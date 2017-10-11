@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.16
+VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Common", "src\Fireasy.Common\Fireasy.Common.csproj", "{E534FE1A-BD42-4508-B848-FA8B37312AD5}"
 EndProject
@@ -26,6 +26,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "documents", "documents", "{0C5F83FE-0C82-499C-9A78-3E11195149FE}"
 	ProjectSection(SolutionItems) = preProject
 		documents\class.dgml = documents\class.dgml
+		documents\release.rar = documents\release.rar
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Windows.Forms", "src\Fireasy.Windows.Forms\Fireasy.Windows.Forms.csproj", "{12B62972-48DB-4A40-9406-0BF1F4BD41A9}"
@@ -95,5 +96,8 @@ Global
 		{16809094-E5D6-4271-9C19-A947F787B288} = {C17CFE8E-2A64-4E6E-9720-4C8681AF3DC3}
 		{12B62972-48DB-4A40-9406-0BF1F4BD41A9} = {C17CFE8E-2A64-4E6E-9720-4C8681AF3DC3}
 		{A7A7033A-B471-47CD-A103-6AD4D822B2B4} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {72E7FC59-9162-48A8-B31F-CB0FEE862E56}
 	EndGlobalSection
 EndGlobal
