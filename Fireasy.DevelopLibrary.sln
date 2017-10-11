@@ -26,7 +26,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "documents", "documents", "{0C5F83FE-0C82-499C-9A78-3E11195149FE}"
 	ProjectSection(SolutionItems) = preProject
 		documents\class.dgml = documents\class.dgml
-		documents\release.rar = documents\release.rar
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Windows.Forms", "src\Fireasy.Windows.Forms\Fireasy.Windows.Forms.csproj", "{12B62972-48DB-4A40-9406-0BF1F4BD41A9}"
