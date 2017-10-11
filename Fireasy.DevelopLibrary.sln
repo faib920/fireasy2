@@ -1,0 +1,99 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.16
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Common", "src\Fireasy.Common\Fireasy.Common.csproj", "{E534FE1A-BD42-4508-B848-FA8B37312AD5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Data", "src\Fireasy.Data\Fireasy.Data.csproj", "{8F96CFEC-6AA9-416B-94DB-87B2F7FAC951}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Data.Entity", "src\Fireasy.Data.Entity\Fireasy.Data.Entity.csproj", "{8E21D3B6-389A-4ABC-9A82-B1212E6C517E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fireasy.Common.Tests", "test\Fireasy.Common.Tests\Fireasy.Common.Tests.csproj", "{FA1593D6-BC48-4588-8931-3EEF92FF5D24}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{C17CFE8E-2A64-4E6E-9720-4C8681AF3DC3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{9E3A93FF-A335-4546-93AC-6DD95595FA71}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fireasy.Data.Tests", "test\Fireasy.Data.Tests\Fireasy.Data.Tests.csproj", "{0525F7FD-026A-44C5-9EEF-1C8402B9DF78}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fireasy.Data.Entity.Tests", "test\Fireasy.Data.Entity.Tests\Fireasy.Data.Entity.Tests.csproj", "{2F97AF7D-F43F-4E73-97BE-F0FC8775BB5A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Web.Mvc", "src\Fireasy.Web.Mvc\Fireasy.Web.Mvc.csproj", "{A6FBD2A1-F109-4E5B-B931-0980B066E303}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Web.EasyUI", "src\Fireasy.Web.EasyUI\Fireasy.Web.EasyUI.csproj", "{16809094-E5D6-4271-9C19-A947F787B288}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "documents", "documents", "{0C5F83FE-0C82-499C-9A78-3E11195149FE}"
+	ProjectSection(SolutionItems) = preProject
+		documents\class.dgml = documents\class.dgml
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Windows.Forms", "src\Fireasy.Windows.Forms\Fireasy.Windows.Forms.csproj", "{12B62972-48DB-4A40-9406-0BF1F4BD41A9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "impl", "impl", "{19E2EB7D-D0D9-4457-AD22-AE43723E0930}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Redis", "src\Fireasy.Redis\Fireasy.Redis.csproj", "{A7A7033A-B471-47CD-A103-6AD4D822B2B4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E534FE1A-BD42-4508-B848-FA8B37312AD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E534FE1A-BD42-4508-B848-FA8B37312AD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E534FE1A-BD42-4508-B848-FA8B37312AD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E534FE1A-BD42-4508-B848-FA8B37312AD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8F96CFEC-6AA9-416B-94DB-87B2F7FAC951}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F96CFEC-6AA9-416B-94DB-87B2F7FAC951}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F96CFEC-6AA9-416B-94DB-87B2F7FAC951}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F96CFEC-6AA9-416B-94DB-87B2F7FAC951}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E21D3B6-389A-4ABC-9A82-B1212E6C517E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E21D3B6-389A-4ABC-9A82-B1212E6C517E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E21D3B6-389A-4ABC-9A82-B1212E6C517E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E21D3B6-389A-4ABC-9A82-B1212E6C517E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA1593D6-BC48-4588-8931-3EEF92FF5D24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA1593D6-BC48-4588-8931-3EEF92FF5D24}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA1593D6-BC48-4588-8931-3EEF92FF5D24}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA1593D6-BC48-4588-8931-3EEF92FF5D24}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0525F7FD-026A-44C5-9EEF-1C8402B9DF78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0525F7FD-026A-44C5-9EEF-1C8402B9DF78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0525F7FD-026A-44C5-9EEF-1C8402B9DF78}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0525F7FD-026A-44C5-9EEF-1C8402B9DF78}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F97AF7D-F43F-4E73-97BE-F0FC8775BB5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F97AF7D-F43F-4E73-97BE-F0FC8775BB5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F97AF7D-F43F-4E73-97BE-F0FC8775BB5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F97AF7D-F43F-4E73-97BE-F0FC8775BB5A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6FBD2A1-F109-4E5B-B931-0980B066E303}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6FBD2A1-F109-4E5B-B931-0980B066E303}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6FBD2A1-F109-4E5B-B931-0980B066E303}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6FBD2A1-F109-4E5B-B931-0980B066E303}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16809094-E5D6-4271-9C19-A947F787B288}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16809094-E5D6-4271-9C19-A947F787B288}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16809094-E5D6-4271-9C19-A947F787B288}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16809094-E5D6-4271-9C19-A947F787B288}.Release|Any CPU.Build.0 = Release|Any CPU
+		{12B62972-48DB-4A40-9406-0BF1F4BD41A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{12B62972-48DB-4A40-9406-0BF1F4BD41A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{12B62972-48DB-4A40-9406-0BF1F4BD41A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{12B62972-48DB-4A40-9406-0BF1F4BD41A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7A7033A-B471-47CD-A103-6AD4D822B2B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7A7033A-B471-47CD-A103-6AD4D822B2B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7A7033A-B471-47CD-A103-6AD4D822B2B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7A7033A-B471-47CD-A103-6AD4D822B2B4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E534FE1A-BD42-4508-B848-FA8B37312AD5} = {C17CFE8E-2A64-4E6E-9720-4C8681AF3DC3}
+		{8F96CFEC-6AA9-416B-94DB-87B2F7FAC951} = {C17CFE8E-2A64-4E6E-9720-4C8681AF3DC3}
+		{8E21D3B6-389A-4ABC-9A82-B1212E6C517E} = {C17CFE8E-2A64-4E6E-9720-4C8681AF3DC3}
+		{FA1593D6-BC48-4588-8931-3EEF92FF5D24} = {9E3A93FF-A335-4546-93AC-6DD95595FA71}
+		{0525F7FD-026A-44C5-9EEF-1C8402B9DF78} = {9E3A93FF-A335-4546-93AC-6DD95595FA71}
+		{2F97AF7D-F43F-4E73-97BE-F0FC8775BB5A} = {9E3A93FF-A335-4546-93AC-6DD95595FA71}
+		{A6FBD2A1-F109-4E5B-B931-0980B066E303} = {C17CFE8E-2A64-4E6E-9720-4C8681AF3DC3}
+		{16809094-E5D6-4271-9C19-A947F787B288} = {C17CFE8E-2A64-4E6E-9720-4C8681AF3DC3}
+		{12B62972-48DB-4A40-9406-0BF1F4BD41A9} = {C17CFE8E-2A64-4E6E-9720-4C8681AF3DC3}
+		{A7A7033A-B471-47CD-A103-6AD4D822B2B4} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
+	EndGlobalSection
+EndGlobal

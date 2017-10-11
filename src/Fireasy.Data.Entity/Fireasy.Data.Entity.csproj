@@ -1,0 +1,91 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;net46;net40;net35;</TargetFrameworks>
+    <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
+    <Authors>Huangxd</Authors>
+    <Company>Fireasy</Company>
+    <FileVersion>2.0.0.46080</FileVersion>
+    <Copyright>Copyright © Fireasy 2013-2017</Copyright>
+    <AssemblyVersion>2.0.0.46080</AssemblyVersion>
+    <SignAssembly>True</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>False</DelaySign>
+    <Product>Fireasy Entity Framework</Product>
+    <Version>2.0.0</Version>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net35|AnyCPU'">
+    <DocumentationFile>bin\Debug\net35\Fireasy.Data.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">
+    <DocumentationFile>bin\Debug\net45\Fireasy.Data.Entity.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net40|AnyCPU'">
+    <DocumentationFile>bin\Debug\net40\Fireasy.Data.Entity.xml</DocumentationFile>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net46|AnyCPU'">
+    <DocumentationFile>bin\Debug\net46\Fireasy.Data.Entity.xml</DocumentationFile>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net35|AnyCPU'">
+    <DocumentationFile>..\..\Release\net35\Fireasy.Data.Entity.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
+    <DocumentationFile>..\..\Release\net45\Fireasy.Data.Entity.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net40|AnyCPU'">
+    <DocumentationFile>..\..\..\..\Release\net40\Fireasy.Data.Entity.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net46|AnyCPU'">
+    <DocumentationFile>..\..\Release\net46\Fireasy.Data.Entity.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <Compile Remove="QueryBuilder\**" />
+    <EmbeddedResource Remove="QueryBuilder\**" />
+    <None Remove="QueryBuilder\**" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Remove="Dynamic\EntityPersister.cs" />
+    <Compile Remove="EntityPersister.cs" />
+    <Compile Remove="EntityPersisterHelper.cs" />
+    <Compile Remove="EntityTreePersistentException.cs" />
+    <Compile Remove="EntityTreePersistentHelper.cs" />
+    <Compile Remove="EntityTreePersister.cs" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Remove="Strings.resources" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <EmbeddedResource Include="Strings.resources" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\Fireasy.Common\Fireasy.Common.csproj" />
+    <ProjectReference Include="..\Fireasy.Data\Fireasy.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+</Project>

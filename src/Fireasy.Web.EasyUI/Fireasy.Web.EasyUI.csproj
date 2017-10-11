@@ -1,0 +1,68 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;net46;net40</TargetFrameworks>
+    <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
+    <Authors>Huangxd</Authors>
+    <Company>Fireasy</Company>
+    <FileVersion>2.0.0.46080</FileVersion>
+    <Copyright>Copyright © Fireasy 2013-2017</Copyright>
+    <AssemblyVersion>2.0.0.46080</AssemblyVersion>
+    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>True</SignAssembly>
+    <DelaySign>False</DelaySign>
+    <Product>Fireasy EasyUI Extensions</Product>
+    <Version>2.0.0</Version>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">
+    <DocumentationFile>bin\Debug\net45\Fireasy.Web.EasyUI.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net40|AnyCPU'">
+    <DocumentationFile>bin\Debug\net40\Fireasy.Web.EasyUI.xml</DocumentationFile>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net46|AnyCPU'">
+    <DocumentationFile>bin\Debug\net46\Fireasy.Web.EasyUI.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
+    <DocumentationFile>..\..\Release\net45\Fireasy.Web.EasyUI.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net40|AnyCPU'">
+    <DocumentationFile>..\..\Release\net40\Fireasy.Web.EasyUI.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net46|AnyCPU'">
+    <DocumentationFile>..\..\Release\net46\Fireasy.Web.EasyUI.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNet.Mvc" Version="4.0.20505" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\Fireasy.Common\Fireasy.Common.csproj" />
+    <ProjectReference Include="..\Fireasy.Data.Entity\Fireasy.Data.Entity.csproj" />
+    <ProjectReference Include="..\Fireasy.Data\Fireasy.Data.csproj" />
+    <ProjectReference Include="..\Fireasy.Web.Mvc\Fireasy.Web.Mvc.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Web" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
+    <PackageReference Include="Microsoft.AspNet.WebPages">
+      <Version>3.0.0</Version>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>
