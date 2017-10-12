@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Fireasy.Data.Extensions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Data;
 using System.Linq;
@@ -120,12 +121,108 @@ namespace Fireasy.Data.Tests
         }
 
         [TestMethod]
+        public void ExecuteDataTableByPage()
+        {
+            using (var database = DatabaseFactory.CreateDatabase())
+            {
+                var sql = new SqlCommand("SELECT * FROM Customers");
+                var pager = new DataPager(5, 2);
+                var table = database.ExecuteDataTable(sql, segment: pager);
+                table.EachRow((r, i) => Console.WriteLine("CustomerID: {0}", r[0]));
+            };
+        }
+
+        [TestMethod]
         public void TestExecuteEnumerable()
         {
             using (var db = DatabaseFactory.CreateDatabase())
             {
                 var result = db.ExecuteEnumerable<Customer>((SqlCommand)"select * from customers");
                 Console.WriteLine($"执行完毕 结果为{result.Count()}");
+            }
+        }
+
+        [TestMethod]
+        public void TestExecuteDynamicEnumerable()
+        {
+            using (var db = DatabaseFactory.CreateDatabase())
+            {
+                var pager = new DataPager(5, 0);
+                var result = db.ExecuteEnumerable((SqlCommand)"select * from customers");
+                Console.WriteLine($"执行完毕 结果为{result.Count()}");
+            }
+        }
+
+        [TestMethod]
+        public void TestExecuteEnumerableByPager()
+        {
+            using (var db = DatabaseFactory.CreateDatabase())
+            {
+                var pager = new DataPager(5, 0);
+                var result = db.ExecuteEnumerable<Customer>((SqlCommand)"select * from customers", pager);
+                Console.WriteLine($"执行完毕 结果为{result.Count()}");
+            }
+        }
+
+        [TestMethod]
+        public void TestExecuteEnumerableByExpiration()
+        {
+            using (var db = DatabaseFactory.CreateDatabase())
+            {
+                var sql = (SqlCommand)"select * from customers";
+
+                var pager = new DataPager(5, 0);
+
+                //查询总记录数，同时采用20秒缓存，因此可以不用每次都查询总记录数
+                pager.Evaluator = new TotalRecordEvaluator
+                {
+                    Expiration = TimeSpan.FromSeconds(20)
+                };
+
+                while (true)
+                {
+                    var result = db.ExecuteEnumerable<Customer>(sql, pager);
+                    Console.WriteLine($"执行完毕 结果为{result.Count()}");
+
+                    if (pager.CurrentPageIndex + 1 >= pager.PageCount)
+                    {
+                        break;
+                    }
+
+                    pager.CurrentPageIndex++;
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestExecuteEnumerableByTryNextEvaluator()
+        {
+            using (var db = DatabaseFactory.CreateDatabase())
+            {
+                var sql = (SqlCommand)"select * from customers";
+
+                //每页5条
+                var pager = new DataPager(5, 0);
+                pager.Evaluator = new TryNextEvaluator();
+
+                //记录当前查询出的记录数
+                var recordCount = 0;
+
+                while (true)
+                {
+                    var result = db.ExecuteEnumerable<Customer>(sql, pager);
+                    Console.WriteLine($"执行完毕 结果为{result.Count()}");
+
+                    //判断是否到最后一页
+                    if (recordCount + pager.PageSize > pager.RecordCount)
+                    {
+                        break;
+                    }
+
+                    //赋值新记录数
+                    recordCount = pager.RecordCount;
+                    pager.CurrentPageIndex++;
+                }
             }
         }
 
