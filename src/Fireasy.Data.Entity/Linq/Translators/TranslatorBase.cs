@@ -1131,7 +1131,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
         protected bool IsString(Expression exp)
         {
             return exp.Type == typeof(string) ||
-                exp.Type == typeof(char) || exp.Type == typeof(char?);
+                exp.Type == typeof(char) || exp.Type == typeof(char?) ||
+                exp.Type == typeof(Guid);
         }
 
         protected bool IsStringOrDate(Expression exp)

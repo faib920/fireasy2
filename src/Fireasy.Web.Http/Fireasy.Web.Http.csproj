@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;net46</TargetFrameworks>
+    <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
+    <Authors>Huangxd</Authors>
+    <Company>Fireasy</Company>
+    <FileVersion>2.0.0.46080</FileVersion>
+    <Copyright>Copyright © Fireasy 2013-2017</Copyright>
+    <AssemblyVersion>2.0.0.46080</AssemblyVersion>
+    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>True</SignAssembly>
+    <DelaySign>False</DelaySign>
+    <Product>Fireasy Asp.Net WebApi</Product>
+    <Version>2.0.0</Version>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNet.WebApi" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Fireasy.Common\Fireasy.Common.csproj" />
+  </ItemGroup>
+
+</Project>

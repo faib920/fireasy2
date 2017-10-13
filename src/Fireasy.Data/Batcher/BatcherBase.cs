@@ -208,6 +208,7 @@ namespace Fireasy.Data.Batcher
                 case DbType.Date:
                 case DbType.DateTime:
                 case DbType.DateTime2:
+                case DbType.Guid:
                     return true;
                 case DbType.String:
                 case DbType.AnsiString:
