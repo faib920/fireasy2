@@ -847,11 +847,12 @@ namespace Fireasy.Data.Extensions
                         case "System.Drawing.Size":
                         case "System.Drawing.Rectangle":
                         case "System.Drawing.Font":
-                        case "System.Guid":
                             return DbType.String;
                         case "System.Drawing.Image":
                         case "System.Drawing.Bitmap":
                             return DbType.Binary;
+                        case "System.Guid":
+                            return DbType.Guid;
                     }
 
                     if (type == typeof(byte[]))
