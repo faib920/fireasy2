@@ -147,7 +147,7 @@ namespace Fireasy.Data.Batcher
                 }
                 else
                 {
-                    sb.Append(BuildValueString(provider, mappings[i], parameters, value, i++, batch));
+                    sb.Append(BuildValueString(provider, mappings[i], parameters, value, i, batch));
                 }
             }
 
