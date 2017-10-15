@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common;
 using Fireasy.Common.Extensions;
+using Fireasy.Common.Linq.Expressions;
 using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Entity.Validation;
@@ -16,6 +17,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace Fireasy.Data.Entity
 {
@@ -58,7 +60,8 @@ namespace Fireasy.Data.Entity
         /// <param name="entity">插入的实体。</param>
         /// <param name="referEntity">参照的实体。</param>
         /// <param name="position">插入的位置。</param>
-        public virtual void Insert(TEntity entity, TEntity referEntity, EntityTreePosition position = EntityTreePosition.Children)
+        /// <param name="isolation">数据隔离表达式。</param>
+        public virtual void Insert(TEntity entity, TEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null)
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
@@ -67,7 +70,7 @@ namespace Fireasy.Data.Entity
                 var arg = CreateUpdatingArgument(entity);
 
                 //获得新节点的Order值
-                arg.NewValue.Order = GetNewOrderNumber(null, EntityTreePosition.Children);
+                arg.NewValue.Order = GetNewOrderNumber(null, EntityTreePosition.Children, 0, isolation);
                 arg.NewValue.Level = 1;
 
                 //生成新的InnerID
@@ -194,12 +197,13 @@ namespace Fireasy.Data.Entity
         /// <param name="bag"></param>
         /// <param name="mode"></param>
         /// <param name="offset"></param>
+        /// <param name="isolation"></param>
         /// <returns></returns>
-        private int GetNewOrderNumber(EntityTreeUpdatingBag bag, EntityTreePosition mode, int offset = 0)
+        private int GetNewOrderNumber(EntityTreeUpdatingBag bag, EntityTreePosition mode, int offset = 0, Expression<Func<TEntity>> isolation = null)
         {
             if (bag == null)
             {
-                return GetNewOrderNumber();
+                return GetNewOrderNumber(isolation);
             }
 
             switch (mode)
@@ -227,13 +231,22 @@ namespace Fireasy.Data.Entity
         /// 取顶层的最大order值。
         /// </summary>
         /// <returns></returns>
-        private int GetNewOrderNumber()
+        private int GetNewOrderNumber(Expression<Func<TEntity>> isolation = null)
         {
             var sql = string.Format("SELECT MAX({0}) FROM {1} WHERE {2} = {3}",
                 GetOrderExpression(),
                 DbUtility.FormatByQuote(syntax, metadata.TableName),
                 syntax.String.Length(QuoteColumn(metaTree.InnerSign)),
                 metaTree.SignLength);
+
+            if (isolation != null)
+            {
+                var condition = IsolationConditionBuilder.Build(isolation);
+                if (!string.IsNullOrEmpty(condition))
+                {
+                    sql += " AND " + condition;
+                }
+            }
 
             return database.ExecuteScalar((SqlCommand)sql).To<int>() + 1;
         }
@@ -579,6 +592,52 @@ namespace Fireasy.Data.Entity
             public EntityTreeUpdatingBag OldValue { get; set; }
 
             public EntityTreeUpdatingBag NewValue { get; set; }
+        }
+
+        /// <summary>
+        /// 数据隔离条件生成器。
+        /// </summary>
+        private class IsolationConditionBuilder : Common.Linq.Expressions.ExpressionVisitor
+        {
+            private StringBuilder condition = new StringBuilder();
+
+            public static string Build(Expression expression)
+            {
+                var builder = new IsolationConditionBuilder();
+                builder.Visit(expression);
+                return builder.condition.ToString();
+            }
+
+            protected override MemberBinding VisitBinding(MemberBinding binding)
+            {
+                var assign = binding as MemberAssignment;
+                if (assign == null)
+                {
+                    return binding;
+                }
+
+                var propertyName = assign.Member.Name;
+                var property = PropertyUnity.GetProperty(typeof(TEntity), propertyName);
+                if (property != null)
+                {
+                    if (condition.Length > 0)
+                    {
+                        condition.Append(" AND ");
+                    }
+
+                    var constExp = PartialEvaluator.Eval(assign.Expression) as ConstantExpression;
+                    if (constExp.Type.IsStringOrDateTime())
+                    {
+                        condition.AppendFormat("{0} = '{1}'", property.Info.FieldName, constExp.Value);
+                    }
+                    else
+                    {
+                        condition.AppendFormat("{0} = {1}", property.Info.FieldName, constExp.Value);
+                    }
+                }
+
+                return binding;
+            }
         }
     }
 }

@@ -21,6 +21,8 @@ namespace Fireasy.Data.Entity.Tests
             using (var context = new DbContext())
             {
                 var product = context.Products.Get(12);
+                int? a = null;
+                var product1 = context.Products.Get(a);
             }
         }
 

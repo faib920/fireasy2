@@ -213,6 +213,11 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public int Delete(PropertyValue[] primaryValues, bool logicalDelete = true)
         {
+            if (primaryValues.Any(s => PropertyValue.IsEmpty(s)))
+            {
+                return 0;
+            }
+
             return Queryable.RemoveByPrimary(primaryValues, logicalDelete);
         }
 
@@ -234,6 +239,11 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public TEntity Get(params PropertyValue[] primaryValues)
         {
+            if (primaryValues.Any(s => PropertyValue.IsEmpty(s)))
+            {
+                return default(TEntity);
+            }
+
             return Queryable.GetByPrimary<TEntity, PropertyValue>(primaryValues);
         }
 

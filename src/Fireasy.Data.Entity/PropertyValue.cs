@@ -1121,7 +1121,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public override string ToString()
         {
-            return StorageType == StorageType.Empty ? string.Empty : GetValue().ToString();
+            return StorageType == StorageType.Empty ? string.Empty : GetValue().ToStringSafely();
         }
 
         #endregion
@@ -1348,7 +1348,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static bool IsEmpty(PropertyValue value)
         {
-            return value == Empty || value.StorageType == StorageType.Empty;
+            return value == Empty || value.StorageType == StorageType.Empty || value.GetValue() == null;
         }
         #endregion
     }

@@ -64,5 +64,24 @@ namespace Fireasy.Data.Entity.Tests
                 rep.Insert(dept1, null);
             }
         }
+
+        [TestMethod]
+        public void TestInsertByIsolation()
+        {
+            var dc = "dd";
+
+            using (var db = new DbContext())
+            {
+                var rep = db.CreateTreeRepository<Depts>();
+                var sc = db.Depts.FirstOrDefault(s => s.DeptName == "四川");
+
+                //var dept = new Depts { DeptName = "成都" };
+                //rep.Insert(dept, sc, EntityTreePosition.Children);
+
+                var dept1 = new Depts { DeptName = "贵州" };
+                rep.Insert(dept1, null, isolation: () => new Depts { DeptID = 1, DeptCode = dc });
+            }
+        }
+
     }
 }
