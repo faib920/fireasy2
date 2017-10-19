@@ -266,9 +266,32 @@ namespace Fireasy.Data.Entity.Tests
             }
         }
 
+        [TestMethod]
+        public void TestExtendAs1()
+        {
+            using (var db = new DbContext())
+            {
+                var items = new List<string> { "df", "cc" };
+                var list = db.OrderDetails.Select(s =>
+                    s.ExtendAs<OrderDetailsEx>(() => new OrderDetailsEx
+                    {
+                        ProductName = items.FirstOrDefault(),
+                        List = items.OrderBy(t => t).Where(t => true).ToList(),
+                        Count = items.Count(t => true)
+                    }))
+                    .ToList();
+
+                Assert.AreEqual("cc", list[0].ProductName);
+            }
+        }
+
         public class OrderDetailsEx : OrderDetails
         {
             public string ProductName { get; set; }
+
+            public IEnumerable<string> List { get; set; }
+
+            public int Count { get; set; }
         }
 
         [TestMethod]

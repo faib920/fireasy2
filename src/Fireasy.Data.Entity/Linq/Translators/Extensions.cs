@@ -44,6 +44,16 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return System.Linq.Expressions.Expression.Bind(assigment.Member, expression);
         }
 
+        public static MethodCallExpression Update(this MethodCallExpression callExp, Expression body, IEnumerable<Expression> arguments)
+        {
+            if (callExp.Object != body || arguments != callExp.Arguments)
+            {
+                return Expression.Call(body, callExp.Method, arguments);
+            }
+
+            return callExp;
+        }
+
         public static BinaryExpression Update(this BinaryExpression binary, Expression left, LambdaExpression conversion, Expression right)
         {
             if (binary.Left == left && binary.Right == right && binary.Conversion == conversion)
