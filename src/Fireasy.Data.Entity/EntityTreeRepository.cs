@@ -169,8 +169,9 @@ namespace Fireasy.Data.Entity
         /// 递归返回实体的父亲实体。
         /// </summary>
         /// <param name="entity">当前实体。</param>
+        /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
         /// <returns></returns>
-        public IQueryable<TEntity> RecurrenceParent(IEntity entity)
+        public IQueryable<TEntity> RecurrenceParent(IEntity entity, Expression<Func<TEntity, bool>> predicate = null)
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
@@ -182,7 +183,7 @@ namespace Fireasy.Data.Entity
                 parents.Add(keyId);
             }
 
-            var expression = TreeExpressionBuilder.BuildGetByInnerIdExpression<TEntity>(metaTree, parents);
+            var expression = TreeExpressionBuilder.BuildGetByInnerIdExpression<TEntity>(metaTree, predicate, parents);
 
             var querable = QueryHelper.CreateQuery<TEntity>(repository.Provider, expression);
 

@@ -93,9 +93,10 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="metadata"></param>
+        /// <param name="predicate"></param>
         /// <param name="innerIds"></param>
         /// <returns></returns>
-        internal static Expression BuildGetByInnerIdExpression<T>(EntityTreeMetadata metadata, List<string> innerIds)
+        internal static Expression BuildGetByInnerIdExpression<T>(EntityTreeMetadata metadata, Expression<Func<T, bool>> predicate, List<string> innerIds)
         {
             var parExp = Expression.Parameter(typeof(T), "s");
             var memberExp = Expression.MakeMemberAccess(parExp, metadata.InnerSign.Info.ReflectionInfo);
@@ -107,15 +108,29 @@ namespace Fireasy.Data.Entity
                 expres.Add(Expression.Equal(memberExp, Expression.Constant(innerId)));
             }
 
+            Expression condition = null;
+
             //如果没有父编码，返回不成立的 1=0 表达式
             if (expres.Count == 0)
             {
-                return Expression.Lambda<Func<T, bool>>(Expression.Equal(Expression.Constant(1, typeof(int)), Expression.Constant(0, typeof(int))), parExp);
+                condition = Expression.Equal(Expression.Constant(1, typeof(int)), Expression.Constant(0, typeof(int)));
+            }
+            else
+            {
+                condition = expres.Aggregate(Expression.Or);
             }
 
-            return Expression.Lambda<Func<T, bool>>(expres.Aggregate(Expression.Or), parExp);
-        }
+            if (predicate != null)
+            {
+                var lambda = GetLambda(predicate);
+                if (lambda != null)
+                {
+                    condition = condition.And(DbExpressionReplacer.Replace(lambda.Body, lambda.Parameters[0], parExp));
+                }
+            }
 
+            return Expression.Lambda<Func<T, bool>>(condition, parExp);
+        }
         /// <summary>
         /// 构造采用编码排序的表达式。
         /// </summary>
