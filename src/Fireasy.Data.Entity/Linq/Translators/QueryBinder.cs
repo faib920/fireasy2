@@ -1104,12 +1104,6 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private Expression BindAggregate(Expression source, MemberInfo member, LambdaExpression argument, bool isRoot)
         {
-            var projection = VisitSequence(source);
-            if (projection == null)
-            {
-                return null;
-            }
-
             var returnType = member.GetMemberType();
             var aggType = GetAggregateType(member.Name);
             var hasPredicateArg = HasPredicateArg(aggType);
@@ -1135,6 +1129,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 source = Expression.Call(typeof(Queryable), "Where", new Type [] { source.Type.GetEnumerableElementType() }, source, argument);
                 argument = null;
                 argumentWasPredicate = true;
+            }
+
+            var projection = VisitSequence(source);
+            if (projection == null)
+            {
+                return null;
             }
 
             Expression argExpr = null;
