@@ -85,7 +85,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator bool(PropertyValue value)
         {
-            return value == Empty && value.Boolean.Value;
+            return value == Empty ? false : value.Boolean.Value;
         }
 
         /// <summary>
