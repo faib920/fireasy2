@@ -28,14 +28,13 @@ namespace Fireasy.Data
         /// <returns>由当前 <see cref="IDataReader"/> 对象中的数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
         public virtual T Map(IDataReader reader)
         {
-            var index = reader.FieldCount != 1 ? 1 : 0;
-            var value = RecordWrapper == null ? reader[index] : 
-                RecordWrapper.GetValue(reader, index);
+            var value = RecordWrapper == null ? reader[0] : 
+                RecordWrapper.GetValue(reader, 0);
 
             var converter = ConvertManager.GetConverter(typeof(T));
             if (converter != null)
             {
-                return (T)converter.ConvertFrom(value, reader.GetFieldType(index).GetDbType());
+                return (T)converter.ConvertFrom(value, reader.GetFieldType(0).GetDbType());
             }
 
             return value.To<object, T>();
@@ -48,14 +47,13 @@ namespace Fireasy.Data
         /// <returns>由 <see cref="DataRow"/> 中数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
         public virtual T Map(DataRow row)
         {
-            var index = row.Table.Columns.Count != 1 ? 1 : 0;
             var converter = ConvertManager.GetConverter(typeof(T));
             if (converter != null)
             {
-                return (T)converter.ConvertFrom(row[index], row.Table.Columns[index].DataType.GetDbType());
+                return (T)converter.ConvertFrom(row[0], row.Table.Columns[0].DataType.GetDbType());
             }
 
-            return row[index].To<object, T>();
+            return row[0].To<object, T>();
         }
 
         /// <summary>
