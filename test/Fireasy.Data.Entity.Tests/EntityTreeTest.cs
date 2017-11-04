@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Fireasy.Data.Entity.Tests.Models;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Fireasy.Data.Entity.Tests
 {
@@ -62,6 +63,24 @@ namespace Fireasy.Data.Entity.Tests
 
                 var dept1 = new Depts { DeptName = "贵州" };
                 rep.Insert(dept1, null);
+            }
+        }
+
+        [TestMethod]
+        public void TestBatchInsert()
+        {
+            using (var db = new DbContext())
+            {
+                var rep = db.CreateTreeRepository<Depts>();
+                var sc = db.Depts.FirstOrDefault(s => s.DeptName == "四川");
+
+                var list = new List<Depts>();
+                for (var i = 0; i < 20; i++)
+                {
+                    list.Add(new Depts { DeptName = "四川" + i });
+                }
+
+                rep.BatchInsert(list, sc);
             }
         }
 

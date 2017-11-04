@@ -119,6 +119,75 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
+        /// 将一组实体插入到参照实体的相应位置。
+        /// </summary>
+        /// <param name="entities">插入的实体集。</param>
+        /// <param name="referEntity">参照的实体。</param>
+        /// <param name="position">插入的位置。</param>
+        /// <param name="isolation">数据隔离表达式。</param>
+        public virtual void BatchInsert(IEnumerable<TEntity> entities, TEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null)
+        {
+            if (referEntity == null)
+            {
+                var orderNo1 = GetNewOrderNumber(null, EntityTreePosition.Children, 0, isolation);
+
+                foreach (var entity in entities)
+                {
+                    var arg = CreateUpdatingArgument(entity);
+                    //获得新节点的Order值
+                    arg.NewValue.Order = orderNo1 ++;
+                    arg.NewValue.Level = 1;
+
+                    //生成新的InnerID
+                    arg.NewValue.FullName = arg.OldValue.Name;
+                    arg.NewValue.InnerId = GenerateInnerId(string.Empty, arg.NewValue.Order, EntityTreePosition.Children);
+
+                    UpdateEntityByArgument(entity, arg);
+                }
+
+                repository.Batch(entities, (u, s) => u.Insert(s));
+                return;
+            }
+
+            var arg2 = CreateUpdatingArgument(referEntity);
+
+            var keyId = arg2.OldValue.InnerId;
+            var orderNo = GetNewOrderNumber(arg2.OldValue, position);
+
+            foreach (var entity in entities)
+            {
+                var arg1 = CreateUpdatingArgument(entity);
+
+                //获得新节点的Order值
+                arg1.NewValue.Order = orderNo ++;
+
+                //获得参照节点的级别
+                arg1.NewValue.Level = arg2.OldValue.Level;
+
+                //如果插入为孩子，级别则+1
+                if (position == EntityTreePosition.Children)
+                {
+                    arg1.NewValue.Level += 1;
+                }
+
+                //生成新的InnerID
+                arg1.NewValue.InnerId = GenerateInnerId(keyId, arg1.NewValue.Order, position);
+                arg1.NewValue.FullName = GenerateFullName(arg1, arg2, position);
+
+                UpdateEntityByArgument(entity, arg1);
+            }
+
+            try
+            {
+                repository.Batch(entities, (u, s) => u.Insert(s));
+            }
+            catch (Exception ex)
+            {
+                throw new EntityPersistentException(SR.GetString(SRKind.FailInEntityInsert), ex);
+            }
+        }
+
+        /// <summary>
         /// 将一个实体移动到参照实体的相应位置。
         /// </summary>
         /// <param name="entity">要移动的实体。</param>
@@ -171,7 +240,7 @@ namespace Fireasy.Data.Entity
         /// <param name="entity">当前实体。</param>
         /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
         /// <returns></returns>
-        public IQueryable<TEntity> RecurrenceParent(IEntity entity, Expression<Func<TEntity, bool>> predicate = null)
+        public IQueryable<TEntity> RecurrenceParent(TEntity entity, Expression<Func<TEntity, bool>> predicate = null)
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
@@ -190,6 +259,10 @@ namespace Fireasy.Data.Entity
             var orderExp = TreeExpressionBuilder.BuildOrderByLengthDescExpression<TEntity>(metaTree, querable.Expression);
 
             return repository.Provider.CreateQuery<TEntity>(orderExp);
+        }
+
+        public void UpdateFullName(IEntity entity)
+        {
         }
 
         /// <summary>
