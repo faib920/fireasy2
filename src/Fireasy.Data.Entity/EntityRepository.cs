@@ -72,7 +72,8 @@ namespace Fireasy.Data.Entity
         public int Insert(TEntity entity)
         {
             Guard.ArgumentNull(entity, nameof(entity));
-            return repositoryProxy.Insert(entity);
+
+            return EntityPersistentSubscribePublisher.OnCreate(entity, () => repositoryProxy.Insert(entity));
         }
 
         /// <summary>
@@ -98,11 +99,11 @@ namespace Fireasy.Data.Entity
 
             if (entity.EntityState == EntityState.Attached)
             {
-                return repositoryProxy.Insert(entity);
+                return EntityPersistentSubscribePublisher.OnCreate(entity, () => repositoryProxy.Insert(entity));
             }
             else
             {
-                return repositoryProxy.Update(entity);
+                return EntityPersistentSubscribePublisher.OnUpdate(entity, () => repositoryProxy.Update(entity));
             }
         }
 
@@ -115,7 +116,8 @@ namespace Fireasy.Data.Entity
         public int Delete(TEntity entity, bool logicalDelete = true)
         {
             Guard.ArgumentNull(entity, nameof(entity));
-            return repositoryProxy.Delete(entity, logicalDelete);
+
+            return EntityPersistentSubscribePublisher.OnRemove(entity, () => repositoryProxy.Delete(entity, logicalDelete));
         }
 
         /// <summary>
@@ -169,7 +171,8 @@ namespace Fireasy.Data.Entity
         public int Update(TEntity entity)
         {
             Guard.ArgumentNull(entity, nameof(entity));
-            return repositoryProxy.Update(entity);
+
+            return EntityPersistentSubscribePublisher.OnUpdate(entity, () => repositoryProxy.Update(entity));
         }
 
         /// <summary>
@@ -216,12 +219,9 @@ namespace Fireasy.Data.Entity
         public int Batch(IEnumerable<TEntity> instances, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation)
         {
             var operateName = OperateFinder.Find(fnOperation);
-            if (string.IsNullOrEmpty(operateName))
-            {
-                throw new InvalidOperationException(SR.GetString(SRKind.InvalidBatchOperation));
-            }
+            var eventType = GetBeforeEventType(operateName);
 
-            return repositoryProxy.Batch(instances, fnOperation);
+            return EntityPersistentSubscribePublisher.OnBatch(instances.Cast<IEntity>(), eventType, () => repositoryProxy.Batch(instances, fnOperation));
         }
 
 #if !NET40 && !NET35
@@ -481,6 +481,17 @@ namespace Fireasy.Data.Entity
         }
 #endif
 
+        private IEntity GetCloneEntity(IEntity entity)
+        {
+            var kp = entity as IKeepStateCloneable;
+            if (kp != null)
+            {
+                return (IEntity)kp.Clone();
+            }
+
+            return entity;
+        }
+
         /// <summary>
         /// 操作查找器。
         /// </summary>
@@ -516,6 +527,36 @@ namespace Fireasy.Data.Entity
                 }
 
                 return node;
+            }
+        }
+
+        private EntityPersistentOperater GetBeforeEventType(string operateName)
+        {
+            switch (operateName)
+            {
+                case "Insert":
+                    return EntityPersistentOperater.Create;
+                case "Update":
+                    return EntityPersistentOperater.Update;
+                case "Delete":
+                    return EntityPersistentOperater.Remove;
+                default:
+                    throw new InvalidOperationException();
+            }
+        }
+
+        private EntityPersistentEventType GetAfterEventType(string operateName)
+        {
+            switch (operateName)
+            {
+                case "Insert":
+                    return EntityPersistentEventType.AfterCreate;
+                case "Update":
+                    return EntityPersistentEventType.AfterUpdate;
+                case "Delete":
+                    return EntityPersistentEventType.AfterRemove;
+                default:
+                    throw new InvalidOperationException();
             }
         }
 

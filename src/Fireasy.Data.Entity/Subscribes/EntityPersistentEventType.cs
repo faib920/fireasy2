@@ -30,5 +30,32 @@ namespace Fireasy.Data.Entity.Subscribes
         /// 移除实体之后。
         /// </summary>
         AfterRemove,
+        /// <summary>
+        /// 批量操作之前。
+        /// </summary>
+        BeforeBatch,
+        /// <summary>
+        /// 批量操作之后。
+        /// </summary>
+        AfterBatch,
+    }
+
+    /// <summary>
+    /// 持久化操作类别。
+    /// </summary>
+    public enum EntityPersistentOperater
+    {
+        /// <summary>
+        /// 创建实体。
+        /// </summary>
+        Create,
+        /// <summary>
+        /// 更新实体。
+        /// </summary>
+        Update,
+        /// <summary>
+        /// 移除实体。
+        /// </summary>
+        Remove
     }
 }

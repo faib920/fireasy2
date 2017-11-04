@@ -1,8 +1,5 @@
 ﻿using Fireasy.Common.Subscribe;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Fireasy.Data.Entity.Subscribes
 {
@@ -42,6 +39,14 @@ namespace Fireasy.Data.Entity.Subscribes
                     break;
                 case EntityPersistentEventType.AfterRemove:
                     OnAfterRemove(esub.Argument as IEntity);
+                    break;
+                case EntityPersistentEventType.BeforeBatch:
+                    var objs1 = (object[])esub.Argument;
+                    OnBeforeBatch(objs1[0] as IEnumerable<IEntity>, (EntityPersistentOperater)objs1[1]);
+                    break;
+                case EntityPersistentEventType.AfterBatch:
+                    var objs2 = (object[])esub.Argument;
+                    OnAfterBatch(objs2[0] as IEnumerable<IEntity>, (EntityPersistentOperater)objs2[1]);
                     break;
             }
         }
@@ -91,6 +96,24 @@ namespace Fireasy.Data.Entity.Subscribes
         /// </summary>
         /// <param name="entity">移除的实体对象。</param>
         protected virtual void OnAfterRemove(IEntity entity)
+        {
+        }
+
+        /// <summary>
+        /// 用于实体批量处理之前的通知。
+        /// </summary>
+        /// <param name="entities">批量处理的实体对象。</param>
+        /// <param name="operater"></param>
+        protected virtual void OnBeforeBatch(IEnumerable<IEntity> entities, EntityPersistentOperater operater)
+        {
+        }
+
+        /// <summary>
+        /// 用于实体批量处理之后的通知。
+        /// </summary>
+        /// <param name="entities">批量处理的实体对象。</param>
+        /// <param name="operater"></param>
+        protected virtual void OnAfterBatch(IEnumerable<IEntity> entities, EntityPersistentOperater operater)
         {
         }
     }

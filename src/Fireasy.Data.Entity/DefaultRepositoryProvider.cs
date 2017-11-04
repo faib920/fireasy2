@@ -58,7 +58,6 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Insert(TEntity entity)
         {
-            EntityPersistentSubscribePublisher.OnBeforeCreate(entity);
             ValidationUnity.Validate(entity);
 
             var trans = CheckRelationHasModified(entity);
@@ -77,7 +76,6 @@ namespace Fireasy.Data.Entity
                     entity.As<IEntityPersistentInstanceContainer>(s => s.InstanceName = context.InstanceName);
 
                     HandleRelationProperties(entity);
-                    EntityPersistentSubscribePublisher.OnAfterCreate(entity);
                 }
 
                 if (trans)
@@ -105,7 +103,6 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Update(TEntity entity)
         {
-            EntityPersistentSubscribePublisher.OnBeforeUpdate(entity);
             ValidationUnity.Validate(entity);
 
             var trans = CheckRelationHasModified(entity);
@@ -118,10 +115,7 @@ namespace Fireasy.Data.Entity
 
             try
             {
-                if ((result = Queryable.UpdateEntity(entity)) > 0)
-                {
-                    EntityPersistentSubscribePublisher.OnAfterUpdate(entity);
-                }
+                result = Queryable.UpdateEntity(entity);
 
                 HandleRelationProperties(entity);
 
@@ -161,8 +155,6 @@ namespace Fireasy.Data.Entity
             var rootType = typeof(TEntity).GetRootType();
             var tableName = string.Empty;
 
-            entities.ForEach(s => EntityPersistentSubscribePublisher.OnBeforeCreate(s));
-
             if (context.Environment != null)
             {
                 tableName = DbUtility.FormatByQuote(syntax, context.Environment.GetVariableTableName(rootType));
@@ -184,15 +176,7 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Delete(TEntity entity, bool logicalDelete = true)
         {
-            EntityPersistentSubscribePublisher.OnBeforeRemove(entity);
-
-            int result;
-            if ((result = Queryable.RemoveEntity(entity, logicalDelete)) > 0)
-            {
-                EntityPersistentSubscribePublisher.OnAfterRemove(entity);
-            }
-
-            return result;
+            return Queryable.RemoveEntity(entity, logicalDelete);
         }
 
         /// <summary>
@@ -403,13 +387,13 @@ namespace Fireasy.Data.Entity
             {
                 var relation = RelationshipUnity.GetRelationship(property);
                 added.ForEach(e =>
+                {
+                    foreach (var key in relation.Keys)
                     {
-                        foreach (var key in relation.Keys)
-                        {
-                            var value = entity.GetValue(key.ThisProperty);
-                            e.SetValue(key.OtherProperty, value);
-                        }
-                    });
+                        var value = entity.GetValue(key.ThisProperty);
+                        e.SetValue(key.OtherProperty, value);
+                    }
+                });
 
                 if (entitySet.AllowBatchInsert)
                 {
