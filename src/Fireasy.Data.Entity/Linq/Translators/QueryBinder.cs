@@ -1709,6 +1709,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
             if (selector != null)
             {
                 var expression = Visit(selector.Body);
+                if (expression.NodeType == ExpressionType.Convert)
+                {
+                    expression = (expression as UnaryExpression).Operand;
+                }
 
                 if (expression.NodeType == ExpressionType.New)
                 {
@@ -1740,7 +1744,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 }
             }
 
-            foreach (var property in PropertyUnity.GetPersistentProperties(source.Type))
+            var sourceType = ParameterTypeFinder.Find(source);
+            foreach (var property in PropertyUnity.GetPersistentProperties(sourceType))
             {
                 var columnExp = new ColumnExpression(property.Type, __alias, property.Name, property.Info);
                 arguments.Add(columnExp);
@@ -1770,6 +1775,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 var members = new List<MemberInfo>();
 
                 var expression = Visit(selector.Body);
+                if (expression.NodeType == ExpressionType.Convert)
+                {
+                    expression = (expression as UnaryExpression).Operand;
+                }
+
                 if (expression.NodeType == ExpressionType.New)
                 {
                     var newExp = expression as NewExpression;
@@ -1809,7 +1819,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 }
             }
 
-            foreach (var property in PropertyUnity.GetPersistentProperties(source.Type))
+            var sourceType = ParameterTypeFinder.Find(source);
+            foreach (var property in PropertyUnity.GetPersistentProperties(sourceType))
             {
                 var prop = returnType.GetProperty(property.Name);
                 if (prop == null || !prop.CanWrite)
@@ -1827,7 +1838,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
         public Expression BindTo(Type returnType, Expression source)
         {
             var memberInits = new List<MemberAssignment>();
-            foreach (var property in PropertyUnity.GetPersistentProperties(source.Type))
+            var sourceType = ParameterTypeFinder.Find(source);
+            foreach (var property in PropertyUnity.GetPersistentProperties(sourceType))
             {
                 var prop = returnType.GetProperty(property.Name);
                 if (prop == null || !prop.CanWrite)
@@ -2027,5 +2039,24 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 return memberExp;
             }
         }
+
+        private class ParameterTypeFinder : Common.Linq.Expressions.ExpressionVisitor
+        {
+            private Type parameterType;
+
+            public static Type Find(Expression expression)
+            {
+                var finder = new ParameterTypeFinder();
+                finder.Visit(expression);
+                return finder.parameterType;
+            }
+
+            protected override Expression VisitParameter(ParameterExpression parExp)
+            {
+                parameterType = parExp.Type;
+                return parExp;
+            }
+        }
+
     }
 }
