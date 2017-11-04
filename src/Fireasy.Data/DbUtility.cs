@@ -5,10 +5,11 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
-using Fireasy.Data.Syntax;
 using Fireasy.Common.Configuration;
 using Fireasy.Data.Configuration;
+using Fireasy.Data.Syntax;
+using System;
+using System.Text.RegularExpressions;
 
 namespace Fireasy.Data
 {
@@ -88,5 +89,48 @@ namespace Fireasy.Data
 
             return string.Format("{0}{1}{2}", syntax.Quote[0], name, syntax.Quote[1]);
         }
+
+        /// <summary>
+        /// 在命令文本中查找 Order By 子句。
+        /// </summary>
+        /// <param name="commandText"></param>
+        /// <returns></returns>
+        internal static string FindOrderBy(string commandText)
+        {
+            var regx = new Regex(@"\border\s*by", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            var match = regx.Match(commandText);
+            if (match.Groups.Count > 0 && match.Groups[0].Success)
+            {
+                var index = match.Groups[match.Groups.Count - 1].Index;
+                var start = index;
+                var len = commandText.Length;
+                var count = 0;
+                var finded = false;
+                while (index < len - 1)
+                {
+                    if (commandText[index] == '(')
+                    {
+                        count++;
+                        finded = true;
+                    }
+                    else if (commandText[index] == ')')
+                    {
+                        count--;
+                        finded = true;
+                    }
+                    if (finded && count == -1)
+                    {
+                        break;
+                    }
+
+                    index++;
+                }
+
+                return commandText.Substring(start, index - start + 1);
+            }
+
+            return string.Empty;
+        }
+
     }
 }

@@ -131,7 +131,31 @@ namespace Fireasy.Data.Syntax
             {
                 throw new SegmentNotSupportedException();
             }
+            else if (version >= 11)
+            {
+                return SegmentWith2012(context.Command.CommandText, context.Segment);
+            }
+
             return Segment(context.Command.CommandText, context.Segment);
+        }
+
+        /// <summary>
+        /// 2012以上版本支持的新分页语法。
+        /// </summary>
+        /// <param name="commandText"></param>
+        /// <param name="segment"></param>
+        /// <returns></returns>
+        private string SegmentWith2012(string commandText, IDataSegment segment)
+        {
+            var orderBy = DbUtility.FindOrderBy(commandText);
+
+            commandText = string.Format(@"{0}
+{1}{2} FETCH NEXT {3} ROWS ONLY",
+                commandText,
+                string.IsNullOrEmpty(orderBy) ? "ORDER BY 1" : string.Empty,
+                segment.Start != null ? string.Format(" OFFSET {0} ROW", (segment.Start - 1)) : string.Empty,
+                segment.Length != 0 ? segment.Length : 1000);
+            return commandText;
         }
 
         /// <summary>
@@ -143,12 +167,11 @@ namespace Fireasy.Data.Syntax
         /// <exception cref="SegmentNotSupportedException">当前数据库或版本不支持分段时，引发该异常。</exception>
         public virtual string Segment(string commandText, IDataSegment segment)
         {
-            var regxOrder = new Regex(@"order\s+by ([\W|\w])+", RegexOptions.IgnoreCase);
-            var regAlias = new Regex(@"(\S+)?\.");
+            var orderBy = DbUtility.FindOrderBy(commandText);
+            var regAlias = new Regex(@"(\w+)?\.");
             //如果有排序
-            if (regxOrder.IsMatch(commandText))
+            if (!string.IsNullOrEmpty(orderBy))
             {
-                var matchs = regxOrder.Matches(commandText);
                 //去除子句中的Order并移到OVER后
                 commandText = string.Format(@"
                     SELECT T.* FROM 
@@ -157,9 +180,9 @@ namespace Fireasy.Data.Syntax
                         FROM ({0}) T
                     ) T 
                     WHERE {1}",
-                    regxOrder.Replace(commandText, "").Trim(),
+                    commandText.Replace(orderBy, string.Empty).Trim(),
                     segment.Condition("ROW_NUM"),
-                    regAlias.Replace(matchs[matchs.Count - 1].Value, ""));
+                    regAlias.Replace(orderBy, string.Empty));
             }
             else
             {

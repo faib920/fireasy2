@@ -255,6 +255,12 @@ namespace Fireasy.Data
 
                     for (var i = 0; i < reader.FieldCount; i++)
                     {
+                        var name = wrapper.GetFieldName(reader, i);
+                        if (name.Equals("ROW_NUM"))
+                        {
+                            continue;
+                        }
+
                         dictionary.Add(wrapper.GetFieldName(reader, i), RecordWrapHelper.GetValue(wrapper, reader, i));
                     }
 

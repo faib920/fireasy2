@@ -55,8 +55,9 @@ namespace Fireasy.Data
         private int GetRecordCountFromDatabase(CommandContext context)
         {
             var count = 0;
-            var regx = new Regex(@"\border\s*by\b([^)]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-            var sql = string.Format("SELECT COUNT(*) FROM ({0}) TEMP", regx.Replace(context.Command.CommandText, string.Empty));
+            var orderBy = DbUtility.FindOrderBy(context.Command.CommandText);
+            var sql = string.IsNullOrEmpty(orderBy) ? context.Command.CommandText : context.Command.CommandText.Replace(orderBy, string.Empty);
+            sql = string.Format("SELECT COUNT(*) FROM ({0}) TEMP", sql);
             using (var connection = context.Database.CreateConnection())
             {
                 connection.OpenClose(() =>
