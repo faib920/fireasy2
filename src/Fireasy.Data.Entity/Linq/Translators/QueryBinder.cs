@@ -1819,8 +1819,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 }
             }
 
-            var sourceType = ParameterTypeFinder.Find(source);
-            foreach (var property in PropertyUnity.GetPersistentProperties(sourceType))
+            foreach (var property in PropertyUnity.GetPersistentProperties(returnType))
             {
                 var prop = returnType.GetProperty(property.Name);
                 if (prop == null || !prop.CanWrite)
@@ -1838,8 +1837,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         public Expression BindTo(Type returnType, Expression source)
         {
             var memberInits = new List<MemberAssignment>();
-            var sourceType = ParameterTypeFinder.Find(source);
-            foreach (var property in PropertyUnity.GetPersistentProperties(sourceType))
+            foreach (var property in PropertyUnity.GetPersistentProperties(returnType))
             {
                 var prop = returnType.GetProperty(property.Name);
                 if (prop == null || !prop.CanWrite)
