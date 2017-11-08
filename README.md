@@ -60,3 +60,5 @@ Fireasy是一套基于.Net Framework应用开发组件，其主旨思想为“�
 
 * 为EasyUI的HTML扩展。
 
+![](http://www.fireasy.cn/content/images/Donate.png)
+
