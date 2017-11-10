@@ -752,6 +752,29 @@ namespace Fireasy.Data.Entity.Tests
             }
         }
 
+        [TestMethod]
+        public void TestTransaction()
+        {
+            using (var scope = new EntityTransactionScope())
+            using (var context = new DbContext())
+            {
+                TestAnyMethod(context.Database);
+                scope.Complete();
+            }
+        }
+
+        private void TestAnyMethod(IDatabase db)
+        {
+            //事件期间，不同的DbContext对象共用一个IDatabase对象
+            using (var context = new DbContext())
+            {
+                Assert.IsNotNull(context.Database.Transaction);
+                context.BeginTransaction();
+                Assert.AreEqual(db, context.Database);
+                context.CommitTransaction();
+            }
+        }
+
         private class OrderResult
         {
             public string Date { get; set; }

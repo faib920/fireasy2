@@ -60,6 +60,8 @@ namespace Fireasy.Data.Entity
                 return;
             }
 
+            base.Dispose(true);
+
             foreach (var database in databases.Values)
             {
                 if (database.CommitTransaction())
@@ -68,7 +70,6 @@ namespace Fireasy.Data.Entity
                 }
             }
 
-            base.Dispose(true);
             isDisposed = true;
         }
 
@@ -82,6 +83,8 @@ namespace Fireasy.Data.Entity
                 return;
             }
 
+            base.Dispose(true);
+
             foreach (var database in databases.Values)
             {
                 if (database.RollbackTransaction())
@@ -90,7 +93,6 @@ namespace Fireasy.Data.Entity
                 }
             }
 
-            base.Dispose(true);
             isDisposed = true;
         }
 
