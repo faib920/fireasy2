@@ -68,7 +68,7 @@ namespace Fireasy.Windows.Forms
                     {
                         var texts = new List<string>();
                         CheckItem(TreeList.Items, value as object[], texts);
-#if N35
+#if NET35
                         SetText(string.Join(",", texts.ToArray()));
 #else
                         SetText(string.Join(",", texts));
