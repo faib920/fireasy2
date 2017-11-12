@@ -571,6 +571,26 @@ namespace Fireasy.Data.Entity.Tests
                 }
 
                 db.Depts.Batch(list, (u, s) => u.Insert(s));
+                Console.WriteLine(11);
+            }
+        }
+
+        [TestMethod]
+        public void TestBatchUpdate()
+        {
+            using (var db = new DbContext())
+            {
+                var list = new List<Depts>();
+
+                for (var i = 0; i < 3; i++)
+                {
+                    var d = Depts.New();
+                    d.DeptID = i + 50;
+                    d.DeptName = "a" + i;
+                    list.Add(d);
+                }
+
+                db.Depts.Batch(list, (u, s) => u.Update(s));
             }
         }
 

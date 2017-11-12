@@ -551,6 +551,7 @@ namespace Fireasy.Data.Entity.Linq
             var namedValues = NamedValueGatherer.Gather(operation);
 
             var table = new DataTable();
+
             foreach (var nv in namedValues)
             {
                 var t = nv.Type.GetNonNullableType();
@@ -583,7 +584,15 @@ namespace Fireasy.Data.Entity.Linq
                 Expression.Constant(null, typeof(SqlCommand))
                 );
 
-            return plan;
+            if (operation.NodeType != (ExpressionType)DbExpressionType.Insert)
+            {
+                return plan;
+            }
+
+            return Expression.Call(typeof(ExecutionBuilder), "UpdateEntities", null,
+                    plan,
+                    Expression.Constant(table, typeof(DataTable)),
+                    Expression.Constant(entities, typeof(IEnumerable)));
         }
 
         /// <summary>
@@ -734,6 +743,38 @@ namespace Fireasy.Data.Entity.Linq
             {
                 return Expression.NewArrayInit(typeof(object), key.Select(k => (Expression)Expression.Convert(k, typeof(object))));
             }
+        }
+
+        /// <summary>
+        /// 执行Batch-Insert后更新主键到实体集。
+        /// </summary>
+        /// <param name="rows">Update影响的行数。</param>
+        /// <param name="table"></param>
+        /// <param name="entities"></param>
+        /// <returns></returns>
+        private static int UpdateEntities(int rows, DataTable table, IEnumerable entities)
+        {
+            var index = 0;
+            IProperty pkProperty = null;
+            foreach (IEntity entity in entities)
+            {
+                if (pkProperty == null)
+                {
+                    pkProperty = PropertyUnity.GetPrimaryProperties(entity.GetType())
+                        .FirstOrDefault(s => s.Info.GenerateType == IdentityGenerateType.AutoIncrement);
+                }
+
+                if (pkProperty == null)
+                {
+                    return rows;
+                }
+
+                var row = table.Rows[index++];
+                var pkValue = PropertyValue.NewValue(row.ItemArray[table.Columns.Count - 1], pkProperty.Type);
+                entity.InitializateValue(pkProperty, pkValue);
+            }
+
+            return rows;
         }
 
         private class Scope

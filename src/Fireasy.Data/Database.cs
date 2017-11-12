@@ -502,7 +502,7 @@ namespace Fireasy.Data
                     if (insertCommand != null)
                     {
                         adapter.InsertCommand = CreateDbCommand(insertCommand, parameters);
-                        adapter.InsertCommand.UpdatedRowSource = UpdateRowSource.None;
+                        adapter.InsertCommand.UpdatedRowSource = UpdateRowSource.Both;
                     }
 
                     var period = TimeWatcher.Watch(() => result = adapter.Update(dataTable));
