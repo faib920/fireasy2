@@ -1126,7 +1126,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
             if (argument != null && hasPredicateArg)
             {
                 // convert query.Count(predicate) into query.Where(predicate).Count()
-                source = Expression.Call(typeof(Queryable), "Where", new Type [] { source.Type.GetEnumerableElementType() }, source, argument);
+                var type = typeof(IQueryable).IsAssignableFrom(source.Type) ? typeof(Queryable) : typeof(Enumerable);
+                source = Expression.Call(type, "Where", new Type [] { source.Type.GetEnumerableElementType() }, source, argument);
                 argument = null;
                 argumentWasPredicate = true;
             }
