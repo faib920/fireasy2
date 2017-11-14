@@ -93,5 +93,10 @@ namespace Fireasy.Data
 
             return this;
         }
+
+        public override string ToString()
+        {
+            return string.Format("Member:{0},Order:{1}", Member, Order);
+        }
     }
 }

@@ -244,16 +244,9 @@ namespace Fireasy.Data.Entity.Linq
                 return source;
             }
 
-            var sourceType = typeof(TSource);
-            var property = sourceType.GetProperty(memberName);
-            if (property == null)
-            {
-                throw new PropertyNotFoundException(memberName);
-            }
-
             var methodName = sortOrder == SortOrder.Ascending ? "OrderBy" : "OrderByDescending";
 
-            return CreateOrderExpression(source, methodName, property);
+            return CreateOrderExpression(source, methodName, memberName);
         }
 
         /// <summary>
@@ -277,17 +270,9 @@ namespace Fireasy.Data.Entity.Linq
                 return source;
             }
 
-
-            var sourceType = typeof(TSource);
-            var property = sourceType.GetProperty(memberName);
-            if (property == null)
-            {
-                throw new PropertyNotFoundException(memberName);
-            }
-
             var methodName = sortOrder == SortOrder.Ascending ? "ThenBy" : "ThenByDescending";
 
-            return CreateOrderExpression(source, methodName, property);
+            return CreateOrderExpression(source, methodName, memberName);
         }
 
         /// <summary>
@@ -321,18 +306,30 @@ namespace Fireasy.Data.Entity.Linq
         /// <typeparam name="T"></typeparam>
         /// <param name="source"></param>
         /// <param name="methodName"></param>
-        /// <param name="property"></param>
+        /// <param name="memberName"></param>
         /// <returns></returns>
-        private static IQueryable<T> CreateOrderExpression<T>(IQueryable<T> source, string methodName, PropertyInfo property)
+        private static IQueryable<T> CreateOrderExpression<T>(IQueryable<T> source, string methodName, string memberName)
         {
             var sourceType = typeof(T);
             var parExp = Expression.Parameter(sourceType, "s");
 
-            var expression = (Expression)Expression.MakeMemberAccess(parExp, property);
+            var propertyType = sourceType;
+            Expression expression = parExp;
+            foreach (var member in memberName.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                var property = propertyType.GetProperty(member);
+                if (property == null)
+                {
+                    throw new PropertyNotFoundException(member);
+                }
 
-            var delegateType = typeof(Func<,>).MakeGenericType(sourceType, property.PropertyType);
+                expression = Expression.MakeMemberAccess(expression, property);
+                propertyType = property.PropertyType;
+            }
+
+            var delegateType = typeof(Func<,>).MakeGenericType(sourceType, propertyType);
             var lambda = Expression.Lambda(delegateType, expression, parExp);
-            expression = Expression.Call(typeof(Queryable), methodName, new [] { sourceType, property.PropertyType }, source.Expression, lambda);
+            expression = Expression.Call(typeof(Queryable), methodName, new [] { sourceType, propertyType }, source.Expression, lambda);
 
             return source.Provider.CreateQuery<T>(expression);
         }

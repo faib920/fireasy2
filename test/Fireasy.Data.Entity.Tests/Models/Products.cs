@@ -42,6 +42,8 @@ namespace Fireasy.Data.Entity.Tests.Models
         public virtual Categories categories { get; set; }
 
         public virtual EntitySet<OrderDetails> OrderDetailses { get; set; }
+
+        public string ReorderLevelName { get; set; }
     }
 
     public class ProductsMetadata

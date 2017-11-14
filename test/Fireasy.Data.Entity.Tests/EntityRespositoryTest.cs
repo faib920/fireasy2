@@ -773,6 +773,97 @@ namespace Fireasy.Data.Entity.Tests
         }
 
         [TestMethod]
+        public void TestOrderByExtend()
+        {
+            using (var context = new DbContext())
+            {
+                var sorting = new SortDefinition();
+                sorting.Member = "OrderDate";
+                sorting.Order = SortOrder.Descending;
+
+                var list = context.Orders
+                    .Select(s => new { s.OrderDate, CompanyName = s.Customers.CompanyName })
+                    .OrderBy(sorting)
+                    .ToList();
+
+                Console.WriteLine(list.Count);
+            }
+        }
+
+        [TestMethod]
+        public void TestOrderByExtendDefault()
+        {
+            using (var context = new DbContext())
+            {
+                var sorting = new SortDefinition();
+                //sorting.Member = "OrderDate";
+                //sorting.Order = SortOrder.Descending;
+
+                var list = context.Orders
+                    .Select(s => new { s.OrderDate, CompanyName = s.Customers.CompanyName })
+                    .OrderBy(sorting, u => u.OrderByDescending(s => s.OrderDate))
+                    .ToList();
+
+                Console.WriteLine(list.Count);
+            }
+        }
+
+        [TestMethod]
+        public void TestOrderByExtendReplace()
+        {
+            using (var context = new DbContext())
+            {
+                var sorting = new SortDefinition();
+                sorting.Member = "ReorderLevelName";
+                sorting.Replace("ReorderLevelName", "Products.ReorderLevel");
+
+                var list = context.OrderDetails
+                    .Select(s => s.ExtendAs<OrderDetails>(() => new OrderDetails
+                    {
+                        ReorderLevelName = s.Products.ReorderLevel.GetDescription(),
+                    }))
+                    .OrderBy(sorting)
+                    .ToList();
+
+                Console.WriteLine(list.Count);
+            }
+        }
+
+        [TestMethod]
+        public void TestOrderByExtend1()
+        {
+            using (var context = new DbContext())
+            {
+                var sorting = new SortDefinition();
+                sorting.Member = "CompanyName";
+
+                var list = context.Orders
+                    .Select(s => new { s.OrderDate, CompanyName = s.Customers.CompanyName })
+                    .OrderBy(sorting)
+                    .ToList();
+
+                Console.WriteLine(list.Count);
+            }
+        }
+
+        [TestMethod]
+        public void TestOrderByExtend2()
+        {
+            using (var context = new DbContext())
+            {
+                var sorting = new SortDefinition();
+                sorting.Member = "ProductName";
+
+                var list = context.OrderDetails
+                    .Select(s => s.ExtendAs<OrderDetailsEx>(() => new OrderDetailsEx { ProductName = s.Orders.CustomerID }))
+                    .OrderBy(sorting)
+                    .ToList();
+
+                Console.WriteLine(list.Count);
+            }
+        }
+
+        [TestMethod]
         public void TestTransaction()
         {
             using (var scope = new EntityTransactionScope())

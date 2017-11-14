@@ -53,6 +53,8 @@ namespace Fireasy.Data.Entity.Tests.Models
         /// </summary>
         public virtual Orders Orders { get; set; }
 
+        public string ReorderLevelName { get; set; }
+
     }
 
     public class OrderDetailsMetadata
