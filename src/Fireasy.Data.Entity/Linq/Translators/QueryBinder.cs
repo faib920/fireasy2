@@ -1679,26 +1679,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             var projection = VisitSequence(source);
 
-            //把序列中的第一个实体放到上下文中，在构造参数的时候会用到
-            TranslateScope.Current.SetData(QueryUtility.FIRST_ENTITY_KEY, GetFirstItem(instances));
+            QueryUtility.AttachModifiedProperties(instances);
+
             var op = (LambdaExpression)this.Visit(operation);
 
-            //从上下文中移除
-            TranslateScope.Current.RemoveData(QueryUtility.FIRST_ENTITY_KEY);
+            QueryUtility.ReleaseModifiedProperties();
 
             var items = this.Visit(instances);
             return new BatchCommandExpression(items, op);
-        }
-
-        private IEntity GetFirstItem(Expression instances)
-        {
-            var enumerator = (((ConstantExpression)instances).Value as IEnumerable).GetEnumerator();
-            if (enumerator.MoveNext())
-            {
-                return enumerator.Current as IEntity;
-            }
-
-            return null;
         }
 
 #if !NET35

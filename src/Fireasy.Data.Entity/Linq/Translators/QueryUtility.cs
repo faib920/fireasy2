@@ -9,6 +9,7 @@ using Fireasy.Data.Entity.Properties;
 using Fireasy.Data.Extensions;
 using Fireasy.Data.Syntax;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -19,7 +20,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 {
     internal sealed class QueryUtility
     {
-        internal static string FIRST_ENTITY_KEY = "FirstEntity";
+        const string REFERENCE_MPROS_KEY = "MPSKEY";
 
         internal static LambdaExpression GetAggregator(Type expectedType, Type actualType)
         {
@@ -346,6 +347,25 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return insertExp;
         }
 
+        /// <summary>
+        /// 将被修改的属性集附加到 <see cref="TranslateScope"/> 对象中。
+        /// </summary>
+        /// <param name="instances"></param>
+        internal static void AttachModifiedProperties(Expression instances)
+        {
+            //在序列中查找被修改的属性列表
+            TranslateScope.Current.SetData(REFERENCE_MPROS_KEY, GetModifiedProperties(instances));
+        }
+
+        /// <summary>
+        /// 从 <see cref="TranslateScope"/> 中移除标记的属性集。
+        /// </summary>
+        internal static void ReleaseModifiedProperties()
+        {
+            //从上下文中移除
+            TranslateScope.Current.RemoveData(REFERENCE_MPROS_KEY);
+        }
+
         private static bool HasAutoIncrement(Type entityType)
         {
             return PropertyUnity.GetPrimaryProperties(entityType).Any(s => s.Info.GenerateType == IdentityGenerateType.AutoIncrement);
@@ -365,10 +385,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
         private static IEnumerable<ColumnAssignment> GetUpdateArguments(TableExpression table, ParameterExpression parExp)
         {
             IEnumerable<IProperty> properties = null;
-            IEntity firstEntity = null;
-            if ((firstEntity = GetFirstEntityFromContext()) != null)
+            List<string> modifiedNames = null;
+            if ((modifiedNames = GetReferenceModifiedProperties()) != null)
             {
-                properties = GetModifiedProperties(firstEntity);
+                properties = GetModifiedProperties(table.Type, modifiedNames);
             }
 
             return properties
@@ -420,11 +440,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
         private static IEnumerable<ColumnAssignment> GetInsertArguments(ISyntaxProvider syntax, TableExpression table, ParameterExpression parExp)
         {
             IEnumerable<IProperty> properties = null;
-            IEntity firstEntity = null;
+            List<string> modifiedNames = null;
 
-            if ((firstEntity = GetFirstEntityFromContext()) != null)
+            if ((modifiedNames = GetReferenceModifiedProperties()) != null)
             {
-                properties = GetModifiedProperties(firstEntity);
+                properties = GetModifiedProperties(table.Type, modifiedNames);
             }
 
             var assignments = properties
@@ -484,9 +504,21 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             //判断实体类型有是不是编译的代理类型，如果不是，取非null的属性，否则使用IsModified判断
             var isNotCompiled = entityType.IsNotCompiled();
-            return properties.Where(m => isNotCompiled ? 
-                    !PropertyValue.IsEmpty(entity.GetValue(m)) : 
+            return properties.Where(m => isNotCompiled ?
+                    !PropertyValue.IsEmpty(entity.GetValue(m)) :
                     entity.IsModified(m.Name));
+        }
+
+        /// <summary>
+        /// 获取实体可插入或更新的非主键属性列表。
+        /// </summary>
+        /// <param name="entityType"></param>
+        /// <param name="names"></param>
+        /// <returns></returns>
+        private static IEnumerable<IProperty> GetModifiedProperties(Type entityType, List<string> names)
+        {
+            return PropertyUnity.GetPersistentProperties(entityType)
+                .Where(s => names.Contains(s.Name));
         }
 
         /// <summary>
@@ -537,19 +569,65 @@ namespace Fireasy.Data.Entity.Linq.Translators
         }
 
         /// <summary>
-        /// 在批处理的指令中获取第一个实体对象。
+        /// 在批处理的指令中获取被修改的实体属性名称列表。
         /// </summary>
         /// <returns></returns>
-        private static IEntity GetFirstEntityFromContext()
+        private static List<string> GetReferenceModifiedProperties()
         {
-            IEntity firstEntity;
+            List<string> names;
             if (TranslateScope.Current != null &&
-                (firstEntity = TranslateScope.Current.GetData<object>(FIRST_ENTITY_KEY) as IEntity) != null)
+                (names = TranslateScope.Current.GetData<object>(REFERENCE_MPROS_KEY) as List<string>) != null)
             {
-                return firstEntity;
+                return names;
             }
 
             return null;
         }
+
+        /// <summary>
+        /// 获取插入或更新所参照的实体。
+        /// </summary>
+        /// <param name="instances"></param>
+        /// <returns></returns>
+        private static List<string> GetModifiedProperties(Expression instances)
+        {
+            var entities = ((ConstantExpression)instances).Value as IEnumerable;
+            if (entities == null)
+            {
+                return null;
+            }
+
+            var maxProperties = new List<string>();
+            IEntity retEntity = null;
+            Type entityType = null;
+            IEnumerable<IProperty> properties = null;
+
+            //循环列表查找属性修改最多的那个实体作为参照
+            foreach (IEntity entity in entities)
+            {
+                if (entityType == null)
+                {
+                    entityType = entity.GetType();
+                    properties = PropertyUnity.GetPersistentProperties(entityType)
+                        .Where(m => !m.Info.IsPrimaryKey ||
+                            (m.Info.IsPrimaryKey && m.Info.GenerateType == IdentityGenerateType.None));
+                }
+
+                //判断实体类型有是不是编译的代理类型，如果不是，取非null的属性，否则使用IsModified判断
+                var isNotCompiled = entityType.IsNotCompiled();
+                var modified = isNotCompiled ?
+                    properties.Where(s => !PropertyValue.IsEmpty(entity.GetValue(s))).Select(s => s.Name).ToArray() :
+                    entity.GetModifiedProperties();
+
+                if (!modified.All(s => maxProperties.Contains(s)))
+                {
+                    retEntity = entity;
+                    maxProperties.AddRange(modified.Except(maxProperties));
+                }
+            }
+
+            return maxProperties;
+        }
+
     }
 }

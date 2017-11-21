@@ -570,6 +570,8 @@ namespace Fireasy.Data.Entity.Tests
                     list.Add(d);
                 }
 
+                list[1].DeptCode = "test";
+
                 db.Depts.Batch(list, (u, s) => u.Insert(s));
                 Console.WriteLine(11);
             }
@@ -589,6 +591,8 @@ namespace Fireasy.Data.Entity.Tests
                     d.DeptName = "a" + i;
                     list.Add(d);
                 }
+
+                list[1].DeptCode = "test";
 
                 db.Depts.Batch(list, (u, s) => u.Update(s));
             }
