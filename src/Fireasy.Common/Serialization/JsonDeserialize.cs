@@ -41,7 +41,7 @@ namespace Fireasy.Common.Serialization
             this.serializer = serializer;
             jsonReader = reader;
             this.option = option;
-            context = new SerializeContext();
+            context = new SerializeContext { Option = option };
         }
 
         internal T Deserialize<T>()
@@ -762,6 +762,7 @@ namespace Fireasy.Common.Serialization
 
             if (disposing)
             {
+                context.Dispose();
                 jsonReader.Dispose();
                 jsonReader = null;
             }

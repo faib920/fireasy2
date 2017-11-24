@@ -716,6 +716,29 @@ studio");
             }
         }
 
+        [TestMethod]
+        public void TestSerializeWithCompositeConverter()
+        {
+            var data = new JsonData
+            {
+                Age = 12,
+                Name = "huangxd",
+                Birthday = DateTime.Parse("1982-9-20"),
+                WorkTime = DateTime.Parse("2000-9-20")
+            };
+
+            var converter = new CompositeJsonConverter<JsonData>();
+            converter.AddConverter(s => s.Birthday, new DateTimeJsonConverter("yyyy-MM"));
+            var option = new JsonSerializeOption();
+            option.Converters.Add(converter);
+            var serializer = new JsonSerializer(option);
+
+            var json = serializer.Serialize(data);
+
+            Console.WriteLine(json);
+
+        }
+
         public class LazyClass : ILazyManager
         {
             public string Name { get; set; }
@@ -1295,6 +1318,8 @@ studio");
             public string Name { get; set; }
 
             public DateTime Birthday { get; set; }
+
+            public DateTime WorkTime { get; set; }
 
             public decimal? Age { get; set; }
 

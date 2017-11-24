@@ -1,0 +1,107 @@
+﻿using Fireasy.Common.ComponentModel;
+using Fireasy.Common.Extensions;
+using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Reflection;
+
+namespace Fireasy.Common.Serialization
+{
+    /// <summary>
+    /// 组合的 Json 转换器。
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class CompositeJsonConverter<T> : JsonConverter<T>
+    {
+        private Dictionary<PropertyInfo, ITextConverter> converters = new Dictionary<PropertyInfo, ITextConverter>();
+
+        /// <summary>
+        /// 使用流方式序列化对象。
+        /// </summary>
+        public override bool Streaming => true;
+
+        /// <summary>
+        /// 不支持反序列化。
+        /// </summary>
+        public override bool CanRead => false;
+
+        /// <summary>
+        /// 为匹配的成员表达式添加转换器。
+        /// </summary>
+        public CompositeJsonConverter<T> AddConverter<V>(Expression<Func<T, V>> expression, ITextConverter converter)
+        {
+            if (expression is LambdaExpression lambda)
+            {
+                if (lambda.Body is MemberExpression mbrExp && mbrExp.Member.MemberType == MemberTypes.Property)
+                {
+                    converters.Add(mbrExp.Member as PropertyInfo, converter);
+                }
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// 将一个对象转换为 Json 文本。
+        /// </summary>
+        /// <param name="serializer"></param>
+        /// <param name="writer"></param>
+        /// <param name="obj"></param>
+        public override void WriteJson(JsonSerializer serializer, JsonWriter writer, object obj)
+        {
+            var lazyMgr = obj.As<ILazyManager>();
+            var flag = new AssertFlag();
+            var type = obj.GetType();
+
+            writer.WriteStartObject();
+            var context = SerializeContext.Current;
+            var option = context.Option as JsonSerializeOption;
+
+            foreach (var acc in context.GetAccessorCache(type))
+            {
+                if (acc.Filter(acc.PropertyInfo, lazyMgr))
+                {
+                    continue;
+                }
+
+                var value = acc.Accessor.GetValue(obj);
+                if (option.IgnoreNull && value == null)
+                {
+                    continue;
+                }
+
+                if (!flag.AssertTrue())
+                {
+                    writer.WriteComma();
+                }
+
+                writer.WriteKey(SerializeName(acc.PropertyName, option));
+                if (converters.TryGetValue(acc.PropertyInfo, out ITextConverter converter))
+                {
+                    writer.WriteRaw(converter.WriteObject(serializer, value));
+                }
+                else
+                {
+                    writer.WriteRaw(serializer.Serialize(value));
+                }
+            }
+
+            writer.WriteEndObject();
+        }
+
+        private string SerializeName(string name, JsonSerializeOption option)
+        {
+            if (string.IsNullOrEmpty(name))
+            {
+                return string.Empty;
+            }
+
+            if (option.Format == JsonFormat.Object)
+            {
+                return option.CamelNaming ? char.ToLower(name[0]) + name.Substring(1) : name;
+            }
+
+            return JsonTokens.StringDelimiter + (option.CamelNaming ? char.ToLower(name[0]) + name.Substring(1) : name) + JsonTokens.StringDelimiter;
+        }
+    }
+}

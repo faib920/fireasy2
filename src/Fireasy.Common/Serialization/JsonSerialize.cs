@@ -37,7 +37,7 @@ namespace Fireasy.Common.Serialization
             this.serializer = serializer;
             jsonWriter = writer;
             this.option = option;
-            context = new SerializeContext();
+            context = new SerializeContext { Option = option };
         }
 
         /// <summary>
@@ -287,7 +287,7 @@ namespace Fireasy.Common.Serialization
             var type = obj.GetType();
             jsonWriter.WriteStartObject();
 
-            foreach (var acc in GetAccessorCache(type))
+            foreach (var acc in context.GetAccessorCache(type))
             {
                 if (acc.Filter(acc.PropertyInfo, lazyMgr))
                 {
@@ -454,33 +454,6 @@ namespace Fireasy.Common.Serialization
             }
 
             isDisposed = true;
-        }
-
-        /// <summary>
-        /// 获取指定类型的属性访问缓存。
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        private List<PropertyGetAccessorCache> GetAccessorCache(Type type)
-        {
-            return context.GetAccessors.TryGetValue(type, () =>
-            {
-                return type.GetProperties()
-                    .Where(s => s.CanRead && !SerializerUtil.IsNoSerializable(option, s))
-                    .Distinct(new SerializerUtil.PropertyEqualityComparer())
-                    .Select(s => new PropertyGetAccessorCache
-                    {
-                        Accessor = ReflectionCache.GetAccessor(s),
-                        Filter = (p, l) =>
-                        {
-                            return !SerializerUtil.CheckLazyValueCreate(l, p.Name);
-                        },
-                        PropertyInfo = s,
-                        PropertyName = SerializerUtil.GetPropertyName(s)
-                    })
-                    .Where(s => !string.IsNullOrEmpty(s.PropertyName))
-                    .ToList();
-            });
         }
 
         private IEnumerable<DataColumn> GetDataColumns(DataTable table)
