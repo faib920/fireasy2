@@ -262,7 +262,7 @@ namespace Fireasy.Data.Batcher
 
                 sb.AppendFormat("{0}{1}", prefix, parameterName);
             }
-            else if (value is string)
+            else if (value is string || value is Guid)
             {
                 sb.AppendFormat("'{0}'", value);
             }
