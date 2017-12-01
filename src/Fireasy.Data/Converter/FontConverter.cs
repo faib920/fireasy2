@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+#if !NETSTANDARD2_0
 
 using System.Data;
 using System.Drawing;
@@ -196,3 +197,4 @@ namespace Fireasy.Data.Converter
         }
     }
 }
+#endif

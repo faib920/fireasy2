@@ -10,6 +10,10 @@ using System;
 using System.Xml;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
+using System.Linq;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Fireasy.Common.Caching.Configuration
 {
@@ -42,12 +46,44 @@ namespace Fireasy.Common.Caching.Configuration
             base.Initialize(section);
         }
 
+#if NETSTANDARD2_0
+        /// <summary>
+        /// 使用配置节点对当前配置进行初始化。
+        /// </summary>
+        /// <param name="configuration">对应的配置节点。</param>
+        public override void Bind(IConfiguration configuration)
+        {
+            Bind(configuration, 
+                "settings", 
+                func: c => new CachingConfigurationSetting
+                    {
+                        Name = c.Key,
+                        CacheType = Type.GetType(c.GetSection("type").Value, false, true)
+                    });
+
+            //取默认实例
+            defaultInstanceName = configuration.GetSection("default").Value;
+
+            base.Bind(configuration);
+        }
+#endif
+
         /// <summary>
         /// 获取默认的配置项。
         /// </summary>
         public CachingConfigurationSetting Default
         {
-            get { return string.IsNullOrEmpty(defaultInstanceName) ? Settings["setting0"] : Settings[defaultInstanceName]; }
+            get
+            {
+                if (Settings.Count == 0)
+                {
+                    return null;
+                }
+
+                return string.IsNullOrEmpty(defaultInstanceName) ?
+                    (Settings.ContainsKey("setting0") ? Settings["setting0"] : Settings.FirstOrDefault().Value) :
+                    Settings[defaultInstanceName];
+            }
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.16
+VisualStudioVersion = 15.0.27004.2008
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Common", "src\Fireasy.Common\Fireasy.Common.csproj", "{E534FE1A-BD42-4508-B848-FA8B37312AD5}"
 EndProject
@@ -34,7 +34,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "impl", "impl", "{19E2EB7D-D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Redis", "src\Fireasy.Redis\Fireasy.Redis.csproj", "{A7A7033A-B471-47CD-A103-6AD4D822B2B4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fireasy.Web.Http", "src\Fireasy.Web.Http\Fireasy.Web.Http.csproj", "{4075E57A-FDFB-4DF0-A698-023D2B9AF78A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Web.Http", "src\Fireasy.Web.Http\Fireasy.Web.Http.csproj", "{4075E57A-FDFB-4DF0-A698-023D2B9AF78A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

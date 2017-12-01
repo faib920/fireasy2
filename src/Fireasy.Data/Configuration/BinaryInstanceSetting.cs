@@ -12,7 +12,9 @@ using System.Xml;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Serialization;
-using Fireasy.Data.Provider;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Fireasy.Data.Configuration
 {
@@ -56,11 +58,23 @@ namespace Fireasy.Data.Configuration
         {
             public IConfigurationSettingItem Parse(XmlNode node)
             {
+                var fileName = node.GetAttributeValue("fileName");
+                return Parse(fileName);
+            }
+
+#if NETSTANDARD2_0
+            public IConfigurationSettingItem Parse(IConfiguration configuration)
+            {
+                var fileName = configuration.GetSection("fileName").Value;
+                return Parse(fileName);
+            }
+#endif
+            private IConfigurationSettingItem Parse(string fileName)
+            {
                 var setting = new BinaryInstanceSetting();
 
-                var file = node.GetAttributeValue("fileName");
-                DbUtility.ParseDataDirectory(ref file);
-                setting.FileName = file;
+                DbUtility.ParseDataDirectory(ref fileName);
+                setting.FileName = fileName;
                 if (!File.Exists(setting.FileName))
                 {
                     throw new FileNotFoundException(SR.GetString(SRKind.FileNotFound, setting.FileName), setting.FileName);

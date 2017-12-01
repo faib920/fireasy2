@@ -119,7 +119,11 @@ namespace Fireasy.Common.Emit
                 builder.CreateType();
             }
 
+#if !NETSTANDARD2_0
             return TypeBuilder.CreateType();
+#else
+            return TypeBuilder.CreateTypeInfo();
+#endif
         }
 
         /// <summary>

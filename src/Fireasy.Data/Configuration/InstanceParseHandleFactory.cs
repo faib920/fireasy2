@@ -13,6 +13,11 @@ namespace Fireasy.Data.Configuration
     {
         internal static IConfigurationSettingParseHandler GetParseHandler(string storeType)
         {
+            if (string.IsNullOrEmpty(storeType))
+            {
+                return new StringInstanceSetting.SettingParseHandler();
+            }
+
             switch (storeType.ToLower())
             {
                 case "registry":

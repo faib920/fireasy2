@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-
+#if !NETSTANDARD2_0
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -222,3 +222,4 @@ namespace Fireasy.Data.Schema
         }
     }
 }
+#endif

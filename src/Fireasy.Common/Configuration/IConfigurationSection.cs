@@ -6,6 +6,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Xml;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Fireasy.Common.Configuration
 {
@@ -19,5 +22,9 @@ namespace Fireasy.Common.Configuration
         /// </summary>
         /// <param name="section">对应的配置节点。</param>
         void Initialize(XmlNode section);
+
+#if NETSTANDARD2_0
+        void Bind(IConfiguration configuration);
+#endif
     }
 }

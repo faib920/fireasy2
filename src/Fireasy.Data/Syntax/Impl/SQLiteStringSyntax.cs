@@ -6,7 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using Fireasy.Common.Compiler;
 using Fireasy.Common.Emit;
 using Fireasy.Common.Extensions;
 using System;

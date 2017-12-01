@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-
+#if !NETSTANDARD2_0
 using Fireasy.Data.Identity;
 using Fireasy.Data.RecordWrapper;
 using Fireasy.Data.Schema;
@@ -30,7 +30,9 @@ namespace Fireasy.Data.Provider
             : base("System.Data.OleDb")
         {
             RegisterService<IGeneratorProvider, BaseSequenceGenerator>();
+#if !NETSTANDARD2_0
             RegisterService<ISchemaProvider, OleDbSchema>();
+#endif
             RegisterService<IRecordWrapper, GeneralRecordWrapper>();
             RegisterService<ISyntaxProvider, AccessSyntax>();
         }
@@ -89,3 +91,4 @@ namespace Fireasy.Data.Provider
         }
     }
 }
+#endif

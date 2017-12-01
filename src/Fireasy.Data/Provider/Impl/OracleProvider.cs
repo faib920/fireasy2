@@ -16,7 +16,12 @@ namespace Fireasy.Data.Provider
     /// <summary>
     /// Oracle数据库提供者。
     /// </summary>
-    public class OracleProvider : ProviderBase
+    public class OracleProvider :
+#if NETSTANDARD2_0
+        AssemblyProvider
+#else
+        ProviderBase
+#endif
     {
         /// <summary>
         /// 提供 <see cref="OracleProvider"/> 的静态实例。
@@ -27,7 +32,11 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="OracleProvider"/> 类的新实例。
         /// </summary>
         public OracleProvider()
+#if NETSTANDARD2_0
+            : base("System.Data.OracleClient.OracleClientFactory, Mono.Data.OracleClientCore", "Instance")
+#else
             : base("System.Data.OracleClient")
+#endif
         {
             RegisterService<IGeneratorProvider, OracleSequenceGenerator>();
             RegisterService<ISyntaxProvider, OracleSyntax>();

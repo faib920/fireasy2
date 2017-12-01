@@ -8,11 +8,14 @@
 using System.Xml;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Fireasy.Data.Configuration
 {
     [ConfigurationSectionStorage("fireasy/dataGlobal")]
-    public class GlobalConfigurationSection : ConfigurationSection
+    public class GlobalConfigurationSection : Fireasy.Common.Configuration.ConfigurationSection
     {
         public override void Initialize(XmlNode section)
         {
@@ -25,6 +28,20 @@ namespace Fireasy.Data.Configuration
                     };
             }
         }
+
+#if NETSTANDARD2_0
+        public override void Bind(IConfiguration configuration)
+        {
+            var ndOption = configuration.GetSection("options");
+            if (ndOption != null)
+            {
+                Options = new GlobalOptions
+                    {
+                        AttachQuote = ndOption.GetSection("attachQuote").Value.To(false)
+                    };
+            }
+        }
+#endif
 
         public GlobalOptions Options { get; set; }
     }

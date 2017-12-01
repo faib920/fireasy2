@@ -13,6 +13,7 @@ using System.Data.SqlClient;
 using Fireasy.Common;
 using Fireasy.Data.Extensions;
 using Fireasy.Data.Syntax;
+using System.Reflection;
 
 namespace Fireasy.Data.Batcher
 {
@@ -66,7 +67,11 @@ namespace Fireasy.Data.Batcher
                     BatchSize = batchSize
                 })
                 {
+#if !NETSTANDARD2_0
                     bulk.WriteToServer(dataTable);
+#else
+                    //todo 还未处理
+#endif
                 }
             }
             catch (Exception exp)

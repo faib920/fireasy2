@@ -8,7 +8,6 @@
 
 using System;
 using Fireasy.Common.Configuration;
-using Fireasy.Data.Provider;
 
 namespace Fireasy.Data.Configuration
 {

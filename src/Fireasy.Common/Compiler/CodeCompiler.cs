@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+#if !NETSTANDARD2_0
 using System;
 using System.CodeDom;
 using System.CodeDom.Compiler;
@@ -266,3 +267,4 @@ namespace Fireasy.Common.Compiler
         }
     }
 }
+#endif

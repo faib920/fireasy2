@@ -13,6 +13,9 @@ using System.Linq;
 using System.Xml;
 using Fireasy.Common.Caching;
 using Fireasy.Common.Extensions;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Fireasy.Common.Configuration
 {
@@ -36,7 +39,12 @@ namespace Fireasy.Common.Configuration
                 return default(T);
             }
 
+#if NETSTANDARD2_0
+            var cacheMgr = MemoryCacheManager.Instance;
+            return (T)cacheMgr.Get(attribute.Name);
+#else
             return (T)GetSection(attribute.Name);
+#endif
         }
 
         /// <summary>
@@ -52,6 +60,32 @@ namespace Fireasy.Common.Configuration
             }
         }
 
+#if NETSTANDARD2_0
+        /// <summary>
+        /// 将配置信息绑定到 <typeparamref name="T"/> 对象内部。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="configuration"></param>
+        /// <returns></returns>
+        public static T Bind<T>(IConfiguration configuration) where T : IConfigurationSection, new()
+        {
+            var attribute = typeof(T).GetCustomAttributes<ConfigurationSectionStorageAttribute>().FirstOrDefault();
+            if (attribute == null)
+            {
+                return default(T);
+            }
+
+            var cacheMgr = MemoryCacheManager.Instance;
+            return cacheMgr.TryGet(attribute.Name, () =>
+                {
+                    var section = new T();
+                    section.Bind(configuration.GetSection(attribute.Name.Replace("/", ":")));
+                    return section;
+                });
+        }
+#endif
+
+#if !NETSTANDARD2_0
         private static IConfigurationSection GetSection(string sectionName)
         {
             var cacheMgr = MemoryCacheManager.Instance;
@@ -109,5 +143,6 @@ namespace Fireasy.Common.Configuration
                 throw new ConfigurationErrorsException(SR.GetString(SRKind.UnableReadConfiguration, sectionName), ex);
             }
         }
+#endif
     }
 }

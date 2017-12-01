@@ -50,8 +50,10 @@ namespace Fireasy.Common.Caching
         /// <returns>过期为 true，有效为 false。</returns>
         public bool HasExpired(CacheItem cacheItem)
         {
+#if !NETSTANDARD2_0
             var permission = new FileIOPermission(FileIOPermissionAccess.Read, FilePath);
             permission.Demand();
+#endif
 
             if (!File.Exists(FilePath))
             {

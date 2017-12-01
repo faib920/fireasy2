@@ -18,7 +18,12 @@ namespace Fireasy.Data.Provider
     /// <summary>
     /// MsSql数据库提供者。
     /// </summary>
-    public class MsSqlProvider : ProviderBase
+    public class MsSqlProvider :
+#if NETSTANDARD2_0
+        AssemblyProvider
+#else
+        ProviderBase
+#endif
     {
         /// <summary>
         /// 提供 <see cref="MsSqlProvider"/> 的静态实例。
@@ -29,7 +34,11 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="MsSqlProvider"/> 类的新实例。
         /// </summary>
         public MsSqlProvider()
+#if NETSTANDARD2_0
+            : base("System.Data.SqlClient.SqlClientFactory, System.Data.SqlClient", "Instance")
+#else
             : base("System.Data.SqlClient")
+#endif
         {
             RegisterService<IGeneratorProvider, BaseSequenceGenerator>();
             RegisterService<IBackupProvider, MsSqlBackup>();

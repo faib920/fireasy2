@@ -254,7 +254,11 @@ namespace Fireasy.Common.Extensions
                 return source;
             }
 
+#if !NETSTANDARD2_0
             return Strings.StrConv(source, VbStrConv.SimplifiedChinese);
+#else
+            throw new NotSupportedException();
+#endif
         }
 
         /// <summary>
@@ -269,7 +273,11 @@ namespace Fireasy.Common.Extensions
                 return source;
             }
 
+#if !NETSTANDARD2_0
             return Strings.StrConv(source, VbStrConv.TraditionalChinese);
+#else
+            throw new NotSupportedException();
+#endif
         }
 
 

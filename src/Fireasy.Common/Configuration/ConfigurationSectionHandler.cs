@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+#if !NETSTANDARD2_0
 using System;
 using System.Configuration;
 using System.Xml;
@@ -37,3 +38,4 @@ namespace Fireasy.Common.Configuration
         }
     }
 }
+#endif

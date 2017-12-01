@@ -11,6 +11,9 @@ using System.Collections.Generic;
 using System.Xml;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Fireasy.Data.Provider.Configuration
 {
@@ -28,6 +31,17 @@ namespace Fireasy.Data.Provider.Configuration
         {
             InitializeNode(section, "provider", null, ParseProviderSetting);
         }
+
+#if NETSTANDARD2_0
+        /// <summary>
+        /// 使用配置节点对当前配置进行初始化。
+        /// </summary>
+        /// <param name="configuration">对应的配置节点。</param>
+        public override void Bind(IConfiguration configuration)
+        {
+            Bind(configuration, "settings", null, ParseProviderSetting);
+        }
+#endif
 
         private ProviderConfigurationSetting ParseProviderSetting(XmlNode node)
         {
@@ -56,9 +70,44 @@ namespace Fireasy.Data.Provider.Configuration
             return types;
         }
 
+#if NETSTANDARD2_0
+        private ProviderConfigurationSetting ParseProviderSetting(IConfiguration configuration)
+        {
+            return new ProviderConfigurationSetting(LoadServices(configuration))
+                {
+                    Name = ((Microsoft.Extensions.Configuration.IConfigurationSection)configuration).Key,
+                    Type = Type.GetType(GetEllipticalTypeName(configuration.GetSection("type").Value), false, true)
+                };
+        }
+
+        /// <summary>
+        /// 循环节点provider\service，将服务类添加到配置的服务集合中。
+        /// </summary>
+        /// <param name="configuration">provider 节点。</param>
+        private IEnumerable<Type> LoadServices(IConfiguration configuration)
+        {
+            var types = new List<Type>();
+            foreach (var child in configuration.GetSection("services").GetChildren())
+            {
+                var typeName = GetEllipticalTypeName(child.GetSection("type").Value);
+                if (string.IsNullOrEmpty(typeName))
+                {
+                    continue;
+                }
+
+                var type = Type.GetType(typeName, false, true);
+                if (type != null)
+                {
+                    types.Add(type);
+                }
+            }
+            return types;
+        }
+#endif
+
         private string GetEllipticalTypeName(string typeName)
         {
-            if (!typeName.Contains(","))
+            if (!string.IsNullOrEmpty(typeName) && !typeName.Contains(","))
             {
                 typeName = string.Format("Fireasy.Data.Provider.{0}, Fireasy.Data", typeName);
             }

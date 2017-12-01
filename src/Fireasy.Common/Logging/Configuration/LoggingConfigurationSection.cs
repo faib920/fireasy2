@@ -9,6 +9,10 @@ using System;
 using System.Xml;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
+using System.Linq;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Fireasy.Common.Logging.Configuration
 {
@@ -40,12 +44,43 @@ namespace Fireasy.Common.Logging.Configuration
             base.Initialize(section);
         }
 
+#if NETSTANDARD2_0
+        /// <summary>
+        /// 使用配置节点对当前配置进行初始化。
+        /// </summary>
+        /// <param name="configuration">对应的配置节点。</param>
+        public override void Bind(IConfiguration configuration)
+        {
+            Bind(configuration,
+                "settings", 
+                func: c => new LoggingConfigurationSetting
+                    {
+                        Name = c.Key,
+                        LogType = Type.GetType(c.GetSection("type").Value, false, true)
+                    });
+
+            defaultInstanceName = configuration.GetSection("default").Value;
+
+            base.Bind(configuration);
+        }
+#endif
+
         /// <summary>
         /// 获取默认的日志配置。
         /// </summary>
         public LoggingConfigurationSetting Default
         {
-            get { return string.IsNullOrEmpty(defaultInstanceName) ? Settings["setting0"] : Settings[defaultInstanceName]; }
+            get
+            {
+                if (Settings.Count == 0)
+                {
+                    return null;
+                }
+
+                return string.IsNullOrEmpty(defaultInstanceName) ?
+                    (Settings.ContainsKey("setting0") ? Settings["setting0"] : Settings.FirstOrDefault().Value) :
+                    Settings[defaultInstanceName];
+            }
         }
 
     }

@@ -12,8 +12,10 @@ using Fireasy.Common;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Serialization;
-using Fireasy.Data.Provider;
 using Microsoft.Win32;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Fireasy.Data.Configuration
 {
@@ -106,10 +108,31 @@ namespace Fireasy.Data.Configuration
             public IConfigurationSettingItem Parse(XmlNode node)
             {
                 var setting = new RegistryInstanceSetting();
-                setting.Name = node.GetAttributeValue("name");
-                setting.RootKey = node.GetAttributeValue("rootKey");
-                setting.SubKey = node.GetAttributeValue("subKey");
-                setting.ValueKey = node.GetAttributeValue("valueKey");
+                var rootKey = node.GetAttributeValue("rootKey");
+                var subKey = node.GetAttributeValue("subKey");
+                var valueKey = node.GetAttributeValue("valueKey");
+
+                return Parse(rootKey, subKey, valueKey);
+            }
+
+#if NETSTANDARD2_0
+            public IConfigurationSettingItem Parse(IConfiguration configuration)
+            {
+                var setting = new RegistryInstanceSetting();
+                var rootKey = configuration.GetSection("rootKey").Value;
+                var subKey = configuration.GetSection("subKey").Value;
+                var valueKey = configuration.GetSection("valueKey").Value;
+
+                return Parse(rootKey, subKey, valueKey);
+            }
+#endif
+
+            private IConfigurationSettingItem Parse(string rootKey, string subKey, string valueKey)
+            {
+                var setting = new RegistryInstanceSetting();
+                setting.RootKey = rootKey;
+                setting.SubKey = subKey;
+                setting.ValueKey = valueKey;
 
                 if (string.IsNullOrEmpty(setting.RootKey) ||
                     string.IsNullOrEmpty(setting.SubKey) ||

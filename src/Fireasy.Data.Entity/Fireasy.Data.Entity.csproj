@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net45;net46;net40;net35;</TargetFrameworks>
+    <TargetFrameworks>net45;net46;net40;net35;net47;netstandard2.0</TargetFrameworks>
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
@@ -51,13 +51,28 @@
     <DocumentationFile>..\..\Release\net46\Fireasy.Data.Entity.xml</DocumentationFile>
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net47|AnyCPU'">
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <DocumentationFile>..\..\Release\net47\Fireasy.Data.Entity.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netcoreapp2.0|AnyCPU'">
+    <DocumentationFile>..\..\Release\netcoreapp2.0\Fireasy.Data.Entity.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
+    <DocumentationFile>..\..\Release\netstandard2.0\Fireasy.Data.Entity.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath> 
+  </PropertyGroup>
   
   <ItemGroup>
     <Compile Remove="QueryBuilder\**" />
     <EmbeddedResource Remove="QueryBuilder\**" />
     <None Remove="QueryBuilder\**" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <Compile Remove="Dynamic\EntityPersister.cs" />
     <Compile Remove="EntityPersister.cs" />
@@ -87,5 +102,13 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.ComponentModel.Annotations">
+      <Version>4.4.0</Version>
+    </PackageReference>
+  	<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.0.0" />
   </ItemGroup>
 </Project>

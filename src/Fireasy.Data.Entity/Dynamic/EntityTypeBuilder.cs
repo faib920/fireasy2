@@ -199,18 +199,22 @@ namespace Fireasy.Data.Entity.Dynamic
                 "??_" + property.Name,
                 typeof(IProperty), null, VisualDecoration.Private,
                 CallingDecoration.Static,
-#if NET35
+#if NET35 || NETSTANDARD2_0
                 x => 
                     { 
                         var @delegate = MakeLambdaExpression(property).Compile();
                         if (@delegate != null)
                         {
                             var bytes = @delegate.Method.GetMethodBody().GetILAsByteArray();
+#if NET35
                             x.MethodBuilder.MethodBuilder.CreateMethodBody(bytes, bytes.Length);
+#else
+                            //todo 未做处理
+#endif
                         }
                     });
 #else
-                x => MakeLambdaExpression(property).CompileToMethod(x.MethodBuilder.MethodBuilder));
+                        x => MakeLambdaExpression(property).CompileToMethod(x.MethodBuilder.MethodBuilder));
 #endif
 
             return emiter
@@ -327,3 +331,19 @@ namespace Fireasy.Data.Entity.Dynamic
         }
     }
 }
+
+#if NETSTANDARD2_0
+namespace System.ComponentModel.DataAnnotations
+{
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+    public sealed class MetadataTypeAttribute : Attribute
+    {
+        public MetadataTypeAttribute(Type metadataClassType)
+        {
+            MetadataClassType = metadataClassType;
+        }
+
+        public Type MetadataClassType { get; private set; }
+    }
+}
+#endif

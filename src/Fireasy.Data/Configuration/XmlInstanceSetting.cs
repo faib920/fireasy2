@@ -12,7 +12,9 @@ using System.Xml;
 using System.Xml.XPath;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
-using Fireasy.Data.Provider;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Fireasy.Data.Configuration
 {
@@ -56,17 +58,30 @@ namespace Fireasy.Data.Configuration
         {
             public IConfigurationSettingItem Parse(XmlNode node)
             {
+                var fileName = node.GetAttributeValue("fileName");
+                var xpath = node.GetAttributeValue("xmlPath");
+                return Parse(fileName, xpath);
+            }
+
+#if NETSTANDARD2_0
+            public IConfigurationSettingItem Parse(IConfiguration configuration)
+            {
+                var fileName = configuration.GetSection("fileName").Value;
+                var xpath = configuration.GetSection("xmlPath").Value;
+                return Parse(fileName, xpath);
+            }
+#endif
+
+            private IConfigurationSettingItem Parse(string fileName, string xpath)
+            {
                 var setting = new XmlInstanceSetting();
-                setting.Name = node.GetAttributeValue("name");
-                var file = node.GetAttributeValue("fileName");
-                DbUtility.ParseDataDirectory(ref file);
-                setting.FileName = file;
+                DbUtility.ParseDataDirectory(ref fileName);
+                setting.FileName = fileName;
                 if (!File.Exists(setting.FileName))
                 {
                     throw new FileNotFoundException(SR.GetString(SRKind.FileNotFound, setting.FileName), setting.FileName);
                 }
 
-                var xpath = node.GetAttributeValue("xmlPath");
 
                 var xmlDoc = new XmlDocument();
                 xmlDoc.Load(setting.FileName);

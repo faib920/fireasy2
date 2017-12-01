@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NET35
+#if !NET35 && !NETSTANDARD2_0
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;

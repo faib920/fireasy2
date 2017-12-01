@@ -10,7 +10,9 @@ using System;
 using System.Linq;
 using System.Xml;
 using Fireasy.Common.Extensions;
-using System.Collections;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Fireasy.Common.Configuration
 {
@@ -26,6 +28,18 @@ namespace Fireasy.Common.Configuration
         public virtual void Initialize(XmlNode section)
         {
         }
+
+
+#if NETSTANDARD2_0
+        /// <summary>
+        /// 使用配置节点对当前配置进行初始化。
+        /// </summary>
+        /// <param name="configuration">对应的配置节点。</param>
+        public virtual void Bind(IConfiguration configuration)
+        {
+
+        }
+#endif
     }
 
     /// <summary>
@@ -95,6 +109,60 @@ namespace Fireasy.Common.Configuration
                 });
         }
 
+#if NETSTANDARD2_0
+        /// <summary>
+        /// 解析配置节下的所有子节点。
+        /// </summary>
+        /// <param name="configuration">当前的配置节点。</param>
+        /// <param name="nodeName">要枚举的子节点的名称。</param>
+        /// <param name="typeNodeName">如果配置类中存在 <see cref="Type"/> 的属性，则指定该属性的名称。</param>
+        /// <param name="func">用于初始化设置项的函数。</param>
+        protected void Bind(IConfiguration configuration, string nodeName, string typeNodeName = "type", Func<Microsoft.Extensions.Configuration.IConfigurationSection, T> func = null)
+        {
+            foreach (var child in configuration.GetSection(nodeName).GetChildren())
+            {
+                var name = child.Key;
+                if (string.IsNullOrEmpty(name))
+                {
+                    name = "setting" + Settings.Count;
+                }
+
+                try
+                {
+                    var setting = default(T);
+                    if (!string.IsNullOrEmpty(typeNodeName))
+                    {
+                        var typeName = child.GetSection(typeNodeName).Value;
+                        if (!string.IsNullOrEmpty(typeName))
+                        {
+                            var type = Type.GetType(typeName, false, true);
+
+                            setting = ParseSetting(child, type);
+                            if (setting == null && func != null)
+                            {
+                                setting = func(child);
+                            }
+                        }
+                    }
+
+                    if (setting == null && func != null)
+                    {
+                        setting = func(child);
+                    }
+
+                    if (setting != null)
+                    {
+                        Settings.Add(name, setting);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Settings.AddInvalidSetting(name, ex);
+                }
+            }
+        }
+#endif
+
         /// <summary>
         /// 返回当前节的配置项集合。
         /// </summary>
@@ -139,6 +207,32 @@ namespace Fireasy.Common.Configuration
 
             return default(T);
         }
+
+#if NETSTANDARD2_0
+        private T ParseSetting(IConfiguration configuration, Type type)
+        {
+            var att = type.GetCustomAttributes<ConfigurationSettingAttribute>().FirstOrDefault();
+            if (att != null)
+            {
+                var att1 = att.Type.GetCustomAttributes<ConfigurationSettingParseTypeAttribute>().FirstOrDefault();
+                if (att1 == null)
+                {
+                    return att.Type.New<T>();
+                }
+                else
+                {
+                    var handler = att1.HandlerType.New<IConfigurationSettingParseHandler>();
+                    if (handler != null)
+                    {
+                        return (T)handler.Parse(configuration);
+                    }
+                }
+            }
+
+            return default(T);
+        }
+#endif
+
     }
 
     /// <summary>
@@ -166,5 +260,22 @@ namespace Fireasy.Common.Configuration
 
             base.Initialize(section);
         }
+
+#if NETSTANDARD2_0
+        public override void Bind(IConfiguration configuration)
+        {
+            var factory = configuration.GetSection("managed").Value;
+            if (!string.IsNullOrEmpty(factory))
+            {
+                var type = factory.ParseType();
+                if (type != null)
+                {
+                    Factory = type.New<IManagedFactory>();
+                }
+            }
+
+            base.Bind(configuration);
+        }
+#endif
     }
 }

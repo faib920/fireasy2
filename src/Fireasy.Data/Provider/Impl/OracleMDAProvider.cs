@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-
+#if !NETSTANDARD2_0
 using Fireasy.Data.Batcher;
 using Fireasy.Data.Identity;
 using Fireasy.Data.RecordWrapper;
@@ -72,3 +72,4 @@ namespace Fireasy.Data.Provider
 
     }
 }
+#endif

@@ -28,7 +28,11 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="MySqlProvider"/> 类的新实例。
         /// </summary>
         public MySqlProvider()
+#if NETSTANDARD2_0
+            : base("MySql.Data.MySqlClient.MySqlClientFactory, MySqlConnector", "Instance")
+#else
             : base("MySql.Data.MySqlClient.MySqlClientFactory, MySql.Data", null)
+#endif
         {
             RegisterService<IGeneratorProvider, BaseSequenceGenerator>();
             RegisterService<ISyntaxProvider, MySqlSyntax>();

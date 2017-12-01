@@ -87,9 +87,9 @@ namespace Fireasy.Common.Serialization
                 return;
             }
 
-            if (typeof(_Type).IsAssignableFrom(type))
+            if (typeof(Type).IsAssignableFrom(type))
             {
-                SerializeType((Type)(object)value);
+                SerializeType((Type)value);
                 return;
             }
 

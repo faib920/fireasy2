@@ -25,14 +25,14 @@ namespace Fireasy.Common.Dynamic
             return new DynamicDelegate { _delegate = @delegate };
         }
 
-        internal object Invoke(dynamic sender, object[] args)
+        internal object Invoke(object sender, object[] args)
         {
             if (_delegate == null)
             {
                 return null;
             }
 
-            return _delegate.Invoke(sender, args);
+            return _delegate.DynamicInvoke(sender, args);
         }
     }
 

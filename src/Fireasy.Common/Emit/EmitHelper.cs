@@ -186,6 +186,7 @@ namespace Fireasy.Common.Emit
             return this;
         }
 
+#if !NETSTANDARD2_0
         /// <summary>
         /// 在 Microsoft 中间语言 (MSIL) 流中标记序列点。
         /// </summary>
@@ -205,6 +206,7 @@ namespace Fireasy.Common.Emit
             ILGenerator.MarkSequencePoint(document, startLine, startColumn, endLine, endColumn);
             return this;
         }
+#endif
 
         /// <summary>
         /// 发出指令以引发异常。
@@ -228,9 +230,9 @@ namespace Fireasy.Common.Emit
             return this;
         }
 
-        #endregion
+#endregion
 
-        #region Emit Wrappers
+#region Emit Wrappers
 
         /// <summary>
         /// 将两个值相加并将结果推送到计算堆栈上。
@@ -3575,7 +3577,7 @@ namespace Fireasy.Common.Emit
             return this;
         }
 
-        #endregion
+#endregion
 
         private static Exception ThrowNoMethodException(Type type, string methodName)
         {

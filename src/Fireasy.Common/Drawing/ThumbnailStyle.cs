@@ -1,4 +1,5 @@
-﻿
+﻿#if !NETSTANDARD2_0
+
 namespace Fireasy.Common.Drawing
 {
     /// <summary>
@@ -20,3 +21,4 @@ namespace Fireasy.Common.Drawing
         Center
     }
 }
+#endif

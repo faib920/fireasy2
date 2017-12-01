@@ -10,7 +10,9 @@ using System.Xml;
 using Fireasy.Common;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
-using Fireasy.Data.Provider;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Fireasy.Data.Configuration
 {
@@ -84,6 +86,20 @@ namespace Fireasy.Data.Configuration
                 }
                 return setting;
             }
+
+#if NETSTANDARD2_0
+            public IConfigurationSettingItem Parse(IConfiguration configuration)
+            {
+                var setting = new RouteInstanceSetting();
+                var type = Type.GetType(configuration.GetSection("type").Value, false, true);
+                if (type != null)
+                {
+                    setting.RouteService = type.New<IInstanceRouteService>();
+                }
+                return setting;
+            }
+#endif
+
         }
     }
 }

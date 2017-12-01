@@ -66,7 +66,11 @@ namespace Fireasy.Common.Emit
         /// <returns></returns>
         public Type CreateType()
         {
+#if !NETSTANDARD2_0
             return enumBuilder.CreateType();
+#else
+            return enumBuilder.CreateTypeInfo();
+#endif
         }
 
         /// <summary>

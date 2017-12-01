@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+#if !NETSTANDARD2_0
 using Fireasy.Common.Configuration;
 
 namespace Fireasy.Common.Caching.Configuration
@@ -16,3 +17,4 @@ namespace Fireasy.Common.Caching.Configuration
     {
     }
 }
+#endif

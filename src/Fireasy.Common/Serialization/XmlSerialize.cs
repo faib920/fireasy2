@@ -73,13 +73,7 @@ namespace Fireasy.Common.Serialization
                 return;
             }
 
-            if (typeof(_Type).IsAssignableFrom(type))
-            {
-                //SerializeType((Type)(object)value);
-                return;
-            }
-
-#if !NET35
+#if !NET35 && !NETSTANDARD2_0
             if (typeof(IDynamicMetaObjectProvider).IsAssignableFrom(type))
             {
                 SerializeDynamicObject((IDynamicMetaObjectProvider)value, startEle);
@@ -178,7 +172,7 @@ namespace Fireasy.Common.Serialization
             return sb.ToString();
         }
 
-#if !NET35
+#if !NET35 && !NETSTANDARD2_0
         private void SerializeDynamicObject(IDynamicMetaObjectProvider dynamicObject, bool startEle)
         {
             var flag = new AssertFlag();

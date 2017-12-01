@@ -56,7 +56,7 @@ namespace Fireasy.Data.Batcher
         protected IList<PropertyFieldMapping> GetNameTypeMapping(object item)
         {
             var result = new List<PropertyFieldMapping>();
-#if !NET35
+#if !NET35 && !NETSTANDARD2_0
             TypeDescriptorUtility.AddDefaultDynamicProvider();
 #endif
             var resolver = item as IPropertyFieldMappingResolver;
