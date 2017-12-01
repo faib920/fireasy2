@@ -31,6 +31,45 @@ Fireasy是一套基于.Net Framework应用开发组件，其主旨思想为“�
 *	富类型转换：可以将Color、Image、Font、Point、Exception等对象放到库中，并且从库中读取。
 *	分页评估：提供大数据量和小数据量场景下的分页计算方法。
 
+<pre><code>
+
+public void Sample()
+{
+	using (var db = DatabaseFactory.CreateDatabase())
+	{
+		//查询返回
+		var customers = db.ExecuteEnumerable<Customer>((SqlCommand)"select * from customers");
+		
+		//分页，参数化
+		var ds = new DataSet();
+		var paper = new DataPager(5, 0);
+		var parameters = new ParameterCollection();
+		parameters.Add("city", "London");
+		db.FillDataSet(ds, (SqlCommand)"select city from customers where city <> @city", segment: paper, parameters: parameters);
+		
+		//批量插入
+		var list = new List<BatcherData>();
+
+		for (var i = 0; i < 100000; i++)
+		{
+			list.Add(new BatcherData { ID = i, NAME = new Size(12, 20), BIRTHDAY = DateTime.Now });
+		}
+
+		var provider = db.Provider.GetService<IBatcherProvider>();
+		provider.Insert(db, list, "BATCHERS");
+		
+		//获取所有表定义
+		var schema = db.Provider.GetService<ISchemaProvider>();
+		var parameter = db.Provider.GetConnectionParameter(db.ConnectionString);
+		foreach (var table in schema.GetSchemas<Table>(db, s => s.Schema == parameter.Schema))
+		{
+			Console.WriteLine(table.Name + "," + table.Description);
+		}
+	}
+}
+
+</code></pre>
+
 <b>`Fireasy.Data.Entity`</b>
 
 实体框架，Linq解析部份参考了iqtoolkit和NLite开源框架。
@@ -49,6 +88,69 @@ Fireasy是一套基于.Net Framework应用开发组件，其主旨思想为“�
 *	实体上下文：提供类似于Entity Framework的数据上下文。
 *	惰性加载：在枚举实体序列并使用关联属性时，由于延迟加载机制将发生n+1次数据库查询动作，此时可以使用Include方法将关联属性预先加载出来。
 *	数据缓存：提供LINQ解析缓存和数据缓存。
+
+<pre><code>
+
+public void Sample()
+{
+	using (var context = new DbContext())
+	{
+		DateTime? startTime = null;
+		DateTime? endTime = null;
+		var state = 0;
+
+		//AssertWhere 用法
+		var orders = context.Orders
+			.AssertWhere(startTime != null, s => s.OrderDate >= startTime)
+			.AssertWhere(endTime != null, s => s.OrderDate <= endTime)
+			.AssertWhere(state == 0, s => s.RequiredDate == DateTime.Now, s => s.RequiredDate >= DateTime.Now);
+	
+		//ExtandAs 扩展用法
+		var details = db.OrderDetails.Select(s =>
+			s.ExtendAs<OrderDetails>(() => new OrderDetails
+				{
+					ProductName = s.Products.ProductName
+				}))
+			.ToList();
+		
+		//分页
+        var pager = new DataPager(50, 2);
+        var products = db.Products.Segment(pager).ToList();
+		
+		//排序
+		var sorting = new SortDefinition();
+		sorting.Member = "OrderDate";
+		sorting.Order = SortOrder.Descending;
+
+		var orders1 = context.Orders
+			.Select(s => new { s.OrderDate, CompanyName = s.Customers.CompanyName })
+			.OrderBy(sorting, u => u.OrderByDescending(s => s.OrderDate))
+			.ToList();
+		
+		//按条件更新
+		db.Orders.Update(() => new Orders { Freight = 1 }, s => s.OrderDate >= DateTime.Now);
+		
+		//计算器方式更新
+		db.Orders.Update(s => new Orders { Freight = s.Freight * 100 }, s => s.OrderDate >= DateTime.Now);
+		
+		//按条件删除
+		db.Orders.Delete(s => s.OrderDate > DateTime.Now);
+
+		//Batch插入
+		var depts = new List<Depts>();
+
+		for (var i = 0; i < 100; i++)
+		{
+			var d = Depts.New();
+			d.DeptName = "测试" + i;
+			depts.Add(d);
+		}
+
+		db.Depts.Batch(depts, (u, s) => u.Insert(s));
+	}
+}
+
+</code></pre>
 
 <b>`Fireasy.Web.Mvc`</b>
 
