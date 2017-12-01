@@ -31,8 +31,7 @@ Fireasy是一套基于.Net Framework应用开发组件，其主旨思想为“�
 *	富类型转换：可以将Color、Image、Font、Point、Exception等对象放到库中，并且从库中读取。
 *	分页评估：提供大数据量和小数据量场景下的分页计算方法。
 
-<pre><code>
-
+```C#
 public void Sample()
 {
 	using (var db = DatabaseFactory.CreateDatabase())
@@ -67,8 +66,7 @@ public void Sample()
 		}
 	}
 }
-
-</code></pre>
+```
 
 <b>`Fireasy.Data.Entity`</b>
 
@@ -89,8 +87,7 @@ public void Sample()
 *	惰性加载：在枚举实体序列并使用关联属性时，由于延迟加载机制将发生n+1次数据库查询动作，此时可以使用Include方法将关联属性预先加载出来。
 *	数据缓存：提供LINQ解析缓存和数据缓存。
 
-<pre><code>
-
+```C#
 public void Sample()
 {
 	using (var context = new DbContext())
@@ -149,8 +146,7 @@ public void Sample()
 		db.Depts.Batch(depts, (u, s) => u.Insert(s));
 	}
 }
-
-</code></pre>
+```
 
 <b>`Fireasy.Web.Mvc`</b>
 
