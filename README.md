@@ -105,9 +105,9 @@ public void Sample()
         //ExtandAs 扩展用法
         var details = db.OrderDetails.Select(s =>
             s.ExtendAs<OrderDetails>(() => new OrderDetails
-            {
-                ProductName = s.Products.ProductName
-            }))
+                {
+                    ProductName = s.Products.ProductName
+                }))
             .ToList();
 		
         //分页
@@ -144,7 +144,7 @@ public void Sample()
         }
 
         db.Depts.Batch(depts, (u, s) => u.Insert(s));
-	}
+    }
 }
 ```
 
