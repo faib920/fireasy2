@@ -103,7 +103,7 @@ public void Sample()
             .AssertWhere(state == 0, s => s.RequiredDate == DateTime.Now, s => s.RequiredDate >= DateTime.Now);
 	
         //ExtandAs 扩展用法
-        var details = db.OrderDetails.Select(s =>
+        var details = context.OrderDetails.Select(s =>
             s.ExtendAs<OrderDetails>(() => new OrderDetails
                 {
                     ProductName = s.Products.ProductName
@@ -112,7 +112,7 @@ public void Sample()
 		
         //分页
         var pager = new DataPager(50, 2);
-        var products = db.Products.Segment(pager).ToList();
+        var products = context.Products.Segment(pager).ToList();
 		
         //排序
         var sorting = new SortDefinition();
@@ -125,13 +125,13 @@ public void Sample()
             .ToList();
 		
         //按条件更新
-        db.Orders.Update(() => new Orders { Freight = 1 }, s => s.OrderDate >= DateTime.Now);
+        context.Orders.Update(() => new Orders { Freight = 1 }, s => s.OrderDate >= DateTime.Now);
 		
         //计算器方式更新
-        db.Orders.Update(s => new Orders { Freight = s.Freight * 100 }, s => s.OrderDate >= DateTime.Now);
+        context.Orders.Update(s => new Orders { Freight = s.Freight * 100 }, s => s.OrderDate >= DateTime.Now);
 		
         //按条件删除
-        db.Orders.Delete(s => s.OrderDate > DateTime.Now);
+        context.Orders.Delete(s => s.OrderDate > DateTime.Now);
 
         //Batch插入
         var depts = new List<Depts>();
@@ -143,7 +143,7 @@ public void Sample()
             depts.Add(d);
         }
 
-        db.Depts.Batch(depts, (u, s) => u.Insert(s));
+        context.Depts.Batch(depts, (u, s) => u.Insert(s));
     }
 }
 ```
