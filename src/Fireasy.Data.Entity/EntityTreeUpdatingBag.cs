@@ -52,4 +52,12 @@ namespace Fireasy.Data.Entity
                 };
         }
     }
+
+    public class EntityTreeUpfydatingArgument
+    {
+        public EntityTreeUpdatingBag OldValue { get; set; }
+
+        public EntityTreeUpdatingBag NewValue { get; set; }
+    }
+
 }

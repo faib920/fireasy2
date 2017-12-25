@@ -140,7 +140,7 @@ namespace Fireasy.Data.Entity
     /// 表示实体泛型的仓储。
     /// </summary>
     /// <typeparam name="TEntity">实体类型。</typeparam>
-    public interface IRepository<TEntity> : IOrderedQueryable<TEntity>, IRepository
+    public interface IRepository<TEntity> : IOrderedQueryable<TEntity>, IRepository where TEntity : IEntity
     {
         /// <summary>
         /// 批量将一组实体对象插入到库中。
@@ -265,6 +265,14 @@ namespace Fireasy.Data.Entity
         /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
         /// <returns>影响的实体数。</returns>
         Task<int> UpdateAsync(Expression<Func<TEntity>> factory, Expression<Func<TEntity, bool>> predicate);
+
+        /// <summary>
+        /// 使用一个累加器更新满足条件的一序列对象。
+        /// </summary>
+        /// <param name="calculator">一个计算器表达式。</param>
+        /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <returns>影响的实体数。</returns>
+        Task<int> UpdateAsync(Expression<Func<TEntity, TEntity>> calculator, Expression<Func<TEntity, bool>> predicate);
 
         /// <summary>
         /// 将实体对象的改动保存到库。

@@ -279,68 +279,6 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 执行一个查询，返回一个序列。
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="database"></param>
-        /// <param name="queryCommand"></param>
-        /// <param name="segment"></param>
-        /// <param name="parameters"></param>
-        /// <param name="initializer"></param>
-        /// <param name="setter"></param>
-        /// <returns></returns>
-        internal static IEnumerable<T> InternalExecuteEnumerable<T>(this IDatabase database, IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, Action<object> initializer = null, Action<IDataReader, T> setter = null)
-        {
-            var mapper = RowMapperFactory.CreateMapper<T>();
-            Guard.ArgumentNull(mapper, "mapper");
-
-            mapper.RecordWrapper = database.Provider.GetService<IRecordWrapper>();
-            mapper.Initializer = initializer;
-
-            using (var reader = database.ExecuteReader(queryCommand, segment, parameters))
-            {
-                while (reader.Read())
-                {
-                    var item = mapper.Map(reader);
-                    setter?.Invoke(reader, item);
-
-                    yield return item;
-                }
-            }
-        }
-
-        /// <summary>
-        /// 执行一个查询，返回一个序列。
-        /// </summary>
-        /// <param name="database"></param>
-        /// <param name="elementType"></param>
-        /// <param name="queryCommand"></param>
-        /// <param name="segment"></param>
-        /// <param name="parameters"></param>
-        /// <param name="initializer"></param>
-        /// <param name="setter"></param>
-        /// <returns></returns>
-        internal static IEnumerable InternalExecuteEnumerable(this IDatabase database, Type elementType, IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, Action<object> initializer = null, Action<IDataReader, object> setter = null)
-        {
-            var mapper = RowMapperFactory.CreateMapper(elementType);
-            Guard.ArgumentNull(mapper, "mapper");
-
-            mapper.RecordWrapper = database.Provider.GetService<IRecordWrapper>();
-            mapper.Initializer = initializer;
-
-            using (var reader = database.ExecuteReader(queryCommand, segment, parameters))
-            {
-                while (reader.Read())
-                {
-                    var item = mapper.Map(reader);
-                    setter?.Invoke(reader, item);
-
-                    yield return item;
-                }
-            }
-        }
-
-        /// <summary>
         /// 如果对象实现了 <see cref="IEntityPersistentInstanceContainer"/> 接口，则会将 <paramref name="instanceName"/> 附加到该对象。
         /// </summary>
         /// <param name="item"></param>

@@ -139,7 +139,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <typeparam name="TEntity"></typeparam>
         /// <returns></returns>
-        public EntityTreeRepository<TEntity> CreateTreeRepository<TEntity>() where TEntity : class, IEntity
+        public ITreeRepository<TEntity> CreateTreeRepository<TEntity>() where TEntity : class, IEntity
         {
             var repository = Set<TEntity>();
             return new EntityTreeRepository<TEntity>(repository, context);
