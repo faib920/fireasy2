@@ -108,19 +108,48 @@ namespace Fireasy.Data
         private string ParseConnectionString(string constr)
         {
             var builder = new StringBuilder();
+            var index = 0;
+            var name = string.Empty;
+            var value = string.Empty;
+            var last = false;
+            var quote = false;
 
-            //循环每节属性
-            var args = constr.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (string par in args)
+            for (var i = 0; i < constr.Length; i++)
             {
-                var segs = par.Split(new[] { '=' }, StringSplitOptions.RemoveEmptyEntries);
-                if (segs.Length == 0)
+                if (constr[i] == '"')
                 {
-                    continue;
+                    quote = !quote;
                 }
+                else if (constr[i] == '=' && !quote)
+                {
+                    name = constr.Substring(index, i - index);
+                    index = i + 1;
+                }
+                else if (constr[i] == ';' && !quote)
+                {
+                    value = constr.Substring(index, i - index);
 
-                var name = segs[0].Trim();
-                var value = segs[1].Trim();
+                    if (!ParseParameter(name, value))
+                    {
+                        DbUtility.ParseDataDirectory(ref value);
+                        builder.AppendFormat("{0}={1};", name, value);
+                    }
+
+                    Properties.Add(name.ToLower(), value);
+
+                    index = i + 1;
+                    last = true;
+                }
+                else
+                {
+                    last = false;
+                }
+            }
+
+            if (!last)
+            {
+                value = constr.Substring(index);
+
                 if (!ParseParameter(name, value))
                 {
                     DbUtility.ParseDataDirectory(ref value);

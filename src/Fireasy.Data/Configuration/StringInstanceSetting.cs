@@ -63,7 +63,7 @@ namespace Fireasy.Data.Configuration
                 var providerType = node.GetAttributeValue("providerType");
                 var databaseType = node.GetAttributeValue("databaseType");
                 var key = node.GetAttributeValue("key");
-                var connectionString = node.GetAttributeValue("connectionString");
+                var connectionString = !string.IsNullOrEmpty(node.InnerText) ? node.InnerText : node.GetAttributeValue("connectionString");
 
                 return Parse(storeType, providerName, providerType, databaseType, key, connectionString);
             }
