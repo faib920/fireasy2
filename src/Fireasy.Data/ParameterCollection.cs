@@ -10,6 +10,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using Fireasy.Data.Extensions;
+using System.ComponentModel;
+using Fireasy.Common;
 
 namespace Fireasy.Data
 {
@@ -53,6 +55,38 @@ namespace Fireasy.Data
                 {
                     Add(p.ParameterName, p.Value);
                 }
+            }
+        }
+
+        /// <summary>
+        /// 使用一个对象初始化参数集合，该实例化方法产生的参数将以对象的属性名称进行命名。
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public ParameterCollection(object obj)
+        {
+            Guard.ArgumentNull(obj, "obj");
+            arrayList = new ArrayList();
+
+            foreach (PropertyDescriptor property in TypeDescriptor.GetProperties(obj))
+            {
+                Add(property.Name, property.GetValue(obj));
+            }
+        }
+
+        /// <summary>
+        /// 使用一个字典对象初始化参数集合，该实例化方法产生的参数将以对象的属性名称进行命名。
+        /// </summary>
+        /// <param name="dic"></param>
+        /// <returns></returns>
+        public ParameterCollection(IDictionary<string, object> dic)
+        {
+            Guard.ArgumentNull(dic, "dic");
+            arrayList = new ArrayList();
+
+            foreach (var kvp in dic)
+            {
+                Add(kvp.Key, kvp.Value);
             }
         }
 

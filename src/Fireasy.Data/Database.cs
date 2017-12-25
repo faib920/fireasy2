@@ -36,6 +36,9 @@ namespace Fireasy.Data
         private readonly TransactionStack tranStack;
         private bool isDisposed;
         private readonly DatabaseScope dbScope;
+#if !NET35 && !NET40
+        private readonly AsyncTaskManager taskMgr;
+#endif
         private DbConnection connection;
 
         /// <summary>
@@ -45,6 +48,9 @@ namespace Fireasy.Data
         {
             tranStack = new TransactionStack();
             dbScope = new DatabaseScope(this);
+#if !NET35 && !NET40
+            taskMgr = new AsyncTaskManager(this);
+#endif
         }
 
         /// <summary>
@@ -167,6 +173,13 @@ namespace Fireasy.Data
                 return false;
             }
 
+#if !NET35 && !NET40
+            if (taskMgr.HasTasks)
+            {
+                return false;
+            }
+#endif
+
             Transaction.Commit();
             Transaction.Dispose();
             Transaction = null;
@@ -184,6 +197,13 @@ namespace Fireasy.Data
             {
                 return false;
             }
+
+#if !NET35 && !NET40
+            if (taskMgr.HasTasks)
+            {
+                return false;
+            }
+#endif
 
             Transaction.Rollback();
             Transaction.Dispose();
@@ -584,7 +604,7 @@ namespace Fireasy.Data
                     var command = CreateDbCommand(queryCommand, parameters);
                     try
                     {
-                        return HandleExecuteTask(HandleCommandExecute(command, () => command.ExecuteScalarAsync()), command, parameters);
+                        return (HandleExecuteTask(HandleCommandExecute(command, () => command.ExecuteScalarAsync()), command, parameters));
                     }
                     catch (DbException exp)
                     {
@@ -645,6 +665,12 @@ namespace Fireasy.Data
         /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
         protected virtual void Dispose(bool disposing)
         {
+#if !NET35 && !NET40
+            if (taskMgr.HasTasks)
+            {
+                return;
+            }
+#endif
             if (isDisposed)
             {
                 return;
@@ -663,6 +689,9 @@ namespace Fireasy.Data
             }
 
             dbScope.Dispose();
+#if !NET35 && !NET40
+            taskMgr.Dispose();
+#endif
             isDisposed = true;
         }
 
@@ -778,6 +807,11 @@ namespace Fireasy.Data
         private string HandleCommandParameterPrefix(string commandText)
         {
             var syntax = Provider.GetService<ISyntaxProvider>();
+            if (string.IsNullOrEmpty(syntax.ParameterPrefix))
+            {
+                return commandText;
+            }
+
             if (Regex.IsMatch(commandText, "(\\" + syntax.ParameterPrefix + ")"))
             {
                 return commandText;

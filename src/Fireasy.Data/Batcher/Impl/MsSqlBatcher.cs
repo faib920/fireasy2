@@ -5,15 +5,18 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Data.Extensions;
+using Fireasy.Data.Syntax;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Data.SqlClient;
-using Fireasy.Common;
-using Fireasy.Data.Extensions;
-using Fireasy.Data.Syntax;
-using System.Reflection;
+using System.Linq;
+#if !NET40 && !NET35
+using System.Threading.Tasks;
+#endif
 
 namespace Fireasy.Data.Batcher
 {
@@ -33,12 +36,25 @@ namespace Fireasy.Data.Batcher
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
         public void Insert<T>(IDatabase database, IEnumerable<T> list, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
         {
-            if (!BatcherChecker.CheckList(list, tableName))
+            try
             {
-                return;
-            }
+                database.Connection.TryOpen();
 
-            Insert(database, list.ToDataTable(tableName), batchSize);
+                //给表名加上前后导符
+                using (var bulk = new SqlBulkCopy((SqlConnection)database.Connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
+                {
+                    DestinationTableName = tableName,
+                    BatchSize = batchSize
+                })
+                using (var reader = new EnumerableBatchReader<T>(list))
+                {
+                    bulk.WriteToServer(reader);
+                }
+            }
+            catch (Exception exp)
+            {
+                throw new BatcherException(list.ToList(), exp);
+            }
         }
 
         /// <summary>
@@ -61,17 +77,14 @@ namespace Fireasy.Data.Batcher
 
                 //给表名加上前后导符
                 var tableName = DbUtility.FormatByQuote(database.Provider.GetService<ISyntaxProvider>(), dataTable.TableName);
-                using (var bulk = new SqlBulkCopy((SqlConnection)database.Connection, SqlBulkCopyOptions.KeepIdentity, null)
+                using (var bulk = new SqlBulkCopy((SqlConnection)database.Connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
                 {
                     DestinationTableName = tableName,
                     BatchSize = batchSize
                 })
+                using (var reader = new DataTableBatchReader(dataTable))
                 {
-#if !NETSTANDARD2_0
-                    bulk.WriteToServer(dataTable);
-#else
-                    //todo 还未处理
-#endif
+                    bulk.WriteToServer(reader);
                 }
             }
             catch (Exception exp)
@@ -79,5 +92,132 @@ namespace Fireasy.Data.Batcher
                 throw new BatcherException(dataTable.Rows, exp);
             }
         }
+
+        /// <summary>
+        /// 将 <paramref name="reader"/> 中的数据流批量复制到数据库中。
+        /// </summary>
+        /// <param name="database">提供给当前插件的 <see cref="IDatabase"/> 对象。</param>
+        /// <param name="reader">源数据读取器。</param>
+        /// <param name="tableName">要写入的数据表的名称。</param>
+        /// <param name="batchSize">每批次写入的数据量。</param>
+        /// <param name="completePercentage">已完成百分比的通知方法。</param>
+        public void Insert(IDatabase database, IDataReader reader, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
+        {
+            try
+            {
+                database.Connection.TryOpen();
+
+                //给表名加上前后导符
+                using (var bulk = new SqlBulkCopy((SqlConnection)database.Connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
+                {
+                    DestinationTableName = tableName,
+                    BatchSize = batchSize
+                })
+                    bulk.WriteToServer((DbDataReader)reader);
+            }
+            catch (Exception exp)
+            {
+                throw new BatcherException(null, exp);
+            }
+        }
+
+#if !NET40 && !NET35
+        /// <summary>
+        /// 将 <see cref="DataTable"/> 的数据批量插入到数据库中。
+        /// </summary>
+        /// <param name="database">提供给当前插件的 <see cref="IDatabase"/> 对象。</param>
+        /// <param name="dataTable">要批量插入的 <see cref="DataTable"/>。</param>
+        /// <param name="batchSize">每批次写入的数据量。</param>
+        /// <param name="completePercentage">已完成百分比的通知方法。</param>
+        public async Task InsertAsync(IDatabase database, DataTable dataTable, int batchSize = 1000, Action<int> completePercentage = null)
+        {
+            if (!BatcherChecker.CheckDataTable(dataTable))
+            {
+                return;
+            }
+
+            try
+            {
+                database.Connection.TryOpen();
+
+                //给表名加上前后导符
+                var tableName = DbUtility.FormatByQuote(database.Provider.GetService<ISyntaxProvider>(), dataTable.TableName);
+                using (var bulk = new SqlBulkCopy((SqlConnection)database.Connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
+                {
+                    DestinationTableName = tableName,
+                    BatchSize = batchSize
+                })
+                using (var reader = new DataTableBatchReader(dataTable))
+                {
+                    await AsyncTaskManager.Adapter(bulk.WriteToServerAsync(reader));
+                }
+            }
+            catch (Exception exp)
+            {
+                throw new BatcherException(dataTable.Rows, exp);
+            }
+        }
+
+        /// <summary>
+        /// 将一个 <see cref="IList"/> 批量插入到数据库中。 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="database">提供给当前插件的 <see cref="IDatabase"/> 对象。</param>
+        /// <param name="list">要写入的数据列表。</param>
+        /// <param name="tableName">要写入的数据表的名称。</param>
+        /// <param name="batchSize">每批次写入的数据量。</param>
+        /// <param name="completePercentage">已完成百分比的通知方法。</param>
+        public async Task InsertAsync<T>(IDatabase database, IEnumerable<T> list, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
+        {
+            try
+            {
+                database.Connection.TryOpen();
+
+                //给表名加上前后导符
+                using (var bulk = new SqlBulkCopy((SqlConnection)database.Connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
+                {
+                    DestinationTableName = tableName,
+                    BatchSize = batchSize
+                })
+                using (var reader = new EnumerableBatchReader<T>(list))
+                {
+                    await AsyncTaskManager.Adapter(bulk.WriteToServerAsync(reader));
+                }
+            }
+            catch (Exception exp)
+            {
+                throw new BatcherException(list.ToList(), exp);
+            }
+        }
+
+        /// <summary>
+        /// 将 <paramref name="reader"/> 中的数据流批量复制到数据库中。
+        /// </summary>
+        /// <param name="database">提供给当前插件的 <see cref="IDatabase"/> 对象。</param>
+        /// <param name="reader">源数据读取器。</param>
+        /// <param name="tableName">要写入的数据表的名称。</param>
+        /// <param name="batchSize">每批次写入的数据量。</param>
+        /// <param name="completePercentage">已完成百分比的通知方法。</param>
+        public async Task InsertAsync(IDatabase database, IDataReader reader, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
+        {
+            try
+            {
+                database.Connection.TryOpen();
+
+                //给表名加上前后导符
+                using (var bulk = new SqlBulkCopy((SqlConnection)database.Connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
+                {
+                    DestinationTableName = tableName,
+                    BatchSize = batchSize
+                })
+                await AsyncTaskManager.Adapter(bulk.WriteToServerAsync((DbDataReader)reader));
+            }
+            catch (Exception exp)
+            {
+                throw new BatcherException(null, exp);
+            }
+        }
+#endif
+
     }
 }
