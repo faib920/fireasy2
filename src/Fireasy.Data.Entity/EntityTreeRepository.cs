@@ -25,7 +25,7 @@ namespace Fireasy.Data.Entity
     /// 提供树实体类型的仓储。
     /// </summary>
     /// <typeparam name="TEntity"></typeparam>
-    public class EntityTreeRepository<TEntity> : IQueryProviderAware where TEntity : class, IEntity
+    public class EntityTreeRepository<TEntity> : ITreeRepository<TEntity>, IQueryProviderAware where TEntity : class, IEntity
     {
         private EntityRepository<TEntity> repository;
         private EntityMetadata metadata;
@@ -152,7 +152,7 @@ namespace Fireasy.Data.Entity
             var arg2 = CreateUpdatingArgument(referEntity);
 
             var keyId = arg2.OldValue.InnerId;
-            var orderNo = GetNewOrderNumber(arg2.OldValue, position);
+            var orderNo = GetNewOrderNumber(arg2.OldValue, position, 0, isolation);
 
             foreach (var entity in entities)
             {
@@ -193,10 +193,56 @@ namespace Fireasy.Data.Entity
         /// <param name="entity">要移动的实体。</param>
         /// <param name="referEntity">参照的实体。</param>
         /// <param name="position">移动的位置。</param>
-        public virtual void Move(TEntity entity, TEntity referEntity, EntityTreePosition? position)
+        /// <param name="isolation">数据隔离表达式。</param>
+        public virtual void Move(TEntity entity, TEntity referEntity, EntityTreePosition? position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null)
         {
-            Guard.ArgumentNull(entity, nameof(entity));
-            throw new NotImplementedException();
+            Guard.ArgumentNull(entity, "entity");
+
+            if (referEntity != null && position == null)
+            {
+                repository.Update(entity);
+                return;
+            }
+
+            AttachRequiredProperties(entity);
+
+            if (!CheckMovable(entity, referEntity))
+            {
+                throw new EntityPersistentException(SR.GetString(SRKind.FailInEntityMoveWildly), null);
+            }
+
+            if (entity.Equals(referEntity) ||
+                (position != null && !CheckNeedMove(entity, referEntity, (EntityTreePosition)position)))
+            {
+                repository.Update(entity);
+                return;
+            }
+
+            try
+            {
+                var arg1 = CreateUpdatingArgument(entity);
+
+                //移到根节点
+                if (referEntity == null)
+                {
+                    UpdateMoveToRoot(entity, arg1, isolation);
+                    return;
+                }
+
+                var arg2 = CreateUpdatingArgument(referEntity);
+
+                if (position == EntityTreePosition.Children)
+                {
+                    UpdateMoveAsChildren(entity, referEntity, arg1, arg2, isolation);
+                    return;
+                }
+
+                throw new NotImplementedException();
+            }
+            catch (Exception ex)
+            {
+                throw new EntityPersistentException(SR.GetString(SRKind.FailInEntityMove), ex);
+            }
         }
 
         /// <summary>
@@ -261,8 +307,44 @@ namespace Fireasy.Data.Entity
             return repository.Provider.CreateQuery<TEntity>(orderExp);
         }
 
-        public void UpdateFullName(IEntity entity)
+        private void AttachRequiredProperties(IEntity entity)
         {
+            var pkValues = new List<PropertyValue>();
+            foreach (var pkProperty in PropertyUnity.GetPrimaryProperties(typeof(TEntity)))
+            {
+                pkValues.Add(entity.GetValue(pkProperty));
+            }
+
+            var oldEntity = repository.Get(pkValues.ToArray());
+            if (oldEntity == null)
+            {
+                return;
+            }
+
+            if (metaTree.InnerSign != null && !entity.IsModified(metaTree.InnerSign.Name))
+            {
+                entity.InitializateValue(metaTree.InnerSign, oldEntity.GetValue(metaTree.InnerSign));
+            }
+
+            if (metaTree.Name != null && !entity.IsModified(metaTree.Name.Name))
+            {
+                entity.InitializateValue(metaTree.Name, oldEntity.GetValue(metaTree.Name));
+            }
+
+            if (metaTree.FullName != null && !entity.IsModified(metaTree.FullName.Name))
+            {
+                entity.InitializateValue(metaTree.FullName, oldEntity.GetValue(metaTree.FullName));
+            }
+
+            if (metaTree.Order != null && !entity.IsModified(metaTree.Order.Name))
+            {
+                entity.InitializateValue(metaTree.Order, oldEntity.GetValue(metaTree.Order));
+            }
+
+            if (metaTree.Level != null && !entity.IsModified(metaTree.Level.Name))
+            {
+                entity.InitializateValue(metaTree.Level, oldEntity.GetValue(metaTree.Level));
+            }
         }
 
         /// <summary>
@@ -348,6 +430,64 @@ namespace Fireasy.Data.Entity
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// 检查是否需要移动。
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <param name="referEntity"></param>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        private bool CheckNeedMove(IEntity entity, IEntity referEntity, EntityTreePosition position)
+        {
+            var bag1 = ParseEntityData(entity);
+            if (referEntity == null)
+            {
+                return bag1.Level != 1;
+            }
+
+            var bag2 = ParseEntityData(referEntity);
+            var isBrotherly = IsBrotherly(bag1, bag2);
+            if (isBrotherly)
+            {
+                //判断是否需要移动
+                if (position == EntityTreePosition.After && bag1.Order - bag2.Order == 1)
+                {
+                    return false;
+                }
+
+                if (position == EntityTreePosition.Before && bag2.Order - bag1.Order == 1)
+                {
+                    return false;
+                }
+            }
+            //本来就属于它的孩子
+            else if (position == EntityTreePosition.Children &&
+                bag1.InnerId.StartsWith(bag2.InnerId) &&
+                bag1.InnerId.Length == bag2.InnerId.Length + metaTree.SignLength)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 使用 <see cref="EntityTreeUpdatingBag"/> 判断是否具有兄弟关系。
+        /// </summary>
+        /// <param name="bag1"></param>
+        /// <param name="bag2"></param>
+        /// <returns></returns>
+        private bool IsBrotherly(EntityTreeUpdatingBag bag1, EntityTreeUpdatingBag bag2)
+        {
+            if ((bag1.InnerId.Length != bag2.InnerId.Length) || bag2.InnerId.Length < metaTree.SignLength)
+            {
+                return false;
+            }
+
+            return bag1.InnerId.Substring(0, bag1.InnerId.Length - metaTree.SignLength)
+                .Equals(bag2.InnerId.Substring(0, bag2.InnerId.Length - metaTree.SignLength));
         }
 
         /// <summary>
@@ -514,6 +654,299 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
+        /// 获取孩子、孙子、重孙...。
+        /// </summary>
+        /// <param name="argument"></param>
+        /// <param name="isolation"></param>
+        /// <returns></returns>
+        private IEnumerable<TEntity> GetChildren(EntityTreeUpfydatingArgument argument, Expression<Func<TEntity>> isolation = null)
+        {
+            var expression = TreeExpressionBuilder.BuildGetChildrenExpression<TEntity>(metaTree, argument.OldValue.InnerId);
+
+            var querable = QueryHelper.CreateQuery<TEntity>(repository.Provider, expression);
+            expression = TreeExpressionBuilder.AddIsolationExpression<TEntity>(querable.Expression, isolation);
+            expression = TreeExpressionBuilder.AddUseableSelectExpression<TEntity>(metaTree, expression);
+
+            return repository.Provider.CreateQuery<TEntity>(expression).ToList();
+        }
+
+        /// <summary>
+        /// 获取兄弟及他们的孩子。
+        /// </summary>
+        /// <param name="argument"></param>
+        /// <param name="includeCurrent">是否包含当 <paramref name="argument"/>，当在它前面插入时，需要包含它。</param>
+        /// <param name="excludeArg">要排除的实体。</param>
+        /// <param name="isTop">是否遇到要排除的实体就终止。</param>
+        /// <param name="isolation"></param>
+        /// <returns></returns>
+        private IEnumerable<TEntity> GetBrothersAndChildren(EntityTreeUpfydatingArgument argument, bool includeCurrent, EntityTreeUpfydatingArgument excludeArg, bool isTop = false, Expression<Func<TEntity>> isolation = null)
+        {
+            var keyId = argument.OldValue.InnerId;
+            var order = argument.OldValue.Order;
+            var level = argument.OldValue.Level;
+            var parameters = new ParameterCollection();
+            var m = EntityMetadataUnity.GetEntityMetadata(entityType);
+
+            var sb = new StringBuilder();
+            sb.Append("SELECT ");
+            var assert = new AssertFlag();
+            foreach (var property in GetUseableProperties())
+            {
+                if (property == null)
+                {
+                    continue;
+                }
+
+                if (!assert.AssertTrue())
+                {
+                    sb.Append(", ");
+                }
+
+                sb.AppendFormat("t.{0} {0}", QuoteColumn(property));
+            }
+
+            sb.AppendFormat(" FROM {0} t", GetTableName());
+            sb.AppendFormat(" JOIN (SELECT f.{0} {0} FROM {1} f", QuoteColumn(metaTree.InnerSign), GetTableName());
+
+            sb.AppendFormat(" WHERE {0} LIKE {1} AND {5} = {6} AND {2} {4} {3}", QuoteColumn(metaTree.InnerSign), syntax.FormatParameter("pn"),
+                GetOrderExpression(), order, includeCurrent ? ">=" : ">", GetLevelExpression(), level);
+
+            if (m.DeleteProperty != null)
+            {
+                sb.AppendFormat(" AND {0} = {1}", QuoteColumn(m.DeleteProperty), 0);
+            }
+
+            if (excludeArg != null)
+            {
+                var excludeId = excludeArg.OldValue.InnerId;
+                sb.AppendFormat(" AND NOT ({0} LIKE {1})", QuoteColumn(metaTree.InnerSign), syntax.FormatParameter("px"));
+                parameters.Add("px", excludeId + "%");
+
+                if (isTop)
+                {
+                    sb.AppendFormat(" AND {0} < {1}", QuoteColumn(metaTree.InnerSign), syntax.FormatParameter("px1"));
+                    parameters.Add("px1", excludeId);
+                }
+            }
+
+            if (!includeCurrent)
+            {
+                sb.AppendFormat(" AND {0} <> {1}", QuoteColumn(metaTree.InnerSign), syntax.FormatParameter("pm"));
+                parameters.Add("pm", keyId);
+            }
+
+            if (isolation != null)
+            {
+                var condition = IsolationConditionBuilder.Build(isolation);
+                if (!string.IsNullOrEmpty(condition))
+                {
+                    sb.AppendFormat(" AND {0}", condition);
+                }
+            }
+
+            sb.AppendFormat(") f ON t.{0} LIKE {1} ORDER BY {0}", QuoteColumn(metaTree.InnerSign), syntax.String.Concat("f." + QuoteColumn(metaTree.InnerSign), "'%'"));
+
+            keyId = GetPreviousKey(keyId) + "_%";
+            parameters.Add("pn", keyId);
+
+            return database.ExecuteEnumerable<TEntity>((SqlCommand)sb.ToString(), parameters: parameters).ToList();
+        }
+
+        /// <summary>
+        /// 更新所有孩子的全名。
+        /// </summary>
+        /// <param name="current">当前的实体对象。</param>
+        /// <param name="children">要更新的子实体对象。</param>
+        /// <param name="fuleName">当前实体对象的全名。</param>
+        private void UpdateChildrenFullName(IEntity current, IEnumerable<TEntity> children, string fuleName)
+        {
+            var list = new List<EntityTreeUpdatingBag>();
+            foreach (IEntity entity in children)
+            {
+                var arg = CreateUpdatingArgument(entity);
+
+                var rowInnerId = arg.NewValue.InnerId;
+
+                //取得上一级编码，然后找到父的全名
+                var prevRowInnerId = GetPreviousKey(rowInnerId);
+                var parentRow = list.FirstOrDefault(s => s.InnerId == prevRowInnerId);
+                var newFullName = parentRow == null ? fuleName :
+                    parentRow.FullName;
+
+                //父全名+分隔+当前元素的名称
+                newFullName = string.Format("{0}{1}{2}", newFullName, metaTree.NameSeparator, arg.OldValue.Name);
+
+                arg.NewValue.FullName = newFullName;
+
+                UpdateEntityByArgument(entity, arg);
+
+                list.Add(arg.NewValue);
+            }
+
+            list.Clear();
+        }
+
+        private void UpdateChildren(IEntity current, IEnumerable<TEntity> entities, EntityTreeUpfydatingArgument argument)
+        {
+            foreach (IEntity entity in entities)
+            {
+                var arg = CreateUpdatingArgument(entity);
+
+                arg.NewValue.Level = argument.NewValue.Level + arg.OldValue.Level - argument.OldValue.Level;
+                arg.NewValue.InnerId = argument.NewValue.InnerId + arg.OldValue.InnerId.Substring(argument.OldValue.Level * metaTree.SignLength);
+
+                if (metaTree.FullName != null && !string.IsNullOrEmpty(argument.NewValue.FullName))
+                {
+                    arg.NewValue.FullName = argument.NewValue.FullName + metaTree.NameSeparator + GetRightFullName(arg.OldValue.FullName, argument.OldValue.Level);
+                }
+
+                UpdateEntityByArgument(entity, arg);
+            }
+        }
+
+        /// <summary>
+        /// 将兄弟和孩子的前N级编码前移或后移，N取决于currentInnerId的长度，如果currentInnerId为空，则取数据表中的第一行数据的InnerID
+        /// </summary>
+        /// <param name="current">当前的实体对象。</param>
+        /// <param name="entities">要移动的子实体对象。</param>
+        /// <param name="currentInnerId">当前的内码。</param>
+        /// <param name="position">移动的偏离位置。</param>
+        private void UpdateBrothersAndChildren(IEntity current, IEnumerable<TEntity> entities, string currentInnerId, int position)
+        {
+            var dictionary = new Dictionary<string, EntityTreeUpfydatingArgument>();
+
+            foreach (IEntity entity in entities)
+            {
+                var arg = CreateUpdatingArgument(entity);
+
+                var rowInnerId = arg.OldValue.InnerId;
+                if (string.IsNullOrEmpty(currentInnerId))
+                {
+                    currentInnerId = rowInnerId;
+                }
+
+                dictionary.TryAdd(arg.OldValue.InnerId, arg);
+
+                var prevRowInnerId = GetPreviousKey(rowInnerId);
+
+                //找父节点
+                EntityTreeUpfydatingArgument parArg;
+
+                if (dictionary.TryGetValue(prevRowInnerId, out parArg))
+                {
+                    prevRowInnerId = parArg.NewValue.InnerId;
+                }
+
+                if (currentInnerId.Length == rowInnerId.Length)
+                {
+                    arg.NewValue.Order += position;
+                }
+
+                var sorder = arg.NewValue.Order.ToString();
+                arg.NewValue.InnerId = prevRowInnerId + new string('0', metaTree.SignLength - sorder.Length) + sorder;
+
+                UpdateEntityByArgument(entity, arg);
+            }
+        }
+
+        /// <summary>
+        /// 节点移动到根目录下，相关节点的更新。
+        /// </summary>
+        /// <param name="current"></param>
+        /// <param name="arg"></param>
+        /// <param name="isolation"></param>
+        private void UpdateMoveToRoot(IEntity current, EntityTreeUpfydatingArgument arg, Expression<Func<TEntity>> isolation = null)
+        {
+            //获得新节点的Order值
+            var newOrder = GetNewOrderNumber(null, EntityTreePosition.Children);
+
+            //获取它的兄弟及其孩子
+            var brothers = GetBrothersAndChildren(arg, false, null, isolation: isolation);
+
+            //获取它的孩子
+            var children = GetChildren(arg, isolation);
+
+            //生成新的InnerID
+            var currentInnerId = GenerateInnerId(string.Empty, newOrder, EntityTreePosition.Children);
+
+            //全名即为名称
+            if (metaTree.FullName != null && metaTree.Name != null)
+            {
+                arg.NewValue.FullName = arg.OldValue.Name;
+            }
+
+            arg.NewValue.InnerId = currentInnerId;
+            arg.NewValue.Level = 1;
+            arg.NewValue.Order = newOrder;
+
+            UpdateEntityByArgument(current, arg);
+
+            //兄弟及其孩子要上移一个单位
+            UpdateBrothersAndChildren(current, brothers, currentInnerId, -1);
+
+            //它的孩子要移到根节点下
+            UpdateChildren(current, children, arg);
+
+            repository.Batch(brothers, (u, s) => u.Update(s));
+            repository.Batch(children, (u, s) => u.Update(s));
+        }
+
+        /// <summary>
+        /// 将子节点移动到另一个子节点的下面。
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <param name="referEntity"></param>
+        /// <param name="arg1"></param>
+        /// <param name="arg2"></param>
+        /// <param name="isolation"></param>
+        private void UpdateMoveAsChildren(IEntity entity, IEntity referEntity, EntityTreeUpfydatingArgument arg1, EntityTreeUpfydatingArgument arg2, Expression<Func<TEntity>> isolation = null)
+        {
+            //获取要移动节点的兄弟及其孩子
+            var brothers = GetBrothersAndChildren(arg1, false, null, isolation: isolation);
+
+            //获取要移动的节点的孩子
+            var children = GetChildren(arg1, isolation);
+
+            //兄弟及其孩子要下移一个单位
+            UpdateBrothersAndChildren(entity, brothers, arg1.OldValue.InnerId, -1);
+
+            var modify = IsInList(referEntity, brothers);
+            if (modify != null)
+            {
+                arg2 = CreateUpdatingArgument(modify);
+            }
+
+            var keyId = arg2.OldValue.InnerId;
+            //获得新节点的Order值
+            arg1.NewValue.Order = GetNewOrderNumber(arg2.OldValue, EntityTreePosition.Children);
+
+            //获得参照节点的级别
+            arg1.NewValue.Level = arg2.OldValue.Level + 1;
+
+            //生成新的InnerID
+            arg1.NewValue.InnerId = GenerateInnerId(keyId, arg1.NewValue.Order, EntityTreePosition.Children);
+            arg1.NewValue.FullName = GenerateFullName(arg1, arg2, EntityTreePosition.Children);
+
+            //更新要移动的节点的孩子
+            UpdateChildren(entity, children, arg1);
+            UpdateEntityByArgument(entity, arg1);
+
+            repository.Batch(brothers, (u, s) => u.Update(s));
+            repository.Batch(children, (u, s) => u.Update(s));
+        }
+
+        /// <summary>
+        /// 判断实体是否在指定的集合中。如果它在集合中，它有可能被修改。
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <param name="entities"></param>
+        /// <returns></returns>
+        private IEntity IsInList(IEntity entity, IEnumerable<TEntity> entities)
+        {
+            return entities.FirstOrDefault(item => item.Equals(entity));
+        }
+
+        /// <summary>
         /// 获取属性的对应的字段表达式，并在前后加上标识符。
         /// </summary>
         /// <param name="property"></param>
@@ -521,6 +954,15 @@ namespace Fireasy.Data.Entity
         private string QuoteColumn(IProperty property)
         {
             return DbUtility.FormatByQuote(syntax, property.Info.FieldName);
+        }
+
+        /// <summary>
+        /// 获取实体类所对应的表的名称。
+        /// </summary>
+        /// <returns></returns>
+        private string GetTableName()
+        {
+            return DbUtility.FormatByQuote(syntax, metadata.TableName);
         }
 
         /// <summary>
@@ -659,13 +1101,6 @@ namespace Fireasy.Data.Entity
             {
                 entity.SetValue(metaTree.FullName, argument.NewValue.FullName);
             }
-        }
-
-        private class EntityTreeUpfydatingArgument
-        {
-            public EntityTreeUpdatingBag OldValue { get; set; }
-
-            public EntityTreeUpdatingBag NewValue { get; set; }
         }
 
         /// <summary>

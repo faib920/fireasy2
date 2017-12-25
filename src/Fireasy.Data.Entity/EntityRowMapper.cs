@@ -56,7 +56,8 @@ namespace Fireasy.Data.Entity
 
         private T MapInternal(Func<PropertyMapping, PropertyValue> func)
         {
-            var entity = typeof(T).New<IEntity>();
+            var proxyType = EntityProxyManager.GetType(typeof(T));
+            var entity = proxyType.New<IEntity>();
             if (entity == null)
             {
                 return default(T);
