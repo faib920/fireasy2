@@ -202,7 +202,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         || skip != select.Skip
                         || take != select.Take)
                     {
-                        select = new SelectExpression(select.Alias, select.Columns, select.From, where, orderBy, groupBy, isDistinct, skip, take, segment, select.IsReverse);
+                        select = new SelectExpression(select.Alias, select.Columns, select.From, where, orderBy, groupBy, isDistinct, skip, take, segment, select.Having, select.IsReverse);
                     }
                 }
 

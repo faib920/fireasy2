@@ -42,7 +42,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     || columns != select.Columns
                     )
                 {
-                    return new SelectExpression(select.Alias, columns, currentFrom, where, orderBy, groupBy, select.IsDistinct, skip, take, select.Segment, select.IsReverse);
+                    return new SelectExpression(select.Alias, columns, currentFrom, where, orderBy, groupBy, select.IsDistinct, skip, take, select.Segment, select.Having, select.IsReverse);
                 }
 
                 return select;

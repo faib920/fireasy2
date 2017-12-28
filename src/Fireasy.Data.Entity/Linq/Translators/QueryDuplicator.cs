@@ -33,7 +33,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             map[select.Alias] = newAlias;
             select = (SelectExpression)base.VisitSelect(select);
 
-            return new SelectExpression(newAlias, select.Columns, select.From, select.Where, select.OrderBy, select.GroupBy, select.IsDistinct, select.Skip, select.Take, select.Segment, select.IsReverse);
+            return new SelectExpression(newAlias, select.Columns, select.From, select.Where, select.OrderBy, select.GroupBy, select.IsDistinct, select.Skip, select.Take, select.Segment, select.Having, select.IsReverse);
         }
 
         protected override Expression VisitColumn(ColumnExpression column)

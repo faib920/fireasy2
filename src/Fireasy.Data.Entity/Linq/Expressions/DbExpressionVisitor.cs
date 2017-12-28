@@ -126,7 +126,8 @@ namespace Fireasy.Data.Entity.Linq.Expressions
             var take = Visit(select.Take);
             var segment = Visit(select.Segment);
             var columns = VisitColumnDeclarations(select.Columns);
-            return select.Update(from, where, orderBy, groupBy, skip, take, segment, select.IsDistinct, columns, select.IsReverse);
+            var having = Visit(select.Having);
+            return select.Update(from, where, orderBy, groupBy, skip, take, segment, select.IsDistinct, columns, having, select.IsReverse);
         }
 
         /// <summary>

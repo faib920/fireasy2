@@ -48,6 +48,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 WriteGroups(select);
             }
 
+            if (select.Having != null)
+            {
+                WriteLine(Indentation.Same);
+                Write("HAVING ");
+                Visit(select.Having);
+            }
+
             if (select.OrderBy != null)
             {
                 WriteOrders(select);

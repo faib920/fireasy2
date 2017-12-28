@@ -65,7 +65,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         var newAlias = new TableAlias();
                         var pc = ColumnProjector.ProjectColumns(QueryUtility.CanBeColumnExpression, newProjector, newOuterSelect.Columns, newAlias, newOuterSelect.Alias, newInnerSelect.Alias);
                         var join = new JoinExpression(JoinType.OuterApply, newOuterSelect, newInnerSelect, null);
-                        var joinedSelect = new SelectExpression(newAlias, pc.Columns, join, null, null, null, proj.IsSingleton, null, null, null, false);
+                        var joinedSelect = new SelectExpression(newAlias, pc.Columns, join, null, null, null, proj.IsSingleton, null, null, null, null, false);
 
                         // apply client-join treatment recursively
                         currentSelect = joinedSelect;

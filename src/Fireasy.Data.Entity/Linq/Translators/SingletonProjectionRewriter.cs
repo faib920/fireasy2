@@ -64,7 +64,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 if (isDistinct)
                 {
                     var newPc = ColumnProjector.ProjectColumns(QueryUtility.CanBeColumnExpression, proj.Projector, null, currentSelect.Alias, proj.Select.Alias);
-                    currentSelect = new SelectExpression(currentSelect.Alias, newPc.Columns, currentSelect, null, null, null, isDistinct, null, null, null, false);
+                    currentSelect = new SelectExpression(currentSelect.Alias, newPc.Columns, currentSelect, null, null, null, isDistinct, null, null, null, null, false);
                     return Visit(newPc.Projector);
                 }
 
@@ -97,14 +97,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
             if (select != null && select.IsDistinct)
             {
                 isDistinct = true;
-                left = select.Update(select.From, select.Where, select.OrderBy, select.GroupBy, select.Skip, select.Take, select.Segment, false, select.Columns, select.IsReverse);
+                left = select.Update(select.From, select.Where, select.OrderBy, select.GroupBy, select.Skip, select.Take, select.Segment, false, select.Columns, select.Having, select.IsReverse);
             }
 
             select = right as SelectExpression;
             if (select != null && select.IsDistinct)
             {
                 isDistinct = true;
-                right = select.Update(select.From, select.Where, select.OrderBy, select.GroupBy, select.Skip, select.Take, select.Segment, false, select.Columns, select.IsReverse);
+                right = select.Update(select.From, select.Where, select.OrderBy, select.GroupBy, select.Skip, select.Take, select.Segment, false, select.Columns, select.Having, select.IsReverse);
             }
 
             return new JoinExpression(JoinType.OuterApply, left, right, null);

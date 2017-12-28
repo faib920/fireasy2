@@ -41,7 +41,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     aggColumns.Add(cd);
                 }
 
-                return new SelectExpression(select.Alias, aggColumns, select.From, select.Where, select.OrderBy, select.GroupBy, select.IsDistinct, select.Skip, select.Take, select.Segment, select.IsReverse);
+                return new SelectExpression(select.Alias, aggColumns, select.From, select.Where, select.OrderBy, select.GroupBy, select.IsDistinct, select.Skip, select.Take, select.Segment, select.Having, select.IsReverse);
             }
 
             return select;

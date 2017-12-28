@@ -96,7 +96,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
                 if (orderings != select.OrderBy || columns != select.Columns || select.IsReverse)
                 {
-                    select = new SelectExpression(select.Alias, columns, select.From, select.Where, orderings, select.GroupBy, select.IsDistinct, select.Skip, select.Take, select.Segment, false);
+                    select = new SelectExpression(select.Alias, columns, select.From, select.Where, orderings, select.GroupBy, select.IsDistinct, select.Skip, select.Take, select.Segment, select.Having, false);
                 }
 
                 return select;

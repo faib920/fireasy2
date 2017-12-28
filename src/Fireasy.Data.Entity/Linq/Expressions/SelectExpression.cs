@@ -24,7 +24,9 @@ namespace Fireasy.Data.Entity.Linq.Expressions
             Expression skip,
             Expression take,
             Expression segment,
-            bool reverse)
+            Expression having,
+            bool reverse
+            )
             : base(DbExpressionType.Select, typeof(void), alias)
         {
             Columns = columns.ToReadOnly();
@@ -36,6 +38,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
             Take = take;
             Skip = skip;
             Segment = segment;
+            Having = having;
             IsReverse = reverse;
         }
 
@@ -45,9 +48,10 @@ namespace Fireasy.Data.Entity.Linq.Expressions
             Expression from,
             Expression where,
             IEnumerable<OrderExpression> orderBy,
-            IEnumerable<Expression> groupBy
+            IEnumerable<Expression> groupBy,
+            Expression having
             )
-            : this(alias, columns, from, where, orderBy, groupBy, false, null, null, null, false)
+            : this(alias, columns, from, where, orderBy, groupBy, false, null, null, null, having, false)
         {
         }
 
@@ -55,7 +59,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
             TableAlias alias, IEnumerable<ColumnDeclaration> columns,
             Expression from, Expression where
             )
-            : this(alias, columns, from, where, null, null)
+            : this(alias, columns, from, where, null, null, null)
         {
         }
 
@@ -83,6 +87,11 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// 获取分组表达式集合。
         /// </summary>
         public ReadOnlyCollection<Expression> GroupBy { get; private set; }
+
+        /// <summary>
+        /// 获取 Having 表达式。
+        /// </summary>
+        public Expression Having { get; private set; }
 
         /// <summary>
         /// 获取是否使用 Distinct 关键字。
@@ -126,6 +135,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
             Expression segment,
             bool isDistinct,
             IEnumerable<ColumnDeclaration> columns,
+            Expression having,
             bool reverse
             )
         {
@@ -139,9 +149,10 @@ namespace Fireasy.Data.Entity.Linq.Expressions
                 || columns != Columns
                 || segment != Segment
                 || reverse != IsReverse
+                || having != Having
                 )
             {
-                return new SelectExpression(Alias, columns, from, where, orderBy, groupBy, isDistinct, skip, take, segment, reverse);
+                return new SelectExpression(Alias, columns, from, where, orderBy, groupBy, isDistinct, skip, take, segment, having, reverse);
             }
             return this;
         }
@@ -150,7 +161,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         {
             if (IsReverse != isReverse)
             {
-                return new SelectExpression(Alias, Columns, From, Where, OrderBy, GroupBy, IsDistinct, Skip, Take, Segment, isReverse);
+                return new SelectExpression(Alias, Columns, From, Where, OrderBy, GroupBy, IsDistinct, Skip, Take, Segment, Having, isReverse);
             }
 
             return this;

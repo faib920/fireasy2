@@ -44,13 +44,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 }
 
                 return select.Update(select.From, where, select.OrderBy, select.GroupBy, select.Skip, select.Take,
-                        select.Segment, select.IsDistinct, select.Columns, select.IsReverse);
+                        select.Segment, select.IsDistinct, select.Columns, select.Having, select.IsReverse);
             }
             else if (select.From != null)
             {
                 var from = base.Visit(select.From);
                 return select.Update(from, select.Where, select.OrderBy, select.GroupBy, select.Skip, select.Take,
-                        select.Segment, select.IsDistinct, select.Columns, select.IsReverse);
+                        select.Segment, select.IsDistinct, select.Columns, select.Having, select.IsReverse);
             }
 
             return select;

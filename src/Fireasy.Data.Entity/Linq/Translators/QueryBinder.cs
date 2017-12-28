@@ -622,7 +622,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var alias = GetNextAlias();
             var pc = ProjectColumns(projection.Projector, alias, projection.Select.Alias);
             return new ProjectionExpression(
-                new SelectExpression(alias, pc.Columns, projection.Select, null, orderings.AsReadOnly(), null),
+                new SelectExpression(alias, pc.Columns, projection.Select, null, orderings.AsReadOnly(), null, null),
                 pc.Projector
                 );
         }
@@ -759,7 +759,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
 
             return new ProjectionExpression(
-                new SelectExpression(alias, pc.Columns, projection.Select, null, null, groupExprs),
+                new SelectExpression(alias, pc.Columns, projection.Select, null, null, groupExprs, null),
                 pc.Projector
                 );
         }
@@ -1203,7 +1203,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var alias = GetNextAlias();
             var pc = ProjectColumns(projection.Projector, alias, projection.Select.Alias);
             return new ProjectionExpression(
-                new SelectExpression(alias, pc.Columns, projection.Select, null, null, null, true, null, null, null, false),
+                new SelectExpression(alias, pc.Columns, projection.Select, null, null, null, true, null, null, null, null, false),
                 pc.Projector
                 );
         }
@@ -1218,7 +1218,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             take = Visit(take);
             var select = projection.Select;
-            return projection.Update(select.Update(select.From, select.Where, select.OrderBy, select.GroupBy, select.Skip, take, select.Segment, select.IsDistinct, select.Columns, select.IsReverse),
+            return projection.Update(select.Update(select.From, select.Where, select.OrderBy, select.GroupBy, select.Skip, take, select.Segment, select.IsDistinct, select.Columns, select.Having, select.IsReverse),
                 projection.Projector, projection.Aggregator);
             /*
             var alias = GetNextAlias();
@@ -1257,7 +1257,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             skip = Visit(skip);
             var select = projection.Select;
-            return projection.Update(select.Update(select.From, select.Where, select.OrderBy, select.GroupBy, skip, select.Take, select.Segment, select.IsDistinct, select.Columns, select.IsReverse),
+            return projection.Update(select.Update(select.From, select.Where, select.OrderBy, select.GroupBy, skip, select.Take, select.Segment, select.IsDistinct, select.Columns, select.Having, select.IsReverse),
                 projection.Projector, projection.Aggregator);
             /*
             var alias = GetNextAlias();
@@ -1283,7 +1283,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 var c = (segment as ConstantExpression).Value as IDataSegment;
                 var exp = new SegmentExpression(c);
                 var select = projection.Select;
-                return projection.Update(select.Update(select.From, select.Where, select.OrderBy, select.GroupBy, null, null, exp, select.IsDistinct, select.Columns, select.IsReverse),
+                return projection.Update(select.Update(select.From, select.Where, select.OrderBy, select.GroupBy, null, null, exp, select.IsDistinct, select.Columns, select.Having, select.IsReverse),
                     projection.Projector, projection.Aggregator);
             }
             return projection;
@@ -1312,7 +1312,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 var alias = this.GetNextAlias();
                 ProjectedColumns pc = this.ProjectColumns(projection.Projector, alias, projection.Select.Alias);
                 projection = new ProjectionExpression(
-                    new SelectExpression(alias, pc.Columns, projection.Select, where, null, null, false, null, logicalDeleteExp, null, isLast),
+                    new SelectExpression(alias, pc.Columns, projection.Select, where, null, null, false, null, logicalDeleteExp, null, null, isLast),
                     pc.Projector
                     );
             }

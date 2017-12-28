@@ -704,6 +704,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 WriteGroups(select);
             }
+            if (select.Having != null)
+            {
+                WriteLine(Indentation.Same);
+                Write("HAVING ");
+                VisitPredicate(select.Where);
+            }
             if (select.OrderBy != null)
             {
                 WriteOrders(select);

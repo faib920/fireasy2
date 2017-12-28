@@ -122,13 +122,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var groupbys = VisitMemberAndExpressionList(select.GroupBy);
             var orderbys = VisitOrderBy(select.OrderBy);
             var where = Visit(select.Where);
+            var having = Visit(select.Having);
 
             var from = Visit(select.From);
 
             ClearColumnsUsed(select.Alias);
 
             //构成新的查询表达式
-            select = select.Update(from, where, orderbys, groupbys, skip, take, select.Segment, select.IsDistinct, columns, select.IsReverse);
+            select = select.Update(from, where, orderbys, groupbys, skip, take, select.Segment, select.IsDistinct, columns, having, select.IsReverse);
 
             retainAllColumns = wasRetained;
 

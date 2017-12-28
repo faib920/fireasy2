@@ -17,7 +17,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
     {
         internal static SelectExpression SetColumns(this SelectExpression select, IEnumerable<ColumnDeclaration> columns)
         {
-            return new SelectExpression(select.Alias, columns.OrderBy(c => c.Name), select.From, select.Where, select.OrderBy, select.GroupBy, select.IsDistinct, select.Skip, select.Take, select.Segment, select.IsReverse);
+            return new SelectExpression(select.Alias, columns.OrderBy(c => c.Name), select.From, select.Where, select.OrderBy, select.GroupBy, select.IsDistinct, select.Skip, select.Take, select.Segment, select.Having, select.IsReverse);
         }
 
         internal static SelectExpression AddColumn(this SelectExpression select, ColumnDeclaration column)
@@ -78,17 +78,17 @@ namespace Fireasy.Data.Entity.Linq.Expressions
 
         internal static SelectExpression SetDistinct(this SelectExpression select, bool isDistinct)
         {
-            return select.IsDistinct != isDistinct ? new SelectExpression(select.Alias, select.Columns, select.From, select.Where, select.OrderBy, select.GroupBy, isDistinct, select.Skip, select.Take, select.Segment, select.IsReverse) : select;
+            return select.IsDistinct != isDistinct ? new SelectExpression(select.Alias, select.Columns, select.From, select.Where, select.OrderBy, select.GroupBy, isDistinct, select.Skip, select.Take, select.Segment, select.Having, select.IsReverse) : select;
         }
 
         internal static SelectExpression SetWhere(this SelectExpression select, Expression where)
         {
-            return where != select.Where ? new SelectExpression(select.Alias, select.Columns, select.From, where, select.OrderBy, select.GroupBy, select.IsDistinct, select.Skip, select.Take, select.Segment, select.IsReverse) : select;
+            return where != select.Where ? new SelectExpression(select.Alias, select.Columns, select.From, where, select.OrderBy, select.GroupBy, select.IsDistinct, select.Skip, select.Take, select.Segment, select.Having, select.IsReverse) : select;
         }
 
         internal static SelectExpression SetOrderBy(this SelectExpression select, IEnumerable<OrderExpression> orderBy)
         {
-            return new SelectExpression(select.Alias, select.Columns, select.From, select.Where, orderBy, select.GroupBy, select.IsDistinct, select.Skip, select.Take, select.Segment, select.IsReverse);
+            return new SelectExpression(select.Alias, select.Columns, select.From, select.Where, orderBy, select.GroupBy, select.IsDistinct, select.Skip, select.Take, select.Segment, select.Having, select.IsReverse);
         }
 
         internal static SelectExpression AddOrderExpression(this SelectExpression select, OrderExpression ordering)
@@ -113,7 +113,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
 
         internal static SelectExpression SetGroupBy(this SelectExpression select, IEnumerable<Expression> groupBy)
         {
-            return new SelectExpression(select.Alias, select.Columns, select.From, select.Where, select.OrderBy, groupBy, select.IsDistinct, select.Skip, select.Take, select.Segment, select.IsReverse);
+            return new SelectExpression(select.Alias, select.Columns, select.From, select.Where, select.OrderBy, groupBy, select.IsDistinct, select.Skip, select.Take, select.Segment, select.Having, select.IsReverse);
         }
 
         internal static SelectExpression AddGroupExpression(this SelectExpression select, Expression expression)
@@ -138,12 +138,12 @@ namespace Fireasy.Data.Entity.Linq.Expressions
 
         internal static SelectExpression SetSkip(this SelectExpression select, Expression skip)
         {
-            return skip != select.Skip ? new SelectExpression(select.Alias, select.Columns, select.From, select.Where, select.OrderBy, select.GroupBy, select.IsDistinct, skip, select.Take, select.Segment, select.IsReverse) : select;
+            return skip != select.Skip ? new SelectExpression(select.Alias, select.Columns, select.From, select.Where, select.OrderBy, select.GroupBy, select.IsDistinct, skip, select.Take, select.Segment, select.Having, select.IsReverse) : select;
         }
 
         internal static SelectExpression SetTake(this SelectExpression select, Expression take)
         {
-            return take != select.Take ? new SelectExpression(select.Alias, select.Columns, select.From, select.Where, select.OrderBy, select.GroupBy, select.IsDistinct, select.Skip, take, select.Segment, select.IsReverse) : select;
+            return take != select.Take ? new SelectExpression(select.Alias, select.Columns, select.From, select.Where, select.OrderBy, select.GroupBy, select.IsDistinct, select.Skip, take, select.Segment, select.Having, select.IsReverse) : select;
         }
 
         internal static SelectExpression AddRedundantSelect(this SelectExpression select, TableAlias newAlias)
@@ -155,13 +155,13 @@ namespace Fireasy.Data.Entity.Linq.Expressions
                         newAlias, d.Name, 
                         d.Expression is ColumnExpression ? ((ColumnExpression)d.Expression).MapInfo : null
                         )));
-            var newFrom = new SelectExpression(newAlias, select.Columns, select.From, select.Where, select.OrderBy, select.GroupBy, select.IsDistinct, select.Skip, select.Take, select.Segment, select.IsReverse);
-            return new SelectExpression(select.Alias, newColumns, newFrom, null, null, null, false, null, null, null, false);
+            var newFrom = new SelectExpression(newAlias, select.Columns, select.From, select.Where, select.OrderBy, select.GroupBy, select.IsDistinct, select.Skip, select.Take, select.Segment, select.Having, select.IsReverse);
+            return new SelectExpression(select.Alias, newColumns, newFrom, null, null, null, false, null, null, null, null, false);
         }
 
         internal static SelectExpression SetFrom(this SelectExpression select, Expression from)
         {
-            return select.From != from ? new SelectExpression(select.Alias, select.Columns, from, select.Where, select.OrderBy, select.GroupBy, select.IsDistinct, select.Skip, select.Take, select.Segment, select.IsReverse) : select;
+            return select.From != from ? new SelectExpression(select.Alias, select.Columns, from, select.Where, select.OrderBy, select.GroupBy, select.IsDistinct, select.Skip, select.Take, select.Segment, select.Having, select.IsReverse) : select;
         }
 
         private static Expression GetOuterJoinTest(SelectExpression select)
