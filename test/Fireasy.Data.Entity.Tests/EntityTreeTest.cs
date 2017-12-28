@@ -102,5 +102,35 @@ namespace Fireasy.Data.Entity.Tests
             }
         }
 
+        [TestMethod]
+        public void TestMove()
+        {
+            using (var db = new DbContext())
+            {
+                var rep = db.CreateTreeRepository<Depts>();
+                //var dept = db.Depts.FirstOrDefault(s => s.DeptName == "昆明");
+                var dept = Depts.New().Normalize(3L);
+                dept.DeptName = "aaaa";
+                var parent = db.Depts.FirstOrDefault(s => s.DeptName == "四川");
+
+                rep.Move(dept, parent);
+
+                db.Depts.Update(dept);
+            }
+        }
+
+        [TestMethod]
+        public void TestMoveToRoot()
+        {
+            using (var db = new DbContext())
+            {
+                var rep = db.CreateTreeRepository<Depts>();
+                var dept = db.Depts.FirstOrDefault(s => s.DeptName == "昆明");
+
+                rep.Move(dept, null);
+
+                db.Depts.Update(dept);
+            }
+        }
     }
 }

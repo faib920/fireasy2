@@ -9,7 +9,7 @@ namespace Fireasy.Data.Entity.Tests.Models
     /// </summary>
     [Serializable]
     [EntityMapping("Depts", Description = "")]
-    [EntityTreeMapping(InnerSign = "DeptCode")]
+    [EntityTreeMapping(InnerSign = nameof(DeptCode), Name = nameof(DeptName), FullName = nameof(FullName))]
     [MetadataType(typeof(CategoriesMetadata))]
     public partial class Depts : LightEntity<Depts>, ITreeNode<Depts>
     {
@@ -26,6 +26,13 @@ namespace Fireasy.Data.Entity.Tests.Models
 
         [PropertyMapping(ColumnName = "DeptName", Description = "", Length = 15, IsNullable = false)]
         public virtual string DeptName { get; set; }
+
+        /// <summary>
+        /// 获取或设置。
+        /// </summary>
+
+        [PropertyMapping(ColumnName = "FullName", Description = "", Length = 50, IsNullable = false)]
+        public virtual string FullName { get; set; }
 
         /// <summary>
         /// 获取或设置。

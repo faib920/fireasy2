@@ -267,6 +267,23 @@ namespace Fireasy.Data.Entity.Tests
         }
 
         [TestMethod]
+        public void TestJoinExtendAs()
+        {
+            using (var db = new DbContext())
+            {
+                var list = db.OrderDetails
+                    .Join(db.Products.DefaultIfEmpty(), 
+                        s => s.ProductID, s => s.ProductID, (s, t) => new { detail = s, product = t })
+                    .Select(s => s.detail.ExtendAs<OrderDetailsEx>(() => new OrderDetailsEx
+                        {
+                            ProductName = s.product.ProductName
+                        }))
+                    .ToList();
+                Assert.AreEqual("Queso Cabrales", list[0].ProductName);
+            }
+        }
+
+        [TestMethod]
         public void TestExtendAs1()
         {
             using (var db = new DbContext())
@@ -561,18 +578,18 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var db = new DbContext())
             {
-                var list = new List<Depts>();
+                var list = new List<OrderDetails>();
 
                 for (var i = 0; i < 3; i++)
                 {
-                    var d = Depts.New();
-                    d.DeptName = "测试" + i;
+                    var d = OrderDetails.New();
+                    d.OrderID = 1;
+                    d.ProductID = 1;
+                    d.Orders = null;
                     list.Add(d);
                 }
 
-                list[1].DeptCode = "test";
-
-                db.Depts.Batch(list, (u, s) => u.Insert(s));
+                db.OrderDetails.Batch(list, (u, s) => u.Insert(s));
                 Console.WriteLine(11);
             }
         }

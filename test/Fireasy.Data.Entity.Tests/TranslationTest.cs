@@ -592,6 +592,15 @@ namespace Fireasy.Data.Entity.Tests
         }
 
         [TestMethod()]
+        public void TestOrderByGroupHaving()
+        {
+            // note: order-by is preserved within grouped sub-collections
+            TestQuery(
+                db.Orders.OrderBy(o => o.OrderID).GroupBy(o => o.CustomerID).Where(s => s.Count() > 0 || s.Sum(t => t.Freight) > 0).Select(s => s.Sum(t => t.Freight))
+                );
+        }
+
+        [TestMethod()]
         public void TestSumWithNoArg()
         {
             TestQuery(

@@ -28,7 +28,7 @@ namespace Fireasy.Data.Tests
             using (var db = DatabaseFactory.CreateDatabase())
             {
                 var parameters = new ParameterCollection();
-                parameters.Add("city", "London");
+                parameters.Add("city", "London111");
                 var task = db.ExecuteNonQueryAsync((SqlCommand)"delete from customers where city = @city", parameters);
                 task.ContinueWith(t =>
                     {
@@ -36,6 +36,7 @@ namespace Fireasy.Data.Tests
                     });
 
                 Console.WriteLine("后续代码");
+                DoSomthings();
             }
         }
 
@@ -66,12 +67,23 @@ namespace Fireasy.Data.Tests
         }
 
         [TestMethod]
+        public void TestExecuteScalrWithParameters()
+        {
+            using (var db = DatabaseFactory.CreateDatabase())
+            {
+                var parameters = new ParameterCollection(new { city = "London" });
+                var result = db.ExecuteScalar<string>((SqlCommand)"select city from customers where city = @city and city <> @city", parameters);
+                Console.WriteLine($"执行完毕 结果为{result}");
+            }
+        }
+
+        [TestMethod]
         public void TestExecuteScalrAsync()
         {
             using (var db = DatabaseFactory.CreateDatabase())
             {
                 var parameters = new ParameterCollection();
-                parameters.Add("city", "London");
+                parameters.Add("city", "Berlin");
                 var task = db.ExecuteScalarAsync<string>((SqlCommand)"select city from customers where city = @city", parameters);
                 task.ContinueWith(t =>
                     {
@@ -79,7 +91,16 @@ namespace Fireasy.Data.Tests
                     });
 
                 Console.WriteLine("后续代码");
+                DoSomthings();
             }
+        }
+
+        private void DoSomthings()
+        {
+            Console.WriteLine("后续代码");
+            Console.WriteLine("后续代码");
+            Console.WriteLine("后续代码");
+            Console.WriteLine("后续代码");
         }
 
         [TestMethod]
@@ -148,7 +169,7 @@ namespace Fireasy.Data.Tests
             using (var db = DatabaseFactory.CreateDatabase())
             {
                 var pager = new DataPager(5, 0);
-                var result = db.ExecuteEnumerable((SqlCommand)"select * from customers");
+                var result = db.ExecuteEnumerable((SqlCommand)"select * from customers").ToList();
                 Console.WriteLine($"执行完毕 结果为{result.Count()}");
             }
         }
@@ -227,13 +248,16 @@ namespace Fireasy.Data.Tests
         }
 
         [TestMethod]
-        public async Task TestExecuteEnumerableAsync()
+        public void TestExecuteEnumerableAsync()
         {
             using (var db = DatabaseFactory.CreateDatabase())
             {
                 var paper = new DataPager(2, 0);
-                var result = await db.ExecuteEnumerableAsync<Customer>((SqlCommand)"select * from customers", paper);
-                Console.WriteLine($"执行完毕 结果为{result.Count()}");
+                var task = db.ExecuteEnumerableAsync<Customer>((SqlCommand)"select * from customers", paper);
+                task.ContinueWith(t =>
+                {
+                    Console.WriteLine($"执行完毕 结果为{t.Result.Count()}");
+                });
 
                 Console.WriteLine("后续代码");
             }
