@@ -14,6 +14,9 @@
     <Product>Fireasy EasyUI Extensions</Product>
     <Version>2.0.0</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Description>EasyUI for Asp.Net 扩展库。</Description>
+    <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
+    <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">
