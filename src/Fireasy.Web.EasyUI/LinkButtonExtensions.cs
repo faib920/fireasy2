@@ -5,8 +5,14 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System.Web;
+using Fireasy.Web.EasyUI;
+using Fireasy.Web.Mvc;
+#if !NETSTANDARD2_0
 using System.Web.Mvc;
+#else
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+#endif
 
 namespace Fireasy.Web.EasyUI
 {
@@ -20,13 +26,19 @@ namespace Fireasy.Web.EasyUI
         /// <param name="onClick">单击时执行的 js 脚本。</param>
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
-        public static HtmlString LinkButton(this System.Web.Mvc.HtmlHelper htmlHelper, string id, string onClick, LinkButtonSettings settings = null)
+        public static ExtendHtmlString LinkButton(this
+#if !NETSTANDARD2_0
+            HtmlHelper htmlHelper
+#else
+            IHtmlHelper htmlHelper
+#endif
+            , string id, string onClick, LinkButtonSettings settings = null)
         {
-            var builder = new TagBuilder("span");
+            var builder = new TagBuildWrapper("span");
             builder.AddCssClass("easyui-linkbutton");
             builder.MergeAttribute("data-options", SettingsSerializer.Serialize(settings));
             builder.GenerateId(id);
-            return new HtmlString(builder.ToString(TagRenderMode.Normal));
+            return new ExtendHtmlString(builder);
         }
     }
 }

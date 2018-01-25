@@ -5,34 +5,20 @@
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
-    <FileVersion>2.0.0.46080</FileVersion>
-    <Copyright>Copyright © Fireasy 2013-2017</Copyright>
-    <AssemblyVersion>2.0.0.46080</AssemblyVersion>
+    <FileVersion>2.0.0.46082</FileVersion>
+    <Copyright>Copyright © Fireasy 2013-2018</Copyright>
+    <AssemblyVersion>2.0.0.46082</AssemblyVersion>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Entity Framework</Product>
-    <Version>2.0.0</Version>
+    <Version>2.0.2</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Description>类似于 Entity framework，也提供了 LINQ to Entities 大众化的查询方法，相比之下更容易使用多种数据库，比如SqlServer、Oracle、MySQL、SQLite、PostgreSQL等等。独创性地提供树持久化方法，使用AOP代理技术管理实体对象的状态变更，提供更贴合SQL语言的Update、Delete语句。</Description>
+    <Description>类似于 Entity framework，也提供了 LINQ to Entities 大众化的查询方法，相比之下更容易使用多种数据库，比如SqlServer、Oracle、MySQL、SQLite、PostgreSQL等等。独创性地提供树持久化方法，使用AOP代理技术管理实体对象的状态变更，提供更贴合SQL语言的Update、Delete语句。
+
+示例源码：https://github.com/faib920/zero</Description>
     <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net35|AnyCPU'">
-    <DocumentationFile>bin\Debug\net35\Fireasy.Data.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">
-    <DocumentationFile>bin\Debug\net45\Fireasy.Data.Entity.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net40|AnyCPU'">
-    <DocumentationFile>bin\Debug\net40\Fireasy.Data.Entity.xml</DocumentationFile>
-  </PropertyGroup>
-  
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net46|AnyCPU'">
-    <DocumentationFile>bin\Debug\net46\Fireasy.Data.Entity.xml</DocumentationFile>
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net35|AnyCPU'">
@@ -58,10 +44,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net47|AnyCPU'">
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <DocumentationFile>..\..\Release\net47\Fireasy.Data.Entity.xml</DocumentationFile>
-    <OutputPath>..\..\Release\</OutputPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netcoreapp2.0|AnyCPU'">
-    <DocumentationFile>..\..\Release\netcoreapp2.0\Fireasy.Data.Entity.xml</DocumentationFile>
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
   
@@ -114,4 +96,5 @@
   	<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.0.0" />
   </ItemGroup>
+
 </Project>

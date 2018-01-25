@@ -80,7 +80,7 @@ namespace Fireasy.Common.Ioc
             {
                 if (reg.ServiceType != null && reg.ComponentType != null)
                 {
-                    container.Register(reg.ServiceType, reg.ComponentType, reg.Singleton ? Lifetime.Singleton : Lifetime.Instance);
+                    container.Register(reg.ServiceType, reg.ComponentType, reg.Singleton ? Lifetime.Singleton : Lifetime.Transient);
                 }
             }
         }

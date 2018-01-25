@@ -7,8 +7,14 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Linq.Expressions;
+using Fireasy.Web.EasyUI;
+using Fireasy.Web.Mvc;
+#if !NETSTANDARD2_0
 using System.Web.Mvc;
-using System.Web;
+#else
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+#endif
 
 namespace Fireasy.Web.EasyUI
 {
@@ -21,14 +27,20 @@ namespace Fireasy.Web.EasyUI
         /// <param name="exp">属性名或使用 txt 作为前缀的 ID 名称。</param>
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
-        public static HtmlString TimeSpinner(this HtmlHelper htmlHelper, string exp, TimeSpinnerSettings settings = null)
+        public static ExtendHtmlString TimeSpinner(this
+#if !NETSTANDARD2_0
+            HtmlHelper htmlHelper
+#else
+            IHtmlHelper htmlHelper
+#endif
+            , string exp, TimeSpinnerSettings settings = null)
         {
             var builder = new EasyUITagBuilder("input", "easyui-timespinner", settings);
             builder.MergeAttribute("name", exp);
             builder.MergeAttribute("data-options", SettingsSerializer.Serialize(settings));
             builder.AddCssClass("form-input");
             builder.GenerateId("txt" + exp);
-            return new HtmlString(builder.ToString(TagRenderMode.Normal));
+            return new ExtendHtmlString(builder);
         }
 
         /// <summary>
@@ -40,10 +52,15 @@ namespace Fireasy.Web.EasyUI
         /// <param name="expression">指定绑定属性的表达式。</param>
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
-        public static HtmlString TimeSpinner<TModel, TProperty>(this HtmlHelper<TModel> htmlHelper, Expression<Func<TModel, TProperty>> expression, TimeSpinnerSettings settings = null)
+        public static ExtendHtmlString TimeSpinner<TModel, TProperty>(this
+#if !NETSTANDARD2_0
+            HtmlHelper<TModel> htmlHelper
+#else
+            IHtmlHelper<TModel> htmlHelper
+#endif
+            , Expression<Func<TModel, TProperty>> expression, TimeSpinnerSettings settings = null)
         {
-            var metadata = ModelMetadata.FromLambdaExpression(expression, htmlHelper.ViewData);
-            var propertyName = metadata.PropertyName;
+            var propertyName = MetadataHelper.GetPropertyName(expression);
             settings.Bind(typeof(TModel), propertyName);
 
             var builder = new EasyUITagBuilder("input", "easyui-timespinner", settings);
@@ -51,7 +68,7 @@ namespace Fireasy.Web.EasyUI
             builder.MergeAttribute("data-options", SettingsSerializer.Serialize(settings));
             builder.AddCssClass("form-input");
             builder.GenerateId("txt" + propertyName);
-            return new HtmlString(builder.ToString(TagRenderMode.Normal));
+            return new ExtendHtmlString(builder);
         }
     }
 }

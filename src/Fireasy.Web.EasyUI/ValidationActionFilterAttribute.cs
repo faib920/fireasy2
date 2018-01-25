@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+#if !NETSTANDARD2_0
 using Fireasy.Common.ComponentModel;
 using Fireasy.Data.Entity.Validation;
 using System.Collections;
@@ -52,3 +53,4 @@ namespace Fireasy.Web.EasyUI
         }
     }
 }
+#endif

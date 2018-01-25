@@ -31,11 +31,11 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="expression"></param>
         /// <param name="func">当缓存不存在时，创建缓存数据的函数。</param>
         /// <returns></returns>
-        internal static Expression<Func<IDatabase, object>> TryGet(Expression expression, Func<Expression<Func<IDatabase, object>>> func)
+        internal static Delegate TryGetDelegate(Expression expression, Func<LambdaExpression> func)
         {
             if (!CachaebleChecker.Check(expression))
             {
-                return func();
+                return func().Compile();
             }
 
             var section = ConfigurationUnity.GetSection<TranslatorConfigurationSection>();
@@ -43,29 +43,30 @@ namespace Fireasy.Data.Entity.Linq
 
             if (!option.ParseCacheEnabled)
             {
-                return func();
+                return func().Compile();
             }
 
             ClearExpiredKeys();
 
-            var lazy = new Lazy<CacheItem>(() => new CacheItem
+            var lazy = new Lazy<CacheItem>(() =>
                 {
-                    Expression = func(),
-                    Expired = DateTime.Now.AddSeconds(option.ParseCacheExpired)
+                    //将表达式内的 Segment 替换成参数
+                    var segParExp = Expression.Parameter(typeof(IDataSegment), "g");
+                    var lambdaExp = func() as LambdaExpression;
+                    var newExp = SegmentReplacer.Repalce(lambdaExp.Body, segParExp);
+                    lambdaExp = Expression.Lambda(newExp, lambdaExp.Parameters[0], segParExp);
+
+                    return new CacheItem
+                        {
+                            Delegate = lambdaExp.Compile(),
+                            Expired = DateTime.Now.AddSeconds(option.ParseCacheExpired)
+                        };
                 });
 
             var cacheKey = GetKey(expression);
             var result = cache.GetOrAdd(cacheKey, k => lazy.Value);
 
-            //在现有的表达式中查找 IDataSegment，去替换缓存中的 IDataSegment
-            //原因是前端需要获得分页信息，如果不进行替换，将无法返回信息
-            var segment = SegmentFinder.Find(expression);
-            if (segment != null)
-            {
-                result.Expression = (Expression<Func<IDatabase, object>>)SegmentReplacer.Repalce(result.Expression, segment);
-            }
-
-            return result.Expression;
+            return result.Delegate;
         }
 
         /// <summary>
@@ -83,9 +84,9 @@ namespace Fireasy.Data.Entity.Linq
         private class CacheItem
         {
             /// <summary>
-            /// 进行缓存的表达式。
+            /// 进行缓存的委托。
             /// </summary>
-            internal Expression<Func<IDatabase, object>> Expression { get; set; }
+            internal Delegate Delegate { get; set; }
 
             /// <summary>
             /// 过期时间。
@@ -149,51 +150,21 @@ namespace Fireasy.Data.Entity.Linq
         }
 
         /// <summary>
-        /// <see cref="IDataSegment"/> 查找器。
-        /// </summary>
-        private class SegmentFinder : Common.Linq.Expressions.ExpressionVisitor
-        {
-            private IDataSegment dataSegment;
-
-            /// <summary>
-        /// <see cref="IDataSegment"/> 查找器。
-            /// </summary>
-            /// <param name="expression"></param>
-            /// <returns></returns>
-            public static IDataSegment Find(Expression expression)
-            {
-                var replaer = new SegmentFinder();
-                replaer.Visit(expression);
-                return replaer.dataSegment;
-            }
-
-            protected override Expression VisitConstant(ConstantExpression constExp)
-            {
-                if (constExp.Value is IDataSegment)
-                {
-                    dataSegment = constExp.Value as IDataSegment;
-                }
-
-                return constExp;
-            }
-        }
-
-        /// <summary>
         /// <see cref="IDataSegment"/> 替换器。
         /// </summary>
         private class SegmentReplacer : Common.Linq.Expressions.ExpressionVisitor
         {
-            private IDataSegment dataSegment;
+            private ParameterExpression parExp;
 
             /// <summary>
-            /// 使用 <paramref name="segment"/> 替换表达式中的 <see cref="IDataSegment"/> 对象。
+            /// 使用 <paramref name="parExp"/> 替换表达式中的 <see cref="IDataSegment"/> 对象。
             /// </summary>
             /// <param name="expression"></param>
-            /// <param name="segment"></param>
+            /// <param name="parExp"></param>
             /// <returns></returns>
-            public static Expression Repalce(Expression expression, IDataSegment segment)
+            public static Expression Repalce(Expression expression, ParameterExpression parExp)
             {
-                var replaer = new SegmentReplacer { dataSegment = segment };
+                var replaer = new SegmentReplacer { parExp = parExp };
                 return replaer.Visit(expression);
             }
 
@@ -201,16 +172,11 @@ namespace Fireasy.Data.Entity.Linq
             {
                 if (constExp.Value is IDataSegment)
                 {
-                    //如果不相同则用新的 IDataSegment 替换
-                    if ((constExp.Value as IDataSegment) != dataSegment)
-                    {
-                        return Expression.Constant(dataSegment);
-                    }
+                    return parExp;
                 }
 
                 return constExp;
             }
         }
-
     }
 }

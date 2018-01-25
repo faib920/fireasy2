@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+#if !NETSTANDARD2_0
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Ioc;
 using System;
@@ -64,3 +65,4 @@ namespace Fireasy.Web.Mvc
         }
     }
 }
+#endif

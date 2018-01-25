@@ -8,7 +8,13 @@
 using Fireasy.Web.Mvc;
 using System;
 using System.Linq.Expressions;
+using Fireasy.Web.EasyUI;
+#if !NETSTANDARD2_0
 using System.Web.Mvc;
+#else
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+#endif
 
 namespace Fireasy.Web.EasyUI
 {
@@ -21,7 +27,13 @@ namespace Fireasy.Web.EasyUI
         /// <param name="exp">属性名或使用 txt 作为前缀的 ID 名称。</param>
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
-        public static ExtendHtmlString TextBox(this HtmlHelper htmlHelper, string exp, TextBoxSettings settings = null)
+        public static ExtendHtmlString TextBox(this
+#if !NETSTANDARD2_0
+            HtmlHelper htmlHelper
+#else
+            IHtmlHelper htmlHelper
+#endif
+            , string exp, TextBoxSettings settings = null)
         {
             settings = settings ?? new TextBoxSettings();
             var builder = new EasyUITagBuilder("input", "easyui-textbox", settings);
@@ -41,11 +53,16 @@ namespace Fireasy.Web.EasyUI
         /// <param name="expression">指定绑定属性的表达式。</param>
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
-        public static ExtendHtmlString TextBox<TModel, TProperty>(this HtmlHelper<TModel> htmlHelper, Expression<Func<TModel, TProperty>> expression, TextBoxSettings settings = null)
+        public static ExtendHtmlString TextBox<TModel, TProperty>(this
+#if !NETSTANDARD2_0
+            HtmlHelper<TModel> htmlHelper
+#else
+            IHtmlHelper<TModel> htmlHelper
+#endif
+            , Expression<Func<TModel, TProperty>> expression, TextBoxSettings settings = null)
         {
             settings = settings ?? new TextBoxSettings();
-            var metadata = ModelMetadata.FromLambdaExpression(expression, htmlHelper.ViewData);
-            var propertyName = metadata.PropertyName;
+            var propertyName = MetadataHelper.GetPropertyName(expression);
             settings.Bind(typeof(TModel), propertyName);
 
             var builder = new EasyUITagBuilder("input", "easyui-textbox", settings);
@@ -63,7 +80,13 @@ namespace Fireasy.Web.EasyUI
         /// <param name="exp">属性名或使用 txt 作为前缀的 ID 名称。</param>
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
-        public static ExtendHtmlString TextMultiBox(this HtmlHelper htmlHelper, string exp, TextBoxSettings settings = null)
+        public static ExtendHtmlString TextMultiBox(this
+#if !NETSTANDARD2_0
+            HtmlHelper htmlHelper
+#else
+            IHtmlHelper htmlHelper
+#endif
+            , string exp, TextBoxSettings settings = null)
         {
             settings = settings ?? new TextBoxSettings();
             settings.Multiline = true;
@@ -84,13 +107,18 @@ namespace Fireasy.Web.EasyUI
         /// <param name="expression">指定绑定属性的表达式。</param>
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
-        public static ExtendHtmlString TextMultiBox<TModel, TProperty>(this HtmlHelper<TModel> htmlHelper, Expression<Func<TModel, TProperty>> expression, TextBoxSettings settings = null)
+        public static ExtendHtmlString TextMultiBox<TModel, TProperty>(this
+#if !NETSTANDARD2_0
+            HtmlHelper<TModel> htmlHelper
+#else
+            IHtmlHelper<TModel> htmlHelper
+#endif
+            , Expression<Func<TModel, TProperty>> expression, TextBoxSettings settings = null)
         {
             settings = settings ?? new TextBoxSettings();
             settings.Multiline = true;
 
-            var metadata = ModelMetadata.FromLambdaExpression(expression, htmlHelper.ViewData);
-            var propertyName = metadata.PropertyName;
+            var propertyName = MetadataHelper.GetPropertyName(expression);
             settings.Bind(typeof(TModel), propertyName);
 
             var builder = new EasyUITagBuilder("textarea", "easyui-textbox", settings);
@@ -108,7 +136,13 @@ namespace Fireasy.Web.EasyUI
         /// <param name="exp">属性名或使用 txt 作为前缀的 ID 名称。</param>
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
-        public static ExtendHtmlString TextPasswordBox(this HtmlHelper htmlHelper, string exp, TextBoxSettings settings = null)
+        public static ExtendHtmlString TextPasswordBox(this
+#if !NETSTANDARD2_0
+            HtmlHelper htmlHelper
+#else
+            IHtmlHelper htmlHelper
+#endif
+            , string exp, TextBoxSettings settings = null)
         {
             settings = settings ?? new TextBoxSettings();
             settings.Type = "password";
@@ -128,13 +162,18 @@ namespace Fireasy.Web.EasyUI
         /// <param name="id">ID 属性值。</param>
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
-        public static ExtendHtmlString TextPasswordBox<TModel, TProperty>(this HtmlHelper<TModel> htmlHelper, Expression<Func<TModel, TProperty>> expression, TextBoxSettings settings = null)
+        public static ExtendHtmlString TextPasswordBox<TModel, TProperty>(this
+#if !NETSTANDARD2_0
+            HtmlHelper<TModel> htmlHelper
+#else
+            IHtmlHelper<TModel> htmlHelper
+#endif
+            , Expression<Func<TModel, TProperty>> expression, TextBoxSettings settings = null)
         {
             settings = settings ?? new TextBoxSettings();
             settings.Type = "password";
 
-            var metadata = ModelMetadata.FromLambdaExpression(expression, htmlHelper.ViewData);
-            var propertyName = metadata.PropertyName;
+            var propertyName = MetadataHelper.GetPropertyName(expression);
             settings.Bind(typeof(TModel), propertyName);
 
             var builder = new EasyUITagBuilder("input", "easyui-textbox", settings);

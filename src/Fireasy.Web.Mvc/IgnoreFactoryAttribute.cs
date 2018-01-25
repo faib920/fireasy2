@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+#if !NETSTANDARD2_0
 using System;
 
 namespace Fireasy.Web.Mvc
@@ -16,3 +17,4 @@ namespace Fireasy.Web.Mvc
     {
     }
 }
+#endif

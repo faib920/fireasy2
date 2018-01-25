@@ -36,10 +36,19 @@ namespace Fireasy.Common.Security
         /// <returns></returns>
         public virtual byte[] Encrypt(byte[] array)
         {
+#if NETSTANDARD2_0
+            var algorithm = new HashAlgorithmName(algorithmName);
+            using (var hasher = IncrementalHash.CreateHash(algorithm))
+            {
+                hasher.AppendData(array);
+                return hasher.GetHashAndReset();
+            }
+#else
             using (var algorithm = HashAlgorithm.Create(algorithmName))
             {
                 return algorithm.ComputeHash(array, 0, array.Length);
             }
+#endif
         }
 
         /// <summary>

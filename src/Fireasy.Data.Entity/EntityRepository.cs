@@ -127,7 +127,13 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Delete(params PropertyValue[] primaryValues)
         {
-            return repositoryProxy.Delete(primaryValues, true);
+            var ret = repositoryProxy.Delete(primaryValues, true);
+            if (ret > 0)
+            {
+                EntityPersistentSubscribePublisher.RaiseEvent<TEntity>(EntityPersistentEventType.AfterRemove);
+            }
+
+            return ret;
         }
 
         /// <summary>
@@ -138,7 +144,13 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Delete(PropertyValue[] primaryValues, bool logicalDelete = true)
         {
-            return repositoryProxy.Delete(primaryValues, logicalDelete);
+            var ret = repositoryProxy.Delete(primaryValues, logicalDelete);
+            if (ret > 0)
+            {
+                EntityPersistentSubscribePublisher.RaiseEvent<TEntity>(EntityPersistentEventType.AfterRemove);
+            }
+
+            return ret;
         }
 
         /// <summary>
@@ -149,7 +161,13 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Delete(object[] primaryValues, bool logicalDelete = true)
         {
-            return repositoryProxy.Delete(primaryValues, logicalDelete);
+            var ret = repositoryProxy.Delete(primaryValues, logicalDelete);
+            if (ret > 0)
+            {
+                EntityPersistentSubscribePublisher.RaiseEvent<TEntity>(EntityPersistentEventType.AfterRemove);
+            }
+
+            return ret;
         }
 
         /// <summary>
@@ -160,7 +178,13 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Delete(Expression<Func<TEntity, bool>> predicate, bool logicalDelete = true)
         {
-            return repositoryProxy.Delete(predicate, logicalDelete);
+            var ret = repositoryProxy.Delete(predicate, logicalDelete);
+            if (ret > 0)
+            {
+                EntityPersistentSubscribePublisher.RaiseEvent<TEntity>(EntityPersistentEventType.AfterRemove);
+            }
+
+            return ret;
         }
 
         /// <summary>
@@ -183,7 +207,13 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Update(TEntity entity, Expression<Func<TEntity, bool>> predicate)
         {
-            return repositoryProxy.Update(entity, predicate);
+            var ret = repositoryProxy.Update(entity, predicate);
+            if (ret > 0)
+            {
+                EntityPersistentSubscribePublisher.RaiseEvent<TEntity>(EntityPersistentEventType.AfterUpdate);
+            }
+
+            return ret;
         }
 
         /// <summary>
@@ -196,6 +226,7 @@ namespace Fireasy.Data.Entity
         {
             var entity = EntityProxyManager.GetType(typeof(TEntity)).New<TEntity>();
             entity.InitByExpression(factory);
+
             return Update(entity, predicate);
         }
 
@@ -207,7 +238,13 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Update(Expression<Func<TEntity, TEntity>> calculator, Expression<Func<TEntity, bool>> predicate)
         {
-            return repositoryProxy.Update(calculator, predicate);
+            var ret = repositoryProxy.Update(calculator, predicate);
+            if (ret > 0)
+            {
+                EntityPersistentSubscribePublisher.RaiseEvent<TEntity>(EntityPersistentEventType.AfterUpdate);
+            }
+
+            return ret;
         }
 
         /// <summary>

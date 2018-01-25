@@ -41,7 +41,7 @@ namespace Fireasy.Data.Entity
 
             return RegisterProperty(propertyInfo, typeof(TEntity), info);
         }
-        
+
         /// <summary>
         /// 注册基本的实体属性。
         /// </summary>
@@ -79,7 +79,7 @@ namespace Fireasy.Data.Entity
 
             return RegisterSupposedProperty(propertyInfo, typeof(TEntity), referenceProperty, options);
         }
-        
+
         /// <summary>
         /// 注册特殊的实体属性，这类属性为附加自实体间关系的不可持久化的属性。
         /// </summary>
@@ -189,14 +189,11 @@ namespace Fireasy.Data.Entity
         {
             foreach (var property in entityType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
-                if (property.DeclaringType == entityType)
+                //定义为 virtual
+                var getMth = property.GetGetMethod();
+                if (getMth != null && getMth.IsVirtual && !getMth.IsFinal)
                 {
-                    //定义为 virtual
-                    var getMth = property.GetGetMethod();
-                    if (getMth != null && getMth.IsVirtual && !getMth.IsFinal)
-                    {
-                        RegisterProperty(entityType, property);
-                    }
+                    RegisterProperty(entityType, property);
                 }
             }
         }
@@ -211,12 +208,12 @@ namespace Fireasy.Data.Entity
         private static IProperty RegisterProperty(PropertyInfo propertyInfo, Type entityType, PropertyMapInfo info = null)
         {
             var property = new GeneralProperty
-                {
-                    Name = propertyInfo.Name,
-                    Type = propertyInfo.PropertyType,
-                    EntityType = entityType,
-                    Info = InitPropertyInfo(info, propertyInfo)
-                };
+            {
+                Name = propertyInfo.Name,
+                Type = propertyInfo.PropertyType,
+                EntityType = entityType,
+                Info = InitPropertyInfo(info, propertyInfo)
+            };
 
             return RegisterProperty(entityType, property);
         }
@@ -237,57 +234,57 @@ namespace Fireasy.Data.Entity
                 if (referenceProperty.Type.IsEnum)
                 {
                     property = new EnumProperty
-                        {
-                            Name = propertyInfo.Name,
-                            Type = propertyInfo.PropertyType,
-                            EntityType = entityType,
-                            RelationType = referenceProperty.Type,
-                            Reference = referenceProperty,
-                            Info = InitRelatedPropertyInfo(propertyInfo),
-                            Options = options ?? RelationOptions.Default
-                        };
+                    {
+                        Name = propertyInfo.Name,
+                        Type = propertyInfo.PropertyType,
+                        EntityType = entityType,
+                        RelationType = referenceProperty.Type,
+                        Reference = referenceProperty,
+                        Info = InitRelatedPropertyInfo(propertyInfo),
+                        Options = options ?? RelationOptions.Default
+                    };
                 }
                 else
                 {
                     //引用属性
                     property = new ReferenceProperty
-                        {
-                            Name = propertyInfo.Name,
-                            Type = propertyInfo.PropertyType,
-                            EntityType = entityType,
-                            RelationType = referenceProperty.EntityType,
-                            Reference = referenceProperty,
-                            Info = InitRelatedPropertyInfo(propertyInfo),
-                            Options = options ?? RelationOptions.Default
-                        };
+                    {
+                        Name = propertyInfo.Name,
+                        Type = propertyInfo.PropertyType,
+                        EntityType = entityType,
+                        RelationType = referenceProperty.EntityType,
+                        Reference = referenceProperty,
+                        Info = InitRelatedPropertyInfo(propertyInfo),
+                        Options = options ?? RelationOptions.Default
+                    };
                 }
             }
             else if (typeof(IEntity).IsAssignableFrom(propertyInfo.PropertyType))
             {
                 //实体引用属性
                 property = new EntityProperty
-                    {
-                        RelationType = propertyInfo.PropertyType,
-                        Name = propertyInfo.Name,
-                        Type = propertyInfo.PropertyType,
-                        EntityType = entityType,
-                        Info = InitRelatedPropertyInfo(propertyInfo),
-                        Options = options ?? RelationOptions.Default
-                    };
+                {
+                    RelationType = propertyInfo.PropertyType,
+                    Name = propertyInfo.Name,
+                    Type = propertyInfo.PropertyType,
+                    EntityType = entityType,
+                    Info = InitRelatedPropertyInfo(propertyInfo),
+                    Options = options ?? RelationOptions.Default
+                };
             }
             else if (propertyInfo.PropertyType.IsGenericType &&
                 typeof(IEntitySet).IsAssignableFrom(propertyInfo.PropertyType))
             {
                 //实体集属性
                 property = new EntitySetProperty
-                    {
-                        RelationType = propertyInfo.PropertyType.GetGenericArguments()[0],
-                        Name = propertyInfo.Name,
-                        Type = propertyInfo.PropertyType,
-                        EntityType = entityType,
-                        Info = InitRelatedPropertyInfo(propertyInfo),
-                        Options = options ?? RelationOptions.Default
-                    };
+                {
+                    RelationType = propertyInfo.PropertyType.GetGenericArguments()[0],
+                    Name = propertyInfo.Name,
+                    Type = propertyInfo.PropertyType,
+                    EntityType = entityType,
+                    Info = InitRelatedPropertyInfo(propertyInfo),
+                    Options = options ?? RelationOptions.Default
+                };
             }
             else
             {
@@ -378,7 +375,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         private static bool IsNeedCorrectDefaultValue(IProperty property)
         {
-            return !PropertyValue.IsEmpty(property.Info.DefaultValue) && 
+            return !PropertyValue.IsEmpty(property.Info.DefaultValue) &&
                 (property.Type.IsEnum || property.Type == typeof(bool) || property.Type == typeof(bool?));
         }
 

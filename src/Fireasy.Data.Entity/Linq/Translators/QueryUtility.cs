@@ -276,8 +276,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         private static Expression GetUpdateExpressionByEntity(ConstantExpression constant, LambdaExpression predicate)
         {
             var entity = constant.Value as IEntity;
-            var entityType = entity.GetType();
-            var metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
+            var metadata = EntityMetadataUnity.GetEntityMetadata(entity.EntityType);
             var table = new TableExpression(new TableAlias(), metadata.TableName, metadata.EntityType);
             Expression where = null;
 
@@ -460,7 +459,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private static IEnumerable<ColumnAssignment> GetAssignmentsForPrimaryKeys(ISyntaxProvider syntax, TableExpression table, ParameterExpression parExp, IEntity entity)
         {
-            var entityType = parExp != null ? parExp.Type : entity.GetType();
+            var entityType = parExp != null ? parExp.Type : entity.EntityType;
             var assignments = new List<ColumnAssignment>();
 
             foreach (var p in PropertyUnity.GetPrimaryProperties(entityType))
@@ -497,13 +496,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         private static IEnumerable<IProperty> GetModifiedProperties(IEntity entity)
         {
-            var entityType = entity.GetType();
-            var properties = PropertyUnity.GetPersistentProperties(entityType)
+            var properties = PropertyUnity.GetPersistentProperties(entity.EntityType)
                 .Where(m => !m.Info.IsPrimaryKey ||
                     (m.Info.IsPrimaryKey && m.Info.GenerateType == IdentityGenerateType.None));
 
             //判断实体类型有是不是编译的代理类型，如果不是，取非null的属性，否则使用IsModified判断
-            var isNotCompiled = entityType.IsNotCompiled();
+            var isNotCompiled = entity.GetType().IsNotCompiled();
             return properties.Where(m => isNotCompiled ?
                     !PropertyValue.IsEmpty(entity.GetValue(m)) :
                     entity.IsModified(m.Name));
@@ -607,8 +605,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 if (entityType == null)
                 {
-                    entityType = entity.GetType();
-                    properties = PropertyUnity.GetPersistentProperties(entityType)
+                    properties = PropertyUnity.GetPersistentProperties(entity.EntityType)
                         .Where(m => !m.Info.IsPrimaryKey ||
                             (m.Info.IsPrimaryKey && m.Info.GenerateType == IdentityGenerateType.None));
                 }

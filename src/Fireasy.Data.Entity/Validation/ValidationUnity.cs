@@ -164,12 +164,11 @@ namespace Fireasy.Data.Entity.Validation
                 return;
             }
 
-            var entityType = entity.GetType();
             var isValid = true;
             var propertyErrors = new Dictionary<IProperty, IList<string>>();
             var errors = new List<string>();
 
-            var proValidations = GetPropertyValidations(entityType).AsEnumerable();
+            var proValidations = GetPropertyValidations(entity.EntityType).AsEnumerable();
 
             if (entity.EntityState == EntityState.Modified)
             {
@@ -180,7 +179,7 @@ namespace Fireasy.Data.Entity.Validation
             //获取定义了验证特性“属性/验证特性”字典
             foreach (var kvp in proValidations)
             {
-                var property = PropertyUnity.GetProperty(entityType, kvp.Key);
+                var property = PropertyUnity.GetProperty(entity.EntityType, kvp.Key);
                 if (property == null)
                 {
                     continue;
@@ -192,7 +191,7 @@ namespace Fireasy.Data.Entity.Validation
             }
 
             //获取于实体类的验证特性，而不是属性的
-            var validations = GetValidations(entityType);
+            var validations = GetValidations(entity.EntityType);
             var context = new ValidationContext(entity, null, null);
 
             foreach (var validation in validations)

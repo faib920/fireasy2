@@ -8,7 +8,11 @@
 using Fireasy.Common.Extensions;
 using Fireasy.Data;
 using System.Collections;
+#if !NETSTANDARD2_0
 using System.Web;
+#else
+using Microsoft.AspNetCore.Http;
+#endif
 
 namespace Fireasy.Web.EasyUI
 {
@@ -17,6 +21,7 @@ namespace Fireasy.Web.EasyUI
     /// </summary>
     public static class EasyUIHelper
     {
+#if !NETSTANDARD2_0
         /// <summary>
         /// 构造分页数据。
         /// </summary>
@@ -50,6 +55,45 @@ namespace Fireasy.Web.EasyUI
             else
             {
                 def.Order = request.Params["order"] == "desc" ? SortOrder.Descending : SortOrder.Ascending;
+            }
+
+            return def;
+        }
+#endif
+
+        /// <summary>
+        /// 构造分页数据。
+        /// </summary>
+        /// <returns></returns>
+        public static DataPager GetDataPager(this HttpContext context)
+        {
+            var request = context.Request;
+            if (string.IsNullOrEmpty(request.Form["page"]))
+            {
+                return null;
+            }
+
+            var page = request.Form["page"].To(1);
+            var pageSize = request.Form["rows"].To(10);
+            return new DataPager(pageSize, page - 1);
+        }
+
+        /// <summary>
+        /// 获取排序信息。
+        /// </summary>
+        /// <returns></returns>
+        public static SortDefinition GetSorting(this HttpContext context)
+        {
+            var def = new SortDefinition();
+            var request = context.Request;
+            def.Member = request.Form["sort"];
+            if (string.IsNullOrEmpty(request.Form["order"]))
+            {
+                def.Order = SortOrder.None;
+            }
+            else
+            {
+                def.Order = request.Form["order"] == "desc" ? SortOrder.Descending : SortOrder.Ascending;
             }
 
             return def;

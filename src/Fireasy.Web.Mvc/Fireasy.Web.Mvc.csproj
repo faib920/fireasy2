@@ -1,34 +1,24 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net45;net46;net40</TargetFrameworks>
+    <TargetFrameworks>net45;net46;net40;net47;netstandard2.0</TargetFrameworks>
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
-    <FileVersion>2.0.0.46080</FileVersion>
-    <Copyright>Copyright © Fireasy 2013-2017</Copyright>
-    <AssemblyVersion>2.0.0.46080</AssemblyVersion>
+    <FileVersion>2.0.0.46082</FileVersion>
+    <Copyright>Copyright © Fireasy 2013-2018</Copyright>
+    <AssemblyVersion>2.0.0.46082</AssemblyVersion>
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>True</SignAssembly>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Asp.Net Mvc</Product>
-    <Version>2.0.0</Version>
+    <Version>2.0.2</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
-    <Description>Asp.Net MVC 辅助类，如资源包配置、控制器工厂、Action上下文等。</Description>
-  </PropertyGroup>
+    <Description>Asp.Net MVC 辅助类，使 Action 可接受复杂的 Json 绑定，Json 按 Fireasy 序列化输出。
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">
-    <DocumentationFile>bin\Debug\net45\Fireasy.Web.Mvc.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net40|AnyCPU'">
-    <DocumentationFile>bin\Debug\net40\Fireasy.Web.Mvc.xml</DocumentationFile>
-  </PropertyGroup>
-  
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net46|AnyCPU'">
-    <DocumentationFile>bin\Debug\net46\Fireasy.Web.Mvc.xml</DocumentationFile>
+示例源码：https://github.com/faib920/zero</Description>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
@@ -46,6 +36,16 @@
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
   
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net47|AnyCPU'">
+    <DocumentationFile>..\..\Release\net47\Fireasy.Web.Mvc.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
+    <DocumentationFile>..\..\Release\netstandard2.0\Fireasy.Web.Mvc.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath>
+  </PropertyGroup>
+  
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNet.Mvc" Version="4.0.20505" />
     <PackageReference Include="Microsoft.AspNet.Web.Optimization" Version="1.0.0" />
@@ -58,6 +58,21 @@
   <ItemGroup>
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="Microsoft.AspNetCore.Mvc">
+      <Version>2.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Net.Http.Headers">
+      <Version>2.0.1</Version>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net47'">
+    <PackageReference Include="Microsoft.Net.Http.Headers">
+      <Version>2.0.1</Version>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

@@ -17,12 +17,16 @@ namespace Fireasy.Windows.Forms
 {
     public partial class TreeList
     {
+        private object dataSource;
+
         /// <summary>
         /// 将一个数据对象绑定到 <see cref="TreeList"/>
         /// </summary>
         /// <param name="dataSource"></param>
         public void DataBind(object dataSource)
         {
+            this.dataSource = dataSource;
+
             BeginUpdate();
 
             var selectKeyValues = GetSelectedItems();
@@ -57,6 +61,19 @@ namespace Fireasy.Windows.Forms
             EndUpdate();
 
             ReSelectItems(selectKeyValues);
+        }
+
+        /// <summary>
+        /// 获取或设置数据源。
+        /// </summary>
+        public object DataSource
+        {
+            get { return dataSource; }
+            set
+            {
+                dataSource = value;
+                DataBind(dataSource);
+            }
         }
 
         /// <summary>

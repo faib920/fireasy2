@@ -16,6 +16,11 @@ namespace Fireasy.Data.Entity
     public interface IEntity
     {
         /// <summary>
+        /// 获取实体类型。
+        /// </summary>
+        Type EntityType { get; }
+
+        /// <summary>
         /// 获取指定属性的值。
         /// </summary>
         /// <param name="propertyName">实体属性名称。</param>

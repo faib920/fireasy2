@@ -55,6 +55,13 @@ namespace Fireasy.Data.Entity.Tests.Models
         [PropertyMapping(ColumnName = "DeptCode", Description = "", Length = 2147483647, IsNullable = true)]
         public virtual string DeptCode { get; set; }
 
+        /// <summary>
+        /// 获取或设置。
+        /// </summary>
+
+        [PropertyMapping(ColumnName = "DeptType", Description = "", IsNullable = true)]
+        public virtual DeptType DeptType { get; set; }
+
         public System.Collections.Generic.List<Depts> Children { get; set; }
 
         System.Collections.IList ITreeNode.Children
@@ -85,5 +92,10 @@ namespace Fireasy.Data.Entity.Tests.Models
 
         public bool IsLoaded { get; set; }
 
+    }
+
+    public enum DeptType
+    {
+        Org
     }
 }

@@ -8,6 +8,7 @@
 
 using Fireasy.Common;
 using Fireasy.Common.Extensions;
+using Fireasy.Common.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Translators;
 using System;
 using System.Collections.Generic;
@@ -83,6 +84,32 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(typeof(Queryable), "Where", new[] { typeof(T) }, source.Expression, condition ? isTruePredicate : isFalsePredicate);
 
             return source.Provider.CreateQuery<T>(expression);
+        }
+
+
+        /// <summary>
+        /// 在 Select 中应用 <see cref="ExtendAs{T}(IEntity, Expression{Func{object}})"/> 来扩展返回的结果。
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="selector"></param>
+        /// <returns></returns>
+        public static IQueryable<TResult> ExtendSelect<TSource, TResult>(this IQueryable<TSource> source, Expression<Func<TSource, TResult>> selector)
+        {
+            var parExp = Expression.Parameter(typeof(TSource), "t");
+
+            var method = typeof(Extensions).GetMethod("ExtendAs").MakeGenericMethod(typeof(TResult));
+
+            var newExp = ExpressionReplacer.Replace(selector.Body, parExp);
+            var newSelector = Expression.Lambda<Func<object>>(newExp);
+
+            var callExp = Expression.Call(null, method, parExp, newSelector);
+            var lambda = Expression.Lambda(callExp, parExp);
+
+            var expression = Expression.Call(typeof(Queryable), "Select", new[] { typeof(TSource), typeof(TResult) }, source.Expression, lambda);
+
+            return source.Provider.CreateQuery<TResult>(expression);
         }
 
         /*
@@ -387,7 +414,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { Expression.Constant(queryable), (Expression)Expression.Constant(entity) });
 
-            var primary = PropertyUnity.GetPrimaryProperties(entity.GetType()).FirstOrDefault(s => s.Info.GenerateType == IdentityGenerateType.AutoIncrement);
+            var primary = PropertyUnity.GetPrimaryProperties(entity.EntityType).FirstOrDefault(s => s.Info.GenerateType == IdentityGenerateType.AutoIncrement);
             var result = queryable.Provider.Execute(expression);
             if (primary != null && !entity.IsModified(primary.Name) &&
                 !result.IsNullOrEmpty())
@@ -475,7 +502,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         internal static int UpdateWhere(this IQueryable queryable, IEntity entity, LambdaExpression predicate)
         {
-            predicate = predicate ?? Expression.Lambda(Expression.Equal(Expression.Constant(1), Expression.Constant(1)), Expression.Parameter(entity.GetType(), "s"));
+            predicate = predicate ?? Expression.Lambda(Expression.Equal(Expression.Constant(1), Expression.Constant(1)), Expression.Parameter(entity.EntityType, "s"));
             var method = (MethodInfo)MethodBase.GetCurrentMethod();
             var expression = Expression.Call(null, method,
                 new[] { Expression.Constant(queryable), (Expression)Expression.Constant(entity), predicate });
@@ -559,13 +586,13 @@ namespace Fireasy.Data.Entity.Linq
 
         private static LambdaExpression BindPrimaryExpression(IEntity entity)
         {
-            var primaryProperties = PropertyUnity.GetPrimaryProperties(entity.GetType()).ToList();
+            var primaryProperties = PropertyUnity.GetPrimaryProperties(entity.EntityType).ToList();
             if (primaryProperties.IsNullOrEmpty())
             {
                 return null;
             }
 
-            var parExp = Expression.Parameter(entity.GetType(), "s");
+            var parExp = Expression.Parameter(entity.EntityType, "s");
             Expression expression = null;
             foreach (var p in primaryProperties)
             {

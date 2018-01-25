@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+#if !NETSTANDARD2_0
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using System.Xml;
@@ -48,3 +49,4 @@ namespace Fireasy.Web.Mvc.Configuration
         public bool EnableOptimization { get; set; }
     }
 }
+#endif

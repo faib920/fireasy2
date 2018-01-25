@@ -9,49 +9,77 @@ using Fireasy.Common.Extensions;
 using System;
 using System.Linq.Expressions;
 using System.Text;
+using Fireasy.Web.Mvc;
+#if !NETSTANDARD2_0
 using System.Web.Mvc;
+#else
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.AspNetCore.Mvc.Rendering;
+#endif
 
 namespace Fireasy.Web.Mvc
 {
     public static class RadioGroupExtensions
     {
-        public static ExtendHtmlString RadioGroup(this HtmlHelper htmlHelper, string exp, RadioGroupSettings settings = null)
+        public static ExtendHtmlString RadioGroup(this
+#if !NETSTANDARD2_0
+            HtmlHelper htmlHelper
+#else
+            IHtmlHelper htmlHelper
+#endif
+            , string exp, RadioGroupSettings settings = null)
         {
-            var builder = new TagBuilder("div");
+            var builder = new TagBuildWrapper("div");
             builder.AddCssClass("radio-group");
             builder.GenerateId("rgp" + exp);
-            builder.InnerHtml = BuildRadioOptions(exp, settings);
+            builder.SetInnerHtmlContent(BuildRadioOptions(exp, settings));
             return new ExtendHtmlString(builder);
         }
 
-        public static ExtendHtmlString RadioGroup(this HtmlHelper htmlHelper, string exp, Type enumType, RadioGroupSettings settings = null)
+        public static ExtendHtmlString RadioGroup(this
+#if !NETSTANDARD2_0
+            HtmlHelper htmlHelper
+#else
+            IHtmlHelper htmlHelper
+#endif
+            , string exp, Type enumType, RadioGroupSettings settings = null)
         {
-            var builder = new TagBuilder("div");
+            var builder = new TagBuildWrapper("div");
             builder.AddCssClass("radio-group");
             builder.GenerateId("rgp" + exp);
-            builder.InnerHtml = BuildRadioOptions(exp, enumType, settings);
+            builder.SetInnerHtmlContent(BuildRadioOptions(exp, enumType, settings));
             return new ExtendHtmlString(builder);
         }
 
-        public static ExtendHtmlString RadioGroup<TModel, TProperty>(this HtmlHelper<TModel> htmlHelper, Expression<Func<TModel, TProperty>> expression, RadioGroupSettings settings = null)
+        public static ExtendHtmlString RadioGroup<TModel, TProperty>(this
+#if !NETSTANDARD2_0
+            HtmlHelper<TModel> htmlHelper
+#else
+            IHtmlHelper<TModel> htmlHelper
+#endif
+            , Expression<Func<TModel, TProperty>> expression, RadioGroupSettings settings = null)
         {
-            var metadata = ModelMetadata.FromLambdaExpression(expression, htmlHelper.ViewData);
-            var propertyName = metadata.PropertyName;
-            var builder = new TagBuilder("div");
+            var propertyName = MetadataHelper.GetPropertyName(expression);
+            var builder = new TagBuildWrapper("div");
             builder.AddCssClass("radio-group");
             builder.GenerateId("rgp" + propertyName);
-            builder.InnerHtml = BuildRadioOptions(propertyName, settings);
+            builder.SetInnerHtmlContent(BuildRadioOptions(propertyName, settings));
             return new ExtendHtmlString(builder);
         }
 
-        public static ExtendHtmlString RadioGroup<TModel, TProperty>(this HtmlHelper<TModel> htmlHelper, Expression<Func<TModel, TProperty>> expression, Type enumType, RadioGroupSettings settings = null)
+        public static ExtendHtmlString RadioGroup<TModel, TProperty>(this
+#if !NETSTANDARD2_0
+            HtmlHelper<TModel> htmlHelper
+#else
+            IHtmlHelper<TModel> htmlHelper
+#endif
+            , Expression<Func<TModel, TProperty>> expression, Type enumType, RadioGroupSettings settings = null)
         {
-            var metadata = ModelMetadata.FromLambdaExpression(expression, htmlHelper.ViewData);
-            var propertyName = metadata.PropertyName;
-            var builder = new TagBuilder("div");
+            var propertyName = MetadataHelper.GetPropertyName(expression);
+            var builder = new TagBuildWrapper("div");
             builder.AddCssClass("radio-group");
             builder.GenerateId("rgp" + propertyName);
-            builder.InnerHtml = BuildRadioOptions(propertyName, enumType, settings);
+            builder.SetInnerHtmlContent(BuildRadioOptions(propertyName, enumType, settings));
             return new ExtendHtmlString(builder);
         }
 

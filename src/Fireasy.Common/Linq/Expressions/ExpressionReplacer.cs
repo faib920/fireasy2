@@ -40,8 +40,8 @@ namespace Fireasy.Common.Linq.Expressions
                 }
             }
 
-            return memberExp;
+            var exp = Visit(memberExp.Expression);
+            return Expression.MakeMemberAccess(exp, memberExp.Member);
         }
-
     }
 }

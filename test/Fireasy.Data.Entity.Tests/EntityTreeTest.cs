@@ -55,14 +55,14 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var db = new DbContext())
             {
-                var rep = db.CreateTreeRepository<Depts>();
-                var sc = db.Depts.FirstOrDefault(s => s.DeptName == "四川");
+                var tree = db.CreateTreeRepository<Depts>();
 
-                //var dept = new Depts { DeptName = "成都" };
-                //rep.Insert(dept, sc, EntityTreePosition.Children);
+                //参照对象
+                var refer = db.Depts.FirstOrDefault(s => s.DeptName == "四川");
 
-                var dept1 = new Depts { DeptName = "贵州" };
-                rep.Insert(dept1, null);
+                var dept = new Depts { DeptName = "成都" };
+
+                tree.Insert(dept, refer);
             }
         }
 
@@ -98,7 +98,7 @@ namespace Fireasy.Data.Entity.Tests
                 //rep.Insert(dept, sc, EntityTreePosition.Children);
 
                 var dept1 = new Depts { DeptName = "贵州" };
-                rep.Insert(dept1, null, isolation: () => new Depts { DeptID = 1, DeptCode = dc });
+                rep.Insert(dept1, null, isolation: () => new Depts { DeptType = DeptType.Org });
             }
         }
 

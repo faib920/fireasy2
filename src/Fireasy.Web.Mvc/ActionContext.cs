@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+#if !NETSTANDARD2_0
 using Fireasy.Common;
 using Fireasy.Common.Serialization;
 using System.Collections.Generic;
@@ -45,3 +46,4 @@ namespace Fireasy.Web.Mvc
         public IDictionary<string, object> Parameters { get; internal set; }
     }
 }
+#endif

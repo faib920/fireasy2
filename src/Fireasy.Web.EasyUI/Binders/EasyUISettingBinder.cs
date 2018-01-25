@@ -79,7 +79,9 @@ namespace Fireasy.Web.EasyUI.Binders
 
             var vsettings = settings as ValidateBoxSettings;
             //获取依赖属性所指定的验证特性
-            var validTypes = new List<string>();
+            var validTypes = vsettings.ValidType == null ? new List<string>() :
+                new List<string>(vsettings.ValidType);
+
             foreach (var validation in ValidationUnity.GetValidations(property))
             {
                 ParseValidation(vsettings, validation, validTypes);
@@ -94,7 +96,7 @@ namespace Fireasy.Web.EasyUI.Binders
         /// <param name="settings"></param>
         /// <param name="validation">要解析的 <see cref="ValidationAttribute"/> 对象。</param>
         /// <param name="validTypes">如果 <paramref name="validation"/>  能与 EasyUI 的客户端验证所对应，则添加到 validType 属性中。</param>
-        private void ParseValidation(ValidateBoxSettings settings, ValidationAttribute validation, List<string> validTypes)
+        protected virtual void ParseValidation(ValidateBoxSettings settings, ValidationAttribute validation, List<string> validTypes)
         {
             //必填验证特性
             if (validation is RequiredAttribute required)

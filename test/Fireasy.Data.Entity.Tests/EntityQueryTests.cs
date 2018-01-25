@@ -2312,5 +2312,31 @@ WHERE (t0.City = 'London')").ToList();
             var custs = db.Customers.ToList();
             Assert.AreEqual(6, custs.Count);
         }
+
+        [TestMethod]
+        public void TestInterface()
+        {
+            var query1 = db.Set(typeof(P1)) as IQueryable<ITestEntity>;
+            var list1 = query1.Where(s => s.Name == "").ToList();
+            var query2 = db.Set(typeof(P2)) as IQueryable<ITestEntity>;
+            var list2 = query2.Where(s => s.Name == "").ToList();
+        }
+    }
+
+    public interface ITestEntity
+    {
+        string Name { get; set; }
+    }
+
+    public class P1 : LightEntity<P1>, ITestEntity
+    {
+        [PropertyMapping]
+        public virtual string Name { get; set; }
+    }
+
+    public class P2 : LightEntity<P2>, ITestEntity
+    {
+        [PropertyMapping]
+        public virtual string Name { get; set; }
     }
 }

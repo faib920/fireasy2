@@ -285,7 +285,7 @@ namespace Fireasy.Data.Entity
         {
             //判断实体类型有是不是编译的代理类型，如果不是，取非null的属性，否则使用IsModified判断
             var isNotCompiled = entity.GetType().IsNotCompiled();
-            return PropertyUnity.GetRelatedProperties(entity.GetType()).Any(s => isNotCompiled ? !PropertyValue.IsEmpty(entity.GetValue(s)) : entity.IsModified(s.Name));
+            return PropertyUnity.GetRelatedProperties(entity.EntityType).Any(s => isNotCompiled ? !PropertyValue.IsEmpty(entity.GetValue(s)) : entity.IsModified(s.Name));
         }
 
         /// <summary>
@@ -296,7 +296,7 @@ namespace Fireasy.Data.Entity
         {
             //判断实体类型有是不是编译的代理类型，如果不是，取非null的属性，否则使用IsModified判断
             var isNotCompiled = entity.GetType().IsNotCompiled();
-            var properties = PropertyUnity.GetRelatedProperties(entity.GetType()).Where(m => isNotCompiled ?
+            var properties = PropertyUnity.GetRelatedProperties(entity.EntityType).Where(m => isNotCompiled ?
                     !PropertyValue.IsEmpty(entity.GetValue(m)) :
                     entity.IsModified(m.Name));
 

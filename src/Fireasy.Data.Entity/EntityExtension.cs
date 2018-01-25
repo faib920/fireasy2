@@ -90,7 +90,7 @@ namespace Fireasy.Data.Entity
             if (entity.EntityState == EntityState.Attached ||
                 entity.EntityState == EntityState.Modified)
             {
-                var property = PropertyUnity.GetProperty(entity.GetType(), propertyName);
+                var property = PropertyUnity.GetProperty(entity.EntityType, propertyName);
                 if (property != null)
                 {
                     return entity.GetOldValue(property);
@@ -108,7 +108,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static T Normalize<T>(this T entity, params PropertyValue[] keyValues) where T : IEntity
         {
-            var primaryKeys = PropertyUnity.GetPrimaryProperties(entity.GetType()).ToArray();
+            var primaryKeys = PropertyUnity.GetPrimaryProperties(entity.EntityType).ToArray();
             if (primaryKeys.Length != 0 && keyValues == null ||
                 primaryKeys.Length != keyValues.Length)
             {
@@ -203,7 +203,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static Type GetDefinitionEntityType(this Type entityType)
         {
-            while (!entityType.BaseType.IsAbstract && entityType.BaseType != typeof(object))
+            if (typeof(ICompiledEntity).IsAssignableFrom(entityType))
             {
                 entityType = entityType.BaseType;
             }

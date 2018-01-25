@@ -5,20 +5,17 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-namespace Fireasy.Common.Ioc
+#if NETSTANDARD2_0
+using Fireasy.Common.Configuration;
+using Microsoft.Extensions.Configuration;
+
+namespace Microsoft.Extensions.DependencyInjection
 {
-    /// <summary>
-    /// 实例的生命周期。
-    /// </summary>
-    public enum Lifetime
+    internal class ConfigurationBinder
     {
-        /// <summary>
-        /// 瞬时。
-        /// </summary>
-        Transient,
-        /// <summary>
-        /// 单例。
-        /// </summary>
-        Singleton
+        internal static void Bind(IServiceCollection services, IConfiguration configuration)
+        {
+        }
     }
 }
+#endif

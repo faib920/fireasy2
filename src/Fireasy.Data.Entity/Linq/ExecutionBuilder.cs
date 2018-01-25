@@ -717,7 +717,7 @@ namespace Fireasy.Data.Entity.Linq
                 return 0;
             }
 
-            var metadata = EntityMetadataUnity.GetEntityMetadata(entity.GetType());
+            var metadata = EntityMetadataUnity.GetEntityMetadata(entity.EntityType);
             var tableName = metadata.TableName;
             var columnName = property.Info.FieldName;
 
@@ -760,7 +760,7 @@ namespace Fireasy.Data.Entity.Linq
             {
                 if (pkProperty == null)
                 {
-                    pkProperty = PropertyUnity.GetPrimaryProperties(entity.GetType())
+                    pkProperty = PropertyUnity.GetPrimaryProperties(entity.EntityType)
                         .FirstOrDefault(s => s.Info.GenerateType == IdentityGenerateType.AutoIncrement);
                 }
 

@@ -97,6 +97,11 @@ namespace Fireasy.Data.Entity.Subscribes
             SubscribeManager.Publish<EntityPersistentSubject>(arguments, eventType);
         }
 
+        public static void RaiseEvent<TEntity>(EntityPersistentEventType eventType)
+        {
+            SubscribeManager.Publish<EntityPersistentSubject>(typeof(TEntity), eventType);
+        }
+
         public static void RaiseEvent(IEntity entity, EntityPersistentEventType eventType)
         {
             SubscribeManager.Publish<EntityPersistentSubject>(entity, eventType);

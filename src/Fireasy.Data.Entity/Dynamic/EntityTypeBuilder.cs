@@ -199,22 +199,20 @@ namespace Fireasy.Data.Entity.Dynamic
                 "??_" + property.Name,
                 typeof(IProperty), null, VisualDecoration.Private,
                 CallingDecoration.Static,
-#if NET35 || NETSTANDARD2_0
+#if NET35
                 x => 
                     { 
                         var @delegate = MakeLambdaExpression(property).Compile();
                         if (@delegate != null)
                         {
                             var bytes = @delegate.Method.GetMethodBody().GetILAsByteArray();
-#if NET35
                             x.MethodBuilder.MethodBuilder.CreateMethodBody(bytes, bytes.Length);
-#else
-                            //todo 未做处理
-#endif
                         }
                     });
+#elif NETSTANDARD2_0
+                x => { });  //todo
 #else
-                        x => MakeLambdaExpression(property).CompileToMethod(x.MethodBuilder.MethodBuilder));
+                x => MakeLambdaExpression(property).CompileToMethod(x.MethodBuilder.MethodBuilder));
 #endif
 
             return emiter

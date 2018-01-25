@@ -74,10 +74,11 @@ namespace Fireasy.Data.Entity.Linq
         /// <exception cref="TranslateException">对 LINQ 表达式解析失败时抛出此异常。</exception>
         public object Execute(Expression expression)
         {
-            var efn = TranslateCache.TryGet(expression, () => (Expression<Func<IDatabase, object>>)GetExecutionPlan(expression));
+            var efn = TranslateCache.TryGetDelegate(expression, () => (LambdaExpression)GetExecutionPlan(expression));
 
-            var func = efn.Compile();
-            return func(context.Database);
+            var segment = SegmentFinder.Find(expression);
+
+            return efn.DynamicInvoke(context.Database, segment);
         }
 
         /// <summary>
@@ -212,5 +213,36 @@ namespace Fireasy.Data.Entity.Linq
             package = provider.GetService<ITranslateProvider>();
             return package;
         }
+
+        /// <summary>
+        /// <see cref="IDataSegment"/> 查找器。
+        /// </summary>
+        private class SegmentFinder : Common.Linq.Expressions.ExpressionVisitor
+        {
+            private IDataSegment dataSegment;
+
+            /// <summary>
+            /// <see cref="IDataSegment"/> 查找器。
+            /// </summary>
+            /// <param name="expression"></param>
+            /// <returns></returns>
+            public static IDataSegment Find(Expression expression)
+            {
+                var replaer = new SegmentFinder();
+                replaer.Visit(expression);
+                return replaer.dataSegment;
+            }
+
+            protected override Expression VisitConstant(ConstantExpression constExp)
+            {
+                if (constExp.Value is IDataSegment)
+                {
+                    dataSegment = constExp.Value as IDataSegment;
+                }
+
+                return constExp;
+            }
+        }
+
     }
 }

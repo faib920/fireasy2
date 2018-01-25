@@ -5,11 +5,12 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Web.Mvc;
 using System.Web.Mvc;
 
 namespace Fireasy.Web.EasyUI
 {
-    public class EasyUITagBuilder : TagBuilder
+    public class EasyUITagBuilder : TagBuildWrapper
     {
         public EasyUITagBuilder(string tagName, string className, SettingsBase settings)
             : base (tagName)

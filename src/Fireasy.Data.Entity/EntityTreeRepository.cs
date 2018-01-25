@@ -88,7 +88,7 @@ namespace Fireasy.Data.Entity
             var keyId = arg2.OldValue.InnerId;
 
             //获得新节点的Order值
-            arg1.NewValue.Order = GetNewOrderNumber(arg2.OldValue, position);
+            arg1.NewValue.Order = GetNewOrderNumber(arg2.OldValue, position, 0, isolation);
 
             //获得参照节点的级别
             arg1.NewValue.Level = arg2.OldValue.Level;
@@ -1138,6 +1138,10 @@ namespace Fireasy.Data.Entity
                     if (constExp.Type.IsStringOrDateTime())
                     {
                         condition.AppendFormat("{0} = '{1}'", property.Info.FieldName, constExp.Value);
+                    }
+                    else if (constExp.Type.IsEnum)
+                    {
+                        condition.AppendFormat("{0} = {1}", property.Info.FieldName, (int)constExp.Value);
                     }
                     else
                     {

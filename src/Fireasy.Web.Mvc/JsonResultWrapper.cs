@@ -8,8 +8,11 @@
 using Fireasy.Common.Serialization;
 using System;
 using System.Linq;
+#if !NETSTANDARD2_0
 using System.Web.Mvc;
-
+#else
+using Microsoft.AspNetCore.Mvc;
+#endif
 namespace Fireasy.Web.Mvc
 {
     /// <summary>
@@ -17,6 +20,25 @@ namespace Fireasy.Web.Mvc
     /// </summary>
     public class JsonResultWrapper : JsonResult
     {
+        /// <summary>
+        /// 初始化 <see cref="JsonResultWrapper"/> 类的新实例。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="option"></param>
+        public JsonResultWrapper(object value, JsonSerializeOption option = null)
+#if NETSTANDARD2_0
+            : base(value)
+#endif
+        {
+#if !NETSTANDARD2_0
+            this.result = new JsonResult { Data = value, JsonRequestBehavior = JsonRequestBehavior.AllowGet };
+#endif
+            Option = option;
+        }
+
+        public JsonSerializeOption Option { get; set; }
+
+#if !NETSTANDARD2_0
         private JsonResult result;
 
         /// <summary>
@@ -24,10 +46,11 @@ namespace Fireasy.Web.Mvc
         /// </summary>
         /// <param name="result"></param>
         /// <param name="behavior"></param>
-        public JsonResultWrapper(JsonResult result, JsonRequestBehavior behavior = JsonRequestBehavior.AllowGet)
+        public JsonResultWrapper(JsonResult result, JsonRequestBehavior behavior = JsonRequestBehavior.AllowGet, JsonSerializeOption option = null)
         {
             this.result = result;
             this.result.JsonRequestBehavior = behavior;
+            Option = option;
         }
 
         /// <summary>
@@ -81,7 +104,7 @@ namespace Fireasy.Web.Mvc
         /// <returns></returns>
         protected virtual string SerializeJson(ControllerContext context, object data)
         {
-            var option = new JsonSerializeOption();
+            var option = Option ?? new JsonSerializeOption();
 
             var globalconverters = GlobalSetting.Converters.Where(s => s is JsonConverter).Cast<JsonConverter>();
             option.Converters.AddRange(globalconverters);
@@ -93,7 +116,7 @@ namespace Fireasy.Web.Mvc
             }
 
             //jsonp的处理
-            var jsoncallback = context.HttpContext.Request.Params["callback"];
+            var jsoncallback = context.HttpContext.Request.Form["callback"];
 
             var serializer = new JsonSerializer(option);
             var json = serializer.Serialize(data);
@@ -105,5 +128,6 @@ namespace Fireasy.Web.Mvc
 
             return json;
         }
+#endif
     }
 }

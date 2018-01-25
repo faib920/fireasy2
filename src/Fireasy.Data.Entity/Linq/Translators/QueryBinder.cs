@@ -1586,7 +1586,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var entity = instance.Value as IEntity;
             var parExp = predicate.Parameters[0];
             var body = predicate.Body;
-            var properties = EntityMetadataUnity.GetEntityMetadata(entity.GetType()).ConcurrencyProperties;
+            var properties = EntityMetadataUnity.GetEntityMetadata(entity.EntityType).ConcurrencyProperties;
 
             foreach (var property in properties)
             {
@@ -1615,8 +1615,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var entity = instance.As<ConstantExpression>().Value as IEntity;
             var blocks = new List<CommandExpression>();
 
-            var entityType = entity.GetType();
-            foreach (var property in PropertyUnity.GetRelatedProperties(entityType))
+            foreach (var property in PropertyUnity.GetRelatedProperties(entity.EntityType))
             {
                 if (entity.IsModified(property.Name))
                 {

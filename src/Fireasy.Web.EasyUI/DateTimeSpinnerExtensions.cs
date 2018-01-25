@@ -8,7 +8,13 @@
 using Fireasy.Web.Mvc;
 using System;
 using System.Linq.Expressions;
+using Fireasy.Web.EasyUI;
+#if !NETSTANDARD2_0
 using System.Web.Mvc;
+#else
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+#endif
 
 namespace Fireasy.Web.EasyUI
 {
@@ -21,7 +27,13 @@ namespace Fireasy.Web.EasyUI
         /// <param name="exp">属性名或使用 txt 作为前缀的 ID 名称。</param>
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
-        public static ExtendHtmlString DateTimeSpinner(this HtmlHelper htmlHelper, string exp, DateTimeSpinnerSettings settings = null)
+        public static ExtendHtmlString DateTimeSpinner(this
+#if !NETSTANDARD2_0
+            HtmlHelper htmlHelper
+#else
+            IHtmlHelper htmlHelper
+#endif
+            , string exp, DateTimeSpinnerSettings settings = null)
         {
             settings = settings ?? new DateTimeSpinnerSettings();
 
@@ -42,12 +54,17 @@ namespace Fireasy.Web.EasyUI
         /// <param name="expression">指定绑定属性的表达式。</param>
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
-        public static ExtendHtmlString DateTimeSpinner<TModel, TProperty>(this HtmlHelper<TModel> htmlHelper, Expression<Func<TModel, TProperty>> expression, DateTimeSpinnerSettings settings = null)
+        public static ExtendHtmlString DateTimeSpinner<TModel, TProperty>(this
+#if !NETSTANDARD2_0
+            HtmlHelper<TModel> htmlHelper
+#else
+            IHtmlHelper<TModel> htmlHelper
+#endif
+            , Expression<Func<TModel, TProperty>> expression, DateTimeSpinnerSettings settings = null)
         {
             settings = settings ?? new DateTimeSpinnerSettings();
 
-            var metadata = ModelMetadata.FromLambdaExpression(expression, htmlHelper.ViewData);
-            var propertyName = metadata.PropertyName;
+            var propertyName = MetadataHelper.GetPropertyName(expression);
             settings.Bind(typeof(TModel), propertyName);
 
             var builder = new EasyUITagBuilder("input", "easyui-timespinner", settings);

@@ -198,7 +198,7 @@ namespace Fireasy.Common.Ioc
         /// <param name="assembly">程序集。</param>
         /// <param name="lifetime">生命周期。</param>
         /// <returns></returns>
-        public Container RegisterAssembly(Assembly assembly, Lifetime lifetime = Lifetime.Instance)
+        public Container RegisterAssembly(Assembly assembly, Lifetime lifetime = Lifetime.Transient)
         {
             foreach (var type in assembly.GetExportedTypes())
             {
@@ -227,7 +227,7 @@ namespace Fireasy.Common.Ioc
         /// <param name="assemblyName">程序集名称。</param>
         /// <param name="lifetime">生命周期。</param>
         /// <returns></returns>
-        public Container RegisterAssembly(string assemblyName, Lifetime lifetime = Lifetime.Instance)
+        public Container RegisterAssembly(string assemblyName, Lifetime lifetime = Lifetime.Transient)
         {
             var assembly = Assembly.Load(assemblyName);
             return RegisterAssembly(assembly, lifetime);

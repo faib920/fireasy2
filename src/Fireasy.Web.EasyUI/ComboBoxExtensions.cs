@@ -5,13 +5,18 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common;
 using Fireasy.Common.Extensions;
 using Fireasy.Web.Mvc;
 using System;
 using System.Linq.Expressions;
 using System.Text;
+using Fireasy.Web.EasyUI;
+#if !NETSTANDARD2_0
 using System.Web.Mvc;
+#else
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+#endif
 
 namespace Fireasy.Web.EasyUI
 {
@@ -24,7 +29,13 @@ namespace Fireasy.Web.EasyUI
         /// <param name="exp">属性名或使用 cbo 作为前缀的 ID 名称。</param>
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
-        public static ExtendHtmlString ComboBox(this HtmlHelper htmlHelper, string exp, ComboBoxSettings settings = null, object htmlAttributes = null)
+        public static ExtendHtmlString ComboBox(this
+#if !NETSTANDARD2_0
+            HtmlHelper htmlHelper
+#else
+            IHtmlHelper htmlHelper
+#endif
+            , string exp, ComboBoxSettings settings = null, object htmlAttributes = null)
         {
             var builder = new EasyUITagBuilder("select", "easyui-combobox", settings);
             builder.MergeAttribute("name", exp);
@@ -41,7 +52,13 @@ namespace Fireasy.Web.EasyUI
         /// <param name="enumType">枚举类型。</param>
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
-        public static ExtendHtmlString ComboBox(this HtmlHelper htmlHelper, string exp, Type enumType, ComboBoxSettings settings = null)
+        public static ExtendHtmlString ComboBox(this
+#if !NETSTANDARD2_0
+            HtmlHelper htmlHelper
+#else
+            IHtmlHelper htmlHelper
+#endif
+            , string exp, Type enumType, ComboBoxSettings settings = null)
         {
             settings = settings ?? new ComboBoxSettings();
 
@@ -49,7 +66,7 @@ namespace Fireasy.Web.EasyUI
             builder.MergeAttribute("name", exp);
             builder.MergeAttribute("data-options", SettingsSerializer.Serialize(settings));
             builder.AddCssClass("form-input");
-            builder.InnerHtml = BuildEnumOptions(enumType);
+            builder.SetInnerHtmlContent(BuildEnumOptions(enumType));
             builder.GenerateId("cbo" + exp);
             return new ExtendHtmlString(builder);
         }
@@ -63,12 +80,17 @@ namespace Fireasy.Web.EasyUI
         /// <param name="expression">指定绑定属性的表达式。</param>
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
-        public static ExtendHtmlString ComboBox<TModel, TProperty>(this HtmlHelper<TModel> htmlHelper, Expression<Func<TModel, TProperty>> expression, ComboBoxSettings settings = null)
+        public static ExtendHtmlString ComboBox<TModel, TProperty>(this
+#if !NETSTANDARD2_0
+            HtmlHelper<TModel> htmlHelper
+#else
+            IHtmlHelper<TModel> htmlHelper
+#endif
+            , Expression<Func<TModel, TProperty>> expression, ComboBoxSettings settings = null)
         {
             settings = settings ?? new ComboBoxSettings();
 
-            var metadata = ModelMetadata.FromLambdaExpression(expression, htmlHelper.ViewData);
-            var propertyName = metadata.PropertyName;
+            var propertyName = MetadataHelper.GetPropertyName(expression);
             settings.Bind(typeof(TModel), propertyName);
 
             var builder = new EasyUITagBuilder("select", "easyui-combobox", settings);
@@ -89,19 +111,24 @@ namespace Fireasy.Web.EasyUI
         /// <param name="enumType">要绑定的枚举类型。</param>
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
-        public static ExtendHtmlString ComboBox<TModel, TProperty>(this HtmlHelper<TModel> htmlHelper, Expression<Func<TModel, TProperty>> expression, Type enumType, ComboBoxSettings settings = null)
+        public static ExtendHtmlString ComboBox<TModel, TProperty>(this
+#if !NETSTANDARD2_0
+            HtmlHelper<TModel> htmlHelper
+#else
+            IHtmlHelper<TModel> htmlHelper
+#endif
+            , Expression<Func<TModel, TProperty>> expression, Type enumType, ComboBoxSettings settings = null)
         {
             settings = settings ?? new ComboBoxSettings();
 
-            var metadata = ModelMetadata.FromLambdaExpression(expression, htmlHelper.ViewData);
-            var propertyName = metadata.PropertyName;
+            var propertyName = MetadataHelper.GetPropertyName(expression);
             settings.Bind(typeof(TModel), propertyName);
 
             var builder = new EasyUITagBuilder("select", "easyui-combobox", settings);
             builder.MergeAttribute("name", propertyName);
             builder.MergeAttribute("data-options", SettingsSerializer.Serialize(settings));
             builder.AddCssClass("form-input");
-            builder.InnerHtml = BuildEnumOptions(enumType);
+            builder.SetInnerHtmlContent(BuildEnumOptions(enumType));
             builder.GenerateId("cbo" + propertyName);
             return new ExtendHtmlString(builder);
         }

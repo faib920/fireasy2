@@ -13,6 +13,8 @@ using Fireasy.Common.Ioc.Configuration;
 using Fireasy.Common.Ioc.Registrations;
 using Fireasy.Common.Logging.Configuration;
 using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -26,11 +28,14 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services"></param>
         /// <param name="configuration"></param>
         /// <returns></returns>
-        public static IServiceCollection UseFireasy(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddFireasy(this IServiceCollection services, IConfiguration configuration)
         {
-            foreach (var assemblyName in Assembly.GetEntryAssembly().GetReferencedAssemblies().Where(s => s.Name.StartsWith("Fireasy")))
+            var assemblies = new List<Assembly>();
+
+            FindReferenceAssemblies(Assembly.GetCallingAssembly(), assemblies);
+
+            foreach (var assembly in assemblies)
             {
-                var assembly = Assembly.Load(assemblyName);
                 var type = assembly.GetType("Microsoft.Extensions.DependencyInjection.ConfigurationBinder");
                 if (type != null)
                 {
@@ -42,7 +47,25 @@ namespace Microsoft.Extensions.DependencyInjection
                 }
             }
 
+            assemblies.Clear();
+
             return services;
+        }
+
+        private static void FindReferenceAssemblies(Assembly assembly, List<Assembly> assemblies)
+        {
+            foreach (var asb in assembly.GetReferencedAssemblies()
+                .Where(s => !s.Name.StartsWith("system.", StringComparison.OrdinalIgnoreCase) &&
+                    !s.Name.StartsWith("microsoft.", StringComparison.OrdinalIgnoreCase))
+                .Select(s => Assembly.Load(s)))
+            {
+                if (!assemblies.Contains(asb))
+                {
+                    assemblies.Add(asb);
+                }
+
+                FindReferenceAssemblies(asb, assemblies);
+            }
         }
 
         /// <summary>
@@ -51,19 +74,19 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services"></param>
         /// <param name="container"></param>
         /// <returns></returns>
-        public static IServiceCollection Register(this IServiceCollection services, Container container = null)
+        public static IServiceCollection AddIoc(this IServiceCollection services, Container container = null)
         {
             container = container ?? ContainerUnity.GetContainer();
             foreach (AbstractRegistration reg in container.GetRegistrations())
             {
                 if (reg is SingletonRegistration singReg)
                 {
-                    services.AddSingleton(singReg.ServiceType, singReg.Resolve());
+                    services.AddSingleton(singReg.ServiceType, reg.Resolve());
                 }
                 else if (reg.GetType().IsGenericType && reg.GetType().GetGenericTypeDefinition() == typeof(TransientRegistration<,>))
                 {
                     var types = reg.GetType().GetGenericArguments();
-                    services.AddTransient(types[0], types[1]);
+                    services.AddTransient(types[0], svr => reg.Resolve());
                 }
                 else if (reg.GetType().IsGenericType && reg.GetType().GetGenericTypeDefinition() == typeof(FuncRegistration<>))
                 {

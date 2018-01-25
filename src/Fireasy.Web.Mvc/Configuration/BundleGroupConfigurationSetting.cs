@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+#if !NETSTANDARD2_0
 using Fireasy.Common.Configuration;
 using System.Collections.Generic;
 using System.Web.Optimization;
@@ -46,3 +47,4 @@ namespace Fireasy.Web.Mvc.Configuration
         public ResourceType Type { get; set; }
     }
 }
+#endif

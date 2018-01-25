@@ -7,16 +7,26 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Logging;
-using System.Configuration;
 using System.Linq;
+#if !NETSTANDARD2_0
 using System.Web.Mvc;
+#else
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.Mvc.Filters;
+#endif
 
 namespace Fireasy.Web.Mvc
 {
     /// <summary>
     /// 控制器方法执行发生异常时，记录日志并返回友好的提示信息。
     /// </summary>
-    public class HandleErrorAttribute : System.Web.Mvc.HandleErrorAttribute
+    public class HandleErrorAttribute :
+#if !NETSTANDARD2_0
+        System.Web.Mvc.HandleErrorAttribute
+#else
+        ExceptionFilterAttribute
+#endif
     {
         /// <summary>
         /// 处理异常信息。
@@ -24,35 +34,18 @@ namespace Fireasy.Web.Mvc
         /// <param name="filterContext"></param>
         public override void OnException(ExceptionContext filterContext)
         {
-            if (IsJsonResult(filterContext))
+#if !NETSTANDARD2_0
+            var descriptor = ActionContext.Current != null ? ActionContext.Current.ActionDescriptor as ReflectedActionDescriptor : null;
+            if (descriptor != null && typeof(JsonResult).IsAssignableFrom(descriptor.MethodInfo.ReturnType))
+#else
+            var descriptor = filterContext.ActionDescriptor as ControllerActionDescriptor;
+            if (descriptor != null && typeof(JsonResult).IsAssignableFrom(descriptor.MethodInfo.ReturnType))
+#endif
             {
                 HandleExceptionForJson(filterContext);
             }
-            else
-            {
-                HandleException(filterContext);
-            }
 
             LogException(filterContext);
-        }
-
-        /// <summary>
-        /// 判断返回结果是否为 Json 类型。
-        /// </summary>
-        /// <param name="filterContext"></param>
-        /// <returns></returns>
-        protected virtual bool IsJsonResult(ExceptionContext filterContext)
-        {
-            if (ActionContext.Current != null)
-            {
-                var desc = ActionContext.Current.ActionDescriptor as ReflectedActionDescriptor;
-                if (desc != null)
-                {
-                    return typeof(JsonResult).IsAssignableFrom(desc.MethodInfo.ReturnType);
-                }
-            }
-
-            return false;
         }
 
         /// <summary>
@@ -65,27 +58,13 @@ namespace Fireasy.Web.Mvc
             var notifyExp = filterContext.Exception as Fireasy.Common.ClientNotificationException;
             if (notifyExp != null)
             {
-                filterContext.Result = new JsonResultWrapper(new JsonResult { Data = Result.Fail(notifyExp.Message) });
+                filterContext.Result = new JsonResultWrapper(Result.Fail(notifyExp.Message));
                 filterContext.ExceptionHandled = true;
                 return;
             }
             else
             {
-                filterContext.Result = GetHandledResult();
-                filterContext.ExceptionHandled = true;
-            }
-        }
-
-        /// <summary>
-        /// 处理一般返回结果的异常信息。
-        /// </summary>
-        /// <param name="filterContext"></param>
-        protected virtual void HandleException(ExceptionContext filterContext)
-        {
-            var errorPage = ConfigurationManager.AppSettings["error-page"];
-            if (!string.IsNullOrEmpty(errorPage))
-            {
-                filterContext.Result = new RedirectResult(errorPage);
+                filterContext.Result = GetHandledResult(filterContext);
                 filterContext.ExceptionHandled = true;
             }
         }
@@ -111,32 +90,43 @@ namespace Fireasy.Web.Mvc
         /// <summary>
         /// 获取处理后的返回结果。
         /// </summary>
+        /// <param name="filterContext"></param>
         /// <returns></returns>
-        protected virtual ActionResult GetHandledResult()
+        protected virtual ActionResult GetHandledResult(ExceptionContext filterContext)
         {
+            EmptyArrayResultAttribute attr = null;
+#if !NETSTANDARD2_0
             if (ActionContext.Current != null)
             {
-                //检查是否定义了 ExceptionBehaviorAttribute 特性
-                var attr = ActionContext.Current.ActionDescriptor
+                attr = ActionContext.Current.ActionDescriptor
                     .GetCustomAttributes(typeof(EmptyArrayResultAttribute), false)
                     .Cast<EmptyArrayResultAttribute>().FirstOrDefault();
 
-                if (attr != null)
+            }
+#else
+            var descriptor = filterContext.ActionDescriptor as ControllerActionDescriptor;
+            if (descriptor != null)
+            {
+                attr = descriptor.MethodInfo
+                    .GetCustomAttributes(typeof(EmptyArrayResultAttribute), false)
+                    .Cast<EmptyArrayResultAttribute>().FirstOrDefault();
+            }
+#endif
+            if (attr != null)
+            {
+                //返回空数组，一般用在列表绑定上
+                if (attr.EmptyArray)
                 {
-                    //返回空数组，一般用在列表绑定上
-                    if (attr.EmptyArray)
-                    {
-                        return new JsonResultWrapper(new JsonResult { Data = new string[0] });
-                    }
-                    //使用提示信息
-                    else if (!string.IsNullOrEmpty(attr.Message))
-                    {
-                        return new JsonResultWrapper(new JsonResult { Data = Result.Fail(attr.Message) });
-                    }
+                    return new JsonResultWrapper(new string[0]);
+                }
+                //使用提示信息
+                else if (!string.IsNullOrEmpty(attr.Message))
+                {
+                    return new JsonResultWrapper(Result.Fail(attr.Message));
                 }
             }
 
-            return new JsonResultWrapper(new JsonResult { Data = Result.Fail("发生错误，请查阅相关日志或联系管理员。") });
+            return new JsonResultWrapper(Result.Fail("发生错误，请查阅相关日志或联系管理员。"));
         }
     }
 }

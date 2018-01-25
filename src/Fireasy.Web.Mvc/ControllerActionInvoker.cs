@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+#if !NETSTANDARD2_0
 using Fireasy.Common.Logging;
 using Fireasy.Common.Serialization;
 using System;
@@ -30,7 +31,8 @@ namespace Fireasy.Web.Mvc
         /// <returns></returns>
         protected override object GetParameterValue(ControllerContext controllerContext, ParameterDescriptor parameterDescriptor)
         {
-            if (IsSystemType(parameterDescriptor.ParameterType))
+            var type = parameterDescriptor.ParameterType.GetNonNullableType();
+            if (type.IsValueType || type.IsEnum || type == typeof(string))
             {
                 var value = controllerContext.HttpContext.Request.Params[parameterDescriptor.ParameterName];
                 if (value == "null")
@@ -124,30 +126,6 @@ namespace Fireasy.Web.Mvc
         {
             return new JsonResultWrapper(jsonResult);
         }
-
-        /// <summary>
-        /// 判断类型是不是系统类的数据类型。
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        private bool IsSystemType(Type type)
-        {
-            switch (type.GetNonNullableType().FullName)
-            {
-                case "System.String":
-                case "System.Boolean":
-                case "System.Int16":
-                case "System.Int32":
-                case "System.Int64":
-                case "System.Decimal":
-                case "System.Single":
-                case "System.Double":
-                case "System.Byte":
-                case "System.Char":
-                case "System.DateTime":
-                    return true;
-                default: return false;
-            }
-        }
     }
 }
+#endif

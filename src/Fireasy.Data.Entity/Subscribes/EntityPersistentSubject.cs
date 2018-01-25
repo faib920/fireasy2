@@ -27,11 +27,18 @@ namespace Fireasy.Data.Entity.Subscribes
 
         void ISubject.Initialize(params object[] arguments)
         {
-            Argument = arguments[0];
-            var entity = arguments[0] as IEntity;
-            if (entity != null)
+            if (arguments[0] is Type)
             {
-                EntityType = entity.GetType();
+                EntityType = arguments[0] as Type;
+            }
+            else
+            {
+                Argument = arguments[0];
+                var entity = arguments[0] as IEntity;
+                if (entity != null)
+                {
+                    EntityType = entity.EntityType;
+                }
             }
 
             EventType = (EntityPersistentEventType)arguments[1];

@@ -272,12 +272,12 @@ namespace Fireasy.Data.Entity.Tests
             using (var db = new DbContext())
             {
                 var list = db.OrderDetails
-                    .Join(db.Products.DefaultIfEmpty(), 
+                    .Join(db.Products.DefaultIfEmpty(),
                         s => s.ProductID, s => s.ProductID, (s, t) => new { detail = s, product = t })
                     .Select(s => s.detail.ExtendAs<OrderDetailsEx>(() => new OrderDetailsEx
-                        {
-                            ProductName = s.product.ProductName
-                        }))
+                    {
+                        ProductName = s.product.ProductName
+                    }))
                     .ToList();
                 Assert.AreEqual("Queso Cabrales", list[0].ProductName);
             }
@@ -299,6 +299,19 @@ namespace Fireasy.Data.Entity.Tests
                     .ToList();
 
                 Assert.AreEqual("cc", list[0].ProductName);
+            }
+        }
+
+        [TestMethod]
+        public void TestExtendSelect()
+        {
+            using (var db = new DbContext())
+            {
+                var list = db.OrderDetails
+                    .ExtendSelect(s => new OrderDetailsEx { ProductName = s.Products.ProductName })
+                    .ToList();
+
+                Assert.AreEqual("Queso Cabrales", list[0].ProductName);
             }
         }
 
@@ -895,6 +908,28 @@ namespace Fireasy.Data.Entity.Tests
             }
         }
 
+        [TestMethod]
+        public void TestBatchOr()
+        {
+            var countries = new string[] { "France", "Spain" };
+            using (var context = new DbContext())
+            {
+                var list = context.Customers.BatchOr(countries, (s, t) => s.Country.Contains(t)).ToList();
+                Assert.AreEqual(16, list.Count);
+            }
+        }
+
+        [TestMethod]
+        public void TestBatchAnd()
+        {
+            var countries = new string[] { "France", "Spain" };
+            using (var context = new DbContext())
+            {
+                var list = context.Customers.BatchAnd(countries, (s, t) => s.Country.Contains(t)).ToList();
+                Assert.AreEqual(0, list.Count);
+            }
+        }
+
         private void TestAnyMethod(IDatabase db)
         {
             //事件期间，不同的DbContext对象共用一个IDatabase对象
@@ -930,9 +965,7 @@ namespace Fireasy.Data.Entity.Tests
 
             return (IQueryable<T>)queryable.Provider.CreateQuery(where);
         }
-
     }
-
 
     /// <summary>
     /// 自定义函数库。
