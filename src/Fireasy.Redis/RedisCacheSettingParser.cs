@@ -7,6 +7,9 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 using System;
 using System.Xml;
 
@@ -15,9 +18,9 @@ namespace Fireasy.Redis
     /// <summary>
     /// Redis 配置的解析处理器。
     /// </summary>
-    internal class RedisCacheSettingParser : IConfigurationSettingParseHandler
+    public class RedisCacheSettingParser : IConfigurationSettingParseHandler
     {
-        IConfigurationSettingItem IConfigurationSettingParseHandler.Parse(System.Xml.XmlNode section)
+        public IConfigurationSettingItem Parse(System.Xml.XmlNode section)
         {
             var setting = new RedisCacheSetting();
             setting.Name = section.GetAttributeValue("name");
@@ -49,5 +52,39 @@ namespace Fireasy.Redis
 
             return setting;
         }
+
+#if NETSTANDARD2_0
+        public IConfigurationSettingItem Parse(IConfiguration configuration)
+        {
+            var setting = new RedisCacheSetting();
+            setting.CacheType = Type.GetType(configuration["type"], false, true);
+            var configNode = configuration.GetSection("config");
+            if (configNode != null)
+            {
+                var serializerType = configNode["serializerType"];
+                if (!string.IsNullOrEmpty(serializerType))
+                {
+                    setting.SerializerType = serializerType.ParseType();
+                }
+
+                setting.MaxReadPoolSize = configNode["maxReadPoolSize"].To(5);
+                setting.MaxWritePoolSize = configNode["maxWritePoolSize"].To(5);
+                setting.DefaultDb = configNode["defaultDb"].To(0);
+                setting.Password = configNode["password"];
+
+                foreach (var nd in configNode.GetSection("host").GetChildren())
+                {
+                    var host = new RedisCacheHost();
+                    host.Server = nd["server"];
+                    host.Port = nd["port"].To(0);
+                    host.ReadOnly = nd["readonly"].To(false);
+
+                    setting.Hosts.Add(host);
+                }
+            }
+
+            return setting;
+        }
+#endif
     }
 }
