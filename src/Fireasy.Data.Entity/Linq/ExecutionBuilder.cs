@@ -660,7 +660,7 @@ namespace Fireasy.Data.Entity.Linq
             //循环所有属性进行赋值
             for (var i = 0; i < properties.Length; i++)
             {
-                entity.InitializateValue(properties[i], values[i]);
+                entity.InitializeValue(properties[i], values[i]);
             }
 
             //设置状态
@@ -771,7 +771,7 @@ namespace Fireasy.Data.Entity.Linq
 
                 var row = table.Rows[index++];
                 var pkValue = PropertyValue.NewValue(row.ItemArray[table.Columns.Count - 1], pkProperty.Type);
-                entity.InitializateValue(pkProperty, pkValue);
+                entity.InitializeValue(pkProperty, pkValue);
             }
 
             return rows;

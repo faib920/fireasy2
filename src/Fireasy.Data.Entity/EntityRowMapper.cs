@@ -74,7 +74,7 @@ namespace Fireasy.Data.Entity
             foreach (var mapper in mapping)
             {
                 var value = func(mapper);
-                entity.InitializateValue(mapper.Property, value);
+                entity.InitializeValue(mapper.Property, value);
             }
 
             if (alwaysProperties != null)

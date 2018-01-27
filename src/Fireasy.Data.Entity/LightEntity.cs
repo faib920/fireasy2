@@ -35,6 +35,16 @@ namespace Fireasy.Data.Entity
         {
             base.SetValue(property, value);
         }
+
+        /// <summary>
+        /// 初始化属性的值。
+        /// </summary>
+        /// <param name="property"></param>
+        /// <param name="value"></param>
+        protected void ProtectInitializeValue(IProperty property, PropertyValue value)
+        {
+            base.InitializeValue(property, value);
+        }
     }
 
     /// <summary>
@@ -86,6 +96,16 @@ namespace Fireasy.Data.Entity
         public override void SetValue(IProperty property, PropertyValue value)
         {
             property.Info.ReflectionInfo.SetValue(this, value.GetValue(), null);
+        }
+
+        /// <summary>
+        /// 初始化属性的值。
+        /// </summary>
+        /// <param name="property"></param>
+        /// <param name="value"></param>
+        public override void InitializeValue(IProperty property, PropertyValue value)
+        {
+            this.SetValue(property, value);
         }
     }
 }

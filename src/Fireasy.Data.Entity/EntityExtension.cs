@@ -33,7 +33,7 @@ namespace Fireasy.Data.Entity
         public static void Lazyload(this IEntity entity, IProperty property)
         {
             var value = EntityLazyloader.Load(entity, property);
-            entity.InitializateValue(property, value);
+            entity.InitializeValue(property, value);
         }
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace Fireasy.Data.Entity
 
             for (var i = 0; i < primaryKeys.Length; i++)
             {
-                entity.InitializateValue(primaryKeys[i], keyValues[i]);
+                entity.InitializeValue(primaryKeys[i], keyValues[i]);
             }
 
             entity.SetState(EntityState.Modified);

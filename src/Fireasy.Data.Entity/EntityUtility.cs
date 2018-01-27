@@ -96,33 +96,6 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将实体的所有主键值赋给关联的实体属性。
-        /// </summary>
-        /// <param name="entity"></param>
-        /// <param name="relationPro"></param>
-        /// <param name="enumerable"></param>
-        internal static void AttachPrimaryKeyValues(IEntity entity, RelationProperty relationPro, IEnumerable enumerable)
-        {
-            var relationKey = RelationshipUnity.GetRelationship(relationPro);
-            if (relationKey == null)
-            {
-                return;
-            }
-            var action = GetAttachPrimaryKeyAction(enumerable.GetType().GetEnumerableElementType());
-            foreach (IEntity item in enumerable)
-            {
-                if (entity.EntityState != EntityState.Attached)
-                {
-                    continue;
-                }
-                foreach (var key in relationKey.Keys)
-                {
-                    action(item, key.OtherProperty, entity.GetValue(key.ThisProperty));
-                }
-            }
-        }
-
-        /// <summary>
         /// 检查主键值是否允许修改。
         /// </summary>
         /// <param name="entity"></param>
@@ -143,7 +116,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         private static Action<IEntity, IProperty, PropertyValue> GetAttachPrimaryKeyAction(Type elementType)
         {
-            return (e, p, v) => e.InitializateValue(p, v, true);
+            return (e, p, v) => e.SetValue(p, v);
         }
 
         internal static void UpdateFromReference(IProperty property, IEntity entity, PropertyValue value)

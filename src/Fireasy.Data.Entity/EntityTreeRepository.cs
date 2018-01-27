@@ -323,27 +323,27 @@ namespace Fireasy.Data.Entity
 
             if (metaTree.InnerSign != null && !entity.IsModified(metaTree.InnerSign.Name))
             {
-                entity.InitializateValue(metaTree.InnerSign, oldEntity.GetValue(metaTree.InnerSign));
+                entity.InitializeValue(metaTree.InnerSign, oldEntity.GetValue(metaTree.InnerSign));
             }
 
             if (metaTree.Name != null && !entity.IsModified(metaTree.Name.Name))
             {
-                entity.InitializateValue(metaTree.Name, oldEntity.GetValue(metaTree.Name));
+                entity.InitializeValue(metaTree.Name, oldEntity.GetValue(metaTree.Name));
             }
 
             if (metaTree.FullName != null && !entity.IsModified(metaTree.FullName.Name))
             {
-                entity.InitializateValue(metaTree.FullName, oldEntity.GetValue(metaTree.FullName));
+                entity.InitializeValue(metaTree.FullName, oldEntity.GetValue(metaTree.FullName));
             }
 
             if (metaTree.Order != null && !entity.IsModified(metaTree.Order.Name))
             {
-                entity.InitializateValue(metaTree.Order, oldEntity.GetValue(metaTree.Order));
+                entity.InitializeValue(metaTree.Order, oldEntity.GetValue(metaTree.Order));
             }
 
             if (metaTree.Level != null && !entity.IsModified(metaTree.Level.Name))
             {
-                entity.InitializateValue(metaTree.Level, oldEntity.GetValue(metaTree.Level));
+                entity.InitializeValue(metaTree.Level, oldEntity.GetValue(metaTree.Level));
             }
         }
 

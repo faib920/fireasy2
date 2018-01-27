@@ -21,19 +21,19 @@ namespace Fireasy.Data.Entity
     /// 表示数据实体。该类型通过定义多个静态的 <see cref="IProperty"/> 来映射业务实体的属性。
     /// </summary>
     [Serializable]
-	public abstract class EntityObject : 
+    public abstract class EntityObject :
         IEntity,
         ICloneable,
         IKeepStateCloneable,
-		INotifyPropertyChanging,
-		INotifyPropertyChanged,
+        INotifyPropertyChanging,
+        INotifyPropertyChanged,
         IEntityPersistentEnvironment,
         IEntityPersistentInstanceContainer,
         ISupportInitializeNotification,
         ILazyManager,
         IEntityRelation,
         IPropertyFieldMappingResolver
-	{
+    {
         private readonly EntityEntryDictionary valueEntry = new EntityEntryDictionary();
         private EntityOwner owner;
         [NonSerialized]
@@ -43,15 +43,15 @@ namespace Fireasy.Data.Entity
         [NonSerialized]
         private EntityLzayManager lazyMgr;
 
-		/// <summary>
-		/// 在属性即将修改时，通知客户端应用程序。
-		/// </summary>
-		public event PropertyChangingEventHandler PropertyChanging;
+        /// <summary>
+        /// 在属性即将修改时，通知客户端应用程序。
+        /// </summary>
+        public event PropertyChangingEventHandler PropertyChanging;
 
-		/// <summary>
-		/// 在属性修改之后，通知客户端应用程序。
-		/// </summary>
-		public event PropertyChangedEventHandler PropertyChanged;
+        /// <summary>
+        /// 在属性修改之后，通知客户端应用程序。
+        /// </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
         /// 实体初始化完成的事件。
@@ -81,13 +81,13 @@ namespace Fireasy.Data.Entity
             return GetType().GetDefinitionEntityType();
         }
 
-		/// <summary>
-		/// 获取指定属性的值。
-		/// </summary>
-		/// <param name="property">实体属性。</param>
-		/// <returns></returns>
-		public virtual PropertyValue GetValue(IProperty property)
-		{
+        /// <summary>
+        /// 获取指定属性的值。
+        /// </summary>
+        /// <param name="property">实体属性。</param>
+        /// <returns></returns>
+        public virtual PropertyValue GetValue(IProperty property)
+        {
             var hasValue = valueEntry.Has(property.Name);
             var value = PropertyValue.Empty;
             if (hasValue)
@@ -106,30 +106,30 @@ namespace Fireasy.Data.Entity
             }
 
             return EntityUtility.CheckReturnValue(property, value);
-		}
+        }
 
-		/// <summary>
-		/// 设置指定属性的值。
-		/// </summary>
-		/// <param name="property">实体属性。</param>
-		/// <param name="value">要设置的值。</param>
+        /// <summary>
+        /// 设置指定属性的值。
+        /// </summary>
+        /// <param name="property">实体属性。</param>
+        /// <param name="value">要设置的值。</param>
         public virtual void SetValue(IProperty property, PropertyValue value)
-		{
+        {
             PropertyValue oldValue;
             //如果赋值相同则忽略更改
-			if (CheckValueEquals(property, value, out oldValue))
-			{
+            if (CheckValueEquals(property, value, out oldValue))
+            {
                 return;
-			}
+            }
 
             //验证属性值
             //ValidationUnity.Validate(this, property, value);
             EntityUtility.CheckPrimaryProperty(this, property);
 
             if (CheckPropertyChangingIsCanceled(property, value, oldValue))
-			{
-				return;
-			}
+            {
+                return;
+            }
 
             CheckEntitySetDestroy(property, oldValue, value);
             InternalSetValue(property, value);
@@ -139,12 +139,27 @@ namespace Fireasy.Data.Entity
             OnPropertyChanged(new PropertyChangedEventArgs(property, oldValue, value));
         }
 
-		/// <summary>
-		/// 触发属性即将修改的通知事件。
-		/// </summary>
-		/// <param name="e"></param>
-		protected virtual void OnPropertyChanging(PropertyChangingEventArgs e)
-		{
+        /// <summary>
+        /// 初始化属性的值。
+        /// </summary>
+        /// <param name="property"></param>
+        /// <param name="value"></param>
+        public virtual void InitializeValue(IProperty property, PropertyValue value)
+        {
+            if (property is RelationProperty)
+            {
+                lazyMgr.SetValueCreated(property.Name);
+            }
+
+            valueEntry.Initializate(property.Name, value);
+        }
+
+        /// <summary>
+        /// 触发属性即将修改的通知事件。
+        /// </summary>
+        /// <param name="e"></param>
+        protected virtual void OnPropertyChanging(PropertyChangingEventArgs e)
+        {
             PropertyChanging?.Invoke(this, e);
         }
 
@@ -157,56 +172,56 @@ namespace Fireasy.Data.Entity
             Initialized?.Invoke(this, e);
         }
 
-		/// <summary>
-		/// 触发属性已被修改的通知事件。
-		/// </summary>
-		/// <param name="e"></param>
-		protected virtual void OnPropertyChanged(PropertyChangedEventArgs e)
-		{
+        /// <summary>
+        /// 触发属性已被修改的通知事件。
+        /// </summary>
+        /// <param name="e"></param>
+        protected virtual void OnPropertyChanged(PropertyChangedEventArgs e)
+        {
             PropertyChanged?.Invoke(this, e);
         }
 
-		#region 实现IEntity
-		/// <summary>
-		/// 获取指定属性的值。
-		/// </summary>
-		/// <param name="propertyName">实体属性。</param>
-		/// <returns></returns>
+        #region 实现IEntity
+        /// <summary>
+        /// 获取指定属性的值。
+        /// </summary>
+        /// <param name="propertyName">实体属性。</param>
+        /// <returns></returns>
         PropertyValue IEntity.GetValue(string propertyName)
-		{
-			var property = PropertyUnity.GetProperty(entityType, propertyName);
-            if (property == null)
-            {
-                throw new PropertyNotFoundException(propertyName);
-            }
-
-			return GetValue(property);
-		}
-
-		/// <summary>
-		/// 设置指定属性的值。
-		/// </summary>
-		/// <param name="propertyName">实体属性。</param>
-		/// <param name="value">要设置的值。</param>
-        void IEntity.SetValue(string propertyName, PropertyValue value)
-		{
+        {
             var property = PropertyUnity.GetProperty(entityType, propertyName);
             if (property == null)
             {
                 throw new PropertyNotFoundException(propertyName);
             }
 
-			SetValue(property, value);
-		}
+            return GetValue(property);
+        }
 
-	    /// <summary>
-	    /// 获取或设置持久化环境。
-	    /// </summary>
-	    EntityPersistentEnvironment IEntityPersistentEnvironment.Environment
-	    {
+        /// <summary>
+        /// 设置指定属性的值。
+        /// </summary>
+        /// <param name="propertyName">实体属性。</param>
+        /// <param name="value">要设置的值。</param>
+        void IEntity.SetValue(string propertyName, PropertyValue value)
+        {
+            var property = PropertyUnity.GetProperty(entityType, propertyName);
+            if (property == null)
+            {
+                throw new PropertyNotFoundException(propertyName);
+            }
+
+            SetValue(property, value);
+        }
+
+        /// <summary>
+        /// 获取或设置持久化环境。
+        /// </summary>
+        EntityPersistentEnvironment IEntityPersistentEnvironment.Environment
+        {
             get { return environment; }
             set { environment = value; }
-	    }
+        }
 
         string IEntityPersistentInstanceContainer.InstanceName { get; set; }
 
@@ -231,9 +246,9 @@ namespace Fireasy.Data.Entity
         }
 
         void IEntity.SetState(EntityState state)
-		{
-			this.state = state;
-		}
+        {
+            this.state = state;
+        }
 
         void IEntity.ResetUnchanged()
         {
@@ -241,36 +256,19 @@ namespace Fireasy.Data.Entity
             valueEntry.Reset();
         }
 
-		string[] IEntity.GetModifiedProperties()
-		{
+        string[] IEntity.GetModifiedProperties()
+        {
             return valueEntry.GetModifiedProperties().ToArray();
-		}
+        }
 
         PropertyValue IEntity.GetOldValue(IProperty property)
         {
             return valueEntry.Has(property.Name) ? valueEntry[property.Name].GetOldValue() : PropertyValue.Empty;
         }
 
-	    PropertyValue IEntity.GetDirectValue(IProperty property)
-	    {
-	        return valueEntry.Has(property.Name) ? valueEntry[property.Name].GetCurrentValue() : PropertyValue.Empty;
-	    }
-
-	    void IEntity.InitializateValue(IProperty property, PropertyValue value, bool modify)
-	    {
-            if (property is RelationProperty)
-            {
-                lazyMgr.SetValueCreated(property.Name);
-            }
-
-            if (modify)
-            {
-                valueEntry.Modify(property.Name, value);
-            }
-            else
-            {
-                valueEntry.Initializate(property.Name, value);
-            }
+        PropertyValue IEntity.GetDirectValue(IProperty property)
+        {
+            return valueEntry.Has(property.Name) ? valueEntry[property.Name].GetCurrentValue() : PropertyValue.Empty;
         }
 
         bool IEntity.IsModifyLocked
@@ -299,7 +297,7 @@ namespace Fireasy.Data.Entity
             return valueEntry.Has(propertyName) && valueEntry[propertyName].IsModified;
         }
 
-	    #endregion
+        #endregion
 
         #region 实现IEntityRelation
         EntityOwner IEntityRelation.Owner
@@ -398,17 +396,17 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <returns></returns>
 		public override int GetHashCode()
-		{
+        {
             var pkProperties = PropertyUnity.GetPrimaryProperties(entityType);
             return pkProperties.Select(GetValue).Aggregate(0, (current, value) => current ^ (value == null ? 0 : value.GetHashCode()));
-		}
+        }
 
         /// <summary>
         /// 克隆出一个新的实体对象。克隆的新实体状态为 <see cref="EntityState.Attached"/>，且所有的属性变为被修改的。
         /// </summary>
         /// <returns></returns>
 	    public object Clone()
-	    {
+        {
             return CloneInternal(false, false);
         }
 
@@ -481,7 +479,7 @@ namespace Fireasy.Data.Entity
                 lazyMgr.SetValueCreated(property.Name);
                 if (value != null)
                 {
-                    valueEntry.Initializate(property.Name, value, () => value.DataType = property.Info.DataType );
+                    valueEntry.Initializate(property.Name, value, () => value.DataType = property.Info.DataType);
                 }
 
                 return value;
@@ -588,6 +586,8 @@ namespace Fireasy.Data.Entity
             }
 
             valueEntry.Modify(property.Name, value);
+
+            property.Info.ReflectionInfo.SetValue(this, value.GetValue(), null);
         }
 
         /// <summary>

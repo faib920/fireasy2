@@ -102,6 +102,20 @@ namespace Fireasy.Data.Entity.Tests
         }
 
         [TestMethod]
+        public void TestInitValue()
+        {
+            var customer = new Customers();
+            customer.InitializeValue(PropertyUnity.GetProperty(typeof(Customers), "ContactName"), "ddd");
+            Assert.AreEqual(customer.ContactName, "ddd");
+            Assert.IsFalse(customer.IsModified("ContactName"));
+
+            var order = Orders.New();
+            order.InitializeValue(PropertyUnity.GetProperty(typeof(Orders), "CustomerID"), "eee");
+            Assert.AreEqual(order.CustomerID, "eee");
+            Assert.IsFalse(order.IsModified("CustomerID"));
+        }
+
+        [TestMethod]
         public void TestGetProperty()
         {
             var customer = Customers.New();

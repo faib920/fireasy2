@@ -89,8 +89,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="property"></param>
         /// <param name="value"></param>
-        /// <param name="modify"></param>
-        void InitializateValue(IProperty property, PropertyValue value, bool modify = false);
+        void InitializeValue(IProperty property, PropertyValue value);
 
         /// <summary>
         /// 是否处于修改锁定状态。

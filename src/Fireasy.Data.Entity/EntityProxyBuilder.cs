@@ -22,6 +22,7 @@ namespace Fireasy.Data.Entity
         private static MethodInfo mthGetProperty = typeof(PropertyUnity).GetMethod("GetProperty");
         private static MethodInfo mthGetValue = typeof(ProtectedEntity).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(s => s.Name == "ProtectGetValue");
         private static MethodInfo mthSetValue = typeof(ProtectedEntity).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(s => s.Name == "ProtectSetValue");
+        private static MethodInfo mthInitValue = typeof(ProtectedEntity).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(s => s.Name == "ProtectInitializeValue");
         private static MethodInfo mthPVNewValue = typeof(PropertyValue).GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(s => s.Name == "NewValue");
         private static MethodInfo mthPVGetValue = typeof(PropertyValue).GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(s => s.Name == "GetValue");
 
@@ -93,6 +94,15 @@ namespace Fireasy.Data.Entity
                         });
                 }
             }
+
+            var initMethod = typeBuilder.DefineMethod("InitializeValue", 
+                parameterTypes: new[] { typeof(IProperty), typeof(PropertyValue) }, 
+                ilCoding: code =>
+                    {
+                        code.Emitter.
+                            ldarg_0.ldarg_1.ldarg_2.
+                            callvirt(mthInitValue).ret();
+                    });
 
             return typeBuilder.CreateType();
         }
