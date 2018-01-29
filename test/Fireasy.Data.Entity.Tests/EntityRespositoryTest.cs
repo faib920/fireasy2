@@ -1,7 +1,9 @@
 ﻿using Fireasy.Common.Extensions;
+using Fireasy.Common.Subscribe;
 using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Translators;
+using Fireasy.Data.Entity.Subscribes;
 using Fireasy.Data.Entity.Tests.Models;
 using Fireasy.Data.Extensions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -927,6 +929,62 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var list = context.Customers.BatchAnd(countries, (s, t) => s.Country.Contains(t)).ToList();
                 Assert.AreEqual(0, list.Count);
+            }
+        }
+
+
+        [TestMethod]
+        public void TestSubscriberForBatch()
+        {
+            SubscribeManager.Register<EntityPersistentSubject>(new EntitySubscriber());
+
+            using (var db = new DbContext())
+            {
+                var list = new List<Depts>();
+
+                for (var i = 0; i < 3; i++)
+                {
+                    var d = Depts.New();
+                    d.DeptID = i + 50;
+                    d.DeptName = "a" + i;
+                    list.Add(d);
+                }
+
+                list[1].DeptCode = "test";
+
+                db.Depts.Batch(list, (u, s) => u.Update(s));
+            }
+
+        }
+
+        [TestMethod]
+        public void TestSubscriberForUpdate()
+        {
+            SubscribeManager.Register<EntityPersistentSubject>(new EntitySubscriber());
+
+            using (var db = new DbContext())
+            {
+                var order = db.Orders.FirstOrDefault();
+                order.ShipName = "1";
+                db.Orders.Update(order);
+            }
+        }
+
+        private class EntitySubscriber : EntityPersistentSubscriber
+        {
+            protected override void OnBeforeUpdate(IEntity entity)
+            {
+                Console.WriteLine(entity);
+            }
+
+            protected override void OnUpdate(Type entityType)
+            {
+                Console.WriteLine(entityType);
+            }
+
+            protected override void OnBeforeBatch(IEnumerable<IEntity> entities, EntityPersistentOperater operater)
+            {
+                Console.WriteLine(operater);
             }
         }
 

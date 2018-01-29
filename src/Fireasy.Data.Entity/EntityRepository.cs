@@ -255,6 +255,11 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Batch(IEnumerable<TEntity> instances, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation)
         {
+            if (instances.IsNullOrEmpty())
+            {
+                return -1;
+            }
+
             var operateName = OperateFinder.Find(fnOperation);
             var eventType = GetBeforeEventType(operateName);
 

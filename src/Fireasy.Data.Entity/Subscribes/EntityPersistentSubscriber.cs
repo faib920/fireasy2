@@ -26,13 +26,13 @@ namespace Fireasy.Data.Entity.Subscribes
                 case EntityPersistentEventType.BeforeCreate:
                     if (esub.Argument != null)
                     {
-                        OnBeforeCreate(esub.Argument as IEntity);
+                        OnBeforeCreate((esub.Argument as EntityEventArgs).Entity);
                     }
                     break;
                 case EntityPersistentEventType.AfterCreate:
                     if (esub.Argument != null)
                     {
-                        OnAfterCreate(esub.Argument as IEntity);
+                        OnAfterCreate((esub.Argument as EntityEventArgs).Entity);
                     }
 
                     OnCreate(esub.EntityType);
@@ -40,13 +40,13 @@ namespace Fireasy.Data.Entity.Subscribes
                 case EntityPersistentEventType.BeforeUpdate:
                     if (esub.Argument != null)
                     {
-                        OnBeforeUpdate(esub.Argument as IEntity);
+                        OnBeforeUpdate((esub.Argument as EntityEventArgs).Entity);
                     }
                     break;
                 case EntityPersistentEventType.AfterUpdate:
                     if (esub.Argument != null)
                     {
-                        OnAfterUpdate(esub.Argument as IEntity);
+                        OnAfterUpdate((esub.Argument as EntityEventArgs).Entity);
                     }
 
                     OnUpdate(esub.EntityType);
@@ -54,36 +54,35 @@ namespace Fireasy.Data.Entity.Subscribes
                 case EntityPersistentEventType.BeforeRemove:
                     if (esub.Argument != null)
                     {
-                        OnBeforeRemove(esub.Argument as IEntity);
+                        OnBeforeRemove((esub.Argument as EntityEventArgs).Entity);
                     }
                     break;
                 case EntityPersistentEventType.AfterRemove:
                     if (esub.Argument != null)
                     {
-                        OnAfterRemove(esub.Argument as IEntity);
+                        OnAfterRemove((esub.Argument as EntityEventArgs).Entity);
                     }
 
                     OnRemove(esub.EntityType);
                     break;
                 case EntityPersistentEventType.BeforeBatch:
-                    var objs1 = (object[])esub.Argument;
-                    OnBeforeBatch(objs1[0] as IEnumerable<IEntity>, (EntityPersistentOperater)objs1[1]);
+                    var objs1 = esub.Argument as EntitiesArgs;
+                    OnBeforeBatch(objs1.Entities, objs1.OperType);
                     break;
                 case EntityPersistentEventType.AfterBatch:
-                    var objs2 = (object[])esub.Argument;
-                    var operater = (EntityPersistentOperater)objs2[1];
-                    OnAfterBatch(objs2[0] as IEnumerable<IEntity>, operater);
+                    var objs2 = esub.Argument as EntitiesArgs;
+                    OnAfterBatch(objs2.Entities, objs2.OperType);
 
-                    switch (operater)
+                    switch (objs2.OperType)
                     {
                         case EntityPersistentOperater.Create:
                             OnCreate(esub.EntityType);
                             break;
                         case EntityPersistentOperater.Update:
-                            OnCreate(esub.EntityType);
+                            OnUpdate(esub.EntityType);
                             break;
                         case EntityPersistentOperater.Remove:
-                            OnCreate(esub.EntityType);
+                            OnRemove(esub.EntityType);
                             break;
                     }
 

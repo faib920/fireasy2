@@ -3,6 +3,7 @@ using Fireasy.Common;
 using Fireasy.Common.Subscribe;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Fireasy.Data.Entity.Subscribes
 {
@@ -71,40 +72,66 @@ namespace Fireasy.Data.Entity.Subscribes
             return ret;
         }
 
-        public static void OnBeforeBatch(IEnumerable<IEntity> entities, EntityPersistentEventType eventType)
-        {
-            Guard.ArgumentNull(entities, "entity");
-            RaiseEvent(new object[] { entities, eventType }, EntityPersistentEventType.BeforeBatch);
-        }
-
-        public static void OnAfterBatch(IEnumerable<IEntity> entities, EntityPersistentEventType eventType)
-        {
-            Guard.ArgumentNull(entities, "entity");
-            RaiseEvent(new object[] { entities, eventType }, EntityPersistentEventType.AfterBatch);
-        }
-
         public static T OnBatch<T>(IEnumerable<IEntity> entities, EntityPersistentOperater operater, Func<T> func)
         {
             var ret = default(T);
-            RaiseEvent(new object[] { entities, operater }, EntityPersistentEventType.BeforeBatch);
+            RaiseEvent(entities, operater, EntityPersistentEventType.BeforeBatch);
             ret = func();
-            RaiseEvent(new object[] { entities, operater }, EntityPersistentEventType.AfterBatch);
+            RaiseEvent(entities, operater, EntityPersistentEventType.AfterBatch);
             return ret;
         }
 
-        public static void RaiseEvent(object[] arguments, EntityPersistentEventType eventType)
+        public static void RaiseEvent(IEnumerable<IEntity> entities, EntityPersistentOperater operType, EntityPersistentEventType eventType)
         {
-            SubscribeManager.Publish<EntityPersistentSubject>(arguments, eventType);
+            SubscribeManager.Publish<EntityPersistentSubject>(new EntitiesArgs(entities, operType, eventType));
         }
 
         public static void RaiseEvent<TEntity>(EntityPersistentEventType eventType)
         {
-            SubscribeManager.Publish<EntityPersistentSubject>(typeof(TEntity), eventType);
+            SubscribeManager.Publish<EntityPersistentSubject>(new EntityEventTypeArgs(typeof(TEntity), eventType));
         }
 
         public static void RaiseEvent(IEntity entity, EntityPersistentEventType eventType)
         {
-            SubscribeManager.Publish<EntityPersistentSubject>(entity, eventType);
+            SubscribeManager.Publish<EntityPersistentSubject>(new EntityEventArgs(entity, eventType));
         }
+    }
+
+    internal class EntityEventTypeArgs
+    {
+        public EntityEventTypeArgs(Type entityType, EntityPersistentEventType eventType)
+        {
+            EntityType = entityType;
+            EventType = eventType;
+        }
+
+        public Type EntityType { get; set; }
+
+        public EntityPersistentEventType EventType { get; set; }
+    }
+
+    internal class EntityEventArgs : EntityEventTypeArgs
+    {
+        public EntityEventArgs(IEntity entity, EntityPersistentEventType eventType)
+            : base(entity.EntityType, eventType)
+        {
+            Entity = entity;
+        }
+
+        public IEntity Entity { get; set; }
+    }
+
+    internal class EntitiesArgs : EntityEventTypeArgs
+    {
+        public EntitiesArgs(IEnumerable<IEntity> entities, EntityPersistentOperater operType, EntityPersistentEventType eventType)
+            : base(entities.FirstOrDefault().EntityType, eventType)
+        {
+            Entities = entities;
+            OperType = operType;
+        }
+
+        public IEnumerable<IEntity> Entities { get; set; }
+
+        public EntityPersistentOperater OperType { get; set; }
     }
 }
