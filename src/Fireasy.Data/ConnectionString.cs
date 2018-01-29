@@ -116,7 +116,7 @@ namespace Fireasy.Data
 
             for (var i = 0; i < constr.Length; i++)
             {
-                if (constr[i] == '"')
+                if (constr[i] == '"' || constr[i] == '\'')
                 {
                     quote = !quote;
                 }

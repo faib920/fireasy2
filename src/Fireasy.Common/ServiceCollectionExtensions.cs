@@ -6,11 +6,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if NETSTANDARD2_0
+using Fireasy.Common.Caching;
 using Fireasy.Common.Caching.Configuration;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Ioc;
 using Fireasy.Common.Ioc.Configuration;
 using Fireasy.Common.Ioc.Registrations;
+using Fireasy.Common.Logging;
 using Fireasy.Common.Logging.Configuration;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -106,6 +108,9 @@ namespace Microsoft.Extensions.DependencyInjection
             ConfigurationUnity.Bind<LoggingConfigurationSection>(configuration);
             ConfigurationUnity.Bind<CachingConfigurationSection>(configuration);
             ConfigurationUnity.Bind<ContainerConfigurationSection>(configuration);
+
+            services.AddSingleton(typeof(ILogger), s => LoggerFactory.CreateLogger());
+            services.AddSingleton(typeof(ICacheManager), s => CacheManagerFactory.CreateManager());
         }
     }
 }
