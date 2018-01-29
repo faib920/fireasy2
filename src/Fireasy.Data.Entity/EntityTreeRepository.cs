@@ -135,7 +135,7 @@ namespace Fireasy.Data.Entity
                 {
                     var arg = CreateUpdatingArgument(entity);
                     //获得新节点的Order值
-                    arg.NewValue.Order = orderNo1 ++;
+                    arg.NewValue.Order = orderNo1++;
                     arg.NewValue.Level = 1;
 
                     //生成新的InnerID
@@ -159,7 +159,7 @@ namespace Fireasy.Data.Entity
                 var arg1 = CreateUpdatingArgument(entity);
 
                 //获得新节点的Order值
-                arg1.NewValue.Order = orderNo ++;
+                arg1.NewValue.Order = orderNo++;
 
                 //获得参照节点的级别
                 arg1.NewValue.Level = arg2.OldValue.Level;
@@ -200,7 +200,7 @@ namespace Fireasy.Data.Entity
 
             if (referEntity != null && position == null)
             {
-                repository.Update(entity);
+                UpdateCurrent(entity, isolation);
                 return;
             }
 
@@ -214,33 +214,49 @@ namespace Fireasy.Data.Entity
             if (entity.Equals(referEntity) ||
                 (position != null && !CheckNeedMove(entity, referEntity, (EntityTreePosition)position)))
             {
-                repository.Update(entity);
+                UpdateCurrent(entity, isolation);
                 return;
             }
 
+            var isTrans = false;
+
             try
             {
+                isTrans = database.BeginTransaction();
+
                 var arg1 = CreateUpdatingArgument(entity);
 
                 //移到根节点
                 if (referEntity == null)
                 {
                     UpdateMoveToRoot(entity, arg1, isolation);
-                    return;
                 }
-
-                var arg2 = CreateUpdatingArgument(referEntity);
-
-                if (position == EntityTreePosition.Children)
+                else
                 {
-                    UpdateMoveAsChildren(entity, referEntity, arg1, arg2, isolation);
-                    return;
+                    var arg2 = CreateUpdatingArgument(referEntity);
+
+                    if (position == EntityTreePosition.Children)
+                    {
+                        UpdateMoveAsChildren(entity, referEntity, arg1, arg2, isolation);
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
                 }
 
-                throw new NotImplementedException();
+                if (isTrans)
+                {
+                    database.CommitTransaction();
+                }
             }
             catch (Exception ex)
             {
+                if (isTrans)
+                {
+                    database.RollbackTransaction();
+                }
+
                 throw new EntityPersistentException(SR.GetString(SRKind.FailInEntityMove), ex);
             }
         }
@@ -307,7 +323,7 @@ namespace Fireasy.Data.Entity
             return repository.Provider.CreateQuery<TEntity>(orderExp);
         }
 
-        private void AttachRequiredProperties(IEntity entity)
+        private void AttachRequiredProperties(TEntity entity)
         {
             var pkValues = new List<PropertyValue>();
             foreach (var pkProperty in PropertyUnity.GetPrimaryProperties(typeof(TEntity)))
@@ -413,7 +429,7 @@ namespace Fireasy.Data.Entity
         /// <param name="entity"></param>
         /// <param name="referEntity"></param>
         /// <returns></returns>
-        private bool CheckMovable(IEntity entity, IEntity referEntity)
+        private bool CheckMovable(TEntity entity, TEntity referEntity)
         {
             if (referEntity == null)
             {
@@ -439,7 +455,7 @@ namespace Fireasy.Data.Entity
         /// <param name="referEntity"></param>
         /// <param name="position"></param>
         /// <returns></returns>
-        private bool CheckNeedMove(IEntity entity, IEntity referEntity, EntityTreePosition position)
+        private bool CheckNeedMove(TEntity entity, TEntity referEntity, EntityTreePosition position)
         {
             var bag1 = ParseEntityData(entity);
             if (referEntity == null)
@@ -589,34 +605,6 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 使用当前节点生成新的全名
-        /// </summary>
-        /// <param name="entity"></param>
-        /// <returns></returns>
-        private string GenerateFullName(IEntity entity)
-        {
-            var fullName = string.Empty;
-            if (metaTree.Name != null && metaTree.FullName != null)
-            {
-                fullName = (string)entity.GetValue(metaTree.FullName);
-                var index = fullName.LastIndexOf(metaTree.NameSeparator);
-                if (index != -1)
-                {
-                    //取上一级全名
-                    fullName = string.Format("{0}{1}{2}", fullName.Substring(0, index), metaTree.NameSeparator,
-                                             (string)entity.GetValue(metaTree.Name));
-                }
-                else
-                {
-                    //全名等于名称
-                    fullName = (string)entity.GetValue(metaTree.Name);
-                }
-            }
-
-            return fullName;
-        }
-
-        /// <summary>
         /// 生成新的全名，以参考节点的全名作为基础
         /// </summary>
         /// <param name="arg1"></param>
@@ -758,10 +746,10 @@ namespace Fireasy.Data.Entity
         /// <param name="current">当前的实体对象。</param>
         /// <param name="children">要更新的子实体对象。</param>
         /// <param name="fuleName">当前实体对象的全名。</param>
-        private void UpdateChildrenFullName(IEntity current, IEnumerable<TEntity> children, string fuleName)
+        private void UpdateChildrenFullName(TEntity current, IEnumerable<TEntity> children, string fuleName)
         {
             var list = new List<EntityTreeUpdatingBag>();
-            foreach (IEntity entity in children)
+            foreach (var entity in children)
             {
                 var arg = CreateUpdatingArgument(entity);
 
@@ -786,9 +774,9 @@ namespace Fireasy.Data.Entity
             list.Clear();
         }
 
-        private void UpdateChildren(IEntity current, IEnumerable<TEntity> entities, EntityTreeUpfydatingArgument argument)
+        private void UpdateChildren(TEntity current, IEnumerable<TEntity> entities, EntityTreeUpfydatingArgument argument)
         {
-            foreach (IEntity entity in entities)
+            foreach (var entity in entities)
             {
                 var arg = CreateUpdatingArgument(entity);
 
@@ -811,11 +799,11 @@ namespace Fireasy.Data.Entity
         /// <param name="entities">要移动的子实体对象。</param>
         /// <param name="currentInnerId">当前的内码。</param>
         /// <param name="position">移动的偏离位置。</param>
-        private void UpdateBrothersAndChildren(IEntity current, IEnumerable<TEntity> entities, string currentInnerId, int position)
+        private void UpdateBrothersAndChildren(TEntity current, IEnumerable<TEntity> entities, string currentInnerId, int position)
         {
             var dictionary = new Dictionary<string, EntityTreeUpfydatingArgument>();
 
-            foreach (IEntity entity in entities)
+            foreach (var entity in entities)
             {
                 var arg = CreateUpdatingArgument(entity);
 
@@ -855,7 +843,7 @@ namespace Fireasy.Data.Entity
         /// <param name="current"></param>
         /// <param name="arg"></param>
         /// <param name="isolation"></param>
-        private void UpdateMoveToRoot(IEntity current, EntityTreeUpfydatingArgument arg, Expression<Func<TEntity>> isolation = null)
+        private void UpdateMoveToRoot(TEntity current, EntityTreeUpfydatingArgument arg, Expression<Func<TEntity>> isolation = null)
         {
             //获得新节点的Order值
             var newOrder = GetNewOrderNumber(null, EntityTreePosition.Children);
@@ -887,6 +875,8 @@ namespace Fireasy.Data.Entity
             //它的孩子要移到根节点下
             UpdateChildren(current, children, arg);
 
+            repository.Update(current);
+
             repository.Batch(brothers, (u, s) => u.Update(s));
             repository.Batch(children, (u, s) => u.Update(s));
         }
@@ -894,12 +884,12 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 将子节点移动到另一个子节点的下面。
         /// </summary>
-        /// <param name="entity"></param>
+        /// <param name="current"></param>
         /// <param name="referEntity"></param>
         /// <param name="arg1"></param>
         /// <param name="arg2"></param>
         /// <param name="isolation"></param>
-        private void UpdateMoveAsChildren(IEntity entity, IEntity referEntity, EntityTreeUpfydatingArgument arg1, EntityTreeUpfydatingArgument arg2, Expression<Func<TEntity>> isolation = null)
+        private void UpdateMoveAsChildren(TEntity current, TEntity referEntity, EntityTreeUpfydatingArgument arg1, EntityTreeUpfydatingArgument arg2, Expression<Func<TEntity>> isolation = null)
         {
             //获取要移动节点的兄弟及其孩子
             var brothers = GetBrothersAndChildren(arg1, false, null, isolation: isolation);
@@ -908,7 +898,7 @@ namespace Fireasy.Data.Entity
             var children = GetChildren(arg1, isolation);
 
             //兄弟及其孩子要下移一个单位
-            UpdateBrothersAndChildren(entity, brothers, arg1.OldValue.InnerId, -1);
+            UpdateBrothersAndChildren(current, brothers, arg1.OldValue.InnerId, -1);
 
             var modify = IsInList(referEntity, brothers);
             if (modify != null)
@@ -928,11 +918,41 @@ namespace Fireasy.Data.Entity
             arg1.NewValue.FullName = GenerateFullName(arg1, arg2, EntityTreePosition.Children);
 
             //更新要移动的节点的孩子
-            UpdateChildren(entity, children, arg1);
-            UpdateEntityByArgument(entity, arg1);
+            UpdateChildren(current, children, arg1);
+            UpdateEntityByArgument(current, arg1);
+
+            repository.Update(current);
 
             repository.Batch(brothers, (u, s) => u.Update(s));
             repository.Batch(children, (u, s) => u.Update(s));
+        }
+
+        /// <summary>
+        /// 更新当前节点。
+        /// </summary>
+        /// <param name="current"></param>
+        /// <param name="isolation"></param>
+        private void UpdateCurrent(TEntity current, Expression<Func<TEntity>> isolation)
+        {
+            if (metaTree.FullName != null && current.IsModified(metaTree.Name.Name))
+            {
+                var arg = CreateUpdatingArgument(current);
+
+                var fullName = GetPreviousFullName(arg.OldValue.FullName);
+
+                fullName = string.Format("{0}{1}{2}", fullName, metaTree.NameSeparator, arg.NewValue.Name);
+
+                arg.NewValue.FullName = fullName;
+
+                var chindren = GetChildren(arg, isolation);
+
+                UpdateChildren(current, chindren, arg);
+                UpdateEntityByArgument(current, arg);
+
+                repository.Batch(chindren, (u, s) => u.Update(s));
+            }
+
+            repository.Update(current);
         }
 
         /// <summary>
@@ -941,7 +961,7 @@ namespace Fireasy.Data.Entity
         /// <param name="entity"></param>
         /// <param name="entities"></param>
         /// <returns></returns>
-        private IEntity IsInList(IEntity entity, IEnumerable<TEntity> entities)
+        private TEntity IsInList(TEntity entity, IEnumerable<TEntity> entities)
         {
             return entities.FirstOrDefault(item => item.Equals(entity));
         }
@@ -1006,7 +1026,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
-        private EntityTreeUpfydatingArgument CreateUpdatingArgument(IEntity entity)
+        private EntityTreeUpfydatingArgument CreateUpdatingArgument(TEntity entity)
         {
             if (entity == null)
             {
@@ -1026,7 +1046,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
-        private EntityTreeUpdatingBag ParseEntityData(IEntity entity)
+        private EntityTreeUpdatingBag ParseEntityData(TEntity entity)
         {
             var data = new EntityTreeUpdatingBag
             {
@@ -1070,7 +1090,7 @@ namespace Fireasy.Data.Entity
         /// <param name="entity"></param>
         /// <param name="argument"></param>
         /// <param name="force">是否强制修改。</param>
-        private void UpdateEntityByArgument(IEntity entity, EntityTreeUpfydatingArgument argument, bool force = false)
+        private void UpdateEntityByArgument(TEntity entity, EntityTreeUpfydatingArgument argument, bool force = false)
         {
             //force强制修改属性
             if (force || argument.OldValue.InnerId != argument.NewValue.InnerId)

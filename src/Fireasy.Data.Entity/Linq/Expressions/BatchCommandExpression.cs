@@ -12,22 +12,25 @@ namespace Fireasy.Data.Entity.Linq.Expressions
 {
     public sealed class BatchCommandExpression : DbExpression
     {
-        public BatchCommandExpression(Expression input, LambdaExpression operation)
+        public BatchCommandExpression(Expression input, LambdaExpression operation, List<string> arguments)
             : base(DbExpressionType.Batch, typeof(IEnumerable<>).MakeGenericType(operation.Body.Type))
         {
             Input = input;
             Operation = operation;
+            Arguments = arguments;
         }
 
         public Expression Input { get; private set; }
 
         public LambdaExpression Operation { get; private set; }
 
-        public BatchCommandExpression Update(Expression input, LambdaExpression operation)
+        public List<string> Arguments { get; private set; }
+
+        public BatchCommandExpression Update(Expression input, LambdaExpression operation, List<string> arguments)
         {
-            if (input != Input || operation != Operation)
+            if (input != Input || operation != Operation || arguments != Arguments)
             {
-                return new BatchCommandExpression(input, operation);
+                return new BatchCommandExpression(input, operation, arguments);
             }
 
             return this;

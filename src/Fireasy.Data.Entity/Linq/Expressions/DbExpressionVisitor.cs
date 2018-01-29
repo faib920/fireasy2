@@ -352,7 +352,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         protected virtual Expression VisitBatch(BatchCommandExpression batch)
         {
             var operation = (LambdaExpression)this.Visit(batch.Operation);
-            return batch.Update(batch.Input, operation);
+            return batch.Update(batch.Input, operation, batch.Arguments);
         }
 
         /// <summary>

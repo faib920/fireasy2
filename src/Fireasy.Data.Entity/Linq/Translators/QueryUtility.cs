@@ -350,10 +350,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// 将被修改的属性集附加到 <see cref="TranslateScope"/> 对象中。
         /// </summary>
         /// <param name="instances"></param>
-        internal static void AttachModifiedProperties(Expression instances)
+        internal static List<string> AttachModifiedProperties(Expression instances)
         {
+            var properties = GetModifiedProperties(instances);
+
             //在序列中查找被修改的属性列表
-            TranslateScope.Current.SetData(REFERENCE_MPROS_KEY, GetModifiedProperties(instances));
+            TranslateScope.Current.SetData(REFERENCE_MPROS_KEY, properties);
+
+            return properties;
         }
 
         /// <summary>

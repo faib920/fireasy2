@@ -258,7 +258,10 @@ namespace Fireasy.Data.Entity
 
         string[] IEntity.GetModifiedProperties()
         {
-            return valueEntry.GetModifiedProperties().ToArray();
+            return (from s in valueEntry.GetModifiedProperties()
+                   let p = PropertyUnity.GetProperty(entityType, s)
+                   where p != null && (!p.Info.IsPrimaryKey || (p.Info.IsPrimaryKey && p.Info.GenerateType == IdentityGenerateType.None))
+                   select s).ToArray();
         }
 
         PropertyValue IEntity.GetOldValue(IProperty property)

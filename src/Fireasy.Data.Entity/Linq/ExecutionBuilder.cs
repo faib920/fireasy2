@@ -171,6 +171,11 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         protected override Expression VisitBatch(BatchCommandExpression batch)
         {
+            if (batch.Arguments.Count == 0)
+            {
+                return Expression.Constant(-1);
+            }
+
             var operation = batch.Operation;
             if (operation.Body is CommandExpression command)
             {
@@ -186,7 +191,7 @@ namespace Fireasy.Data.Entity.Linq
                 }
             }
 
-            batch = batch.Update(batch.Input, operation);
+            batch = batch.Update(batch.Input, operation, batch.Arguments);
 
             return BuildExecuteBatch(batch);
         }

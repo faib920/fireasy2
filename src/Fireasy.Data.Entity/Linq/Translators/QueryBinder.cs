@@ -1678,14 +1678,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             var projection = VisitSequence(source);
 
-            QueryUtility.AttachModifiedProperties(instances);
+            var arguments = QueryUtility.AttachModifiedProperties(instances);
 
             var op = (LambdaExpression)this.Visit(operation);
 
             QueryUtility.ReleaseModifiedProperties();
 
             var items = this.Visit(instances);
-            return new BatchCommandExpression(items, op);
+            return new BatchCommandExpression(items, op, arguments);
         }
 
 #if !NET35
