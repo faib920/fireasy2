@@ -76,6 +76,11 @@ namespace Fireasy.Data.Entity.Linq
         {
             var efn = TranslateCache.TryGetDelegate(expression, () => (LambdaExpression)GetExecutionPlan(expression));
 
+            if (efn.Method.GetParameters().Length == 2)
+            {
+                return efn.DynamicInvoke(context.Database);
+            }
+
             var segment = SegmentFinder.Find(expression);
 
             return efn.DynamicInvoke(context.Database, segment);
