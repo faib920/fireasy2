@@ -30,7 +30,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services"></param>
         /// <param name="configuration"></param>
         /// <returns></returns>
-        public static IServiceCollection AddFireasy(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddFireasy(this IServiceCollection services, IConfiguration configuration, Action<Fireasy.Common.CoreOptions> setupAction = null)
         {
             var assemblies = new List<Assembly>();
 
@@ -48,6 +48,9 @@ namespace Microsoft.Extensions.DependencyInjection
                     }
                 }
             }
+
+            var options = new Fireasy.Common.CoreOptions();
+            setupAction?.Invoke(options);
 
             assemblies.Clear();
 
