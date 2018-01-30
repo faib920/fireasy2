@@ -18,9 +18,8 @@ namespace Fireasy.Data.Entity.Metadata
     /// </summary>
     public sealed class EntityMetadata
     {
-        private readonly List<IProperty> properties = new List<IProperty>();
+        private readonly MetadataPropertyDictionary properties = new MetadataPropertyDictionary();
         private readonly List<IProperty> concurrencyProperties = new List<IProperty>();
-        private ReadOnlyCollection<IProperty> roProperties;
 
         /// <summary>
         /// 初始化 <see cref="EntityMetadata"/> 类的新实例。
@@ -91,16 +90,11 @@ namespace Fireasy.Data.Entity.Metadata
         /// <summary>
         /// 获取实体的所有属性列表。
         /// </summary>
-        public ReadOnlyCollection<IProperty> Properties
+        public MetadataPropertyDictionary Properties
         {
             get
             {
-                if (roProperties == null || properties.Count != roProperties.Count)
-                {
-                    roProperties = properties.ToReadOnly();
-                }
-
-                return roProperties;
+                return properties;
             }
         }
 
@@ -115,12 +109,9 @@ namespace Fireasy.Data.Entity.Metadata
         /// <param name="property"></param>
         internal void InternalAddProperty(IProperty property)
         {
-            foreach (var p in properties)
+            if (properties.Keys.Any(s => s == property.Name))
             {
-                if (p.Name.Equals(property.Name))
-                {
-                    return;
-                }
+                return;
             }
 
             if (property.Info.IsDeletedKey)
@@ -133,11 +124,50 @@ namespace Fireasy.Data.Entity.Metadata
                 concurrencyProperties.Add(property);
             }
 
-            properties.Add(property);
+            properties.Add(property.Name, property);
 
             if (EntityTree != null)
             {
                 EntityTree.InitTreeMetadata(property);
+            }
+        }
+    }
+
+    public class MetadataPropertyDictionary
+    {
+        private Dictionary<string, IProperty> dic = new Dictionary<string, IProperty>();
+
+        internal void Add(string name, IProperty property)
+        {
+            dic.Add(name, property);
+        }
+
+        public IEnumerable<string> Keys
+        {
+            get
+            {
+                return dic.Keys;
+            }
+        }
+
+        public IEnumerable<IProperty> Values
+        {
+            get
+            {
+                return dic.Values;
+            }
+        }
+
+        public IProperty this[string name]
+        {
+            get
+            {
+                if (dic.ContainsKey(name))
+                {
+                    return dic[name];
+                }
+
+                return null;
             }
         }
     }

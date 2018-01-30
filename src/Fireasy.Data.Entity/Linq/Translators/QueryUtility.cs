@@ -609,7 +609,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 if (entityType == null)
                 {
-                    properties = PropertyUnity.GetPersistentProperties(entity.EntityType)
+                    entityType = entity.EntityType;
+                    properties = PropertyUnity.GetPersistentProperties(entityType)
                         .Where(m => !m.Info.IsPrimaryKey ||
                             (m.Info.IsPrimaryKey && m.Info.GenerateType == IdentityGenerateType.None));
                 }

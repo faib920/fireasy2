@@ -589,8 +589,6 @@ namespace Fireasy.Data.Entity
             }
 
             valueEntry.Modify(property.Name, value);
-
-            property.Info.ReflectionInfo.SetValue(this, value.GetValue(), null);
         }
 
         /// <summary>

@@ -24,66 +24,82 @@ namespace Fireasy.Data.Entity.Subscribes
             switch (esub.EventType)
             {
                 case EntityPersistentEventType.BeforeCreate:
-                    if (esub.Argument != null)
                     {
-                        OnBeforeCreate((esub.Argument as EntityEventArgs).Entity);
+                        if (esub.Argument is EntityEventArgs arg)
+                        {
+                            OnBeforeCreate(arg.Entity);
+                        }
                     }
                     break;
                 case EntityPersistentEventType.AfterCreate:
-                    if (esub.Argument != null)
                     {
-                        OnAfterCreate((esub.Argument as EntityEventArgs).Entity);
+                        if (esub.Argument is EntityEventArgs arg)
+                        {
+                            OnAfterCreate(arg.Entity);
+                        }
                     }
 
                     OnCreate(esub.EntityType);
                     break;
                 case EntityPersistentEventType.BeforeUpdate:
-                    if (esub.Argument != null)
                     {
-                        OnBeforeUpdate((esub.Argument as EntityEventArgs).Entity);
+                        if (esub.Argument is EntityEventArgs arg)
+                        {
+                            OnBeforeUpdate(arg.Entity);
+                        }
                     }
                     break;
                 case EntityPersistentEventType.AfterUpdate:
-                    if (esub.Argument != null)
                     {
-                        OnAfterUpdate((esub.Argument as EntityEventArgs).Entity);
+                        if (esub.Argument is EntityEventArgs arg)
+                        {
+                            OnAfterUpdate(arg.Entity);
+                        }
                     }
 
                     OnUpdate(esub.EntityType);
                     break;
                 case EntityPersistentEventType.BeforeRemove:
-                    if (esub.Argument != null)
                     {
-                        OnBeforeRemove((esub.Argument as EntityEventArgs).Entity);
+                        if (esub.Argument is EntityEventArgs arg)
+                        {
+                            OnBeforeRemove(arg.Entity);
+                        }
                     }
                     break;
                 case EntityPersistentEventType.AfterRemove:
-                    if (esub.Argument != null)
                     {
-                        OnAfterRemove((esub.Argument as EntityEventArgs).Entity);
+                        if (esub.Argument is EntityEventArgs arg)
+                        {
+                            OnAfterRemove(arg.Entity);
+                        }
                     }
 
                     OnRemove(esub.EntityType);
                     break;
                 case EntityPersistentEventType.BeforeBatch:
-                    var objs1 = esub.Argument as EntitiesArgs;
-                    OnBeforeBatch(objs1.Entities, objs1.OperType);
+                    {
+                        var arg = esub.Argument as EntitiesArgs;
+                        OnBeforeBatch(arg.Entities, arg.OperType);
+                    }
                     break;
                 case EntityPersistentEventType.AfterBatch:
-                    var objs2 = esub.Argument as EntitiesArgs;
-                    OnAfterBatch(objs2.Entities, objs2.OperType);
-
-                    switch (objs2.OperType)
                     {
-                        case EntityPersistentOperater.Create:
-                            OnCreate(esub.EntityType);
-                            break;
-                        case EntityPersistentOperater.Update:
-                            OnUpdate(esub.EntityType);
-                            break;
-                        case EntityPersistentOperater.Remove:
-                            OnRemove(esub.EntityType);
-                            break;
+                        var arg = esub.Argument as EntitiesArgs;
+                        OnAfterBatch(arg.Entities, arg.OperType);
+
+                        switch (arg.OperType)
+                        {
+                            case EntityPersistentOperater.Create:
+                                OnCreate(esub.EntityType);
+                                break;
+                            case EntityPersistentOperater.Update:
+                                OnUpdate(esub.EntityType);
+                                break;
+                            case EntityPersistentOperater.Remove:
+                                OnRemove(esub.EntityType);
+                                break;
+                        }
                     }
 
                     break;

@@ -121,8 +121,10 @@ namespace Fireasy.Data.Entity.Tests
             var customer = Customers.New();
             var property1 = PropertyUnity.GetProperty(customer.GetType(), "CustomerID");
             var property2 = PropertyUnity.GetProperty(typeof(Customers), "CustomerID");
+            var property3 = PropertyUnity.GetProperty(typeof(Customers), "CustomerID1");
             Assert.IsNotNull(property1);
             Assert.IsNotNull(property2);
+            Assert.IsNull(property3);
             Assert.AreEqual(property1, property2);
         }
 

@@ -970,6 +970,17 @@ namespace Fireasy.Data.Entity.Tests
             }
         }
 
+        [TestMethod]
+        public void TestSubscriberForUpdateLinq()
+        {
+            SubscribeManager.Register<EntityPersistentSubject>(new EntitySubscriber());
+
+            using (var db = new DbContext())
+            {
+                db.Orders.Update(new Orders { ShipName = "1" }, s => s.ShipName == "1");
+            }
+        }
+
         private class EntitySubscriber : EntityPersistentSubscriber
         {
             protected override void OnBeforeUpdate(IEntity entity)

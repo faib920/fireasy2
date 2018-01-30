@@ -125,7 +125,13 @@ namespace Fireasy.Data.Entity
         /// <returns>一个 <see cref="IProperty"/> 对象。</returns>
         public static IProperty GetProperty(Type entityType, string propertyName)
         {
-            return GetProperties(entityType).FirstOrDefault(property => property.Name.Equals(propertyName));
+            var properties = EntityMetadataUnity.InternalGetEntityMetadata(entityType)?.Properties;
+            if (properties != null)
+            {
+                return properties[propertyName];
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -135,7 +141,7 @@ namespace Fireasy.Data.Entity
         /// <returns>一个 <see cref="IProperty"/> 对象枚举器。</returns>
         public static IEnumerable<IProperty> GetProperties(Type entityType)
         {
-            return EntityMetadataUnity.InternalGetEntityMetadata(entityType).Properties;
+            return EntityMetadataUnity.InternalGetEntityMetadata(entityType)?.Properties.Values;
         }
 
         /// <summary>
@@ -145,7 +151,7 @@ namespace Fireasy.Data.Entity
         /// <returns>一个 <see cref="IProperty"/> 对象枚举器。</returns>
         public static IEnumerable<IProperty> GetPrimaryProperties(Type entityType)
         {
-            return GetProperties(entityType).Where(property => property is ISavedProperty && property.Info.IsPrimaryKey);
+            return GetProperties(entityType)?.Where(property => property is ISavedProperty && property.Info.IsPrimaryKey);
         }
 
         /// <summary>
@@ -155,7 +161,7 @@ namespace Fireasy.Data.Entity
         /// <returns>一个 <see cref="IProperty"/> 对象枚举器。</returns>
         public static IEnumerable<IProperty> GetPersistentProperties(Type entityType)
         {
-            return GetProperties(entityType).Where(property => property is ISavedProperty);
+            return GetProperties(entityType)?.Where(property => property is ISavedProperty);
         }
 
         /// <summary>
@@ -165,7 +171,7 @@ namespace Fireasy.Data.Entity
         /// <returns>一个 <see cref="IProperty"/> 对象枚举器。</returns>
         public static IEnumerable<IProperty> GetLoadedProperties(Type entityType)
         {
-            return GetProperties(entityType).Where(property => property is ILoadedProperty);
+            return GetProperties(entityType)?.Where(property => property is ILoadedProperty);
         }
 
         /// <summary>
