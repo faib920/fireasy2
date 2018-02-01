@@ -618,9 +618,7 @@ namespace Fireasy.Data.Entity.Tests
 
                 for (var i = 0; i < 3; i++)
                 {
-                    var d = Depts.New();
-                    d.DeptID = i + 50;
-                    d.DeptName = "a" + i;
+                    var d = Depts.Wrap(() => new Depts { DeptID = i + 50, DeptName = "a" + i });
                     list.Add(d);
                 }
 
