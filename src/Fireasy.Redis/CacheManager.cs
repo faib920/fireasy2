@@ -260,6 +260,7 @@ namespace Fireasy.Redis
             {
                 DefaultDatabase = this.setting.DefaultDb,
                 Password = this.setting.Password,
+                AllowAdmin = true
             };
 
             var endPoints = new EndPointCollection();
