@@ -17,7 +17,7 @@ namespace Fireasy.Data.Entity
     /// <summary>
     /// 提供以对象形式查询和使用实体数据的功能。
     /// </summary>
-    public abstract class EntityContext : IUnitOfWork, IDisposable
+    public abstract class EntityContext : IDisposable
     {
         protected InternalContext context;
         private bool isDisposed;
@@ -122,16 +122,6 @@ namespace Fireasy.Data.Entity
         public IRepository Set(Type entitytype)
         {
             return context.GetDbSet(entitytype);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <typeparam name="TEntity"></typeparam>
-        /// <returns></returns>
-        IRepository<TEntity> IUnitOfWork.CreateRepository<TEntity>()
-        {
-            return Set<TEntity>();
         }
 
         /// <summary>
