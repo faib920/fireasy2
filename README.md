@@ -2,7 +2,9 @@
 
 Fireasy是一套基于.Net Framework应用开发组件，其主旨思想为“让开发变为更简单”，其义为，使用尽可能少的组件，实现你所需的功能。Fireasy几乎覆盖了开发中可能使用到的技术，比如Log、Cache、AOP、IOC、ORM、MVC等等。
 
-目前，Fireasy 刚刚完成 .NET Standard 的改造，asp.net core 项目也可以使用 Fireasy 了。
+Fireasy 支持 net3.5/net4.0/net4.5/net4.6/net4.7/netstandard2.0，只需一个dll即可，已发布到 nuget ，搜索添加即可。
+
+Fireasy 的使用可链接开源库 [https://github.com/faib920/zero](https://github.com/faib920/zero) 进行学习。
 
 <b>`Fireasy.Common`</b>
 
