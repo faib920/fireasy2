@@ -35,7 +35,7 @@ namespace Fireasy.Data.Entity
         private IDatabase database;
 
         /// <summary>
-        /// 初始化 <see cref="EntityTreeRepository&lt;TEntity&gt;"/> 类的新实例。
+        /// 初始化 <see cref="EntityTreeRepository{TEntity}"/> 类的新实例。
         /// </summary>
         /// <param name="repository"></param>
         /// <param name="context"></param>
@@ -578,7 +578,7 @@ namespace Fireasy.Data.Entity
         private string GetPreviousFullName(string fullName)
         {
             var index = fullName.LastIndexOf(metaTree.NameSeparator);
-            return index != -1 ? fullName.Substring(0, index) : fullName;
+            return index != -1 ? fullName.Substring(0, index) : string.Empty;
         }
 
         /// <summary>
@@ -737,7 +737,7 @@ namespace Fireasy.Data.Entity
             keyId = GetPreviousKey(keyId) + "_%";
             parameters.Add("pn", keyId);
 
-            return database.ExecuteEnumerable<TEntity>((SqlCommand)sb.ToString(), parameters: parameters).ToList();
+            return database.ExecuteEnumerable((SqlCommand)sb.ToString(), parameters: parameters, rowMapper: new EntityRowMapper<TEntity>()).ToList();
         }
 
         /// <summary>
@@ -940,7 +940,8 @@ namespace Fireasy.Data.Entity
 
                 var fullName = GetPreviousFullName(arg.OldValue.FullName);
 
-                fullName = string.Format("{0}{1}{2}", fullName, metaTree.NameSeparator, arg.NewValue.Name);
+                fullName = string.IsNullOrEmpty(fullName) ? 
+                    arg.NewValue.Name : string.Format("{0}{1}{2}", fullName, metaTree.NameSeparator, arg.NewValue.Name);
 
                 arg.NewValue.FullName = fullName;
 
