@@ -82,7 +82,7 @@ namespace Fireasy.Data
         DataTable ExecuteDataTable(IQueryCommand queryCommand, string tableName = null, IDataSegment segment = null, ParameterCollection parameters = null);
 
         /// <summary>
-        /// 执行查询文本并将结果以一个 <see cref="IEnumerable&lt;T&gt;"/> 的序列返回。
+        /// 执行查询文本并将结果以一个 <see cref="IEnumerable{T}"/> 的序列返回。
         /// </summary>
         /// <typeparam name="T">查询对象类型。</typeparam>
         /// <param name="queryCommand">查询命令。</param>
@@ -206,7 +206,7 @@ namespace Fireasy.Data
         Task<T> ExecuteScalarAsync<T>(IQueryCommand queryCommand, ParameterCollection parameters = null);
 
         /// <summary>
-        /// 异步执行查询文本并将结果以一个 <see cref="IEnumerable&lt;T&gt;"/> 的序列返回。
+        /// 异步执行查询文本并将结果以一个 <see cref="IEnumerable{T}"/> 的序列返回。
         /// </summary>
         /// <typeparam name="T">查询对象类型。</typeparam>
         /// <param name="queryCommand">查询命令。</param>

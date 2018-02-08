@@ -46,7 +46,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="Nullable&lt;Char&gt;"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// 将 <see cref="Nullable{Char}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -56,7 +56,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable&lt;Char&gt;"/> 类型。
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{Char}"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -89,7 +89,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="Nullable&lt;Boolean&gt;"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// 将 <see cref="Nullable{Boolean}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -99,7 +99,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable&lt;Boolean&gt;"/> 类型。
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{Boolean}"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -132,7 +132,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="Nullable&lt;Byte&gt;"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// 将 <see cref="Nullable{Byte}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -142,7 +142,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable&lt;Byte&gt;"/> 类型。
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{Byte}"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -201,7 +201,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="Nullable&lt;DateTime&gt;"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// 将 <see cref="Nullable{DateTime}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -211,7 +211,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable&lt;DateTime&gt;"/> 类型。
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{DateTime}"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -244,7 +244,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="Nullable&lt;Decimal&gt;"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// 将 <see cref="Nullable{Decimal}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -254,7 +254,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable&lt;Decimal&gt;"/> 类型。
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{Decimal}"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -287,7 +287,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="Nullable&lt;Double&gt;"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// 将 <see cref="Nullable{Double}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -297,7 +297,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable&lt;Double&gt;"/> 类型。
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{Double}"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -350,7 +350,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="Nullable&lt;Guid&gt;"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// 将 <see cref="Nullable{Guid}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -360,7 +360,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable&lt;Guid&gt;"/> 类型。
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{Guid}"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -396,7 +396,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="Nullable&lt;Int32&gt;"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// 将 <see cref="Nullable{Int32}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -406,7 +406,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable&lt;Int32&gt;"/> 类型。
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{Int32}"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -439,7 +439,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="Nullable&lt;Int16&gt;"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// 将 <see cref="Nullable{Int16}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -449,7 +449,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable&lt;Int16&gt;"/> 类型。
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{Int16}"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -482,7 +482,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="Nullable&lt;Int64&gt;"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// 将 <see cref="Nullable{Int64}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -492,7 +492,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable&lt;Int64&gt;"/> 类型。
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{Int64}"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -525,7 +525,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="Nullable&lt;Single&gt;"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// 将 <see cref="Nullabl{Single}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -535,7 +535,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable&lt;Single&gt;"/> 类型。
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{Single}"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -607,7 +607,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="Nullable&lt;TimeSpan&gt;"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// 将 <see cref="Nullable{TimeSpan}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -617,7 +617,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable&lt;TimeSpan&gt;"/> 类型。
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{TimeSpan}"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>

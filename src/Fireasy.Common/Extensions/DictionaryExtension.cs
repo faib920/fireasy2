@@ -129,7 +129,7 @@ namespace Fireasy.Common.Extensions
         }
 
         /// <summary>
-        /// 使用一个 <see cref="System.Collections.Generic.IComparer&lt;T&gt;"/> 对字典进行排序。
+        /// 使用一个 <see cref="System.Collections.Generic.IComparer{T}"/> 对字典进行排序。
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>

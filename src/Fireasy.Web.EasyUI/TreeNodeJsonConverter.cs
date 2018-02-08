@@ -23,14 +23,14 @@ namespace Fireasy.Web.EasyUI
         private Dictionary<string, Func<T, object>> attrMappers = new Dictionary<string, Func<T, object>>();
 
         /// <summary>
-        /// 初始化 <see cref="TreeNodeJsonConverter&lt;T&gt;"/> 类的新实例。
+        /// 初始化 <see cref="TreeNodeJsonConverter{T}"/> 类的新实例。
         /// </summary>
         public TreeNodeJsonConverter()
         {
         }
 
         /// <summary>
-        /// 使用一组属性映射初始化 <see cref="TreeNodeJsonConverter&lt;T&gt;"/> 类的新实例。
+        /// 使用一组属性映射初始化 <see cref="TreeNodeJsonConverter{T}"/> 类的新实例。
         /// </summary>
         /// <param name="attrMappers"></param>
         public TreeNodeJsonConverter(Dictionary<string, Func<T, object>> attrMappers)

@@ -49,7 +49,7 @@ namespace Fireasy.Common.Configuration
     public abstract class ConfigurationSection<T> : ConfigurationSection where T : IConfigurationSettingItem
     {
         /// <summary>
-        /// 初始化 <see cref="ConfigurationSection&lt;T&gt;"/> 类的新实例。
+        /// 初始化 <see cref="ConfigurationSection{T}"/> 类的新实例。
         /// </summary>
         protected ConfigurationSection()
         {

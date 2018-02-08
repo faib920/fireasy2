@@ -228,7 +228,7 @@ namespace Fireasy.Data
         }
 
         /// <summary>
-        /// 执行查询文本并将结果以一个 <see cref="IEnumerable&lt;T&gt;"/> 的序列返回。
+        /// 执行查询文本并将结果以一个 <see cref="IEnumerable{T}"/> 的序列返回。
         /// </summary>
         /// <typeparam name="T">查询对象类型。</typeparam>
         /// <param name="queryCommand">查询命令。</param>
@@ -630,7 +630,7 @@ namespace Fireasy.Data
         }
 
         /// <summary>
-        /// 异步执行查询文本并将结果以一个 <see cref="IEnumerable&lt;T&gt;"/> 的序列返回。
+        /// 异步执行查询文本并将结果以一个 <see cref="IEnumerable{T}"/> 的序列返回。
         /// </summary>
         /// <typeparam name="T">查询对象类型。</typeparam>
         /// <param name="queryCommand">查询命令。</param>
