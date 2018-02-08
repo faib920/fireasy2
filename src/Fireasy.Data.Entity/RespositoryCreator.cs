@@ -30,7 +30,7 @@ namespace Fireasy.Data.Entity
         /// <param name="entityType">实体类型。</param>
         /// <param name="context"></param>
         /// <returns></returns>
-        public static bool TryCreate(Type entityType, InternalContext context)
+        public static bool TryCreate(Type entityType, InternalContext context, Action<Type> succeed, Action<Type, Exception> failed)
         {
             var metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
 
@@ -42,15 +42,21 @@ namespace Fireasy.Data.Entity
                     SqlCommand sql = syntax.ExistsTable(metadata.TableName);
                     if (context.Database.ExecuteScalar<int>(sql) == 0)
                     {
-                        if (InternalCreate(metadata, syntax, context))
+                        try
                         {
-                            //通知 context 仓储已经创建
-                            context.OnRespositoryCreated?.Invoke(entityType);
+                            if (InternalCreate(metadata, syntax, context))
+                            {
+                                //通知 context 仓储已经创建
+                                succeed?.Invoke(entityType);
 
-                            return true;
+                                return true;
+                            }
                         }
-
-                        return false;
+                        catch (Exception exp)
+                        {
+                            failed?.Invoke(entityType, exp);
+                            return false;
+                        }
                     }
 
                     return true;
@@ -65,15 +71,8 @@ namespace Fireasy.Data.Entity
             //表的名称
             var tableName = metadata.TableName;
 
-            try
-            {
-                SqlCommand sql = BuildTableScript(metadata.EntityType, syntax, tableName);
-                return context.Database.ExecuteNonQuery(sql) > 0;
-            }
-            catch (Exception exp)
-            {
-                return false;
-            }
+            SqlCommand sql = BuildTableScript(metadata.EntityType, syntax, tableName);
+            return context.Database.ExecuteNonQuery(sql) > 0;
         }
 
         /// <summary>

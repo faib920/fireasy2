@@ -257,11 +257,16 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var db = new DbContext())
             {
-                var list = db.OrderDetails.Select(s =>
-                    s.ExtendAs<OrderDetailsEx>(() => new OrderDetailsEx
-                    {
-                        ProductName = s.Products.ProductName
-                    }))
+                var list = db.OrderDetails
+                    .Join(db.Orders, s => s.OrderID, s => s.OrderID, (s, t) => new { s, t})
+                    .Where(s => s.s.OrderID != 1)
+                    .Select(s =>
+                        s.s.ExtendAs<OrderDetailsEx>(() => new OrderDetailsEx
+                        {
+                            ProductName = s.s.Products.ProductName,
+                            OrderDesc = s.t.OrderDate.ToString()
+                        }))
+                    .Distinct()
                     .ToList();
 
                 Assert.AreEqual("Queso Cabrales", list[0].ProductName);
@@ -324,6 +329,8 @@ namespace Fireasy.Data.Entity.Tests
             public IEnumerable<string> List { get; set; }
 
             public int Count { get; set; }
+
+            public string OrderDesc { get; set; }
         }
 
         [TestMethod]

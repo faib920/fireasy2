@@ -31,7 +31,7 @@ namespace Fireasy.Data.Entity
         private IRepositoryProvider<TEntity> repositoryProxy;
 
         /// <summary>
-        /// 初始化 <see cref="EntityRepository&lt;TEntity&gt;"/> 类的新实例。
+        /// 初始化 <see cref="EntityRepository{TEntity}"/> 类的新实例。
         /// </summary>
         /// <param name="context"></param>
         public EntityRepository(InternalContext context)

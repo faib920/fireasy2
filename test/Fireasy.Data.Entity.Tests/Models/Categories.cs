@@ -7,7 +7,7 @@ namespace Fireasy.Data.Entity.Tests.Models
     ///   µÃÂ¿‡°£
     /// </summary>
     [Serializable]
-    [EntityMapping("Categories", Description = "")]
+    [EntityMapping("categories", Description = "")]
     [MetadataType(typeof(CategoriesMetadata))]
     public partial class Categories : LightEntity<Categories>
     {

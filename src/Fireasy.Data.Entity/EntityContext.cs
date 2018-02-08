@@ -22,13 +22,12 @@ namespace Fireasy.Data.Entity
         protected InternalContext context;
         private bool isDisposed;
         private bool isBeginTransaction = false;
-        private string configName;
 
         /// <summary>
         /// 初始化 <see cref="EntityContext"/> 类的新实例。
         /// </summary>
         public EntityContext()
-            : this(null)
+            : this(string.Empty)
         {
         }
 
@@ -37,23 +36,18 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="name">配置名称。</param>
         public EntityContext(string name)
+            : this (new EntityContextOptions { ConfigName = name })
         {
-            configName = name;
-            Initialize();
-            new EntityRepositoryDiscoveryService(this).InitializeSets();
         }
 
         /// <summary>
-        /// 初始化。
+        /// 初始化 <see cref="EntityContext"/> 类的新实例。
         /// </summary>
-        protected virtual void Initialize()
+        /// <param name="options">选项参数。</param>
+        public EntityContext(EntityContextOptions options)
         {
-            context = new InternalContext(configName)
-            {
-                OnRespositoryCreated = new Action<Type>(t =>
-                    {
-                    })
-            };
+            Initialize(options);
+            new EntityRepositoryDiscoveryService(this).InitializeSets();
         }
 
         /// <summary>
@@ -104,7 +98,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 为指定的类型返回 <see cref="EntityRepository&lt;TEntity&gt;"/>
+        /// 为指定的类型返回 <see cref="EntityRepository{TEntity}"/>
         /// </summary>
         /// <typeparam name="TEntity">实体类型。</typeparam>
         /// <returns></returns>
@@ -215,6 +209,36 @@ namespace Fireasy.Data.Entity
             {
                 isBeginTransaction = false;
             }
+        }
+
+        /// <summary>
+        /// 初始化。
+        /// </summary>
+        private void Initialize(EntityContextOptions options)
+        {
+            context = new InternalContext(options.ConfigName)
+                {
+                    AutoCreateTables = options.AutoCreateTables,
+                    OnRespositoryCreated = OnRespositoryCreated,
+                    OnRespositoryCreateFailed = OnRespositoryCreateFailed
+            };
+        }
+
+        /// <summary>
+        /// 仓储创建时可进行数据初始化。
+        /// </summary>
+        /// <param name="entityType">实体类型。</param>
+        protected virtual void OnRespositoryCreated(Type entityType)
+        {
+        }
+
+        /// <summary>
+        /// 仓储创建失败时通知。
+        /// </summary>
+        /// <param name="entityType">实体类型。</param>
+        /// <param name="exception">触发的异常。</param>
+        protected virtual void OnRespositoryCreateFailed(Type entityType, Exception exception)
+        {
         }
     }
 }

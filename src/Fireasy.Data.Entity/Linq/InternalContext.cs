@@ -45,11 +45,15 @@ namespace Fireasy.Data.Entity.Linq
 
         public string InstanceName { get; set; }
 
+        public bool AutoCreateTables { get; set; }
+
         public EntityPersistentEnvironment Environment { get; set; }
 
         public IDatabase Database { get; internal set; }
 
         public Action<Type> OnRespositoryCreated { get; set; }
+
+        public Action<Type, Exception> OnRespositoryCreateFailed { get; set; }
 
         bool IQueryPolicy.IsIncluded(MemberInfo member)
         {
@@ -100,15 +104,27 @@ namespace Fireasy.Data.Entity.Linq
         public IRepositoryProvider<TEntity> CreateRepositoryProvider<TEntity>() where TEntity : IEntity
         {
             var factory = Database.Provider.GetService<IContextProvider>() ?? new DefaultContextProvider();
-            RespositoryCreator.TryCreate(typeof(TEntity), this);
-            return factory.Create<TEntity>(this);
+            var repository = factory.Create<TEntity>(this);
+
+            if (AutoCreateTables)
+            {
+                RespositoryCreator.TryCreate(typeof(TEntity), this, OnRespositoryCreated, OnRespositoryCreateFailed);
+            }
+
+            return repository;
         }
 
         public IRepositoryProvider CreateRepositoryProvider(Type entityType)
         {
             var factory = Database.Provider.GetService<IContextProvider>() ?? new DefaultContextProvider();
-            RespositoryCreator.TryCreate(entityType, this);
-            return factory.Create(entityType, this);
+            var repository = factory.Create(entityType, this);
+
+            if (AutoCreateTables)
+            {
+                RespositoryCreator.TryCreate(entityType, this, OnRespositoryCreated, OnRespositoryCreateFailed);
+            }
+
+            return repository;
         }
 
         public void IncludeWith<TEntity>(Expression<Func<TEntity, object>> fnMember) where TEntity : IEntity

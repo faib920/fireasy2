@@ -8,7 +8,7 @@ namespace Fireasy.Data.Entity.Tests.Models
     ///  实体类。
     /// </summary>
     [Serializable]
-    [EntityMapping("Depts", Description = "")]
+    [EntityMapping("depts", Description = "")]
     [EntityTreeMapping(InnerSign = nameof(DeptCode), Name = nameof(DeptName), FullName = nameof(FullName))]
     [MetadataType(typeof(CategoriesMetadata))]
     public partial class Depts : LightEntity<Depts>, ITreeNode<Depts>

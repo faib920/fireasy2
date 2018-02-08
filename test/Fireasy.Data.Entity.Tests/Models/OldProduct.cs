@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Fireasy.Data.Entity.Tests.Models
 {
-    [EntityMapping("PRODUCTS", Description = "产品表")]
+    [EntityMapping("products", Description = "产品表")]
     [Serializable]
     public class OldProduct : EntityObject
     {
