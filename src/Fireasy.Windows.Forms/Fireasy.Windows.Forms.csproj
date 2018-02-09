@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net45;net46;net40</TargetFrameworks>
+    <TargetFrameworks>net45;net40</TargetFrameworks>
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
@@ -15,18 +15,6 @@
     <Version>2.0.0</Version>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">
-    <DocumentationFile>bin\Debug\net45\Fireasy.Windows.Forms.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net40|AnyCPU'">
-    <DocumentationFile>bin\Debug\net40\Fireasy.Windows.Forms.xml</DocumentationFile>
-  </PropertyGroup>
-  
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net46|AnyCPU'">
-    <DocumentationFile>bin\Debug\net46\Fireasy.Windows.Forms.xml</DocumentationFile>
-  </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
     <DocumentationFile>..\..\Release\net45\Fireasy.Windows.Forms.xml</DocumentationFile>
     <OutputPath>..\..\Release\</OutputPath>
@@ -34,11 +22,6 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net40|AnyCPU'">
     <DocumentationFile>..\..\Release\net40\Fireasy.Windows.Forms.xml</DocumentationFile>
-    <OutputPath>..\..\Release\</OutputPath>
-  </PropertyGroup>
-  
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net46|AnyCPU'">
-    <DocumentationFile>..\..\Release\net46\Fireasy.Windows.Forms.xml</DocumentationFile>
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
   
@@ -50,110 +33,6 @@
     <Reference Include="System.Design" />
     <Reference Include="System.Drawing.Design" />
     <Reference Include="System.Windows.Forms" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Compile Update="ComplexComboBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="ComplexTextBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="ErrorMessageBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="ErrorMessageBox.Designer.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="MaskTextBox\CurrencyTextBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="MaskTextBox\DateTextBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="MaskTextBox\DateTimeTextBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="MaskTextBox\IntegerTextBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="MaskTextBox\MaskBaseTextBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="MaskTextBox\MaskTextBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="MaskTextBox\NumericTextBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="MaskTextBox\TimeTextBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="Popup.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="PopupComboBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="Resource.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resource.resx</DependentUpon>
-    </Compile>
-    <Compile Update="TreeList\Editors\TreeListCellWrapEditor.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="TreeList\Editors\TreeListCheckBoxEditor.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="TreeList\Editors\TreeListComboBoxEditor.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="TreeList\Editors\TreeListComplexComboBoxEditor.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="TreeList\Editors\TreeListDateTimeEditor.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="TreeList\Editors\TreeListIntegerEditor.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="TreeList\Editors\TreeListNumericEditor.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="TreeList\Editors\TreeListNumericUpDownEditor.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="TreeList\Editors\TreeListTextEditor.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="TreeList\TreeList.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="TreeList\TreeListColumn.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="TreeList\TreeListFooterItem.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="TreeList\TreeListGroup.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="TreeList\TreeListItem.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="TreeList\TreeList_DataBind.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="TreeList\TreeList_Event.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="TreeList\TreeList_HitTest.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="TreeList\TreeList_Select.cs">
-      <SubType>Component</SubType>
-    </Compile>
   </ItemGroup>
   
   <ItemGroup>

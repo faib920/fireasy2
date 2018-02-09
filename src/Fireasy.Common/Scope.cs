@@ -63,10 +63,10 @@ namespace Fireasy.Common
         /// <summary>
         /// 在当前范围内添加一个数据。
         /// </summary>
-        /// <typeparam name="TV">附加数据的类型。</typeparam>
+        /// <typeparam name="TData">附加数据的类型。</typeparam>
         /// <param name="key">键名。</param>
         /// <param name="data">数据值。</param>
-        public void SetData<TV>(string key, TV data)
+        public void SetData<TData>(string key, TData data)
         {
             dataCache.AddOrReplace(key, data);
         }
@@ -74,19 +74,19 @@ namespace Fireasy.Common
         /// <summary>
         /// 获取当前范围内指定键名的数据。
         /// </summary>
-        /// <typeparam name="TV">附加数据的类型。</typeparam>
+        /// <typeparam name="TData">附加数据的类型。</typeparam>
         /// <param name="key">键名。</param>
         /// <returns>返回附加的数据（如果存在）。</returns>
-        public TV GetData<TV>(string key)
+        public TData GetData<TData>(string key)
         {
             dataCache.TryGetValue(key, out object data);
 
-            if (data is TV)
+            if (data is TData)
             {
-                return (TV)data;
+                return (TData)data;
             }
 
-            return default(TV);
+            return default(TData);
         }
 
         /// <summary>

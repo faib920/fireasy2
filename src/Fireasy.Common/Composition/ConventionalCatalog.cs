@@ -46,8 +46,8 @@ namespace Fireasy.Common.Composition
         /// <returns>当前的 <see cref="ConventionalCatalog"/> 对象。</returns>
         public ConventionalCatalog Register(Type contractType, Type implType, bool replace = true)
         {
-            Guard.ArgumentNull(contractType, "contractType");
-            Guard.ArgumentNull(implType, "implType");
+            Guard.ArgumentNull(contractType, nameof(contractType));
+            Guard.ArgumentNull(implType, nameof(implType));
             if (!IsRegisted(contractType) || replace)
             {
                 var part = ReflectionModelServices.CreatePartDefinition(
@@ -70,7 +70,7 @@ namespace Fireasy.Common.Composition
         /// <returns>当前的 <see cref="ConventionalCatalog"/> 对象。</returns>
         public ConventionalCatalog Register<TContract>(Func<TContract> creator, bool replace = true)
         {
-            Guard.ArgumentNull(creator, "creator");
+            Guard.ArgumentNull(creator, nameof(creator));
             return Register(typeof(TContract), creator());
         }
 

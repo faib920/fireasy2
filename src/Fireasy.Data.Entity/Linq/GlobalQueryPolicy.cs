@@ -34,7 +34,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static GlobalQueryPolicySession Create(Func<string> sessionIdFactory)
         {
-            Guard.ArgumentNull(sessionIdFactory, "sessionIdFactory");
+            Guard.ArgumentNull(sessionIdFactory, nameof(sessionIdFactory));
 
             var sessionId = sessionIdFactory();
             var lazy = new Lazy<GlobalQueryPolicySession>(() => new GlobalQueryPolicySession() { SessionIdFactory = sessionIdFactory });

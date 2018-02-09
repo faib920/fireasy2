@@ -1,18 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net45;net46;net40;net47;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net45;net40;netstandard2.0</TargetFrameworks>
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
-    <FileVersion>2.0.0.46082</FileVersion>
+    <FileVersion>2.0.0.46084</FileVersion>
     <Copyright>Copyright © Fireasy 2013-2018</Copyright>
-    <AssemblyVersion>2.0.0.46082</AssemblyVersion>
+    <AssemblyVersion>2.0.0.46084</AssemblyVersion>
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>True</SignAssembly>
     <DelaySign>False</DelaySign>
     <Product>Fireasy EasyUI Extensions</Product>
-    <Version>2.0.2</Version>
+    <Version>2.0.4</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Description>EasyUI for Asp.Net 扩展库。
 
@@ -31,23 +31,10 @@
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
   
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net46|AnyCPU'">
-    <DocumentationFile>..\..\Release\net46\Fireasy.Web.EasyUI.xml</DocumentationFile>
-    <OutputPath>..\..\Release\</OutputPath>
-  </PropertyGroup>
-  
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net47|AnyCPU'">
-    <DocumentationFile>..\..\Release\net47\Fireasy.Web.EasyUI.xml</DocumentationFile>
-    <OutputPath>..\..\Release\</OutputPath>
-  </PropertyGroup>
-  
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
     <DocumentationFile>..\..\Release\netstandard2.0\Fireasy.Web.EasyUI.xml</DocumentationFile>
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNet.Mvc" Version="4.0.20505" />
-  </ItemGroup>
   
   <ItemGroup>
     <ProjectReference Include="..\Fireasy.Common\Fireasy.Common.csproj" />
@@ -56,9 +43,16 @@
     <ProjectReference Include="..\Fireasy.Web.Mvc\Fireasy.Web.Mvc.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net40'">
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Web" />
+    <PackageReference Include="Microsoft.AspNet.Mvc" Version="4.0.20505" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Web" />
+    <PackageReference Include="Microsoft.AspNet.Mvc" Version="4.0.20505" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">

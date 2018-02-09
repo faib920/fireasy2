@@ -281,7 +281,7 @@ namespace Fireasy.Data.Extensions
         /// <returns></returns>
         public static DbType GetDbType(this Type type)
         {
-            Guard.ArgumentNull(type, "type");
+            Guard.ArgumentNull(type, nameof(type));
             if (type.IsNullableType())
             {
                 var baseType = type.GetGenericArguments()[0];
@@ -357,7 +357,7 @@ namespace Fireasy.Data.Extensions
         /// <returns></returns>
         public static int GetDbTypeSize(this Type type, int? defaultSize)
         {
-            Guard.ArgumentNull(type, "type");
+            Guard.ArgumentNull(type, nameof(type));
             if (type == typeof(string))
             {
                 if (defaultSize != null)
@@ -421,7 +421,7 @@ namespace Fireasy.Data.Extensions
         /// <returns></returns>
         public static CommandType GetCommandType(this IQueryCommand queryCommand)
         {
-            Guard.ArgumentNull(queryCommand, "queryCommand");
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
             if (queryCommand is SqlCommand)
             {
                 return CommandType.Text;
@@ -507,7 +507,7 @@ namespace Fireasy.Data.Extensions
         /// <returns></returns>
         public static DbParameter ToDbParameter(this Parameter sourcePar, IProvider provider)
         {
-            Guard.ArgumentNull(sourcePar, "sourcePar");
+            Guard.ArgumentNull(sourcePar, nameof(sourcePar));
 
             var parameter = provider.DbProviderFactory.CreateParameter();
             Guard.NullReference(parameter);
@@ -625,7 +625,7 @@ namespace Fireasy.Data.Extensions
         /// <returns></returns>
         public static bool IsDbTypeSupported(this Type type)
         {
-            Guard.ArgumentNull(type, "type");
+            Guard.ArgumentNull(type, nameof(type));
             type = type.GetNonNullableType();
             var typeCode = Type.GetTypeCode(type);
             if (ConvertManager.CanConvert(type))

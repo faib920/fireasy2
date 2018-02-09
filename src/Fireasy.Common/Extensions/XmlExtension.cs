@@ -24,7 +24,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static T GetValue<T>(this XmlAttribute attribute)
         {
-            Guard.ArgumentNull(attribute, "attribute");
+            Guard.ArgumentNull(attribute, nameof(attribute));
             return attribute.Value.To<string, T>();
         }
 
@@ -37,7 +37,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static T GetAttributeValue<T>(this XmlNode node, string name)
         {
-            Guard.ArgumentNull(node, "node");
+            Guard.ArgumentNull(node, nameof(node));
             return node.Attributes[name] == null ? (T)typeof(T).GetDefaultValue() : node.Attributes[name].Value.To<string, T>();
         }
 
@@ -51,7 +51,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static T GetAttributeValue<T>(this XmlNode node, string name, T defaultValue = default(T))
         {
-            Guard.ArgumentNull(node, "node");
+            Guard.ArgumentNull(node, nameof(node));
             return node.Attributes[name] == null ? defaultValue : node.Attributes[name].Value.To(defaultValue);
         }
 
@@ -63,7 +63,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static string GetAttributeValue(this XmlNode node, string name)
         {
-            Guard.ArgumentNull(node, "node");
+            Guard.ArgumentNull(node, nameof(node));
             return node.Attributes[name] == null ? string.Empty : node.Attributes[name].Value;
         }
 

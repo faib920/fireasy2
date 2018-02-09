@@ -86,7 +86,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static double Variance(this double[] array, Func<double, double, double> weightFunc = null)
         {
-            Guard.ArgumentNull(array, "array");
+            Guard.ArgumentNull(array, nameof(array));
 
             if (array.Length == 0)
             {
@@ -116,7 +116,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static double Median<T>(this T[] array) where T : IComparable<T>, IConvertible
         {
-            Guard.ArgumentNull(array, "array");
+            Guard.ArgumentNull(array, nameof(array));
 
             if (array.Length == 0)
             {

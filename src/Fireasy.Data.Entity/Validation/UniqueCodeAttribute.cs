@@ -46,7 +46,7 @@ namespace Fireasy.Data.Entity.Validation
         /// <returns></returns>
         protected override ValidationResult IsValid(object value, ValidationContext validationContext)
         {
-            Guard.ArgumentNull(validationContext, "validationContext");
+            Guard.ArgumentNull(validationContext, nameof(validationContext));
 
             var entityType = validationContext.ObjectType;
 

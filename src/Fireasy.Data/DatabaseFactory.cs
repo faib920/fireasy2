@@ -54,7 +54,7 @@ namespace Fireasy.Data
         /// <returns>一个 <see cref="Database"/> 实例对象。</returns>
         public static IDatabase CreateDatabase(IInstanceConfigurationSetting setting)
         {
-            Guard.ArgumentNull(setting, "setting");
+            Guard.ArgumentNull(setting, nameof(setting));
 
             var section = ConfigurationUnity.GetSection<ProviderConfigurationSection>();
             var providerSetting = GetProviderSetting(setting, section);

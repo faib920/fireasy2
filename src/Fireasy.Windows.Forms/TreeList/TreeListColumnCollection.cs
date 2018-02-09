@@ -30,7 +30,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                Guard.ArgumentNull(key, "dataKey");
+                Guard.ArgumentNull(key, nameof(key));
 
                 foreach (var column in Items)
                 {

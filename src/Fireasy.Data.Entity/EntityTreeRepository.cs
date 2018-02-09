@@ -196,7 +196,7 @@ namespace Fireasy.Data.Entity
         /// <param name="isolation">数据隔离表达式。</param>
         public virtual void Move(TEntity entity, TEntity referEntity, EntityTreePosition? position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null)
         {
-            Guard.ArgumentNull(entity, "entity");
+            Guard.ArgumentNull(entity, nameof(entity));
 
             if (referEntity != null && position == null)
             {

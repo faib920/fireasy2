@@ -12,6 +12,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Xml;
+using System;
+using System.Diagnostics;
 #if NETSTANDARD2_0
 using Microsoft.Extensions.Configuration;
 #endif
@@ -160,28 +162,21 @@ namespace Fireasy.Common.Ioc.Configuration
 
         private void ResolveAssembly(string assemblyName, bool singleton, List<RegistrationSetting> list)
         {
-            var assembly = Assembly.Load(assemblyName);
-            foreach (var type in assembly.GetExportedTypes())
+            try
             {
-                if (type.IsInterface || type.IsEnum)
+                var assembly = Assembly.Load(assemblyName);
+                if (assembly != null)
                 {
-                    continue;
-                }
-
-                foreach (var interfaceType in type.GetInterfaces())
-                {
-                    if (interfaceType.IsDefined<IgnoreRegisterAttribute>())
-                    {
-                        continue;
-                    }
-
                     list.Add(new RegistrationSetting
                     {
-                        ServiceType = interfaceType,
-                        ComponentType = type,
+                        Assembly = assembly,
                         Singleton = singleton
                     });
                 }
+            }
+            catch
+            {
+                Trace.WriteLine($"Load assembly {assemblyName} failed.");
             }
         }
     }

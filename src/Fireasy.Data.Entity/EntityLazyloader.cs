@@ -28,8 +28,8 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         internal static PropertyValue Load(IEntity entity, IProperty property)
         {
-            Guard.ArgumentNull(entity, "entity");
-            Guard.ArgumentNull(property, "property");
+            Guard.ArgumentNull(entity, nameof(entity));
+            Guard.ArgumentNull(property, nameof(property));
 
             var attr = property.GetType().GetCustomAttributes<PropertyLazyLoadderAttribute>().FirstOrDefault();
             Guard.Assert(attr != null, new EntityLazyloadException(SR.GetString(SRKind.NotRelationProperty, property.Name), entity, property));

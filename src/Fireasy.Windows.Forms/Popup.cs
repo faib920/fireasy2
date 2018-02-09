@@ -87,7 +87,7 @@ namespace Fireasy.Windows.Forms
         /// <param name="content">下拉控件。</param>
         public Popup(Control content)
         {
-            Guard.ArgumentNull(content, "content");
+            Guard.ArgumentNull(content, nameof(content));
 
             Content = content;
             FocusOnOpen = true;
@@ -170,7 +170,7 @@ namespace Fireasy.Windows.Forms
         /// <param name="control"></param>
         public void Show(Control control)
         {
-            Guard.ArgumentNull(control, "control");
+            Guard.ArgumentNull(control, nameof(control));
 
             Show(control, control.ClientRectangle);
         }
@@ -201,7 +201,7 @@ namespace Fireasy.Windows.Forms
 
         public void Show(Control control, Rectangle area)
         {
-            Guard.ArgumentNull(control, "control");
+            Guard.ArgumentNull(control, nameof(control));
 
             SetOwnerItem(control);
 

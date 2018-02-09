@@ -34,7 +34,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="context">一个 <see cref="InternalContext"/> 对象。</param>
         internal EntityQueryProvider(InternalContext context)
         {
-            Guard.ArgumentNull(context, "context");
+            Guard.ArgumentNull(context, nameof(context));
 
             this.context = context;
         }

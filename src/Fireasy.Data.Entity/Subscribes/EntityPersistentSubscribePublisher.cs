@@ -11,13 +11,13 @@ namespace Fireasy.Data.Entity.Subscribes
     {
         public static void OnBeforeCreate(IEntity entity)
         {
-            Guard.ArgumentNull(entity, "entity");
+            Guard.ArgumentNull(entity, nameof(entity));
             RaiseEvent(entity, EntityPersistentEventType.BeforeCreate);
         }
 
         public static void OnAfterCreate(IEntity entity)
         {
-            Guard.ArgumentNull(entity, "entity");
+            Guard.ArgumentNull(entity, nameof(entity));
             RaiseEvent(entity, EntityPersistentEventType.AfterCreate);
         }
 
@@ -32,13 +32,13 @@ namespace Fireasy.Data.Entity.Subscribes
 
         public static void OnBeforeUpdate(IEntity entity)
         {
-            Guard.ArgumentNull(entity, "entity");
+            Guard.ArgumentNull(entity, nameof(entity));
             RaiseEvent(entity, EntityPersistentEventType.BeforeUpdate);
         }
 
         public static void OnAfterUpdate(IEntity entity)
         {
-            Guard.ArgumentNull(entity, "entity");
+            Guard.ArgumentNull(entity, nameof(entity));
             RaiseEvent(entity, EntityPersistentEventType.AfterUpdate);
         }
 
@@ -53,13 +53,13 @@ namespace Fireasy.Data.Entity.Subscribes
 
         public static void OnBeforeRemove(IEntity entity)
         {
-            Guard.ArgumentNull(entity, "entity");
+            Guard.ArgumentNull(entity, nameof(entity));
             RaiseEvent(entity, EntityPersistentEventType.BeforeRemove);
         }
 
         public static void OnAfterRemove(IEntity entity)
         {
-            Guard.ArgumentNull(entity, "entity");
+            Guard.ArgumentNull(entity, nameof(entity));
             RaiseEvent(entity, EntityPersistentEventType.AfterRemove);
         }
 

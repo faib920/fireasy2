@@ -6,7 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Web.Mvc;
-using System.Web.Mvc;
 
 namespace Fireasy.Web.EasyUI
 {

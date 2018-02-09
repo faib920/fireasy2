@@ -38,8 +38,8 @@ namespace Fireasy.Data.Entity.Validation
         /// <returns>验证通过为 true，否则为 false。</returns>
         public static bool Validate(IEntity entity, IProperty property, PropertyValue value, Action<IProperty, IList<string>> callback = null)
         {
-            Guard.ArgumentNull(entity, "entity");
-            Guard.ArgumentNull(property, "property");
+            Guard.ArgumentNull(entity, nameof(entity));
+            Guard.ArgumentNull(property, nameof(property));
 
             var validations = GetValidations(property);
             if (validations == null)
@@ -98,7 +98,7 @@ namespace Fireasy.Data.Entity.Validation
         /// <returns>验证通过为 true，否则为 false。</returns>
         public static bool Validate(IProperty property, object value, Action<IProperty, IList<string>> callback = null)
         {
-            Guard.ArgumentNull(property, "property");
+            Guard.ArgumentNull(property, nameof(property));
 
             var validations = GetValidations(property);
             if (validations == null)
@@ -157,7 +157,7 @@ namespace Fireasy.Data.Entity.Validation
         /// <exception cref="EntityInvalidateException">实体验证失败。</exception>
         public static void Validate(IEntity entity)
         {
-            Guard.ArgumentNull(entity, "entity");
+            Guard.ArgumentNull(entity, nameof(entity));
 
             if (entity.EntityState == EntityState.Unchanged)
             {
@@ -226,7 +226,7 @@ namespace Fireasy.Data.Entity.Validation
         /// <returns>一个 <see cref="ValidationAttribute"/> 的序列。</returns>
         public static IEnumerable<ValidationAttribute> GetValidations(IProperty property)
         {
-            Guard.ArgumentNull(property, "property");
+            Guard.ArgumentNull(property, nameof(property));
 
             var entityType = property.EntityType;
             var propertyName = property.Name;
@@ -264,7 +264,7 @@ namespace Fireasy.Data.Entity.Validation
         /// <returns>一个 <see cref="ValidationAttribute"/> 的序列。</returns>
         public static IEnumerable<ValidationAttribute> GetValidations(Type entityType)
         {
-            Guard.ArgumentNull(entityType, "entityType");
+            Guard.ArgumentNull(entityType, nameof(entityType));
 
             return locker.LockRead(() => 
                 entityValidations.TryGetValue(entityType, () => GetEntityValidations(entityType))
@@ -279,8 +279,8 @@ namespace Fireasy.Data.Entity.Validation
         /// <exception cref="ArgumentNullException"><paramref name="entityType"/>、<paramref name="property"/> 或 <paramref name="validation"/> 参数为 null。</exception>
         public static void RegisterValidation(Type entityType, ValidationAttribute validation)
         {
-            Guard.ArgumentNull(entityType, "entityType");
-            Guard.ArgumentNull(validation, "validation");
+            Guard.ArgumentNull(entityType, nameof(entityType));
+            Guard.ArgumentNull(validation, nameof(validation));
 
             locker.LockWrite(() =>
                 {
@@ -297,8 +297,8 @@ namespace Fireasy.Data.Entity.Validation
         /// <exception cref="ArgumentNullException"><paramref name="property"/> 或 <paramref name="validation"/> 参数为 null。</exception>
         public static void RegisterValidation(IProperty property, ValidationAttribute validation)
         {
-            Guard.ArgumentNull(property, "property");
-            Guard.ArgumentNull(validation, "validation");
+            Guard.ArgumentNull(property, nameof(property));
+            Guard.ArgumentNull(validation, nameof(validation));
 
             var entityType = property.EntityType;
 

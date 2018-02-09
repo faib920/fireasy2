@@ -27,9 +27,9 @@ namespace Fireasy.Data
         /// <param name="transaction">数据库事务对象。</param>
         public CommandBuilder(IProvider provider, DataTable table, DbConnection connection, DbTransaction transaction)
         {
-            Guard.ArgumentNull(provider, "provider");
-            Guard.ArgumentNull(table, "table");
-            Guard.ArgumentNull(connection, "connection");
+            Guard.ArgumentNull(provider, nameof(provider));
+            Guard.ArgumentNull(table, nameof(table));
+            Guard.ArgumentNull(connection, nameof(connection));
 
             var proxy = table.PrimaryKey.Length > 0
                         ? (CommandBuildProxy) new CommandBuildProxyWithPrimaryKey()

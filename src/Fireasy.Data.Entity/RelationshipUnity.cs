@@ -33,7 +33,7 @@ namespace Fireasy.Data.Entity
         public static RelationshipMetadata GetRelationship(IProperty property)
         {
             var relProperty = property.As<RelationProperty>();
-            Guard.Argument(relProperty != null, "property", SR.GetString(SRKind.NotRelationProperty));
+            Guard.Argument(relProperty != null, nameof(property), SR.GetString(SRKind.NotRelationProperty));
 
             var relations = GetAssemblyRelationships(relProperty.EntityType.Assembly);
 
@@ -193,7 +193,7 @@ namespace Fireasy.Data.Entity
         /// <param name="keyExpression">键对表达式，如 "父键1=>子键1,父键2=>子键2"。</param>
         private static IEnumerable<RelationshipKey> ParseRelationshipKeys(Type thisType, Type otherType, string keyExpression)
         {
-            Guard.ArgumentNull(keyExpression, "keyExpression");
+            Guard.ArgumentNull(keyExpression, nameof(keyExpression));
 
             var keys = keyExpression.Split(',');
 

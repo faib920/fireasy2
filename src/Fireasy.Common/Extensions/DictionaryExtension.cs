@@ -27,8 +27,8 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static bool TryAdd<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, Func<TValue> valueFactory)
         {
-            Guard.ArgumentNull(dictionary, "dictionary");
-            Guard.ArgumentNull(valueFactory, "valueFactory");
+            Guard.ArgumentNull(dictionary, nameof(dictionary));
+            Guard.ArgumentNull(valueFactory, nameof(valueFactory));
 
             if (dictionary.ContainsKey(key) == false)
             {
@@ -50,7 +50,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static bool TryAdd<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue value)
         {
-            Guard.ArgumentNull(dictionary, "dictionary");
+            Guard.ArgumentNull(dictionary, nameof(dictionary));
 
             if (dictionary.ContainsKey(key) == false)
             {
@@ -75,7 +75,7 @@ namespace Fireasy.Common.Extensions
             TValue value;
             if (!dictionary.TryGetValue(key, out value))
             {
-                Guard.ArgumentNull(func, "func");
+                Guard.ArgumentNull(func, nameof(func));
                 value = func();
                 dictionary.Add(key, value);
             }
@@ -94,7 +94,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static IDictionary<TKey, TValue> AddOrReplace<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue value)
         {
-            Guard.ArgumentNull(dictionary, "dictionary");
+            Guard.ArgumentNull(dictionary, nameof(dictionary));
 
             dictionary[key] = value;
             return dictionary;
@@ -111,7 +111,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static TValue GetValue<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue = default(TValue))
         {
-            Guard.ArgumentNull(dictionary, "dictionary");
+            Guard.ArgumentNull(dictionary, nameof(dictionary));
             return dictionary.ContainsKey(key) ? dictionary[key] : defaultValue;
         }
 
@@ -124,7 +124,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static SortedDictionary<TKey, TValue> Sort<TKey, TValue>(this IDictionary<TKey, TValue> dictionary)
         {
-            Guard.ArgumentNull(dictionary, "dictionary");
+            Guard.ArgumentNull(dictionary, nameof(dictionary));
             return new SortedDictionary<TKey, TValue>(dictionary);
         }
 
@@ -138,7 +138,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static SortedDictionary<TKey, TValue> Sort<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, IComparer<TKey> comparer)
         {
-            Guard.ArgumentNull(dictionary, "dictionary");
+            Guard.ArgumentNull(dictionary, nameof(dictionary));
             return new SortedDictionary<TKey, TValue>(dictionary, comparer);
         }
     }

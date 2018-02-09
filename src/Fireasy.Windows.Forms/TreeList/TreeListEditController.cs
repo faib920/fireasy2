@@ -38,7 +38,7 @@ namespace Fireasy.Windows.Forms
         /// <param name="rect">编辑器放置的位置。</param>
         public void BeginEdit(TreeListCell cell, Rectangle rect)
         {
-            Guard.ArgumentNull(cell, "cell");
+            Guard.ArgumentNull(cell, nameof(cell));
 
             if (IsEditing && cell == Cell)
             {

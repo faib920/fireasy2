@@ -62,7 +62,7 @@ namespace Fireasy.Data.Extensions
         /// <returns><paramref name="database"/> 创建的 <see cref="DbConnection"/> 对象。</returns>
         public static DbConnection CreateConnection(this IDatabase database)
         {
-            Guard.ArgumentNull(database, "database");
+            Guard.ArgumentNull(database, nameof(database));
             return database.Provider.CreateConnection(database.ConnectionString.ToString());
         }
     }

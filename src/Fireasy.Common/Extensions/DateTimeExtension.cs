@@ -277,8 +277,8 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static bool IsBefore(this DateTime source, DateTime other)
         {
-            Guard.ArgumentNull(source, "source");
-            Guard.ArgumentNull(other, "other");
+            Guard.ArgumentNull(source, nameof(source));
+            Guard.ArgumentNull(other, nameof(other));
 
             return source.CompareTo(other) < 0;
         }
@@ -291,8 +291,8 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static bool IsAfter(this DateTime source, DateTime other)
         {
-            Guard.ArgumentNull(source, "source");
-            Guard.ArgumentNull(other, "other");
+            Guard.ArgumentNull(source, nameof(source));
+            Guard.ArgumentNull(other, nameof(other));
 
             return source.CompareTo(other) > 0;
         }

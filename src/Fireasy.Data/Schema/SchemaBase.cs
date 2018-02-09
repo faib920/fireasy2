@@ -135,7 +135,7 @@ namespace Fireasy.Data.Schema
         /// <param name="restrs"></param>
         protected void AddRestrictionIndex<T>(params Expression<Func<T, string>>[] restrs) where T : ISchemaMetadata
         {
-            Guard.ArgumentNull(restrs, "restrs");
+            Guard.ArgumentNull(restrs, nameof(restrs));
             var indexes = dicRestrIndex.TryGetValue(typeof(T), () => new Dictionary<string, int>());
             for (var i = 0; i < restrs.Length; i++)
             {

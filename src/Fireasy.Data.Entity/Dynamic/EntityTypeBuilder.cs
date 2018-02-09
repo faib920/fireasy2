@@ -82,7 +82,7 @@ namespace Fireasy.Data.Entity.Dynamic
         /// <param name="attributes">一组 <see cref="ValidationAttribute"/> 特性。</param>
         public void DefineValidateRule(IProperty property, params Expression<Func<Attribute>>[] attributes)
         {
-            Guard.ArgumentNull(attributes, "attributes");
+            Guard.ArgumentNull(attributes, nameof(attributes));
             if (validations == null)
             {
                 validations = new Dictionary<IProperty, List<Expression<Func<Attribute>>>>();
@@ -98,7 +98,7 @@ namespace Fireasy.Data.Entity.Dynamic
         /// <param name="attributes">一组 <see cref="ValidationAttribute"/> 特性。</param>
         public void DefineValidateRule(params Expression<Func<Attribute>>[] attributes)
         {
-            Guard.ArgumentNull(attributes, "attributes");
+            Guard.ArgumentNull(attributes, nameof(attributes));
             if (eValidations == null)
             {
                 eValidations = new List<Expression<Func<Attribute>>>();

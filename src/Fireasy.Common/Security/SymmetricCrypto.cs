@@ -25,7 +25,7 @@ namespace Fireasy.Common.Security
         /// <param name="algorithmName">算法名称。</param>
         public SymmetricCrypto(string algorithmName)
         {
-            Guard.ArgumentNull(algorithmName, "algorithmName");
+            Guard.ArgumentNull(algorithmName, nameof(algorithmName));
             this.algorithmName = algorithmName;
             SetDefaultKeyIV();
         }

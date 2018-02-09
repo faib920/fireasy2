@@ -537,7 +537,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper boxIfValueType(Type type)
         {
-            Guard.ArgumentNull(type, "type");
+            Guard.ArgumentNull(type, nameof(type));
 
             return type.IsValueType ? box(type) : this;
         }
@@ -663,7 +663,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper call(Type type, string methodName, params Type[] optionalParameterTypes)
         {
-            Guard.ArgumentNull(type, "type");
+            Guard.ArgumentNull(type, nameof(type));
 
             var methodInfo = type.GetMethod(methodName, optionalParameterTypes);
 
@@ -683,7 +683,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper call(Type type, string methodName, BindingFlags flags, params Type[] optionalParameterTypes)
         {
-            Guard.ArgumentNull(type, "type");
+            Guard.ArgumentNull(type, nameof(type));
 
             var methodInfo = type.GetMethod(methodName, flags, null, optionalParameterTypes, null);
 
@@ -724,7 +724,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper callvirt(Type type, string methodName, params Type[] optionalParameterTypes)
         {
-            Guard.ArgumentNull(type, "type");
+            Guard.ArgumentNull(type, nameof(type));
 
             var methodInfo = type.GetMethod(methodName, optionalParameterTypes);
 
@@ -784,7 +784,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper castType(Type type)
         {
-            Guard.ArgumentNull(type, "type");
+            Guard.ArgumentNull(type, nameof(type));
 
             return type.IsValueType ? unbox_any(type) : castclass(type);
         }
@@ -950,7 +950,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper conv(Type type)
         {
-            Guard.ArgumentNull(type, "type");
+            Guard.ArgumentNull(type, nameof(type));
 
             switch (Type.GetTypeCode(type))
             {
@@ -2691,7 +2691,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper newobj(Type type, params Type[] parameters)
         {
-            Guard.ArgumentNull(type, "type");
+            Guard.ArgumentNull(type, nameof(type));
 
             var ci = type.GetConstructor(parameters);
             return newobj(ci);
@@ -3156,7 +3156,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper stind(Type type)
         {
-            Guard.ArgumentNull(type, "type");
+            Guard.ArgumentNull(type, nameof(type));
 
             switch (Type.GetTypeCode(type))
             {
@@ -3471,7 +3471,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper unboxIfValueType(Type type)
         {
-            Guard.ArgumentNull(type, "type");
+            Guard.ArgumentNull(type, nameof(type));
 
             return type.IsValueType ? unbox_any(type) : this;
         }

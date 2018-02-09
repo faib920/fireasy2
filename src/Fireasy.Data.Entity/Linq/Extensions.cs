@@ -390,7 +390,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         internal static TEntity GetByPrimary<TEntity, TKey>(this IQueryable queryable, TKey[] primaryValues)
         {
-            Guard.ArgumentNull(primaryValues, "primaryValues");
+            Guard.ArgumentNull(primaryValues, nameof(primaryValues));
 
             var predicate = BindPrimaryExpression(queryable.ElementType, primaryValues);
             if (predicate == null)
@@ -619,7 +619,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         private static LambdaExpression BindPrimaryExpression<TKey>(Type type, TKey[] primaryValues)
         {
-            Guard.ArgumentNull(primaryValues, "primaryValues");
+            Guard.ArgumentNull(primaryValues, nameof(primaryValues));
 
             var pkProperties = PropertyUnity.GetPrimaryProperties(type).ToList();
             if (pkProperties.IsNullOrEmpty())

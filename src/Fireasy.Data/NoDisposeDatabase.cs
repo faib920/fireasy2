@@ -29,7 +29,7 @@ namespace Fireasy.Data
         /// <param name="database">受包装的 <see cref="IDatabase"/> 对象。</param>
         public NoDisposeDatabase(IDatabase database)
         {
-            Guard.ArgumentNull(database, "database");
+            Guard.ArgumentNull(database, nameof(database));
             innerDatabase = database;
         }
 

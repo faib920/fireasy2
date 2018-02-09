@@ -28,7 +28,7 @@ namespace Fireasy.Data.Extensions
         /// <returns></returns>
         public static DbConnection CreateConnection(this IProvider provider, string connectionString)
         {
-            Guard.ArgumentNull(provider, "provider");
+            Guard.ArgumentNull(provider, nameof(provider));
             Guard.NullReference(provider.DbProviderFactory);
 
             var connection = provider.DbProviderFactory.CreateConnection();
@@ -48,7 +48,7 @@ namespace Fireasy.Data.Extensions
         /// <returns></returns>
         public static DbCommand CreateCommand(this IProvider provider, DbConnection connection, DbTransaction transaction, string commandText, CommandType commandType = CommandType.Text, IEnumerable<Parameter> parameters = null)
         {
-            Guard.ArgumentNull(provider, "provider");
+            Guard.ArgumentNull(provider, nameof(provider));
             Guard.NullReference(provider.DbProviderFactory);
 
             var syntax = provider.GetService<ISyntaxProvider>();
@@ -75,7 +75,7 @@ namespace Fireasy.Data.Extensions
         /// <returns></returns>
         public static DbParameter CreateParameter(this IProvider provider, string parameterName, object value)
         {
-            Guard.ArgumentNull(provider, "provider");
+            Guard.ArgumentNull(provider, nameof(provider));
             Guard.NullReference(provider.DbProviderFactory);
 
             var parameter = provider.DbProviderFactory.CreateParameter();

@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Reflection;
 
 namespace Fireasy.Common.Ioc.Configuration
 {
@@ -23,6 +24,11 @@ namespace Fireasy.Common.Ioc.Configuration
         /// 获取或设置组件的类型。
         /// </summary>
         public Type ComponentType { get; set; }
+
+        /// <summary>
+        /// 获取或设置程序集。
+        /// </summary>
+        public Assembly Assembly { get; set; }
 
         /// <summary>
         /// 获取或设置是否单例。

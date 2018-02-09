@@ -6,9 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using System.Collections.ObjectModel;
 using Fireasy.Common.Configuration;
+using System.Collections.ObjectModel;
 
 namespace Fireasy.Common.Ioc.Configuration
 {

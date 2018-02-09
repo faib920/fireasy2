@@ -65,7 +65,7 @@ namespace Fireasy.Data
         /// <returns></returns>
         public ParameterCollection(object obj)
         {
-            Guard.ArgumentNull(obj, "obj");
+            Guard.ArgumentNull(obj, nameof(obj));
             arrayList = new ArrayList();
 
             foreach (PropertyDescriptor property in TypeDescriptor.GetProperties(obj))
@@ -81,7 +81,7 @@ namespace Fireasy.Data
         /// <returns></returns>
         public ParameterCollection(IDictionary<string, object> dic)
         {
-            Guard.ArgumentNull(dic, "dic");
+            Guard.ArgumentNull(dic, nameof(dic));
             arrayList = new ArrayList();
 
             foreach (var kvp in dic)

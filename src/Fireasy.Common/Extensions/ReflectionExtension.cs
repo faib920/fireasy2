@@ -337,7 +337,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static T New<T>(this Type type, params object[] args)
         {
-            Guard.ArgumentNull(type, "type");
+            Guard.ArgumentNull(type, nameof(type));
 
             var instance = type.New(args);
             if (instance is T)
@@ -356,7 +356,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static object New(this Type type, params object[] args)
         {
-            Guard.ArgumentNull(type, "type");
+            Guard.ArgumentNull(type, nameof(type));
 
             //如果支持 Aop，则用Aop生成
             if (typeof(IAopSupport).IsAssignableFrom(type) && !typeof(IAopImplement).IsAssignableFrom(type))
@@ -404,7 +404,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static object GetDefaultValue(this Type type)
         {
-            Guard.ArgumentNull(type, "type");
+            Guard.ArgumentNull(type, nameof(type));
 
             var isNullable = !type.IsValueType || type.IsNullableType();
             if (!isNullable)
@@ -422,7 +422,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static bool IsNullableType(this Type type)
         {
-            Guard.ArgumentNull(type, "type");
+            Guard.ArgumentNull(type, nameof(type));
             return (type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(Nullable<>)));
         }
 
@@ -552,8 +552,8 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static Type GetImplementType(this Type type, Type interfaceType)
         {
-            Guard.ArgumentNull(type, "type");
-            Guard.ArgumentNull(interfaceType, "interfaceType");
+            Guard.ArgumentNull(type, nameof(type));
+            Guard.ArgumentNull(interfaceType, nameof(interfaceType));
             var baseType = type.BaseType;
             while (baseType != typeof(object))
             {
@@ -575,9 +575,9 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static bool IsImplementInterface(this Type type, Type interfaceType)
         {
-            Guard.ArgumentNull(type, "type");
-            Guard.ArgumentNull(interfaceType, "interfaceType");
-            Guard.Argument(interfaceType.IsInterface, "interfaceType", SR.GetString(SRKind.NotInterfaceType, interfaceType.FullName));
+            Guard.ArgumentNull(type, nameof(type));
+            Guard.ArgumentNull(interfaceType, nameof(interfaceType));
+            Guard.Argument(interfaceType.IsInterface, nameof(interfaceType), SR.GetString(SRKind.NotInterfaceType, interfaceType.FullName));
             return interfaceType.IsAssignableFrom(type);
         }
 
@@ -589,9 +589,9 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static bool IsDirectImplementInterface(this Type type, Type interfaceType)
         {
-            Guard.ArgumentNull(type, "type");
-            Guard.ArgumentNull(interfaceType, "interfaceType");
-            Guard.Argument(interfaceType.IsInterface, "interfaceType", SR.GetString(SRKind.NotInterfaceType, interfaceType.FullName));
+            Guard.ArgumentNull(type, nameof(type));
+            Guard.ArgumentNull(interfaceType, nameof(interfaceType));
+            Guard.Argument(interfaceType.IsInterface, nameof(interfaceType), SR.GetString(SRKind.NotInterfaceType, interfaceType.FullName));
             foreach (var type1 in type.GetInterfaces())
             {
                 if (type1 != interfaceType)
@@ -617,9 +617,9 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static Type GetDirectImplementInterface(this Type type, Type interfaceType)
         {
-            Guard.ArgumentNull(type, "type");
-            Guard.ArgumentNull(interfaceType, "interfaceType");
-            Guard.Argument(interfaceType.IsInterface, "interfaceType", SR.GetString(SRKind.NotInterfaceType, interfaceType.FullName));
+            Guard.ArgumentNull(type, nameof(type));
+            Guard.ArgumentNull(interfaceType, nameof(interfaceType));
+            Guard.Argument(interfaceType.IsInterface, nameof(interfaceType), SR.GetString(SRKind.NotInterfaceType, interfaceType.FullName));
             foreach (var type1 in type.GetInterfaces())
             {
                 if (interfaceType.IsAssignableFrom(type1))
@@ -637,7 +637,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static bool IsAnonymousType(this Type type)
         {
-            Guard.ArgumentNull(type, "type");
+            Guard.ArgumentNull(type, nameof(type));
 
             var fullName = type.FullName;
             return fullName.Length > 18 && fullName.Substring(0, 18) == "<>f__AnonymousType";
@@ -788,7 +788,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static Type BuildImplementType(this Type definedType)
         {
-            Guard.ArgumentNull(definedType, "definedType");
+            Guard.ArgumentNull(definedType, nameof(definedType));
 
             var cacheMgr = MemoryCacheManager.Instance;
             var key = "ImplAssembly_" + definedType.FullName;
@@ -803,7 +803,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static object FastGetValue(this PropertyInfo property, object instance)
         {
-            Guard.ArgumentNull(property, "property");
+            Guard.ArgumentNull(property, nameof(property));
             return ReflectionCache.GetAccessor(property).GetValue(instance);
         }
 
@@ -815,7 +815,7 @@ namespace Fireasy.Common.Extensions
         /// <param name="value">要设置的值。</param>
         public static void FastSetValue(this PropertyInfo property, object instance, object value)
         {
-            Guard.ArgumentNull(property, "property");
+            Guard.ArgumentNull(property, nameof(property));
             ReflectionCache.GetAccessor(property).SetValue(instance, value);
         }
 
@@ -827,7 +827,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static object FastGetValue(this FieldInfo field, object instance)
         {
-            Guard.ArgumentNull(field, "field");
+            Guard.ArgumentNull(field, nameof(field));
             return ReflectionCache.GetAccessor(field).GetValue(instance);
         }
 
@@ -840,7 +840,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static object FastInvoke(this MethodInfo method, object instance, params object[] arguments)
         {
-            Guard.ArgumentNull(method, "method");
+            Guard.ArgumentNull(method, nameof(method));
             return ReflectionCache.GetInvoker(method).Invoke(instance, arguments);
         }
 
@@ -851,7 +851,7 @@ namespace Fireasy.Common.Extensions
         /// <param name="arguments">构造函数的参数。</param>
         public static object FastInvoke(this ConstructorInfo constructor, params object[] arguments)
         {
-            Guard.ArgumentNull(constructor, "constructor");
+            Guard.ArgumentNull(constructor, nameof(constructor));
             return ReflectionCache.GetInvoker(constructor).Invoke(arguments);
         }
 

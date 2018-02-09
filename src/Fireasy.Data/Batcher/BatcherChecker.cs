@@ -27,7 +27,7 @@ namespace Fireasy.Data.Batcher
         /// <returns>可以生成，为 true，否则为 false。</returns>
         internal static bool CheckDataTable(DataTable dataTable)
         {
-            Guard.ArgumentNull(dataTable, "dataTable");
+            Guard.ArgumentNull(dataTable, nameof(dataTable));
 
             if (dataTable.IsNullOrEmpty())
             {
@@ -51,7 +51,7 @@ namespace Fireasy.Data.Batcher
         /// <returns>可以生成，为 true，否则为 false。</returns>
         internal static bool CheckList<T>(IEnumerable<T> list, string tableName)
         {
-            Guard.ArgumentNull(list, "list");
+            Guard.ArgumentNull(list, nameof(list));
 
             if (list.IsNullOrEmpty())
             {

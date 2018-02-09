@@ -196,7 +196,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static bool IsBetween<T>(this T value, T lowerBound, T upperBound, IComparer<T> comparer, bool includeLowerBound = false, bool includeUpperBound = false)
         {
-            Guard.ArgumentNull(comparer, "comparer");
+            Guard.ArgumentNull(comparer, nameof(comparer));
             var lowerCompareResult = comparer.Compare(value, lowerBound);
             var upperCompareResult = comparer.Compare(value, upperBound);
 
@@ -255,7 +255,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static object ToType(this object value, Type conversionType, object defaultValue = null, ConvertMapper mapper = null)
         {
-            Guard.ArgumentNull(conversionType, "conversionType");
+            Guard.ArgumentNull(conversionType, nameof(conversionType));
             if (value.IsNullOrEmpty())
             {
                 return conversionType.IsNullableType() ? null : (defaultValue ?? conversionType.GetDefaultValue());
@@ -461,8 +461,8 @@ namespace Fireasy.Common.Extensions
         /// <param name="action"></param>
         public static void Compare(this object obj, Action<PropertyInfo, object> action)
         {
-            Guard.ArgumentNull(obj, "value");
-            Guard.ArgumentNull(action, "action");
+            Guard.ArgumentNull(obj, nameof(obj));
+            Guard.ArgumentNull(action, nameof(action));
 
             var type = obj.GetType();
             var comobj = type.New();
@@ -535,7 +535,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         private static object CloneTo(this object obj, Type conversionType, ConvertMapper mapper)
         {
-            Guard.ArgumentNull(obj, "obj");
+            Guard.ArgumentNull(obj, nameof(obj));
             var sourceType = obj.GetType();
 
             if (conversionType.IsAssignableFrom(sourceType))

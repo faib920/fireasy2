@@ -27,7 +27,7 @@ namespace Fireasy.Data.Entity
 
         internal EntityDatabase(IDatabase database)
         {
-            Guard.ArgumentNull(database, "database");
+            Guard.ArgumentNull(database, nameof(database));
             this.database = database;
         }
 

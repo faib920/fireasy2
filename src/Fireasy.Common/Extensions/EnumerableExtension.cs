@@ -66,7 +66,7 @@ namespace Fireasy.Common.Extensions
                 return;
             }
 
-            Guard.ArgumentNull(action, "action");
+            Guard.ArgumentNull(action, nameof(action));
             foreach (var item in source)
             {
                 action(item);
@@ -84,8 +84,8 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static IEnumerable<T> Slice<T>(this IEnumerable<T> source, int? start = null, int? stop = null, int? step = null)
         {
-            Guard.ArgumentNull(source, "source");
-            Guard.Argument(step != 0, "step");
+            Guard.ArgumentNull(source, nameof(source));
+            Guard.Argument(step != 0, nameof(step));
 
             var sourceCollection = source as IList<T> ?? new List<T>(source);
 

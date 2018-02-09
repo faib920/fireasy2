@@ -523,7 +523,7 @@ namespace Fireasy.Common.Serialization
         /// <param name="loop">应用数组单位的方法。</param>
         public void LoopReadArray(Action<JsonReader> loop)
         {
-            Guard.ArgumentNull(loop, "loop");
+            Guard.ArgumentNull(loop, nameof(loop));
 
             if (IsNull())
             {

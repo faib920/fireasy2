@@ -28,9 +28,9 @@ namespace Fireasy.Windows.Forms
         /// <param name="set"></param>
         public static void KeepClip(this Graphics graphics, Region region, Action action, bool set = true)
         {
-            Guard.ArgumentNull(graphics, "graphics");
-            Guard.ArgumentNull(region, "region");
-            Guard.ArgumentNull(action, "action");
+            Guard.ArgumentNull(graphics, nameof(graphics));
+            Guard.ArgumentNull(region, nameof(region));
+            Guard.ArgumentNull(action, nameof(action));
 
             Region saved = null;
             if (set)

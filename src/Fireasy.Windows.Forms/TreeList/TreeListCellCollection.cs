@@ -23,7 +23,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                Guard.ArgumentNull(key, "dataKey");
+                Guard.ArgumentNull(key, nameof(key));
 
                 if (listitem != null)
                 {
@@ -44,7 +44,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                Guard.ArgumentNull(column, "column");
+                Guard.ArgumentNull(column, nameof(column));
 
                 if (listitem != null)
                 {

@@ -1088,7 +1088,7 @@ namespace Fireasy.Windows.Forms
         /// <returns></returns>
         public Point GetItemPosition(TreeListItem item)
         {
-            Guard.ArgumentNull(item, "item");
+            Guard.ArgumentNull(item, nameof(item));
 
             VirtualTreeListItem vitem;
             if ((vitem = virMgr.Items.FirstOrDefault(s => s.Item.Equals(item))) != null)
@@ -1107,7 +1107,7 @@ namespace Fireasy.Windows.Forms
         /// <returns></returns>
         public Point GetCellPosition(TreeListCell cell)
         {
-            Guard.ArgumentNull(cell, "cell");
+            Guard.ArgumentNull(cell, nameof(cell));
 
             VirtualTreeListItem vitem;
             if ((vitem = virMgr.Items.FirstOrDefault(s => s.Item.Equals(cell.Item))) != null)

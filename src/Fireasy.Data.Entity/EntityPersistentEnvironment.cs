@@ -37,8 +37,8 @@ namespace Fireasy.Data.Entity
         /// <param name="value">变量的值。</param>
         public void AddVariable(string name, object value)
         {
-            Guard.ArgumentNull(name, "name");
-            Guard.ArgumentNull(value, "value");
+            Guard.ArgumentNull(name, nameof(name));
+            Guard.ArgumentNull(value, nameof(value));
 
             object v;
             if (!parameters.TryGetValue(name, out v))
@@ -57,7 +57,7 @@ namespace Fireasy.Data.Entity
         /// <param name="name">变量名称。</param>
         public void RemoveVariable(string name)
         {
-            Guard.ArgumentNull(name, "name");
+            Guard.ArgumentNull(name, nameof(name));
             if (parameters.ContainsKey(name))
             {
                 parameters.Remove(name);
@@ -71,7 +71,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public string GetVariableTableName(Type entityType)
         {
-            Guard.ArgumentNull(entityType, "entityType");
+            Guard.ArgumentNull(entityType, nameof(entityType));
             return GetVariableTableName(EntityMetadataUnity.GetEntityMetadata(entityType));
         }
 
@@ -83,7 +83,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public string GetVariableTableName(Type entityType, IEntity entity)
         {
-            Guard.ArgumentNull(entityType, "entityType");
+            Guard.ArgumentNull(entityType, nameof(entityType));
             var metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
 
             var regx = new Regex(@"(<\w+>)");

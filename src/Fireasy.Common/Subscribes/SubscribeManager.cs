@@ -27,13 +27,12 @@ namespace Fireasy.Common.Subscribe
         /// <param name="arguments">消息的参数。</param>
         public static void Publish<T>(params object[] arguments) where T : ISubject
         {
-            SubjectCache cache;
-            if (subscribes.TryGetValue(typeof(T), out cache))
+            if (subscribes.TryGetValue(typeof(T), out SubjectCache cache))
             {
                 cache.Subject.Initialize(arguments);
                 var subscribers = cache.Subject.Filter == null ?
                     cache.Subscribers : cache.Subscribers.Where(s => cache.Subject.Filter(s));
-                SubscribePublisher.Publish(cache.Subject, subscribers.ToList());
+                SubscribePublisher.Publish(cache.Subject, subscribers);
             }
         }
 
@@ -104,48 +103,18 @@ namespace Fireasy.Common.Subscribe
     /// </summary>
     internal class SubscribePublisher
     {
-        private ISubject subject;
-        private IEnumerable<ISubscriber> subscribers;
-
-        /// <summary>
-        /// 初始化 <see cref="SubscribePublisher"/> 类的新实例。
-        /// </summary>
-        /// <param name="subject">订阅的主题。</param>
-        /// <param name="subscribers">订阅该主题的订阅者列表。</param>
-        internal SubscribePublisher(ISubject subject, ICollection<ISubscriber> subscribers)
-        {
-            this.subject = subject;
-            this.subscribers = subscribers;
-        }
-
-        /// <summary>
-        /// 发布消息。
-        /// </summary>
-        internal void Publish()
-        {
-            subscribers.ForEach(s => s.Accept(subject));
-        }
-
         /// <summary>
         /// 静态方法，发布订阅消息给订阅消息的订阅者。
         /// </summary>
         /// <param name="subject">订阅的主题。</param>
         /// <param name="subscribers">订阅该主题的订阅者列表。</param>
-        internal static void Publish(ISubject subject, ICollection<ISubscriber> subscribers)
+        internal static void Publish(ISubject subject, IEnumerable<ISubscriber> subscribers)
         {
-            //if (subject.Thread)
-            //{
-            //    //开启一个线程来发布消息
-            //    var publisher = new SubscribePublisher(subject, subscribers);
-            //    var thread = new Thread(new ThreadStart(publisher.Publish));
-            //    thread.IsBackground = true;
-            //    thread.Start();
-            //}
-            //else
-            //{
-                var publisher = new SubscribePublisher(subject, subscribers);
-                publisher.Publish();
-            //}
+#if !NET35
+            ActionQueue.Push(() => subscribers.ForEach(s => s.Accept(subject)));
+#else
+            subscribers.ForEach(s => s.Accept(subject));
+#endif
         }
     }
 }

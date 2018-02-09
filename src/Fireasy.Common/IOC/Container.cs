@@ -207,6 +207,8 @@ namespace Fireasy.Common.Ioc
                     continue;
                 }
 
+                Register(type, type);
+
                 foreach (var interfaceType in type.GetInterfaces())
                 {
                     if (interfaceType.IsDefined<IgnoreRegisterAttribute>())
@@ -352,7 +354,7 @@ namespace Fireasy.Common.Ioc
         /// <returns>当前的 IOC 容器。</returns>
         public Container RegisterInitializer<TService>(Action<TService> instanceInitializer) where TService : class
         {
-            Guard.ArgumentNull(instanceInitializer, "instanceInitializer");
+            Guard.ArgumentNull(instanceInitializer, nameof(instanceInitializer));
 
             instanceInitializers.Add(new InstanceInitializer
             {

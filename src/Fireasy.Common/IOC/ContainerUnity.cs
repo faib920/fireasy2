@@ -78,7 +78,11 @@ namespace Fireasy.Common.Ioc
 
             foreach (var reg in setting.Registrations)
             {
-                if (reg.ServiceType != null && reg.ComponentType != null)
+                if (reg.Assembly != null)
+                {
+                    container.RegisterAssembly(reg.Assembly, reg.Singleton ? Lifetime.Singleton : Lifetime.Transient);
+                }
+                else if (reg.ServiceType != null && reg.ComponentType != null)
                 {
                     container.Register(reg.ServiceType, reg.ComponentType, reg.Singleton ? Lifetime.Singleton : Lifetime.Transient);
                 }

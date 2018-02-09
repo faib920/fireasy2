@@ -61,7 +61,7 @@ namespace Fireasy.Data
         public Database(ConnectionString connectionString, IProvider provider)
             : this()
         {
-            Guard.ArgumentNull(provider, "provider");
+            Guard.ArgumentNull(provider, nameof(provider));
             Provider = provider;
             ConnectionString = connectionString;
             Track = DefaultCommandTracker.Instance;
@@ -221,7 +221,7 @@ namespace Fireasy.Data
         /// <returns>一个 <see cref="DataTable"/> 对象。</returns>
         public virtual DataTable ExecuteDataTable(IQueryCommand queryCommand, string tableName = null, IDataSegment segment = null, ParameterCollection parameters = null)
         {
-            Guard.ArgumentNull(queryCommand, "queryCommand");
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
             var ds = new DataSet();
             FillDataSet(ds, queryCommand, tableName, segment, parameters);
             return ds.Tables.Count == 0 ? null : ds.Tables[0];
@@ -238,7 +238,7 @@ namespace Fireasy.Data
         /// <returns>一个 <typeparamref name="T"/> 类型的对象的枚举器。</returns>
         public virtual IEnumerable<T> ExecuteEnumerable<T>(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, IDataRowMapper<T> rowMapper = null)
         {
-            Guard.ArgumentNull(queryCommand, "queryCommand");
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
 
             rowMapper = rowMapper ?? RowMapperFactory.CreateRowMapper<T>();
             rowMapper.RecordWrapper = Provider.GetService<IRecordWrapper>();
@@ -260,7 +260,7 @@ namespace Fireasy.Data
         /// <returns>一个动态对象的枚举器。</returns>
         public virtual IEnumerable<object> ExecuteEnumerable(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null)
         {
-            Guard.ArgumentNull(queryCommand, "queryCommand");
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
 
             using (var reader = ExecuteReader(queryCommand, segment, parameters))
             {
@@ -305,7 +305,7 @@ namespace Fireasy.Data
         /// <returns>所影响的记录数。</returns>
         public virtual int ExecuteNonQuery(IQueryCommand queryCommand, ParameterCollection parameters = null)
         {
-            Guard.ArgumentNull(queryCommand, "queryCommand");
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
             return UsingConnection(() =>
                 {
                     using (var command = CreateDbCommand(queryCommand, parameters))
@@ -338,7 +338,7 @@ namespace Fireasy.Data
         /// <returns>一个 <see cref="IDataReader"/> 对象。</returns>
         public virtual IDataReader ExecuteReader(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null)
         {
-            Guard.ArgumentNull(queryCommand, "queryCommand");
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
             return UsingConnection(() =>
                 {
                     var command = CreateDbCommand(queryCommand, parameters);
@@ -372,7 +372,7 @@ namespace Fireasy.Data
         /// <returns>第一行的第一列数据。</returns>
         public virtual object ExecuteScalar(IQueryCommand queryCommand, ParameterCollection parameters = null)
         {
-            Guard.ArgumentNull(queryCommand, "queryCommand");
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
             return UsingConnection(() =>
                 {
                     using (var command = CreateDbCommand(queryCommand, parameters))
@@ -422,7 +422,7 @@ namespace Fireasy.Data
         /// <param name="parameters">查询参数集合。</param>
         public virtual void FillDataSet(DataSet dataSet, IQueryCommand queryCommand, string tableName = null, IDataSegment segment = null, ParameterCollection parameters = null)
         {
-            Guard.ArgumentNull(queryCommand, "queryCommand");
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
             var adapter = Provider.DbProviderFactory.CreateDataAdapter();
             Guard.NullReference(adapter);
 
@@ -490,7 +490,7 @@ namespace Fireasy.Data
         /// <param name="dataTable">要更新的数据表对象。</param>
         public void Update(DataTable dataTable)
         {
-            Guard.ArgumentNull(dataTable, "dataTable");
+            Guard.ArgumentNull(dataTable, nameof(dataTable));
 
             UsingConnection(() =>
                 {
@@ -512,7 +512,7 @@ namespace Fireasy.Data
         /// <returns></returns>
         public int Update(DataTable dataTable, SqlCommand insertCommand, SqlCommand updateCommand, SqlCommand deleteCommand)
         {
-            Guard.ArgumentNull(dataTable, "dataTable");
+            Guard.ArgumentNull(dataTable, nameof(dataTable));
             var result = -1;
 
             UsingConnection(() =>
@@ -542,7 +542,7 @@ namespace Fireasy.Data
         /// <returns>所影响的记录数。</returns>
         public async virtual Task<int> ExecuteNonQueryAsync(IQueryCommand queryCommand, ParameterCollection parameters = null)
         {
-            Guard.ArgumentNull(queryCommand, "queryCommand");
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
             return await UsingConnection(() =>
                 {
                     var command = CreateDbCommand(queryCommand, parameters);
@@ -569,7 +569,7 @@ namespace Fireasy.Data
         /// <returns>一个 <see cref="IDataReader"/> 对象。</returns>
         public async virtual Task<IDataReader> ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null)
         {
-            Guard.ArgumentNull(queryCommand, "queryCommand");
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
             return await UsingConnection(() =>
                 {
                     var command = CreateDbCommand(queryCommand, parameters);
@@ -598,7 +598,7 @@ namespace Fireasy.Data
         /// <returns>第一行的第一列数据。</returns>
         public async virtual Task<object> ExecuteScalarAsync(IQueryCommand queryCommand, ParameterCollection parameters = null)
         {
-            Guard.ArgumentNull(queryCommand, "queryCommand");
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
             return await UsingConnection(() =>
                 {
                     var command = CreateDbCommand(queryCommand, parameters);
@@ -640,7 +640,7 @@ namespace Fireasy.Data
         /// <returns>一个 <typeparamref name="T"/> 类型的对象的枚举器。</returns>
         public async virtual Task<IEnumerable<T>> ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, IDataRowMapper<T> rowMapper = null)
         {
-            Guard.ArgumentNull(queryCommand, "queryCommand");
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
 
             rowMapper = rowMapper ?? RowMapperFactory.CreateRowMapper<T>();
             rowMapper.RecordWrapper = Provider.GetService<IRecordWrapper>();

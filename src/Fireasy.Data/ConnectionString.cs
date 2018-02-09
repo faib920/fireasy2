@@ -49,7 +49,7 @@ namespace Fireasy.Data
         /// <exception cref="ArgumentNullException">connectionString 为 null。</exception>
         public ConnectionString(string connectionString)
         {
-            Guard.ArgumentNull(connectionString, "connectionString");
+            Guard.ArgumentNull(connectionString, nameof(connectionString));
             Properties = new ConnectionProperties();
             this.connectionString = ParseConnectionString(connectionString);
         }
