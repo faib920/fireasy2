@@ -21,6 +21,7 @@ using Fireasy.Data.Syntax;
 #if !NET35
 using System.Dynamic;
 using Fireasy.Common.ComponentModel;
+using System.Linq;
 #endif
 #if !NET35 && !NET40
 using System.Threading.Tasks;
@@ -31,7 +32,7 @@ namespace Fireasy.Data
     /// <summary>
     /// 提供数据库基本操作的方法。
     /// </summary>
-    public class Database : IDatabase
+    public class Database : IDatabase, IDistributedDatabase
     {
         private readonly TransactionStack tranStack;
         private bool isDisposed;
@@ -39,7 +40,8 @@ namespace Fireasy.Data
 #if !NET35 && !NET40
         private readonly AsyncTaskManager taskMgr;
 #endif
-        private DbConnection connection;
+        private DbConnection connMaster;
+        private DbConnection connSlave;
 
         /// <summary>
         /// 初始化 <see cref="Database"/> 类的新实例。
@@ -68,6 +70,21 @@ namespace Fireasy.Data
         }
 
         /// <summary>
+        /// 初始化 <see cref="Database"/> 类的新实例。
+        /// </summary>
+        /// <param name="connectionStrings">数据库连接字符串组。</param>
+        /// <param name="provider">数据库提供者。</param>
+        public Database(List<DistributedConnectionString> connectionStrings, IProvider provider)
+            : this()
+        {
+            Guard.ArgumentNull(provider, nameof(provider));
+            Provider = provider;
+            DistributedConnectionStrings = connectionStrings;
+            ConnectionString = connectionStrings.Find(s => s.Mode == DistributedMode.Master);
+            Track = DefaultCommandTracker.Instance;
+        }
+
+        /// <summary>
         /// 析构函数。
         /// </summary>
         ~Database()
@@ -79,6 +96,11 @@ namespace Fireasy.Data
         /// 获取或设置数据库连接字符串。
         /// </summary>
         public ConnectionString ConnectionString { get; set; }
+
+        /// <summary>
+        /// 获取或设置分布式数据库连接字符串组。
+        /// </summary>
+        public List<DistributedConnectionString> DistributedConnectionStrings { get; set; }
 
         /// <summary>
         /// 获取数据库提供者。
@@ -112,28 +134,13 @@ namespace Fireasy.Data
         {
             get
             {
+                var connection = connMaster ?? connSlave;
                 if (connection == null)
                 {
-                    if (Transaction != null)
-                    {
-                        connection = Transaction.Connection;
-                    }
-                    else
-                    {
-                        connection = TransactionScopeConnections.GetConnection(this);
-                        if (connection == null)
-                        {
-                            connection = this.CreateConnection();
-                            connection.StateChange += (o, e) => OnConnectionStateChanged(e.OriginalState, e.CurrentState);
-                        }
-                    }
+                    connection = GetConnection();
                 }
 
                 return connection;
-            }
-            private set
-            {
-                connection = value;
             }
         }
 
@@ -275,7 +282,7 @@ namespace Fireasy.Data
 
                     for (var i = 0; i < reader.FieldCount; i++)
                     {
-                        var name = wrapper.GetFieldName(reader, i);
+                        var name = wrapper.GetFieldName(reader, i); //34343424
                         if (name.Equals("ROW_NUM"))
                         {
                             continue;
@@ -306,9 +313,9 @@ namespace Fireasy.Data
         public virtual int ExecuteNonQuery(IQueryCommand queryCommand, ParameterCollection parameters = null)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
-            return UsingConnection(() =>
+            return UsingConnection(connection =>
                 {
-                    using (var command = CreateDbCommand(queryCommand, parameters))
+                    using (var command = CreateDbCommand(connection, queryCommand, parameters))
                     {
                         try
                         {
@@ -339,9 +346,9 @@ namespace Fireasy.Data
         public virtual IDataReader ExecuteReader(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
-            return UsingConnection(() =>
+            return UsingConnection(connection =>
                 {
-                    var command = CreateDbCommand(queryCommand, parameters);
+                    var command = CreateDbCommand(connection, queryCommand, parameters);
                     try
                     {
                         var cmdBehavior = CommandBehavior.Default;
@@ -361,7 +368,7 @@ namespace Fireasy.Data
 
                         throw new CommandException(command, exp);
                     }
-                });
+                }, mode: DistributedMode.Slave);
         }
 
         /// <summary>
@@ -373,9 +380,9 @@ namespace Fireasy.Data
         public virtual object ExecuteScalar(IQueryCommand queryCommand, ParameterCollection parameters = null)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
-            return UsingConnection(() =>
+            return UsingConnection(connection =>
                 {
-                    using (var command = CreateDbCommand(queryCommand, parameters))
+                    using (var command = CreateDbCommand(connection, queryCommand, parameters))
                     {
                         try
                         {
@@ -392,7 +399,7 @@ namespace Fireasy.Data
                             throw new CommandException(command, exp);
                         }
                     }
-                });
+                }, mode: DistributedMode.Slave);
         }
 
         /// <summary>
@@ -426,9 +433,9 @@ namespace Fireasy.Data
             var adapter = Provider.DbProviderFactory.CreateDataAdapter();
             Guard.NullReference(adapter);
 
-            UsingConnection(() =>
+            UsingConnection(connection =>
                 {
-                    using (var command = CreateDbCommand(queryCommand, parameters))
+                    using (var command = CreateDbCommand(connection, queryCommand, parameters))
                     {
                         adapter.SelectCommand = command;
 
@@ -457,7 +464,7 @@ namespace Fireasy.Data
                             throw new CommandException(command, exp);
                         }
                     }
-                }, false);
+                }, false, DistributedMode.Slave);
         }
 
         /// <summary>
@@ -492,9 +499,9 @@ namespace Fireasy.Data
         {
             Guard.ArgumentNull(dataTable, nameof(dataTable));
 
-            UsingConnection(() =>
+            UsingConnection(connection =>
                 {
-                    var builder = new CommandBuilder(Provider, dataTable, Connection, Transaction);
+                    var builder = new CommandBuilder(Provider, dataTable, connection, Transaction);
                     var adapter = Provider.DbProviderFactory.CreateDataAdapter();
                     Guard.NullReference(adapter);
                     builder.FillAdapter(adapter);
@@ -515,13 +522,13 @@ namespace Fireasy.Data
             Guard.ArgumentNull(dataTable, nameof(dataTable));
             var result = -1;
 
-            UsingConnection(() =>
+            UsingConnection(connection =>
                 {
                     var parameters = GetTableParameters(dataTable);
                     var adapter = Provider.DbProviderFactory.CreateDataAdapter();
                     if (insertCommand != null)
                     {
-                        adapter.InsertCommand = CreateDbCommand(insertCommand, parameters);
+                        adapter.InsertCommand = CreateDbCommand(connection, insertCommand, parameters);
                         adapter.InsertCommand.UpdatedRowSource = UpdateRowSource.Both;
                     }
 
@@ -543,9 +550,9 @@ namespace Fireasy.Data
         public async virtual Task<int> ExecuteNonQueryAsync(IQueryCommand queryCommand, ParameterCollection parameters = null)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
-            return await UsingConnection(() =>
+            return await UsingConnection(connection =>
                 {
-                    var command = CreateDbCommand(queryCommand, parameters);
+                    var command = CreateDbCommand(connection, queryCommand, parameters);
                     try
                     {
                         return HandleExecuteTask(HandleCommandExecute(command, () => command.ExecuteNonQueryAsync()), command, parameters);
@@ -570,9 +577,9 @@ namespace Fireasy.Data
         public async virtual Task<IDataReader> ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
-            return await UsingConnection(() =>
+            return await UsingConnection(connection =>
                 {
-                    var command = CreateDbCommand(queryCommand, parameters);
+                    var command = CreateDbCommand(connection, queryCommand, parameters);
                     try
                     {
                         var context = new CommandContext(this, command, segment, parameters);
@@ -599,9 +606,9 @@ namespace Fireasy.Data
         public async virtual Task<object> ExecuteScalarAsync(IQueryCommand queryCommand, ParameterCollection parameters = null)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
-            return await UsingConnection(() =>
+            return await UsingConnection(connection =>
                 {
-                    var command = CreateDbCommand(queryCommand, parameters);
+                    var command = CreateDbCommand(connection, queryCommand, parameters);
                     try
                     {
                         return (HandleExecuteTask(HandleCommandExecute(command, () => command.ExecuteScalarAsync()), command, parameters));
@@ -682,10 +689,16 @@ namespace Fireasy.Data
                 Transaction = null;
             }
 
-            if (connection != null)
+            if (connMaster != null)
             {
-                connection.Dispose();
-                connection = null;
+                connMaster.Dispose();
+                connMaster = null;
+            }
+
+            if (connSlave != null)
+            {
+                connSlave.Dispose();
+                connSlave = null;
             }
 
             dbScope.Dispose();
@@ -723,12 +736,13 @@ namespace Fireasy.Data
         /// <summary>
         /// 创建一个 DbCommand 对象。
         /// </summary>
+        /// <param name="connection"></param>
         /// <param name="queryCommand">查询命令。</param>
         /// <param name="parameters">参数集合。</param>
         /// <returns>一个由 <see cref="IQueryCommand"/> 和参数集合组成的 <see cref="DbCommand"/> 对象。</returns>
-        private DbCommand CreateDbCommand(IQueryCommand queryCommand, IEnumerable<Parameter> parameters)
+        private DbCommand CreateDbCommand(DbConnection connection, IQueryCommand queryCommand, IEnumerable<Parameter> parameters)
         {
-            var command = Connection.CreateCommand();
+            var command = connection.CreateCommand();
             Guard.NullReference(command);
             command.CommandType = queryCommand.GetCommandType();
             command.CommandText = HandleCommandParameterPrefix(queryCommand.ToString());
@@ -746,24 +760,76 @@ namespace Fireasy.Data
             return command;
         }
 
-        private T UsingConnection<T>(Func<T> callback, bool isAutoOpen = true)
+        private T UsingConnection<T>(Func<DbConnection, T> callback, bool isAutoOpen = true, DistributedMode mode = DistributedMode.Master)
         {
             var result = default(T);
             if (callback != null)
             {
-                Connection.TryOpen(isAutoOpen);
-                result = callback();
+                var connection = GetConnection(mode);
+                connection.TryOpen(isAutoOpen);
+                result = callback(connection);
             }
 
             return result;
         }
 
-        private void UsingConnection(Action callback, bool isAutoOpen = true)
+        private void UsingConnection(Action<DbConnection> callback, bool isAutoOpen = true, DistributedMode mode = DistributedMode.Master)
         {
             if (callback != null)
             {
-                Connection.TryOpen(isAutoOpen);
-                callback();
+                var connection = GetConnection(mode);
+                connection.TryOpen(isAutoOpen);
+                callback(connection);
+            }
+        }
+
+        private DbConnection GetConnection(DistributedMode mode = DistributedMode.Master)
+        {
+            if (Transaction != null)
+            {
+                return Transaction.Connection;
+            }
+            else
+            {
+                var connection = TransactionScopeConnections.GetConnection(this);
+                if (connection != null)
+                {
+                    return connection;
+                }
+
+                var isNew = false;
+
+                if (mode == DistributedMode.Slave)
+                {
+                    if (connSlave == null)
+                    {
+                        connection = connSlave = this.CreateConnection(mode);
+                        isNew = true;
+                    }
+                    else
+                    {
+                        connection = connSlave;
+                    }
+                }
+                else if (mode == DistributedMode.Master)
+                {
+                    if (connMaster == null)
+                    {
+                        connection = connMaster = this.CreateConnection(mode);
+                        isNew = true;
+                    }
+                    else
+                    {
+                        connection = connMaster;
+                    }
+                }
+
+                if (isNew)
+                {
+                    connection.StateChange += (o, e) => OnConnectionStateChanged(e.OriginalState, e.CurrentState);
+                }
+
+                return connection;
             }
         }
 

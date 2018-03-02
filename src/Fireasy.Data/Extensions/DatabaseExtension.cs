@@ -9,6 +9,7 @@
 using System;
 using System.Data;
 using System.Data.Common;
+using System.Linq;
 using Fireasy.Common;
 
 namespace Fireasy.Data.Extensions
@@ -59,11 +60,20 @@ namespace Fireasy.Data.Extensions
         /// 创建一个新的 <see cref="DbConnection"/> 对象。
         /// </summary>
         /// <param name="database"><see cref="IDatabase"/> 对象。</param>
+        /// <param name="mode">分布式模式。</param>
         /// <returns><paramref name="database"/> 创建的 <see cref="DbConnection"/> 对象。</returns>
-        public static DbConnection CreateConnection(this IDatabase database)
+        public static DbConnection CreateConnection(this IDatabase database, DistributedMode mode = DistributedMode.Master)
         {
             Guard.ArgumentNull(database, nameof(database));
-            return database.Provider.CreateConnection(database.ConnectionString.ToString());
+
+            ConnectionString connStr = null;
+
+            if (mode == DistributedMode.Slave && database is IDistributedDatabase distDb)
+            {
+                connStr = DistributedConnectionManager.GetConnection(distDb);
+            }
+
+            return database.Provider.CreateConnection((connStr ?? database.ConnectionString).ToString());
         }
     }
 }

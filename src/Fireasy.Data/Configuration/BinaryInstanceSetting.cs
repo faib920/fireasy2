@@ -22,33 +22,8 @@ namespace Fireasy.Data.Configuration
     /// 一个提供数据库字符串配置的类，使用二进制文件进行配置。
     /// </summary>
     [Serializable]
-    public sealed class BinaryInstanceSetting : IInstanceConfigurationSetting
+    public sealed class BinaryInstanceSetting : DefaultInstanceConfigurationSetting
     {
-        /// <summary>
-        /// 返回提供者配置名称。
-        /// </summary>
-        public string ProviderName { get; set; }
-
-        /// <summary>
-        /// 获取实例名称。
-        /// </summary>
-        public string Name { get; set; }
-
-        /// <summary>
-        /// 获取数据提供者类型。
-        /// </summary>
-        public string ProviderType { get; set; }
-
-        /// <summary>
-        /// 返回数据库类型。
-        /// </summary>
-        public Type DatabaseType { get; set; }
-
-        /// <summary>
-        /// 获取数据库连接字符串。
-        /// </summary>
-        public string ConnectionString { get; set; }
-
         /// <summary>
         /// 返回二进制文件名称。
         /// </summary>

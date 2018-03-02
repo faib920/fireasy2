@@ -16,6 +16,7 @@ using Fireasy.Data.Provider.Configuration;
 using Fireasy.Common.Security;
 using System.Globalization;
 using System.Text;
+using System.Collections.Generic;
 
 namespace Fireasy.Data
 {
@@ -36,14 +37,29 @@ namespace Fireasy.Data
 
             var setting = string.IsNullOrEmpty(instanceName) ? section.Default : section.Settings[instanceName];
             Guard.NullReference(setting, SR.GetString(SRKind.InstanceConfigurationInvalid, instanceName));
+            IDatabase database = null;
 
             if (setting.DatabaseType != null)
             {
-                return setting.DatabaseType.New<IDatabase>((ConnectionString)setting.ConnectionString);
+                if (setting.Clusters.Count > 0)
+                {
+                    database = setting.DatabaseType.New<IDatabase>(GetDistributedConnections(setting));
+                }
+                else
+                {
+                    database = setting.DatabaseType.New<IDatabase>((ConnectionString)setting.ConnectionString);
+                }
+            }
+            else
+            {
+                database = CreateDatabase(setting);
             }
 
-            var database = CreateDatabase(setting);
-            DatabaseScope.Current.InstanceName = instanceName;
+            if (DatabaseScope.Current != null)
+            {
+                DatabaseScope.Current.InstanceName = instanceName;
+            }
+
             return database;
         }
 
@@ -62,8 +78,12 @@ namespace Fireasy.Data
 
             Guard.Assert(provider != null, new Exception(SR.GetString(SRKind.ProviderNotSupported)));
 
-            var database = new Database(setting.ConnectionString, provider);
-            return database;
+            if (setting.Clusters.Count > 0)
+            {
+                return new Database(GetDistributedConnections(setting), provider);
+            }
+
+            return new Database(setting.ConnectionString, provider);
         }
 
         /// <summary>
@@ -126,6 +146,31 @@ namespace Fireasy.Data
             }
 
             return connectionStr;
+        }
+
+        /// <summary>
+        /// 获取分布式的数据库连接串。
+        /// </summary>
+        /// <param name="setting"></param>
+        /// <returns></returns>
+        private static List<DistributedConnectionString> GetDistributedConnections(IInstanceConfigurationSetting setting)
+        {
+            if (setting.Clusters.Count > 0)
+            {
+                var connections = new List<DistributedConnectionString>();
+                foreach (var cluster in setting.Clusters)
+                {
+                    connections.Add(new DistributedConnectionString(cluster.ConnectionString)
+                        {
+                            Mode = cluster.Mode,
+                            Weight = cluster.Weight
+                        });
+                }
+
+                return connections;
+            }
+
+            return null;
         }
     }
 }

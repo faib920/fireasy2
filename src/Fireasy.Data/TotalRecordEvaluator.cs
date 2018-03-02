@@ -58,7 +58,7 @@ namespace Fireasy.Data
             var orderBy = DbUtility.FindOrderBy(context.Command.CommandText);
             var sql = string.IsNullOrEmpty(orderBy) ? context.Command.CommandText : context.Command.CommandText.Replace(orderBy, string.Empty);
             sql = string.Format("SELECT COUNT(*) FROM ({0}) TEMP", sql);
-            using (var connection = context.Database.CreateConnection())
+            using (var connection = context.Database.CreateConnection(DistributedMode.Slave))
             {
                 connection.OpenClose(() =>
                     {

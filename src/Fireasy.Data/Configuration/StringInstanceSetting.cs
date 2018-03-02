@@ -10,6 +10,7 @@ using System;
 using System.Xml;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
+using System.Collections.Generic;
 #if NETSTANDARD2_0
 using Microsoft.Extensions.Configuration;
 #else
@@ -22,33 +23,8 @@ namespace Fireasy.Data.Configuration
     /// 一个提供数据库字符串配置的类，使用配置文件中的字符串进行配置。
     /// </summary>
     [Serializable]
-    public sealed class StringInstanceSetting : IInstanceConfigurationSetting
+    public sealed class StringInstanceSetting : DefaultInstanceConfigurationSetting
     {
-        /// <summary>
-        /// 返回提供者配置名称。
-        /// </summary>
-        public string ProviderName { get; set; }
-
-        /// <summary>
-        /// 获取实例名称。
-        /// </summary>
-        public string Name { get; set; }
-
-        /// <summary>
-        /// 返回数据库类型。
-        /// </summary>
-        public string ProviderType { get; set; }
-
-        /// <summary>
-        /// 返回数据库类型。
-        /// </summary>
-        public Type DatabaseType { get; set; }
-
-        /// <summary>
-        /// 返回数据库连接字符串。
-        /// </summary>
-        public string ConnectionString { get; set; }
-
         /// <summary>
         /// 返回字符串的引用类型。
         /// </summary>
@@ -62,7 +38,14 @@ namespace Fireasy.Data.Configuration
                 var providerName = node.GetAttributeValue("providerName");
                 var providerType = node.GetAttributeValue("providerType");
                 var databaseType = node.GetAttributeValue("databaseType");
+                var clusters = node.SelectSingleNode("clusters");
                 var key = node.GetAttributeValue("key");
+
+                if (clusters != null)
+                {
+                    return Parse(storeType, providerName, providerType, databaseType, key, clusters);
+                }
+
                 var connectionString = !string.IsNullOrEmpty(node.InnerText) ? node.InnerText : node.GetAttributeValue("connectionString");
 
                 return Parse(storeType, providerName, providerType, databaseType, key, connectionString);
@@ -75,7 +58,14 @@ namespace Fireasy.Data.Configuration
                 var providerName = configuration.GetSection("providerName").Value;
                 var providerType = configuration.GetSection("providerType").Value;
                 var databaseType = configuration.GetSection("databaseType").Value;
+                var clusters = configuration.GetSection("clusters");
                 var key = configuration.GetSection("key").Value;
+
+                if (clusters.Exists())
+                {
+                    return Parse(storeType, providerName, providerType, databaseType, key, clusters);
+                }
+
                 var connectionString = configuration.GetSection("connectionString").Value;
 
                 return Parse(storeType, providerName, providerType, databaseType, key, connectionString);
@@ -121,6 +111,88 @@ namespace Fireasy.Data.Configuration
                 }
                 return setting;
             }
+
+            private IConfigurationSettingItem Parse(string storeType, string providerName, string providerType, string databaseType, string key, XmlNode clusters)
+            {
+                var setting = new StringInstanceSetting();
+
+                setting.ProviderName = providerName;
+                setting.ProviderType = providerType;
+                setting.DatabaseType = string.IsNullOrEmpty(databaseType) ? null : Type.GetType(databaseType, false, true);
+
+                var master = clusters.SelectSingleNode("master");
+                var slaves = clusters.SelectSingleNode("slaves");
+
+                if (master != null)
+                {
+                    var connstr = master.GetAttributeValue("connectionString");
+                    var cluster = new ClusteredConnectionSetting
+                        {
+                            ConnectionString = ConnectionStringHelper.GetConnectionString(connstr),
+                            Mode = DistributedMode.Master
+                        };
+                    setting.Clusters.Add(cluster);
+                }
+
+                if (slaves != null)
+                {
+                    foreach (XmlNode node in slaves.ChildNodes)
+                    {
+                        var connstr = node.GetAttributeValue("connectionString");
+                        var cluster = new ClusteredConnectionSetting
+                            {
+                                ConnectionString = ConnectionStringHelper.GetConnectionString(connstr),
+                                Mode = DistributedMode.Slave,
+                                Weight = node.GetAttributeValue("weight", 0)
+                            };
+                        setting.Clusters.Add(cluster);
+                    }
+                }
+
+                return setting;
+            }
+
+#if NETSTANDARD2_0
+            private IConfigurationSettingItem Parse(string storeType, string providerName, string providerType, string databaseType, string key, IConfiguration clusters)
+            {
+                var setting = new StringInstanceSetting();
+
+                setting.ProviderName = providerName;
+                setting.ProviderType = providerType;
+                setting.DatabaseType = string.IsNullOrEmpty(databaseType) ? null : Type.GetType(databaseType, false, true);
+
+                var master = clusters.GetSection("master");
+                var slaves = clusters.GetSection("slaves");
+
+                if (master.Exists())
+                {
+                    var connstr = master["connectionString"];
+                    var cluster = new ClusteredConnectionSetting
+                        {
+                            ConnectionString = ConnectionStringHelper.GetConnectionString(connstr),
+                            Mode = DistributedMode.Master
+                        };
+                    setting.Clusters.Add(cluster);
+                }
+
+                if (slaves.Exists())
+                {
+                    foreach (var child in slaves.GetChildren())
+                    {
+                        var connstr = child["connectionString"];
+                        var cluster = new ClusteredConnectionSetting
+                            {
+                                ConnectionString = ConnectionStringHelper.GetConnectionString(connstr),
+                                Mode = DistributedMode.Slave,
+                                Weight = child["weight"].To(0)
+                            };
+                        setting.Clusters.Add(cluster);
+                    }
+                }
+
+                return setting;
+            }
+#endif
         }
     }
 

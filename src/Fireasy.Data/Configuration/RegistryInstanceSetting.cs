@@ -23,33 +23,8 @@ namespace Fireasy.Data.Configuration
     /// 一个提供数据库字符串配置的类，使用系统注册表进行配置。
     /// </summary>
     [Serializable]
-    public sealed class RegistryInstanceSetting : IInstanceConfigurationSetting
+    public sealed class RegistryInstanceSetting : DefaultInstanceConfigurationSetting
     {
-        /// <summary>
-        /// 返回提供者配置名称。
-        /// </summary>
-        public string ProviderName { get; set; }
-
-        /// <summary>
-        /// 获取实例名称。
-        /// </summary>
-        public string Name { get; set; }
-
-        /// <summary>
-        /// 返回数据库类型。
-        /// </summary>
-        public string ProviderType { get; set; }
-
-        /// <summary>
-        /// 返回数据库类型。
-        /// </summary>
-        public Type DatabaseType { get; set; }
-
-        /// <summary>
-        /// 返回数据库连接字符串。
-        /// </summary>
-        public string ConnectionString { get; set; }
-
         /// <summary>
         /// 获取根键名称。
         /// </summary>

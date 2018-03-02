@@ -15,10 +15,10 @@ using Fireasy.Data.Provider;
 namespace Fireasy.Data
 {
     /// <summary>
-    /// 扩展的数据库连接字符串。无法继承此类。
+    /// 扩展的数据库连接字符串。
     /// </summary>
     /// <remarks>连接字符串中可使用特殊的名称来标记数据库文件的有效地址，这些标识包含|datadirectory|或来自 <see cref="Environment.SpecialFolder"/> 枚举项，如|System|、|ApplicationData|，同时，也可以使用../路径命令符。</remarks>
-    public sealed class ConnectionString
+    public class ConnectionString
     {
         private string connectionString;
 

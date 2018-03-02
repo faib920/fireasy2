@@ -20,26 +20,21 @@ namespace Fireasy.Data.Configuration
     /// 基于路由服务的数据库实例配置。
     /// </summary>
     [Serializable]
-    public class RouteInstanceSetting : IInstanceConfigurationSetting
+    public class RouteInstanceSetting : DefaultInstanceConfigurationSetting
     {
         /// <summary>
         /// 返回提供者配置名称。
         /// </summary>
-        public string ProviderName
+        public override string ProviderName
         {
             get { return GetSetting().ProviderName; }
             set { }
         }
 
         /// <summary>
-        /// 获取实例名称。
-        /// </summary>
-        public string Name { get; set; }
-
-        /// <summary>
         /// 返回数据库类型。
         /// </summary>
-        public string ProviderType
+        public override string ProviderType
         {
             get { return GetSetting().ProviderType; }
             set { }
@@ -48,7 +43,7 @@ namespace Fireasy.Data.Configuration
         /// <summary>
         /// 返回数据库类型。
         /// </summary>
-        public Type DatabaseType
+        public override Type DatabaseType
         {
             get { return GetSetting().DatabaseType; }
             set { }
@@ -57,7 +52,7 @@ namespace Fireasy.Data.Configuration
         /// <summary>
         /// 获取数据库连接字符串。
         /// </summary>
-        public string ConnectionString
+        public override string ConnectionString
         {
             get { return GetSetting().ConnectionString; }
             set { }
