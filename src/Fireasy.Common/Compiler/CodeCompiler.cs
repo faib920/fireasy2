@@ -6,15 +6,21 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if !NETSTANDARD2_0
-using System;
 using System.CodeDom;
 using System.CodeDom.Compiler;
+using Microsoft.CSharp;
+#else
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Emit;
+using System.Linq;
+#endif
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text;
 using Fireasy.Common.Extensions;
-using Microsoft.CSharp;
 
 namespace Fireasy.Common.Compiler
 {
@@ -28,14 +34,18 @@ namespace Fireasy.Common.Compiler
         /// </summary>
         public CodeCompiler()
         {
+#if !NETSTANDARD2_0
             CodeProvider = new CSharpCodeProvider();
+#endif
             Assemblies = new List<string>();
         }
 
+#if !NETSTANDARD2_0
         /// <summary>
         /// 获取或设置代码编译的提供者，默认为 <see cref="CSharpCodeProvider"/>。
         /// </summary>
         public CodeDomProvider CodeProvider { get; set; }
+#endif
 
         /// <summary>
         /// 获取或设置输出的程序集。
@@ -52,6 +62,7 @@ namespace Fireasy.Common.Compiler
         /// </summary>
         public List<string> Assemblies { get; private set; }
 
+#if !NETSTANDARD2_0
         /// <summary>
         /// 编译代码并返回指定方法的委托。如果未指定方法名称，则返回类的第一个方法。
         /// </summary>
@@ -95,6 +106,7 @@ namespace Fireasy.Common.Compiler
 
             return GetTypeFromAssembly(assembly, typeName);
         }
+#endif
 
         /// <summary>
         /// 编译代码并返回指定方法的委托。如果未指定方法名称，则返回类的第一个方法。
@@ -116,6 +128,7 @@ namespace Fireasy.Common.Compiler
         /// <returns>由代码编译成的程序集。</returns>
         public Assembly CompileAssembly(string source)
         {
+#if !NETSTANDARD2_0
             var compileOption = GetCompilerParameters();
 
             var compileResult = CodeProvider.CompileAssemblyFromSource(compileOption, source);
@@ -125,6 +138,43 @@ namespace Fireasy.Common.Compiler
             }
 
             return compileResult.CompiledAssembly;
+#else
+            var compilation = CSharpCompilation.Create(Guid.NewGuid().ToString())
+                .AddSyntaxTrees(CSharpSyntaxTree.ParseText(source))
+                .AddReferences(MetadataReference.CreateFromFile(typeof(object).Assembly.Location))
+                .AddReferences(Assemblies.Select(s => MetadataReference.CreateFromFile(s)))
+                .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+            if (!string.IsNullOrEmpty(OutputAssembly))
+            {
+                var result = compilation.Emit(OutputAssembly);
+                if (result.Success)
+                {
+                    return Assembly.Load(OutputAssembly);
+                }
+                else
+                {
+                    ThrowCompileException(result);
+                    return null;
+                }
+            }
+            else
+            {
+                using (var ms = new MemoryStream())
+                {
+                    var result = compilation.Emit(ms);
+                    if (result.Success)
+                    {
+                        return Assembly.Load(ms.ToArray());
+                    }
+                    else
+                    {
+                        ThrowCompileException(result);
+                        return null;
+                    }
+                }
+            }
+#endif
         }
 
         /// <summary>
@@ -140,6 +190,7 @@ namespace Fireasy.Common.Compiler
             return GetTypeFromAssembly(assembly, typeName);
         }
 
+#if !NETSTANDARD2_0
         /// <summary>
         /// 编译代码并返回指定方法的委托。如果未指定方法名称，则返回类的第一个方法。
         /// </summary>
@@ -183,6 +234,7 @@ namespace Fireasy.Common.Compiler
 
             return GetTypeFromAssembly(assembly, typeName);
         }
+#endif
 
         private Type GetTypeFromAssembly(Assembly assembly, string typeName = null)
         {
@@ -203,7 +255,8 @@ namespace Fireasy.Common.Compiler
             return null;
         }
 
-        private CompilerParameters GetCompilerParameters()
+#if !NETSTANDARD2_0
+       private CompilerParameters GetCompilerParameters()
         {
             var option = new CompilerParameters();
             if (!string.IsNullOrEmpty(OutputAssembly))
@@ -247,8 +300,23 @@ namespace Fireasy.Common.Compiler
                 errorBuilder.AppendLine(string.Format("({0},{1}): {2}", error.Line, error.Column, error.ErrorText));
             }
 
-            throw new CodeCompilerException(errorBuilder.ToString(), result.Errors);
+            throw new CodeCompilerException(errorBuilder.ToString());
         }
+#else
+        private void ThrowCompileException(EmitResult result)
+        {
+            var errorBuilder = new StringBuilder();
+
+            foreach (var diagnostic in result.Diagnostics.Where(diagnostic =>
+                        diagnostic.IsWarningAsError ||
+                        diagnostic.Severity == DiagnosticSeverity.Error))
+            {
+                errorBuilder.AppendFormat("{0}: {1}", diagnostic.Id, diagnostic.GetMessage());
+            }
+
+            throw new CodeCompilerException(errorBuilder.ToString());
+        }
+#endif
 
         private TDelegate MakeDelegate<TDelegate>(Type compileType, string methodName)
         {
@@ -267,4 +335,3 @@ namespace Fireasy.Common.Compiler
         }
     }
 }
-#endif
