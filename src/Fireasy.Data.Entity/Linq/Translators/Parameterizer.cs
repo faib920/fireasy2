@@ -112,7 +112,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 return GetNamedValue(methodCallExp);
             }
 
-            return methodCallExp;
+            var arguments = Visit(methodCallExp.Arguments);
+            var obj = Visit(methodCallExp.Object);
+            return methodCallExp.Update(obj, arguments);
         }
 
         protected override Expression VisitMember(MemberExpression memberExp)
