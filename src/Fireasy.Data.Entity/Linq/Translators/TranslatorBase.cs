@@ -36,6 +36,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
         private int dept;
         private Dictionary<TableAlias, string> m_aliases;
         private IDataSegment dataSegment;
+        private TranslateOptions options;
+        private bool hideColumnAliases;
+        private bool hideTableAliases;
+        private bool attachParameter;
 
         /// <summary>
         /// 获取或设置是否嵌套查询。
@@ -55,7 +59,20 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <summary>
         /// 获取或设置翻译器的选项。
         /// </summary>
-        public TranslateOptions Options { get; set; }
+        public TranslateOptions Options
+        {
+            get
+            {
+                return options;
+            }
+            set
+            {
+                options = value;
+                hideColumnAliases = options.HideColumnAliases;
+                hideTableAliases = options.HideTableAliases;
+                attachParameter = options.AttachParameter;
+            }
+        }
 
         /// <summary>
         /// 获取或设置语法插件服务。
@@ -84,12 +101,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             Visit(expression);
             return new TranslateResult
-                {
-                    QueryText = ToString(),
-                    Syntax = Syntax,
-                    DataSegment = dataSegment,
-                    Parameters = Parameters
-                };
+            {
+                QueryText = ToString(),
+                Syntax = Syntax,
+                DataSegment = dataSegment,
+                Parameters = Parameters
+            };
         }
 
         /// <summary>
@@ -211,13 +228,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 case (ExpressionType)DbExpressionType.Projection:
                 case (ExpressionType)DbExpressionType.Function:
                 case (ExpressionType)DbExpressionType.Segment:
-                case (ExpressionType)DbExpressionType.Delete:
-                case (ExpressionType)DbExpressionType.Update:
-                case (ExpressionType)DbExpressionType.Insert:
                 case (ExpressionType)DbExpressionType.Block:
                 case (ExpressionType)DbExpressionType.Generator:
                 case (ExpressionType)DbExpressionType.SqlText:
                     return base.Visit(exp);
+                case (ExpressionType)DbExpressionType.Delete:
+                case (ExpressionType)DbExpressionType.Update:
+                case (ExpressionType)DbExpressionType.Insert:
+                    return HideAliases(() => base.Visit(exp));
                 default:
                     throw new TranslateException(exp, new Exception(SR.GetString(SRKind.NodeTranslateNotSupported, (DbExpressionType)exp.NodeType)));
             }
@@ -301,19 +319,19 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 if (nex.Arguments.Count == 3)
                 {
                     Write(Syntax.DateTime.New(
-                        TranslateString(nex.Arguments[0]), 
-                        TranslateString(nex.Arguments[1]), 
+                        TranslateString(nex.Arguments[0]),
+                        TranslateString(nex.Arguments[1]),
                         TranslateString(nex.Arguments[2])));
                     return nex;
                 }
                 else if (nex.Arguments.Count == 6)
                 {
                     Write(Syntax.DateTime.New(
-                        TranslateString(nex.Arguments[0]), 
-                        TranslateString(nex.Arguments[1]), 
-                        TranslateString(nex.Arguments[2]), 
-                        TranslateString(nex.Arguments[3]), 
-                        TranslateString(nex.Arguments[4]), 
+                        TranslateString(nex.Arguments[0]),
+                        TranslateString(nex.Arguments[1]),
+                        TranslateString(nex.Arguments[2]),
+                        TranslateString(nex.Arguments[3]),
+                        TranslateString(nex.Arguments[4]),
                         TranslateString(nex.Arguments[5])));
                     return nex;
                 }
@@ -907,7 +925,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 for (int i = 0, n = func.Arguments.Count; i < n; i++)
                 {
                     if (i > 0)
-                    { 
+                    {
                         Write(", ");
                     }
                     Visit(func.Arguments[i]);
@@ -925,9 +943,6 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitDelete(DeleteCommandExpression delete)
         {
-            var hiddenColumnAliases = Options.HideColumnAliases;
-            var hideTableAliases = Options.HideTableAliases;
-            Options.HideColumnAliases = Options.HideTableAliases = true;
             if (delete.Table != null)
             {
                 Write("DELETE FROM ");
@@ -939,16 +954,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 Write("WHERE ");
                 VisitPredicate(delete.Where);
             }
-            Options.HideColumnAliases = hiddenColumnAliases;
-            Options.HideTableAliases = hideTableAliases;
+
             return delete;
         }
 
         protected override Expression VisitUpdate(UpdateCommandExpression update)
         {
-            var hiddenColumnAliases = Options.HideColumnAliases;
-            var hideTableAliases = Options.HideTableAliases;
-            Options.HideColumnAliases = Options.HideTableAliases = true;
             if (update.Table != null)
             {
                 Write("UPDATE ");
@@ -975,8 +986,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 Write("WHERE ");
                 VisitPredicate(update.Where);
             }
-            Options.HideColumnAliases = hiddenColumnAliases;
-            Options.HideTableAliases = hideTableAliases;
+
             return update;
         }
 
@@ -987,9 +997,6 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 insert.WithAutoIncrement = false;
             }
 
-            var hiddenColumnAliases = Options.HideColumnAliases;
-            var hideTableAliases = Options.HideTableAliases;
-            Options.HideColumnAliases = Options.HideTableAliases = true;
             if (insert.Table != null)
             {
                 Write("INSERT INTO ");
@@ -1032,8 +1039,6 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 Write(Syntax.IdentitySelect);
             }
 
-            Options.HideColumnAliases = hiddenColumnAliases;
-            Options.HideTableAliases = hideTableAliases;
             return insert;
         }
 
@@ -1143,8 +1148,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected bool IsStringOrDate(Expression exp)
         {
-            return (IsString(exp) || 
-                exp.Type == typeof(DateTime) || 
+            return (IsString(exp) ||
+                exp.Type == typeof(DateTime) ||
                 exp.Type == typeof(DateTime?));
         }
 
@@ -1246,13 +1251,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
             switch (m.Method.Name)
             {
                 case "StartsWith":
-                    Write(string.Format("({0} LIKE {1})", 
+                    Write(string.Format("({0} LIKE {1})",
                             TranslateString(m.Object),
                             Syntax.String.Concat(TranslateString(m.Arguments[0]), "'%'"))
                         );
                     break;
                 case "EndsWith":
-                    Write(string.Format("({0} LIKE {1})", 
+                    Write(string.Format("({0} LIKE {1})",
                             TranslateString(m.Object),
                             Syntax.String.Concat("'%'", TranslateString(m.Arguments[0])))
                         );
@@ -1942,6 +1947,21 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return aggregateType == AggregateType.Count;
         }
 
+        /// <summary>
+        /// 切换“隐藏别名”的参数为 true。
+        /// </summary>
+        /// <param name="func"></param>
+        protected Expression HideAliases(Func<Expression> func)
+        {
+            hideColumnAliases = hideTableAliases = true;
+
+            var exp = func?.Invoke();
+
+            hideColumnAliases = Options.HideColumnAliases;
+            hideTableAliases = Options.HideTableAliases;
+
+            return exp;
+        }
 
         private Expression MakeJoinKey(IList<Expression> key)
         {
