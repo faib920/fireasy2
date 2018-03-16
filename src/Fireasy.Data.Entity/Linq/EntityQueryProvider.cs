@@ -90,26 +90,26 @@ namespace Fireasy.Data.Entity.Linq
         /// 获取表达式的执行计划。
         /// </summary>
         /// <param name="expression"></param>
-        /// <param name="option"></param>
         /// <returns></returns>
-        public Expression GetExecutionPlan(Expression expression, TranslateOptions option = null)
+        public Expression GetExecutionPlan(Expression expression)
         {
             try
             {
-                LambdaExpression lambda = expression as LambdaExpression;
-                if (lambda != null)
+                if (expression is LambdaExpression lambda)
                 {
                     expression = lambda.Body;
                 }
 
                 var section = ConfigurationUnity.GetSection<TranslatorConfigurationSection>();
                 var package = GetTranslateProvider();
-                var options = option ?? (section != null ? section.Options : TranslateOptions.Default);
+                var options = GetTranslateOptions();
 
-                using (var scope = new TranslateScope(context, package))
+                using (var scope = new TranslateScope(context, package, options))
                 {
-                    var translation = package.Translate(expression, options);
-                    return package.BuildExecutionPlan(translation, options);
+                    var translation = package.Translate(expression);
+                    var translator = package.CreateTranslator();
+
+                    return ExecutionBuilder.Build(translation, e => translator.Translate(e));
                 }
             }
             catch (Exception ex)
@@ -123,29 +123,24 @@ namespace Fireasy.Data.Entity.Linq
         /// </summary>
         /// <param name="expression">表示 LINQ 查询的表达式树。</param>
         /// <returns>一个 <see cref="TranslateResult"/>。</returns>
-        /// <param name="option">指定解析的选项。</param>
+        /// <param name="options">指定解析的选项。</param>
         /// <exception cref="TranslateException">对 LINQ 表达式解析失败时抛出此异常。</exception>
-        public TranslateResult Translate(Expression expression, TranslateOptions option = null)
+        public TranslateResult Translate(Expression expression, TranslateOptions options = null)
         {
             try
             {
-                LambdaExpression lambda = expression as LambdaExpression;
-                if (lambda != null)
+                if (expression is LambdaExpression lambda)
                 {
                     expression = lambda.Body;
                 }
 
-                var section = ConfigurationUnity.GetSection<TranslatorConfigurationSection>();
                 var package = GetTranslateProvider();
-                var options = option ?? (section != null ? section.Options : TranslateOptions.Default);
+                options = options ?? GetTranslateOptions();
 
-                using (var scope = new TranslateScope(context, package))
+                using (var scope = new TranslateScope(context, package, options))
                 {
-                    var translation = package.Translate(expression, options);
+                    var translation = package.Translate(expression);
                     var translator = package.CreateTranslator();
-                    translator.Syntax = context.Database.Provider.GetService<ISyntaxProvider>();
-                    translator.Environment = environment;
-                    translator.Options = options;
 
                     TranslateResult result;
                     var selects = SelectGatherer.Gather(translation).ToList();
@@ -217,6 +212,12 @@ namespace Fireasy.Data.Entity.Linq
 
             package = provider.GetService<ITranslateProvider>();
             return package;
+        }
+
+        private TranslateOptions GetTranslateOptions()
+        {
+            var section = ConfigurationUnity.GetSection<TranslatorConfigurationSection>();
+            return (section != null ? section.Options : Translators.TranslateOptions.Default).Clone();
         }
 
         /// <summary>

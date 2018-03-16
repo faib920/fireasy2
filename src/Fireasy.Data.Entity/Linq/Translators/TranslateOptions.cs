@@ -13,6 +13,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public sealed class TranslateOptions
     {
+        /// <summary>
+        /// 缺省的选项。
+        /// </summary>
         public readonly static TranslateOptions Default = new TranslateOptions();
 
         /// <summary>
@@ -55,5 +58,23 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// </summary>
         public int DataCacheExpired { get; set; } = 60;
 
+        /// <summary>
+        /// 克隆一份选项。
+        /// </summary>
+        /// <returns></returns>
+        public TranslateOptions Clone()
+        {
+            return new TranslateOptions
+                {
+                    AttachParameter = AttachParameter,
+                    HideTableAliases = HideTableAliases,
+                    HideColumnAliases = HideColumnAliases,
+                    ParseCacheEnabled = ParseCacheEnabled,
+                    ParseCacheExpired = ParseCacheExpired,
+                    DataCacheEnabled = DataCacheEnabled,
+                    DataCacheExpired = DataCacheExpired,
+                    WhereOnly = WhereOnly
+                };
+        }
     }
 }

@@ -29,25 +29,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// 对 ELinq 表达式进行翻译，并返回翻译的结果。
         /// </summary>
         /// <param name="expression">一个 ELinq 表达式。</param>
-        /// <param name="options">翻译的选项。</param>
         /// <returns></returns>
-        public virtual Expression Translate(Expression expression, TranslateOptions options = null)
+        public virtual Expression Translate(Expression expression)
         {
             expression = PartialEvaluator.Eval(expression, CanBeEvaluatedLocally);
-            return TranslateInternal(expression, options);
+            return TranslateInternal(expression);
         }
 
-        public virtual Expression BuildExecutionPlan(Expression expression, TranslateOptions option = null)
-        {
-            var translator = CreateTranslator();
-            translator.Options = option;
-            translator.Syntax = TranslateScope.Current.Context.Database.Provider.GetService<ISyntaxProvider>();
-            translator.Environment = (TranslateScope.Current.Context as IEntityPersistentEnvironment).Environment;
-
-            return ExecutionBuilder.Build(expression, e => translator.Translate(e));
-        }
-
-        private Expression TranslateInternal(Expression expression, TranslateOptions options)
+        private Expression TranslateInternal(Expression expression)
         {
             var syntax = TranslateScope.Current.Context.Database.Provider.GetService<ISyntaxProvider>();
             var translation = QueryBinder.Bind(expression, syntax);

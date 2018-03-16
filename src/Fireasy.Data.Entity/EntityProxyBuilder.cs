@@ -36,6 +36,7 @@ namespace Fireasy.Data.Entity
         {
             var typeBuilder = assemblyBuilder.DefineType(entityType.Name, baseType: entityType);
             typeBuilder.ImplementInterface(typeof(ICompiledEntity));
+            typeBuilder.SetCustomAttribute(() => new SerializableAttribute());
 
             var properties = from s in entityType.GetProperties()
                              let getMth = s.GetGetMethod()

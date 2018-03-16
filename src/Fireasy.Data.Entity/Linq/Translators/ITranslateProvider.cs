@@ -27,17 +27,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// 对 ELinq 表达式进行翻译，并返回翻译的结果。
         /// </summary>
         /// <param name="expression">一个 ELinq 表达式。</param>
-        /// <param name="options">翻译的选项。</param>
         /// <returns></returns>
-        Expression Translate(Expression expression, TranslateOptions options);
-
-        /// <summary>
-        /// 构造执行计划表达式。
-        /// </summary>
-        /// <param name="expression"></param>
-        /// <param name="options"></param>
-        /// <returns></returns>
-        Expression BuildExecutionPlan(Expression expression, TranslateOptions options);
+        Expression Translate(Expression expression);
 
         /// <summary>
         /// 判断表达式中的常量是否可以被计算。

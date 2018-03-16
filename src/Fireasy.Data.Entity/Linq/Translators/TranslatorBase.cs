@@ -10,8 +10,6 @@ using Fireasy.Common.Extensions;
 using Fireasy.Data.Converter;
 using Fireasy.Data.Entity.Linq.Expressions;
 using Fireasy.Data.Extensions;
-using Fireasy.Data.Identity;
-using Fireasy.Data.Provider;
 using Fireasy.Data.Syntax;
 using System;
 using System.Collections;
@@ -28,18 +26,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// <summary>
     /// 一个抽象类，用于将 ELinq 表达式翻译为 SQL 语句。
     /// </summary>
-    public abstract class TranslatorBase : DbExpressionVisitor, IEntityPersistentEnvironment
+    public abstract class TranslatorBase : DbExpressionVisitor
     {
         private Stack<string> stack = new Stack<string>();
         private StringBuilder builder;
         private const int Indent = 2;
         private int dept;
-        private Dictionary<TableAlias, string> m_aliases;
+        private Dictionary<TableAlias, string> aliases;
         private IDataSegment dataSegment;
-        private TranslateOptions options;
-        private bool hideColumnAliases;
-        private bool hideTableAliases;
-        private bool attachParameter;
 
         /// <summary>
         /// 获取或设置是否嵌套查询。
@@ -52,25 +46,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
         protected TranslatorBase()
         {
             builder = new StringBuilder();
-            m_aliases = new Dictionary<TableAlias, string>();
+            aliases = new Dictionary<TableAlias, string>();
             Parameters = new ParameterCollection();
-        }
 
-        /// <summary>
-        /// 获取或设置翻译器的选项。
-        /// </summary>
-        public TranslateOptions Options
-        {
-            get
+            if (TranslateScope.Current != null)
             {
-                return options;
-            }
-            set
-            {
-                options = value;
-                hideColumnAliases = options.HideColumnAliases;
-                hideTableAliases = options.HideTableAliases;
-                attachParameter = options.AttachParameter;
+                Options = TranslateScope.Current.Options;
+                Syntax = TranslateScope.Current.Context.Database.Provider.GetService<ISyntaxProvider>();
+                Environment = TranslateScope.Current.Context.Environment;
             }
         }
 
@@ -78,6 +61,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// 获取或设置语法插件服务。
         /// </summary>
         public ISyntaxProvider Syntax { get; set; }
+
+        /// <summary>
+        /// 获取或设置翻译器的选项。
+        /// </summary>
+        public TranslateOptions Options { get; set; }
 
         /// <summary>
         /// 获取参数集合。
@@ -1190,10 +1178,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
         protected string GetAliasName(TableAlias alias)
         {
             string name;
-            if (!m_aliases.TryGetValue(alias, out name))
+            if (!aliases.TryGetValue(alias, out name))
             {
-                name = "t" + m_aliases.Count;
-                m_aliases.Add(alias, name);
+                name = "t" + aliases.Count;
+                aliases.Add(alias, name);
             }
             return name;
         }
@@ -1953,12 +1941,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <param name="func"></param>
         protected Expression HideAliases(Func<Expression> func)
         {
-            hideColumnAliases = hideTableAliases = true;
+            var hideTableAliases = Options.HideTableAliases;
+            var hideColumnAliases = Options.HideColumnAliases;
+            Options.HideTableAliases = Options.HideColumnAliases = true;
 
             var exp = func?.Invoke();
 
-            hideColumnAliases = Options.HideColumnAliases;
-            hideTableAliases = Options.HideTableAliases;
+            Options.HideColumnAliases = hideColumnAliases;
+            Options.HideTableAliases = hideTableAliases;
 
             return exp;
         }
