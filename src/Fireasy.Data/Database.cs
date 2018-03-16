@@ -451,7 +451,7 @@ namespace Fireasy.Data
                             var context = new CommandContext(this, command, segment, parameters);
 
                             //无法分页时才采用 adapter.Fill(dataSet, startRecord, maxRecords, "Table")
-                            var handler = !HandleSegmentCommand(context) ?
+                            var handler = !HandleSegmentCommand(context) && segment != null ?
                                 new Func<int>(() => adapter.Fill(dataSet, segment.Start.Value, segment.Length, "Table")) :
                                 new Func<int>(() => adapter.Fill(dataSet));
 
