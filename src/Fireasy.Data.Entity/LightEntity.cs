@@ -14,6 +14,7 @@ namespace Fireasy.Data.Entity
     /// <summary>
     /// 保护的实体类型。
     /// </summary>
+    [Serializable]
     public abstract class ProtectedEntity : EntityObject
     {
         /// <summary>
@@ -51,6 +52,7 @@ namespace Fireasy.Data.Entity
     /// 轻量级的数据实体，继承此类不需要显式定义 <see cref="IProperty"/> 。该类型基于 动态编译 实现，属性必须使用 Virtual 声明。
     /// </summary>
     /// <typeparam name="TEntity">实体类型。</typeparam>
+    [Serializable]
     public abstract class LightEntity<TEntity> : ProtectedEntity,
         ICompilableEntity
         where TEntity : EntityObject

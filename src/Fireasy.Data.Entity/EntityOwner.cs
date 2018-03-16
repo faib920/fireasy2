@@ -5,11 +5,14 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
+
 namespace Fireasy.Data.Entity
 {
     /// <summary>
     /// 表示实体的所有者属性。
     /// </summary>
+    [Serializable]
     public sealed class EntityOwner
     {
         /// <summary>
