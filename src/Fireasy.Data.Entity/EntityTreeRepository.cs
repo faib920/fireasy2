@@ -388,6 +388,15 @@ namespace Fireasy.Data.Entity
                         syntax.FormatParameter("pm"));
                     var innerId = bag.InnerId;
 
+                    if (isolation != null)
+                    {
+                        var condition = IsolationConditionBuilder.Build(isolation);
+                        if (!string.IsNullOrEmpty(condition))
+                        {
+                            sql += " AND " + condition;
+                        }
+                    }
+
                     var parameters = new ParameterCollection { { "pm", innerId + new string('_', metaTree.SignLength) } };
                     return database.ExecuteScalar((SqlCommand)sql, parameters).To<int>() + 1 + offset;
                 case EntityTreePosition.Before:
@@ -723,16 +732,24 @@ namespace Fireasy.Data.Entity
                 parameters.Add("pm", keyId);
             }
 
+            var conIsolation = string.Empty;
             if (isolation != null)
             {
-                var condition = IsolationConditionBuilder.Build(isolation);
-                if (!string.IsNullOrEmpty(condition))
+                conIsolation = IsolationConditionBuilder.Build(isolation);
+                if (!string.IsNullOrEmpty(conIsolation))
                 {
-                    sb.AppendFormat(" AND {0}", condition);
+                    sb.AppendFormat(" AND {0}", conIsolation);
                 }
             }
 
-            sb.AppendFormat(") f ON t.{0} LIKE {1} ORDER BY {0}", QuoteColumn(metaTree.InnerSign), syntax.String.Concat("f." + QuoteColumn(metaTree.InnerSign), "'%'"));
+            sb.AppendFormat(") f ON t.{0} LIKE {1}", QuoteColumn(metaTree.InnerSign), syntax.String.Concat("f." + QuoteColumn(metaTree.InnerSign), "'%'"));
+
+            if (!string.IsNullOrEmpty(conIsolation))
+            {
+                sb.AppendFormat(" WHERE {0}", conIsolation);
+            }
+
+            sb.AppendFormat("ORDER BY {0}", QuoteColumn(metaTree.InnerSign));
 
             keyId = GetPreviousKey(keyId) + "_%";
             parameters.Add("pn", keyId);
@@ -846,7 +863,7 @@ namespace Fireasy.Data.Entity
         private void UpdateMoveToRoot(TEntity current, EntityTreeUpfydatingArgument arg, Expression<Func<TEntity>> isolation = null)
         {
             //获得新节点的Order值
-            var newOrder = GetNewOrderNumber(null, EntityTreePosition.Children);
+            var newOrder = GetNewOrderNumber(null, EntityTreePosition.Children, isolation: isolation);
 
             //获取它的兄弟及其孩子
             var brothers = GetBrothersAndChildren(arg, false, null, isolation: isolation);
@@ -908,7 +925,7 @@ namespace Fireasy.Data.Entity
 
             var keyId = arg2.OldValue.InnerId;
             //获得新节点的Order值
-            arg1.NewValue.Order = GetNewOrderNumber(arg2.OldValue, EntityTreePosition.Children);
+            arg1.NewValue.Order = GetNewOrderNumber(arg2.OldValue, EntityTreePosition.Children, isolation: isolation);
 
             //获得参照节点的级别
             arg1.NewValue.Level = arg2.OldValue.Level + 1;
