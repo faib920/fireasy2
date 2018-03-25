@@ -82,8 +82,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 return BindQueryableMethod(node);
             }
             else if (node.Method.DeclaringType.IsGenericType && 
-                (node.Method.DeclaringType.GetGenericTypeDefinition() == typeof(EntityRepository<>) ||
-                node.Method.DeclaringType.GetGenericTypeDefinition() == typeof(EntityTreeRepository<>)))
+                node.Method.DeclaringType.GetGenericTypeDefinition() == typeof(ITreeRepository<>))
             {
                 return ChangePersisterMethod(node);
             }
@@ -1059,15 +1058,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         private Expression ChangePersisterMethod(MethodCallExpression m)
         {
-            if (m.Method.Name == "Query")
-            {
-                var eleType = m.Type.GetEnumerableElementType();
-
-                var query = CreateQuery(eleType, m.Object);
-
-                return Visit(Expression.Call(typeof(Queryable), "Where", new [] { eleType }, Expression.Constant(query), m.Arguments[0]));
-            }
-            else if (m.Method.Name == "HasChildren")
+            if (m.Method.Name == "HasChildren")
             {
                 var eleType = (m.Arguments[0] as ParameterExpression).Type;
                 var parExp = Expression.Parameter(eleType, "s");
