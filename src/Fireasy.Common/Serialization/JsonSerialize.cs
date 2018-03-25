@@ -44,8 +44,13 @@ namespace Fireasy.Common.Serialization
         /// 将对象序列化为文本。
         /// </summary>
         /// <param name="value">要序列化的值。</param>
-        internal void Serialize(object value)
+        internal void Serialize<T>(T value)
         {
+            if (WithConverter(typeof(T), value))
+            {
+                return;
+            }
+
             if ((value == null) || DBNull.Value.Equals(value))
             {
                 jsonWriter.WriteNull();
@@ -58,10 +63,6 @@ namespace Fireasy.Common.Serialization
             }
 
             var type = value.GetType();
-            if (WithConverter(type, value))
-            {
-                return;
-            }
 
             if (type == typeof(DataSet))
             {
@@ -83,13 +84,13 @@ namespace Fireasy.Common.Serialization
 
             if (type == typeof(Color))
             {
-                SerializeColor((Color)value);
+                SerializeColor((Color)(object)value);
                 return;
             }
 
             if (typeof(Type).IsAssignableFrom(type))
             {
-                SerializeType((Type)value);
+                SerializeType((Type)(object)value);
                 return;
             }
 
@@ -115,7 +116,7 @@ namespace Fireasy.Common.Serialization
 
             if (type == typeof(byte[]))
             {
-                SerializeBytes((byte[])value);
+                SerializeBytes((byte[])(object)value);
                 return;
             }
 
