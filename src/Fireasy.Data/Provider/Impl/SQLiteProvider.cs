@@ -29,9 +29,10 @@ namespace Fireasy.Data.Provider
         /// </summary>
         public SQLiteProvider()
 #if NETSTANDARD2_0
-            : base("Microsoft.Data.Sqlite.SqliteFactory, Microsoft.Data.Sqlite", "Instance")
+            : base("Microsoft.Data.Sqlite.SqliteFactory, Microsoft.Data.Sqlite",
+                  "Devart.Data.SQLite.SQLiteProviderFactory, Devart.Data.SQLite")
 #else
-            : base("System.Data.SQLite.SQLiteFactory, System.Data.SQLite", null)
+            : base("System.Data.SQLite.SQLiteFactory, System.Data.SQLite")
 #endif
         {
             RegisterService<IGeneratorProvider, BaseSequenceGenerator>();

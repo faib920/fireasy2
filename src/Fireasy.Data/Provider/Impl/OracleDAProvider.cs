@@ -23,7 +23,7 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="OracleDAProvider"/> 类的新实例。
         /// </summary>
         public OracleDAProvider()
-            : base("Oracle.DataAccess.Client.OracleClientFactory, Oracle.DataAccess", "Instance")
+            : base("Oracle.DataAccess.Client.OracleClientFactory, Oracle.DataAccess")
         {
             RegisterService<IGeneratorProvider, OracleSequenceGenerator>();
             RegisterService<ISyntaxProvider, OracleSyntax>();

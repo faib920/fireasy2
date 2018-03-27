@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Data.Common;
+using System.Linq;
 using System.Reflection;
 using Fireasy.Common.Extensions;
 
@@ -21,35 +22,31 @@ namespace Fireasy.Data.Provider
         /// 根据类全名加载 <see cref="DbProviderFactory"/> 对象。
         /// </summary>
         /// <param name="typeName">类的全名。</param>
+        /// <param name="factory"></param>
         /// <returns></returns>
-        public static DbProviderFactory Load(string typeName)
+        public static bool TryLoad(string typeName, out DbProviderFactory factory)
         {
             var type = Type.GetType(typeName, false, true);
             if (type != null)
             {
-                return type.New<DbProviderFactory>();
-            }
-            return null;
-        }
+                var field = type.GetFields(BindingFlags.Public | BindingFlags.Static)
+                    .FirstOrDefault(s => typeof(DbProviderFactory).IsAssignableFrom(s.FieldType));
 
-        /// <summary>
-        /// 根据类命名和静态成员名加载 <see cref="DbProviderFactory"/> 对象。
-        /// </summary>
-        /// <param name="typeName">类的全名。</param>
-        /// <param name="fieldName">静态的实例成员名称，如 Instance。</param>
-        /// <returns></returns>
-        public static DbProviderFactory Load(string typeName, string fieldName)
-        {
-            var type = Type.GetType(typeName, false, true);
-            if (type != null)
-            {
-                var field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.Static);
                 if (field != null)
                 {
-                    return field.GetValue(null) as DbProviderFactory;
+                    factory = field.GetValue(null) as DbProviderFactory;
+                }
+                else
+                {
+                    factory = type.New<DbProviderFactory>();
                 }
             }
-            return null;
+            else
+            {
+                factory = null;
+            }
+
+            return factory != null;
         }
     }
 }

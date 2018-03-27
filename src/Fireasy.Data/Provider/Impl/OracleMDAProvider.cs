@@ -23,7 +23,7 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="OracleMDAProvider"/> 类的新实例。
         /// </summary>
         public OracleMDAProvider()
-            : base("Oracle.ManagedDataAccess.Client.OracleClientFactory, Oracle.ManagedDataAccess", "Instance")
+            : base("Oracle.ManagedDataAccess.Client.OracleClientFactory, Oracle.ManagedDataAccess")
         {
             RegisterService<IGeneratorProvider, OracleSequenceGenerator>();
             RegisterService<ISyntaxProvider, OracleSyntax>();

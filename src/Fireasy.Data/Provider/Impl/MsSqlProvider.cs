@@ -35,7 +35,7 @@ namespace Fireasy.Data.Provider
         /// </summary>
         public MsSqlProvider()
 #if NETSTANDARD2_0
-            : base("System.Data.SqlClient.SqlClientFactory, System.Data.SqlClient", "Instance")
+            : base("System.Data.SqlClient.SqlClientFactory, System.Data.SqlClient")
 #else
             : base("System.Data.SqlClient")
 #endif

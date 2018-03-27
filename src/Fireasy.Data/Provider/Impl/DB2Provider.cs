@@ -28,7 +28,7 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="DB2Provider"/> 类的新实例。
         /// </summary>
         public DB2Provider()
-            : base("IBM.Data.DB2.DB2Factory, IBM.Data.DB2", null)
+            : base("IBM.Data.DB2.DB2Factory, IBM.Data.DB2")
         {
             RegisterService<IGeneratorProvider, BaseSequenceGenerator>();
             RegisterService<ISyntaxProvider, MySqlSyntax>();

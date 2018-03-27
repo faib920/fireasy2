@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
 using System.Data.Common;
 
 namespace Fireasy.Data.Provider
@@ -15,19 +16,16 @@ namespace Fireasy.Data.Provider
     /// </summary>
     public abstract class AssemblyProvider : ProviderBase
     {
-        private readonly string assemblyName;
-        private readonly string fieldName;
+        private readonly List<string> typeNames;
 
         /// <summary>
         /// 使用程序集名称初始化 <see cref="AssemblyProvider"/> 类的新实例。
         /// </summary>
-        /// <param name="assemblyName">程序集名称。</param>
-        /// <param name="fieldName">单例变量名称。</param>
-        protected AssemblyProvider(string assemblyName, string fieldName)
+        /// <param name="typeNames">程序集组。</param>
+        protected AssemblyProvider(params string[] typeNames)
             : base()
         {
-            this.assemblyName = assemblyName;
-            this.fieldName = fieldName;
+            this.typeNames = new List<string>(typeNames);
         }
 
         /// <summary>
@@ -36,9 +34,15 @@ namespace Fireasy.Data.Provider
         /// <returns></returns>
         protected override DbProviderFactory InitDbProviderFactory()
         {
-            return string.IsNullOrEmpty(fieldName) ? 
-                AssemblyLoader.Load(assemblyName) : 
-                AssemblyLoader.Load(assemblyName, fieldName);
+            foreach (var typeName in typeNames)
+            {
+                if (AssemblyLoader.TryLoad(typeName, out DbProviderFactory factory))
+                {
+                    return factory;
+                }
+            }
+
+            return null;
         }
     }
 }

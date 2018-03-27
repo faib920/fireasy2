@@ -29,9 +29,10 @@ namespace Fireasy.Data.Provider
         /// </summary>
         public MySqlProvider()
 #if NETSTANDARD2_0
-            : base("MySql.Data.MySqlClient.MySqlClientFactory, MySqlConnector", "Instance")
+            : base("MySql.Data.MySqlClient.MySqlClientFactory, MySqlConnector", 
+                  "Devart.Data.MySql.MySqlProviderFactory, Devart.Data.MySql")
 #else
-            : base("MySql.Data.MySqlClient.MySqlClientFactory, MySql.Data", null)
+            : base("MySql.Data.MySqlClient.MySqlClientFactory, MySql.Data")
 #endif
         {
             RegisterService<IGeneratorProvider, BaseSequenceGenerator>();
