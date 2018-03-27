@@ -8,6 +8,7 @@
 #if NETSTANDARD2_0
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters.Json.Internal;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.AspNetCore.Mvc.Razor.Compilation;
 using Microsoft.AspNetCore.Razor.Language;
 using System;
@@ -38,6 +39,11 @@ namespace Microsoft.Extensions.DependencyInjection
                 builder.Services.AddSingleton<JsonResultExecutor, Fireasy.Web.Mvc.JsonResultExecutor>();
             }
 
+            if (options.DisableModelValidator)
+            {
+                builder.Services.AddSingleton<IObjectModelValidator, Fireasy.Web.Mvc.NoneObjectModelValidator>();
+            }
+
             if (options.UseReferenceAssembly)
             {
                 builder.PartManager.FeatureProviders.Remove(builder.PartManager.FeatureProviders.First(f => f is MetadataReferenceFeatureProvider));
@@ -45,6 +51,7 @@ namespace Microsoft.Extensions.DependencyInjection
             }
 
             builder.Services.AddSingleton<RazorProject, Fireasy.Web.Mvc.BasedRazorProject>();
+
             builder.Services.Configure<MvcOptions>(s =>
                 {
                     s.Filters.Add(new Fireasy.Web.Mvc.HandleErrorAttribute());
