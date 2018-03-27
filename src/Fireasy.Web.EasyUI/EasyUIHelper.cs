@@ -116,13 +116,13 @@ namespace Fireasy.Web.EasyUI
                 }
                 else
                 {
-                    var f = footer is IEnumerable ? footer : new[] { footer };
+                    var f = footer is IEnumerable ? footer : footer != null ? new[] { footer } : null;
                     return new { rows = data, footer = f };
                 }
             }
             else
             {
-                var f = footer is IEnumerable ? footer : new[] { footer };
+                var f = footer is IEnumerable ? footer : footer != null ? new[] { footer } : null;
                 return new { total = pager.RecordCount, rows = data, footer = f };
             }
         }

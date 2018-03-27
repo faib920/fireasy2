@@ -44,9 +44,14 @@ namespace Fireasy.Common.Serialization
         /// 将对象序列化为文本。
         /// </summary>
         /// <param name="value">要序列化的值。</param>
-        internal void Serialize<T>(T value)
+        internal void Serialize(object value, Type type = null)
         {
-            if (WithConverter(typeof(T), value))
+            if (type == null && value != null)
+            {
+                type = value.GetType();
+            }
+
+            if (type != null && WithConverter(type, value))
             {
                 return;
             }
@@ -62,7 +67,6 @@ namespace Fireasy.Common.Serialization
                 return;
             }
 
-            var type = value.GetType();
 
             if (type == typeof(DataSet))
             {
@@ -84,13 +88,13 @@ namespace Fireasy.Common.Serialization
 
             if (type == typeof(Color))
             {
-                SerializeColor((Color)(object)value);
+                SerializeColor((Color)value);
                 return;
             }
 
             if (typeof(Type).IsAssignableFrom(type))
             {
-                SerializeType((Type)(object)value);
+                SerializeType((Type)value);
                 return;
             }
 
@@ -116,7 +120,7 @@ namespace Fireasy.Common.Serialization
 
             if (type == typeof(byte[]))
             {
-                SerializeBytes((byte[])(object)value);
+                SerializeBytes((byte[])value);
                 return;
             }
 
@@ -307,7 +311,7 @@ namespace Fireasy.Common.Serialization
                 }
 
                 jsonWriter.WriteKey(SerializeName(acc.PropertyName));
-                JsonConvertContext.Current.Assign(acc.Accessor.PropertyInfo.Name, value, () => Serialize(value));
+                JsonConvertContext.Current.Assign(acc.Accessor.PropertyInfo.Name, value, () => Serialize(value, acc.PropertyInfo.PropertyType));
             }
 
             jsonWriter.WriteEndObject();
@@ -406,7 +410,7 @@ namespace Fireasy.Common.Serialization
         private void SerializeKeyValue<TKey, TValue>(TKey key, TValue value)
         {
             jsonWriter.WriteKey(SerializeName(key.ToString()));
-            JsonConvertContext.Current.Assign(key.ToString(), value, () => Serialize(value));
+            JsonConvertContext.Current.Assign(key.ToString(), value, () => Serialize(value, typeof(TValue)));
         }
 
         private string SerializeName(string name)

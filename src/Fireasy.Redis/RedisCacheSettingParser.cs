@@ -59,7 +59,7 @@ namespace Fireasy.Redis
             var setting = new RedisCacheSetting();
             setting.CacheType = Type.GetType(configuration["type"], false, true);
             var configNode = configuration.GetSection("config");
-            if (configNode != null)
+            if (configNode.Exists())
             {
                 var serializerType = configNode["serializerType"];
                 if (!string.IsNullOrEmpty(serializerType))

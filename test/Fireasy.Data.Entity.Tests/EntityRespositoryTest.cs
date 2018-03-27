@@ -1,4 +1,5 @@
 ﻿using Fireasy.Common.Extensions;
+using Fireasy.Common.Serialization;
 using Fireasy.Common.Subscribe;
 using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Linq.Expressions;
@@ -9,8 +10,10 @@ using Fireasy.Data.Extensions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace Fireasy.Data.Entity.Tests
 {
@@ -258,7 +261,7 @@ namespace Fireasy.Data.Entity.Tests
             using (var db = new DbContext())
             {
                 var list = db.OrderDetails
-                    .Join(db.Orders, s => s.OrderID, s => s.OrderID, (s, t) => new { s, t})
+                    .Join(db.Orders, s => s.OrderID, s => s.OrderID, (s, t) => new { s, t })
                     .Where(s => s.s.OrderID != 1)
                     .Select(s =>
                         s.s.ExtendAs<OrderDetailsEx>(() => new OrderDetailsEx
@@ -905,6 +908,16 @@ namespace Fireasy.Data.Entity.Tests
         }
 
         [TestMethod]
+        public void TestExecuteSql()
+        {
+            using (var context = new DbContext())
+            {
+                var d = new DataPager(10, 0);
+                var dt = context.Database.ExecuteDataTable((SqlCommand)"select * from products", null, d);
+            }
+        }
+
+        [TestMethod]
         public void TestTransaction()
         {
             using (var scope = new EntityTransactionScope())
@@ -937,6 +950,43 @@ namespace Fireasy.Data.Entity.Tests
             }
         }
 
+        [TestMethod]
+        public void TestTranslateCache()
+        {
+            using (var context = new DbContext())
+            {
+                var customer1 = context.Customers.FirstOrDefault();
+                var customer2 = context.Customers.FirstOrDefault();
+            }
+        }
+
+        [TestMethod]
+        public void TestXmlSerialize()
+        {
+            using (var context = new DbContext())
+            {
+                var customer = context.Customers.FirstOrDefault();
+
+                var ser = new XmlSerializer();
+                var str = ser.Serialize(customer);
+                Console.WriteLine(str);
+            }
+        }
+
+        [TestMethod]
+        public void TestBinSerialize()
+        {
+            using (var context = new DbContext())
+            {
+                var customer = context.Customers.FirstOrDefault();
+
+                var ser = new BinaryFormatter();
+                using (var m = new MemoryStream())
+                {
+                    ser.Serialize(m, customer);
+                }
+            }
+        }
 
         [TestMethod]
         public void TestSubscriberForBatch()

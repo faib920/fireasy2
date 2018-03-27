@@ -85,5 +85,15 @@ namespace Fireasy.Data.Tests
                 Assert.IsNull(exception);
             }
         }
+
+        [TestMethod]
+        public void TestCluster()
+        {
+            using (var db = DatabaseFactory.CreateDatabase("cluster"))
+            {
+                var exception = db.TryConnect();
+                Assert.IsNull(exception);
+            }
+        }
     }
 }

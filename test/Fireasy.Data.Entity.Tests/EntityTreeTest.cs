@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Fireasy.Data.Entity.Tests.Models;
 using System.Linq;
 using System.Collections.Generic;
+using Fireasy.Data.Entity.Linq;
 
 namespace Fireasy.Data.Entity.Tests
 {
@@ -33,6 +34,18 @@ namespace Fireasy.Data.Entity.Tests
                 var rep = db.CreateTreeRepository<Depts>();
                 var yn = db.Depts.FirstOrDefault(s => s.DeptName == "云南");
                 var list = rep.QueryChildren(yn).ToList();
+                Assert.AreEqual(list[0].DeptName, "昆明");
+            }
+        }
+
+        [TestMethod]
+        public void TestQueryChildrenExtend()
+        {
+            using (var db = new DbContext())
+            {
+                var rep = db.CreateTreeRepository<Depts>();
+                var yn = db.Depts.FirstOrDefault(s => s.DeptName == "云南");
+                var list = rep.QueryChildren(yn).Select(s => s.ExtendAs<Depts>(() => new Depts { HasChildren = rep.HasChildren(s, null) } )).ToList();
                 Assert.AreEqual(list[0].DeptName, "昆明");
             }
         }
