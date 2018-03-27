@@ -60,9 +60,9 @@ namespace Microsoft.Extensions.DependencyInjection
         private static void FindReferenceAssemblies(Assembly assembly, List<Assembly> assemblies)
         {
             foreach (var asb in assembly.GetReferencedAssemblies()
-                .Where(s => !s.Name.StartsWith("system.", StringComparison.OrdinalIgnoreCase) &&
-                    !s.Name.StartsWith("microsoft.", StringComparison.OrdinalIgnoreCase))
-                .Select(s => Assembly.Load(s)))
+                .Where(s => ExcludeAssembly(s.Name))
+                .Select(s => LoadAssembly(s))
+                .Where(s => s != null))
             {
                 if (!assemblies.Contains(asb))
                 {
@@ -101,6 +101,24 @@ namespace Microsoft.Extensions.DependencyInjection
             }
 
             return services;
+        }
+
+        private static bool ExcludeAssembly(string assemblyName)
+        {
+            return !assemblyName.StartsWith("system.", StringComparison.OrdinalIgnoreCase) &&
+                    !assemblyName.StartsWith("microsoft.", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static Assembly LoadAssembly(AssemblyName assemblyName)
+        {
+            try
+            {
+                return Assembly.Load(assemblyName);
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 

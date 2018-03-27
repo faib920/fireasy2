@@ -5,14 +5,14 @@
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
-    <FileVersion>2.0.0.46086</FileVersion>
+    <FileVersion>2.0.0.46090</FileVersion>
     <Copyright>Copyright © Fireasy 2013-2018</Copyright>
-    <AssemblyVersion>2.0.0.46086</AssemblyVersion>
+    <AssemblyVersion>2.0.0.46090</AssemblyVersion>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Common Library</Product>
-    <Version>2.0.5</Version>
+    <Version>2.0.7</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Description>通用类库，提供配置、缓存、日志、AOP、IOC、JSON序列化、扩展方法、Emit、加解密等等基础方法。
 
@@ -20,6 +20,7 @@
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
     <RepositoryUrl></RepositoryUrl>
     <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
+    <PackageReleaseNotes>1、完善 Json 序列化时转换器对 null 数据无效的bug。</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net35|AnyCPU'">
@@ -110,7 +111,7 @@
       <Version>4.4.0</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp">
-      <Version>2.6.1</Version>
+      <Version>2.3.1</Version>
     </PackageReference>
   </ItemGroup>
 </Project>
