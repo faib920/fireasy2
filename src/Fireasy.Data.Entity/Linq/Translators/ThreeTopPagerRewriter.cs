@@ -38,19 +38,23 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
                 // propogate order-bys to new layer
                 select = (SelectExpression)new OrderByRewriter().Visit(select);
+
                 var inverted = select.OrderBy.Select(ob => new OrderExpression(
                     ob.OrderType == OrderType.Ascending ? OrderType.Descending : OrderType.Ascending,
                     ob.Expression
                     ));
+
                 select = select.SetOrderBy(inverted);
 
                 select = select.AddRedundantSelect(new TableAlias());
                 select = select.SetTake(Expression.Constant(0)); // temporary
                 select = (SelectExpression)new OrderByRewriter().Visit(select);
+
                 var reverted = select.OrderBy.Select(ob => new OrderExpression(
                     ob.OrderType == OrderType.Ascending ? OrderType.Descending : OrderType.Ascending,
                     ob.Expression
                     ));
+
                 select = select.SetOrderBy(reverted);
                 select = select.SetTake(null);
             }

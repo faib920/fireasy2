@@ -22,7 +22,7 @@ namespace Fireasy.Common.Emit
     {
         private AssemblyBuilder assemblyBuilder;
         private ModuleBuilder moduleBuilder;
-        private static readonly Dictionary<string, Assembly> Assemblies = new Dictionary<string, Assembly>();
+        private static readonly Dictionary<string, Assembly> assemblies = new Dictionary<string, Assembly>();
         private readonly List<ITypeCreator> typeBuilders = new List<ITypeCreator>();
 
         /// <summary>
@@ -91,13 +91,13 @@ namespace Fireasy.Common.Emit
 #endif
                 }
 
-                ReadWriteLocker.Instance.LockWrite(() => Assemblies.TryAdd(AssemblyName, assemblyBuilder));
+                ReadWriteLocker.Instance.LockWrite(() => assemblies.TryAdd(AssemblyName, assemblyBuilder));
 
                 //如果引用到当前程序集中的其他类型，则需要定义以下事件
                 AppDomain.CurrentDomain.AssemblyResolve += (o, e) =>
                     {
                         var names = e.Name.Split(',');
-                        return Assemblies.TryGetValue(names[0].Trim(), () => null);
+                        return assemblies.TryGetValue(names[0].Trim(), () => null);
                     };
             }
 

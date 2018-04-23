@@ -6,7 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Security.Cryptography;
 
 namespace Fireasy.Common.Security
 {
@@ -47,7 +46,7 @@ namespace Fireasy.Common.Security
                     return new DSACrypto();
             }
 
-            throw new NotSupportedException();
+            throw new NotSupportedException(SR.GetString(SRKind.AlgorithmNotSupported, algorithmName));
         }
 
         /// <summary>
@@ -59,6 +58,46 @@ namespace Fireasy.Common.Security
         public static ICryptoProvider Create(CryptoAlgorithm algorithm)
         {
             return Create(algorithm.ToString());
+        }
+
+        public static AsymmetricCrypto CreateAsymmetric(CryptoAlgorithm algorithm)
+        {
+            if (algorithm != CryptoAlgorithm.RSA && 
+                algorithm != CryptoAlgorithm.DSA)
+            {
+                throw new NotSupportedException(SR.GetString(SRKind.AlgorithmNotSupported, algorithm));
+            }
+
+            return Create(algorithm.ToString()) as AsymmetricCrypto;
+        }
+
+        public static SymmetricCrypto CreateSymmetric(CryptoAlgorithm algorithm)
+        {
+            if (algorithm != CryptoAlgorithm.DES &&
+                algorithm != CryptoAlgorithm.AES &&
+                algorithm != CryptoAlgorithm.RC2 &&
+                algorithm != CryptoAlgorithm.RC4 &&
+                algorithm != CryptoAlgorithm.Rijndael &&
+                algorithm != CryptoAlgorithm.TripleDES)
+            {
+                throw new NotSupportedException(SR.GetString(SRKind.AlgorithmNotSupported, algorithm));
+            }
+
+            return Create(algorithm.ToString()) as SymmetricCrypto;
+        }
+
+        public static HashCrypto CreateHash(CryptoAlgorithm algorithm)
+        {
+            if (algorithm != CryptoAlgorithm.MD5 && 
+                algorithm != CryptoAlgorithm.SHA1 && 
+                algorithm != CryptoAlgorithm.SHA256 && 
+                algorithm != CryptoAlgorithm.SHA384 && 
+                algorithm != CryptoAlgorithm.SHA512)
+            {
+                throw new NotSupportedException(SR.GetString(SRKind.AlgorithmNotSupported, algorithm));
+            }
+
+            return Create(algorithm.ToString()) as HashCrypto;
         }
     }
 }

@@ -18,8 +18,7 @@ namespace Fireasy.Data.Entity.Linq
     /// <typeparam name="TElement"></typeparam>
     public sealed class Grouping<TKey, TElement> : IGrouping<TKey, TElement>
     {
-        private readonly TKey m_key;
-        private readonly IEnumerable<TElement> m_elements;
+        private readonly IEnumerable<TElement> elements;
 
         /// <summary>
         /// 初始化 <see cref="T:Fireasy.Data.Entity.Linq.Grouping`2"/> 类的新实例。
@@ -28,17 +27,14 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="elements">一个元素的序列。</param>
         public Grouping(TKey key, IEnumerable<TElement> elements)
         {
-            m_key = key;
-            m_elements = elements;
+            this.Key = key;
+            this.elements = elements;
         }
 
         /// <summary>
         /// 获取该序列的键。
         /// </summary>
-        public TKey Key
-        {
-            get { return m_key; }
-        }
+        public TKey Key { get; private set; }
 
         /// <summary>
         /// 返回枚举器。
@@ -46,12 +42,12 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public IEnumerator<TElement> GetEnumerator()
         {
-            return m_elements == null ? null : m_elements.GetEnumerator();
+            return elements == null ? null : elements.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return m_elements.GetEnumerator();
+            return elements.GetEnumerator();
         }
     }
 }

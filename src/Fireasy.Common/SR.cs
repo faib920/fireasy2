@@ -55,6 +55,7 @@ namespace Fireasy.Common
         internal const string StreamNotSupportRead = "StreamNotSupportRead";
         internal const string StreamNotSupportWrite = "StreamNotSupportWrite";
         internal const string MethodNotOverride = "MethodNotOverride";
+        internal const string AlgorithmNotSupported = "AlgorithmNotSupported";
     }
 
     internal class SR

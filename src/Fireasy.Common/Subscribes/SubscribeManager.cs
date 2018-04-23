@@ -24,15 +24,16 @@ namespace Fireasy.Common.Subscribe
         /// 发布消息。
         /// </summary>
         /// <typeparam name="T"></typeparam>
+        /// <param name="queue">是否放队列里。</param>
         /// <param name="arguments">消息的参数。</param>
-        public static void Publish<T>(params object[] arguments) where T : ISubject
+        public static void Publish<T>(bool queue, params object[] arguments) where T : ISubject
         {
             if (subscribes.TryGetValue(typeof(T), out SubjectCache cache))
             {
                 cache.Subject.Initialize(arguments);
                 var subscribers = cache.Subject.Filter == null ?
                     cache.Subscribers : cache.Subscribers.Where(s => cache.Subject.Filter(s));
-                SubscribePublisher.Publish(cache.Subject, subscribers);
+                SubscribePublisher.Publish(cache.Subject, subscribers, queue);
             }
         }
 
@@ -108,10 +109,18 @@ namespace Fireasy.Common.Subscribe
         /// </summary>
         /// <param name="subject">订阅的主题。</param>
         /// <param name="subscribers">订阅该主题的订阅者列表。</param>
-        internal static void Publish(ISubject subject, IEnumerable<ISubscriber> subscribers)
+        /// <param name="queue">是否放到队列里。</param>
+        internal static void Publish(ISubject subject, IEnumerable<ISubscriber> subscribers, bool queue = true)
         {
 #if !NET35
-            ActionQueue.Push(() => subscribers.ForEach(s => s.Accept(subject)));
+            if (queue)
+            {
+                ActionQueue.Push(() => subscribers.ForEach(s => s.Accept(subject)));
+            }
+            else
+            {
+                subscribers.ForEach(s => s.Accept(subject));
+            }
 #else
             subscribers.ForEach(s => s.Accept(subject));
 #endif

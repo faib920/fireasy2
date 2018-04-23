@@ -32,7 +32,7 @@ namespace Fireasy.Common.Emit
                 if (context.TypeBuilder.BaseType != null)
                 {
                     var baseCon = parameterTypes == null ?
-                        context.TypeBuilder.BaseType.GetConstructors()[0] :
+                        context.TypeBuilder.BaseType.GetConstructors().FirstOrDefault() :
                         context.TypeBuilder.BaseType.GetConstructor(parameterTypes);
 
                     if (baseCon != null)

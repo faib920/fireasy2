@@ -46,6 +46,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     proj = SubqueryRemover.Remove(proj, redundant);
                 }
             }
+
             return proj;
         }
 
@@ -59,6 +60,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     return false;
                 }
             }
+
             return true;
         }
 
@@ -211,14 +213,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             private static SelectExpression GetLeftMostSelect(Expression source)
             {
-                var select = source as SelectExpression;
-                if (select != null)
+                if (source is SelectExpression select)
                 {
                     return select;
                 }
 
-                var join = source as JoinExpression;
-                if (join != null)
+                if (source is JoinExpression join)
                 {
                     return GetLeftMostSelect(join.Left);
                 }
@@ -262,32 +262,60 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 var frmHasOrderBy = fromSelect.OrderBy != null && fromSelect.OrderBy.Count > 0;
                 var frmHasGroupBy = fromSelect.GroupBy != null && fromSelect.GroupBy.Count > 0;
                 var frmHasAggregates = AggregateChecker.HasAggregates(fromSelect);
+
                 // both cannot have orderby
                 if (selHasOrderBy && frmHasOrderBy)
+                {
                     return false;
+                }
+
                 // both cannot have groupby
                 if (selHasGroupBy && frmHasGroupBy)
+                {
                     return false;
+                }
+
                 // these are distinct operations 
                 if (select.IsReverse || fromSelect.IsReverse)
+                {
                     return false;
+                }
+
                 // cannot move forward order-by if outer has group-by
                 if (frmHasOrderBy && (selHasGroupBy || selHasAggregates || select.IsDistinct))
+                {
                     return false;
+                }
+
                 // cannot move forward group-by if outer has where clause
                 if (frmHasGroupBy /*&& (select.Where != null)*/) // need to assert projection is the same in order to move group-by forward
+                {
                     return false;
+                }
+
                 // cannot move forward a take if outer has take or skip or distinct
                 if (fromSelect.Take != null && (select.Take != null || select.Skip != null || select.IsDistinct || selHasAggregates || selHasGroupBy || selHasJoin))
+                {
                     return false;
+                }
+
                 // cannot move forward a skip if outer has skip or distinct
                 if (fromSelect.Skip != null && (select.Skip != null || select.IsDistinct || selHasAggregates || selHasGroupBy || selHasJoin))
+                {
                     return false;
+                }
+
                 // cannot move forward a distinct if outer has take, skip, groupby or a different projection
                 if (fromSelect.IsDistinct && (select.Take != null || select.Skip != null || !selHasNameMapProjection || selHasGroupBy || selHasAggregates || (selHasOrderBy && !isTopLevel) || selHasJoin))
+                {
                     return false;
+                }
+
                 if (frmHasAggregates && (select.Take != null || select.Skip != null || select.IsDistinct || selHasAggregates || selHasGroupBy || selHasJoin))
+                {
                     return false;
+                }
+
                 return true;
             }
         }

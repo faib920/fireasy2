@@ -61,12 +61,12 @@ namespace Fireasy.Web.Mvc
         {
             if (context == null)
             {
-                throw new ArgumentNullException("context");
+                throw new ArgumentNullException(nameof(context));
             }
 
             if (result == null)
             {
-                throw new ArgumentNullException("result");
+                throw new ArgumentNullException(nameof(result));
             }
 
             if ((result.JsonRequestBehavior == JsonRequestBehavior.DenyGet) && 

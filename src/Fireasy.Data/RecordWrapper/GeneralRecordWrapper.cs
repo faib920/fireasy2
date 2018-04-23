@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Data.Provider;
 using System;
 using System.Data;
 using System.IO;
@@ -18,7 +19,9 @@ namespace Fireasy.Data.RecordWrapper
     /// 一个通用的记录包装器。
     /// </summary>
     public class GeneralRecordWrapper : IRecordWrapper
-    {   
+    {
+        IProvider IProviderService.Provider { get; set; }
+
         /// <summary>
         /// 获取指定索引处的字段名称。
         /// </summary>

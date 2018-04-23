@@ -38,8 +38,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         public static string GetCustomFunction(MethodInfo method)
         {
-            string funcName;
-            if (!functions.TryGetValue(method, out funcName))
+            if (!functions.TryGetValue(method, out string funcName))
             {
                 var attr = method.GetCustomAttributes<FunctionBindAttribute>().FirstOrDefault();
                 if (attr != null)
@@ -59,8 +58,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         public static IMethodCallBinder GetMethodBinder(MethodInfo method)
         {
-            IMethodCallBinder binder;
-            if (!binders.TryGetValue(method, out binder))
+            if (!binders.TryGetValue(method, out IMethodCallBinder binder))
             {
                 var attr = method.GetCustomAttributes<MethodCallBindAttribute>().FirstOrDefault();
                 if (attr != null)

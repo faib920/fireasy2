@@ -20,6 +20,11 @@ namespace Fireasy.Data.Entity.Tests
     [TestClass]
     public class EntityRespositoryTest
     {
+        public EntityRespositoryTest()
+        {
+            InitConfig.Init();
+        }
+
         [TestMethod]
         public void TestGet()
         {

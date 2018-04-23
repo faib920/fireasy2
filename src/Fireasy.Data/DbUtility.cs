@@ -30,7 +30,8 @@ namespace Fireasy.Data
             {
                 string directory;
                 var file = urlExpression.Substring(dirIndex + 1);
-                if (urlExpression.IndexOf("|datadirectory|", StringComparison.OrdinalIgnoreCase) != -1)
+                if (urlExpression.IndexOf("|datadirectory|", StringComparison.OrdinalIgnoreCase) != -1 ||
+                    urlExpression.IndexOf("|appdir|", StringComparison.OrdinalIgnoreCase) != -1)
                 {
                     directory = AppDomain.CurrentDomain.BaseDirectory;
                 }

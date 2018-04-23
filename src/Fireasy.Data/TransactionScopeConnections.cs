@@ -36,10 +36,7 @@ namespace Fireasy.Data
                 return null;
             }
 
-            ConcurrentDictionary<string, DbConnection> connDictionary;
-            DbConnection connection = null;
-
-            if (!transConns.TryGetValue(curTrans, out connDictionary))
+            if (!transConns.TryGetValue(curTrans, out ConcurrentDictionary<string, DbConnection> connDictionary))
             {
                 connDictionary = new ConcurrentDictionary<string, DbConnection>();
                 transConns.TryAdd(curTrans, connDictionary);
@@ -49,7 +46,7 @@ namespace Fireasy.Data
             }
 
             var connStr = database.ConnectionString.ToString();
-            if (!connDictionary.TryGetValue(connStr, out connection))
+            if (!connDictionary.TryGetValue(connStr, out DbConnection connection))
             {
                 connection = database.Provider.DbProviderFactory.CreateConnection();
                 if (connection != null)
@@ -77,8 +74,7 @@ namespace Fireasy.Data
         /// <param name="e"></param>
         static void OnTransactionCompleted(object sender, TransactionEventArgs e)
         {
-            ConcurrentDictionary<string, DbConnection> connDictionary;
-            if (!transConns.TryGetValue(e.Transaction, out connDictionary))
+            if (!transConns.TryGetValue(e.Transaction, out ConcurrentDictionary<string, DbConnection> connDictionary))
             {
                 return;
             }

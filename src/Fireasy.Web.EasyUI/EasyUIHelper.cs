@@ -68,6 +68,13 @@ namespace Fireasy.Web.EasyUI
         public static DataPager GetDataPager(this HttpContext context)
         {
             var request = context.Request;
+#if NETSTANDARD2_0
+            if (!request.HasFormContentType)
+            {
+                return null;
+            }
+#endif
+
             if (string.IsNullOrEmpty(request.Form["page"]))
             {
                 return null;
@@ -86,6 +93,13 @@ namespace Fireasy.Web.EasyUI
         {
             var def = new SortDefinition();
             var request = context.Request;
+#if NETSTANDARD2_0
+            if (!request.HasFormContentType)
+            {
+                return def;
+            }
+#endif
+
             def.Member = request.Form["sort"];
             if (string.IsNullOrEmpty(request.Form["order"]))
             {
@@ -116,13 +130,13 @@ namespace Fireasy.Web.EasyUI
                 }
                 else
                 {
-                    var f = footer is IEnumerable ? footer : footer != null ? new[] { footer } : null;
+                    var f = footer is IEnumerable ? footer : new[] { footer };
                     return new { rows = data, footer = f };
                 }
             }
             else
             {
-                var f = footer is IEnumerable ? footer : footer != null ? new[] { footer } : null;
+                var f = footer is IEnumerable ? footer : new[] { footer };
                 return new { total = pager.RecordCount, rows = data, footer = f };
             }
         }

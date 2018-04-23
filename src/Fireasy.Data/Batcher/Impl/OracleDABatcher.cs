@@ -27,6 +27,8 @@ namespace Fireasy.Data.Batcher
     /// </summary>
     public sealed class OracleDABatcher : BatcherBase, IBatcherProvider
     {
+        IProvider IProviderService.Provider { get; set; }
+
         /// <summary>
         /// 将 <see cref="DataTable"/> 的数据批量插入到数据库中。
         /// </summary>

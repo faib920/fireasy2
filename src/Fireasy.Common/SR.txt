@@ -42,3 +42,4 @@ AopCanotCreateProxy_Sealed=Aspect 无法为类型 {0} 创建代理类，因为�
 StreamNotSupportRead=流对象未提供读操作。
 StreamNotSupportWrite=流对象未提供读操作。
 MethodNotOverride=所定义的方法在父类中未标记virtual、abstract或override。
+AlgorithmNotSupported=不支持 {0} 密码算法。

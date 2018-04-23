@@ -64,7 +64,7 @@ namespace Fireasy.Web.EasyUI
             var node = obj as ITreeNode;
             var sb = new StringBuilder();
             sb.Append("{");
-            sb.AppendFormat("\"id\": \"{0}\",", node.Id);
+            sb.Append($"\"id\": \"{node.Id}\",");
 
             foreach (var map in attrMappers)
             {
@@ -76,14 +76,14 @@ namespace Fireasy.Web.EasyUI
                 var state = WriteState(node);
                 if (!string.IsNullOrEmpty(state))
                 {
-                    sb.Append(state + ",");
+                    sb.Append($"{state},");
                 }
             }
 
             var icon = WriteIconCls(node);
             if (!string.IsNullOrEmpty(icon))
             {
-                sb.Append(icon + ",");
+                sb.Append($"{icon},");
             }
 
             sb.AppendFormat("\"children\": {0}", serializer.Serialize(node.Children));

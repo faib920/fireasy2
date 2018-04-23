@@ -88,6 +88,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             Parameters.Clear();
 
             Visit(expression);
+
             return new TranslateResult
             {
                 QueryText = ToString(),
@@ -231,20 +232,20 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitMember(MemberExpression m)
         {
-            var parMember = m.Expression as MemberExpression;
-            if (parMember != null &&
+            if (m.Expression is MemberExpression parMember &&
                 parMember.Member.DeclaringType.IsNullableType())
             {
                 var value = Expression.MakeMemberAccess(Expression.Convert(parMember.Expression, m.Member.DeclaringType), m.Member);
                 return Visit(value);
             }
-            var columnExp = m.Expression as ColumnExpression;
-            if (columnExp != null &&
+
+            if (m.Expression is ColumnExpression columnExp &&
                 columnExp.Type.IsNullableType())
             {
                 var value = Expression.Convert(columnExp, columnExp.Type.GetNullableType());
                 return Visit(value);
             }
+
             if (m.Member.DeclaringType == typeof(string))
             {
                 return VisitStringMember(m);
@@ -264,7 +265,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitMethodCall(MethodCallExpression m)
         {
-            if ((m.Method.Name == "CompareTo" || m.Method.Name == "Compare") &&
+            if ((m.Method.Name == nameof(int.CompareTo) || m.Method.Name == "Compare") &&
                 m.Method.ReturnType == typeof(int))
             {
                 return VisitCompareMethod(m);
@@ -310,6 +311,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         TranslateString(nex.Arguments[0]),
                         TranslateString(nex.Arguments[1]),
                         TranslateString(nex.Arguments[2])));
+
                     return nex;
                 }
                 else if (nex.Arguments.Count == 6)
@@ -321,15 +323,18 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         TranslateString(nex.Arguments[3]),
                         TranslateString(nex.Arguments[4]),
                         TranslateString(nex.Arguments[5])));
+
                     return nex;
                 }
             }
+
             throw new TranslateException(nex, new NotSupportedException(SR.GetString(SRKind.NewTranslateNotSupported, nex.Constructor)));
         }
 
         protected override Expression VisitUnary(UnaryExpression u)
         {
             var op = GetOperator(u);
+
             switch (u.NodeType)
             {
                 case ExpressionType.Not:
@@ -357,6 +362,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 default:
                     throw new TranslateException(u, new NotSupportedException(SR.GetString(SRKind.UnaryTranslateNotSupported, u.NodeType)));
             }
+
             return u;
         }
         protected override Expression VisitClientJoin(ClientJoinExpression join)
@@ -364,29 +370,30 @@ namespace Fireasy.Data.Entity.Linq.Translators
             // convert client join into a up-front lookup table builder & replace client-join in tree with lookup accessor
 
             // 1) lookup = query.Select(e => new KVP(key: inner, value: e)).ToLookup(kvp => kvp.Key, kvp => kvp.Value)
-            Expression innerKey = MakeJoinKey(join.InnerKey);
-            Expression outerKey = MakeJoinKey(join.OuterKey);
+            var innerKey = MakeJoinKey(join.InnerKey);
+            var outerKey = MakeJoinKey(join.OuterKey);
 
             var kvpConstructor = typeof(KeyValuePair<,>).MakeGenericType(innerKey.Type, join.Projection.Projector.Type).GetConstructor(new Type[] { innerKey.Type, join.Projection.Projector.Type });
-            Expression constructKVPair = Expression.New(kvpConstructor, innerKey, join.Projection.Projector);
+            var constructKVPair = Expression.New(kvpConstructor, innerKey, join.Projection.Projector);
             Expression newProjection = new ProjectionExpression(join.Projection.Select, constructKVPair);
 
-            ParameterExpression kvp = Expression.Parameter(constructKVPair.Type, "kvp");
+            var kvp = Expression.Parameter(constructKVPair.Type, "kvp");
 
             // filter out nulls
             if (join.Projection.Projector.NodeType == (ExpressionType)DbExpressionType.OuterJoined)
             {
-                LambdaExpression pred = Expression.Lambda(
+                var pred = Expression.Lambda(
                     Expression.NotEqual(Expression.PropertyOrField(kvp, "Value"), Expression.Constant(null, join.Projection.Projector.Type.GetNullableType())),
                     kvp
                     );
-                newProjection = Expression.Call(typeof(Enumerable), "Where", new Type[] { kvp.Type }, newProjection, pred);
+
+                newProjection = Expression.Call(typeof(Enumerable), nameof(Enumerable.Where), new Type[] { kvp.Type }, newProjection, pred);
             }
 
             // make lookup
-            LambdaExpression keySelector = Expression.Lambda(Expression.PropertyOrField(kvp, "Key"), kvp);
-            LambdaExpression elementSelector = Expression.Lambda(Expression.PropertyOrField(kvp, "Value"), kvp);
-            Expression toLookup = Expression.Call(typeof(Enumerable), "ToLookup", new Type[] { kvp.Type, outerKey.Type, join.Projection.Projector.Type }, newProjection, keySelector, elementSelector);
+            var keySelector = Expression.Lambda(Expression.PropertyOrField(kvp, "Key"), kvp);
+            var elementSelector = Expression.Lambda(Expression.PropertyOrField(kvp, "Value"), kvp);
+            var toLookup = Expression.Call(typeof(Enumerable), nameof(Enumerable.ToLookup), new Type[] { kvp.Type, outerKey.Type, join.Projection.Projector.Type }, newProjection, keySelector, elementSelector);
 
             // 2) agg(lookup[outer])
             ParameterExpression lookup = Expression.Parameter(toLookup.Type, "lookup");
@@ -410,11 +417,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 return VisitBinaryPower(b);
             }
+
             if (b.NodeType == ExpressionType.Coalesce)
             {
                 return VisitBinaryCoalesce(b);
             }
+
             Write("(");
+
             switch (b.NodeType)
             {
                 case ExpressionType.And:
@@ -475,17 +485,21 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 default:
                     throw new TranslateException(b, new NotSupportedException(SR.GetString(SRKind.UnaryTranslateNotSupported, b.NodeType)));
             }
+
             Write(")");
+
             return b;
         }
 
         protected virtual Expression VisitPredicate(Expression expr)
         {
             Visit(expr);
+
             if (!IsPredicate(expr))
             {
                 Write(" <> 0");
             }
+
             return expr;
         }
 
@@ -501,6 +515,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 Visit(expr);
             }
+
             return expr;
         }
 
@@ -518,6 +533,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 Write(" THEN ");
                 VisitValue(c.IfTrue);
                 var ifFalse = c.IfFalse;
+
                 while (ifFalse != null && ifFalse.NodeType == ExpressionType.Conditional)
                 {
                     var fc = (ConditionalExpression)ifFalse;
@@ -527,11 +543,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     VisitValue(fc.IfTrue);
                     ifFalse = fc.IfFalse;
                 }
+
                 if (ifFalse != null)
                 {
                     Write(" ELSE ");
                     VisitValue(ifFalse);
                 }
+
                 Write(" END)");
             }
             else
@@ -574,7 +592,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     }
 
                     Parameters.Add(parameter);
+
                     Write(Syntax.FormatParameter(parameter.ParameterName));
+
                     return c;
                 }
             }
@@ -649,6 +669,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 {
                     alias = GetAliasName(column.Alias) + ".";
                 }
+
                 Write("(" + sqc.Subquery.Replace("$", alias) + ")");
             }
             return column;
@@ -706,20 +727,24 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 Write("WHERE ");
                 VisitPredicate(select.Where);
             }
+
             if (select.GroupBy != null)
             {
                 WriteGroups(select);
             }
+
             if (select.Having != null)
             {
                 WriteLine(Indentation.Same);
                 Write("HAVING ");
                 VisitPredicate(select.Where);
             }
+
             if (select.OrderBy != null)
             {
                 WriteOrders(select);
             }
+
             return select;
         }
 
@@ -727,17 +752,20 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             bool saveIsNested = IsNested;
             IsNested = true;
+
             switch ((DbExpressionType)source.NodeType)
             {
                 case DbExpressionType.Table:
                     var table = (TableExpression)source;
                     var tableName = GetTableName(table);
                     Write(DbUtility.FormatByQuote(Syntax, tableName));
+
                     if (!Options.HideTableAliases)
                     {
                         WriteAs();
                         Write(GetAliasName(table.Alias));
                     }
+
                     break;
                 case DbExpressionType.Select:
                     var select = (SelectExpression)source;
@@ -756,6 +784,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 default:
                     throw new TranslateException(source, new InvalidOperationException(SR.GetString(SRKind.EntityQueryInvalid)));
             }
+
             IsNested = saveIsNested;
             return source;
         }
@@ -769,6 +798,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             VisitSource(join.Left);
             WriteLine(Indentation.Same);
+
             switch (join.JoinType)
             {
                 case JoinType.CrossJoin:
@@ -790,7 +820,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     Write("RIGHT OUTER JOIN ");
                     break;
             }
+
             VisitSource(join.Right);
+
             if (join.Condition != null)
             {
                 WriteLine(Indentation.Inner);
@@ -798,6 +830,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 VisitPredicate(join.Condition);
                 SetIndentation(Indentation.Outer);
             }
+
             return join;
         }
 
@@ -805,10 +838,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             Write(GetAggregateName(aggregate.AggregateType));
             Write("(");
+
             if (aggregate.IsDistinct)
             {
                 Write("DISTINCT ");
             }
+
             if (aggregate.Argument != null)
             {
                 VisitValue(aggregate.Argument);
@@ -817,7 +852,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 Write("*");
             }
+
             Write(")");
+
             return aggregate;
         }
 
@@ -825,6 +862,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             VisitValue(isnull.Expression);
             Write(" IS NULL");
+
             return isnull;
         }
 
@@ -835,6 +873,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             VisitValue(between.Lower);
             Write(" AND ");
             VisitValue(between.Upper);
+
             return between;
         }
 
@@ -846,6 +885,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             WriteLine(Indentation.Same);
             Write(")");
             SetIndentation(Indentation.Outer);
+
             return subquery;
         }
 
@@ -868,6 +908,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             WriteLine(Indentation.Same);
             Write(")");
             SetIndentation(Indentation.Outer);
+
             return exists;
         }
 
@@ -901,15 +942,18 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     Write(")");
                 }
             }
+
             return @in;
         }
 
         protected override Expression VisitFunction(FunctionExpression func)
         {
             Write(func.Name);
+
             if (func.Arguments.Count > 0)
             {
                 Write("(");
+
                 for (int i = 0, n = func.Arguments.Count; i < n; i++)
                 {
                     if (i > 0)
@@ -918,8 +962,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     }
                     Visit(func.Arguments[i]);
                 }
+
                 Write(")");
             }
+
             return func;
         }
 
@@ -936,6 +982,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 Write("DELETE FROM ");
                 VisitSource(delete.Table);
             }
+
             if (delete.Where != null)
             {
                 WriteLine(Indentation.Same);
@@ -953,9 +1000,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 Write("UPDATE ");
                 VisitSource(update.Table);
             }
+
             WriteLine(Indentation.Same);
             Write("SET");
             WriteLine(Indentation.Inner);
+
             var flag = new AssertFlag();
             foreach (var assignment in update.Assignments)
             {
@@ -964,11 +1013,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     Write(", ");
                     WriteLine(Indentation.Same);
                 }
+
                 Visit(assignment.Column);
                 Write(" = ");
                 Visit(assignment.Expression);
             }
+
             WriteLine(Indentation.Outer);
+
             if (update.Where != null)
             {
                 Write("WHERE ");
@@ -990,9 +1042,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 Write("INSERT INTO ");
                 VisitSource(insert.Table);
             }
+
             WriteLine(Indentation.Same);
             Write("(");
             WriteLine(Indentation.Inner);
+
             var flag = new AssertFlag();
             foreach (var assignment in insert.Assignments)
             {
@@ -1004,9 +1058,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
                 Visit(assignment.Column);
             }
+
             WriteLine(Indentation.Outer);
             Write(") VALUES (");
             WriteLine(Indentation.Inner);
+
             flag.Reset();
             foreach (var assignment in insert.Assignments)
             {
@@ -1018,6 +1074,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
                 Visit(assignment.Expression);
             }
+
             WriteLine(Indentation.Outer);
             Write(")");
 
@@ -1054,13 +1111,20 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             switch (methodName)
             {
-                case "Add": return "+";
-                case "Subtract": return "-";
-                case "Multiply": return "*";
-                case "Divide": return "/";
-                case "Negate": return "-";
-                case "Remainder": return "%";
-                default: return null;
+                case nameof(decimal.Add):
+                    return " +";
+                case nameof(decimal.Subtract):
+                    return "-";
+                case nameof(decimal.Multiply):
+                    return "*";
+                case nameof(decimal.Divide):
+                    return "/";
+                case nameof(decimal.Negate):
+                    return "-";
+                case nameof(decimal.Remainder):
+                    return "%";
+                default:
+                    return null;
             }
         }
 
@@ -1177,12 +1241,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         protected string GetAliasName(TableAlias alias)
         {
-            string name;
-            if (!aliases.TryGetValue(alias, out name))
+            if (!aliases.TryGetValue(alias, out string name))
             {
-                name = "t" + aliases.Count;
+                name = $"t{aliases.Count}";
                 aliases.Add(alias, name);
             }
+
             return name;
         }
 
@@ -1195,12 +1259,18 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             switch (aggregateType)
             {
-                case AggregateType.Count: return "COUNT";
-                case AggregateType.Min: return "MIN";
-                case AggregateType.Max: return "MAX";
-                case AggregateType.Sum: return "SUM";
-                case AggregateType.Average: return "AVG";
-                default: throw new TranslateException(null, new Exception(SR.GetString(SRKind.UnknowAggregateType, aggregateType)));
+                case AggregateType.Count:
+                    return "COUNT";
+                case AggregateType.Min:
+                    return "MIN";
+                case AggregateType.Max:
+                    return "MAX";
+                case AggregateType.Sum:
+                    return "SUM";
+                case AggregateType.Average:
+                    return "AVG";
+                default:
+                    throw new TranslateException(null, new Exception(SR.GetString(SRKind.UnknowAggregateType, aggregateType)));
             }
         }
 
@@ -1238,77 +1308,79 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             switch (m.Method.Name)
             {
-                case "StartsWith":
+                case nameof(string.StartsWith):
                     Write(string.Format("({0} LIKE {1})",
                             TranslateString(m.Object),
                             Syntax.String.Concat(TranslateString(m.Arguments[0]), "'%'"))
                         );
                     break;
-                case "EndsWith":
+                case nameof(string.EndsWith):
                     Write(string.Format("({0} LIKE {1})",
                             TranslateString(m.Object),
                             Syntax.String.Concat("'%'", TranslateString(m.Arguments[0])))
                         );
                     break;
-                case "Contains":
+                case nameof(string.Contains):
                     Write(string.Format("({0} LIKE {1})",
                             TranslateString(m.Object),
                             Syntax.String.Concat("'%'", TranslateString(m.Arguments[0]), "'%'"))
                         );
                     break;
-                case "Concat":
+                case nameof(string.Concat):
                     IList<Expression> args = m.Arguments;
                     if (args.Count == 1 && args[0].NodeType == ExpressionType.NewArrayInit)
                     {
                         args = ((NewArrayExpression)args[0]).Expressions;
                     }
+
                     var sps = new string[args.Count];
                     for (int i = 0, n = args.Count; i < n; i++)
                     {
                         sps[i] = TranslateString(args[i]);
                     }
+
                     Write(Syntax.String.Concat(sps));
                     break;
-                case "IsNullOrEmpty":
+                case nameof(string.IsNullOrEmpty):
                     Write("(");
                     Visit(m.Arguments[0]);
                     Write(" IS NULL OR ");
                     Visit(m.Arguments[0]);
                     Write(" = '')");
                     break;
-                case "ToUpper":
+                case nameof(string.ToUpper):
                     Write(Syntax.String.ToUpper(TranslateString(m.Object)));
                     break;
-                case "ToLower":
+                case nameof(string.ToLower):
                     Write(Syntax.String.ToLower(TranslateString(m.Object)));
                     break;
-                case "Replace":
+                case nameof(string.Replace):
                     Write(Syntax.String.Replace(TranslateString(m.Object),
                         TranslateString(m.Arguments[0]),
                         TranslateString(m.Arguments[1])));
                     break;
-                case "Substring":
+                case nameof(string.Substring):
                     Write(Syntax.String.Substring(TranslateString(m.Object),
                         TranslateString(m.Arguments[0]) + " + 1",
                         m.Arguments.Count == 2 ? TranslateString(m.Arguments[1]) : "8000"));
                     break;
-                case "IndexOf":
+                case nameof(string.IndexOf):
                     var startIndex = m.Arguments.Count > 1 ? TranslateString(m.Arguments[1]) : null;
                     var count = m.Arguments.Count > 2 ? TranslateString(m.Arguments[2]) : null;
                     Write(Syntax.String.IndexOf(TranslateString(m.Object),
                         TranslateString(m.Arguments[0]),
                         startIndex, count) + " - 1");
                     break;
-                case "Trim":
+                case nameof(string.Trim):
                     Write(Syntax.String.Trim(TranslateString(m.Object)));
                     break;
-                case "TrimStart":
+                case nameof(string.TrimStart):
                     Write(Syntax.String.TrimStart(TranslateString(m.Object)));
                     break;
-                case "TrimEnd":
+                case nameof(string.TrimEnd):
                     Write(Syntax.String.TrimEnd(TranslateString(m.Object)));
                     break;
-                case "Equals":
+                case nameof(string.Equals):
                     if (m.Method.IsStatic && m.Method.DeclaringType == typeof(object))
                     {
                         Write("(");
@@ -1316,7 +1388,6 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         Write(" = ");
                         Visit(m.Arguments[1]);
                         Write(")");
-                        return m;
                     }
                     else if (!m.Method.IsStatic && m.Arguments.Count == 1 && m.Arguments[0].Type == m.Object.Type)
                     {
@@ -1325,14 +1396,15 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         Write(" = ");
                         Visit(m.Arguments[0]);
                         Write(")");
-                        return m;
                     }
+
                     break;
-                case "ToString":
+                case nameof(string.ToString):
                     if (m.Object.Type == typeof(string))
                     {
                         Visit(m.Object);
                     }
+
                     break;
                 case "Like":
                     Visit(m.Arguments[0]);
@@ -1340,6 +1412,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     Visit(m.Arguments[1]);
                     break;
             }
+
             return m;
         }
 
@@ -1347,41 +1420,37 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             switch (m.Method.Name)
             {
-                case "AddSeconds":
+                case nameof(DateTime.AddSeconds):
                     Write(Syntax.DateTime.AddSeconds(TranslateString(m.Object), TranslateString(m.Arguments[0])));
                     break;
-                case "AddMinutes":
+                case nameof(DateTime.AddMinutes):
                     Write(Syntax.DateTime.AddMinutes(TranslateString(m.Object), TranslateString(m.Arguments[0])));
                     break;
-                case "AddHours":
+                case nameof(DateTime.AddHours):
                     Write(Syntax.DateTime.AddHours(TranslateString(m.Object), TranslateString(m.Arguments[0])));
                     break;
-                case "AddDays":
+                case nameof(DateTime.AddDays):
                     Write(Syntax.DateTime.AddDays(TranslateString(m.Object), TranslateString(m.Arguments[0])));
                     break;
-                case "AddMonths":
+                case nameof(DateTime.AddMonths):
                     Write(Syntax.DateTime.AddMonths(TranslateString(m.Object), TranslateString(m.Arguments[0])));
                     break;
-                case "AddYears":
+                case nameof(DateTime.AddYears):
                     Write(Syntax.DateTime.AddYears(TranslateString(m.Object), TranslateString(m.Arguments[0])));
                     break;
                 case "op_Subtract":
-                    if (m.Arguments[1].Type == typeof(DateTime))
+                    if (m.Arguments[1].Type.GetNonNullableType() == typeof(DateTime))
                     {
-                        Write("DATEDIFF(");
-                        Visit(m.Arguments[0]);
-                        Write(", ");
-                        Visit(m.Arguments[1]);
-                        Write(")");
+                        Write(Syntax.DateTime.DiffDays(TranslateString(m.Arguments[0]), TranslateString(m.Arguments[1])));
                     }
                     break;
-                case "Parse":
+                case nameof(DateTime.Parse):
                     Write(Syntax.Convert(TranslateString(m.Arguments[0]), m.Method.DeclaringType.GetDbType()));
                     break;
-                case "ToShortTimeString":
+                case nameof(DateTime.ToShortTimeString):
                     Write(Syntax.DateTime.ShortTime(TranslateString(m.Object)));
                     break;
-                case "ToShortDateString":
+                case nameof(DateTime.ToShortDateString):
                     Write(Syntax.DateTime.ShortDate(TranslateString(m.Object)));
                     break;
             }
@@ -1392,14 +1461,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             switch (m.Method.Name)
             {
-                case "Remainder":
-                    Write(Syntax.Math.Modulo(TranslateString(m.Arguments[0]),
-                    TranslateString(m.Arguments[1])));
+                case nameof(decimal.Remainder):
+                    Write(Syntax.Math.Modulo(TranslateString(m.Arguments[0]), TranslateString(m.Arguments[1])));
                     break;
-                case "Add":
-                case "Subtract":
-                case "Multiply":
-                case "Divide":
+                case nameof(decimal.Add):
+                case nameof(decimal.Subtract):
+                case nameof(decimal.Multiply):
+                case nameof(decimal.Divide):
                     Write("(");
                     VisitValue(m.Arguments[0]);
                     Write(" ");
@@ -1408,36 +1476,35 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     VisitValue(m.Arguments[1]);
                     Write(")");
                     break;
-                case "Negate":
+                case nameof(decimal.Negate):
                     Write(Syntax.Math.Negate(TranslateString(m.Arguments[0])));
                     Write("");
                     break;
-                case "Ceiling":
+                case nameof(decimal.Ceiling):
                     Write(Syntax.Math.Ceiling(TranslateString(m.Arguments[0])));
                     break;
-                case "Floor":
+                case nameof(decimal.Floor):
                     Write(Syntax.Math.Floor(TranslateString(m.Arguments[0])));
                     break;
-                case "Round":
+                case nameof(decimal.Round):
                     if (m.Arguments.Count == 1)
                     {
                         Write(Syntax.Math.Round(TranslateString(m.Arguments[0])));
-                        return m;
                     }
-                    if (m.Arguments.Count == 2 && m.Arguments[1].Type == typeof(int))
+                    else if (m.Arguments.Count == 2 && m.Arguments[1].Type == typeof(int))
                     {
-                        Write(Syntax.Math.Round(TranslateString(m.Arguments[0]),
-                                                   TranslateString(m.Arguments[1])));
-                        return m;
+                        Write(Syntax.Math.Round(TranslateString(m.Arguments[0]), TranslateString(m.Arguments[1])));
                     }
+
                     break;
-                case "Truncate":
+                case nameof(decimal.Truncate):
                     Write(Syntax.Math.Truncate(TranslateString(m.Arguments[0])));
                     break;
-                case "Parse":
+                case nameof(decimal.Parse):
                     Write(Syntax.Convert(TranslateString(m.Arguments[0]), m.Method.DeclaringType.GetDbType()));
                     break;
             }
+
             return m;
         }
 
@@ -1445,69 +1512,67 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             switch (m.Method.Name)
             {
-                case "Abs":
+                case nameof(Math.Abs):
                     Write(Syntax.Math.Abs(TranslateString(m.Arguments[0])));
                     break;
-                case "Acos":
+                case nameof(Math.Acos):
                     Write(Syntax.Math.Acos(TranslateString(m.Arguments[0])));
                     break;
-                case "Asin":
+                case nameof(Math.Asin):
                     Write(Syntax.Math.Asin(TranslateString(m.Arguments[0])));
                     break;
-                case "Atan":
+                case nameof(Math.Atan):
                     Write(Syntax.Math.Atan(TranslateString(m.Arguments[0])));
                     break;
-                case "Cos":
+                case nameof(Math.Cos):
                     Write(Syntax.Math.Cos(TranslateString(m.Arguments[0])));
                     break;
-                case "Exp":
+                case nameof(Math.Exp):
                     Write(Syntax.Math.Exp(TranslateString(m.Arguments[0])));
                     break;
-                case "Log":
+                case nameof(Math.Log):
                     Write(Syntax.Math.Log(TranslateString(m.Arguments[0])));
                     break;
-                case "Log10":
+                case nameof(Math.Log10):
                     Write(Syntax.Math.Log10(TranslateString(m.Arguments[0])));
                     break;
-                case "Sin":
+                case nameof(Math.Sin):
                     Write(Syntax.Math.Sin(TranslateString(m.Arguments[0])));
                     break;
-                case "Tan":
+                case nameof(Math.Tan):
                     Write(Syntax.Math.Tan(TranslateString(m.Arguments[0])));
                     break;
-                case "Sqrt":
+                case nameof(Math.Sqrt):
                     Write(Syntax.Math.Sqrt(TranslateString(m.Arguments[0])));
                     break;
-                case "Sign":
+                case nameof(Math.Sign):
                     Write(Syntax.Math.Sign(TranslateString(m.Arguments[0])));
                     break;
-                case "Ceiling":
+                case nameof(Math.Ceiling):
                     Write(Syntax.Math.Ceiling(TranslateString(m.Arguments[0])));
                     break;
-                case "Floor":
+                case nameof(Math.Floor):
                     Write(Syntax.Math.Floor(TranslateString(m.Arguments[0])));
                     break;
-                case "Pow":
-                    Write(Syntax.Math.Power(TranslateString(m.Arguments[0]),
-                        TranslateString(m.Arguments[1])));
+                case nameof(Math.Pow):
+                    Write(Syntax.Math.Power(TranslateString(m.Arguments[0]), TranslateString(m.Arguments[1])));
                     break;
-                case "Round":
+                case nameof(Math.Round):
                     if (m.Arguments.Count == 1)
                     {
                         Write(Syntax.Math.Round(TranslateString(m.Arguments[0])));
-                        return m;
                     }
-                    if (m.Arguments.Count == 2 && m.Arguments[1].Type == typeof(int))
+                    else if (m.Arguments.Count == 2 && m.Arguments[1].Type == typeof(int))
                     {
-                        Write(Syntax.Math.Round(TranslateString(m.Arguments[0]),
-                                                   TranslateString(m.Arguments[1])));
-                        return m;
+                        Write(Syntax.Math.Round(TranslateString(m.Arguments[0]), TranslateString(m.Arguments[1])));
                     }
+
                     break;
-                case "Truncate":
+                case nameof(Math.Truncate):
                     Write(Syntax.Math.Truncate(TranslateString(m.Arguments[0])));
                     break;
             }
+
             return m;
         }
 
@@ -1515,7 +1580,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             switch (m.Method.Name)
             {
-                case "ChangeType":
+                case nameof(Convert.ChangeType):
                     var consExp = m.Arguments[1] as ConstantExpression;
                     if (consExp != null)
                     {
@@ -1528,62 +1593,66 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         {
                             typeCode = (DbType)consExp.Value;
                         }
+
                         Write(Syntax.Convert(TranslateString(m.Arguments[0]), typeCode));
+
                         return m;
                     }
+
                     break;
-                case "ToChar":
+                case nameof(Convert.ToChar):
                     Write(Syntax.Convert(TranslateString(m.Arguments[0]), DbType.StringFixedLength));
                     break;
-                case "ToString":
+                case nameof(Convert.ToString):
                     Write(Syntax.Convert(TranslateString(m.Arguments[0]), DbType.String));
                     break;
-                case "ToInt16":
+                case nameof(Convert.ToInt16):
                     Write(Syntax.Convert(TranslateString(m.Arguments[0]), DbType.Int16));
                     break;
-                case "ToIntU16":
+                case nameof(Convert.ToUInt16):
                     Write(Syntax.Convert(TranslateString(m.Arguments[0]), DbType.UInt16));
                     break;
-                case "ToInt32":
+                case nameof(Convert.ToInt32):
                     Write(Syntax.Convert(TranslateString(m.Arguments[0]), DbType.Int32));
                     break;
-                case "ToIntU32":
+                case nameof(Convert.ToUInt32):
                     Write(Syntax.Convert(TranslateString(m.Arguments[0]), DbType.UInt32));
                     break;
-                case "ToInt64":
+                case nameof(Convert.ToInt64):
                     Write(Syntax.Convert(TranslateString(m.Arguments[0]), DbType.Int64));
                     break;
-                case "ToIntU64":
+                case nameof(Convert.ToUInt64):
                     Write(Syntax.Convert(TranslateString(m.Arguments[0]), DbType.UInt64));
                     break;
-                case "ToByte":
+                case nameof(Convert.ToByte):
                     Write(Syntax.Convert(TranslateString(m.Arguments[0]), DbType.Byte));
                     break;
-                case "ToSByte":
+                case nameof(Convert.ToSByte):
                     Write(Syntax.Convert(TranslateString(m.Arguments[0]), DbType.SByte));
                     break;
-                case "ToDecimal":
+                case nameof(Convert.ToDecimal):
                     Write(Syntax.Convert(TranslateString(m.Arguments[0]), DbType.Decimal));
                     break;
-                case "ToSingle":
+                case nameof(Convert.ToSingle):
                     Write(Syntax.Convert(TranslateString(m.Arguments[0]), DbType.Single));
                     break;
-                case "ToDouble":
+                case nameof(Convert.ToDouble):
                     Write(Syntax.Convert(TranslateString(m.Arguments[0]), DbType.Double));
                     break;
-                case "ToBoolean":
+                case nameof(Convert.ToBoolean):
                     Write(Syntax.Convert(TranslateString(m.Arguments[0]), DbType.Boolean));
                     break;
-                case "ToDateTime":
+                case nameof(Convert.ToDateTime):
                     Write(Syntax.Convert(TranslateString(m.Arguments[0]), DbType.DateTime));
                     break;
             }
+
             return m;
         }
 
         protected virtual Expression VisitRegexMethod(MethodCallExpression m)
         {
-            if (m.Method.Name == "IsMatch")
+            if (m.Method.Name == nameof(Regex.IsMatch))
             {
                 Write(Syntax.String.IsMatch(TranslateString(m.Arguments[0]), TranslateString(m.Arguments[1])));
             }
@@ -1604,6 +1673,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     {
                         Write(Syntax.Convert(TranslateString(m.Object), DbType.String));
                     }
+
                     break;
                 case "Equals":
                     if (m.Method.IsStatic && m.Method.DeclaringType == typeof(object))
@@ -1613,22 +1683,22 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         Write(" = ");
                         Visit(m.Arguments[1]);
                         Write(")");
-                        return m;
                     }
-                    if (!m.Method.IsStatic && m.Arguments.Count == 1 && m.Arguments[0].Type == m.Object.Type)
+                    else if (!m.Method.IsStatic && m.Arguments.Count == 1 && m.Arguments[0].Type == m.Object.Type)
                     {
                         Write("(");
                         Visit(m.Object);
                         Write(" = ");
                         Visit(m.Arguments[0]);
                         Write(")");
-                        return m;
                     }
+
                     break;
                 case "Parse":
                     Write(Syntax.Convert(TranslateString(m.Arguments[0]), m.Method.DeclaringType.GetDbType()));
                     break;
             }
+
             return m;
         }
 
@@ -1636,10 +1706,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             switch (m.Member.Name)
             {
-                case "Length":
+                case nameof(string.Length):
                     Write(Syntax.String.Length(TranslateString(m.Expression)));
                     break;
             }
+
             return m;
         }
 
@@ -1647,34 +1718,35 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             switch (m.Member.Name)
             {
-                case "Day":
+                case nameof(DateTime.Day):
                     Write(Syntax.DateTime.Day(TranslateString(m.Expression)));
                     break;
-                case "Month":
+                case nameof(DateTime.Month):
                     Write(Syntax.DateTime.Month(TranslateString(m.Expression)));
                     break;
-                case "Year":
+                case nameof(DateTime.Year):
                     Write(Syntax.DateTime.Year(TranslateString(m.Expression)));
                     break;
-                case "Hour":
+                case nameof(DateTime.Hour):
                     Write(Syntax.DateTime.Hour(TranslateString(m.Expression)));
                     break;
-                case "Minute":
+                case nameof(DateTime.Minute):
                     Write(Syntax.DateTime.Minute(TranslateString(m.Expression)));
                     break;
-                case "Second":
+                case nameof(DateTime.Second):
                     Write(Syntax.DateTime.Second(TranslateString(m.Expression)));
                     break;
-                case "Millisecond":
+                case nameof(DateTime.Millisecond):
                     Write(Syntax.DateTime.Millisecond(TranslateString(m.Expression)));
                     break;
-                case "DayOfWeek":
+                case nameof(DateTime.DayOfWeek):
                     Write(Syntax.DateTime.DayOfWeek(TranslateString(m.Expression)));
                     break;
-                case "DayOfYear":
+                case nameof(DateTime.DayOfYear):
                     Write(Syntax.DateTime.DayOfYear(TranslateString(m.Expression)));
                     break;
             }
+
             return m;
         }
 
@@ -1685,37 +1757,37 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 bin = m.Expression as BinaryExpression;
             }
+
             if (m.Expression.NodeType == ExpressionType.Convert)
             {
                 bin = ((UnaryExpression)m.Expression).Operand as BinaryExpression;
             }
+
             if (bin == null)
             {
                 return m;
             }
+
             switch (m.Member.Name)
             {
-                case "TotalDays":
-                case "Days":
-                    Write(Syntax.DateTime.DiffDays(TranslateString(bin.Right),
-                                                      TranslateString(bin.Left)));
+                case nameof(TimeSpan.TotalDays):
+                case nameof(TimeSpan.Days):
+                    Write(Syntax.DateTime.DiffDays(TranslateString(bin.Right), TranslateString(bin.Left)));
                     break;
-                case "TotalHours":
-                case "Hours":
-                    Write(Syntax.DateTime.DiffHours(TranslateString(bin.Right),
-                                                       TranslateString(bin.Left)));
+                case nameof(TimeSpan.TotalHours):
+                case nameof(TimeSpan.Hours):
+                    Write(Syntax.DateTime.DiffHours(TranslateString(bin.Right), TranslateString(bin.Left)));
                     break;
-                case "TotalMinutes":
-                case "Minutes":
-                    Write(Syntax.DateTime.DiffMinutes(TranslateString(bin.Right),
-                                                         TranslateString(bin.Left)));
+                case nameof(TimeSpan.TotalMinutes):
+                case nameof(TimeSpan.Minutes):
+                    Write(Syntax.DateTime.DiffMinutes(TranslateString(bin.Right), TranslateString(bin.Left)));
                     break;
-                case "TotalSeconds":
-                case "Seconds":
-                    Write(Syntax.DateTime.DiffSeconds(TranslateString(bin.Right),
-                                                         TranslateString(bin.Left)));
+                case nameof(TimeSpan.TotalSeconds):
+                case nameof(TimeSpan.Seconds):
+                    Write(Syntax.DateTime.DiffSeconds(TranslateString(bin.Right), TranslateString(bin.Left)));
                     break;
             }
+
             return m;
         }
 
@@ -1723,22 +1795,26 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             var left = b.Left;
             var right = b.Right;
-            var array = new ArrayList();
+            var array = new List<string>();
+
             while (right.NodeType == ExpressionType.Coalesce)
             {
                 var rb = (BinaryExpression)right;
                 array.Add(TranslateString(rb.Left));
                 right = rb.Right;
             }
+
             array.Add(TranslateString(right));
-            Write(Syntax.Coalesce(TranslateString(left), (string[])array.ToArray(typeof(string))));
+
+            Write(Syntax.Coalesce(TranslateString(left), array.ToArray()));
+
             return b;
         }
 
         protected virtual Expression VisitBinaryPower(BinaryExpression b)
         {
-            Write(Syntax.Math.Power(TranslateString(b.Left),
-                TranslateString(b.Right)));
+            Write(Syntax.Math.Power(TranslateString(b.Left), TranslateString(b.Right)));
+
             return b;
         }
 
@@ -1757,13 +1833,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 if (b.NodeType == ExpressionType.And ||
                     b.NodeType == ExpressionType.AndAlso)
                 {
-                    Write(Syntax.Math.And(TranslateString(b.Left),
-                                             TranslateString(b.Right)));
+                    Write(Syntax.Math.And(TranslateString(b.Left), TranslateString(b.Right)));
                 }
                 else
                 {
-                    Write(Syntax.Math.Or(TranslateString(b.Left),
-                                            TranslateString(b.Right)));
+                    Write(Syntax.Math.Or(TranslateString(b.Left), TranslateString(b.Right)));
                 }
             }
             return b;
@@ -1783,6 +1857,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
                     Visit(b.Left);
                     Write(" IS NULL");
+
                     return null;
                 }
             }
@@ -1798,6 +1873,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
                     Visit(b.Right);
                     Write(" IS NULL");
+
                     return null;
                 }
             }
@@ -1810,16 +1886,17 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 var mc = (MethodCallExpression)left;
                 var ce = (ConstantExpression)right;
+
                 if (ce.Value != null && ce.Value.GetType() == typeof(int) && ((int)ce.Value) == 0)
                 {
-                    if (mc.Method.Name == "CompareTo" && !mc.Method.IsStatic && mc.Arguments.Count == 1)
+                    if (mc.Method.Name == nameof(int.CompareTo) && !mc.Method.IsStatic && mc.Arguments.Count == 1)
                     {
                         left = mc.Object;
                         right = mc.Arguments[0];
                     }
                     else if (
                         (mc.Method.DeclaringType == typeof(string) || mc.Method.DeclaringType == typeof(decimal))
-                        && mc.Method.Name == "Compare" && mc.Method.IsStatic && mc.Arguments.Count == 2)
+                        && mc.Method.Name == nameof(string.Compare) && mc.Method.IsStatic && mc.Arguments.Count == 2)
                     {
                         left = mc.Arguments[0];
                         right = mc.Arguments[1];
@@ -1832,10 +1909,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
         protected override Expression VisitSqlText(SqlExpression sql)
         {
             Write(sql.SqlCommand);
+
             return sql;
         }
-
-        private bool isOutter = true;
 
         protected virtual void WriteColumns(ReadOnlyCollection<ColumnDeclaration> columns)
         {
@@ -1848,12 +1924,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     {
                         Write(", ");
                     }
+
                     var c = VisitValue(column.Expression) as ColumnExpression;
                     if ((string.IsNullOrEmpty(column.Name) ||
                         (c != null && !(c is SubqueryColumnExpression) && c.Name == column.Name)))
                     {
                         continue;
                     }
+
                     WriteAs();
                     Write(GetColumnName(column.Name));
                 }
@@ -1861,13 +1939,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
             else
             {
                 Write("NULL ");
+
                 if (IsNested)
                 {
                     Write(" tmp ");
                 }
             }
-
-            isOutter = false;
         }
 
         protected virtual void WriteAs()
@@ -1881,12 +1958,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 WriteLine(Indentation.Same);
                 Write("GROUP BY ");
+
                 for (int i = 0, n = select.GroupBy.Count; i < n; i++)
                 {
                     if (i > 0)
                     {
                         Write(", ");
                     }
+
                     VisitValue(select.GroupBy[i]);
                 }
             }
@@ -1898,6 +1977,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 WriteLine(Indentation.Same);
                 Write("ORDER BY ");
+
                 for (int i = 0, n = select.OrderBy.Count; i < n; i++)
                 {
                     var exp = select.OrderBy[i];
@@ -1905,7 +1985,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     {
                         Write(", ");
                     }
+
                     VisitValue(exp.Expression);
+
                     if (exp.OrderType != OrderType.Ascending)
                     {
                         Write(" DESC");

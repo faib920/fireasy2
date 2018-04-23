@@ -18,8 +18,8 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public class EntityProxyBuilder
     {
-        private static MethodInfo mthTypeGetTypeFromHandle = typeof(Type).GetMethod("GetTypeFromHandle", BindingFlags.Public | BindingFlags.Static);
-        private static MethodInfo mthGetProperty = typeof(PropertyUnity).GetMethod("GetProperty");
+        private static MethodInfo mthTypeGetTypeFromHandle = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Public | BindingFlags.Static);
+        private static MethodInfo mthGetProperty = typeof(PropertyUnity).GetMethod(nameof(PropertyUnity.GetProperty));
         private static MethodInfo mthGetValue = typeof(ProtectedEntity).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(s => s.Name == "ProtectGetValue");
         private static MethodInfo mthSetValue = typeof(ProtectedEntity).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(s => s.Name == "ProtectSetValue");
         private static MethodInfo mthInitValue = typeof(ProtectedEntity).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(s => s.Name == "ProtectInitializeValue");
@@ -30,11 +30,12 @@ namespace Fireasy.Data.Entity
         /// 构造实体类 <paramref name="entityType"/> 的代理类。
         /// </summary>
         /// <param name="entityType"></param>
+        /// <param name="entityName"></param>
         /// <param name="assemblyBuilder"></param>
         /// <returns></returns>
-        public static Type BuildType(Type entityType, DynamicAssemblyBuilder assemblyBuilder = null)
+        public static Type BuildType(Type entityType, string entityName, DynamicAssemblyBuilder assemblyBuilder = null)
         {
-            var typeBuilder = assemblyBuilder.DefineType(entityType.Name, baseType: entityType);
+            var typeBuilder = assemblyBuilder.DefineType(entityName ?? entityType.Name, baseType: entityType);
             typeBuilder.ImplementInterface(typeof(ICompiledEntity));
             typeBuilder.SetCustomAttribute(() => new SerializableAttribute());
 

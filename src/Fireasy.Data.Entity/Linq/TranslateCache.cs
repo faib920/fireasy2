@@ -134,13 +134,13 @@ namespace Fireasy.Data.Entity.Linq
                 //增删改的操作，不能缓存
                 switch (node.Method.Name)
                 {
-                    case "RemoveWhere":
-                    case "UpdateWhere":
-                    case "CreateEntity":
-                    case "BatchOperate":
-                    case "Insert":
-                    case "Update":
-                    case "Delete":
+                    case nameof(Extensions.RemoveWhere):
+                    case nameof(Extensions.UpdateWhere):
+                    case nameof(Extensions.CreateEntity):
+                    case nameof(Extensions.BatchOperate):
+                    case nameof(IRepository.Insert):
+                    case nameof(IRepository.Update):
+                    case nameof(IRepository.Delete):
                         cacheable = false;
                         break;
                 }

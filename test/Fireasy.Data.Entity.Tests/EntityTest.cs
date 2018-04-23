@@ -1,9 +1,11 @@
 ﻿using Fireasy.Common;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Serialization;
+using Fireasy.Data.Entity.Dynamic;
 using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Translators;
+using Fireasy.Data.Entity.Properties;
 using Fireasy.Data.Entity.Tests.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
@@ -148,6 +150,31 @@ namespace Fireasy.Data.Entity.Tests
                 var product = db.Products.FirstOrDefault();
                 Assert.AreEqual(product.ReorderLevel, RecorderLevel.B);
             }
+        }
+
+        [TestMethod]
+        public void TestDynamic()
+        {
+            var builder = new EntityTypeBuilder("test");
+            builder.Properties.Add(new GeneralProperty() { Name = "aa", Type = typeof(string) });
+            var a = builder.Create();
+        }
+    }
+
+    public class dd : EntityObject
+    {
+        private IProperty property;
+
+        public string Name
+        {
+            get { return (string)GetValue(property); }
+            set { SetValue(property, value); }
+        }
+
+        public int Age
+        {
+            get { return (int)GetValue(property); }
+            set { SetValue(property, value); }
         }
     }
 }

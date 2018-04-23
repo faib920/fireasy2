@@ -9,19 +9,16 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
-using System.Drawing;
 using System.Text.RegularExpressions;
 using System.Linq;
 using System.Globalization;
 using System.Reflection;
 using Fireasy.Common.Extensions;
+using System.Collections.ObjectModel;
 #if !NET35
 using System.Dynamic;
-using Fireasy.Common.Dynamic;
 #endif
 using Fireasy.Common.Reflection;
 
@@ -34,7 +31,7 @@ namespace Fireasy.Common.Serialization
         private JsonReader jsonReader;
         private bool isDisposed;
         private SerializeContext context;
-        private static MethodInfo MthToArray = typeof(Enumerable).GetMethod("ToArray", BindingFlags.Public | BindingFlags.Static);
+        private static MethodInfo mthToArray = typeof(Enumerable).GetMethod(nameof(Enumerable.ToArray), BindingFlags.Public | BindingFlags.Static);
 
         internal JsonDeserialize(JsonSerializer serializer, JsonReader reader, JsonSerializeOption option)
         {
@@ -63,10 +60,6 @@ namespace Fireasy.Common.Serialization
             }
 
             jsonReader.SkipWhiteSpaces();
-            if (type == typeof(Color))
-            {
-                return DeserializeColor();
-            }
 
             if (type == typeof(Type))
             {
@@ -105,6 +98,11 @@ namespace Fireasy.Common.Serialization
                 return DeserializeDataTable();
             }
 
+            if (type.IsGenericType && type.GetGenericTypeDefinition().FullName.StartsWith("System.Tuple`"))
+            {
+                return DeserializeTuple(type);
+            }
+
             if (type.IsEnum)
             {
                 return DeserializeEnum(type);
@@ -129,16 +127,26 @@ namespace Fireasy.Common.Serialization
 
         private bool WithConverter(Type type, ref object value)
         {
-            var converter = option.Converters.GetReadableConverter(type, new[] { typeof(JsonConverter) });
-            if (converter == null)
+            JsonConverter converter;
+            TextConverterAttribute attr;
+            if ((attr = type.GetCustomAttributes<TextConverterAttribute>().FirstOrDefault()) != null &&
+                typeof(JsonConverter).IsAssignableFrom(attr.ConverterType))
+            {
+                converter = attr.ConverterType.New<JsonConverter>();
+            }
+            else
+            {
+                converter = option.Converters.GetReadableConverter(type, new[] { typeof(JsonConverter) }) as JsonConverter;
+            }
+
+            if (converter == null || !converter.CanRead)
             {
                 return false;
             }
 
-            var jsonConvert = converter as JsonConverter;
-            value = jsonConvert != null && jsonConvert.Streaming ?
-                jsonConvert.ReadJson(serializer, jsonReader, type) :
-                converter.ReadObject(serializer, type, jsonReader.ReadRaw());
+            value = converter.Streaming ?
+                converter.ReadJson(serializer, jsonReader, type) :
+                converter.ReadJson(serializer, type, jsonReader.ReadRaw());
 
             return true;
         }
@@ -193,26 +201,6 @@ namespace Fireasy.Common.Serialization
             if ((value == null || value.ToString().Length == 0) && !type.IsNullableType())
             {
                 throw new SerializationException(SR.GetString(SRKind.JsonNullableType, type));
-            }
-        }
-
-        private Color DeserializeColor()
-        {
-            var str = jsonReader.ReadAsString();
-            var converter = TypeDescriptor.GetConverter(typeof(int));
-            if (converter == null)
-            {
-                return Color.Empty;
-            }
-
-            try
-            {
-                var val = converter.ConvertFromString("0x" + str);
-                return val == null ? Color.Empty : Color.FromArgb(-16777216 | (int)val);
-            }
-            catch (Exception ex)
-            {
-                throw new SerializationException(SR.GetString(SRKind.DeserializeError, str, typeof(Color)), ex);
             }
         }
 
@@ -360,7 +348,7 @@ namespace Fireasy.Common.Serialization
 
             if (listType.IsArray)
             {
-                var invoker = ReflectionCache.GetInvoker(MthToArray.MakeGenericMethod(elementType));
+                var invoker = ReflectionCache.GetInvoker(mthToArray.MakeGenericMethod(elementType));
                 return invoker.Invoke(null, container);
             }
 
@@ -507,6 +495,61 @@ namespace Fireasy.Common.Serialization
             return dynamicObject;
         }
 #endif
+
+        private object DeserializeTuple(Type type)
+        {
+            if (jsonReader.IsNull())
+            {
+                return null;
+            }
+
+            var genericTypes = type.GetGenericArguments();
+            var arguments = new object[genericTypes.Length];
+
+            jsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
+
+            while (true)
+            {
+                jsonReader.SkipWhiteSpaces();
+                if (jsonReader.IsNextCharacter(JsonTokens.EndObjectLiteralCharacter))
+                {
+                    break;
+                }
+
+                var name = jsonReader.ReadKey();
+
+                jsonReader.SkipWhiteSpaces();
+                jsonReader.AssertAndConsume(JsonTokens.PairSeparator);
+                jsonReader.SkipWhiteSpaces();
+
+                var index = GetTupleItemIndex(name);
+                if (index != -1)
+                {
+                    arguments[index] = Deserialize(genericTypes[index]);
+                }
+
+                jsonReader.SkipWhiteSpaces();
+                if (jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndObjectLiteralCharacter))
+                {
+                    break;
+                }
+            }
+
+            return type.New(arguments);
+        }
+
+        private int GetTupleItemIndex(string name)
+        {
+            var match = Regex.Match(name, @"Item(\d)");
+            if (match.Success && match.Groups.Count > 0)
+            {
+                return match.Groups[1].Value.To<int>() - 1;
+            }
+            else
+            {
+                return -1;
+            }
+        }
 
         private object DeserializeEnum(Type enumType)
         {

@@ -40,17 +40,22 @@ namespace Fireasy.Common.Serialization
         /// </summary>
         /// <param name="value">要序列化的值。</param>
         /// <param name="startEle"></param>
-        internal void Serialize(object value, bool startEle = false)
+        /// <param name="type"></param>
+        internal void Serialize(object value, bool startEle = false, Type type = null)
         {
-            if ((value == null) || DBNull.Value.Equals(value))
+            if (type == null && value != null)
             {
-                xmlWriter.WriteValue(null);
+                type = value.GetType();
+            }
+
+            if (WithSerializable(type, value, startEle))
+            {
                 return;
             }
 
-            var type = value.GetType();
-            if (WithSerializable(type, value, startEle))
+            if ((value == null) || DBNull.Value.Equals(value))
             {
+                xmlWriter.WriteValue(null);
                 return;
             }
 
@@ -93,7 +98,7 @@ namespace Fireasy.Common.Serialization
                 return;
             }
 
-            if (typeof(IEnumerable).IsAssignableFrom(type) && type != typeof(string))
+            if (((value is IEnumerable) || typeof(IEnumerable).IsAssignableFrom(type)) && type != typeof(string))
             {
                 var eleType = type.IsGenericType || type.IsArray ? type.GetEnumerableElementType() : null;
                 SerializeEnumerable(value as IEnumerable, eleType, startEle);
@@ -123,7 +128,18 @@ namespace Fireasy.Common.Serialization
 
         private bool WithConverter(Type type, object value, bool startEle)
         {
-            var converter = option.Converters.GetConverter(type);
+            XmlConverter converter;
+            TextConverterAttribute attr;
+            if ((attr = type.GetCustomAttributes<TextConverterAttribute>().FirstOrDefault()) != null &&
+                typeof(XmlConverter).IsAssignableFrom(attr.ConverterType))
+            {
+                converter = attr.ConverterType.New<XmlConverter>();
+            }
+            else
+            {
+                converter = option.Converters.GetWritableConverter(type, new[] { typeof(XmlConverter) }) as XmlConverter;
+            }
+
             if ((converter is XmlConverter || converter is ValueConverter) && converter.CanWrite)
             {
                 WriteXmlElement(GetElementName(type), startEle, () =>
@@ -135,7 +151,7 @@ namespace Fireasy.Common.Serialization
                         }
                         else
                         {
-                            xmlWriter.WriteRaw(converter.WriteObject(serializer, value));
+                            xmlWriter.WriteRaw(converter.WriteXml(serializer, value));
                         }
                     });
 
@@ -384,7 +400,7 @@ namespace Fireasy.Common.Serialization
                 }
 
                 xmlWriter.WriteStartElement(acc.PropertyName);
-                Serialize(value);
+                Serialize(value, type: acc.PropertyInfo.PropertyType);
                 xmlWriter.WriteEndElement();
             }
 

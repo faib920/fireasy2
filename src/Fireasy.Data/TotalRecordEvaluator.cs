@@ -28,13 +28,10 @@ namespace Fireasy.Data
 
         void IDataPageEvaluator.Evaluate(CommandContext context)
         {
-            var dataPager = context.Segment as IPager;
-            if (dataPager == null)
+            if (context.Segment is IPager dataPager)
             {
-                return;
+                dataPager.RecordCount = GetRecoredCount(context);
             }
-
-            dataPager.RecordCount = GetRecoredCount(context);
         }
 
         private int GetRecoredCount(CommandContext context)
@@ -56,8 +53,10 @@ namespace Fireasy.Data
         {
             var count = 0;
             var orderBy = DbUtility.FindOrderBy(context.Command.CommandText);
+
             var sql = string.IsNullOrEmpty(orderBy) ? context.Command.CommandText : context.Command.CommandText.Replace(orderBy, string.Empty);
             sql = string.Format("SELECT COUNT(*) FROM ({0}) TEMP", sql);
+
             using (var connection = context.Database.CreateConnection(DistributedMode.Slave))
             {
                 connection.OpenClose(() =>

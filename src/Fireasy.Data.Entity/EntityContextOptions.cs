@@ -10,7 +10,7 @@ namespace Fireasy.Data.Entity
     public class EntityContextOptions
     {
         /// <summary>
-        /// 获取或设置是否自动创建数据表。
+        /// 获取或设置是否自动创建数据表。默认为 false。
         /// </summary>
         public bool AutoCreateTables { get; set; }
 

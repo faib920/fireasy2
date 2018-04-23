@@ -60,7 +60,7 @@ namespace Fireasy.Data.Entity.Linq
                 return source;
             }
 
-            var expression = Expression.Call(typeof(Queryable), "Where", new[] { typeof(T) }, source.Expression, predicate);
+            var expression = Expression.Call(typeof(Queryable), nameof(Queryable.Where), new[] { typeof(T) }, source.Expression, predicate);
 
             return source.Provider.CreateQuery<T>(expression);
         }
@@ -81,7 +81,7 @@ namespace Fireasy.Data.Entity.Linq
                 return source;
             }
 
-            var expression = Expression.Call(typeof(Queryable), "Where", new[] { typeof(T) }, source.Expression, condition ? isTruePredicate : isFalsePredicate);
+            var expression = Expression.Call(typeof(Queryable), nameof(Queryable.Where), new[] { typeof(T) }, source.Expression, condition ? isTruePredicate : isFalsePredicate);
 
             return source.Provider.CreateQuery<T>(expression);
         }
@@ -99,7 +99,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             var parExp = Expression.Parameter(typeof(TSource), "t");
 
-            var method = typeof(Extensions).GetMethod("ExtendAs").MakeGenericMethod(typeof(TResult));
+            var method = typeof(Extensions).GetMethod(nameof(Extensions.ExtendAs)).MakeGenericMethod(typeof(TResult));
 
             var newExp = ExpressionReplacer.Replace(selector.Body, parExp);
             var newSelector = Expression.Lambda<Func<object>>(newExp);
@@ -107,7 +107,7 @@ namespace Fireasy.Data.Entity.Linq
             var callExp = Expression.Call(null, method, parExp, newSelector);
             var lambda = Expression.Lambda(callExp, parExp);
 
-            var expression = Expression.Call(typeof(Queryable), "Select", new[] { typeof(TSource), typeof(TResult) }, source.Expression, lambda);
+            var expression = Expression.Call(typeof(Queryable), nameof(Queryable.Select), new[] { typeof(TSource), typeof(TResult) }, source.Expression, lambda);
 
             return source.Provider.CreateQuery<TResult>(expression);
         }
@@ -164,7 +164,7 @@ namespace Fireasy.Data.Entity.Linq
             }
 
             var lambda = Expression.Lambda<Func<TSource, bool>>(joinExp, parExp);
-            var expression = Expression.Call(typeof(Queryable), "Where", new[] { typeof(TSource) }, source.Expression, lambda);
+            var expression = Expression.Call(typeof(Queryable), nameof(Queryable.Where), new[] { typeof(TSource) }, source.Expression, lambda);
 
             return source.Provider.CreateQuery<TSource>(expression);
         }
@@ -199,7 +199,7 @@ namespace Fireasy.Data.Entity.Linq
             }
 
             var lambda = Expression.Lambda<Func<TSource, bool>>(joinExp, parExp);
-            var expression = Expression.Call(typeof(Queryable), "Where", new[] { typeof(TSource) }, source.Expression, lambda);
+            var expression = Expression.Call(typeof(Queryable), nameof(Queryable.Where), new[] { typeof(TSource) }, source.Expression, lambda);
 
             return source.Provider.CreateQuery<TSource>(expression);
         }
@@ -271,7 +271,7 @@ namespace Fireasy.Data.Entity.Linq
                 return source;
             }
 
-            var methodName = sortOrder == SortOrder.Ascending ? "OrderBy" : "OrderByDescending";
+            var methodName = sortOrder == SortOrder.Ascending ? nameof(Queryable.OrderBy) : nameof(Queryable.OrderByDescending);
 
             return CreateOrderExpression(source, methodName, memberName);
         }
@@ -297,7 +297,7 @@ namespace Fireasy.Data.Entity.Linq
                 return source;
             }
 
-            var methodName = sortOrder == SortOrder.Ascending ? "ThenBy" : "ThenByDescending";
+            var methodName = sortOrder == SortOrder.Ascending ? nameof(Queryable.ThenBy) : nameof(Queryable.ThenByDescending);
 
             return CreateOrderExpression(source, methodName, memberName);
         }
@@ -398,7 +398,7 @@ namespace Fireasy.Data.Entity.Linq
                 return default(TEntity);
             }
 
-            var expression = Expression.Call(typeof(Queryable), "FirstOrDefault", new[] { queryable.ElementType }, Expression.Constant(queryable), (Expression)predicate);
+            var expression = Expression.Call(typeof(Queryable), nameof(Queryable.FirstOrDefault), new[] { queryable.ElementType }, Expression.Constant(queryable), (Expression)predicate);
 
             return queryable.Provider.Execute<TEntity>(expression);
         }
@@ -549,7 +549,7 @@ namespace Fireasy.Data.Entity.Linq
         internal static LambdaExpression CreateInsertExpression(this IQueryable queryable)
         {
             var rpType = typeof(IRepository<>).MakeGenericType(queryable.ElementType);
-            var method = rpType.GetMethod("Insert");
+            var method = rpType.GetMethod(nameof(IRepository.Insert));
             var parSet = Expression.Parameter(rpType, "u");
             var parEle = Expression.Parameter(queryable.ElementType, "s");
             return Expression.Lambda(Expression.Call(parSet, method, parEle), parSet, parEle);
@@ -563,7 +563,7 @@ namespace Fireasy.Data.Entity.Linq
         internal static LambdaExpression CreateUpdateExpression(this IQueryable queryable)
         {
             var rpType = typeof(IRepository<>).MakeGenericType(queryable.ElementType);
-            var method = rpType.GetMethod("Update", new[] { queryable.ElementType });
+            var method = rpType.GetMethod(nameof(IRepository.Update), new[] { queryable.ElementType });
             var parSet = Expression.Parameter(rpType, "u");
             var parEle = Expression.Parameter(queryable.ElementType, "s");
             return Expression.Lambda(Expression.Call(parSet, method, parEle), parSet, parEle);
@@ -578,7 +578,7 @@ namespace Fireasy.Data.Entity.Linq
         internal static LambdaExpression CreateDeleteExpression(this IQueryable queryable, bool logicalDelete)
         {
             var rpType = typeof(IRepository<>).MakeGenericType(queryable.ElementType);
-            var method = rpType.GetMethod("Delete", new[] { queryable.ElementType, typeof(bool) });
+            var method = rpType.GetMethod(nameof(IRepository.Delete), new[] { queryable.ElementType, typeof(bool) });
             var parSet = Expression.Parameter(rpType, "u");
             var parEle = Expression.Parameter(queryable.ElementType, "s");
             return Expression.Lambda(Expression.Call(parSet, method, parEle, Expression.Constant(logicalDelete)), parSet, parEle);
@@ -676,8 +676,8 @@ namespace Fireasy.Data.Entity.Linq
             protected override Expression VisitMethodCall(MethodCallExpression methodCallExp)
             {
                 if (methodCallExp.Method.DeclaringType == typeof(Queryable) &&
-                    (methodCallExp.Method.Name == "OrderBy" || methodCallExp.Method.Name == "OrderByDescending" ||
-                    methodCallExp.Method.Name == "ThenBy" || methodCallExp.Method.Name == "ThenByDescending"))
+                    (methodCallExp.Method.Name == nameof(Queryable.OrderBy) || methodCallExp.Method.Name == nameof(Queryable.OrderByDescending) ||
+                    methodCallExp.Method.Name == nameof(Queryable.ThenBy) || methodCallExp.Method.Name == nameof(Queryable.ThenByDescending)))
                 {
                     Visit(methodCallExp.Arguments[0]);
                     orderBys.Add(methodCallExp.Method, methodCallExp.Arguments[1]);

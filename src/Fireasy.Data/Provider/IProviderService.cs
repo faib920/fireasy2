@@ -13,5 +13,9 @@ namespace Fireasy.Data.Provider
     /// </summary>
     public interface IProviderService
     {
+        /// <summary>
+        /// 获取或设置当前的 <see cref="IProvider"/> 实例。
+        /// </summary>
+        IProvider Provider { get; set; }
     }
 }

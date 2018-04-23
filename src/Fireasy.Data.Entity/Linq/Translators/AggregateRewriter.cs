@@ -35,7 +35,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 var aggColumns = new List<ColumnDeclaration>(select.Columns);
                 foreach (var ae in lookup[select.Alias])
                 {
-                    var name = "agg" + aggColumns.Count;
+                    var name = $"agg{aggColumns.Count}";
                     var cd = new ColumnDeclaration(name, ae.AggregateInGroupSelect);
                     map.Add(ae, new ColumnExpression(ae.Type, ae.GroupByAlias, name, null));
                     aggColumns.Add(cd);

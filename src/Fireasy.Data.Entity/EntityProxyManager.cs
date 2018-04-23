@@ -41,7 +41,7 @@ namespace Fireasy.Data.Entity
 
                     assembly.GetExportedTypes()
                         .Where(s => s.IsNotCompiled())
-                        .ForEach(s => EntityProxyBuilder.BuildType(s, assemblyBuilder));
+                        .ForEach(s => EntityProxyBuilder.BuildType(s, null, assemblyBuilder));
 
                     return assemblyBuilder.AssemblyBuilder;
                 });

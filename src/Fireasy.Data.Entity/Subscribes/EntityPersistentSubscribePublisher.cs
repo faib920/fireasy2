@@ -83,17 +83,25 @@ namespace Fireasy.Data.Entity.Subscribes
 
         public static void RaiseEvent(IEnumerable<IEntity> entities, EntityPersistentOperater operType, EntityPersistentEventType eventType)
         {
-            SubscribeManager.Publish<EntityPersistentSubject>(new EntitiesArgs(entities, operType, eventType));
+            SubscribeManager.Publish<EntityPersistentSubject>(IsQueue(eventType), new EntitiesArgs(entities, operType, eventType));
         }
 
         public static void RaiseEvent<TEntity>(EntityPersistentEventType eventType)
         {
-            SubscribeManager.Publish<EntityPersistentSubject>(new EntityEventTypeArgs(typeof(TEntity), eventType));
+            SubscribeManager.Publish<EntityPersistentSubject>(IsQueue(eventType), new EntityEventTypeArgs(typeof(TEntity), eventType));
         }
 
         public static void RaiseEvent(IEntity entity, EntityPersistentEventType eventType)
         {
-            SubscribeManager.Publish<EntityPersistentSubject>(new EntityEventArgs(entity, eventType));
+            SubscribeManager.Publish<EntityPersistentSubject>(IsQueue(eventType), new EntityEventArgs(entity, eventType));
+        }
+
+        private static bool IsQueue(EntityPersistentEventType eventType)
+        {
+            return eventType == EntityPersistentEventType.AfterCreate || 
+                eventType == EntityPersistentEventType.AfterUpdate || 
+                eventType == EntityPersistentEventType.AfterRemove || 
+                eventType == EntityPersistentEventType.AfterBatch;
         }
     }
 

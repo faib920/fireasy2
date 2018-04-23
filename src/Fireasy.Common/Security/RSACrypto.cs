@@ -9,6 +9,7 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Xml;
 using Fireasy.Common.Extensions;
 
 namespace Fireasy.Common.Security
@@ -29,7 +30,7 @@ namespace Fireasy.Common.Security
         /// <returns></returns>
         public override string GeneratePublicKey()
         {
-            return rsa.ToXmlString(false);
+            return ToXmlString(false);
         }
 
         /// <summary>
@@ -38,7 +39,7 @@ namespace Fireasy.Common.Security
         /// <returns></returns>
         public override string GeneratePrivateKey()
         {
-            return rsa.ToXmlString(true);
+            return ToXmlString(true);
         }
 
         /// <summary>
@@ -67,7 +68,7 @@ namespace Fireasy.Common.Security
         /// <returns></returns>
         public override byte[] Encrypt(byte[] source)
         {
-            rsa.FromXmlString(PublicKey);
+            FromXmlString(PublicKey);
             return rsa.Encrypt(source, false);
         }
 
@@ -108,7 +109,7 @@ namespace Fireasy.Common.Security
         /// <returns></returns>
         public override byte[] Decrypt(byte[] cipherData)
         {
-            rsa.FromXmlString(PrivateKey);
+            FromXmlString(PrivateKey);
             return rsa.Decrypt(cipherData, false);
         }
 
@@ -130,7 +131,7 @@ namespace Fireasy.Common.Security
         /// <returns></returns>
         public override byte[] CreateSignature(byte[] source)
         {
-            rsa.FromXmlString(PrivateKey);
+            FromXmlString(PrivateKey);
             var md5 = CryptographyFactory.Create(CryptoAlgorithm.MD5);
             return rsa.SignHash(md5.Encrypt(source), "MD5");
         }
@@ -143,9 +144,90 @@ namespace Fireasy.Common.Security
         /// <returns></returns>
         public override bool VerifySignature(byte[] source, byte[] signature)
         {
-            rsa.FromXmlString(PublicKey);
+            FromXmlString(PublicKey);
             var md5 = CryptographyFactory.Create(CryptoAlgorithm.MD5);
             return rsa.VerifyHash(md5.Encrypt(source), "MD5", signature);
+        }
+
+        private string ToXmlString(bool includePrivateParameters)
+        {
+#if !NETSTANDARD2_0
+            return rsa.ToXmlString(includePrivateParameters);
+#else
+            var parameters = rsa.ExportParameters(includePrivateParameters);
+
+            var sb = new StringBuilder();
+            sb.Append("<RSAKeyValue>");
+            // Add the modulus
+            sb.Append($"<Modulus>{Convert.ToBase64String(parameters.Modulus)}</Modulus>");
+            // Add the exponent
+            sb.Append($"<Exponent>{Convert.ToBase64String(parameters.Exponent)}</Exponent>");
+
+            if (includePrivateParameters)
+            {
+                // Add the private components
+                sb.Append($"<P>{Convert.ToBase64String(parameters.P)}</P>");
+                sb.Append($"<Q>{Convert.ToBase64String(parameters.Q)}</Q>");
+                sb.Append($"<DP>{Convert.ToBase64String(parameters.DP)}</DP>");
+                sb.Append($"<DQ>{Convert.ToBase64String(parameters.DQ)}</DQ>");
+                sb.Append($"<InverseQ>{Convert.ToBase64String(parameters.InverseQ)}</InverseQ>");
+                sb.Append($"<D>{Convert.ToBase64String(parameters.D)}</D>");
+            }
+
+            sb.Append("</RSAKeyValue>");
+
+            return sb.ToString();
+#endif
+        }
+
+        private void FromXmlString(string xmlString)
+        {
+#if !NETSTANDARD2_0
+            rsa.FromXmlString(xmlString);
+#else
+            var parameters = new RSAParameters();
+
+            var xmlDoc = new XmlDocument();
+            xmlDoc.LoadXml(xmlString);
+
+            if (!xmlDoc.DocumentElement.Name.Equals("RSAKeyValue"))
+            {
+                throw new Exception("Invalid XML RSA key.");
+            }
+
+            foreach (XmlNode node in xmlDoc.DocumentElement.ChildNodes)
+            {
+                switch (node.Name)
+                {
+                    case "Modulus":
+                        parameters.Modulus = (string.IsNullOrEmpty(node.InnerText) ? null : Convert.FromBase64String(node.InnerText));
+                        break;
+                    case "Exponent":
+                        parameters.Exponent = (string.IsNullOrEmpty(node.InnerText) ? null : Convert.FromBase64String(node.InnerText));
+                        break;
+                    case "P":
+                        parameters.P = (string.IsNullOrEmpty(node.InnerText) ? null : Convert.FromBase64String(node.InnerText));
+                        break;
+                    case "Q":
+                        parameters.Q = (string.IsNullOrEmpty(node.InnerText) ? null : Convert.FromBase64String(node.InnerText));
+                        break;
+                    case "DP":
+                        parameters.DP = (string.IsNullOrEmpty(node.InnerText) ? null : Convert.FromBase64String(node.InnerText));
+                        break;
+                    case "DQ":
+                        parameters.DQ = (string.IsNullOrEmpty(node.InnerText) ? null : Convert.FromBase64String(node.InnerText));
+                        break;
+                    case "InverseQ":
+                        parameters.InverseQ = (string.IsNullOrEmpty(node.InnerText) ? null : Convert.FromBase64String(node.InnerText));
+                        break;
+                    case "D":
+                        parameters.D = (string.IsNullOrEmpty(node.InnerText) ? null : Convert.FromBase64String(node.InnerText));
+                        break;
+                }
+            }
+
+            rsa.ImportParameters(parameters);
+#endif
         }
     }
 }

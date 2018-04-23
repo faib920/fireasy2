@@ -15,17 +15,17 @@ namespace Fireasy.Common.Dynamic
     /// </summary>
     public class NoThrowGetBinderMember : GetMemberBinder
     {
-        private readonly GetMemberBinder _innerBinder;
+        private readonly GetMemberBinder innerBinder;
 
         public NoThrowGetBinderMember(GetMemberBinder innerBinder)
             : base(innerBinder.Name, innerBinder.IgnoreCase)
         {
-            _innerBinder = innerBinder;
+            this.innerBinder = innerBinder;
         }
 
         public override DynamicMetaObject FallbackGetMember(DynamicMetaObject target, DynamicMetaObject errorSuggestion)
         {
-            var retMetaObject = _innerBinder.Bind(target, new DynamicMetaObject[] { });
+            var retMetaObject = innerBinder.Bind(target, new DynamicMetaObject[] { });
 
             var noThrowVisitor = new NoThrowExpressionVisitor();
             var resultExpression = noThrowVisitor.Visit(retMetaObject.Expression);

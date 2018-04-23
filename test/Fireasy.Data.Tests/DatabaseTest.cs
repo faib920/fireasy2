@@ -1,7 +1,10 @@
-﻿using Fireasy.Data.Extensions;
+﻿using Fireasy.Common.Configuration;
+using Fireasy.Data.Extensions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -10,6 +13,11 @@ namespace Fireasy.Data.Tests
     [TestClass]
     public class DatabaseTest
     {
+        public DatabaseTest()
+        {
+            InitConfig.Init();
+        }
+
         [TestMethod]
         public void TestExecuteNonQuery()
         {

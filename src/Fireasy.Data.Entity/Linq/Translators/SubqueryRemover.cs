@@ -47,11 +47,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitColumn(ColumnExpression column)
         {
-            Dictionary<string, Expression> nameMap;
-            if (map.TryGetValue(column.Alias, out nameMap))
+            if (map.TryGetValue(column.Alias, out Dictionary<string, Expression> nameMap))
             {
-                Expression expr;
-                if (nameMap.TryGetValue(column.Name, out expr))
+                if (nameMap.TryGetValue(column.Name, out Expression expr))
                 {
                     return Visit(expr);
                 }

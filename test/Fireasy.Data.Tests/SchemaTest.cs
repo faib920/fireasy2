@@ -7,6 +7,11 @@ namespace Fireasy.Data.Tests
     [TestClass]
     public class SchemaTest
     {
+        public SchemaTest()
+        {
+            InitConfig.Init();
+        }
+
         private void Invoke(Action<IDatabase, ISchemaProvider> action)
         {
             using (var db = DatabaseFactory.CreateDatabase("mssql1"))

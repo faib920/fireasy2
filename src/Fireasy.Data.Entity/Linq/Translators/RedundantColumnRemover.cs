@@ -23,8 +23,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitColumn(ColumnExpression column)
         {
-            ColumnExpression mapped;
-            return map.TryGetValue(column, out mapped) ? mapped : column;
+            return map.TryGetValue(column, out ColumnExpression mapped) ? mapped : column;
         }
 
         protected override Expression VisitSelect(SelectExpression select)
@@ -32,24 +31,26 @@ namespace Fireasy.Data.Entity.Linq.Translators
             select = (SelectExpression)base.VisitSelect(select);
 
             // look for redundant column declarations
-            List<ColumnDeclaration> cols = select.Columns.OrderBy(c => c.Name).ToList();
-            BitArray removed = new BitArray(select.Columns.Count);
+            var cols = select.Columns.OrderBy(c => c.Name).ToList();
+            var removed = new BitArray(select.Columns.Count);
+
             bool anyRemoved = false;
             for (int i = 0, n = cols.Count; i < n - 1; i++)
             {
-                ColumnDeclaration ci = cols[i];
-                ColumnExpression cix = ci.Expression as ColumnExpression;
-                ColumnExpression cxi = new ColumnExpression(ci.Expression.Type, select.Alias, ci.Name, cix != null ? cix.MapInfo : null);
+                var ci = cols[i];
+                var cix = ci.Expression as ColumnExpression;
+                var cxi = new ColumnExpression(ci.Expression.Type, select.Alias, ci.Name, cix != null ? cix.MapInfo : null);
+
                 for (int j = i + 1; j < n; j++)
                 {
                     if (!removed.Get(j))
                     {
-                        ColumnDeclaration cj = cols[j];
+                        var cj = cols[j];
                         if (SameExpression(ci.Expression, cj.Expression))
                         {
                             // any reference to 'j' should now just be a reference to 'i'
-                            ColumnExpression cj1 = cj.Expression as ColumnExpression;
-                            ColumnExpression cxj = new ColumnExpression(cj.Expression.Type, select.Alias, cj.Name, cj1 != null ? cj1.MapInfo : null);
+                            var cj1 = cj.Expression as ColumnExpression;
+                            var cxj = new ColumnExpression(cj.Expression.Type, select.Alias, cj.Name, cj1 != null ? cj1.MapInfo : null);
                             this.map.Add(cxj, cxi);
                             removed.Set(j, true);
                             anyRemoved = true;
@@ -57,9 +58,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     }
                 }
             }
+
             if (anyRemoved)
             {
-                List<ColumnDeclaration> newDecls = new List<ColumnDeclaration>();
+                var newDecls = new List<ColumnDeclaration>();
                 for (int i = 0, n = cols.Count; i < n; i++)
                 {
                     if (!removed.Get(i))
@@ -67,6 +69,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         newDecls.Add(cols[i]);
                     }
                 }
+
                 select = select.SetColumns(newDecls);
             }
 

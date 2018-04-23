@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2010
+VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Common", "src\Fireasy.Common\Fireasy.Common.csproj", "{E534FE1A-BD42-4508-B848-FA8B37312AD5}"
 EndProject
@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Data", "src\Fireasy
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Data.Entity", "src\Fireasy.Data.Entity\Fireasy.Data.Entity.csproj", "{8E21D3B6-389A-4ABC-9A82-B1212E6C517E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fireasy.Common.Tests", "test\Fireasy.Common.Tests\Fireasy.Common.Tests.csproj", "{FA1593D6-BC48-4588-8931-3EEF92FF5D24}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Common.Tests", "test\Fireasy.Common.Tests\Fireasy.Common.Tests.csproj", "{FA1593D6-BC48-4588-8931-3EEF92FF5D24}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{C17CFE8E-2A64-4E6E-9720-4C8681AF3DC3}"
 EndProject
@@ -35,6 +35,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Redis", "src\Fireasy.Redis\Fireasy.Redis.csproj", "{A7A7033A-B471-47CD-A103-6AD4D822B2B4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Web.Http", "src\Fireasy.Web.Http\Fireasy.Web.Http.csproj", "{4075E57A-FDFB-4DF0-A698-023D2B9AF78A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.MongoDB", "src\Fireasy.MongoDB\Fireasy.MongoDB.csproj", "{739E0CCA-AFAC-4E01-940D-0D2A600EF299}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -86,6 +88,10 @@ Global
 		{4075E57A-FDFB-4DF0-A698-023D2B9AF78A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4075E57A-FDFB-4DF0-A698-023D2B9AF78A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4075E57A-FDFB-4DF0-A698-023D2B9AF78A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{739E0CCA-AFAC-4E01-940D-0D2A600EF299}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{739E0CCA-AFAC-4E01-940D-0D2A600EF299}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{739E0CCA-AFAC-4E01-940D-0D2A600EF299}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{739E0CCA-AFAC-4E01-940D-0D2A600EF299}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -102,6 +108,7 @@ Global
 		{12B62972-48DB-4A40-9406-0BF1F4BD41A9} = {C17CFE8E-2A64-4E6E-9720-4C8681AF3DC3}
 		{A7A7033A-B471-47CD-A103-6AD4D822B2B4} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
 		{4075E57A-FDFB-4DF0-A698-023D2B9AF78A} = {C17CFE8E-2A64-4E6E-9720-4C8681AF3DC3}
+		{739E0CCA-AFAC-4E01-940D-0D2A600EF299} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {72E7FC59-9162-48A8-B31F-CB0FEE862E56}

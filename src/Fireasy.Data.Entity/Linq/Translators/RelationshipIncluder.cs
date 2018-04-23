@@ -37,8 +37,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitEntity(EntityExpression entity)
         {
-            var init = entity.Expression as MemberInitExpression;
-            if (init != null)
+            if (entity.Expression is MemberInitExpression init)
             {
                 var save = includeScope;
                 includeScope = new ScopedDictionary<IProperty, bool>(this.includeScope);

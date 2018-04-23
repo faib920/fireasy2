@@ -78,9 +78,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
 
             var result = QueryBinder.BindMember(source, m.Member);
-            var mex = result as MemberExpression;
 
-            if (mex != null &&
+            if (result is MemberExpression mex &&
                 mex.Member == m.Member &&
                 mex.Expression == m.Expression)
             {

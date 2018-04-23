@@ -27,9 +27,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var saveSelect = this.currentSelect;
             isTopLevel = true;
             currentSelect = null;
+
             Expression result = base.VisitClientJoin(join);
+
             isTopLevel = saveTop;
             currentSelect = saveSelect;
+
             return result;
         }
 
@@ -58,8 +61,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 var pc = ColumnProjector.ProjectColumns(QueryUtility.CanBeColumnExpression, pex.Projector, currentSelect.Columns, currentSelect.Alias, newAlias, proj.Select.Alias);
 
                 // **fix** 解决返回关联对象后使用Distinct的问题
-                bool isDistinct;
-                var join = CreateJoinExpression(currentSelect.From, pex.Select, out isDistinct);
+                var join = CreateJoinExpression(currentSelect.From, pex.Select, out bool isDistinct);
                 currentSelect = new SelectExpression(currentSelect.Alias, pc.Columns, join, null);
                 if (isDistinct)
                 {
@@ -75,9 +77,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var saveSelect = currentSelect;
             isTopLevel = true;
             currentSelect = null;
+
             var result = base.VisitProjection(proj);
+
             isTopLevel = saveTop;
             currentSelect = saveSelect;
+
             return result;
         }
 
@@ -93,8 +98,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             isDistinct = false;
 
-            var select = left as SelectExpression;
-            if (select != null && select.IsDistinct)
+            if (left is SelectExpression select && select.IsDistinct)
             {
                 isDistinct = true;
                 left = select.Update(select.From, select.Where, select.OrderBy, select.GroupBy, select.Skip, select.Take, select.Segment, false, select.Columns, select.Having, select.IsReverse);

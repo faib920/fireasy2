@@ -77,17 +77,17 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     //字符或日期型，加'
                     if (par.Value is string || par.Value is DateTime || par.Value is char)
                     {
-                        sb.AppendFormat("\n{0}='{1}'", par.ParameterName, par.Value);
+                        sb.Append($"\n{par.ParameterName}='{par.Value}'");
                     }
 
                     //字节数组，转换为字符串
                     else if (par.Value is byte[])
                     {
-                        sb.AppendFormat("\n{0}='{1}'", par.ParameterName, Encoding.ASCII.GetString(par.Value as byte[]));
+                        sb.AppendFormat($"\n{par.ParameterName}='{Encoding.ASCII.GetString(par.Value as byte[])}'");
                     }
                     else
                     {
-                        sb.AppendFormat("\n{0}={1}", par.ParameterName, par.Value);
+                        sb.AppendFormat($"\n{par.ParameterName}={par.Value}");
                     }
                 }
             }

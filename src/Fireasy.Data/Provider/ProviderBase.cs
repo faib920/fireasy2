@@ -98,19 +98,21 @@ namespace Fireasy.Data.Provider
         /// <typeparam name="TImplement"></typeparam>
         public virtual void RegisterService<TDefined, TImplement>() where TDefined : class, IProviderService where TImplement : class, TDefined, new()
         {
-            RegisterService<TDefined>(new TImplement());
+            var instance = new TImplement();
+            instance.Provider = this;
+            RegisterService<TDefined>(instance);
         }
 
         /// <summary>
         /// 注册指定类型的插件服务。
         /// </summary>
-        /// <typeparam name="TProvider"></typeparam>
+        /// <typeparam name="TService"></typeparam>
         /// <param name="provider"></param>
-        public virtual void RegisterService<TProvider>(TProvider provider) where TProvider : class, IProviderService
+        public virtual void RegisterService<TService>(TService provider) where TService : class, IProviderService
         {
             lock (services)
             {
-                services.AddOrReplace(typeof(TProvider).Name, provider);
+                services.AddOrReplace(typeof(TService).Name, provider);
             }
         }
 

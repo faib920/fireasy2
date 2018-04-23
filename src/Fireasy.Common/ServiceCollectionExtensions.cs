@@ -16,8 +16,6 @@ using Fireasy.Common.Logging;
 using Fireasy.Common.Logging.Configuration;
 using Microsoft.Extensions.Configuration;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 
 namespace Microsoft.Extensions.DependencyInjection
@@ -32,45 +30,14 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IServiceCollection AddFireasy(this IServiceCollection services, IConfiguration configuration, Action<Fireasy.Common.CoreOptions> setupAction = null)
         {
-            var assemblies = new List<Assembly>();
+            services.AddUnity();
 
-            FindReferenceAssemblies(Assembly.GetCallingAssembly(), assemblies);
-
-            foreach (var assembly in assemblies)
-            {
-                var type = assembly.GetType("Microsoft.Extensions.DependencyInjection.ConfigurationBinder");
-                if (type != null)
-                {
-                    var method = type.GetMethod("Bind", BindingFlags.Static | BindingFlags.NonPublic);
-                    if (method != null)
-                    {
-                        method.Invoke(null, new object[] { services, configuration });
-                    }
-                }
-            }
+            ConfigurationUnity.Bind(Assembly.GetCallingAssembly(), configuration, services);
 
             var options = new Fireasy.Common.CoreOptions();
             setupAction?.Invoke(options);
 
-            assemblies.Clear();
-
             return services;
-        }
-
-        private static void FindReferenceAssemblies(Assembly assembly, List<Assembly> assemblies)
-        {
-            foreach (var asb in assembly.GetReferencedAssemblies()
-                .Where(s => ExcludeAssembly(s.Name))
-                .Select(s => LoadAssembly(s))
-                .Where(s => s != null))
-            {
-                if (!assemblies.Contains(asb))
-                {
-                    assemblies.Add(asb);
-                }
-
-                FindReferenceAssemblies(asb, assemblies);
-            }
         }
 
         /// <summary>
@@ -102,24 +69,6 @@ namespace Microsoft.Extensions.DependencyInjection
 
             return services;
         }
-
-        private static bool ExcludeAssembly(string assemblyName)
-        {
-            return !assemblyName.StartsWith("system.", StringComparison.OrdinalIgnoreCase) &&
-                    !assemblyName.StartsWith("microsoft.", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static Assembly LoadAssembly(AssemblyName assemblyName)
-        {
-            try
-            {
-                return Assembly.Load(assemblyName);
-            }
-            catch
-            {
-                return null;
-            }
-        }
     }
 
     internal class ConfigurationBinder
@@ -130,8 +79,11 @@ namespace Microsoft.Extensions.DependencyInjection
             ConfigurationUnity.Bind<CachingConfigurationSection>(configuration);
             ConfigurationUnity.Bind<ContainerConfigurationSection>(configuration);
 
-            services.AddSingleton(typeof(ILogger), s => LoggerFactory.CreateLogger());
-            services.AddSingleton(typeof(ICacheManager), s => CacheManagerFactory.CreateManager());
+            if (services != null)
+            {
+                services.AddSingleton(typeof(ILogger), s => LoggerFactory.CreateLogger());
+                services.AddSingleton(typeof(ICacheManager), s => CacheManagerFactory.CreateManager());
+            }
         }
     }
 }

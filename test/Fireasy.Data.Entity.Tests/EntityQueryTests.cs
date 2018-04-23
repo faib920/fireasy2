@@ -24,8 +24,8 @@ namespace Fireasy.Data.Entity.Tests
         [ClassInitialize]
         public static void Initialize(TestContext context)
         {
+            InitConfig.Init();
             db = new DbContext();
-            //db.Products.Delete(s => s.ProductName.StartsWith("XXXX"));
         }
 
         [ClassCleanup]

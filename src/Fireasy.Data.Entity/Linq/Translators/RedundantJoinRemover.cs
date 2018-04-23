@@ -74,8 +74,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitColumn(ColumnExpression column)
         {
-            TableAlias mapped;
-            return map.TryGetValue(column.Alias, out mapped) ?
+            return map.TryGetValue(column.Alias, out TableAlias mapped) ?
                 new ColumnExpression(column.Type, mapped, column.Name, column.MapInfo) : column;
         }
     }

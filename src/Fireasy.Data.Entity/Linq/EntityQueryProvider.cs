@@ -9,6 +9,8 @@ using Fireasy.Common;
 using Fireasy.Common.Configuration;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Linq.Translators.Configuration;
+using Fireasy.Data.Entity.Providers;
+using Fireasy.Data.Provider;
 using Fireasy.Data.Syntax;
 using System;
 using System.Collections.Generic;
@@ -101,13 +103,13 @@ namespace Fireasy.Data.Entity.Linq
                 }
 
                 var section = ConfigurationUnity.GetSection<TranslatorConfigurationSection>();
-                var package = GetTranslateProvider();
+                var service = context.Database.Provider.GetTranslateProvider();
                 var options = GetTranslateOptions();
 
-                using (var scope = new TranslateScope(context, package, options))
+                using (var scope = new TranslateScope(context, service, options))
                 {
-                    var translation = package.Translate(expression);
-                    var translator = package.CreateTranslator();
+                    var translation = service.Translate(expression);
+                    var translator = service.CreateTranslator();
 
                     return ExecutionBuilder.Build(translation, e => translator.Translate(e));
                 }
@@ -134,13 +136,13 @@ namespace Fireasy.Data.Entity.Linq
                     expression = lambda.Body;
                 }
 
-                var package = GetTranslateProvider();
+                var service = context.Database.Provider.GetTranslateProvider();
                 options = options ?? GetTranslateOptions();
 
-                using (var scope = new TranslateScope(context, package, options))
+                using (var scope = new TranslateScope(context, service, options))
                 {
-                    var translation = package.Translate(expression);
-                    var translator = package.CreateTranslator();
+                    var translation = service.Translate(expression);
+                    var translator = service.CreateTranslator();
 
                     TranslateResult result;
                     var selects = SelectGatherer.Gather(translation).ToList();
@@ -170,48 +172,6 @@ namespace Fireasy.Data.Entity.Linq
             {
                 throw new TranslateException(expression, ex);
             }
-        }
-
-        private ITranslateProvider GetTranslateProvider()
-        {
-            var provider = context.Database.Provider;
-            var package = provider.GetService<ITranslateProvider>();
-            if (package != null)
-            {
-                return package;
-            }
-
-            var serviceType = typeof(ITranslateProvider);
-            switch (provider.GetType().Name)
-            {
-                case "MsSqlProvider":
-                    provider.RegisterService(serviceType, new MsSqlTranslateProvider());
-                    break;
-                case "OracleProvider":
-                case "OracleAccessProvider":
-                    provider.RegisterService(serviceType, new OracleTranslateProvider());
-                    break;
-                case "MySqlProvider":
-                    provider.RegisterService(serviceType, new MySqlTranslateProvider());
-                    break;
-                case "SQLiteProvider":
-                    provider.RegisterService(serviceType, new SQLiteTranslateProvider());
-                    break;
-                case "OleDbProvider":
-                    provider.RegisterService(serviceType, new AccessTranslateProvider());
-                    break;
-                case "PostgreSqlProvider":
-                    provider.RegisterService(serviceType, new PostgreSqlTranslateProvider());
-                    break;
-                case "FirebirdProvider":
-                    provider.RegisterService(serviceType, new FirebirdTranslateProvider());
-                    break;
-                default:
-                    throw new Exception(SR.GetString(SRKind.TranslatorNotSupported, provider.GetType().Name));
-            }
-
-            package = provider.GetService<ITranslateProvider>();
-            return package;
         }
 
         private TranslateOptions GetTranslateOptions()

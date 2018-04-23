@@ -18,7 +18,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public sealed class CachableChecker : Common.Linq.Expressions.ExpressionVisitor
     {
-        private bool m_isCachable = true;
+        private bool isCachable = true;
 
         /// <summary>
         /// 检查表达式是否可以被缓存。
@@ -29,7 +29,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             var checker = new CachableChecker();
             checker.Visit(expression);
-            return checker.m_isCachable;
+            return checker.isCachable;
         }
 
         protected override Expression VisitConstant(ConstantExpression constExp)
@@ -39,7 +39,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 !constExp.Value.Is<IEnumerable>() && 
                 constExp.Type.ToString() == constExp.Value.ToString())
             {
-                m_isCachable = false;
+                isCachable = false;
                 return constExp;
             }
 

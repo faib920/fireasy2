@@ -35,6 +35,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 first = false;
                 return base.VisitSelect(select);
             }
+
             return select;
         }
     }

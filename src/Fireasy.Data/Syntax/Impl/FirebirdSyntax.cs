@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Data.Provider;
 using System;
 using System.Data;
 using System.Text;
@@ -17,6 +18,8 @@ namespace Fireasy.Data.Syntax
         private StringSyntax strSyntax;
         private DateTimeSyntax dtSyntax;
         private MathSyntax mathSyntax;
+
+        IProvider IProviderService.Provider { get; set; }
 
         public StringSyntax String
         {

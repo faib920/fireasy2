@@ -9,6 +9,7 @@ using System.Data;
 using System.Text;
 using System.Text.RegularExpressions;
 using Fireasy.Data.Extensions;
+using Fireasy.Data.Provider;
 
 namespace Fireasy.Data.Syntax
 {
@@ -20,6 +21,8 @@ namespace Fireasy.Data.Syntax
         private StringSyntax strSyntax;
         private DateTimeSyntax dtSyntax;
         private MathSyntax mathSyntax;
+
+        IProvider IProviderService.Provider { get; set; }
 
         /// <summary>
         /// 获取字符串函数相关的语法。

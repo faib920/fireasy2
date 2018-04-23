@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Data.Extensions;
+using Fireasy.Data.Provider;
 using Fireasy.Data.Syntax;
 using System;
 using System.Collections;
@@ -25,6 +26,8 @@ namespace Fireasy.Data.Batcher
     /// </summary>
     public sealed class MsSqlBatcher : IBatcherProvider
     {
+        IProvider IProviderService.Provider { get; set; }
+
         /// <summary>
         /// 将一个 <see cref="IList"/> 批量插入到数据库中。 
         /// </summary>

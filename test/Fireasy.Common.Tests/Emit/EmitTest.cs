@@ -2,12 +2,8 @@
 using Fireasy.Common.Extensions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Fireasy.Common.Tests.Emit
 {
@@ -22,9 +18,11 @@ namespace Fireasy.Common.Tests.Emit
             var interfaceBuilder = assemblyBuilder.DefineInterface("IInterface");
             var typeBuilder = assemblyBuilder.DefineType("Class1");
             var enumBuilder = assemblyBuilder.DefineEnum("Enum1");
+#if NETAPPCORE
             var assembly = assemblyBuilder.Save();
             Assert.AreEqual("Class1", typeBuilder.TypeBuilder.Name);
             Assert.AreEqual("DynamicAssembly1", assembly.GetExportedTypes().Length);
+#endif
         }
 
         [TestMethod()]
@@ -65,7 +63,9 @@ namespace Fireasy.Common.Tests.Emit
             var fileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "dynamicAssembly1.dll");
             var assemblyBuilder = new DynamicAssemblyBuilder("dynamicAssembly1", fileName);
 
+#if NETAPPCORE
             assemblyBuilder.Save();
+#endif
 
             Assert.IsTrue(File.Exists(fileName));
         }
@@ -77,7 +77,9 @@ namespace Fireasy.Common.Tests.Emit
             var type1 = assemblyBuilder.DefineType("class1");
             var type2 = assemblyBuilder.DefineType("class2");
 
+#if NETAPPCORE
             assemblyBuilder.Save();
+#endif
 
             Assert.AreEqual(2, assemblyBuilder.AssemblyBuilder.GetTypes().Length);
         }

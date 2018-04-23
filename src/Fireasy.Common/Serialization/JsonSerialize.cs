@@ -9,17 +9,13 @@
 using System;
 using System.Collections;
 using System.Data;
-using System.Drawing;
 using System.Linq;
 using System.Globalization;
 using Fireasy.Common.Extensions;
-using System.Runtime.InteropServices;
 #if !NET35
 using System.Dynamic;
-using Fireasy.Common.Dynamic;
 #endif
 using Fireasy.Common.ComponentModel;
-using Fireasy.Common.Reflection;
 using System.Collections.Generic;
 
 namespace Fireasy.Common.Serialization
@@ -44,6 +40,7 @@ namespace Fireasy.Common.Serialization
         /// 将对象序列化为文本。
         /// </summary>
         /// <param name="value">要序列化的值。</param>
+        /// <param name="type"></param>
         internal void Serialize(object value, Type type = null)
         {
             if (type == null && value != null)
@@ -86,12 +83,6 @@ namespace Fireasy.Common.Serialization
                 return;
             }
 
-            if (type == typeof(Color))
-            {
-                SerializeColor((Color)value);
-                return;
-            }
-
             if (typeof(Type).IsAssignableFrom(type))
             {
                 SerializeType((Type)value);
@@ -112,7 +103,7 @@ namespace Fireasy.Common.Serialization
                 return;
             }
 
-            if (typeof(IEnumerable).IsAssignableFrom(type) && type != typeof(string))
+            if (((value is IEnumerable) || typeof(IEnumerable).IsAssignableFrom(type)) && type != typeof(string))
             {
                 SerializeEnumerable(value as IEnumerable);
                 return;
@@ -142,20 +133,29 @@ namespace Fireasy.Common.Serialization
 
         private bool WithConverter(Type type, object value)
         {
-            var converter = option.Converters.GetWritableConverter(type, new[] { typeof(JsonConverter) });
-            if (converter == null)
+            JsonConverter converter;
+            TextConverterAttribute attr;
+            if ((attr = type.GetCustomAttributes<TextConverterAttribute>().FirstOrDefault()) != null && 
+                typeof(JsonConverter).IsAssignableFrom(attr.ConverterType))
             {
-                return false;
-            }
-
-            var jsonConvert = converter as JsonConverter;
-            if (jsonConvert != null && jsonConvert.Streaming)
-            {
-                jsonConvert.WriteJson(serializer, jsonWriter, value);
+                converter = attr.ConverterType.New<JsonConverter>();
             }
             else
             {
-                jsonWriter.WriteValue(converter.WriteObject(serializer, value));
+                converter = option.Converters.GetWritableConverter(type, new[] { typeof(JsonConverter) }) as JsonConverter;
+            }
+
+            if (converter == null || !converter.CanWrite)
+            {
+                return false;
+            }
+            else if (converter.Streaming)
+            {
+                converter.WriteJson(serializer, jsonWriter, value);
+            }
+            else if (converter != null)
+            {
+                jsonWriter.WriteValue(converter.WriteJson(serializer, value));
             }
 
             return true;
@@ -218,12 +218,6 @@ namespace Fireasy.Common.Serialization
             }
 
             jsonWriter.WriteEndObject();
-        }
-
-        private void SerializeColor(Color color)
-        {
-            var value = string.Format("{0:X2}{1:X2}{2:X2}{3:X2}", color.A, color.R, color.G, color.B);
-            SerializeString(value);
         }
 
         private void SerializeEnumerable(IEnumerable enumerable)
@@ -407,10 +401,10 @@ namespace Fireasy.Common.Serialization
             jsonWriter.WriteString(str);
         }
 
-        private void SerializeKeyValue<TKey, TValue>(TKey key, TValue value)
+        private void SerializeKeyValue(object key, object value)
         {
             jsonWriter.WriteKey(SerializeName(key.ToString()));
-            JsonConvertContext.Current.Assign(key.ToString(), value, () => Serialize(value, typeof(TValue)));
+            JsonConvertContext.Current.Assign(key.ToString(), value, () => Serialize(value));
         }
 
         private string SerializeName(string name)

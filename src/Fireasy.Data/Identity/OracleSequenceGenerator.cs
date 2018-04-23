@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Data.Provider;
 using System;
 
 namespace Fireasy.Data.Identity
@@ -14,6 +15,8 @@ namespace Fireasy.Data.Identity
     /// </summary>
     public sealed class OracleSequenceGenerator : IGeneratorProvider
     {
+        IProvider IProviderService.Provider { get; set; }
+
         /// <summary>
         /// 自动生成列的值。
         /// </summary>

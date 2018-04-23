@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 
 using Fireasy.Common.Linq.Expressions;
+using Fireasy.Data.Provider;
 using Fireasy.Data.Syntax;
 using System;
 using System.Linq;
@@ -19,6 +20,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public abstract class TranslateProviderBase : ITranslateProvider
     {
+        IProvider IProviderService.Provider { get; set; }
+
         /// <summary>
         /// 获取一个 ELinq 翻译器。
         /// </summary>
@@ -131,18 +134,15 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         public static Func<Expression, bool> EvaluatedLocallyFunc = new Func<Expression, bool>(expression =>
         {
-            var cex = expression as ConstantExpression;
-            if (cex != null)
+            if (expression is ConstantExpression cex)
             {
-                var query = cex.Value as IQueryable;
-                if (query != null && query.Provider is QueryProvider)
+                if (cex.Value is IQueryable query && query.Provider is QueryProvider)
                 {
                     return false;
                 }
             }
 
-            var mc = expression as MethodCallExpression;
-            if (mc != null &&
+            if (expression is MethodCallExpression mc &&
                 (mc.Method.DeclaringType == typeof(Enumerable) ||
                  mc.Method.DeclaringType == typeof(Queryable) ||
                  mc.Method.DeclaringType == typeof(Extensions)))

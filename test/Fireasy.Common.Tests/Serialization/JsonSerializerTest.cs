@@ -49,6 +49,23 @@ namespace Fireasy.Common.Tests.Serialization
         }
 
         /// <summary>
+        /// 使用整型测试Serialize方法。
+        /// </summary>
+        [TestMethod()]
+        public void TestNullArray()
+        {
+            var serializer = new JsonSerializer();
+
+            object footer = null;
+            var f = footer is IEnumerable ? footer : new [] { footer };
+            var obj = new { total = 100, rows = new List<int> { 22 }, footer = f };
+            var json = serializer.Serialize(obj);
+
+            Assert.AreEqual("89", json);
+            Console.WriteLine(json);
+        }
+
+        /// <summary>
         /// 使用字符串测试Serialize方法。
         /// </summary>
         [TestMethod()]
@@ -739,6 +756,36 @@ studio");
 
         }
 
+        [TestMethod]
+        public void TestSerializeTuple()
+        {
+            var tuple = new Tuple<int, int, string>(23, 44, "fireasy");
+            var serializer = new JsonSerializer(null);
+
+            var json = serializer.Serialize(tuple);
+            Console.WriteLine(json);
+        }
+
+        [TestMethod]
+        public void TestSerializeTuple1()
+        {
+            var tuple = new Tuple<int, int, string, Tuple<int, int>>(23, 44, "fireasy", new Tuple<int, int>(55, 45));
+            var serializer = new JsonSerializer(null);
+
+            var json = serializer.Serialize(tuple);
+            Console.WriteLine(json);
+        }
+
+        [TestMethod]
+        public void TestSerializeWithConverterAttr()
+        {
+            var attr = new AttrTest { Name = "fireasy" };
+            var serializer = new JsonSerializer(null);
+
+            var json = serializer.Serialize(attr);
+            Console.WriteLine(json);
+        }
+
         public class LazyClass : ILazyManager
         {
             public string Name { get; set; }
@@ -790,6 +837,20 @@ studio");
 
             var s1 = "2015/2/2";
             var str = serializer.Deserialize<string>("\"<span style=\\\"background-color:#ffffff\\\">201/12/12</span>\"");
+            Console.WriteLine(serializer.Serialize(s1));
+            //Assert.AreEqual("<span style=\"background-color:#ffffff\"></span>", str);
+        }
+
+        /// <summary>
+        /// 使用字符串测试Deserialize方法。
+        /// </summary>
+        [TestMethod()]
+        public void TestDeserializePath()
+        {
+            var serializer = new JsonSerializer();
+
+            var s1 = "\"e:\\doct\\test.doc\"";
+            var str = serializer.Deserialize<string>(s1);
             Console.WriteLine(serializer.Serialize(s1));
             //Assert.AreEqual("<span style=\"background-color:#ffffff\"></span>", str);
         }
@@ -1260,6 +1321,32 @@ studio");
             Console.WriteLine(ret);
         }
 
+        [TestMethod]
+        public void TestDeserializeTuple()
+        {
+            var ss = new JsonText(@"{'Item2':23,'Item1':44,'Item3':'fireasy'}");
+            var serializer = new JsonSerializer();
+            var tuple = serializer.Deserialize<Tuple<int, int, string>>(ss.ToString());
+        }
+
+        [TestMethod]
+        public void TestDeserializeTuple1()
+        {
+            var ss = new JsonText(@"{'Item2':23,'Item1':44,'Item3':'fireasy', 'Item4':{'Item1':55,'Item2':45}}");
+            var serializer = new JsonSerializer();
+            var tuple = serializer.Deserialize<Tuple<int, int, string, Tuple<int, int>>>(ss.ToString());
+        }
+
+        [TestMethod]
+        public void TestDeserializeWithConverterAttr()
+        {
+            var ss = "\"test\"";
+            var serializer = new JsonSerializer(null);
+
+            var attr = serializer.Deserialize<AttrTest>(ss);
+            Console.WriteLine(attr.Name);
+        }
+
         private async Task<Result<MedInpatientsViewModel>> DD()
         {
             var s = new JsonText(@"{'data':[{'MedId':25437,'InhCode':'0001410726','InfoId':467,'MedName':'周伟','MedOutdate':'2015-10-16','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25282,'InhCode':'0001410501','InfoId':312,'MedName':'陶寿明','MedOutdate':'2015-10-16','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25322,'InhCode':'0001410525','InfoId':352,'MedName':'左凤云','MedOutdate':'2015-10-16','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25439,'InhCode':'0001410731','InfoId':469,'MedName':'叶应珠','MedOutdate':'2015-10-16','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25390,'InhCode':'0001410606','InfoId':420,'MedName':'徐远达','MedOutdate':'2015-10-16','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25405,'InhCode':'0001410664','InfoId':435,'MedName':'罗朝兰','MedOutdate':'2015-10-16','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25349,'InhCode':'0001410553','InfoId':379,'MedName':'黄新芝','MedOutdate':'2015-10-15','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25297,'InhCode':'0001410497','InfoId':327,'MedName':'余焕珍','MedOutdate':'2015-10-14','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25333,'InhCode':'0001410547','InfoId':363,'MedName':'全顺祥','MedOutdate':'2015-10-14','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25408,'InhCode':'0001410667','InfoId':438,'MedName':'柳卫民','MedOutdate':'2015-10-12','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25072,'InhCode':'0001410187','InfoId':102,'MedName':'张可栋','MedOutdate':'2015-10-12','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25248,'InhCode':'0001410431','InfoId':278,'MedName':'杨云芬','MedOutdate':'2015-10-11','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25263,'InhCode':'0001410456','InfoId':293,'MedName':'王正平','MedOutdate':'2015-10-10','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25125,'InhCode':'0001410289','InfoId':155,'MedName':'张仕追','MedOutdate':'2015-10-10','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25063,'InhCode':'0001410157','InfoId':93,'MedName':'张顺德','MedOutdate':'2015-10-10','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':24998,'InhCode':'0001409857','InfoId':28,'MedName':'李丽华','MedOutdate':'2015-10-09','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25008,'InhCode':'0001409938','InfoId':38,'MedName':'陈志珍','MedOutdate':'2015-10-09','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25037,'InhCode':'0001410084','InfoId':67,'MedName':'何世凤','MedOutdate':'2015-10-09','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':24972,'InhCode':'0001408306','InfoId':2,'MedName':'秦计明','MedOutdate':'2015-10-09','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'W','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25021,'InhCode':'0001410033','InfoId':51,'MedName':'彭豫斌','MedOutdate':'2015-10-08','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25005,'InhCode':'0001409941','InfoId':35,'MedName':'胡斌','MedOutdate':'2015-10-06','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25262,'InhCode':'0001410454','InfoId':292,'MedName':'杨冬梅','MedOutdate':'2015-10-06','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25025,'InhCode':'0001410056','InfoId':55,'MedName':'王秀华','MedOutdate':'2015-10-04','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25089,'InhCode':'0001410218','InfoId':119,'MedName':'杨琦','MedOutdate':'2015-10-02','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25143,'InhCode':'0001410304','InfoId':173,'MedName':'汤凤新','MedOutdate':'2015-10-02','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25075,'InhCode':'0001410186','InfoId':105,'MedName':'周晓东','MedOutdate':'2015-10-01','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25116,'InhCode':'0001410273','InfoId':146,'MedName':'三保','MedOutdate':'2015-10-01','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25118,'InhCode':'0001410271','InfoId':148,'MedName':'李长凤','MedOutdate':'2015-10-01','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''}],'succeed':true,'msg':''}");
@@ -1298,6 +1385,25 @@ studio");
             Type DataType { get; set; }
             string Name { get; set; }
             List<WorkRecord> WorkRecords { get; set; }
+        }
+
+        [TextConverter(typeof(AttrTestConverter))]
+        public class AttrTest
+        {
+            public string Name { get; set; }
+        }
+
+        public class AttrTestConverter : JsonConverter<AttrTest>
+        {
+            public override string WriteJson(JsonSerializer serializer, object obj)
+            {
+                return $"\"{((AttrTest)obj).Name}\"";
+            }
+
+            public override object ReadJson(JsonSerializer serializer, Type dataType, string json)
+            {
+                return new AttrTest { Name = json };
+            }
         }
 
         /// <summary>

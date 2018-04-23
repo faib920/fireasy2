@@ -28,6 +28,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         private Expression root;
         private ISyntaxProvider syntax;
         private List<OrderExpression> thenBys;
+        private Expression batchSource;
 
         private QueryBinder(Expression root)
         {
@@ -47,7 +48,6 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return new QueryBinder(expression) { syntax = syntax }.Visit(expression);
         }
 
-        private Expression batchSource;
         /// <summary>
         /// 访问 <see cref="MethodCallExpression"/> 的子级。
         /// </summary>
@@ -88,7 +88,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
             else if (typeof(IList).IsAssignableFrom(node.Method.DeclaringType))
             {
-                if (node.Method.Name == "Contains")
+                if (node.Method.Name == nameof(IList.Contains))
                 {
                     return BindContains(node.Object, node.Arguments[0], node == root);
                 }
@@ -97,7 +97,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 switch (node.Method.Name)
                 {
-                    case "To":
+                    case nameof(GenericExtension.To):
                         return BindTo(node.Type, node.Arguments[0]);
                 }
             }
@@ -105,33 +105,30 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 switch (node.Method.Name)
                 {
-                    case "Segment":
+                    case nameof(Extensions.Segment):
                         return BindSegment(node.Arguments[0], node.Arguments[1]);
-                    case "RemoveWhere":
+                    case nameof(Extensions.RemoveWhere):
                         return BindDelete(node.Arguments[0], GetLambda(node.Arguments[1]), node.Arguments[2]);
-                    case "UpdateWhere":
+                    case nameof(Extensions.UpdateWhere):
                         return BindUpdate(node.Arguments[0], node.Arguments[1], GetLambda(node.Arguments[2]));
-                    case "CreateEntity":
+                    case nameof(Extensions.CreateEntity):
                         return BindInsert(node.Arguments[0], node.Arguments[1]);
-                    case "BatchOperate":
+                    case nameof(Extensions.BatchOperate):
                         batchSource = node.Arguments[0];
                         return BindBatch(node.Arguments[0], node.Arguments[1], GetLambda(node.Arguments[2]));
 #if !NET35
-                    case "Extend":
+                    case nameof(Extensions.Extend):
                         return BindExtend(node.Arguments[0], GetLambda(node.Arguments[1]));
 #endif
-                    case "ExtendAs":
+                    case nameof(Extensions.ExtendAs):
                         return BindExtendAs(node.Type, node.Arguments[0], GetLambda(node.Arguments[1]));
-                    //case "Cache":
-                        //var expired = (TimeSpan)(node.Arguments[1] as ConstantExpression).Value;
-                        //return Visit(node.Arguments[0]);
                 }
             }
             else if (typeof(IRepository).IsAssignableFrom(node.Method.DeclaringType))
             {
                 switch (node.Method.Name)
                 {
-                    case "Delete":
+                    case nameof(IRepository.Delete):
                         var predicate1 = GetLambda(node.Arguments[0]);
                         if (predicate1 != null)
                         {
@@ -141,10 +138,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         {
                             return BindDelete(batchSource, (ParameterExpression)node.Arguments[0], node.Arguments[1]);
                         }
-                    case "Update":
+                    case nameof(IRepository.Update):
                         var predicate2 = node.Arguments.Count > 1 ? GetLambda(node.Arguments[1]) : null;
                         return BindUpdate(batchSource, node.Arguments[0], predicate2);
-                    case "Insert":
+                    case nameof(IRepository.Insert):
                         return BindInsert(batchSource, node.Arguments[0]);
                 }
             }
@@ -229,7 +226,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 return VisitSequence(QueryUtility.GetTableQuery(EntityMetadataUnity.GetEntityMetadata(m.Type.GetEnumerableElementType())));
             }
 
-            if (m.Member.DeclaringType.IsNullableType() && m.Member.Name == "HasValue")
+            if (m.Member.DeclaringType.IsNullableType() && m.Member.Name == nameof(Nullable<int>.HasValue))
             {
                 return Visit(Expression.NotEqual(m.Expression, Expression.Constant(null)));
             }
@@ -241,8 +238,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
 
             var result = BindMember(source, m.Member);
-            var mex = result as MemberExpression;
-            if (mex != null &&
+            if (result is MemberExpression mex &&
                 mex.Member == m.Member &&
                 mex.Expression == m.Expression)
             {
@@ -482,8 +478,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var collection = collectionSelector.Body;
 
             bool defaultIfEmpty = false;
-            var mcs = collection as MethodCallExpression;
-            if (mcs != null && mcs.Method.Name == "DefaultIfEmpty" && mcs.Arguments.Count == 1 &&
+            if (collection is MethodCallExpression mcs && mcs.Method.Name == nameof(Queryable.DefaultIfEmpty) && mcs.Arguments.Count == 1 &&
                 (mcs.Method.DeclaringType == typeof(Queryable) || mcs.Method.DeclaringType == typeof(Enumerable)))
             {
                 collection = mcs.Arguments[0];
@@ -576,7 +571,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             if (outerSource.NodeType == ExpressionType.Call)
             {
                 var callExp = outerSource as MethodCallExpression;
-                if (callExp.Method.Name == "DefaultIfEmpty")
+                if (callExp.Method.Name == nameof(Queryable.DefaultIfEmpty))
                 {
                     outerSource = callExp.Arguments[0];
                     return JoinType.RightOuter;
@@ -585,7 +580,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             if (innerSource.NodeType == ExpressionType.Call)
             {
                 var callExp = innerSource as MethodCallExpression;
-                if (callExp.Method.Name == "DefaultIfEmpty")
+                if (callExp.Method.Name == nameof(Queryable.DefaultIfEmpty))
                 {
                     innerSource = callExp.Arguments[0];
                     return JoinType.LeftOuter;
@@ -829,13 +824,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             switch (name)
             {
-                case "Count": 
-                case "LongCount":
+                case nameof(Enumerable.Count): 
+                case nameof(Enumerable.LongCount):
                     return AggregateType.Count;
-                case "Min": return AggregateType.Min;
-                case "Max": return AggregateType.Max;
-                case "Sum": return AggregateType.Sum;
-                case "Average": return AggregateType.Average;
+                case nameof(Enumerable.Min): return AggregateType.Min;
+                case nameof(Enumerable.Max): return AggregateType.Max;
+                case nameof(Enumerable.Sum): return AggregateType.Sum;
+                case nameof(Enumerable.Average): return AggregateType.Average;
                 default: throw new TranslateException(null, new Exception(SR.GetString(SRKind.UnknowAggregateType, name)));
             }
         }
@@ -850,19 +845,19 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 {
                     switch (method.Name)
                     {
-                        case "Count":
-                        case "LongCount":
-                        case "Sum":
-                        case "Min":
-                        case "Max":
-                        case "Average":
+                        case nameof(Enumerable.Count):
+                        case nameof(Enumerable.LongCount):
+                        case nameof(Enumerable.Sum):
+                        case nameof(Enumerable.Min):
+                        case nameof(Enumerable.Max):
+                        case nameof(Enumerable.Average):
                             return true;
                     }
                 }
             }
             var property = member as PropertyInfo;
             if (property != null
-                && property.Name == "Count"
+                && property.Name == nameof(Enumerable.Count)
                 && typeof(IEnumerable).IsAssignableFrom(property.DeclaringType))
             {
                 return true;
@@ -906,31 +901,31 @@ namespace Fireasy.Data.Entity.Linq.Translators
             Expression newExp = null;
             switch (node.Method.Name)
             {
-                case "Where":
+                case nameof(Queryable.Where):
                     newExp = BindWhere(node.Type, node.Arguments[0], GetLambda(node.Arguments[1]));
                     break;
-                case "Select":
+                case nameof(Queryable.Select):
                     newExp = BindSelect(node.Type, node.Arguments[0], GetLambda(node.Arguments[1]));
                     break;
-                case "SelectMany":
+                case nameof(Queryable.SelectMany):
                     newExp = BindSelectMany(node.Type, node.Arguments[0], GetLambda(node.Arguments[1]), node.Arguments.Count == 3 ? GetLambda(node.Arguments[2]) : null);
                     break;
-                case "Join":
+                case nameof(Queryable.Join):
                     newExp = BindJoin(node.Type, node.Arguments[0], node.Arguments[1], GetLambda(node.Arguments[2]), GetLambda(node.Arguments[3]), GetLambda(node.Arguments[4]));
                     break;
-                case "OrderBy":
+                case nameof(Queryable.OrderBy):
                     newExp = BindOrderBy(node.Type, node.Arguments[0], GetLambda(node.Arguments[1]), OrderType.Ascending);
                     break;
-                case "OrderByDescending":
+                case nameof(Queryable.OrderByDescending):
                     newExp = BindOrderBy(node.Type, node.Arguments[0], GetLambda(node.Arguments[1]), OrderType.Descending);
                     break;
-                case "ThenBy":
+                case nameof(Queryable.ThenBy):
                     newExp = BindThenBy(node.Arguments[0], GetLambda(node.Arguments[1]), OrderType.Ascending);
                     break;
-                case "ThenByDescending":
+                case nameof(Queryable.ThenByDescending):
                     newExp = BindThenBy(node.Arguments[0], GetLambda(node.Arguments[1]), OrderType.Descending);
                     break;
-                case "GroupBy":
+                case nameof(Queryable.GroupBy):
                     switch (node.Arguments.Count)
                     {
                         case 2:
@@ -954,60 +949,60 @@ namespace Fireasy.Data.Entity.Linq.Translators
                             break;
                     }
                     break;
-                case "GroupJoin":
+                case nameof(Queryable.GroupJoin):
                     if (node.Arguments.Count == 5)
                     {
                         newExp = BindGroupJoin(node.Method, node.Arguments[0], node.Arguments[1], GetLambda(node.Arguments[2]), GetLambda(node.Arguments[3]), GetLambda(node.Arguments[4]));
                     }
                     break;
-                case "Count":
-                case "LongCount":
-                case "Min":
-                case "Max":
-                case "Sum":
-                case "Average":
+                case nameof(Queryable.Count):
+                case nameof(Queryable.LongCount):
+                case nameof(Queryable.Min):
+                case nameof(Queryable.Max):
+                case nameof(Queryable.Sum):
+                case nameof(Queryable.Average):
                     newExp = BindAggregate(node.Arguments[0], node.Method, node.Arguments.Count == 2 ? GetLambda(node.Arguments[1]) : null, node == root);
                     break;
-                case "Reverse":
+                case nameof(Queryable.Reverse):
                     newExp = BindReverse(node.Arguments[0]);
                     break;
-                case "Distinct":
+                case nameof(Queryable.Distinct):
                     if (node.Arguments.Count == 1)
                     {
                         newExp = BindDistinct(node.Arguments[0]);
                     }
                     break;
-                case "Except":
-                case "Intersect":
+                case nameof(Queryable.Except):
+                case nameof(Queryable.Intersect):
                     if (node.Arguments.Count == 2)
                     {
                         newExp = BindIntersect(node.Arguments[0], node.Arguments[1], node.Method.Name == "Except");
                     }
                     break;
-                case "Cast":
+                case nameof(Queryable.Cast):
                     if (node.Arguments.Count == 1)
                     {
                         newExp = BindCast(node.Arguments[0], node.Method.GetGenericArguments()[0]);
                     }
                     break;
-                case "Skip":
+                case nameof(Queryable.Skip):
                     if (node.Arguments.Count == 2)
                     {
                         newExp = BindSkip(node.Arguments[0], node.Arguments[1]);
                     }
                     break;
-                case "Take":
+                case nameof(Queryable.Take):
                     if (node.Arguments.Count == 2)
                     {
                         newExp = BindTake(node.Arguments[0], node.Arguments[1]);
                     }
                     break;
-                case "First":
-                case "FirstOrDefault":
-                case "Single":
-                case "SingleOrDefault":
-                case "Last":
-                case "LastOrDefault":
+                case nameof(Queryable.First):
+                case nameof(Queryable.FirstOrDefault):
+                case nameof(Queryable.Single):
+                case nameof(Queryable.SingleOrDefault):
+                case nameof(Queryable.Last):
+                case nameof(Queryable.LastOrDefault):
                     if (node.Arguments.Count == 1)
                     {
                         newExp = BindFirst(node.Arguments[0], null, node.Method.Name, node == this.root);
@@ -1017,22 +1012,22 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         newExp = BindFirst(node.Arguments[0], GetLambda(node.Arguments[1]), node.Method.Name, node == this.root);
                     }
                     break;
-                case "Any":
+                case nameof(Queryable.Any):
                     newExp = BindAnyAll(node.Arguments[0], node.Method, node.Arguments.Count == 2 ? GetLambda(node.Arguments[1]) : null, node == root);
                     break;
-                case "All":
+                case nameof(Queryable.All):
                     if (node.Arguments.Count == 2)
                     {
                         newExp = BindAnyAll(node.Arguments[0], node.Method, GetLambda(node.Arguments[1]), node == root);
                     }
                     break;
-                case "Contains":
+                case nameof(Queryable.Contains):
                     if (node.Arguments.Count == 2)
                     {
                         newExp = BindContains(node.Arguments[0], node.Arguments[1], node == root);
                     }
                     break;
-                case "DefaultIfEmpty":
+                case nameof(Queryable.DefaultIfEmpty):
                     newExp = Visit(node.Arguments[0]);
                     break;
             }
@@ -1058,7 +1053,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         private Expression ChangePersisterMethod(MethodCallExpression m)
         {
-            if (m.Method.Name == "HasChildren")
+            if (m.Method.Name == nameof(ITreeRepository<VirEntity>.HasChildren))
             {
                 var eleType = (m.Arguments[0] as ParameterExpression).Type;
                 var parExp = Expression.Parameter(eleType, "s");
@@ -1066,8 +1061,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 var metadata = EntityMetadataUnity.GetEntityMetadata(eleType).EntityTree;
                 var memberExp = Expression.MakeMemberAccess(parExp, metadata.InnerSign.Info.ReflectionInfo);
                 var noExp = Expression.MakeMemberAccess(m.Arguments[0], metadata.InnerSign.Info.ReflectionInfo);
-                var mthConcat = typeof(string).GetMethod("Concat", new[] { typeof(string), typeof(string) });
-                var condition = (Expression)Expression.Call(typeof(StringExtension), "Like", null, memberExp, Expression.Call(null, mthConcat, noExp, Expression.Constant(new string('_', metadata.SignLength))));
+                var mthConcat = typeof(string).GetMethod(nameof(string.Concat), new[] { typeof(string), typeof(string) });
+                var condition = (Expression)Expression.Call(typeof(StringExtension), 
+                    nameof(StringExtension.Like), null, memberExp, 
+                    Expression.Call(null, mthConcat, noExp, Expression.Constant(new string('_', metadata.SignLength))));
 
                 var lambda = GetLambda(m.Arguments[1]);
                 if (lambda != null)
@@ -1078,7 +1075,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
                 lambda = Expression.Lambda(condition, parExp);
                 var query = CreateQuery(eleType, m.Object);
-                condition = Expression.Call(typeof(Enumerable), "Count", new [] { eleType }, query.Expression, lambda);
+                condition = Expression.Call(typeof(Enumerable), nameof(Enumerable.Count), new [] { eleType }, query.Expression, lambda);
 
                 return Visit(Expression.GreaterThan(condition, Expression.Constant(0)));
             }
@@ -1105,7 +1102,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var mcs = source as MethodCallExpression;
             if (mcs != null && !hasPredicateArg && argument == null)
             {
-                if (mcs.Method.Name == "Distinct" && mcs.Arguments.Count == 1 &&
+                if (mcs.Method.Name == nameof(Queryable.Distinct) && mcs.Arguments.Count == 1 &&
                     (mcs.Method.DeclaringType == typeof(Queryable) || mcs.Method.DeclaringType == typeof(Enumerable)) &&
                     syntax.SupportDistinctInAggregates)
                 {
@@ -1118,7 +1115,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 // convert query.Count(predicate) into query.Where(predicate).Count()
                 var type = typeof(IQueryable).IsAssignableFrom(source.Type) ? typeof(Queryable) : typeof(Enumerable);
-                source = Expression.Call(type, "Where", new Type [] { source.Type.GetEnumerableElementType() }, source, argument);
+                source = Expression.Call(type, nameof(Queryable.Where), new Type [] { source.Type.GetEnumerableElementType() }, source, argument);
                 argument = null;
                 argumentWasPredicate = true;
             }
@@ -1147,7 +1144,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             if (isRoot)
             {
                 var p = Expression.Parameter(typeof(IEnumerable<>).MakeGenericType(aggExpr.Type), "p");
-                var gator = Expression.Lambda(Expression.Call(typeof(Enumerable), "Single", new[] { returnType }, p), p);
+                var gator = Expression.Lambda(Expression.Call(typeof(Enumerable), nameof(Enumerable.Single), new[] { returnType }, p), p);
                 return new ProjectionExpression(select, new ColumnExpression(returnType, alias, string.Empty, null), gator);
             }
 
@@ -1232,7 +1229,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             Type elementType = GetTrueUnderlyingType(projection.Projector);
             if (!targetElementType.IsAssignableFrom(elementType))
             {
-                throw new InvalidOperationException(string.Format("", elementType, targetElementType));
+                throw new InvalidOperationException(string.Format(string.Empty, elementType, targetElementType));
             }
 
             return projection;
@@ -1319,9 +1316,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private Expression BindAnyAll(Expression source, MethodInfo method, LambdaExpression predicate, bool isRoot)
         {
-            var isAll = method.Name == "All";
-            var constSource = source as ConstantExpression;
-            if (constSource != null && !IsQueryable(constSource))
+            var isAll = method.Name == nameof(Queryable.All);
+            if (source is ConstantExpression constSource && !IsQueryable(constSource))
             {
                 System.Diagnostics.Debug.Assert(!isRoot);
                 Expression where = null;
@@ -1350,7 +1346,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
             if (predicate != null)
             {
-                source = Expression.Call(typeof(Queryable), "Where", method.GetGenericArguments(), source, predicate);
+                source = Expression.Call(typeof(Queryable), nameof(Queryable.Where), method.GetGenericArguments(), source, predicate);
             }
 
             var projection = VisitSequence(source);
@@ -1368,7 +1364,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 if (syntax.SupportSubqueryInSelectWithoutFrom)
                 {
-                    return GetSingletonSequence(result, "SingleOrDefault");
+                    return GetSingletonSequence(result, nameof(Queryable.SingleOrDefault));
                 }
                 else
                 {
@@ -1403,8 +1399,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private Expression BindContains(Expression source, Expression match, bool isRoot)
         {
-            var constSource = source as ConstantExpression;
-            if (constSource != null && !IsQueryable(constSource))
+            if (source is ConstantExpression constSource && !IsQueryable(constSource))
             {
                 var elementType = constSource.Type.GetEnumerableElementType();
                 var er = (IEnumerable)constSource.Value;
@@ -1425,7 +1420,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 var p = Expression.Parameter(source.Type.GetEnumerableElementType(), "x");
                 var predicate = Expression.Lambda(p.Equal(match), p);
-                var exp = Expression.Call(typeof(Queryable), "Any", new Type[] { p.Type }, source, predicate);
+                var exp = Expression.Call(typeof(Queryable), nameof(Queryable.Any), new Type[] { p.Type }, source, predicate);
                 root = exp;
                 return this.Visit(exp);
             }
@@ -1444,17 +1439,17 @@ namespace Fireasy.Data.Entity.Linq.Translators
             if (mbrExp != null)
             {
                 //属性的前后添加逗号
-                var concatExp = Expression.Call(typeof(string), "Concat", null,
+                var concatExp = Expression.Call(typeof(string), nameof(string.Concat), null,
                     new Expression[] { Expression.Constant(","), Visit(mbrExp), Expression.Constant(",") });
 
-                var toExp = Expression.Call(typeof(Convert), "ToString", null, new[] { match });
+                var toExp = Expression.Call(typeof(Convert), nameof(Convert.ToString), null, new[] { match });
 
                 //值的前后添加逗号
-                var matchExp = Expression.Call(typeof(string), "Concat", null,
+                var matchExp = Expression.Call(typeof(string), nameof(string.Concat), null,
                     new Expression[] { Expression.Constant(","), Expression.Convert(toExp, typeof(object)), Expression.Constant(",") });
 
                 //属性包含值
-                return Expression.Call(concatExp, typeof(string).GetMethod("Contains"), new[] { matchExp });
+                return Expression.Call(concatExp, typeof(string).GetMethod(nameof(string.Contains)), new[] { matchExp });
             }
 
             var projection = VisitSequence(source);
@@ -1470,7 +1465,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             match = Visit(match);
             Expression result = new InExpression(match, projection.Select);
-            return isRoot ? GetSingletonSequence(result, "SingleOrDefault") : result;
+            return isRoot ? GetSingletonSequence(result, nameof(Queryable.SingleOrDefault)) : result;
         }
 
         /// <summary>
@@ -2034,6 +2029,5 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 return parExp;
             }
         }
-
     }
 }

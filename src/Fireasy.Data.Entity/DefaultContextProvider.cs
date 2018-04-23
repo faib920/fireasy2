@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Linq;
+using Fireasy.Data.Provider;
 using System;
 
 namespace Fireasy.Data.Entity
@@ -16,6 +17,8 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public sealed class DefaultContextProvider : IContextProvider
     {
+        IProvider IProviderService.Provider { get; set; }
+
         IRepositoryProvider IContextProvider.Create(Type entityType, InternalContext context)
         {
             return typeof(DefaultRepositoryProvider<>).MakeGenericType(entityType).New<IRepositoryProvider>(context);

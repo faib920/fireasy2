@@ -1,11 +1,18 @@
-﻿using System;
+﻿using Fireasy.Common.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.IO;
 
 namespace Fireasy.Data.Tests
 {
     [TestClass]
     public class ConnectionTest
     {
+        public ConnectionTest()
+        {
+            InitConfig.Init();
+        }
+
         [TestMethod]
         public void TestMsSql()
         {
@@ -20,6 +27,16 @@ namespace Fireasy.Data.Tests
         public void TestMySql()
         {
             using (var db = DatabaseFactory.CreateDatabase("mysql"))
+            {
+                var exception = db.TryConnect();
+                Assert.IsNull(exception);
+            }
+        }
+
+        [TestMethod]
+        public void TestSqlite()
+        {
+            using (var db = DatabaseFactory.CreateDatabase("sqlite"))
             {
                 var exception = db.TryConnect();
                 Assert.IsNull(exception);

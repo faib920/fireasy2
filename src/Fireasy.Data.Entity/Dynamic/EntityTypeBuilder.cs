@@ -24,11 +24,11 @@ namespace Fireasy.Data.Entity.Dynamic
     /// </summary>
     public sealed class EntityTypeBuilder
     {
-        private static readonly MethodInfo GetValueMethod = typeof(EntityObject).GetMethods().FirstOrDefault(s => s.Name == "GetValue" && s.IsGenericMethod);
-        private static readonly MethodInfo SetValueMethod = typeof(EntityObject).GetMethods().FirstOrDefault(s => s.Name == "SetValue" && s.IsGenericMethod);
-        private static readonly MethodInfo RegisterMethod = typeof(PropertyUnity).GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(s => s.Name == "RegisterProperty" && !s.IsGenericMethod && s.GetParameters().Length == 2);
-        private static readonly MethodInfo TypeGetTypeFromHandle = typeof(Type).GetMethod("GetTypeFromHandle", BindingFlags.Public | BindingFlags.Static);
-        private static readonly MethodInfo SetReferenceMethod = typeof(IPropertyReference).GetMethod("set_Reference");
+        private static readonly MethodInfo GetValueMethod = typeof(EntityObject).GetMethods().FirstOrDefault(s => s.Name == nameof(IEntity.GetValue));
+        private static readonly MethodInfo SetValueMethod = typeof(EntityObject).GetMethods().FirstOrDefault(s => s.Name == nameof(IEntity.SetValue));
+        private static readonly MethodInfo RegisterMethod = typeof(PropertyUnity).GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(s => s.Name == nameof(PropertyUnity.RegisterProperty) && !s.IsGenericMethod && s.GetParameters().Length == 2);
+        private static readonly MethodInfo TypeGetTypeFromHandle = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Public | BindingFlags.Static);
+        private static readonly MethodInfo SetReferenceMethod = typeof(IPropertyReference).GetMethod($"set_{nameof(IPropertyReference.Reference)}");
 
         private readonly DynamicAssemblyBuilder assemblyBuilder;
         private List<DynamicFieldBuilder> fields;
@@ -170,8 +170,8 @@ namespace Fireasy.Data.Entity.Dynamic
                 var fieldBuilder = InnerBuilder.DefineField(GetFieldName(property), typeof(IProperty), null, VisualDecoration.Public, CallingDecoration.Static);
                 var propertyBuider = InnerBuilder.DefineProperty(property.Name, property.Type, VisualDecoration.Public, CallingDecoration.Virtual);
 
-                var getMethod = propertyBuider.DefineGetMethod(ilCoding: bc => bc.Emitter.ldarg_0.ldsfld(fieldBuilder.FieldBuilder).callvirt(GetValueMethod.MakeGenericMethod(property.Type)).ret());
-                var setMethod = propertyBuider.DefineSetMethod(ilCoding: bc => bc.Emitter.ldarg_0.ldsfld(fieldBuilder.FieldBuilder).ldarg_1.callvirt(SetValueMethod.MakeGenericMethod(property.Type)).ret());
+                var getMethod = propertyBuider.DefineGetMethod(ilCoding: bc => bc.Emitter.ldarg_0.ldsfld(fieldBuilder.FieldBuilder).callvirt(GetValueMethod).ret());
+                var setMethod = propertyBuider.DefineSetMethod(ilCoding: bc => bc.Emitter.ldarg_0.ldsfld(fieldBuilder.FieldBuilder).ldarg_1.callvirt(SetValueMethod).ret());
                 setMethod.DefineParameter("value");
 
                 fields.Add(fieldBuilder);

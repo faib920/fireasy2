@@ -15,6 +15,7 @@ using System.Linq.Expressions;
 using Fireasy.Common;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Extensions;
+using Fireasy.Data.Provider;
 using Fireasy.Data.Schema.Linq;
 
 namespace Fireasy.Data.Schema
@@ -25,6 +26,8 @@ namespace Fireasy.Data.Schema
     public abstract class SchemaBase : ISchemaProvider
     {
         private readonly Dictionary<Type, Dictionary<string, int>> dicRestrIndex = new Dictionary<Type, Dictionary<string, int>>();
+
+        public IProvider Provider { get; set; }
 
         /// <summary>
         /// 获取指定类型的数据库架构信息。

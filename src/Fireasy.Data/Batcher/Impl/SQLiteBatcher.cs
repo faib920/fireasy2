@@ -14,6 +14,7 @@ using System.Linq;
 using Fireasy.Data.Extensions;
 using Fireasy.Data.Syntax;
 using System.Diagnostics.CodeAnalysis;
+using Fireasy.Data.Provider;
 #if !NET40 && !NET35
 using System.Threading.Tasks;
 #endif
@@ -25,6 +26,8 @@ namespace Fireasy.Data.Batcher
     /// </summary>
     public sealed class SQLiteBatcher : BatcherBase, IBatcherProvider
     {
+        IProvider IProviderService.Provider { get; set; }
+
         /// <summary>
         /// 将 <see cref="DataTable"/> 的数据批量插入到数据库中。
         /// </summary>

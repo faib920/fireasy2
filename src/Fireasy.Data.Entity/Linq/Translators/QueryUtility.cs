@@ -30,25 +30,26 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 var expectedElementType = expectedType.GetEnumerableElementType();
                 var p = Expression.Parameter(actualType, "p");
                 Expression body = null;
+
                 if (expectedType.IsAssignableFrom(actualElementType))
                 {
-                    body = Expression.Call(typeof(Enumerable), "SingleOrDefault", new[] { actualElementType }, p);
+                    body = Expression.Call(typeof(Enumerable), nameof(Enumerable.SingleOrDefault), new[] { actualElementType }, p);
                 }
                 else if (expectedType.IsGenericType && expectedType.GetGenericTypeDefinition() == typeof(IQueryable<>))
                 {
-                    body = Expression.Call(typeof(Queryable), "AsQueryable", new[] { expectedElementType }, CastElementExpression(expectedElementType, p));
+                    body = Expression.Call(typeof(Queryable), nameof(Queryable.AsQueryable), new[] { expectedElementType }, CastElementExpression(expectedElementType, p));
                 }
                 else if (expectedType.IsArray && expectedType.GetArrayRank() == 1)
                 {
-                    body = Expression.Call(typeof(Enumerable), "ToArray", new[] { expectedElementType }, CastElementExpression(expectedElementType, p));
+                    body = Expression.Call(typeof(Enumerable), nameof(Enumerable.ToArray), new[] { expectedElementType }, CastElementExpression(expectedElementType, p));
                 }
                 else if (expectedType.IsGenericType && expectedType.GetGenericTypeDefinition() == typeof(EntitySet<>))
                 {
-                    body = Expression.Call(typeof(Entity.EnumerableExtension), "ToEntitySet", new[] { expectedElementType }, CastElementExpression(expectedElementType, p));
+                    body = Expression.Call(typeof(EnumerableExtension), nameof(EnumerableExtension.ToEntitySet), new[] { expectedElementType }, CastElementExpression(expectedElementType, p));
                 }
                 else if (expectedType.IsAssignableFrom(typeof(List<>).MakeGenericType(actualElementType)))
                 {
-                    body = Expression.Call(typeof(Enumerable), "ToList", new[] { expectedElementType }, CastElementExpression(expectedElementType, p));
+                    body = Expression.Call(typeof(Enumerable), nameof(Enumerable.ToList), new[] { expectedElementType }, CastElementExpression(expectedElementType, p));
                 }
                 else
                 {
@@ -58,11 +59,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         body = Expression.New(ci, p);
                     }
                 }
+
                 if (body != null)
                 {
                     return Expression.Lambda(body, p);
                 }
             }
+
             return null;
         }
 
@@ -93,8 +96,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 (expectedElementType.IsAssignableFrom(elementType) ||
                   elementType.IsAssignableFrom(expectedElementType)))
             {
-                return Expression.Call(typeof(Enumerable), "Cast", new[] { expectedElementType }, expression);
+                return Expression.Call(typeof(Enumerable), nameof(Enumerable.Cast), new[] { expectedElementType }, expression);
             }
+
             return expression;
         }
 
@@ -120,6 +124,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             var entityType = entity.EntityType;
             var bindings = new List<MemberBinding>();
+
             //获取实体中定义的所有依赖属性
             var properties = PropertyUnity.GetLoadedProperties(entityType);
             foreach (var property in properties)
@@ -130,13 +135,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     bindings.Add(Expression.Bind(property.Info.ReflectionInfo, mbrExpression));
                 }
             }
+
             return new EntityExpression(entity, Expression.MemberInit(Expression.New(entityType), bindings));
         }
 
         internal static Expression GetMemberExpression(Expression root, IProperty property)
         {
-            var relationProprety = property as RelationProperty;
-            if (relationProprety != null)
+            if (property is RelationProperty relationProprety)
             {
                 //所关联的实体类型
                 var relMetadata = EntityMetadataUnity.GetEntityMetadata(relationProprety.RelationType);
@@ -144,6 +149,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
                 Expression parentExp = null, childExp = null;
                 var ship = RelationshipUnity.GetRelationship(relationProprety);
+
                 if (ship.ThisType != relationProprety.EntityType)
                 {
                     parentExp = projection.Projector;
@@ -175,11 +181,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 return ApplyPolicy(result, property.Info.ReflectionInfo);
             }
 
-            var table = root as TableExpression;
-            if (table != null)
+            if (root is TableExpression table)
             {
-                var sqProperty = property as SubqueryProperty;
-                if (sqProperty != null)
+                if (property is SubqueryProperty sqProperty)
                 {
                     return new SubqueryColumnExpression(property.Type, table.Alias, property.Info.FieldName, sqProperty.Subquery);
                 }
@@ -188,6 +192,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     return new ColumnExpression(property.Type, table.Alias, property.Name, property.Info);
                 }
             }
+
             return QueryBinder.BindMember(root, property.Info.ReflectionInfo);
         }
 
@@ -293,6 +298,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             var metadata = EntityMetadataUnity.GetEntityMetadata(parExp.Type);
             var table = new TableExpression(new TableAlias(), metadata.TableName, parExp.Type);
+
             return new UpdateCommandExpression(table, predicate.Body, GetUpdateArguments(table, parExp));
         }
 
@@ -325,9 +331,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
             InsertCommandExpression insertExp;
             var entityType = instance.Type;
             Func<TableExpression, IEnumerable<ColumnAssignment>> func;
-            if (instance is ParameterExpression)
+
+            if (instance is ParameterExpression parExp)
             {
-                var parExp = (ParameterExpression)instance;
                 func = new Func<TableExpression, IEnumerable<ColumnAssignment>>(t => GetInsertArguments(syntax, t, parExp));
             }
             else
@@ -338,10 +344,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             var metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
             var table = new TableExpression(new TableAlias(), metadata.TableName, entityType);
-            insertExp = new InsertCommandExpression(table, func(table));
-
-            insertExp.WithAutoIncrement = !string.IsNullOrEmpty(syntax.IdentitySelect) &&
-                HasAutoIncrement(instance.Type);
+            insertExp = new InsertCommandExpression(table, func(table))
+                {
+                    WithAutoIncrement = !string.IsNullOrEmpty(syntax.IdentitySelect) && HasAutoIncrement(instance.Type)
+                };
 
             return insertExp;
         }
@@ -630,6 +636,5 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             return maxProperties;
         }
-
     }
 }

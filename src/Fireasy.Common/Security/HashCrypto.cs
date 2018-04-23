@@ -119,5 +119,15 @@ namespace Fireasy.Common.Security
         {
             throw new NotSupportedException();
         }
+
+        /// <summary>
+        /// 计算 Hash 值。
+        /// </summary>
+        /// <param name="array"></param>
+        /// <returns></returns>
+        public virtual byte[] ComputeHash(byte[] array)
+        {
+            return Encrypt(array);
+        }
     }
 }

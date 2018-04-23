@@ -94,7 +94,7 @@ namespace Fireasy.Common.Security
                 throw new Exception(SR.GetString(SRKind.SourceCanotReadDestCanotWrite));
             }
 
-            using (var algorithm = SymmetricAlgorithm.Create(algorithmName))
+            using (var algorithm = CreateAlgorithm(algorithmName))
             {
                 if (algorithm != null)
                 {
@@ -158,7 +158,7 @@ namespace Fireasy.Common.Security
                 throw new Exception(SR.GetString(SRKind.SourceCanotReadDestCanotWrite));
             }
 
-            using (var algorithm = SymmetricAlgorithm.Create(algorithmName))
+            using (var algorithm = CreateAlgorithm(algorithmName))
             {
                 if (algorithm != null)
                 {
@@ -207,6 +207,28 @@ namespace Fireasy.Common.Security
         public string Decrypt(byte[] cipherData, Encoding encoding)
         {
             return encoding.GetString(Decrypt(cipherData));
+        }
+
+        private SymmetricAlgorithm CreateAlgorithm(string algorithmName)
+        {
+#if !NETSTANDARD2_0
+            return SymmetricAlgorithm.Create(algorithmName);
+#endif
+            switch (algorithmName.ToUpper())
+            {
+                case "AES":
+                    return Aes.Create();
+                case "DES":
+                    return DES.Create();
+                case "RC2":
+                    return RC2.Create();
+                case "RIJNDAEL":
+                    return Rijndael.Create();
+                case "TRIPLEDES":
+                    return TripleDES.Create();
+                default:
+                    return null;
+            }
         }
     }
 }

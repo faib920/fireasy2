@@ -30,7 +30,7 @@ namespace Fireasy.Data.Tests
                 tb.Rows.Add(row);
             }
 
-            using (var db = new Database("data source=47.93.113.103;user id=sa;password=123456a*;initial catalog=skiad;tracking=true", MsSqlProvider.Instance))
+            using (var db = new Database("data source=127.0.0.1;user id=sa;password=11;initial catalog=a;tracking=true", MsSqlProvider.Instance))
             {
                 var batcher = db.Provider.GetService<IBatcherProvider>();
                 batcher.Insert(db, tb);
@@ -52,7 +52,7 @@ namespace Fireasy.Data.Tests
                 });
             }
 
-            using (var db = new Database("data source=47.93.113.103;user id=sa;password=123456a*;initial catalog=skiad;tracking=true", MsSqlProvider.Instance))
+            using (var db = new Database("data source=127.0.0.1;user id=sa;password=11;initial catalog=a;tracking=true", MsSqlProvider.Instance))
             {
                 var batcher = db.Provider.GetService<IBatcherProvider>();
                 Console.WriteLine(DateTime.Now);

@@ -6,12 +6,15 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common;
+using Fireasy.Common.Configuration;
 using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Tests.Models;
 using Fireasy.Data.Syntax;
+using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 
@@ -26,6 +29,7 @@ namespace Fireasy.Data.Entity.Tests
         [TestInitialize]
         public void Init()
         {
+            InitConfig.Init();
             db = new DbContext();
         }
 

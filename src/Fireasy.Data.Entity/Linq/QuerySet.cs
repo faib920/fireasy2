@@ -35,7 +35,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             if (provider == null)
             {
-                throw new ArgumentNullException("Provider");
+                throw new ArgumentNullException(nameof(provider));
             }
             this.provider = provider;
             this.expression = staticType != null ? Expression.Constant(this, staticType) : Expression.Constant(this);
@@ -45,11 +45,11 @@ namespace Fireasy.Data.Entity.Linq
         {
             if (provider == null)
             {
-                throw new ArgumentNullException("Provider");
+                throw new ArgumentNullException(nameof(provider));
             }
             if (expression == null)
             {
-                throw new ArgumentNullException("expression");
+                throw new ArgumentNullException(nameof(expression));
             }
 
             this.provider = provider;
@@ -146,7 +146,7 @@ namespace Fireasy.Data.Entity.Linq
             {
                 var query = (IQueryable)querySet;
                 var method = typeof(Queryable).GetMethods(BindingFlags.Public | BindingFlags.Static)
-                    .FirstOrDefault(s => s.Name == "Where");
+                    .FirstOrDefault(s => s.Name == nameof(Queryable.Where));
 
                 if (method != null)
                 {

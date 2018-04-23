@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Data.Provider;
 using System.Data;
 using System.Reflection;
 using System.Text;
@@ -16,6 +17,8 @@ namespace Fireasy.Data.Syntax
         private StringSyntax strSyntax;
         private DateTimeSyntax dtSyntax;
         private MathSyntax mathSyntax;
+
+        IProvider IProviderService.Provider { get; set; }
 
         /// <summary>
         /// 获取字符串函数相关的语法。

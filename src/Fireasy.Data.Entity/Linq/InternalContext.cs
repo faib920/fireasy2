@@ -149,7 +149,7 @@ namespace Fireasy.Data.Entity.Linq
         public void Apply<TEntity>(Expression<Func<IEnumerable<TEntity>, IEnumerable<TEntity>>> fnApply) where TEntity : IEntity
         {
             if (fnApply == null)
-                throw new ArgumentNullException("fnApply");
+                throw new ArgumentNullException(nameof(fnApply));
             if (fnApply.Parameters.Count != 1)
                 throw new ArgumentException("Apply function has wrong number of arguments.");
             AddOperation(fnApply.Parameters[0].Type.GetEnumerableElementType(), fnApply);
@@ -158,7 +158,7 @@ namespace Fireasy.Data.Entity.Linq
         public void Apply(Type entityType, LambdaExpression fnApply)
         {
             if (fnApply == null)
-                throw new ArgumentNullException("fnApply");
+                throw new ArgumentNullException(nameof(fnApply));
             if (fnApply.Parameters.Count != 1)
                 throw new ArgumentException("Apply function has wrong number of arguments.");
             AddOperation(entityType, fnApply);

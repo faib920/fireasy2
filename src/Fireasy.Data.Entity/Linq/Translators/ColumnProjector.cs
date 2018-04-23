@@ -68,8 +68,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 if (expression.NodeType == (ExpressionType)DbExpressionType.Column)
                 {
                     var column = (ColumnExpression)expression;
-                    ColumnExpression mapped;
-                    if (map.TryGetValue(column, out mapped))
+                    if (map.TryGetValue(column, out ColumnExpression mapped))
                     {
                         return mapped;
                     }
@@ -77,8 +76,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     // check for column that already refers to this column
                     foreach (var existingColumn in columns)
                     {
-                        var cex = existingColumn.Expression as ColumnExpression;
-                        if (cex != null &&
+                        if (existingColumn.Expression is ColumnExpression cex &&
                             cex.Alias == column.Alias &&
                             cex.Name == column.Name)
                         {

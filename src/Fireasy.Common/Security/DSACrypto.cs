@@ -9,6 +9,7 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Xml;
 
 namespace Fireasy.Common.Security
 {
@@ -28,7 +29,7 @@ namespace Fireasy.Common.Security
         /// <returns></returns>
         public override string GeneratePublicKey()
         {
-            return dsa.ToXmlString(false);
+            return ToXmlString(false);
         }
 
         /// <summary>
@@ -37,7 +38,7 @@ namespace Fireasy.Common.Security
         /// <returns></returns>
         public override string GeneratePrivateKey()
         {
-            return dsa.ToXmlString(true);
+            return ToXmlString(true);
         }
 
         /// <summary>
@@ -109,7 +110,7 @@ namespace Fireasy.Common.Security
         /// <returns></returns>
         public override byte[] CreateSignature(byte[] source)
         {
-            dsa.FromXmlString(PrivateKey);
+            FromXmlString(PrivateKey);
             var md5 = CryptographyFactory.Create(CryptoAlgorithm.SHA1);
             return dsa.SignHash(md5.Encrypt(source), "SHA1");
         }
@@ -122,9 +123,146 @@ namespace Fireasy.Common.Security
         /// <returns></returns>
         public override bool VerifySignature(byte[] source, byte[] signature)
         {
-            dsa.FromXmlString(PublicKey);
+            FromXmlString(PublicKey);
             var md5 = CryptographyFactory.Create(CryptoAlgorithm.SHA1);
             return dsa.VerifyHash(md5.Encrypt(source), "SHA1", signature);
-        }    
+        }
+
+
+        private string ToXmlString(bool includePrivateParameters)
+        {
+#if !NETSTANDARD2_0
+            return dsa.ToXmlString(includePrivateParameters);
+#else
+            var parameters = dsa.ExportParameters(includePrivateParameters);
+
+            var sb = new StringBuilder();
+            sb.Append("<DSAKeyValue>");
+
+            // Add P, Q, G and Y
+            sb.Append($"<P>{Convert.ToBase64String(parameters.P)}</P>");
+            sb.Append($"<Q>{Convert.ToBase64String(parameters.Q)}</Q>");
+            sb.Append($"<G>{Convert.ToBase64String(parameters.G)}</G>");
+            sb.Append($"<Y>{Convert.ToBase64String(parameters.Y)}</Y>");
+
+            // Add optional components if present
+            if (parameters.J != null)
+            {
+                sb.Append($"<J>{Convert.ToBase64String(parameters.J)}</J>");
+            }
+
+            if ((parameters.Seed != null))
+            {  // note we assume counter is correct if Seed is present
+                sb.Append($"<Seed>{Convert.ToBase64String(parameters.Seed)}</Seed>");
+                sb.Append($"<PgenCounter>{Convert.ToBase64String(ConvertIntToByteArray(parameters.Counter))}</PgenCounter>");
+            }
+
+            if (includePrivateParameters)
+            {
+                // Add the private component
+                sb.Append($"<X>{Convert.ToBase64String(parameters.X)}</X>");
+            }
+
+            sb.Append("</DSAKeyValue>");
+
+            return sb.ToString();
+#endif
+        }
+
+        private void FromXmlString(string xmlString)
+        {
+#if !NETSTANDARD2_0
+            dsa.FromXmlString(xmlString);
+#else
+            var parameters = new DSAParameters();
+
+            var xmlDoc = new XmlDocument();
+            xmlDoc.LoadXml(xmlString);
+
+            if (!xmlDoc.DocumentElement.Name.Equals("DSAKeyValue"))
+            {
+                throw new Exception("Invalid XML DSA key.");
+            }
+
+            foreach (XmlNode node in xmlDoc.DocumentElement.ChildNodes)
+            {
+                switch (node.Name)
+                {
+                    case "P":
+                        parameters.P = (string.IsNullOrEmpty(node.InnerText) ? null : Convert.FromBase64String(node.InnerText));
+                        break;
+                    case "Q":
+                        parameters.Q = (string.IsNullOrEmpty(node.InnerText) ? null : Convert.FromBase64String(node.InnerText));
+                        break;
+                    case "G":
+                        parameters.G = (string.IsNullOrEmpty(node.InnerText) ? null : Convert.FromBase64String(node.InnerText));
+                        break;
+                    case "Y":
+                        parameters.Y = (string.IsNullOrEmpty(node.InnerText) ? null : Convert.FromBase64String(node.InnerText));
+                        break;
+                    case "J":
+                        parameters.J = (string.IsNullOrEmpty(node.InnerText) ? null : Convert.FromBase64String(node.InnerText));
+                        break;
+                    case "Seed":
+                        parameters.Seed = (string.IsNullOrEmpty(node.InnerText) ? null : Convert.FromBase64String(node.InnerText));
+                        break;
+                    case "PgenCounter":
+                        parameters.Counter = ConvertByteArrayToInt(Convert.FromBase64String(node.InnerText));
+                        break;
+                    case "X":
+                        parameters.X = (string.IsNullOrEmpty(node.InnerText) ? null : Convert.FromBase64String(node.InnerText));
+                        break;
+                }
+            }
+
+            dsa.ImportParameters(parameters);
+#endif
+        }
+
+        private byte[] ConvertIntToByteArray(int dwInput)
+        {
+            var temp = new byte[8]; // int can never be greater than Int64
+            int t1;  // t1 is remaining value to account for
+            int t2;  // t2 is t1 % 256
+            int i = 0;
+
+            if (dwInput == 0)
+            {
+                return new byte[1];
+            }
+
+            t1 = dwInput;
+            while (t1 > 0)
+            {
+                t2 = t1 % 256;
+                temp[i] = (byte)t2;
+                t1 = (t1 - t2) / 256;
+                i++;
+            }
+
+            // Now, copy only the non-zero part of temp and reverse
+            var output = new byte[i];
+
+            // copy and reverse in one pass
+            for (var j = 0; j < i; j++)
+            {
+                output[j] = temp[i - j - 1];
+            }
+
+            return output;
+        }
+
+        private int ConvertByteArrayToInt(byte[] input)
+        {
+            // Input to this routine is always big endian
+            var dwOutput = 0;
+            for (var i = 0; i < input.Length; i++)
+            {
+                dwOutput *= 256;
+                dwOutput += input[i];
+            }
+
+            return (dwOutput);
+        }
     }
 }

@@ -24,8 +24,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private void MarkColumnAsUsed(TableAlias alias, string name)
         {
-            HashSet<string> columns;
-            if (!allColumnsUsed.TryGetValue(alias, out columns))
+            if (!allColumnsUsed.TryGetValue(alias, out HashSet<string> columns))
             {
                 columns = new HashSet<string>();
                 allColumnsUsed.Add(alias, columns);
@@ -36,8 +35,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private bool IsColumnUsed(TableAlias alias, string name)
         {
-            HashSet<string> columnsUsed;
-            if (allColumnsUsed.TryGetValue(alias, out columnsUsed))
+            if (allColumnsUsed.TryGetValue(alias, out HashSet<string> columnsUsed))
             {
                 if (columnsUsed != null)
                 {
@@ -175,8 +173,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 // first visit right side w/o looking at condition
                 var right = Visit(join.Right);
-                var ax = right as AliasedExpression;
-                if (ax != null && !allColumnsUsed.ContainsKey(ax.Alias))
+                if (right is AliasedExpression ax && !allColumnsUsed.ContainsKey(ax.Alias))
                 {
                     // if nothing references the alias on the right, then the join is redundant
                     return Visit(join.Left);

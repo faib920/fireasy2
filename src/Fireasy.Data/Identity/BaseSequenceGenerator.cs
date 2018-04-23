@@ -9,6 +9,7 @@ using System;
 using System.Data;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Extensions;
+using Fireasy.Data.Provider;
 using Fireasy.Data.Syntax;
 
 namespace Fireasy.Data.Identity
@@ -18,6 +19,8 @@ namespace Fireasy.Data.Identity
     /// </summary>
     public sealed class BaseSequenceGenerator : IGeneratorProvider
     {
+        IProvider IProviderService.Provider { get; set; }
+
         /// <summary>
         /// 自动生成列的值。
         /// </summary>

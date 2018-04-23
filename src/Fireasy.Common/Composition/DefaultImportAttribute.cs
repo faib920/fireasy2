@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if !NET35 && !NETSTANDARD2_0
+using System;
 
 namespace Fireasy.Common.Composition
 {
@@ -32,3 +33,4 @@ namespace Fireasy.Common.Composition
         public Type ImportType { get; set; }
     }
 }
+#endif
