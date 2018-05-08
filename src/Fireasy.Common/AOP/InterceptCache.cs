@@ -22,7 +22,7 @@ namespace Fireasy.Common.Aop
         internal static MethodInfo MethodGetBaseDefinition = typeof(MethodInfo).GetMethod(nameof(MethodInfo.GetBaseDefinition));
         internal static MethodInfo TypeGetProperty = typeof(Type).GetMethod(nameof(Type.GetProperty), new[] { typeof(string) });
         internal static MethodInfo MemberGetCustomAttributes = typeof(MemberInfo).GetMethod(nameof(MemberInfo.GetCustomAttributes), new[] { typeof(Type), typeof(bool) });
-        internal static MethodInfo TypeGetTypeFromHandle = typeof(Type).GetMethod(nameof(TypeGetTypeFromHandle), BindingFlags.Public | BindingFlags.Static);
+        internal static MethodInfo TypeGetTypeFromHandle = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Public | BindingFlags.Static);
         internal static MethodInfo CallInfoGetMember = typeof(InterceptCallInfo).GetMethod($"get_{nameof(InterceptCallInfo.Member)}");
         internal static MethodInfo CallInfoSetMember = typeof(InterceptCallInfo).GetMethod($"set_{nameof(InterceptCallInfo.Member)}");
         internal static MethodInfo CallInfoSetTarget = typeof(InterceptCallInfo).GetMethod($"set_" + nameof(InterceptCallInfo.Target));

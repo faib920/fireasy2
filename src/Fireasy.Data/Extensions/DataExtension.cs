@@ -495,7 +495,7 @@ namespace Fireasy.Data.Extensions
 
             foreach (var par in parameters)
             {
-                command.Parameters.Add(par.ToDbParameter(provider));
+                command.Parameters.Add(provider.PrepareParameter(par.ToDbParameter(provider)));
             }
         }
 

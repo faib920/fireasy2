@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using Fireasy.Data.Provider;
+using System.Threading;
 #if !NET35 && !NET40
 using System.Threading.Tasks;
 #endif
@@ -177,8 +178,9 @@ namespace Fireasy.Data
         /// </summary>
         /// <param name="queryCommand">查询命令。</param>
         /// <param name="parameters">查询参数集合。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>所影响的记录数。</returns>
-        Task<int> ExecuteNonQueryAsync(IQueryCommand queryCommand, ParameterCollection parameters = null);
+        Task<int> ExecuteNonQueryAsync(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 异步执行查询文本并返回一个 <see cref="IDataReader"/>。
@@ -186,24 +188,27 @@ namespace Fireasy.Data
         /// <param name="queryCommand">查询命令。</param>
         /// <param name="segment">数据分段对象。</param>
         /// <param name="parameters">查询参数集合。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>一个 <see cref="IDataReader"/> 对象。</returns>
-        Task<IDataReader> ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null);
+        Task<IDataReader> ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 执行查询文本，并返回第一行的第一列。
         /// </summary>
         /// <param name="queryCommand">查询命令。</param>
         /// <param name="parameters">查询参数集合。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>第一行的第一列数据。</returns>
-        Task<object> ExecuteScalarAsync(IQueryCommand queryCommand, ParameterCollection parameters = null);
+        Task<object> ExecuteScalarAsync(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 执行查询文本，并返回第一行的第一列。
         /// </summary>
         /// <param name="queryCommand">查询命令。</param>
         /// <param name="parameters">查询参数集合。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>第一行的第一列数据。</returns>
-        Task<T> ExecuteScalarAsync<T>(IQueryCommand queryCommand, ParameterCollection parameters = null);
+        Task<T> ExecuteScalarAsync<T>(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 异步执行查询文本并将结果以一个 <see cref="IEnumerable{T}"/> 的序列返回。
@@ -213,8 +218,9 @@ namespace Fireasy.Data
         /// <param name="segment">数据分段对象。</param>
         /// <param name="parameters">查询参数集合。</param>
         /// <param name="rowMapper">数据行映射器。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>一个 <typeparamref name="T"/> 类型的对象的枚举器。</returns>
-        Task<IEnumerable<T>> ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, IDataRowMapper<T> rowMapper = null);
+        Task<IEnumerable<T>> ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, IDataRowMapper<T> rowMapper = null, CancellationToken cancellationToken = default);
 #endif
     }
 }

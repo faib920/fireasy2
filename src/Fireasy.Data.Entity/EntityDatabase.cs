@@ -12,6 +12,7 @@ using System.Data;
 using System.Data.Common;
 using Fireasy.Common;
 using Fireasy.Data.Provider;
+using System.Threading;
 #if !NET35 && !NET40
 using System.Threading.Tasks;
 #endif
@@ -139,29 +140,29 @@ namespace Fireasy.Data.Entity
         }
 
 #if !NET35 && !NET40
-        Task<IEnumerable<T>> IDatabase.ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper)
+        Task<IEnumerable<T>> IDatabase.ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper, CancellationToken cancellationToken)
         {
-            return database.ExecuteEnumerableAsync<T>(queryCommand, segment, parameters, rowMapper);
+            return database.ExecuteEnumerableAsync<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);
         }
 
-        Task<int> IDatabase.ExecuteNonQueryAsync(IQueryCommand queryCommand, ParameterCollection parameters)
+        Task<int> IDatabase.ExecuteNonQueryAsync(IQueryCommand queryCommand, ParameterCollection parameters, CancellationToken cancellationToken)
         {
-            return database.ExecuteNonQueryAsync(queryCommand, parameters);
+            return database.ExecuteNonQueryAsync(queryCommand, parameters, cancellationToken);
         }
 
-        Task<IDataReader> IDatabase.ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters)
+        Task<IDataReader> IDatabase.ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CancellationToken cancellationToken)
         {
-            return database.ExecuteReaderAsync(queryCommand, segment, parameters);
+            return database.ExecuteReaderAsync(queryCommand, segment, parameters, cancellationToken);
         }
 
-        Task<object> IDatabase.ExecuteScalarAsync(IQueryCommand queryCommand, ParameterCollection parameters)
+        Task<object> IDatabase.ExecuteScalarAsync(IQueryCommand queryCommand, ParameterCollection parameters, CancellationToken cancellationToken)
         {
-            return database.ExecuteScalarAsync(queryCommand, parameters);
+            return database.ExecuteScalarAsync(queryCommand, parameters, cancellationToken);
         }
 
-        Task<T> IDatabase.ExecuteScalarAsync<T>(IQueryCommand queryCommand, ParameterCollection parameters)
+        Task<T> IDatabase.ExecuteScalarAsync<T>(IQueryCommand queryCommand, ParameterCollection parameters, CancellationToken cancellationToken)
         {
-            return database.ExecuteScalarAsync<T>(queryCommand, parameters);
+            return database.ExecuteScalarAsync<T>(queryCommand, parameters, cancellationToken);
         }
 #endif
 

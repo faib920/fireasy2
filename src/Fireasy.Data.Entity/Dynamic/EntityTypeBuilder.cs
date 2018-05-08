@@ -6,16 +6,17 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 using Fireasy.Common;
 using Fireasy.Common.Emit;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Properties;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 
 namespace Fireasy.Data.Entity.Dynamic
 {
@@ -29,11 +30,15 @@ namespace Fireasy.Data.Entity.Dynamic
         private static readonly MethodInfo RegisterMethod = typeof(PropertyUnity).GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(s => s.Name == nameof(PropertyUnity.RegisterProperty) && !s.IsGenericMethod && s.GetParameters().Length == 2);
         private static readonly MethodInfo TypeGetTypeFromHandle = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Public | BindingFlags.Static);
         private static readonly MethodInfo SetReferenceMethod = typeof(IPropertyReference).GetMethod($"set_{nameof(IPropertyReference.Reference)}");
+        private static readonly MethodInfo GetPropertyMethod = typeof(EntityTypeBuilder).GetMethod(nameof(EntityTypeBuilder.GetCachedProperty), BindingFlags.Public | BindingFlags.Static);
+        private static readonly MethodInfo DelegateInvokeMethod = typeof(Delegate).GetMethod(nameof(Delegate.DynamicInvoke));
 
         private readonly DynamicAssemblyBuilder assemblyBuilder;
         private List<DynamicFieldBuilder> fields;
         private Dictionary<IProperty, List<Expression<Func<Attribute>>>> validations;
         private List<Expression<Func<Attribute>>> eValidations;
+
+        private static ConcurrentDictionary<string, Dictionary<string, Delegate>> cache = new ConcurrentDictionary<string, Dictionary<string, Delegate>>();
 
         /// <summary>
         /// 初始化 <see cref="EntityTypeBuilder"/> 类的新实例。
@@ -147,9 +152,20 @@ namespace Fireasy.Data.Entity.Dynamic
             DefineProperties(fields);
             DefineConstructors(fields);
 
-            DefineMetadataType();
+            InnerBuilder.SetCustomAttribute(() => new DescriptionAttribute("dfadf"));
 
             return InnerBuilder.CreateType();
+        }
+
+        public static IProperty GetCachedProperty(string key)
+        {
+            var k = key.Split(':');
+            if (cache.TryGetValue(k[0], out Dictionary<string, Delegate> list))
+            {
+                return list[k[1]].DynamicInvoke() as IProperty;
+            }
+
+            return null;
         }
 
         private string GetFieldName(IProperty property)
@@ -164,15 +180,52 @@ namespace Fireasy.Data.Entity.Dynamic
                 return;
             }
 
+            var dict = cache.GetOrAdd($"{assemblyBuilder.AssemblyName}-{TypeName}", k => new Dictionary<string, Delegate>());
+
             foreach (var property in Properties)
             {
-                property.EntityType = InnerBuilder.UnderlyingSystemType;
+                dict.Add(property.Name, MakeLambdaExpression(property).Compile());
+
                 var fieldBuilder = InnerBuilder.DefineField(GetFieldName(property), typeof(IProperty), null, VisualDecoration.Public, CallingDecoration.Static);
                 var propertyBuider = InnerBuilder.DefineProperty(property.Name, property.Type, VisualDecoration.Public, CallingDecoration.Virtual);
+                var isEnum = property.Type.IsEnum;
+                var opType = isEnum ? typeof(Enum) : property.Type;
 
-                var getMethod = propertyBuider.DefineGetMethod(ilCoding: bc => bc.Emitter.ldarg_0.ldsfld(fieldBuilder.FieldBuilder).callvirt(GetValueMethod).ret());
-                var setMethod = propertyBuider.DefineSetMethod(ilCoding: bc => bc.Emitter.ldarg_0.ldsfld(fieldBuilder.FieldBuilder).ldarg_1.callvirt(SetValueMethod).ret());
+                var op_Explicit = typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == "op_Explicit" && s.ReturnType == property.Type);
+                var op_Implicit = typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == "op_Implicit" && s.GetParameters()[0].ParameterType == property.Type);
+
+                var getMethod = propertyBuider.DefineGetMethod(calling: CallingDecoration.Virtual, ilCoding: bc =>
+                    {
+                        bc.Emitter.DeclareLocal(property.Type);
+                        bc.Emitter
+                            .ldarg_0
+                            .ldsfld(fieldBuilder.FieldBuilder)
+                            .callvirt(GetValueMethod)
+                            .Assert(op_Explicit != null, e1 => e1.call(op_Explicit))
+                            .Assert(isEnum, e1 => e1.unbox_any(opType))
+                            .stloc_0
+                            .ldloc_0
+                            .ret();
+                    });
+
+                var setMethod = propertyBuider.DefineSetMethod(calling: CallingDecoration.Virtual, ilCoding: bc =>
+                    {
+                        bc.Emitter
+                            .ldarg_0
+                            .ldsfld(fieldBuilder.FieldBuilder)
+                            .ldarg_1
+                            .Assert(isEnum, e1 => e1.box(property.Type))
+                            .Assert(op_Implicit != null, e1 => e1.call(op_Implicit))
+                            .callvirt(SetValueMethod)
+                            .ret();
+                    });
+
                 setMethod.DefineParameter("value");
+
+                if (validations.TryGetValue(property, out List<Expression<Func<Attribute>>> attribues))
+                {
+                    attribues.ForEach(s => propertyBuider.SetCustomAttribute(s));
+                }
 
                 fields.Add(fieldBuilder);
             }
@@ -194,31 +247,11 @@ namespace Fireasy.Data.Entity.Dynamic
         private EmitHelper RegisterProperty(DynamicFieldBuilder fieldBuilder, EmitHelper emiter, IProperty property)
         {
             var local = emiter.DeclareLocal(property.GetType());
-
-            var b = InnerBuilder.DefineMethod(
-                "??_" + property.Name,
-                typeof(IProperty), null, VisualDecoration.Private,
-                CallingDecoration.Static,
-#if NET35
-                x => 
-                    { 
-                        var @delegate = MakeLambdaExpression(property).Compile();
-                        if (@delegate != null)
-                        {
-                            var bytes = @delegate.Method.GetMethodBody().GetILAsByteArray();
-                            x.MethodBuilder.MethodBuilder.CreateMethodBody(bytes, bytes.Length);
-                        }
-                    });
-#elif NETSTANDARD2_0
-                x => { });  //todo
-#else
-                x => MakeLambdaExpression(property).CompileToMethod(x.MethodBuilder.MethodBuilder));
-#endif
-
             return emiter
                 .ldtoken(InnerBuilder.UnderlyingSystemType)
                 .call(TypeGetTypeFromHandle)
-                .call(b.MethodBuilder)
+                .ldstr($"{assemblyBuilder.AssemblyName}-{TypeName}:{property.Name}")
+                .call(GetPropertyMethod)
                 .stloc(local)
                 .Assert(
                     property is IPropertyReference,
@@ -290,58 +323,5 @@ namespace Fireasy.Data.Entity.Dynamic
         {
             return Expression.Lambda<Func<IProperty>>(MakeMemberInitExpression(property));
         }
-
-        /// <summary>
-        /// 定义 MetadataTypeAttribute 类。
-        /// </summary>
-        private void DefineMetadataType()
-        {
-            if (validations.IsNullOrEmpty() && eValidations.IsNullOrEmpty())
-            {
-                return;
-            }
-
-            var metadataType = assemblyBuilder.DefineType("<Metadata>__" + TypeName);
-
-            if (validations != null)
-            {
-                foreach (var property in validations.Keys)
-                {
-                    var propertyBuilder = metadataType.DefineProperty(property.Name, typeof(IProperty));
-                    propertyBuilder.DefineGetSetMethods();
-
-                    foreach (var expression in validations[property])
-                    {
-                        propertyBuilder.SetCustomAttribute(expression);
-                    }
-                }
-            }
-
-            if (eValidations != null)
-            {
-                foreach (var expression in eValidations)
-                {
-                    metadataType.SetCustomAttribute(expression);
-                }
-            }
-
-            InnerBuilder.SetCustomAttribute<MetadataTypeAttribute>(metadataType.CreateType());
-        }
     }
 }
-
-#if NETSTANDARD2_0
-namespace System.ComponentModel.DataAnnotations
-{
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-    public sealed class MetadataTypeAttribute : Attribute
-    {
-        public MetadataTypeAttribute(Type metadataClassType)
-        {
-            MetadataClassType = metadataClassType;
-        }
-
-        public Type MetadataClassType { get; private set; }
-    }
-}
-#endif

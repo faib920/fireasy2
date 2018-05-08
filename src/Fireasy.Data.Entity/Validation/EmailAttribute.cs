@@ -19,7 +19,7 @@ namespace Fireasy.Data.Entity.Validation
         public EmailAttribute()
             : base("Email", "^\\w+((-\\w+)|(\\.\\w+))*\\@[A-Za-z0-9]+((\\.|-)[A-Za-z0-9]+)*\\.[A-Za-z0-9]+$")
         {
-            ErrorMessage = "{0} 字段不符合电子邮件的格式";
+            ErrorMessage = SR.GetString(SRKind.EmailValideError);
         }
     }
 }

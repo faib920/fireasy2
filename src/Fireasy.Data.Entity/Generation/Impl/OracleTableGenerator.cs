@@ -96,7 +96,7 @@ namespace Fireasy.Data.Entity.Generation
                 sb.Append(")");
             }
 
-            sb.Append(");\n");
+            sb.Append(")\n");
 
             return new SqlCommand[] { sb.ToString() };
         }

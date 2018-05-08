@@ -13,10 +13,18 @@ using System;
 
 namespace Fireasy.Data.Entity.Generation
 {
+    /// <summary>
+    /// 基础的数据表生成器。
+    /// </summary>
     public abstract class BaseTableGenerateProvider : ITableGenerateProvider
     {
         IProvider IProviderService.Provider { get; set; }
 
+        /// <summary>
+        /// 尝试创建实体类型对应的数据表。
+        /// </summary>
+        /// <param name="database">提供给当前插件的 <see cref="IDatabase"/> 对象。</param>
+        /// <param name="entityType">实体类型。</param>
         public void TryCreate(IDatabase database, Type entityType)
         {
             var metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
@@ -28,6 +36,12 @@ namespace Fireasy.Data.Entity.Generation
             }
         }
 
+        /// <summary>
+        /// 判断实体类型对应的数据表是否已经存在。
+        /// </summary>
+        /// <param name="database">提供给当前插件的 <see cref="IDatabase"/> 对象。</param>
+        /// <param name="entityType">实体类型。</param>
+        /// <returns></returns>
         public bool IsExists(IDatabase database, Type entityType)
         {
             var metadata = EntityMetadataUnity.GetEntityMetadata(entityType);

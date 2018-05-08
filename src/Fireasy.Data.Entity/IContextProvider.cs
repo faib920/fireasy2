@@ -22,7 +22,7 @@ namespace Fireasy.Data.Entity
         /// <param name="entityType">实体类型。</param>
         /// <param name="context"></param>
         /// <returns></returns>
-        IRepositoryProvider Create(Type entityType, InternalContext context);
+        IRepositoryProvider Create(Type entityType, object context);
 
         /// <summary>
         /// 创建仓储提供者对象。
@@ -30,6 +30,6 @@ namespace Fireasy.Data.Entity
         /// <typeparam name="TEntity">实体类型。</typeparam>
         /// <param name="context"></param>
         /// <returns></returns>
-        IRepositoryProvider<TEntity> Create<TEntity>(InternalContext context) where TEntity : IEntity;
+        IRepositoryProvider<TEntity> Create<TEntity>(object context) where TEntity : IEntity;
     }
 }

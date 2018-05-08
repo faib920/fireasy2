@@ -8,6 +8,7 @@
 using Fireasy.Common;
 using Fireasy.Common.Extensions;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -20,11 +21,10 @@ namespace Fireasy.Data.Entity.Validation
     /// </summary>
     public static class ValidationUnity
     {
-        private static readonly Dictionary<Type, Dictionary<string, List<ValidationAttribute>>> propertyValidations =
-            new Dictionary<Type, Dictionary<string, List<ValidationAttribute>>>();
-        private static readonly Dictionary<Type, List<ValidationAttribute>> entityValidations =
-            new Dictionary<Type, List<ValidationAttribute>>();
-        private static readonly ReadWriteLocker locker = new ReadWriteLocker();
+        private static readonly ConcurrentDictionary<Type, Dictionary<string, List<ValidationAttribute>>> propertyValidations =
+            new ConcurrentDictionary<Type, Dictionary<string, List<ValidationAttribute>>>();
+        private static readonly ConcurrentDictionary<Type, List<ValidationAttribute>> entityValidations =
+            new ConcurrentDictionary<Type, List<ValidationAttribute>>();
 
         /// <summary>
         /// 对实体指定属性的值进行验证。
@@ -52,6 +52,11 @@ namespace Fireasy.Data.Entity.Validation
 
             //获取属性真实的值
             var relValue = PropertyValue.GetValue(value);
+            if (relValue != null && relValue is IFormattable formatter)
+            {
+                relValue = relValue.ToString();
+            }
+
             var context = CreateContext(entity, property);
 
             foreach (var validation in validations)
@@ -59,6 +64,7 @@ namespace Fireasy.Data.Entity.Validation
                 try
                 {
                     var result = validation.GetValidationResult(relValue, context);
+
                     //验证失败，记录提示信息
                     if (result != ValidationResult.Success)
                     {
@@ -78,7 +84,7 @@ namespace Fireasy.Data.Entity.Validation
                 {
                     throw new PropertyInvalidateException(property, messages);
                 }
-                
+
                 //回调，将当前属性的异常信息通知调用程序
                 callback(property, messages);
                 return false;
@@ -231,29 +237,14 @@ namespace Fireasy.Data.Entity.Validation
             var entityType = property.EntityType;
             var propertyName = property.Name;
 
-            return locker.LockRead(() =>
-                {
-                    Dictionary<string, List<ValidationAttribute>> pdic = null;
+            var pdic = propertyValidations.GetOrAdd(entityType, k => GetPropertyValidations(entityType));
 
-                    if (!propertyValidations.TryGetValue(entityType, out pdic))
-                    {
-                        locker.LockWrite(() =>
-                            {
-                                pdic = propertyValidations.TryGetValue(entityType, () => GetPropertyValidations(entityType));
-                            });
-                    }
+            if (!pdic.TryGetValue(propertyName, out List<ValidationAttribute> attrs))
+            {
+                attrs = pdic.TryGetValue(propertyName, () => new List<ValidationAttribute>());
+            }
 
-                    List<ValidationAttribute> attrs = null;
-                    if (!pdic.TryGetValue(propertyName, out attrs))
-                    {
-                        locker.LockWrite(() =>
-                            {
-                                attrs = pdic.TryGetValue(propertyName, () => new List<ValidationAttribute>());
-                            });
-                    }
-
-                    return attrs;
-                });
+            return attrs;
         }
 
         /// <summary>
@@ -266,48 +257,7 @@ namespace Fireasy.Data.Entity.Validation
         {
             Guard.ArgumentNull(entityType, nameof(entityType));
 
-            return locker.LockRead(() => 
-                entityValidations.TryGetValue(entityType, () => GetEntityValidations(entityType))
-                );
-        }
-
-        /// <summary>
-        /// 为指定的实体属性注册一个验证器。
-        /// </summary>
-        /// <param name="entityType">一个实体的类型。</param>
-        /// <param name="validation">要注册的验证器。</param>
-        /// <exception cref="ArgumentNullException"><paramref name="entityType"/>、<paramref name="property"/> 或 <paramref name="validation"/> 参数为 null。</exception>
-        public static void RegisterValidation(Type entityType, ValidationAttribute validation)
-        {
-            Guard.ArgumentNull(entityType, nameof(entityType));
-            Guard.ArgumentNull(validation, nameof(validation));
-
-            locker.LockWrite(() =>
-                {
-                    var list = entityValidations.TryGetValue(entityType, () => new List<ValidationAttribute>());
-                    list.Add(validation);
-                });
-        }
-
-        /// <summary>
-        /// 为指定的实体属性注册一个验证器。
-        /// </summary>
-        /// <param name="property">要注册验证器的实体属性。</param>
-        /// <param name="validation">要注册的验证器。</param>
-        /// <exception cref="ArgumentNullException"><paramref name="property"/> 或 <paramref name="validation"/> 参数为 null。</exception>
-        public static void RegisterValidation(IProperty property, ValidationAttribute validation)
-        {
-            Guard.ArgumentNull(property, nameof(property));
-            Guard.ArgumentNull(validation, nameof(validation));
-
-            var entityType = property.EntityType;
-
-            locker.LockWrite(() =>
-                {
-                    var dictionary = propertyValidations.TryGetValue(entityType, () => GetPropertyValidations(entityType));
-                    var list = dictionary.TryGetValue(property.Name, () => new List<ValidationAttribute>());
-                    list.Add(validation);
-                });
+            return entityValidations.GetOrAdd(entityType, k => GetEntityValidations(entityType));
         }
 
         /// <summary>
@@ -328,7 +278,7 @@ namespace Fireasy.Data.Entity.Validation
         /// <returns></returns>
         private static Dictionary<string, List<ValidationAttribute>> GetPropertyValidations(Type entityType)
         {
-            var dictionary = new Dictionary<string, List<ValidationAttribute>>();
+               var dictionary = new Dictionary<string, List<ValidationAttribute>>();
             var metadataType = entityType.GetCustomAttributes<MetadataTypeAttribute>(true).FirstOrDefault();
             if (metadataType != null &&
                 typeof(IMetadataContainer).IsAssignableFrom(metadataType.MetadataClassType))
@@ -336,8 +286,8 @@ namespace Fireasy.Data.Entity.Validation
                 return metadataType.MetadataClassType.New<IMetadataContainer>().InitializeRules();
             }
 
-            var properties = metadataType == null ? 
-                PropertyUnity.GetProperties(entityType).Select(s => s.Info.ReflectionInfo) : 
+            var properties = metadataType == null ?
+                PropertyUnity.GetProperties(entityType).Select(s => s.Info.ReflectionInfo) :
                 metadataType.MetadataClassType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
             foreach (var property in properties)
@@ -415,10 +365,10 @@ namespace Fireasy.Data.Entity.Validation
             }
 
             return new ValidationContext(entity, null, null)
-                {
-                    DisplayName = displayName,
-                    MemberName = property.Name
-                };
+            {
+                DisplayName = displayName,
+                MemberName = property.Name
+            };
         }
     }
 }

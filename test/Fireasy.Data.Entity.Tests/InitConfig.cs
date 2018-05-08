@@ -1,5 +1,7 @@
 ﻿using Fireasy.Common.Configuration;
+#if NETCOREAPP2_0
 using Microsoft.Extensions.Configuration;
+#endif
 using System;
 using System.Collections.Generic;
 using System.IO;

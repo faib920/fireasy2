@@ -39,6 +39,9 @@ namespace Fireasy.Data.Entity.Tests.Models
         [PropertyMapping(ColumnName = "Discontinued", Description = "", IsNullable = false)]
         public virtual bool Discontinued { get; set; }
 
+        [PropertyMapping(ColumnName = "Photo", Description = "", IsNullable = true, DataType = System.Data.DbType.Binary)]
+        public virtual byte[] Photo { get; set; }
+
         public virtual Categories categories { get; set; }
 
         public virtual EntitySet<OrderDetails> OrderDetailses { get; set; }

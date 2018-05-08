@@ -4,6 +4,7 @@
 using Fireasy.Data.Entity.Linq.Expressions;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Translators
@@ -55,14 +56,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 NamedValueExpression nv = (NamedValueExpression)left;
                 ColumnExpression c = (ColumnExpression)right;
-                left = new NamedValueExpression(nv.Name, nv.Value);
+                left = QueryUtility.GetNamedValueExpression(nv.Name, nv.Value, (DbType)c.MapInfo.DataType);
             }
             else if (b.Right.NodeType == (ExpressionType)DbExpressionType.NamedValue
              && b.Left.NodeType == (ExpressionType)DbExpressionType.Column)
             {
                 NamedValueExpression nv = (NamedValueExpression)right;
                 ColumnExpression c = (ColumnExpression)left;
-                right = new NamedValueExpression(nv.Name, nv.Value);
+                right = QueryUtility.GetNamedValueExpression(nv.Name, nv.Value, (DbType)c.MapInfo.DataType);
             }
 
             return b.Update(left, b.Conversion, right);
@@ -72,10 +73,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             ca = base.VisitColumnAssignment(ca);
             Expression expression = ca.Expression;
-            NamedValueExpression nv = expression as NamedValueExpression;
-            if (nv != null)
+            if (expression is NamedValueExpression nv)
             {
-                expression = new NamedValueExpression(nv.Name, nv.Value);
+                expression = QueryUtility.GetNamedValueExpression(nv.Name, nv.Value, (DbType)ca.Column.MapInfo.DataType);
             }
 
             return this.UpdateColumnAssignment(ca, ca.Column, expression);
@@ -86,9 +86,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             if (c.Value != null && !IsNumeric(c.Value.GetType()))
             {
-                NamedValueExpression nv;
                 TypeAndValue tv = new TypeAndValue(c.Type, c.Value);
-                if (!this.map.TryGetValue(tv, out nv))
+                if (!this.map.TryGetValue(tv, out NamedValueExpression nv))
                 { // re-use same name-value if same type & value
                     string name = "p" + (iParam++);
                     nv = new NamedValueExpression(name, c);

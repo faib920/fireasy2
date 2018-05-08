@@ -67,5 +67,26 @@ namespace Fireasy.Data.Provider
         /// </summary>
         /// <returns></returns>
         IEnumerable<IProviderService> GetServices();
+
+        /// <summary>
+        /// 处理 <see cref="DbConnection"/> 对象。
+        /// </summary>
+        /// <param name="connection"></param>
+        /// <returns></returns>
+        DbConnection PrepareConnection(DbConnection connection);
+
+        /// <summary>
+        /// 处理 <see cref="DbCommand"/> 对象。
+        /// </summary>
+        /// <param name="command"></param>
+        /// <returns></returns>
+        DbCommand PrepareCommand(DbCommand command);
+
+        /// <summary>
+        /// 处理 <see cref="DbParameter"/> 对象。
+        /// </summary>
+        /// <param name="parameter"></param>
+        /// <returns></returns>
+        DbParameter PrepareParameter(DbParameter parameter);
     }
 }

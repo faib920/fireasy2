@@ -61,6 +61,12 @@ namespace Fireasy.Data.Entity
         internal const string MethodMustInExpression = "MethodMustInExpression";
         internal const string ClassNotImplInterface = "ClassNotImplInterface";
         internal const string RelationNameRepeated = "RelationNameRepeated";
+        internal const string IDCardValideError = "IDCardValideError";
+        internal const string MobileValideError = "MobileValideError";
+        internal const string TelhponeValideError = "TelhponeValideError";
+        internal const string WebSiteValideError = "WebSiteValideError";
+        internal const string ZipCodeValideError = "ZipCodeValideError";
+        internal const string EmailValideError = "EmailValideError";
     }
 
     internal sealed class SR

@@ -10,8 +10,6 @@ using Fireasy.Data.Batcher;
 using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Entity.Properties;
-using Fireasy.Data.Entity.Subscribes;
-using Fireasy.Data.Entity.Validation;
 using Fireasy.Data.Syntax;
 using System;
 using System.Collections.Generic;
@@ -58,8 +56,6 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Insert(TEntity entity)
         {
-            ValidationUnity.Validate(entity);
-
             var trans = CheckRelationHasModified(entity);
             if (trans)
             {
@@ -103,8 +99,6 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Update(TEntity entity)
         {
-            ValidationUnity.Validate(entity);
-
             var trans = CheckRelationHasModified(entity);
             if (trans)
             {

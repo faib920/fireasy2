@@ -139,23 +139,6 @@ namespace Fireasy.Web.EasyUI.Binders
                 validTypes.Add("email");
                 return;
             }
-
-            if (validation is AsciiCodingAttribute ascii)
-            {
-                validTypes.Add("ascii");
-                return;
-            }
-
-            if (validation is UserNameAttribute un)
-            {
-                validTypes.Add("username");
-                return;
-            }
-
-            if (validation is UnicodeCodingAttribute chinese)
-            {
-                validTypes.Add("chinese");
-            }
         }
     }
 }

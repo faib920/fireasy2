@@ -19,7 +19,7 @@ namespace Fireasy.Data.Entity.Validation
         public ZipCodeAttribute()
             : base("ZipCode", "^\\d{6}$")
         {
-            ErrorMessage = "{0} 字段不符合邮政编码的格式";
+            ErrorMessage = SR.GetString(SRKind.ZipCodeValideError);
         }
     }
 }

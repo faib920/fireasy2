@@ -5,14 +5,14 @@
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
-    <FileVersion>2.0.0.46094</FileVersion>
+    <FileVersion>2.0.0.46096</FileVersion>
     <Copyright>Copyright © Fireasy 2013-2018</Copyright>
-    <AssemblyVersion>2.0.0.46094</AssemblyVersion>
+    <AssemblyVersion>2.0.0.46096</AssemblyVersion>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Entity Framework</Product>
-    <Version>2.0.9</Version>
+    <Version>2.0.10</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Description>类似于 Entity framework，也提供了 LINQ to Entities 大众化的查询方法，相比之下更容易使用多种数据库，比如SqlServer、Oracle、MySQL、SQLite、PostgreSQL等等。独创性地提供树持久化方法，使用AOP代理技术管理实体对象的状态变更，提供更贴合SQL语言的Update、Delete语句。
 
@@ -40,6 +40,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
     <DocumentationFile>..\..\Release\netstandard2.0\Fireasy.Data.Entity.xml</DocumentationFile>
     <OutputPath>..\..\Release\</OutputPath> 
+  </PropertyGroup>
+       
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   
   <ItemGroup>

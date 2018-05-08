@@ -10,6 +10,7 @@ using Fireasy.Data.Extensions;
 using System;
 using System.Data;
 using System.Linq;
+using System.Text;
 
 namespace Fireasy.Data.Converter
 {
@@ -31,12 +32,27 @@ namespace Fireasy.Data.Converter
         /// <exception cref="ConverterNotSupportedException">如果不支持将数组转换为指定的 dbType 数据时，引发此异常。</exception>
         public object ConvertFrom(object value, DbType dbType = DbType.String)
         {
-            if (dbType.IsStringDbType())
+            if (dbType.IsStringDbType() && value != null)
             {
-                var array = value.ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.ToType(elementType)).ToArray();
-                var result = Array.CreateInstance(elementType, array.Length);
-                Array.Copy(array, result, array.Length);
-                return result;
+                if (elementType == typeof(byte))
+                {
+                    try
+                    {
+                        return Convert.FromBase64String(value.ToString());
+                    }
+                    catch
+                    {
+                        return null;
+                    }
+                }
+                else
+                {
+                    var array = value.ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.ToType(elementType)).ToArray();
+                    var result = Array.CreateInstance(elementType, array.Length);
+                    Array.Copy(array, result, array.Length);
+
+                    return result;
+                }
             }
 
             return value;
@@ -51,30 +67,35 @@ namespace Fireasy.Data.Converter
         /// <exception cref="ConverterNotSupportedException">如果不支持将 dbType 类型的数据转换为数组时，引发此异常。</exception>
         public object ConvertTo(object value, DbType dbType = DbType.String)
         {
-            if (dbType.IsStringDbType())
+            if (dbType.IsStringDbType() && value != null)
             {
-#if !NET35
-                if (elementType == typeof(string))
+                if (elementType == typeof(byte))
                 {
-                    return string.Join(",", ((object[])value).Select(s => "'" + s + "'"));
+                    return Convert.ToBase64String((byte[])value);
                 }
                 else
                 {
-                    return string.Join(",", (object[])value);
+                    return BuildString((Array)value);
                 }
-#else
-                if (elementType == typeof(string))
-                {
-                    return string.Join(",", ((object[])value).Select(s => "'" + s + "'").ToArray());
-                }
-                else
-                {
-                    return string.Join(",", ((object[])value).Select(s => s.ToString()).ToArray());
-                }
-#endif
             }
 
             return value;
+        }
+
+        private string BuildString(Array array)
+        {
+            var sb = new StringBuilder();
+            foreach (var a in array)
+            {
+                if (sb.Length > 0)
+                {
+                    sb.Append(",");
+                }
+
+                sb.Append(a);
+            }
+
+            return sb.ToString();
         }
     }
 }

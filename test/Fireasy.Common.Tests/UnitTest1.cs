@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Fireasy.Common;
 using System.Collections.Generic;
 using Fireasy.Common.Extensions;
+using System.Linq.Expressions;
 
 namespace Fireasy.Common.Tests
 {
@@ -12,6 +13,12 @@ namespace Fireasy.Common.Tests
         [TestMethod]
         public void TestMethod1()
         {
+            var types = typeof(LambdaExpression).Assembly.GetTypes();
+            var type = Type.GetType("System.Linq.Expressions.LambdaExpression, System.Linq.Expressions");
+            foreach (var t in type.GetMethods(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Instance))
+            {
+                Console.WriteLine(t);
+            }
             var assert = new AssertFlag();
             Assert.IsTrue(assert.AssertTrue());
         }

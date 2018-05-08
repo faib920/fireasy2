@@ -17,9 +17,9 @@ namespace Fireasy.Data.Entity.Validation
         /// 初始化 <see cref="MobileAttribute"/> 类的新实例。
         /// </summary>
         public MobileAttribute()
-            : base("Mobile", "^13[0-9]{9}|15[012356789][0-9]{8}|18[0-9][0-9]{8}|14[57][0-9]{8}|17[0678][0-9]{8}$")
+            : base("Mobile", "^13[0-9]{9}|15[012356789][0-9]{8}|18[0-9][0-9]{8}|14[5678][0-9]{8}|17[0235678][0-9]{8}|166[0-9]{8}|19[89][0-9]{8}$")
         {
-            ErrorMessage = "{0} 字段不符合手机的格式";
+            ErrorMessage = SR.GetString(SRKind.MobileValideError);
         }
     }
 }

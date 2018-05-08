@@ -116,8 +116,12 @@ namespace Fireasy.Common.Serialization
             if (typeof(ITextSerializable).IsAssignableFrom(type))
             {
                 var obj = type.New<ITextSerializable>();
-                obj.Deserialize(serializer, jsonReader.ReadRaw());
-                value = obj;
+                var rawValue = jsonReader.ReadRaw();
+                if (rawValue != null)
+                {
+                    obj.Deserialize(serializer, rawValue);
+                    value = obj;
+                }
 
                 return true;
             }

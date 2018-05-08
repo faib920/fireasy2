@@ -17,14 +17,14 @@ namespace Fireasy.MongoDB
     {
         IProvider IProviderService.Provider { get; set; }
 
-        IRepositoryProvider IContextProvider.Create(Type entityType, InternalContext context)
+        IRepositoryProvider IContextProvider.Create(Type entityType, object context)
         {
             return typeof(MongoDBRepositoryProvider<>).MakeGenericType(entityType).New<IRepositoryProvider>(context);
         }
 
-        IRepositoryProvider<TEntity> IContextProvider.Create<TEntity>(InternalContext context)
+        IRepositoryProvider<TEntity> IContextProvider.Create<TEntity>(object context)
         {
-            return new MongoDBRepositoryProvider<TEntity>(context);
+            return new MongoDBRepositoryProvider<TEntity>((InternalContext)context);
         }
     }
 }

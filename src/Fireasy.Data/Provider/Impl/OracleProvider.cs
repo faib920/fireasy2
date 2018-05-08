@@ -6,10 +6,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.Extensions;
 using Fireasy.Data.Identity;
 using Fireasy.Data.RecordWrapper;
 using Fireasy.Data.Schema;
 using Fireasy.Data.Syntax;
+using System.Data.Common;
 
 namespace Fireasy.Data.Provider
 {
@@ -33,7 +35,7 @@ namespace Fireasy.Data.Provider
                   "Devart.Data.Oracle.OracleClientFactory, Devart.Data.Oracle")
 #else
             : base("System.Data.OracleClient.OracleClientFactory, System.Data.OracleClient",
-                  "Oracle.DataAccess.Client.OracleClientFactory, Oracle.DataAccess", 
+                  "Oracle.DataAccess.Client.OracleClientFactory, Oracle.DataAccess",
                   "Oracle.ManagedDataAccess.Client.OracleClientFactory, Oracle.ManagedDataAccess")
 #endif
         {
@@ -81,5 +83,21 @@ namespace Fireasy.Data.Provider
             return connectionString.Update();
         }
 
+        /// <summary>
+        /// 处理 <see cref="DbCommand"/> 对象。
+        /// </summary>
+        /// <param name="command"></param>
+        /// <returns></returns>
+        public override DbCommand PrepareCommand(DbCommand command)
+        {
+            //处理 ORA-01008: 并非所有变量都已绑定 ，将 BindByName 设为 true
+            var property = command.GetType().GetProperty("BindByName");
+            if (property != null)
+            {
+                property.FastSetValue(command, true);
+            }
+
+            return command;
+        }
     }
 }

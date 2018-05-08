@@ -9,6 +9,7 @@ using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Provider;
 using System;
+using System.Reflection;
 
 namespace Fireasy.Data.Entity
 {
@@ -19,14 +20,17 @@ namespace Fireasy.Data.Entity
     {
         IProvider IProviderService.Provider { get; set; }
 
-        IRepositoryProvider IContextProvider.Create(Type entityType, InternalContext context)
+        IRepositoryProvider IContextProvider.Create(Type entityType, object context)
         {
-            return typeof(DefaultRepositoryProvider<>).MakeGenericType(entityType).New<IRepositoryProvider>(context);
+            var constructor = typeof(DefaultRepositoryProvider<>)
+                .MakeGenericType(entityType).GetConstructors()[0];
+
+            return (IRepositoryProvider)constructor.FastInvoke(context);
         }
 
-        IRepositoryProvider<TEntity> IContextProvider.Create<TEntity>(InternalContext context)
+        IRepositoryProvider<TEntity> IContextProvider.Create<TEntity>(object context)
         {
-            return new DefaultRepositoryProvider<TEntity>(context);
+            return new DefaultRepositoryProvider<TEntity>((InternalContext)context);
         }
     }
 }

@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if NETSTANDARD2_0
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters.Json.Internal;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
@@ -67,6 +68,27 @@ namespace Microsoft.Extensions.DependencyInjection
 
 
             return builder;
+        }
+
+        /// <summary>
+        /// 添加 Session 复活通知类。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="services"></param>
+        /// <returns></returns>
+        public static IServiceCollection AddSessionRevive<T>(this IServiceCollection services) where T : Fireasy.Web.Mvc.ISessionReviveNotification
+        {
+            return services.AddTransient(typeof(Fireasy.Web.Mvc.ISessionReviveNotification), typeof(T));
+        }
+
+        /// <summary>
+        /// Session 复活中间件。
+        /// </summary>
+        /// <param name="app"></param>
+        /// <returns></returns>
+        public static IApplicationBuilder UseSessionRevive(this IApplicationBuilder app)
+        {
+            return app.UseMiddleware<Fireasy.Web.Mvc.SessionReviveMiddleware>();
         }
     }
 }

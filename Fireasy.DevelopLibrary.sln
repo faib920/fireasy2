@@ -15,9 +15,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{C17CFE8E-2A6
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{9E3A93FF-A335-4546-93AC-6DD95595FA71}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fireasy.Data.Tests", "test\Fireasy.Data.Tests\Fireasy.Data.Tests.csproj", "{0525F7FD-026A-44C5-9EEF-1C8402B9DF78}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Data.Tests", "test\Fireasy.Data.Tests\Fireasy.Data.Tests.csproj", "{0525F7FD-026A-44C5-9EEF-1C8402B9DF78}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fireasy.Data.Entity.Tests", "test\Fireasy.Data.Entity.Tests\Fireasy.Data.Entity.Tests.csproj", "{2F97AF7D-F43F-4E73-97BE-F0FC8775BB5A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Data.Entity.Tests", "test\Fireasy.Data.Entity.Tests\Fireasy.Data.Entity.Tests.csproj", "{2F97AF7D-F43F-4E73-97BE-F0FC8775BB5A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Web.Mvc", "src\Fireasy.Web.Mvc\Fireasy.Web.Mvc.csproj", "{A6FBD2A1-F109-4E5B-B931-0980B066E303}"
 EndProject

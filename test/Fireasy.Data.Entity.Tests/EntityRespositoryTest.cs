@@ -441,6 +441,28 @@ namespace Fireasy.Data.Entity.Tests
         }
 
         [TestMethod]
+        public void TestUpdateNoEvents()
+        {
+            using (var db = new DbContext())
+            {
+                var order = db.Orders.FirstOrDefault();
+                order.ShipName = null;
+                db.Orders.ConfigOptions(s => s.NotifyEvents = false).Update(order);
+            }
+        }
+
+        [TestMethod]
+        public void TestUpdateNoValidate()
+        {
+            using (var db = new DbContext())
+            {
+                var order = db.Orders.FirstOrDefault();
+                order.ShipName = "211111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111";
+                db.Orders.ConfigOptions(s => s.ValidateEntity = false).Update(order);
+            }
+        }
+
+        [TestMethod]
         public void TestUpdateByNewEntity()
         {
             using (var db = new DbContext())
@@ -486,6 +508,25 @@ namespace Fireasy.Data.Entity.Tests
                 }
 
                 db.Orders.Update(order);
+            }
+        }
+
+        [TestMethod]
+        public void TestUpdateBytes()
+        {
+            using (var db = new DbContext())
+            {
+                var sss = new List<Products>();
+
+                for (var i = 0; i < 2; i++)
+                {
+                    var product = Products.New(); ;
+
+                    product.Photo = new byte[] { 45, 55, 34, 67, 133, 54, 213 };
+                    sss.Add(product);
+                }
+
+                db.Products.Batch(sss, (u, s) => u.Insert(s));
             }
         }
 

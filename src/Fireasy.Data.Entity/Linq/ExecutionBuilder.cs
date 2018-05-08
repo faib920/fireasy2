@@ -42,7 +42,8 @@ namespace Fireasy.Data.Entity.Linq
         private static MethodInfo MthConstruct = typeof(ExecutionBuilder).GetMethod(nameof(ExecutionBuilder.ConstructEntity), BindingFlags.Static | BindingFlags.NonPublic);
         private static MethodInfo MthNewPropertyValue = typeof(PropertyValue).GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(s => s.Name == nameof(PropertyValue.NewValue));
         private static MethodInfo MthIsDbNull = typeof(IRecordWrapper).GetMethod(nameof(IRecordWrapper.IsDbNull), new[] { typeof(IDataReader), typeof(int) });
-        private static MethodInfo MthConvert = typeof(IValueConverter).GetMethod(nameof(IValueConverter.ConvertFrom));
+        private static MethodInfo MthConvertFrom = typeof(IValueConverter).GetMethod(nameof(IValueConverter.ConvertFrom));
+        private static MethodInfo MthConvertTo = typeof(IValueConverter).GetMethod("ConvertTo");
         private static MethodInfo MthGetConverter = typeof(ConvertManager).GetMethod(nameof(ConvertManager.GetConverter));
         private static MethodInfo MthGenerateIdentityValue = typeof(ExecutionBuilder).GetMethod(nameof(ExecutionBuilder.GenerateIdentityValue), BindingFlags.Static | BindingFlags.NonPublic);
         private static MethodInfo MthGenerateGuidValue = typeof(ExecutionBuilder).GetMethod(nameof(ExecutionBuilder.GenerateGuidValue), BindingFlags.Static | BindingFlags.NonPublic);
@@ -340,7 +341,7 @@ namespace Fireasy.Data.Entity.Linq
 
                     //调用 IValueConverter.ConvertFrom
                     expression = (Expression)Expression.Convert(
-                        Expression.Call(mconverter, MthConvert, expression, Expression.Constant(dbType)),
+                        Expression.Call(mconverter, MthConvertFrom, expression, Expression.Constant(dbType)),
                         column.Type);
                 }
                 else
@@ -547,16 +548,23 @@ namespace Fireasy.Data.Entity.Linq
 
             foreach (var nv in namedValues)
             {
-                var t = nv.Type.GetNonNullableType();
-                if (t.IsEnum)
-                {
-                    t = typeof(int);
-                }
-
-                table.Columns.Add(nv.Name, t);
+                var info = GetPropertyInfoFromExpression(nv.Value);
+                table.Columns.Add(nv.Name, info.DataType.Value.FromDbType());
             }
 
-            var parameters = namedValues.ToDictionary(s => s.Name, s => Expression.Lambda(s.Value, batch.Operation.Parameters[1]).Compile());
+            var parameters = namedValues.ToDictionary(s => s.Name, s =>
+                {
+                    var expression = s.Value;
+                    if (ConvertManager.GetConverter(expression.Type) != null)
+                    {
+                        var info = GetPropertyInfoFromExpression(expression);
+                        var convExp = Expression.Call(null, MthGetConverter, Expression.Constant(expression.Type));
+                        expression = Expression.Call(convExp, MthConvertTo, expression, Expression.Constant((DbType)info.DataType));
+                    }
+
+                    var lambda = Expression.Lambda(expression, batch.Operation.Parameters[1]).Compile();
+                    return lambda;
+                });
 
             var entities = (IEnumerable)((ConstantExpression)batch.Input).Value;
             foreach (IEntity entity in entities)
@@ -586,6 +594,23 @@ namespace Fireasy.Data.Entity.Linq
                     plan,
                     Expression.Constant(table, typeof(DataTable)),
                     Expression.Constant(entities, typeof(IEnumerable)));
+        }
+
+        private PropertyMapInfo GetPropertyInfoFromExpression(Expression expression)
+        {
+            if (expression.NodeType == ExpressionType.MemberAccess)
+            {
+                var member = (MemberExpression)expression;
+                var property = PropertyUnity.GetProperty(member.Member.DeclaringType, member.Member.Name);
+                return property?.Info;
+            }
+            else if ((DbExpressionType)expression.NodeType == DbExpressionType.Column)
+            {
+                var column = (ColumnExpression)expression;
+                return column.MapInfo;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -835,7 +860,7 @@ namespace Fireasy.Data.Entity.Linq
                     NamedValueExpression nv;
                     if (!this.map.TryGetValue(column, out nv))
                     {
-                        nv = new NamedValueExpression($"n{(iParam++)}", column);
+                        nv = QueryUtility.GetNamedValueExpression($"n{(iParam++)}", column, (DbType)column.MapInfo.DataType);
                         this.map.Add(column, nv);
                     }
 

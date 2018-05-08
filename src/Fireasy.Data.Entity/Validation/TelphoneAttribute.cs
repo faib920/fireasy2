@@ -19,7 +19,7 @@ namespace Fireasy.Data.Entity.Validation
         public TelphoneAttribute()
             : base("Telphone", "^(([0\\+]\\d{2,3}-)?(0\\d{2,3})-)?(\\d{7,8})(-(\\d{3,}))?$")
         {
-            ErrorMessage = "{0} 字段不符合电话号码的格式";
+            ErrorMessage = SR.GetString(SRKind.TelhponeValideError);
         }
     }
 }

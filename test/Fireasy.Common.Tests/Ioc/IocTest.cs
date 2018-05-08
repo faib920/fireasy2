@@ -4,6 +4,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
 using Fireasy.Common.Aop;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Fireasy.Common.Tests.Ioc
 {
@@ -20,6 +22,19 @@ namespace Fireasy.Common.Tests.Ioc
     public class MainServiceSecond : IMainService
     {
         public string Name { get; set; }
+    }
+
+    public interface IGeneric<T>
+    {
+        T Test();
+    }
+
+    public class Generic : IGeneric<MainService>
+    {
+        public MainService Test()
+        {
+            return new MainService();
+        }
     }
 
     public interface IAClass
@@ -154,6 +169,17 @@ namespace Fireasy.Common.Tests.Ioc
             var obj = container.Resolve<IMainService>();
 
             Console.WriteLine(obj.GetType().Name);
+        }
+
+        [TestMethod]
+        public void TestGeneric()
+        {
+            var container = ContainerUnity.GetContainer();
+            container.Register<IGeneric<MainService>, Generic>();
+
+            var obj = container.Resolve<IGeneric<MainService>>();
+
+            Console.WriteLine(obj.Test());
         }
 
         [TestMethod]

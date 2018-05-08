@@ -31,12 +31,13 @@ namespace Fireasy.Common
         /// 将一个委托添加到队列中。
         /// </summary>
         /// <param name="action">要执行的委托。</param>
+        /// <param name="tryTimes">当生产异常时，可重试的次数。</param>
         /// <returns>执行的标识。</returns>
-        public static string Push(Action action)
+        public static string Push(Action action, int tryTimes = 0)
         {
             Guard.ArgumentNull(action, nameof(action));
 
-            var entry = new ActionEntry(action);
+            var entry = new ActionEntry(action, tryTimes);
             queue.Enqueue(entry);
             return entry.Id;
         }
@@ -81,7 +82,7 @@ namespace Fireasy.Common
                 }
                 catch (Exception exp)
                 {
-                    if (entry.CanTry(tryTime))
+                    if (entry.CanTry())
                     {
                         queue.Enqueue(entry);
                     }
@@ -98,10 +99,12 @@ namespace Fireasy.Common
         private class ActionEntry
         {
             private int time = 0;
+            private int tryTimes = 0;
 
-            public ActionEntry(Action action)
+            public ActionEntry(Action action, int tryTimes)
             {
                 Id = Guid.NewGuid().ToString();
+                this.tryTimes = tryTimes;
                 Action = action;
             }
 
@@ -118,11 +121,10 @@ namespace Fireasy.Common
             /// <summary>
             /// 判断是否可以重试。
             /// </summary>
-            /// <param name="max"></param>
             /// <returns></returns>
-            public bool CanTry(int max)
+            public bool CanTry()
             {
-                return time++ < max;
+                return time++ < tryTimes;
             }
         }
     }

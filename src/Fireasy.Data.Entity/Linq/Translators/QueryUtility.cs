@@ -352,6 +352,29 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return insertExp;
         }
 
+        internal static NamedValueExpression GetNamedValueExpression(string name, Expression value, DbType dbType)
+        {
+            var exp = value;
+            if (exp.NodeType == ExpressionType.Convert)
+            {
+                exp = ((UnaryExpression)value).Operand;
+            }
+
+            if (exp.NodeType != ExpressionType.Constant)
+            {
+                return new NamedValueExpression(name, exp);
+            }
+
+            IValueConverter converter;
+            if ((converter = ConvertManager.GetConverter(exp.Type)) != null)
+            {
+                exp = Expression.Constant(converter.ConvertTo(((ConstantExpression)exp).Value, dbType));
+                exp = Expression.Convert(exp, typeof(object));
+            }
+
+            return new NamedValueExpression(name, exp, dbType);
+        }
+
         /// <summary>
         /// 将被修改的属性集附加到 <see cref="TranslateScope"/> 对象中。
         /// </summary>

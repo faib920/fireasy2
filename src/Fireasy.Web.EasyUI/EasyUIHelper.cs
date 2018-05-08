@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
 using Fireasy.Data;
+using System;
 using System.Collections;
 #if !NETSTANDARD2_0
 using System.Web;
@@ -80,8 +81,8 @@ namespace Fireasy.Web.EasyUI
                 return null;
             }
 
-            var page = request.Form["page"].To(1);
-            var pageSize = request.Form["rows"].To(10);
+            var page = Convert.ToInt32(request.Form["page"]);
+            var pageSize = Convert.ToInt32(request.Form["rows"]);
             return new DataPager(pageSize, page - 1);
         }
 

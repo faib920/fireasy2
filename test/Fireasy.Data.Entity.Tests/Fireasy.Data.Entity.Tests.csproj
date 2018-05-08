@@ -30,6 +30,8 @@
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.108" />
     <PackageReference Include="Oracle.ManagedDataAccess" Version="12.2.1100" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.108" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <PackageReference Include="Oracle.DataAccess.x86" Version="2.112.1" />
   </ItemGroup>
   
   <ItemGroup>

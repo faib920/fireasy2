@@ -20,8 +20,8 @@ namespace Fireasy.Data.Entity
     /// </summary>
     /// <typeparam name="TEntity">实体类型。</typeparam>
     [Serializable]
-    public class EntitySet<TEntity> : IEntitySet, 
-        IList<TEntity>, 
+    public class EntitySet<TEntity> : IEntitySet,
+        IList<TEntity>,
         IList,
         IKeepStateCloneable,
         ICloneable,
@@ -367,12 +367,6 @@ namespace Fireasy.Data.Entity
                 detachedList.Add((TEntity)item);
             }
         }
-
-        //void IEntitySetInternalExtension.NotifyModified(IEntity entity)
-        //{
-            //modifiedList.Add((TEntity)entity);
-        //    SetOwnerState();
-        //}
 
         #endregion
 

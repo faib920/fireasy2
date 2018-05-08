@@ -19,7 +19,7 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public abstract class EntityContext : IDisposable
     {
-        protected InternalContext context;
+        private InternalContext context;
         private bool isDisposed;
         private bool isBeginTransaction = false;
 
@@ -34,9 +34,9 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 使用一个配置名称来初始化 <see cref="EntityContext"/> 类的新实例。
         /// </summary>
-        /// <param name="name">配置名称。</param>
-        public EntityContext(string name)
-            : this (new EntityContextOptions { ConfigName = name })
+        /// <param name="instanceName">实例名称。</param>
+        public EntityContext(string instanceName)
+            : this (new EntityContextOptions(instanceName))
         {
         }
 
@@ -47,6 +47,7 @@ namespace Fireasy.Data.Entity
         public EntityContext(EntityContextOptions options)
         {
             Initialize(options);
+
             new EntityRepositoryDiscoveryService(this).InitializeSets();
         }
 
@@ -178,6 +179,18 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
+        /// 配置参数。
+        /// </summary>
+        /// <param name="configuration">配置参数的方法。</param>
+        /// <returns></returns>
+        public EntityContext ConfigOptions(Action<EntityContextOptions> configuration)
+        {
+            configuration?.Invoke(context.Options);
+
+            return this;
+        }
+
+        /// <summary>
         /// 开始事务。
         /// </summary>
         /// <param name="level"></param>
@@ -216,9 +229,8 @@ namespace Fireasy.Data.Entity
         /// </summary>
         private void Initialize(EntityContextOptions options)
         {
-            context = new InternalContext(options.ConfigName)
+            context = new InternalContext(options)
                 {
-                    AutoCreateTables = options.AutoCreateTables,
                     OnRespositoryCreated = OnRespositoryCreated,
                     OnRespositoryCreateFailed = OnRespositoryCreateFailed
             };

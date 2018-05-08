@@ -87,11 +87,11 @@ namespace Fireasy.Common.Emit
 #if !NETSTANDARD2_0
                     assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(an, AssemblyBuilderAccess.RunAndSave, dir);
 #else
-                    assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(an, AssemblyBuilderAccess.RunAndCollect);
+                    assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(an, AssemblyBuilderAccess.Run);
 #endif
                 }
 
-                ReadWriteLocker.Instance.LockWrite(() => assemblies.TryAdd(AssemblyName, assemblyBuilder));
+                assemblies.TryAdd(AssemblyName, assemblyBuilder);
 
                 //如果引用到当前程序集中的其他类型，则需要定义以下事件
                 AppDomain.CurrentDomain.AssemblyResolve += (o, e) =>

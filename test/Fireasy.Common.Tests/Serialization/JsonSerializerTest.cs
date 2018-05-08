@@ -970,7 +970,7 @@ studio");
             var serializer = new JsonSerializer();
 
             var obj = serializer.Deserialize<JsonData>(
-                new JsonText(@"{'Name':'huangxd','Birthday':'\/Date(401299200000+0800)\/','Age':12,'WorkRecords':null}").ToString()
+                new JsonText(@"{'Name':null,'Birthday':'\/Date(401299200000+0800)\/','Age':12,'WorkRecords':null}").ToString()
                 );
 
             Assert.IsNotNull(obj);

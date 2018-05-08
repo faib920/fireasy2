@@ -1,34 +1,29 @@
-﻿using System;
+﻿using Fireasy.Common;
+using System;
+using System.Data;
 using System.Diagnostics;
 using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Expressions
 {
-    [DebuggerDisplay("DbNodeType={DbNodeType},Name={name},Value={value},SqlType={sqlType}")]
+    [DebuggerDisplay("DbNodeType={DbNodeType},Name={Name},Value={Value},DataType={DataType}")]
     public class NamedValueExpression : DbExpression
     {
-        private readonly string name;
-        private readonly Expression value;
-
-        public NamedValueExpression(string name, Expression value)
+        public NamedValueExpression(string name, Expression value, DbType dbType = DbType.String)
             : base(DbExpressionType.NamedValue, value.Type)
         {
-            if (name == null)
-                throw new ArgumentNullException("name");
-            if (value == null)
-                throw new ArgumentNullException("value");
-            this.name = name;
-            this.value = value;
+            Guard.ArgumentNull(name, nameof(name));
+            Guard.ArgumentNull(value, nameof(value));
+
+            Name = name;
+            Value = value;
+            DataType = dbType;
         }
 
-        public string Name
-        {
-            get { return this.name; }
-        }
+        public string Name { get; private set; }
 
-        public Expression Value
-        {
-            get { return this.value; }
-        }
+        public Expression Value { get; private set; }
+
+        public DbType DataType { get; private set; }
     }
 }

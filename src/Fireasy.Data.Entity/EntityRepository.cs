@@ -13,6 +13,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using Fireasy.Data.Entity.Validation;
 
 #if !NET40 && !NET35
 using System.Threading.Tasks;
@@ -73,7 +74,15 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return EntityPersistentSubscribePublisher.OnCreate(entity, () => repositoryProxy.Insert(entity));
+            if (context.Options.ValidateEntity)
+            {
+                ValidationUnity.Validate(entity);
+            }
+
+            int func() => repositoryProxy.Insert(entity);
+
+            return context.Options.NotifyEvents ?
+                EntityPersistentSubscribePublisher.OnCreate(entity, func) : func();
         }
 
         /// <summary>
@@ -85,6 +94,7 @@ namespace Fireasy.Data.Entity
         public void BatchInsert(IEnumerable<TEntity> entities, int batchSize = 1000, Action<int> completePercentage = null)
         {
             Guard.ArgumentNull(entities, nameof(entities));
+
             repositoryProxy.BatchInsert(entities, batchSize, completePercentage);
         }
 
@@ -97,14 +107,19 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            if (entity.EntityState == EntityState.Attached)
+            if (context.Options.NotifyEvents)
             {
-                return EntityPersistentSubscribePublisher.OnCreate(entity, () => repositoryProxy.Insert(entity));
+                if (entity.EntityState == EntityState.Attached)
+                {
+                    return EntityPersistentSubscribePublisher.OnCreate(entity, () => repositoryProxy.Insert(entity));
+                }
+                else
+                {
+                    return EntityPersistentSubscribePublisher.OnUpdate(entity, () => repositoryProxy.Update(entity));
+                }
             }
-            else
-            {
-                return EntityPersistentSubscribePublisher.OnUpdate(entity, () => repositoryProxy.Update(entity));
-            }
+
+            return entity.EntityState == EntityState.Attached ? repositoryProxy.Insert(entity) : repositoryProxy.Update(entity);
         }
 
         /// <summary>
@@ -117,7 +132,10 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return EntityPersistentSubscribePublisher.OnRemove(entity, () => repositoryProxy.Delete(entity, logicalDelete));
+            int func() => repositoryProxy.Delete(entity, logicalDelete);
+
+            return context.Options.NotifyEvents ?
+                EntityPersistentSubscribePublisher.OnRemove(entity, func) : func();
         }
 
         /// <summary>
@@ -128,7 +146,7 @@ namespace Fireasy.Data.Entity
         public int Delete(params PropertyValue[] primaryValues)
         {
             var ret = repositoryProxy.Delete(primaryValues, true);
-            if (ret > 0)
+            if (ret > 0 && context.Options.NotifyEvents)
             {
                 EntityPersistentSubscribePublisher.RaiseEvent<TEntity>(EntityPersistentEventType.AfterRemove);
             }
@@ -145,7 +163,7 @@ namespace Fireasy.Data.Entity
         public int Delete(PropertyValue[] primaryValues, bool logicalDelete = true)
         {
             var ret = repositoryProxy.Delete(primaryValues, logicalDelete);
-            if (ret > 0)
+            if (ret > 0 && context.Options.NotifyEvents)
             {
                 EntityPersistentSubscribePublisher.RaiseEvent<TEntity>(EntityPersistentEventType.AfterRemove);
             }
@@ -162,7 +180,7 @@ namespace Fireasy.Data.Entity
         public int Delete(object[] primaryValues, bool logicalDelete = true)
         {
             var ret = repositoryProxy.Delete(primaryValues, logicalDelete);
-            if (ret > 0)
+            if (ret > 0 && context.Options.NotifyEvents)
             {
                 EntityPersistentSubscribePublisher.RaiseEvent<TEntity>(EntityPersistentEventType.AfterRemove);
             }
@@ -179,7 +197,7 @@ namespace Fireasy.Data.Entity
         public int Delete(Expression<Func<TEntity, bool>> predicate, bool logicalDelete = true)
         {
             var ret = repositoryProxy.Delete(predicate, logicalDelete);
-            if (ret > 0)
+            if (ret > 0 && context.Options.NotifyEvents)
             {
                 EntityPersistentSubscribePublisher.RaiseEvent<TEntity>(EntityPersistentEventType.AfterRemove);
             }
@@ -196,7 +214,15 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return EntityPersistentSubscribePublisher.OnUpdate(entity, () => repositoryProxy.Update(entity));
+            if (context.Options.ValidateEntity)
+            {
+                ValidationUnity.Validate(entity);
+            }
+
+            int func() => repositoryProxy.Update(entity);
+
+            return context.Options.NotifyEvents ?
+                EntityPersistentSubscribePublisher.OnUpdate(entity, func) : func();
         }
 
         /// <summary>
@@ -208,7 +234,7 @@ namespace Fireasy.Data.Entity
         public int Update(TEntity entity, Expression<Func<TEntity, bool>> predicate)
         {
             var ret = repositoryProxy.Update(entity, predicate);
-            if (ret > 0)
+            if (ret > 0 && context.Options.NotifyEvents)
             {
                 EntityPersistentSubscribePublisher.RaiseEvent<TEntity>(EntityPersistentEventType.AfterUpdate);
             }
@@ -239,7 +265,7 @@ namespace Fireasy.Data.Entity
         public int Update(Expression<Func<TEntity, TEntity>> calculator, Expression<Func<TEntity, bool>> predicate)
         {
             var ret = repositoryProxy.Update(calculator, predicate);
-            if (ret > 0)
+            if (ret > 0 && context.Options.NotifyEvents)
             {
                 EntityPersistentSubscribePublisher.RaiseEvent<TEntity>(EntityPersistentEventType.AfterUpdate);
             }
@@ -263,7 +289,11 @@ namespace Fireasy.Data.Entity
             var operateName = OperateFinder.Find(fnOperation);
             var eventType = GetBeforeEventType(operateName);
 
-            return EntityPersistentSubscribePublisher.OnBatch(instances.Cast<IEntity>(), eventType, () => repositoryProxy.Batch(instances, fnOperation));
+            int func() => repositoryProxy.Batch(instances, fnOperation);
+
+            return context.Options.NotifyEvents ?
+                EntityPersistentSubscribePublisher.OnBatch(instances.Cast<IEntity>(), eventType, func) :
+                func();
         }
 
 #if !NET40 && !NET35
@@ -426,6 +456,17 @@ namespace Fireasy.Data.Entity
         public EntityRepository<TEntity> Associate(Expression<Func<TEntity, IEnumerable>> memberQuery)
         {
             context.AssociateWith(memberQuery);
+            return this;
+        }
+
+        /// <summary>
+        /// 配置参数。
+        /// </summary>
+        /// <param name="configuration">配置参数的方法。</param>
+        /// <returns></returns>
+        public EntityRepository<TEntity> ConfigOptions(Action<EntityContextOptions> configuration)
+        {
+            configuration?.Invoke(context.Options);
             return this;
         }
 

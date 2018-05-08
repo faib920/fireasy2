@@ -143,6 +143,36 @@ namespace Fireasy.Data.Provider
         }
 
         /// <summary>
+        /// 处理 <see cref="DbConnection"/> 对象。
+        /// </summary>
+        /// <param name="connection"></param>
+        /// <returns></returns>
+        public virtual DbConnection PrepareConnection(DbConnection connection)
+        {
+            return connection;
+        }
+
+        /// <summary>
+        /// 处理 <see cref="DbCommand"/> 对象。
+        /// </summary>
+        /// <param name="command"></param>
+        /// <returns></returns>
+        public virtual DbCommand PrepareCommand(DbCommand command)
+        {
+            return command;
+        }
+
+        /// <summary>
+        /// 处理 <see cref="DbParameter"/> 对象。
+        /// </summary>
+        /// <param name="parameter"></param>
+        /// <returns></returns>
+        public virtual DbParameter PrepareParameter(DbParameter parameter)
+        {
+            return parameter;
+        }
+
+        /// <summary>
         /// 初始化 <see cref="DbProviderFactory"/> 对象。
         /// </summary>
         /// <returns></returns>

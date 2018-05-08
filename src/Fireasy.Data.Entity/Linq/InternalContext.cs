@@ -32,10 +32,16 @@ namespace Fireasy.Data.Entity.Linq
         private Dictionary<MemberInfo, List<LambdaExpression>> operations = new Dictionary<MemberInfo, List<LambdaExpression>>();
         private Dictionary<Type, IRepository> holders = new Dictionary<Type, IRepository>();
 
-        public InternalContext(string name)
+        public InternalContext(string instanceName)
+            : this(new EntityContextOptions(instanceName))
         {
-            Database = EntityDatabaseFactory.CreateDatabase(name);
-            InstanceName = name;
+        }
+
+        public InternalContext(EntityContextOptions options)
+        {
+            Options = options;
+            Database = EntityDatabaseFactory.CreateDatabase(options.ConfigName);
+            InstanceName = options.ConfigName;
         }
 
         public InternalContext(IDatabase database)
@@ -43,9 +49,9 @@ namespace Fireasy.Data.Entity.Linq
             Database = database;
         }
 
-        public string InstanceName { get; set; }
+        public EntityContextOptions Options { get; private set; }
 
-        public bool AutoCreateTables { get; set; }
+        public string InstanceName { get; set; }
 
         public EntityPersistentEnvironment Environment { get; set; }
 
@@ -88,8 +94,7 @@ namespace Fireasy.Data.Entity.Linq
 
         public IRepository GetDbSet(Type entitytype)
         {
-            IRepository set;
-            if (!this.holders.TryGetValue(entitytype, out set))
+            if (!this.holders.TryGetValue(entitytype, out IRepository set))
             {
                 set = CreateDbSet(entitytype);
                 lock (this.holders)
@@ -106,7 +111,7 @@ namespace Fireasy.Data.Entity.Linq
             var factory = Database.Provider.GetService<IContextProvider>() ?? new DefaultContextProvider();
             var repository = factory.Create<TEntity>(this);
 
-            if (AutoCreateTables)
+            if (Options.AutoCreateTables)
             {
                 RespositoryCreator.TryCreate(typeof(TEntity), this, OnRespositoryCreated, OnRespositoryCreateFailed);
             }
@@ -119,7 +124,7 @@ namespace Fireasy.Data.Entity.Linq
             var factory = Database.Provider.GetService<IContextProvider>() ?? new DefaultContextProvider();
             var repository = factory.Create(entityType, this);
 
-            if (AutoCreateTables)
+            if (Options.AutoCreateTables)
             {
                 RespositoryCreator.TryCreate(entityType, this, OnRespositoryCreated, OnRespositoryCreateFailed);
             }
@@ -183,7 +188,10 @@ namespace Fireasy.Data.Entity.Linq
 
         private IRepository CreateDbSet(Type entityType)
         {
-            return typeof(EntityRepository<>).MakeGenericType(new Type[] { entityType }).New(this) as IRepository;
+            var constructor = typeof(EntityRepository<>)
+                .MakeGenericType(new Type[] { entityType }).GetConstructors()[0];
+
+            return constructor.FastInvoke(this) as IRepository;
         }
 
         private class RootMemberFinder : Fireasy.Common.Linq.Expressions.ExpressionVisitor

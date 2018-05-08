@@ -11,7 +11,9 @@ using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Tests.Models;
 using Fireasy.Data.Syntax;
+#if NETCOREAPP2_0
 using Microsoft.Extensions.Configuration;
+#endif
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;

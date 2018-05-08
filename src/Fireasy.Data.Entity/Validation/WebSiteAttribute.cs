@@ -19,7 +19,7 @@ namespace Fireasy.Data.Entity.Validation
         public WebSiteAttribute()
             : base("WebSite", "^http[s]?:\\/\\/([\\w-]+\\.)+[\\w-]+([\\w-./?%&=]*)?$")
         {
-            ErrorMessage = "{0} 字段不符合网址的格式";
+            ErrorMessage = SR.GetString(SRKind.WebSiteValideError);
         }
     }
 }

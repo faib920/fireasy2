@@ -10,6 +10,12 @@ namespace Fireasy.Data.Entity.Tests
     [TestClass]
     public class EntityTreeTest
     {
+        [ClassInitialize]
+        public static void Initialize(TestContext context)
+        {
+            InitConfig.Init();
+        }
+
         [TestMethod]
         public void TestHasChildren()
         {

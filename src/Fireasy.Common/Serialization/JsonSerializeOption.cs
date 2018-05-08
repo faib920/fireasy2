@@ -5,8 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
-using System.Collections.Generic;
 
 namespace Fireasy.Common.Serialization
 {
@@ -30,8 +28,8 @@ namespace Fireasy.Common.Serialization
         public JsonFormat Format { get; set; }
 
         /// <summary>
-        /// 获取或设置是否忽略为 null 的值。
+        /// 获取或设置是否忽略为 null 的值。默认为 true。
         /// </summary>
-        public bool IgnoreNull { get; set; }
+        public bool IgnoreNull { get; set; } = true;
     }
 }

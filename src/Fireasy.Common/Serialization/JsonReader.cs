@@ -43,7 +43,7 @@ namespace Fireasy.Common.Serialization
                 var value = ReadValue();
                 if (value == null)
                 {
-                    return "null";
+                    return null;
                 }
 
                 return value.ToString();

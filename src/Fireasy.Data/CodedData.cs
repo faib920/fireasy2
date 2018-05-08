@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 
 using Fireasy.Common.Serialization;
+using System;
 using System.Text;
 
 namespace Fireasy.Data
@@ -14,7 +15,7 @@ namespace Fireasy.Data
     /// <summary>
     /// 表示编码过的数据。无法继承此类。
     /// </summary>
-    public sealed class CodedData : ITextSerializable
+    public sealed class CodedData : ITextSerializable, IFormattable
     {
         /// <summary>
         /// 将字符串转换为 <see cref="CodedData"/> 对象。
@@ -34,6 +35,33 @@ namespace Fireasy.Data
         public static explicit operator string(CodedData data)
         {
             return data == null || data.Data == null ? string.Empty : Encoding.UTF8.GetString(data.Data);
+        }
+
+        public static bool operator ==(CodedData v1, string v2)
+        {
+            return v1.ToString() == v2;
+        }
+
+        public static bool operator !=(CodedData v1, string v2)
+        {
+            return v1.ToString() != v2;
+        }
+
+        /// <summary>
+        /// 初始化类 <see cref="CodedData"/> 的新实例。
+        /// </summary>
+        public CodedData()
+        {
+            Data = new byte[0];
+        }
+
+        /// <summary>
+        /// 初始化类 <see cref="CodedData"/> 的新实例。
+        /// </summary>
+        /// <param name="content"></param>
+        public CodedData(string content)
+            : this(Encoding.UTF8.GetBytes(content))
+        {
         }
 
         /// <summary>
@@ -59,14 +87,22 @@ namespace Fireasy.Data
             return Data == null ? string.Empty : Encoding.UTF8.GetString(Data);
         }
 
-        string ITextSerializable.Serialize(ITextSerializer serializer)
+        string IFormattable.ToString(string format, IFormatProvider formatProvider)
         {
             return ToString();
         }
 
+        string ITextSerializable.Serialize(ITextSerializer serializer)
+        {
+            return serializer.Serialize(Encoding.UTF8.GetString(Data));
+        }
+
         void ITextSerializable.Deserialize(ITextSerializer serializer, string text)
         {
-            Data = Encoding.UTF8.GetBytes(text);
+            if (!string.IsNullOrEmpty(text))
+            {
+                Data = Encoding.UTF8.GetBytes(text);
+            }
         }
     }
 }
