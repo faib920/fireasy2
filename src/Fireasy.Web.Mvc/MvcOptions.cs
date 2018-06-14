@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 #if NETSTANDARD2_0
 using Fireasy.Common.Serialization;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using System.Collections.Generic;
 
 namespace Fireasy.Web.Mvc

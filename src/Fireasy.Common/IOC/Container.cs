@@ -202,12 +202,10 @@ namespace Fireasy.Common.Ioc
         {
             foreach (var type in assembly.GetExportedTypes())
             {
-                if (type.IsInterface || type.IsEnum)
+                if (type.IsInterface || type.IsAbstract || type.IsEnum)
                 {
                     continue;
                 }
-
-                Register(type, type);
 
                 foreach (var interfaceType in type.GetInterfaces())
                 {
