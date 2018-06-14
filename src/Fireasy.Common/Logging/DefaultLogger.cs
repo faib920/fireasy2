@@ -5,10 +5,14 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Configuration;
+using Fireasy.Common.Logging.Configuration;
 using System;
 using System.IO;
 using System.Text;
-using Fireasy.Common.Configuration;
+#if NET35
+using Fireasy.Common.Extensions;
+#endif
 
 namespace Fireasy.Common.Logging
 {
@@ -19,6 +23,7 @@ namespace Fireasy.Common.Logging
     {
         private static readonly string logFilePath;
         private static readonly ReadWriteLocker locker = new ReadWriteLocker();
+        private LogLevel level;
 
         /// <summary>
         /// 获取 <see cref="DefaultLogger"/> 的静态实例。
@@ -33,6 +38,12 @@ namespace Fireasy.Common.Logging
             logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log");
         }
 
+        private DefaultLogger()
+        {
+            var section = ConfigurationUnity.GetSection<LoggingConfigurationSection>();
+            level = section == null ? LogLevel.Default : section.Level;
+        }
+
         /// <summary>
         /// 记录错误信息到日志。
         /// </summary>
@@ -40,7 +51,10 @@ namespace Fireasy.Common.Logging
         /// <param name="exception">异常对象。</param>
         public void Error(object message, Exception exception = null)
         {
-            Write("error", message, exception);
+            if (level == LogLevel.Default || level.HasFlag(LogLevel.Error))
+            {
+                Write("error", message, exception);
+            }
         }
 
         /// <summary>
@@ -50,7 +64,10 @@ namespace Fireasy.Common.Logging
         /// <param name="exception">异常对象。</param>
         public void Info(object message, Exception exception = null)
         {
-            Write("info", message, exception);
+            if (level == LogLevel.Default || level.HasFlag(LogLevel.Info))
+            {
+                Write("info", message, exception);
+            }
         }
 
         /// <summary>
@@ -60,7 +77,10 @@ namespace Fireasy.Common.Logging
         /// <param name="exception">异常对象。</param>
         public void Warn(object message, Exception exception = null)
         {
-            Write("warn", message, exception);
+            if (level == LogLevel.Default || level.HasFlag(LogLevel.Warn))
+            {
+                Write("warn", message, exception);
+            }
         }
 
         /// <summary>
@@ -70,7 +90,10 @@ namespace Fireasy.Common.Logging
         /// <param name="exception">异常对象。</param>
         public void Debug(object message, Exception exception = null)
         {
-            Write("debug", message, exception);
+            if (level == LogLevel.Default || level.HasFlag(LogLevel.Debug))
+            {
+                Write("debug", message, exception);
+            }
         }
 
         /// <summary>
@@ -80,7 +103,10 @@ namespace Fireasy.Common.Logging
         /// <param name="exception">异常对象。</param>
         public void Fatal(object message, Exception exception = null)
         {
-            Write("fatal", message, exception);
+            if (level == LogLevel.Default || level.HasFlag(LogLevel.Fatal))
+            {
+                Write("fatal", message, exception);
+            }
         }
 
         /// <summary>
@@ -162,7 +188,6 @@ namespace Fireasy.Common.Logging
 
                 e = e.InnerException;
             }
-
         }
     }
 }

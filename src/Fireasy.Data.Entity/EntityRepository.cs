@@ -86,6 +86,19 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
+        /// 使用一个 <see cref="MemberInitExpression"/> 表达式插入新的对象。
+        /// </summary>
+        /// <param name="factory">一个构造实例并成员绑定的表达式。</param>
+        /// <returns></returns>
+        public int Insert(Expression<Func<TEntity>> factory)
+        {
+            var entity = EntityProxyManager.GetType(typeof(TEntity)).New<TEntity>();
+            entity.InitByExpression(factory);
+
+            return Insert(entity);
+        }
+
+        /// <summary>
         /// 批量将一组实体对象插入到库中。
         /// </summary>
         /// <param name="entities">一组要插入实体对象。</param>
@@ -253,7 +266,7 @@ namespace Fireasy.Data.Entity
             var entity = EntityProxyManager.GetType(typeof(TEntity)).New<TEntity>();
             entity.InitByExpression(factory);
 
-            return Update(entity, predicate);
+            return predicate == null ? Update(entity) : Update(entity, predicate);
         }
 
         /// <summary>
@@ -305,6 +318,16 @@ namespace Fireasy.Data.Entity
         public async Task<int> InsertAsync(TEntity entity)
         {
             return await Task.Run(() => Insert(entity));
+        }
+
+        /// <summary>
+        /// 使用一个 <see cref="MemberInitExpression"/> 表达式插入新的对象。
+        /// </summary>
+        /// <param name="factory">一个构造实例并成员绑定的表达式。</param>
+        /// <returns></returns>
+        public async Task<int> InsertAsync(Expression<Func<TEntity>> factory)
+        {
+            return await Task.Run(() => Insert(factory));
         }
 
         /// <summary>

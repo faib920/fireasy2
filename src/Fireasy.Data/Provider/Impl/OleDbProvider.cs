@@ -30,11 +30,7 @@ namespace Fireasy.Data.Provider
             : base("System.Data.OleDb")
         {
             RegisterService<IGeneratorProvider, BaseSequenceGenerator>();
-#if !NETSTANDARD2_0
-            RegisterService<ISchemaProvider, OleDbSchema>();
-#endif
             RegisterService<IRecordWrapper, GeneralRecordWrapper>();
-            RegisterService<ISyntaxProvider, AccessSyntax>();
         }
 
         /// <summary>

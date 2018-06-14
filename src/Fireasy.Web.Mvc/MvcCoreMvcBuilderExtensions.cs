@@ -35,8 +35,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 Fireasy.Web.Mvc.GlobalSetting.Converters.AddRange(options.Converters);
             }
 
-            if (options.UseCustomResultExecutor)
+            if (options.UseTypicalJsonSerializer)
             {
+                builder.Services.Configure<MvcOptions>(s => s.OutputFormatters.Insert(0, new Fireasy.Web.Mvc.JsonOutputFormatter()));
                 builder.Services.AddSingleton<JsonResultExecutor, Fireasy.Web.Mvc.JsonResultExecutor>();
             }
 
@@ -51,7 +52,10 @@ namespace Microsoft.Extensions.DependencyInjection
                 builder.PartManager.FeatureProviders.Add(new Fireasy.Web.Mvc.ReferencesMetadataReferenceFeatureProvider());
             }
 
-            builder.Services.AddSingleton<RazorProject, Fireasy.Web.Mvc.BasedRazorProject>();
+            if (options.UseRootRazorProject)
+            {
+                builder.Services.AddSingleton<RazorProjectFileSystem, Fireasy.Web.Mvc.BasedRazorProject>();
+            }
 
             builder.Services.Configure<MvcOptions>(s =>
                 {
@@ -65,7 +69,6 @@ namespace Microsoft.Extensions.DependencyInjection
                         s.ModelBinderProviders.Insert(0, new Fireasy.Web.Mvc.JsonModelBinderProvider());
                     });
             }
-
 
             return builder;
         }

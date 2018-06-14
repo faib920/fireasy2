@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
+using System.Data.SqlClient;
 using System.Linq;
 
 namespace Fireasy.Data.Batcher
@@ -29,10 +30,16 @@ namespace Fireasy.Data.Batcher
         /// <summary>
         /// 初始化 <see cref="DataTableBatchReader"/> 类的新实例。
         /// </summary>
+        /// <param name="bulk"></param>
         /// <param name="table"></param>
-        public DataTableBatchReader(DataTable table)
+        public DataTableBatchReader(SqlBulkCopy bulk, DataTable table)
         {
             this.table = table;
+
+            for (var i = 0; i < table.Columns.Count; i++)
+            {
+                bulk.ColumnMappings.Add(i, table.Columns[i].ColumnName);
+            }
         }
 
         public override object this[int i] => throw new NotSupportedException();
@@ -195,16 +202,16 @@ namespace Fireasy.Data.Batcher
         private IEnumerator<T> enumerator;
         private T current;
         private bool hasRows;
-        private Dictionary<string, Func<object, object>> accessories = null;
-        private List<Type> propertyTypes = null;
+        private List<Func<object, object>> values = new List<Func<object, object>>();
 
         /// <summary>
         /// 初始化 <see cref="EnumerableBatchReader"/> 类的新实例。
         /// </summary>
+        /// <param name="bulk"></param>
         /// <param name="enumerable"></param>
-        public EnumerableBatchReader(IEnumerable<T> enumerable)
+        public EnumerableBatchReader(SqlBulkCopy bulk, IEnumerable<T> enumerable)
         {
-            InitAccessories(enumerable);
+            InitAccessories(bulk, enumerable);
             enumerator = enumerable.GetEnumerator();
         }
 
@@ -218,7 +225,7 @@ namespace Fireasy.Data.Batcher
 
         public override int RecordsAffected => 0;
 
-        public override int FieldCount => accessories.Count;
+        public override int FieldCount => values.Count;
 
         public override bool HasRows => hasRows;
 
@@ -340,7 +347,7 @@ namespace Fireasy.Data.Batcher
 
         public override object GetValue(int i)
         {
-            return accessories.ElementAt(i).Value(current);
+            return values[i](current);
         }
 
         public override int GetValues(object[] values)
@@ -373,7 +380,7 @@ namespace Fireasy.Data.Batcher
         /// 初始化对象访问器。
         /// </summary>
         /// <param name="list"></param>
-        private void InitAccessories(IEnumerable<T> list)
+        private void InitAccessories(SqlBulkCopy bulk, IEnumerable<T> list)
         {
             var e = list.GetEnumerator();
             if (!e.MoveNext())
@@ -382,15 +389,14 @@ namespace Fireasy.Data.Batcher
             }
 
             hasRows = true;
-            accessories = new Dictionary<string, Func<object, object>>();
-            propertyTypes = new List<Type>();
 
             if (e.Current is IPropertyFieldMappingResolver resolver)
             {
                 foreach (var map in resolver.GetDbMapping())
                 {
-                    accessories.Add(map.FieldName, map.ValueFunc);
-                    propertyTypes.Add(map.PropertyType);
+                    bulk.ColumnMappings.Add(values.Count, map.FieldName);
+                    values.Add(map.ValueFunc);
+
                 }
             }
             else
@@ -402,8 +408,8 @@ namespace Fireasy.Data.Batcher
                 {
                     if (property.PropertyType.IsDbTypeSupported())
                     {
-                        accessories.Add(property.Name, o => property.GetValue(o));
-                        propertyTypes.Add(property.PropertyType);
+                        bulk.ColumnMappings.Add(values.Count, property.Name);
+                        values.Add(o => property.GetValue(o));
                     }
                 }
             }

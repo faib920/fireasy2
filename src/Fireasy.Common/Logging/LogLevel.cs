@@ -5,24 +5,21 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-namespace Fireasy.Common.Ioc
+using System;
+
+namespace Fireasy.Common.Logging
 {
     /// <summary>
-    /// 实例的生命周期。
+    /// 日志级别。
     /// </summary>
-    public enum Lifetime
+    [Flags]
+    public enum LogLevel
     {
-        /// <summary>
-        /// 瞬时。
-        /// </summary>
-        Transient,
-        /// <summary>
-        /// 单例。
-        /// </summary>
-        Singleton,
-        /// <summary>
-        /// 线程范围。
-        /// </summary>
-        Scoped
+        Default = 0,
+        Info = 1,
+        Debug = 2,
+        Warn = 4,
+        Error = 8,
+        Fatal = 16
     }
 }

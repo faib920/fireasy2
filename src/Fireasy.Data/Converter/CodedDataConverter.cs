@@ -23,7 +23,7 @@ namespace Fireasy.Data.Converter
         /// <param name="dbType">数据列类型。</param>
         /// <returns>一个 <see cref="CodedData"/> 对象。</returns>
         /// <exception cref="ConverterNotSupportedException">如果不支持将 <see cref="CodedData"/> 类型的对象转换为指定的 dbType 数据时，引发此异常。</exception>
-        public object ConvertFrom(object value, DbType dbType = DbType.String)
+        public virtual object ConvertFrom(object value, DbType dbType = DbType.String)
         {
             if (value == null || value == DBNull.Value)
             {
@@ -49,7 +49,7 @@ namespace Fireasy.Data.Converter
         /// <param name="dbType">数据列类型。</param>
         /// <returns>表示 <see cref="CodedData"/> 的字节数组。</returns>
         /// <exception cref="ConverterNotSupportedException">如果不支持将 dbType 类型的数据转换为 <see cref="CodedData"/> 类型的对象时，引发此异常。</exception>
-        public object ConvertTo(object value, DbType dbType = DbType.String)
+        public virtual object ConvertTo(object value, DbType dbType = DbType.String)
         {
             if (dbType != DbType.Binary && !dbType.IsStringDbType())
             {

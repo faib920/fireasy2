@@ -43,7 +43,7 @@ namespace Fireasy.Common.Serialization
         /// <param name="type"></param>
         internal void Serialize(object value, Type type = null)
         {
-            if (type == null && value != null)
+            if ((type == null || type == typeof(object)) && value != null)
             {
                 type = value.GetType();
             }

@@ -49,7 +49,7 @@ namespace Fireasy.Data.Batcher
                     DestinationTableName = tableName,
                     BatchSize = batchSize
                 })
-                using (var reader = new EnumerableBatchReader<T>(list))
+                using (var reader = new EnumerableBatchReader<T>(bulk, list))
                 {
                     bulk.WriteToServer(reader);
                 }
@@ -85,7 +85,7 @@ namespace Fireasy.Data.Batcher
                     DestinationTableName = tableName,
                     BatchSize = batchSize
                 })
-                using (var reader = new DataTableBatchReader(dataTable))
+                using (var reader = new DataTableBatchReader(bulk, dataTable))
                 {
                     bulk.WriteToServer(reader);
                 }
@@ -150,7 +150,7 @@ namespace Fireasy.Data.Batcher
                     DestinationTableName = tableName,
                     BatchSize = batchSize
                 })
-                using (var reader = new DataTableBatchReader(dataTable))
+                using (var reader = new DataTableBatchReader(bulk, dataTable))
                 {
                     await AsyncTaskManager.Adapter(bulk.WriteToServerAsync(reader));
                 }
@@ -182,7 +182,7 @@ namespace Fireasy.Data.Batcher
                     DestinationTableName = tableName,
                     BatchSize = batchSize
                 })
-                using (var reader = new EnumerableBatchReader<T>(list))
+                using (var reader = new EnumerableBatchReader<T>(bulk, list))
                 {
                     await AsyncTaskManager.Adapter(bulk.WriteToServerAsync(reader));
                 }

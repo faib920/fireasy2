@@ -33,8 +33,8 @@ namespace Fireasy.Web.Mvc
 
             try
             {
-                var json = serializer.Deserialize(value.FirstValue, bindingContext.ModelType);
-                bindingContext.Result = ModelBindingResult.Success(json);
+                var obj = serializer.Deserialize(value.FirstValue, bindingContext.ModelType);
+                bindingContext.Result = ModelBindingResult.Success(obj);
             }
             catch (Exception exp)
             {

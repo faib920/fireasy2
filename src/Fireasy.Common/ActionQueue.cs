@@ -18,20 +18,27 @@ namespace Fireasy.Common
     public static class ActionQueue
     {
         private static ConcurrentQueue<ActionEntry> queue = new ConcurrentQueue<ActionEntry>();
-        private static Timer timer = new Timer(ProcessQueue, null, TimeSpan.FromMilliseconds(0), TimeSpan.FromSeconds(10));
-        private static bool isProcessing = false;
-        private static int tryTime = 0;
+        private readonly static Thread thread;
+        private static TimeSpan time = TimeSpan.FromSeconds(1);
 
         /// <summary>
         /// 用于处理异常的委托。
         /// </summary>
-        public static Action<Exception> ExceptionHandler { get; set; }
+        public static Action<Action, Exception> ExceptionHandler { get; set; }
+
+        static ActionQueue()
+        {
+            thread = new Thread(new ThreadStart(ProcessQueue));
+            thread.IsBackground = true;
+            thread.Priority = ThreadPriority.Highest;
+            thread.Start();
+        }
 
         /// <summary>
         /// 将一个委托添加到队列中。
         /// </summary>
         /// <param name="action">要执行的委托。</param>
-        /// <param name="tryTimes">当生产异常时，可重试的次数。</param>
+        /// <param name="tryTimes">重试次数。</param>
         /// <returns>执行的标识。</returns>
         public static string Push(Action action, int tryTimes = 0)
         {
@@ -43,57 +50,42 @@ namespace Fireasy.Common
         }
 
         /// <summary>
-        /// 设置后台线程执行的间隔时间。默认为 10 秒。
+        /// 设置后台线程执行的间隔时间。默认为 1 秒。
         /// </summary>
         /// <param name="time">后台线程执行的间隔时间。</param>
         public static void SetPeriod(TimeSpan time)
         {
-            timer.Change(TimeSpan.FromSeconds(1), time);
-        }
-
-        /// <summary>
-        /// 设置发生异常后允许重试的次数。默认为 0。
-        /// </summary>
-        /// <param name="times">重试次数。</param>
-        public static void SetTryTimes(int times)
-        {
-            tryTime = times;
+            ActionQueue.time = time;
         }
 
         /// <summary>
         /// 处理队列内的委托。
         /// </summary>
-        /// <param name="state"></param>
-        private static void ProcessQueue(object state)
+        private static void ProcessQueue()
         {
-            if (isProcessing)
+            while (true)
             {
-                return;
-            }
-
-            ActionEntry entry;
-
-            isProcessing = true;
-            while (queue.TryDequeue(out entry))
-            {
-                try
+                while (queue.TryDequeue(out ActionEntry entry))
                 {
-                    entry.Action();
-                }
-                catch (Exception exp)
-                {
-                    if (entry.CanTry())
+                    try
                     {
-                        queue.Enqueue(entry);
+                        entry.Action();
                     }
-                    else
+                    catch (Exception exp)
                     {
-                        ExceptionHandler?.Invoke(exp);
+                        if (entry.CanTry())
+                        {
+                            queue.Enqueue(entry);
+                        }
+                        else
+                        {
+                            ExceptionHandler?.Invoke(entry.Action, exp);
+                        }
                     }
                 }
-            }
 
-            isProcessing = false;
+                Thread.Sleep(time);
+            }
         }
 
         private class ActionEntry

@@ -21,6 +21,7 @@ using System.Reflection;
 using System.Linq.Expressions;
 using Fireasy.Common.Linq.Expressions;
 using Fireasy.Common.Mapper;
+using Fireasy.Common.Serialization;
 
 namespace Fireasy.Common.Extensions
 {
@@ -481,6 +482,32 @@ namespace Fireasy.Common.Extensions
                     action(property, v1);
                 }
             }
+        }
+
+        /// <summary>
+        /// 将对象序列化为 Json 字符串。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="obj"></param>
+        /// <param name="option"></param>
+        /// <returns></returns>
+        public static string ToJson<T>(this T obj, JsonSerializeOption option = null)
+        {
+            var serializer = new JsonSerializer(option);
+            return serializer.Serialize(obj);
+        }
+
+        /// <summary>
+        /// 从 Json 字符串。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="json"></param>
+        /// <param name="option"></param>
+        /// <returns></returns>
+        public static T FromJson<T>(this string json, JsonSerializeOption option = null)
+        {
+            var serializer = new JsonSerializer(option);
+            return serializer.Deserialize<T>(json);
         }
 
         /// <summary>

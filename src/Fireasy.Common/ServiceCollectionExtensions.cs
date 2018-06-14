@@ -30,8 +30,6 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IServiceCollection AddFireasy(this IServiceCollection services, IConfiguration configuration, Action<Fireasy.Common.CoreOptions> setupAction = null)
         {
-            services.AddUnity();
-
             ConfigurationUnity.Bind(Assembly.GetCallingAssembly(), configuration, services);
 
             var options = new Fireasy.Common.CoreOptions();
@@ -53,17 +51,15 @@ namespace Microsoft.Extensions.DependencyInjection
             {
                 if (reg is SingletonRegistration singReg)
                 {
-                    services.AddSingleton(singReg.ServiceType, reg.Resolve());
-                }
-                else if (reg.GetType().IsGenericType && reg.GetType().GetGenericTypeDefinition() == typeof(TransientRegistration<,>))
-                {
-                    var types = reg.GetType().GetGenericArguments();
-                    services.AddTransient(types[0], svr => reg.Resolve());
+                    services.AddSingleton(singReg.ServiceType, singReg.ComponentType);
                 }
                 else if (reg.GetType().IsGenericType && reg.GetType().GetGenericTypeDefinition() == typeof(FuncRegistration<>))
                 {
-                    var types = reg.GetType().GetGenericArguments();
-                    services.AddSingleton(types[0], reg.Resolve());
+                    services.AddTransient(reg.ServiceType, s => reg.Resolve());
+                }
+                else
+                {
+                    services.AddTransient(reg.ServiceType, reg.ComponentType);
                 }
             }
 

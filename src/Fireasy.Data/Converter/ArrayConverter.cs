@@ -32,7 +32,12 @@ namespace Fireasy.Data.Converter
         /// <exception cref="ConverterNotSupportedException">如果不支持将数组转换为指定的 dbType 数据时，引发此异常。</exception>
         public object ConvertFrom(object value, DbType dbType = DbType.String)
         {
-            if (dbType.IsStringDbType() && value != null)
+            if (value == null || value == DBNull.Value)
+            {
+                return null;
+            }
+
+            if (dbType.IsStringDbType())
             {
                 if (elementType == typeof(byte))
                 {

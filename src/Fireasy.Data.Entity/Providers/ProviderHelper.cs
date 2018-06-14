@@ -41,11 +41,6 @@ namespace Fireasy.Data.Entity.Providers
                 case SQLiteProvider sqlite:
                     provider.RegisterService(serviceType, new SQLiteTranslateProvider());
                     break;
-#if !NETSTANDARD2_0
-                case OleDbProvider oledb:
-                    provider.RegisterService(serviceType, new AccessTranslateProvider());
-                    break;
-#endif
                 case PostgreSqlProvider pgsql:
                     provider.RegisterService(serviceType, new PostgreSqlTranslateProvider());
                     break;

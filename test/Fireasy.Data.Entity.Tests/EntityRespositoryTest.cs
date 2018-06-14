@@ -42,7 +42,7 @@ namespace Fireasy.Data.Entity.Tests
             using (var context = new DbContext())
             {
                 var dept = context.Depts.FirstOrDefault();
-                Console.WriteLine(dept.Attributes);
+                //Console.WriteLine(dept.Attributes);
             }
         }
 
@@ -358,6 +358,20 @@ namespace Fireasy.Data.Entity.Tests
         }
 
         [TestMethod]
+        public void TestInsertByFactory()
+        {
+            using (var db = new DbContext())
+            {
+                db.Customers.Insert(() => new Customers
+                {
+                    CustomerID = "DD",
+                    CompanyName = "kunming",
+                    City = "kunming"
+                });
+            }
+        }
+
+        [TestMethod]
         public void TestInsertAndRetPk()
         {
             using (var db = new DbContext())
@@ -649,19 +663,19 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var db = new DbContext())
             {
-                var list = new List<OrderDetails>();
+                var list = new List<Products>();
 
                 for (var i = 0; i < 3; i++)
                 {
-                    var d = OrderDetails.New();
-                    d.OrderID = 1;
-                    d.ProductID = 1;
-                    d.Orders = null;
+                    var d = Products.New();
+                    //d.ProductID = 944 + i;
+                    d.ProductName = "aa1111";
+                    //d.Orders = null;
+                    d.Discontinued = true;
                     list.Add(d);
                 }
 
-                db.OrderDetails.Batch(list, (u, s) => u.Insert(s));
-                Console.WriteLine(11);
+                db.Products.Batch(list, (u, s) => u.Insert(s));
             }
         }
 
@@ -681,6 +695,26 @@ namespace Fireasy.Data.Entity.Tests
                 list[1].DeptCode = "test";
 
                 db.Depts.Batch(list, (u, s) => u.Update(s));
+            }
+        }
+
+        [TestMethod]
+        public void TestBatchDelete()
+        {
+            using (var db = new DbContext())
+            {
+                var list = new List<Products>();
+
+                for (var i = 0; i < 3; i++)
+                {
+                    var d = Products.New();
+                    d.ProductID = 1;
+                    //d.Orders = null;
+                    list.Add(d);
+                }
+
+                db.Products.Batch(list, (u, s) => u.Delete(s, true));
+                Console.WriteLine(11);
             }
         }
 

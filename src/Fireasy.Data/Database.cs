@@ -432,7 +432,10 @@ namespace Fireasy.Data
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
             var adapter = Provider.DbProviderFactory.CreateDataAdapter();
-            Guard.NullReference(adapter);
+            if (adapter == null)
+            {
+                throw new NotSupportedException(nameof(DataAdapter));
+            }
 
             UsingConnection(connection =>
                 {
@@ -504,7 +507,11 @@ namespace Fireasy.Data
                 {
                     var builder = new CommandBuilder(Provider, dataTable, connection, Transaction);
                     var adapter = Provider.DbProviderFactory.CreateDataAdapter();
-                    Guard.NullReference(adapter);
+                    if (adapter == null)
+                    {
+                        throw new NotSupportedException(nameof(DataAdapter));
+                    }
+
                     builder.FillAdapter(adapter);
                     adapter.Update(dataTable);
                 }, false);
@@ -527,14 +534,19 @@ namespace Fireasy.Data
                 {
                     var parameters = GetTableParameters(dataTable);
                     var adapter = Provider.DbProviderFactory.CreateDataAdapter();
+                    if (adapter == null)
+                    {
+                        result = UpdateManually(dataTable, parameters, insertCommand, updateCommand, deleteCommand);
+                        return;
+                    }
+
                     if (insertCommand != null)
                     {
                         adapter.InsertCommand = CreateDbCommand(connection, insertCommand, parameters);
                         adapter.InsertCommand.UpdatedRowSource = UpdateRowSource.Both;
                     }
 
-                    var period = TimeWatcher.Watch(() => result = adapter.Update(dataTable));
-                    HandleLog(adapter.InsertCommand, period);
+                    result = adapter.Update(dataTable);
 
                 }, false);
 
@@ -979,6 +991,74 @@ namespace Fireasy.Data
             }
 
             return parameters;
+        }
+
+        private int UpdateManually(DataTable dataTable, ParameterCollection parameters, SqlCommand insertCommand, SqlCommand updateCommand, SqlCommand deleteCommand)
+        {
+            if (updateCommand == null && deleteCommand == null && insertCommand != null)
+            {
+                return UpdateSimple(dataTable, parameters, insertCommand);
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        private int UpdateSimple(DataTable dataTable, ParameterCollection parameters, SqlCommand sqlCommand)
+        {
+            const string COLUMN_RESULT = "_Result";
+
+            if (dataTable.Columns[COLUMN_RESULT] == null)
+            {
+                dataTable.Columns.Add(COLUMN_RESULT, typeof(int));
+            }
+
+            var result = 0;
+
+            UsingConnection(connection =>
+                {
+                    BeginTransaction();
+
+                    using (var command = CreateDbCommand(connection, sqlCommand, parameters))
+                    {
+                        try
+                        {
+                            foreach (DataRow row in dataTable.Rows)
+                            {
+                                UpdateParameters(command.Parameters, row);
+
+                                var time = TimeWatcher.Watch(() => row[COLUMN_RESULT] = command.ExecuteScalar() ?? 0);
+                                HandleLog(command, time);
+
+                                result++;
+                            }
+
+                            CommitTransaction();
+                        }
+                        catch (DbException exp)
+                        {
+                            HandleFailedLog(command, exp);
+
+                            RollbackTransaction();
+
+                            throw new CommandException(command, exp);
+                        }
+                    }
+                });
+
+            return result;
+        }
+
+        private void UpdateParameters(DbParameterCollection parameters, DataRow row)
+        {
+            foreach (DbParameter parameter in parameters)
+            {
+                if (row.Table.Columns[parameter.ParameterName] != null)
+                {
+                    parameter.Value = row[parameter.ParameterName];
+                }
+            }
         }
 
 #if !NET40 && !NET35

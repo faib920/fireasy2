@@ -36,8 +36,7 @@ namespace Fireasy.Common.Mapper
         /// <returns></returns>
         public Expression GetMapExpression(MemberInfo member)
         {
-            Expression exp = null;
-            cache.TryGetValue(member, out exp);
+            cache.TryGetValue(member, out Expression exp);
             return exp;
         }
 

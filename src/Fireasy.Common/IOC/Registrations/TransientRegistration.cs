@@ -19,7 +19,7 @@ namespace Fireasy.Common.Ioc.Registrations
         where TService : class
     {
         public TransientRegistration()
-            : base(typeof(TService))
+            : base(typeof(TService), typeof(TImplementation))
         {
         }
 

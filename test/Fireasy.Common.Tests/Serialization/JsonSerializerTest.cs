@@ -323,6 +323,29 @@ studio");
         }
 
         /// <summary>
+        /// 使用排除选项测试Serialize方法。
+        /// </summary>
+        [TestMethod()]
+        public void TestSerializeObjectWithExclusiveMembers()
+        {
+            var option = new JsonSerializeOption();
+            option.Exclude<JsonData>(s => s.Birthday, s => s.Record.StartDate).Include<WorkRecord>(s => s.Company);
+            var serializer = new JsonSerializer(option);
+
+            var obj = new JsonData
+            {
+                Age = 12,
+                Name = "huangxd",
+                Birthday = DateTime.Parse("1982-9-20"),
+                Record = new WorkRecord {  Company = "fireasy", StartDate = DateTime.Now, EndDate = DateTime.Now }
+            };
+
+            var json = serializer.Serialize(obj);
+
+            Console.WriteLine(json);
+        }
+
+        /// <summary>
         /// 使用复杂对象测试Serialize方法。
         /// </summary>
         [TestMethod()]
@@ -981,6 +1004,37 @@ studio");
         /// 测试Deserialize方法，返回object。
         /// </summary>
         [TestMethod()]
+        public void TestDeserializeObject1()
+        {
+            var serializer = new JsonSerializer();
+
+            var obj = serializer.Deserialize<ComponentModel.Result<object>>(
+                new JsonText(@"{'succeed':true,'data':{'Name':'fireasy','Address':'kunming'}}").ToString()
+                );
+
+            Assert.IsNotNull(obj);
+            Console.WriteLine(serializer.Serialize(obj));
+        }
+
+        /// <summary>
+        /// 测试Deserialize方法，返回object。
+        /// </summary>
+        [TestMethod()]
+        public void TestDeserializeObject2()
+        {
+            var serializer = new JsonSerializer();
+
+            var obj = serializer.Deserialize<object>(
+                new JsonText(@"[{'Name':null,'Birthday':'\/Date(401299200000+0800)\/','Age':12,'WorkRecords':null}]").ToString()
+                );
+
+            Assert.IsNotNull(obj);
+        }
+
+        /// <summary>
+        /// 测试Deserialize方法，返回object。
+        /// </summary>
+        [TestMethod()]
         public void TestDeserializeObjectByInterface()
         {
             var serializer = new JsonSerializer();
@@ -1190,12 +1244,12 @@ studio");
         {
             var serializer = new JsonSerializer();
 
-            var json = new JsonText(@"[12,33,44.55,'55']").ToString();
+            var json = new JsonText(@"[12,33,44.55,'55',{'Name':'fireasy'}]").ToString();
 
             var array = serializer.Deserialize<ArrayList>(json);
 
             Assert.IsNotNull(array);
-            Assert.AreEqual(4, array.Count);
+            Assert.AreEqual(5, array.Count);
         }
 
         /// <summary>
@@ -1432,6 +1486,8 @@ studio");
             public List<WorkRecord> WorkRecords { get; set; }
 
             public Type DataType { get; set; }
+
+            public WorkRecord Record { get; set; }
         }
 
         public class WorkRecord

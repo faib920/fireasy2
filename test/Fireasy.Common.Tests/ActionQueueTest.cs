@@ -14,14 +14,13 @@ namespace Fireasy.Common.Tests
         [TestMethod]
         public void TestException()
         {
-            ActionQueue.SetTryTimes(1);
             ActionQueue.SetPeriod(TimeSpan.FromMilliseconds(500));
             ActionQueue.Push(() =>
             {
                 Console.WriteLine("yes");
                 throw new Exception("error");
             });
-            ActionQueue.ExceptionHandler = (exp) =>
+            ActionQueue.ExceptionHandler = (action, exp) =>
             {
                 Console.WriteLine(exp.Message);
             };

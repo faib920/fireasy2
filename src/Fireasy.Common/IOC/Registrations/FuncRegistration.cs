@@ -15,7 +15,7 @@ namespace Fireasy.Common.Ioc.Registrations
         private readonly Func<object> instanceCreator;
 
         internal FuncRegistration(Func<object> instanceCreator)
-            : base(typeof(TService))
+            : base(typeof(TService), null)
         {
             this.instanceCreator = instanceCreator;
         }

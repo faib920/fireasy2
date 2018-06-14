@@ -15,7 +15,7 @@ namespace Fireasy.Common.Ioc.Registrations
         private readonly object instance;
 
         internal SingletonRegistration(Type serviceType, object instance) :
-            base(serviceType)
+            base(serviceType, instance.GetType())
         {
             this.instance = instance;
         }
@@ -37,7 +37,7 @@ namespace Fireasy.Common.Ioc.Registrations
         private readonly TService instance;
 
         internal SingletonRegistration(TService instance) :
-            base(typeof(TService))
+            base(typeof(TService), instance.GetType())
         {
             this.instance = instance;
         }

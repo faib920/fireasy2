@@ -39,15 +39,21 @@ namespace Fireasy.Data.Converter
                 throw new ConverterNotSupportedException(typeof(Image), dbType);
             }
 
-            var bytes = value as byte[];
-            if (bytes == null)
+            if (!(value is byte[] bytes))
             {
                 return null;
             }
 
             using (var stream = new MemoryStream(bytes))
             {
-                return Image.FromStream(stream);
+                try
+                {
+                    return Image.FromStream(stream);
+                }
+                catch
+                {
+                    return null;
+                }
             }
         }
 

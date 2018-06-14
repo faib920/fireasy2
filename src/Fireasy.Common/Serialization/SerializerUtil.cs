@@ -16,7 +16,16 @@ namespace Fireasy.Common.Serialization
 
         internal static bool IsNoSerializable(SerializeOption option, PropertyInfo property)
         {
-            return property.IsDefined<NoTextSerializableAttribute>() || IsNoSerializable(option, property.Name);
+            return property.IsDefined<NoTextSerializableAttribute>() ||
+                (((option.InclusiveNames != null) &&
+                !option.InclusiveNames.Contains(property.Name)) ||
+                ((option.ExclusiveNames != null) &&
+                option.ExclusiveNames.Contains(property.Name))) ||
+                (((option.InclusiveMembers != null) && 
+                option.InclusiveMembers.Count(s => s.DeclaringType == property.DeclaringType) != 0 &&
+                !option.InclusiveMembers.Contains(property)) ||
+                ((option.ExclusiveMembers != null) &&
+                option.ExclusiveMembers.Contains(property)));
         }
 
         internal static bool IsNoSerializable(PropertyDescriptor property, object value)

@@ -579,7 +579,7 @@ namespace Fireasy.Common.Serialization
             while (true)
             {
                 jsonReader.SkipWhiteSpaces();
-                var value = jsonReader.ReadValue();
+                var value = Deserialize(typeof(object));
                 array.Add(value);
                 jsonReader.SkipWhiteSpaces();
 

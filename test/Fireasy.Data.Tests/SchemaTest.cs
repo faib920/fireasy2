@@ -14,11 +14,23 @@ namespace Fireasy.Data.Tests
 
         private void Invoke(Action<IDatabase, ISchemaProvider> action)
         {
-            using (var db = DatabaseFactory.CreateDatabase("mssql1"))
+            using (var db = DatabaseFactory.CreateDatabase("sqlite"))
             {
                 var schema = db.Provider.GetService<ISchemaProvider>();
                 action(db, schema);
             }
+        }
+
+        [TestMethod]
+        public void TestGeUsers()
+        {
+            Invoke((db, schema) =>
+            {
+                foreach (var user in schema.GetSchemas<User>(db))
+                {
+                    Console.WriteLine(user.Name);
+                }
+            });
         }
 
         [TestMethod]
@@ -29,6 +41,18 @@ namespace Fireasy.Data.Tests
                 foreach (var database in schema.GetSchemas<DataBase>(db))
                 {
                     Console.WriteLine(database.Name);
+                }
+            });
+        }
+
+        [TestMethod]
+        public void TestGetDataTypes()
+        {
+            Invoke((db, schema) =>
+            {
+                foreach (var dt in schema.GetSchemas<DataType>(db))
+                {
+                    Console.WriteLine(dt.Name);
                 }
             });
         }
@@ -47,11 +71,24 @@ namespace Fireasy.Data.Tests
         }
 
         [TestMethod]
+        public void TestGetTables1()
+        {
+            Invoke((db, schema) =>
+            {
+                foreach (var table in schema.GetSchemas<Table>(db, s => s.Name == "customers"))
+                {
+                    Console.WriteLine(table.Name + "," + table.Description);
+                }
+            });
+        }
+
+        [TestMethod]
         public void TestGetColumns()
         {
             Invoke((db, schema) =>
             {
-                foreach (var column in schema.GetSchemas<Column>(db, s => s.TableName == "TB_CORP"))
+                var parameter = db.Provider.GetConnectionParameter(db.ConnectionString);
+                foreach (var column in schema.GetSchemas<Column>(db, s => s.Schema == parameter.Schema && s.TableName == "SysOrg"))
                 {
                     Console.WriteLine($"Name: {column.Name}\tIsPrimaryKey: {column.IsNullable}\tDescription: {column.Description}");
                 }
@@ -67,6 +104,30 @@ namespace Fireasy.Data.Tests
                 foreach (var fk in schema.GetSchemas<ForeignKey>(db, s => s.Schema == parameter.Schema))
                 {
                     Console.WriteLine(fk.Name);
+                }
+            });
+        }
+
+        [TestMethod]
+        public void TestGetProcedures()
+        {
+            Invoke((db, schema) =>
+            {
+                foreach (var pro in schema.GetSchemas<Procedure>(db))
+                {
+                    Console.WriteLine(pro.Name);
+                }
+            });
+        }
+
+        [TestMethod]
+        public void TestGetProcedureParameters()
+        {
+            Invoke((db, schema) =>
+            {
+                foreach (var pro in schema.GetSchemas<ProcedureParameter>(db))
+                {
+                    Console.WriteLine(pro.Name);
                 }
             });
         }

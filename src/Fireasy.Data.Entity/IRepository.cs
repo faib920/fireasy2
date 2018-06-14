@@ -165,6 +165,13 @@ namespace Fireasy.Data.Entity
         int Insert(TEntity entity);
 
         /// <summary>
+        /// 使用一个 <see cref="MemberInitExpression"/> 表达式插入新的对象。
+        /// </summary>
+        /// <param name="factory">一个构造实例并成员绑定的表达式。</param>
+        /// <returns></returns>
+        int Insert(Expression<Func<TEntity>> factory);
+
+        /// <summary>
         /// 更新一个实体对象。
         /// </summary>
         /// <param name="entity">要更新的实体对象。</param>
@@ -242,6 +249,13 @@ namespace Fireasy.Data.Entity
         /// <param name="entity">要创建的实体对象。</param>
         /// <returns>影响的实体数。</returns>
         Task<int> InsertAsync(TEntity entity);
+
+        /// <summary>
+        /// 使用一个 <see cref="MemberInitExpression"/> 表达式插入新的对象。
+        /// </summary>
+        /// <param name="factory">一个构造实例并成员绑定的表达式。</param>
+        /// <returns></returns>
+        Task<int> InsertAsync(Expression<Func<TEntity>> factory);
 
         /// <summary>
         /// 更新一个实体对象。

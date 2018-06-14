@@ -5,16 +5,16 @@
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
-    <FileVersion>2.0.0.46096</FileVersion>
+    <FileVersion>2.0.0.46100</FileVersion>
     <Copyright>Copyright © Fireasy 2013-2018</Copyright>
-    <AssemblyVersion>2.0.0.46096</AssemblyVersion>
+    <AssemblyVersion>2.0.0.46100</AssemblyVersion>
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>True</SignAssembly>
     <DelaySign>False</DelaySign>
     <Product>Fireasy EasyUI Extensions</Product>
-    <Version>2.0.10</Version>
+    <Version>2.0.12</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Description>EasyUI for Asp.Net 扩展库。
+    <Description>EasyUI for Asp.Net 扩展库。支持 .Net Core 2.1 版本。
 
 示例源码：https://github.com/faib920/zero</Description>
     <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
@@ -57,7 +57,7 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="Microsoft.AspNetCore.Mvc">
-      <Version>2.0.0</Version>
+      <Version>2.1.0</Version>
     </PackageReference>
   </ItemGroup>
 

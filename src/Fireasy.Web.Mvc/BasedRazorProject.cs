@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if NETSTANDARD2_0
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Razor.Internal;
 using Microsoft.AspNetCore.Razor.Language;
 using System.Collections.Generic;
@@ -13,10 +14,10 @@ using System.Linq;
 
 namespace Fireasy.Web.Mvc
 {
-    internal class BasedRazorProject : FileProviderRazorProject
+    internal class BasedRazorProject : FileProviderRazorProjectFileSystem
     {
-        public BasedRazorProject(IRazorViewEngineFileProviderAccessor accessor)
-            : base(accessor)
+        public BasedRazorProject(IRazorViewEngineFileProviderAccessor accessor, IHostingEnvironment hostingEnvironment)
+            : base(accessor, hostingEnvironment)
         {
         }
 

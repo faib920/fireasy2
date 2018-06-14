@@ -127,9 +127,7 @@ namespace Fireasy.Data.Entity.Tests
             using (var db = new DbContext())
             {
                 var rep = db.CreateTreeRepository<Depts>();
-                //var dept = db.Depts.FirstOrDefault(s => s.DeptName == "昆明");
-                var dept = Depts.New().Normalize(3L);
-                dept.DeptName = "aaaa";
+                var dept = db.Depts.FirstOrDefault(s => s.DeptName == "昆明");
                 var parent = db.Depts.FirstOrDefault(s => s.DeptName == "四川");
 
                 rep.Move(dept, parent);

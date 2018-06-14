@@ -15,13 +15,16 @@ namespace Fireasy.Common.Ioc.Registrations
     {
         private Func<Container, object> instanceCreator;
 
-        protected AbstractRegistration(Type serviceType)
+        protected AbstractRegistration(Type serviceType, Type componetType)
         {
             ServiceType = serviceType;
+            ComponentType = componetType;
             ParameterExpression = Expression.Parameter(typeof(Container), "s");
         }
 
         public Type ServiceType { get; private set; }
+
+        public Type ComponentType { get; set; }
 
         internal Container Container { get; set; }
 

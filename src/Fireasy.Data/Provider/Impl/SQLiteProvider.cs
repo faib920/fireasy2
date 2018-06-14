@@ -30,7 +30,8 @@ namespace Fireasy.Data.Provider
         public SQLiteProvider()
 #if NETSTANDARD2_0
             : base("Microsoft.Data.Sqlite.SqliteFactory, Microsoft.Data.Sqlite",
-                  "Devart.Data.SQLite.SQLiteProviderFactory, Devart.Data.SQLite")
+                    "Microsoft.Data.Sqlite.SqliteFactory, Spreads.SQLite", 
+                    "Devart.Data.SQLite.SQLiteProviderFactory, Devart.Data.SQLite")
 #else
             : base("System.Data.SQLite.SQLiteFactory, System.Data.SQLite")
 #endif

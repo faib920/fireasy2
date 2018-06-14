@@ -98,10 +98,11 @@ namespace Fireasy.Data.Entity.Subscribes
 
         private static bool IsQueue(EntityPersistentEventType eventType)
         {
-            return eventType == EntityPersistentEventType.AfterCreate || 
-                eventType == EntityPersistentEventType.AfterUpdate || 
-                eventType == EntityPersistentEventType.AfterRemove || 
-                eventType == EntityPersistentEventType.AfterBatch;
+            return false;
+            //return eventType == EntityPersistentEventType.AfterCreate || 
+            //    eventType == EntityPersistentEventType.AfterUpdate || 
+            //    eventType == EntityPersistentEventType.AfterRemove || 
+            //    eventType == EntityPersistentEventType.AfterBatch;
         }
     }
 
