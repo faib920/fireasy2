@@ -5,49 +5,71 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-
+using Fireasy.Common.Logging;
 using System;
 
-namespace Fireasy.Common.Logging
+namespace Fireasy.NLog
 {
     /// <summary>
-    /// 提供日志记录的方法。
+    /// 基于 log4net 的日志管理器。
     /// </summary>
-    public interface ILogger
+    public class Logger : ILogger
     {
+        private global::NLog.ILogger log;
+
+        public Logger()
+        {
+            log = global::NLog.LogManager.GetLogger("fireasy");
+        }
+
         /// <summary>
         /// 记录错误信息到日志。
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        void Error(string message, Exception exception = null);
+        public void Error(string message, Exception exception = null)
+        {
+            log.Error(exception, message);
+        }
 
         /// <summary>
         /// 记录一般的信息到日志。
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        void Info(string message, Exception exception = null);
+        public void Info(string message, Exception exception = null)
+        {
+            log.Info(exception, message);
+        }
 
         /// <summary>
         /// 记录警告信息到日志。
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        void Warn(string message, Exception exception = null);
+        public void Warn(string message, Exception exception = null)
+        {
+            log.Warn(exception, message);
+        }
 
         /// <summary>
         /// 记录调试信息到日志。
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        void Debug(string message, Exception exception = null);
+        public void Debug(string message, Exception exception = null)
+        {
+            log.Debug(exception, message);
+        }
 
         /// <summary>
         /// 记录致命信息到日志。
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        void Fatal(string message, Exception exception = null);
+        public void Fatal(string message, Exception exception = null)
+        {
+            log.Fatal(exception, message);
+        }
     }
 }
