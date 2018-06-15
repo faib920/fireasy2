@@ -260,6 +260,7 @@ namespace Fireasy.Redis
             {
                 DefaultDatabase = this.setting.DefaultDb,
                 Password = this.setting.Password,
+                ConnectTimeout = this.setting.ConnectTimeout,
                 AllowAdmin = true
             };
 

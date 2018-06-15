@@ -38,6 +38,7 @@ namespace Fireasy.Redis
                 setting.MaxWritePoolSize = configNode.GetAttributeValue("maxWritePoolSize", 5);
                 setting.DefaultDb = configNode.GetAttributeValue("defaultDb", 0);
                 setting.Password = configNode.GetAttributeValue("password");
+                setting.ConnectTimeout = configNode.GetAttributeValue("connectTimeout", 2);
 
                 foreach (XmlNode nd in configNode.SelectNodes("host"))
                 {
@@ -71,6 +72,7 @@ namespace Fireasy.Redis
                 setting.MaxWritePoolSize = configNode["maxWritePoolSize"].To(5);
                 setting.DefaultDb = configNode["defaultDb"].To(0);
                 setting.Password = configNode["password"];
+                setting.ConnectTimeout = configNode["connectTimeout"].To(2);
 
                 foreach (var nd in configNode.GetSection("host").GetChildren())
                 {

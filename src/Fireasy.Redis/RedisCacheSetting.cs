@@ -52,6 +52,11 @@ namespace Fireasy.Redis
         /// 获取或设置对象序列化器的类型。
         /// </summary>
         public Type SerializerType { get; set; }
+
+        /// <summary>
+        /// 获取或设置连接超时时间。默认为 2 秒。
+        /// </summary>
+        public int ConnectTimeout { get; set; } = 2;
     }
 
     /// <summary>

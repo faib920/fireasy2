@@ -5,14 +5,14 @@
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
-    <FileVersion>2.0.0.46092</FileVersion>
+    <FileVersion>2.0.0.46102</FileVersion>
     <Copyright>Copyright © Fireasy 2013-2017</Copyright>
-    <AssemblyVersion>2.0.0.46092</AssemblyVersion>
+    <AssemblyVersion>2.0.0.46102</AssemblyVersion>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Redis Cache Provider</Product>
-    <Version>2.0.8</Version>
+    <Version>2.0.14</Version>
     <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
     <Description>Redis Cache for Fireasy。</Description>
@@ -24,9 +24,9 @@
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
   
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2_0|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <DocumentationFile>..\..\Release\net46\Fireasy.Redis.xml</DocumentationFile>
+    <DocumentationFile>..\..\Release\netstandard2.0\Fireasy.Redis.xml</DocumentationFile>
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
