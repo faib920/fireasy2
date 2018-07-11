@@ -37,6 +37,7 @@ namespace Fireasy.Common.Emit
         /// <param name="calling">指定类的调用属性。</param>
         /// <param name="baseType">动态类型继承的基类。</param>
         internal DynamicTypeBuilder(BuildContext context, string typeName, VisualDecoration visual = VisualDecoration.Public, CallingDecoration calling = CallingDecoration.Standard, Type baseType = null)
+            : base(visual, calling)
         {
             Context = new BuildContext(context) { TypeBuilder = this };
             TypeName = typeName;
@@ -46,6 +47,7 @@ namespace Fireasy.Common.Emit
         }
 
         internal DynamicTypeBuilder(BuildContext context, string typeName,  VisualDecoration visual, Type baseType)
+            : base(visual, CallingDecoration.Standard)
         {
             Context = new BuildContext(context) { TypeBuilder = context.TypeBuilder };
             isNesetType = true;

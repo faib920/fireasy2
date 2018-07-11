@@ -24,6 +24,7 @@ namespace Fireasy.Common.Emit
         private readonly List<string> parameters = new List<string>();
 
         internal DynamicConstructorBuilder(BuildContext context, Type[] parameterTypes, VisualDecoration visual = VisualDecoration.Public, CallingDecoration calling = CallingDecoration.Standard, Action<BuildContext> ilCoding = null)
+            : base(visual, calling)
         {
             Context = new BuildContext(context) { ConstructorBuilder = this };
             ParameterTypes = parameterTypes;

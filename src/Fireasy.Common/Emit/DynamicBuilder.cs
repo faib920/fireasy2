@@ -24,6 +24,20 @@ namespace Fireasy.Common.Emit
     /// </summary>
     public abstract class DynamicBuilder
     {
+        public DynamicBuilder()
+        {
+        }
+
+        public DynamicBuilder(VisualDecoration visual, CallingDecoration calling)
+        {
+            Visual = visual;
+            Calling = calling;
+        }
+
+        public VisualDecoration Visual { get; private set; }
+
+        public CallingDecoration Calling { get; private set; }
+
         /// <summary>
         /// 获取或设置构造器的上下文对象。
         /// </summary>

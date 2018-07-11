@@ -18,10 +18,10 @@ namespace Fireasy.Common.Emit
     public class DynamicPropertyBuilder : DynamicBuilder
     {
         private PropertyBuilder propertyBuilder;
-
         private DynamicFieldBuilder fieldBuilder;
 
         internal DynamicPropertyBuilder(BuildContext context, string propertyName, Type propertyType, VisualDecoration visual = VisualDecoration.Public, CallingDecoration calling = CallingDecoration.Standard)
+            : base (visual, calling)
         {
             Context = new BuildContext(context) { PropertyBuilder = this };
             Name = propertyName;
@@ -67,8 +67,8 @@ namespace Fireasy.Common.Emit
         /// <returns>当前的 <see cref="DynamicTypeBuilder"/>。</returns>
         public DynamicPropertyBuilder DefineGetSetMethods(DynamicFieldBuilder field = null)
         {
-            DefineGetMethodByField(fieldBuilder: field);
-            DefineSetMethodByField(fieldBuilder: field);
+            DefineGetMethodByField(Visual, Calling, fieldBuilder: field);
+            DefineSetMethodByField(Visual, Calling, fieldBuilder: field);
             return this;
         }
 

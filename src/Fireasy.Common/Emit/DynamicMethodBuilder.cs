@@ -31,6 +31,7 @@ namespace Fireasy.Common.Emit
         private string[] genericTypeNames;
 
         internal DynamicMethodBuilder(BuildContext context, string methodName, Type returnType = null, Type[] parameterTypes = null, VisualDecoration visual = VisualDecoration.Public, CallingDecoration calling = CallingDecoration.Standard, Action<BuildContext> ilCoding = null)
+             : base(visual, calling)
         {
             Context = new BuildContext(context) { MethodBuilder = this };
             Name = methodName;
@@ -238,6 +239,9 @@ namespace Fireasy.Common.Emit
                 case CallingDecoration.Static:
                     attributes |= MethodAttributes.Static;
                     break;
+                case CallingDecoration.ExplicitImpl:
+                    attributes |= MethodAttributes.Private | MethodAttributes.Final;
+                    break;
             }
 
             switch (visual)
@@ -246,7 +250,10 @@ namespace Fireasy.Common.Emit
                     attributes |= MethodAttributes.Assembly;
                     break;
                 case VisualDecoration.Public:
-                    attributes |= MethodAttributes.Public;
+                    if (calling != CallingDecoration.ExplicitImpl)
+                    {
+                        attributes |= MethodAttributes.Public;
+                    }
                     break;
                 case VisualDecoration.Protected:
                     attributes |= MethodAttributes.Family;
@@ -355,7 +362,17 @@ namespace Fireasy.Common.Emit
 
         private void InitBuilder()
         {
-            methodBuilder = Context.TypeBuilder.TypeBuilder.DefineMethod(Name, attributes);
+            var isOverride = Calling == CallingDecoration.ExplicitImpl && Context.BaseMethod != null;
+
+            if (isOverride)
+            {
+                methodBuilder = Context.TypeBuilder.TypeBuilder.DefineMethod(string.Concat(Context.BaseMethod.DeclaringType.Name, ".", Name), attributes);
+            }
+            else
+            {
+                methodBuilder = Context.TypeBuilder.TypeBuilder.DefineMethod(Name, attributes);
+            }
+
             Context.Emitter = new EmitHelper(methodBuilder.GetILGenerator(), methodBuilder);
             if (ParameterTypes != null)
             {
@@ -375,6 +392,11 @@ namespace Fireasy.Common.Emit
             else
             {
                 Context.Emitter.ret();
+            }
+
+            if (isOverride)
+            {
+                Context.TypeBuilder.TypeBuilder.DefineMethodOverride(methodBuilder, Context.BaseMethod);
             }
         }
 

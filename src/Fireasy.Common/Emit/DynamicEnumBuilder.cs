@@ -22,6 +22,7 @@ namespace Fireasy.Common.Emit
         private EnumBuilder enumBuilder;
 
         internal DynamicEnumBuilder(BuildContext context, string enumName, Type underlyingType, VisualDecoration visual = VisualDecoration.Public)
+             : base(visual, CallingDecoration.Standard)
         {
             Context = new BuildContext(context) { EnumBuilder = this };
             EnumName = enumName;

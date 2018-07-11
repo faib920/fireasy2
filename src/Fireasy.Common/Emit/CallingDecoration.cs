@@ -36,6 +36,11 @@ namespace Fireasy.Common.Emit
         /// <summary>
         /// 静态的。
         /// </summary>
-        Static
+        Static,
+
+        /// <summary>
+        /// 显式实现的。
+        /// </summary>
+        ExplicitImpl,
     }
 }

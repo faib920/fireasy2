@@ -22,6 +22,7 @@ namespace Fireasy.Common.Emit
         private readonly FieldAttributes attributes;
 
         internal DynamicFieldBuilder(BuildContext context, string fieldName, Type fieldType, object defaultValue = null, VisualDecoration visual = VisualDecoration.Private, CallingDecoration calling = CallingDecoration.Standard)
+            : base(visual, calling)
         {
             FieldName = fieldName;
             FieldType = fieldType;
