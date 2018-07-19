@@ -52,7 +52,7 @@ namespace Fireasy.Data.Entity.Tests.Models
         /// 获取或设置。
         /// </summary>
 
-        [PropertyMapping(ColumnName = "DeptCode", Description = "", Length = 2147483647, IsNullable = true)]
+        [PropertyMapping(ColumnName = "DeptCode", Description = "", DataType = System.Data.DbType.String, Length = 2147483647, IsNullable = true)]
         public virtual string DeptCode { get; set; }
 
         /// <summary>

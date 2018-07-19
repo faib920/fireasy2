@@ -24,6 +24,11 @@ namespace Fireasy.Redis
         }
 
         /// <summary>
+        /// 获取或设置连接串。
+        /// </summary>
+        public string ConnectionString { get; set; }
+
+        /// <summary>
         /// 获取 Redis 主机群。
         /// </summary>
         public List<RedisCacheHost> Hosts { get; private set; }
@@ -57,6 +62,11 @@ namespace Fireasy.Redis
         /// 获取或设置连接超时时间。默认为 2 秒。
         /// </summary>
         public int ConnectTimeout { get; set; } = 2;
+
+        /// <summary>
+        /// 获取或设置是否启用 Twemproxy 代理。
+        /// </summary>
+        public bool Twemproxy { get; set; }
     }
 
     /// <summary>

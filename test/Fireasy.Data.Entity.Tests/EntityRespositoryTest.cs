@@ -431,7 +431,7 @@ namespace Fireasy.Data.Entity.Tests
                 order.OrderDetailses.Add(new OrderDetails
                 {
                     ProductID = 1 + i,
-                    UnitPrice = 0.3,
+                    UnitPrice = 1,
                     Quantity = 12,
                     Discount = 0.99,
                 });
@@ -795,6 +795,17 @@ namespace Fireasy.Data.Entity.Tests
                 {
                     Console.WriteLine(item.ProductName);
                 }
+            }
+        }
+
+        [TestMethod]
+        public void TestOverrideBind()
+        {
+            TranslateUtils.AddMethodBinder<ConvertBinder>(m => m.DeclaringType == typeof(Convert) && m.Name == "ToInt32");
+
+            using (var context = new DbContext())
+            {
+                var list = context.OrderDetails.Where(s => Convert.ToInt32(s.Discount) == 1).ToList();
             }
         }
 
@@ -1211,9 +1222,9 @@ namespace Fireasy.Data.Entity.Tests
         /// </summary>
         private class RightStringBinder : IMethodCallBinder
         {
-            public Expression Bind(DbExpressionVisitor visitor, MethodCallExpression callExp)
+            public Expression Bind(MethodCallBindContext context)
             {
-                var arguments = visitor.Visit(callExp.Arguments);
+                var arguments = context.Visitor.Visit(context.Expression.Arguments);
 
                 // ret = str.Substring(str.Length - length, length)
                 var lenExp = Expression.MakeMemberAccess(arguments[0], typeof(string).GetProperty("Length"));
@@ -1222,13 +1233,12 @@ namespace Fireasy.Data.Entity.Tests
             }
         }
 
-
         /// <summary>
         /// 方法 CheckDataPermission 的绑定。
         /// </summary>
         private class CheckDataPermissionBinder : IMethodCallBinder
         {
-            public Expression Bind(DbExpressionVisitor visitor, MethodCallExpression callExp)
+            public Expression Bind(MethodCallBindContext context)
             {
                 var sql = @"
               select
@@ -1246,11 +1256,19 @@ namespace Fireasy.Data.Entity.Tests
                 where user_id = {0}
               )";
 
-                var arguments = visitor.Visit(callExp.Arguments);
+                var arguments = context.Visitor.Visit(context.Expression.Arguments);
                 var userId = (arguments[0] as ConstantExpression).Value.ToString();
                 var sqlExp = new SqlExpression(string.Format(sql, userId));
                 return new InExpression(arguments[1], new Expression[] { sqlExp });
             }
+        }
+    }
+
+    public class ConvertBinder : IMethodCallBinder
+    {
+        public Expression Bind(MethodCallBindContext context)
+        {
+            return new SqlExpression("(cast discount as integer)", typeof(int));
         }
     }
 }

@@ -73,7 +73,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var binder = TranslateUtils.GetMethodBinder(node.Method);
             if (binder != null)
             {
-                return binder.Bind(this, node);
+                return binder.Bind(new MethodCallBindContext(this, node, syntax));
             }
 
             if (node.Method.DeclaringType == typeof(Queryable) ||

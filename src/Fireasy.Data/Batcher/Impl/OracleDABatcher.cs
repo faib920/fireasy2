@@ -213,10 +213,8 @@ namespace Fireasy.Data.Batcher
         /// <returns></returns>
         private Type CheckBulkCopy(IProvider provider)
         {
-            //todo 暂时还无法测试OracleBulkCopy
-            return null;
-            //return provider.DbProviderFactory.GetType().Assembly
-            //    .GetType("Oracle.DataAccess.Client.OracleBulkCopy", false);
+            return provider.DbProviderFactory.GetType().Assembly
+                .GetType("Oracle.DataAccess.Client.OracleBulkCopy", false);
         }
 
         /// <summary>

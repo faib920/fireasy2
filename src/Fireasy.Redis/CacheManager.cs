@@ -19,7 +19,7 @@ namespace Fireasy.Redis
     /// 基于 Redis 的缓存管理器。
     /// </summary>
     [ConfigurationSetting(typeof(RedisCacheSetting))]
-    public class CacheManager : ICacheManager, IConfigurationSettingHostService
+    public class CacheManager : IDistributedCacheManager, IConfigurationSettingHostService
     {
         private RedisCacheSetting setting;
         private ConfigurationOptions options;
@@ -34,7 +34,7 @@ namespace Fireasy.Redis
         /// <param name="removeCallback">当对象从缓存中移除时，使用该回调方法通知应用程序。(在此类库中无效)</param>
         public T Add<T>(string cacheKey, T value, TimeSpan? expire = default(TimeSpan?), CacheItemRemovedCallback removeCallback = null)
         {
-            using (var client = ConnectionMultiplexer.Connect(options))
+            using (var client = OpenConnection())
             {
                 GetDb(client).StringSet(cacheKey, Serialize(value), expire);
                 return value;
@@ -51,7 +51,7 @@ namespace Fireasy.Redis
         /// <param name="removeCallback">当对象从缓存中移除时，使用该回调方法通知应用程序。</param>
         public T Add<T>(string cacheKey, T value, ICacheItemExpiration expiration, CacheItemRemovedCallback removeCallback = null)
         {
-            using (var client = ConnectionMultiplexer.Connect(options))
+            using (var client = OpenConnection())
             {
                 TimeSpan? expiry = null;
 
@@ -70,7 +70,7 @@ namespace Fireasy.Redis
         /// </summary>
         public void Clear()
         {
-            using (var client = ConnectionMultiplexer.Connect(options))
+            using (var client = OpenConnection())
             {
                 foreach (var endpoint in client.GetEndPoints())
                 {
@@ -92,7 +92,7 @@ namespace Fireasy.Redis
         /// <returns>如果缓存中包含指定缓存键的对象，则为 true，否则为 false。</returns>
         public bool Contains(string cacheKey)
         {
-            using (var client = ConnectionMultiplexer.Connect(options))
+            using (var client = OpenConnection())
             {
                 return GetDb(client).KeyExists(cacheKey);
             }
@@ -105,7 +105,7 @@ namespace Fireasy.Redis
         /// <returns>检索到的缓存对象，未找到时为 null。</returns>
         public object Get(string cacheKey)
         {
-            using (var client = ConnectionMultiplexer.Connect(options))
+            using (var client = OpenConnection())
             {
                 var value = GetDb(client).StringGet(cacheKey);
                 if (!string.IsNullOrEmpty(value))
@@ -123,7 +123,7 @@ namespace Fireasy.Redis
         /// <returns></returns>
         public IEnumerable<string> GetKeys()
         {
-            using (var client = ConnectionMultiplexer.Connect(options))
+            using (var client = OpenConnection())
             {
                 var server = client.GetServer(client.GetEndPoints()[0]);
                 return server.Keys(options.DefaultDatabase ?? 0).Cast<string>();
@@ -136,7 +136,7 @@ namespace Fireasy.Redis
         /// <param name="cacheKey">用于引用对象的缓存键。</param>
         public void Remove(string cacheKey)
         {
-            using (var client = ConnectionMultiplexer.Connect(options))
+            using (var client = OpenConnection())
             {
                 GetDb(client).KeyDelete(cacheKey);
             }
@@ -152,7 +152,7 @@ namespace Fireasy.Redis
         /// <returns></returns>
         public T TryGet<T>(string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration = null)
         {
-            using (var client = ConnectionMultiplexer.Connect(options))
+            using (var client = OpenConnection())
             {
                 if (GetDb(client).KeyExists(cacheKey))
                 {
@@ -192,7 +192,7 @@ namespace Fireasy.Redis
         /// <returns></returns>
         public bool TryGet<T>(string cacheKey, out T value)
         {
-            using (var client = ConnectionMultiplexer.Connect(options))
+            using (var client = OpenConnection())
             {
                 if (GetDb(client).KeyExists(cacheKey))
                 {
@@ -247,6 +247,18 @@ namespace Fireasy.Redis
             return new RedisSerializer();
         }
 
+        private ConnectionMultiplexer OpenConnection()
+        {
+            try
+            {
+                return ConnectionMultiplexer.Connect(options);
+            }
+            catch (RedisConnectionException exp)
+            {
+                throw new CacheServerException(exp);
+            }
+        }
+
         private IDatabase GetDb(IConnectionMultiplexer conn)
         {
             return conn.GetDatabase(options.DefaultDatabase ?? 0);
@@ -256,24 +268,31 @@ namespace Fireasy.Redis
         {
             this.setting = (RedisCacheSetting)setting;
 
-            options = new ConfigurationOptions
+            if (!string.IsNullOrEmpty(this.setting.ConnectionString))
             {
-                DefaultDatabase = this.setting.DefaultDb,
-                Password = this.setting.Password,
-                ConnectTimeout = this.setting.ConnectTimeout,
-                AllowAdmin = true
-            };
+                options = ConfigurationOptions.Parse(this.setting.ConnectionString);
+            }
+            else
+            {
+                options = new ConfigurationOptions
+                {
+                    DefaultDatabase = this.setting.DefaultDb,
+                    Password = this.setting.Password,
+                    ConnectTimeout = this.setting.ConnectTimeout,
+                    AllowAdmin = true,
+                    Proxy = this.setting.Twemproxy ? Proxy.Twemproxy : Proxy.None
+                };
 
-            var endPoints = new EndPointCollection();
-            foreach (var h in this.setting.Hosts)
-            {
-                if (h.Port == 0)
+                foreach (var host in this.setting.Hosts)
                 {
-                    options.EndPoints.Add(h.Server);
-                }
-                else
-                {
-                    options.EndPoints.Add(h.Server, h.Port);
+                    if (host.Port == 0)
+                    {
+                        options.EndPoints.Add(host.Server);
+                    }
+                    else
+                    {
+                        options.EndPoints.Add(host.Server, host.Port);
+                    }
                 }
             }
         }

@@ -222,7 +222,7 @@ namespace Fireasy.Data.Entity.Dynamic
 
                 setMethod.DefineParameter("value");
 
-                if (validations.TryGetValue(property, out List<Expression<Func<Attribute>>> attribues))
+                if (validations != null && validations.TryGetValue(property, out List<Expression<Func<Attribute>>> attribues))
                 {
                     attribues.ForEach(s => propertyBuider.SetCustomAttribute(s));
                 }

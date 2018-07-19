@@ -37,10 +37,13 @@ namespace Fireasy.Data.Entity.Tests
         [TestMethod]
         public void TestGet()
         {
-            var c = db.Customers.Get("ALFKI");
-            Assert.IsNotNull(c);
-            var d = db.Products.FirstOrDefault();
-            Assert.IsNotNull(d);
+            //var c = db.Customers.Get("ALFKI");
+            //Assert.IsNotNull(c);
+            //var d = db.Products.FirstOrDefault();
+            //Assert.IsNotNull(d);
+
+            var l = new int?[] { 2, 3, 4 };
+            var list = db.OrderDetails.Where(s => l.Contains(s.UnitPrice)).ToList();
         }
 
         [TestMethod]
@@ -628,7 +631,7 @@ WHERE (t0.City = 'London')").ToList();
         [TestMethod]
         public void TestGroupByWithElementSelectorSumMax()
         {
-            var list = db.Orders.Where(o => o.CustomerID == "ALFKI").GroupBy(o => o.CustomerID, o => (o.CustomerID == "ALFKI" ? 1 : 1)).Select(g => new { Sum = g.Sum(), Max = g.Max() }).ToList();
+            var list = db.Orders.Where(o => o.CustomerID == "ALFKI").GroupBy(o => o.CustomerID, o => (o.CustomerID == "ALFKI" ? 1 : 1)).Select(g => new { g.Key, Sum = g.Sum(), Max = g.Max() }).ToList();
             Assert.AreEqual(1, list.Count);
             Assert.AreEqual(6, list[0].Sum);
             Assert.AreEqual(1, list[0].Max);
@@ -688,6 +691,13 @@ WHERE (t0.City = 'London')").ToList();
         {
             var sum = db.Orders.Where(o => o.CustomerID == "ALFKI").Sum(o => (o.CustomerID == "ALFKI" ? 1 : 1));
             Assert.AreEqual(6, sum);
+        }
+
+        [TestMethod]
+        public void TestSumWithFunc()
+        {
+            var data = db.OrderDetails.Select(s => new { Money = SqlFunc.Min(s.Discount * s.Quantity), Quantity = SqlFunc.Sum(s.Quantity), Count = SqlFunc.Count() }).ToList();
+            Assert.AreEqual(6, data.Count());
         }
 
         [TestMethod]

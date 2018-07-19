@@ -30,6 +30,7 @@ namespace Fireasy.Data.Provider
         public MySqlProvider()
 #if NETSTANDARD2_0
             : base("MySql.Data.MySqlClient.MySqlClientFactory, MySqlConnector", 
+                  "MySql.Data.MySqlClient.MySqlClientFactory, MySql.Data",
                   "Devart.Data.MySql.MySqlProviderFactory, Devart.Data.MySql")
 #else
             : base("MySql.Data.MySqlClient.MySqlClientFactory, MySql.Data")

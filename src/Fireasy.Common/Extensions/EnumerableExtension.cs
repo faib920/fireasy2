@@ -143,6 +143,20 @@ namespace Fireasy.Common.Extensions
             }
         }
 
+        /// <summary>
+        /// 将一个 <see cref="IEnumerable"/> 枚举成泛型 <typeparamref name="T"/> 的枚举。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="enumerable"></param>
+        /// <returns></returns>
+        public static IEnumerable<T> Enumerable<T>(this IEnumerable enumerable)
+        {
+            foreach (var item in enumerable)
+            {
+                yield return (T)item;
+            }
+        }
+
         public static void Cycle<T>(this IList<T> list, int start, Action<T> action)
         {
             var count = list.Count;
@@ -165,10 +179,7 @@ namespace Fireasy.Common.Extensions
                     break;
                 }
 
-                if (action != null)
-                {
-                    action(list[i]);
-                }
+                action?.Invoke(list[i]);
 
                 i++;
             }

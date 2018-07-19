@@ -13,6 +13,7 @@ using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Entity.Validation;
 using Fireasy.Data.Syntax;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -1140,6 +1141,38 @@ namespace Fireasy.Data.Entity
                 entity.SetValue(metaTree.FullName, argument.NewValue.FullName);
             }
         }
+
+        #region 实现 ITreeRepository 接口
+        void ITreeRepository.Insert(IEntity entity, IEntity referEntity, EntityTreePosition position, Expression isolation)
+        {
+            Insert((TEntity)entity, (TEntity)referEntity, position, (Expression<Func<TEntity>>)isolation);
+        }
+
+        void ITreeRepository.BatchInsert(IEnumerable entities, IEntity referEntity, EntityTreePosition position, Expression isolation)
+        {
+            BatchInsert(entities.Enumerable<TEntity>(), (TEntity)referEntity, position, (Expression<Func<TEntity>>)isolation);
+        }
+
+        void ITreeRepository.Move(IEntity entity, IEntity referEntity, EntityTreePosition? position, Expression isolation)
+        {
+            Move((TEntity)entity, (TEntity)referEntity, position, (Expression<Func<TEntity>>)isolation);
+        }
+
+        bool ITreeRepository.HasChildren(IEntity entity, Expression predicate)
+        {
+            return HasChildren((TEntity)entity, (Expression<Func<TEntity, bool>>)predicate);
+        }
+
+        IQueryable ITreeRepository.QueryChildren(IEntity entity, Expression predicate, bool recurrence)
+        {
+            return QueryChildren((TEntity)entity, (Expression<Func<TEntity, bool>>)predicate, recurrence);
+        }
+
+        IQueryable ITreeRepository.RecurrenceParent(IEntity entity, Expression predicate)
+        {
+            return RecurrenceParent((TEntity)entity, (Expression<Func<TEntity, bool>>)predicate);
+        }
+        #endregion
 
         /// <summary>
         /// 数据隔离条件生成器。

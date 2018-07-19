@@ -18,17 +18,48 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class TranslateUtils
     {
-        private static ConcurrentDictionary<MethodInfo, IMethodCallBinder> binders = new ConcurrentDictionary<MethodInfo, IMethodCallBinder>();
+        private static ConcurrentDictionary<MethodInfo, IMethodCallBinder> defBinders = new ConcurrentDictionary<MethodInfo, IMethodCallBinder>();
+        private static ConcurrentDictionary<Func<MethodInfo, bool>, IMethodCallBinder> matchBinders = new ConcurrentDictionary<Func<MethodInfo, bool>, IMethodCallBinder>();
         private static ConcurrentDictionary<MethodInfo, string> functions = new ConcurrentDictionary<MethodInfo, string>();
 
         /// <summary>
         /// 添加方法调用的绑定。
         /// </summary>
-        /// <param name="method"></param>
+        /// <param name="method">要绑定的方法。</param>
         /// <param name="binder"></param>
         public static void AddMethodBinder(MethodInfo method, IMethodCallBinder binder)
         {
-            binders.TryAdd(method, binder);
+            defBinders.TryAdd(method, binder);
+        }
+
+        /// <summary>
+        /// 添加方法调用的绑定。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="method">要绑定的方法。</param>
+        public static void AddMethodBinder<T>(MethodInfo method) where T : IMethodCallBinder
+        {
+            AddMethodBinder(method, typeof(T).New<IMethodCallBinder>());
+        }
+
+        /// <summary>
+        /// 添加方法调用的绑定。
+        /// </summary>
+        /// <param name="matcher">方法匹配器。</param>
+        /// <param name="binder"></param>
+        public static void AddMethodBinder(Func<MethodInfo, bool> matcher, IMethodCallBinder binder)
+        {
+            matchBinders.TryAdd(matcher, binder);
+        }
+
+        /// <summary>
+        /// 添加方法调用的绑定。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="matcher">方法匹配器。</param>
+        public static void AddMethodBinder<T>(Func<MethodInfo, bool> matcher) where T : IMethodCallBinder
+        {
+            AddMethodBinder(matcher, typeof(T).New<IMethodCallBinder>());
         }
 
         /// <summary>
@@ -58,7 +89,15 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         public static IMethodCallBinder GetMethodBinder(MethodInfo method)
         {
-            if (!binders.TryGetValue(method, out IMethodCallBinder binder))
+            foreach (var kvp in matchBinders)
+            {
+                if (kvp.Key.Invoke(method))
+                {
+                    return matchBinders[kvp.Key];
+                }
+            }
+
+            if (!defBinders.TryGetValue(method, out IMethodCallBinder binder))
             {
                 var attr = method.GetCustomAttributes<MethodCallBindAttribute>().FirstOrDefault();
                 if (attr != null)
@@ -74,7 +113,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         throw new ArgumentException(SR.GetString(SRKind.ClassNotImplInterface, "IMethodCallBinder"));
                     }
 
-                    binders.TryAdd(method, binder);
+                    defBinders.TryAdd(method, binder);
                 }
             }
 

@@ -544,6 +544,17 @@ namespace Fireasy.Data.Entity
             return Delete((TEntity)entity, logicalDelete);
         }
 
+        /// <summary>
+        /// 将满足条件的一组对象从库中移除。
+        /// </summary>
+        /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <param name="logicalDelete">是否为逻辑删除</param>
+        /// <returns>影响的实体数。</returns>
+        int IRepository.Delete(Expression predicate, bool logicalDelete)
+        {
+            return Delete((Expression<Func<TEntity, bool>>)predicate, logicalDelete);
+        }
+
 #if !NET40 && !NET35
         /// <summary>
         /// 将一个新的对象插入到库。
@@ -584,6 +595,17 @@ namespace Fireasy.Data.Entity
         async Task<int> IRepository.DeleteAsync(IEntity entity, bool logicalDelete)
         {
             return await DeleteAsync((TEntity)entity, logicalDelete);
+        }
+
+        /// <summary>
+        /// 将满足条件的一组对象从库中移除。
+        /// </summary>
+        /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <param name="logicalDelete">是否为逻辑删除</param>
+        /// <returns>影响的实体数。</returns>
+        async Task<int> IRepository.DeleteAsync(Expression predicate, bool logicalDelete)
+        {
+            return await DeleteAsync((Expression<Func<TEntity, bool>>)predicate, logicalDelete);
         }
 #endif
 

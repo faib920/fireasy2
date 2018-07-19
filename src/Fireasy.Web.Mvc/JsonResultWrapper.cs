@@ -8,6 +8,7 @@
 using Fireasy.Common.Serialization;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 #if !NETSTANDARD2_0
 using System.Web.Mvc;
 #else

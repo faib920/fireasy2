@@ -82,7 +82,7 @@ namespace Fireasy.Common.Emit
         public DynamicMethodBuilder DefineGetMethod(VisualDecoration visual = VisualDecoration.Public, CallingDecoration calling = CallingDecoration.Standard, Action<BuildContext> ilCoding = null)
         {
             var isInterface = Context.TypeBuilder is DynamicInterfaceBuilder;
-            var method = new DynamicMethodBuilder(Context, "get_" + Name, PropertyType, Type.EmptyTypes, visual, calling, ctx =>
+            var method = new DynamicMethodBuilder(Context, string.Concat("get_", GetMethodName()), PropertyType, Type.EmptyTypes, visual, calling, ctx =>
                 {
                     if (isInterface)
                     {
@@ -112,7 +112,7 @@ namespace Fireasy.Common.Emit
         public DynamicMethodBuilder DefineGetMethodByField(VisualDecoration visual = VisualDecoration.Public, CallingDecoration calling = CallingDecoration.Standard, DynamicFieldBuilder fieldBuilder = null)
         {
             var isInterface = Context.TypeBuilder is DynamicInterfaceBuilder;
-            var method = new DynamicMethodBuilder(Context, "get_" + Name, PropertyType, Type.EmptyTypes, visual, calling, ctx =>
+            var method = new DynamicMethodBuilder(Context, string.Concat("get_", GetMethodName()), PropertyType, Type.EmptyTypes, visual, calling, ctx =>
                 {
                     if (isInterface)
                     {
@@ -141,7 +141,7 @@ namespace Fireasy.Common.Emit
         public DynamicMethodBuilder DefineSetMethod(VisualDecoration visual = VisualDecoration.Public, CallingDecoration calling = CallingDecoration.Standard, Action<BuildContext> ilCoding = null)
         {
             var isInterface = Context.TypeBuilder is DynamicInterfaceBuilder;
-            var method = new DynamicMethodBuilder(Context, "set_" + Name, null, new[] { PropertyType }, visual, calling, ctx =>
+            var method = new DynamicMethodBuilder(Context, string.Concat("set_", GetMethodName()), null, new[] { PropertyType }, visual, calling, ctx =>
                 {
                     if (isInterface)
                     {
@@ -171,7 +171,7 @@ namespace Fireasy.Common.Emit
         public DynamicMethodBuilder DefineSetMethodByField(VisualDecoration visual = VisualDecoration.Public, CallingDecoration calling = CallingDecoration.Standard, DynamicFieldBuilder fieldBuilder = null)
         {
             var isInterface = Context.TypeBuilder is DynamicInterfaceBuilder;
-            var method = new DynamicMethodBuilder(Context, "set_" + Name, null, new[] { PropertyType }, visual, calling, ctx =>
+            var method = new DynamicMethodBuilder(Context, string.Concat("set_", GetMethodName()), null, new[] { PropertyType }, visual, calling, ctx =>
                 {
                     if (isInterface)
                     {
@@ -206,6 +206,12 @@ namespace Fireasy.Common.Emit
         private void InitBuilder()
         {
             propertyBuilder = Context.TypeBuilder.TypeBuilder.DefineProperty(Name, GetPropertyAttributes(), PropertyType, null);
+        }
+
+        private string GetMethodName()
+        {
+            var dot = Name.IndexOf(".");
+            return dot == -1 ? Name : Name.Substring(dot + 1);
         }
     }
 }

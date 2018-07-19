@@ -7,7 +7,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -81,6 +80,14 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         int Delete(object[] primaryValues, bool logicalDelete = true);
 
+        /// <summary>
+        /// 将满足条件的一组对象从库中移除。
+        /// </summary>
+        /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <param name="logicalDelete">是否为逻辑删除</param>
+        /// <returns>影响的实体数。</returns>
+        int Delete(Expression predicate, bool logicalDelete = true);
+
 #if !NET40 && !NET35
         /// <summary>
         /// 将一个新的对象插入到库。
@@ -133,11 +140,20 @@ namespace Fireasy.Data.Entity
         /// <param name="logicalDelete">是否为逻辑删除。</param>
         /// <returns></returns>
         Task<int> DeleteAsync(object[] primaryValues, bool logicalDelete = true);
+
+        /// <summary>
+        /// 将满足条件的一组对象从库中移除。
+        /// </summary>
+        /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <param name="logicalDelete">是否为逻辑删除</param>
+        /// <returns>影响的实体数。</returns>
+        Task<int> DeleteAsync(Expression predicate, bool logicalDelete = true);
+
 #endif
     }
 
     /// <summary>
-    /// 表示实体泛型的仓储。
+    /// 表示实体 <typeparamref name="TEntity"/> 的仓储。
     /// </summary>
     /// <typeparam name="TEntity">实体类型。</typeparam>
     public interface IRepository<TEntity> : IOrderedQueryable<TEntity>, IRepository where TEntity : IEntity

@@ -27,7 +27,7 @@ namespace Fireasy.Data.Entity.Tests.Models
         /// </summary>
 
         [PropertyMapping(ColumnName = "UnitPrice", Description = "", IsNullable = false)]
-        public virtual double UnitPrice { get; set; }
+        public virtual int? UnitPrice { get; set; }
 
         /// <summary>
         /// 获取或设置。

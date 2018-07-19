@@ -145,7 +145,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
             if (expression is MethodCallExpression mc &&
                 (mc.Method.DeclaringType == typeof(Enumerable) ||
                  mc.Method.DeclaringType == typeof(Queryable) ||
-                 mc.Method.DeclaringType == typeof(Extensions)))
+                 mc.Method.DeclaringType == typeof(Extensions) ||
+                 mc.Method.IsDefined(typeof(MethodCallBindAttribute), false)))
             {
                 return false;
             }

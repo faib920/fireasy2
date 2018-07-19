@@ -25,6 +25,8 @@ namespace Fireasy.Redis
             var setting = new RedisCacheSetting();
             setting.Name = section.GetAttributeValue("name");
             setting.CacheType = Type.GetType(section.GetAttributeValue("type"), false, true);
+            setting.ConnectionString = section.GetAttributeValue("connectionString");
+            setting.Twemproxy = section.GetAttributeValue<bool>("twemproxy");
             var configNode = section.SelectSingleNode("config");
             if (configNode != null)
             {
@@ -59,6 +61,8 @@ namespace Fireasy.Redis
         {
             var setting = new RedisCacheSetting();
             setting.CacheType = Type.GetType(configuration["type"], false, true);
+            setting.ConnectionString = configuration["connectionString"];
+            setting.Twemproxy = configuration["twemproxy"].To(false);
             var configNode = configuration.GetSection("config");
             if (configNode.Exists())
             {

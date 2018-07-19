@@ -5,20 +5,21 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System.Linq.Expressions;
+using System.Threading.Tasks;
 
-namespace Fireasy.Data.Entity.Linq.Translators
+namespace Fireasy.Web.Sockets
 {
     /// <summary>
-    /// 提供对方法调用的绑定。
+    /// 客户端代理。
     /// </summary>
-    public interface IMethodCallBinder
+    public interface IClientProxy
     {
         /// <summary>
-        /// 使用转换来绑定方法调用。
+        /// 发送消息。
         /// </summary>
-        /// <param name="context">方法绑定的上下文对象。</param>
+        /// <param name="method">消息方法。</param>
+        /// <param name="arguments">方法的参数。</param>
         /// <returns></returns>
-        Expression Bind(MethodCallBindContext context);
+        Task SendAsync(string method, params object[] arguments);
     }
 }

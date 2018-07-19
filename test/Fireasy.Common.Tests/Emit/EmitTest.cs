@@ -145,6 +145,30 @@ namespace Fireasy.Common.Tests.Emit
         }
 
         /// <summary>
+        /// 使用接口成员显式实现测试ImplementInterface方法。
+        /// </summary>
+        [TestMethod()]
+        public void ImplementInterfaceWithExplicitMember()
+        {
+            var typeBuilder = CreateBuilder();
+
+            typeBuilder.ImplementInterface(typeof(IDynamicMethodInterface));
+            var methodBuilder = typeBuilder.DefineMethod("Test", 
+                parameterTypes: new[] { typeof(int) }, 
+                calling: CallingDecoration.ExplicitImpl, 
+                ilCoding: (e) => e.Emitter.ldstr("fireasy").call(typeof(Console).GetMethod("WriteLine", new[] { typeof(string) })).ret() );
+
+            methodBuilder.DefineParameter("s");
+
+            var type = typeBuilder.CreateType();
+
+            var obj = type.New<IDynamicMethodInterface>();
+            obj.Test(111);
+
+            Assert.IsTrue(typeof(IDynamicMethodInterface).IsAssignableFrom(type));
+        }
+
+        /// <summary>
         /// 测试DefineProperty方法。
         /// </summary>
         [TestMethod()]
@@ -276,23 +300,6 @@ namespace Fireasy.Common.Tests.Emit
             Assert.IsNotNull(type.GetNestedType("nestedClass", BindingFlags.NonPublic));
         }
 
-        public interface IDynamicInterface
-        {
-        }
-
-        public interface IDynamicPropertyInterface
-        {
-            string Name { get; set; }
-        }
-
-        public class DynamicBuilderBase
-        {
-            public virtual void Hello(string name)
-            {
-                Console.WriteLine("Hello " + name);
-            }
-        }
-
         [TestMethod()]
         public void TestDefineParameter()
         {
@@ -419,4 +426,27 @@ namespace Fireasy.Common.Tests.Emit
             Assert.IsTrue(propertyBuilder.PropertyBuilder.CanWrite);
         }
     }
+
+    public interface IDynamicInterface
+    {
+    }
+
+    public interface IDynamicPropertyInterface
+    {
+        string Name { get; set; }
+    }
+
+    public interface IDynamicMethodInterface
+    {
+        void Test(int s);
+    }
+
+    public class DynamicBuilderBase
+    {
+        public virtual void Hello(string name)
+        {
+            Console.WriteLine("Hello " + name);
+        }
+    }
+
 }

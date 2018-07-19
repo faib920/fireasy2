@@ -38,9 +38,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Web.Http", "src\Fir
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.MongoDB", "src\Fireasy.MongoDB\Fireasy.MongoDB.csproj", "{739E0CCA-AFAC-4E01-940D-0D2A600EF299}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fireasy.Log4net", "src\Fireasy.Log4net\Fireasy.Log4net.csproj", "{5FBE6BB3-D367-4609-949A-2A3BB4123D15}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Log4net", "src\Fireasy.Log4net\Fireasy.Log4net.csproj", "{5FBE6BB3-D367-4609-949A-2A3BB4123D15}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fireasy.NLog", "src\Fireasy.NLog\Fireasy.NLog.csproj", "{C08AE411-3443-4EFC-9106-072487604D16}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.NLog", "src\Fireasy.NLog\Fireasy.NLog.csproj", "{C08AE411-3443-4EFC-9106-072487604D16}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Memcached", "src\Fireasy.Memcached\Fireasy.Memcached.csproj", "{2515F46D-E23F-43FB-994E-EC5AEED85A82}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Web.Sockets", "src\Fireasy.Web.Sockets\Fireasy.Web.Sockets.csproj", "{8747065E-838B-467B-9E2D-5E6BBDF4CBB5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -104,6 +108,14 @@ Global
 		{C08AE411-3443-4EFC-9106-072487604D16}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C08AE411-3443-4EFC-9106-072487604D16}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C08AE411-3443-4EFC-9106-072487604D16}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2515F46D-E23F-43FB-994E-EC5AEED85A82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2515F46D-E23F-43FB-994E-EC5AEED85A82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2515F46D-E23F-43FB-994E-EC5AEED85A82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2515F46D-E23F-43FB-994E-EC5AEED85A82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8747065E-838B-467B-9E2D-5E6BBDF4CBB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8747065E-838B-467B-9E2D-5E6BBDF4CBB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8747065E-838B-467B-9E2D-5E6BBDF4CBB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8747065E-838B-467B-9E2D-5E6BBDF4CBB5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -123,6 +135,8 @@ Global
 		{739E0CCA-AFAC-4E01-940D-0D2A600EF299} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
 		{5FBE6BB3-D367-4609-949A-2A3BB4123D15} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
 		{C08AE411-3443-4EFC-9106-072487604D16} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
+		{2515F46D-E23F-43FB-994E-EC5AEED85A82} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
+		{8747065E-838B-467B-9E2D-5E6BBDF4CBB5} = {C17CFE8E-2A64-4E6E-9720-4C8681AF3DC3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {72E7FC59-9162-48A8-B31F-CB0FEE862E56}

@@ -5,6 +5,8 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
+
 namespace Fireasy.Data.Entity.Linq.Expressions
 {
     /// <summary>
@@ -18,6 +20,17 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <param name="sqlCommand">SQL命令行。</param>
         public SqlExpression(string sqlCommand)
             : base (DbExpressionType.SqlText)
+        {
+            SqlCommand = sqlCommand;
+        }
+
+        /// <summary>
+        /// 初始化 <see cref="SqlExpression"/> 类的新实例 。
+        /// </summary>
+        /// <param name="sqlCommand">SQL命令行。</param>
+        /// <param name="type">返回类型。</param>
+        public SqlExpression(string sqlCommand, Type type)
+            : base(DbExpressionType.SqlText, type)
         {
             SqlCommand = sqlCommand;
         }

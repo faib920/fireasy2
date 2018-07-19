@@ -93,8 +93,8 @@ namespace Fireasy.Common.Tests.Security
         {
             var c = CryptographyFactory.CreateAsymmetric(CryptoAlgorithm.RSA);
 
-            c.PublicKey = c.GeneratePublicKey();
-            c.PrivateKey = c.GeneratePrivateKey();
+            c.PrivateKey = c.GeneratePublicKey();
+            c.PublicKey = c.GeneratePrivateKey();
 
             var bytes = c.CreateSignature(Encoding.UTF8.GetBytes("fireasy"));
             Assert.IsTrue(c.VerifySignature(Encoding.UTF8.GetBytes("fireasy"), bytes));
