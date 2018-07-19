@@ -1,4 +1,6 @@
-﻿<b>`Startup 配置`</b>
+﻿Fireasy.Web.Sockets 在 .Net Core 下实现了类似于 SignalR 的集线器功能。
+
+<b>Startup 配置</b>
 
 ```C#
 public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -12,7 +14,7 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 }
 ```
 
-<b>`Handler示例`</b>
+<b>Handler示例</b>
 
 ```C#
 public class NotifyHandler : WebSocketHandler
@@ -45,7 +47,7 @@ public class NotifyHandler : WebSocketHandler
 }
 ```
 
-<b>`客户端调用`</b>
+<b>客户端调用</b>
 
 ```C#
 public async Task SendAsync()
