@@ -1,18 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
-    <FileVersion>2.0.0.46000</FileVersion>
+    <FileVersion>2.0.0.46002</FileVersion>
     <Copyright>Copyright © Fireasy 2013-2018</Copyright>
-    <AssemblyVersion>2.0.0.46000</AssemblyVersion>
+    <AssemblyVersion>2.0.0.46002</AssemblyVersion>
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>True</SignAssembly>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Asp.Net WebSocket</Product>
-    <Version>2.0.1</Version>
+    <Version>2.0.2</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
@@ -22,18 +22,25 @@
     <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
   
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
+    <DocumentationFile>..\..\Release\net45\Fireasy.Web.Sockets.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
     <DocumentationFile>..\..\Release\netstandard2.0\Fireasy.Web.Sockets.xml</DocumentationFile>
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.WebSockets" Version="2.1.0" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Fireasy.Common\Fireasy.Common.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
+    <Reference Include="System.Web" />
+    <Reference Include="System.Net.Http.WebRequest" />
   </ItemGroup>
 
 </Project>

@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common;
 using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Concurrent;
@@ -72,6 +73,18 @@ namespace Fireasy.Web.Sockets
         }
 
         /// <summary>
+        /// 获取指定的多个客户端连接标识的代理。
+        /// </summary>
+        /// <param name="connectionIds"></param>
+        /// <returns></returns>
+        public IClientProxy Clients(params string[] connectionIds)
+        {
+            Guard.ArgumentNull(connectionIds, nameof(connectionIds));
+
+            return new EnumerableClientProxy(() => clients.Where(s => connectionIds.Contains(s.Key)).Select(s => s.Value));
+        }
+
+        /// <summary>
         /// 获取所有客户端代理。
         /// </summary>
         public IClientProxy All
@@ -87,7 +100,7 @@ namespace Fireasy.Web.Sockets
         /// </summary>
         /// <param name="groupName">组的名称。</param>
         /// <returns></returns>
-        public IClientProxy Groups(string groupName)
+        public IClientProxy Group(string groupName)
         {
             if (groups.ContainsKey(groupName))
             {
@@ -113,7 +126,11 @@ namespace Fireasy.Web.Sockets
                     proxy.SendAsync(method, arguments);
                 }
 
+#if NETSTANDARD2_0
                 return Task.CompletedTask;
+#else
+                return new Task(null);
+#endif
             }
         }
 
@@ -123,7 +140,11 @@ namespace Fireasy.Web.Sockets
 
             public Task SendAsync(string method, params object[] arguments)
             {
+#if NETSTANDARD2_0
                 return Task.CompletedTask;
+#else
+                return new Task(null);
+#endif
             }
         }
     }

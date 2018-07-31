@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+#if NETSTANDARD2_0
 using Fireasy.Web.Sockets;
 using System;
 
@@ -24,7 +25,8 @@ namespace Microsoft.AspNetCore.Builder
             setupAction?.Invoke(options);
 
             return app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = options.KeepAliveInterval, ReceiveBufferSize = options.ReceiveBufferSize })
-                .UseMiddleware<WebSocketMiddleware>(options);
+                .UseMiddleware<WebSocketMiddleware>(app.ApplicationServices, options);
         }
     }
 }
+#endif

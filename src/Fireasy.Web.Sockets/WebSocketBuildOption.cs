@@ -17,6 +17,10 @@ namespace Fireasy.Web.Sockets
     {
         private Dictionary<string, Type> mapping = new Dictionary<string, Type>();
 
+#if !NETSTANDARD2_0
+        public static readonly WebSocketBuildOption Default = new WebSocketBuildOption();
+#endif
+
         /// <summary>
         /// 获取或设置保持活动状态的时间间隔。
         /// </summary>
@@ -26,6 +30,16 @@ namespace Fireasy.Web.Sockets
         /// 获取或设置接收数据的缓冲区大小。
         /// </summary>
         public int ReceiveBufferSize { get; set; }
+
+        /// <summary>
+        /// 获取或设置心跳的时间间隔。默认 30 秒。
+        /// </summary>
+        public TimeSpan HeartbeatInterval { get; set; } = TimeSpan.FromSeconds(30);
+
+        /// <summary>
+        /// 获取或设置心跳容错的次数。默认为 3 次。
+        /// </summary>
+        public int HeartbeatTryTimes { get; set; } = 3;
 
         /// <summary>
         /// 将处理类映射到指定的路径。
