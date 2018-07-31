@@ -19,7 +19,7 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 
 ```C#
 public class NotifyHandler : WebSocketHandler
-	{
+{
     private static SessionManager<int> manager = new SessionManager<int>();
 
     public void Connect(int userId)
