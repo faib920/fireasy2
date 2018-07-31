@@ -7,8 +7,9 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 {
     app.UseWebSockets(options =>
     {
-        options.KeepAliveInterval = TimeSpan.FromSeconds(30);
+        options.HeartbeatInterval = TimeSpan.FromSeconds(10);  //心跳检测时间间隔
         options.ReceiveBufferSize = 4 * 1024;
+        options.KeepAliveInterval = TimeSpan.FromSeconds(10);
         options.MapHandler<NotifyHandler>("/wsNotify");
     });
 }
@@ -40,7 +41,7 @@ public class NotifyHandler : WebSocketHandler
 
         if (!string.IsNullOrEmpty(receiveConnId))
         {
-			//接收者消息通知
+            //接收者消息通知
             Clients.Client(receiveConnId).SendAsync("onReceive", sender, message);
         }
     }
