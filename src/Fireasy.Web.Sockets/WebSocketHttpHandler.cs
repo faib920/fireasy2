@@ -27,7 +27,7 @@ namespace Fireasy.Web.Sockets
                     }
                     else
                     {
-                        var acceptContext = new WebSocketAcceptContext(c.WebSocket, context.User, WebSocketBuildOption.Default.HeartbeatInterval, WebSocketBuildOption.Default.HeartbeatTryTimes);
+                        var acceptContext = new WebSocketAcceptContext(c.WebSocket, context.User, WebSocketBuildOption.Default);
                         await WebSocketHandler.Accept(handlerType, acceptContext);
                     }
                 });

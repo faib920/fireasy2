@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace Fireasy.Web.Sockets
 {
@@ -40,6 +41,16 @@ namespace Fireasy.Web.Sockets
         /// 获取或设置心跳容错的次数。默认为 3 次。
         /// </summary>
         public int HeartbeatTryTimes { get; set; } = 3;
+
+        /// <summary>
+        /// 获取或设置字符编码。
+        /// </summary>
+        public Encoding Encoding { get; set; } = Encoding.UTF8;
+
+        /// <summary>
+        /// 获取或设置消息格式化器。
+        /// </summary>
+        public IMessageFormatter Formatter { get; set; } = new MessageFormatter();
 
         /// <summary>
         /// 将处理类映射到指定的路径。

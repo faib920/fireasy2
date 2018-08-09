@@ -19,7 +19,7 @@ namespace Fireasy.Web.Sockets
     public class WebSocketMiddleware
     {
         private RequestDelegate next;
-        private WebSocketBuildOption options;
+        private WebSocketBuildOption option;
         private IServiceProvider serviceProvider;
 
         /// <summary>
@@ -27,12 +27,12 @@ namespace Fireasy.Web.Sockets
         /// </summary>
         /// <param name="next"></param>
         /// <param name="serviceProvider"></param>
-        /// <param name="options"></param>
-        public WebSocketMiddleware(RequestDelegate next, IServiceProvider serviceProvider, WebSocketBuildOption options)
+        /// <param name="option"></param>
+        public WebSocketMiddleware(RequestDelegate next, IServiceProvider serviceProvider, WebSocketBuildOption option)
         {
             this.next = next;
             this.serviceProvider = serviceProvider;
-            this.options = options;
+            this.option = option;
         }
 
         public async Task Invoke(HttpContext context)
@@ -40,7 +40,7 @@ namespace Fireasy.Web.Sockets
             if (context.WebSockets.IsWebSocketRequest)
             {
                 var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                var handlerType = options.GetHandlerType(context.Request.Path);
+                var handlerType = option.GetHandlerType(context.Request.Path);
 
                 if (handlerType == null || !typeof(WebSocketHandler).IsAssignableFrom(handlerType))
                 {
@@ -51,7 +51,7 @@ namespace Fireasy.Web.Sockets
                     var handler = GetHandler(handlerType);
                     if (handler != null)
                     {
-                        var acceptContext = new WebSocketAcceptContext(webSocket, context.User, options.HeartbeatInterval, options.HeartbeatTryTimes);
+                        var acceptContext = new WebSocketAcceptContext(webSocket, context.User, option);
                         await WebSocketHandler.Accept(handler, acceptContext);
                     }
                 }

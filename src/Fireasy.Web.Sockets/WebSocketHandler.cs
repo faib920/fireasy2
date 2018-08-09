@@ -10,7 +10,6 @@ using Fireasy.Common.Serialization;
 using System;
 using System.Net.WebSockets;
 using System.Reflection;
-using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,14 +19,24 @@ namespace Fireasy.Web.Sockets
     public abstract class WebSocketHandler : IClientProxy, IDisposable
     {
         private WebSocketAcceptContext acceptContext;
-        private DateTime? lastHeartbeatTime = null;
+        private DateTime lastHeartbeatTime = DateTime.Now;
         private Timer timer;
-        private bool isDisposed;
+        private bool isDisposed = false;
+        private bool isClosing = false;
 
+        /// <summary>
+        /// 获取连接唯一标识符。
+        /// </summary>
         public string ConnectionId { get; private set; }
 
+        /// <summary>
+        /// 获取客户端集合。
+        /// </summary>
         public ClientManager Clients { get; private set; }
 
+        /// <summary>
+        /// 获取组集合。
+        /// </summary>
         public GroupManager Groups { get; private set; }
 
         public WebSocketHandler()
@@ -98,9 +107,8 @@ namespace Fireasy.Web.Sockets
             }
 
             await acceptContext.WebSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
-            OnDisconnected();
-            Clients.Remove(ConnectionId);
-            Dispose(true);
+
+            ManualClose();
         }
 
         /// <summary>
@@ -143,9 +151,18 @@ namespace Fireasy.Web.Sockets
         }
 
         /// <summary>
+        /// 调用方法失败时的通知。
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="exception">异常。</param>
+        protected virtual void OnInvokeError(InvokeMessage message, Exception exception)
+        {
+        }
+
+        /// <summary>
         /// 释放对象所占用的所有资源。
         /// </summary>
-        public void Dispose()
+            public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
@@ -164,7 +181,7 @@ namespace Fireasy.Web.Sockets
 
             if (acceptContext != null && acceptContext.WebSocket != null)
             {
-                acceptContext.WebSocket.Abort();
+                acceptContext.WebSocket.Dispose();
             }
 
             if (timer != null)
@@ -192,27 +209,31 @@ namespace Fireasy.Web.Sockets
             }
             else if (type == WebSocketMessageType.Text)
             {
-                var serializer = new JsonSerializer();
-                var content = Encoding.UTF8.GetString(buffer, 0, length);
+                var content = acceptContext.Option.Encoding.GetString(buffer, 0, length);
+                InvokeMessage message = null;
 
                 try
                 {
                     OnReceived(content);
+                    message = acceptContext.Option.Formatter.ResolveMessage(content);
+                }
+                catch (Exception exp)
+                {
+                    OnResolveError(content, exp);
+                    return new byte[0];
+                }
 
-                    var obj = serializer.Deserialize<InvokeMessage>(content);
-
-                    var method = this.GetType().GetMethod(obj.Method, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                try
+                {
+                    var method = FindMethod(message);
                     if (method == null)
                     {
-                        throw new Exception($"没有发现方法 {obj.Method}");
+                        throw new Exception($"没有发现方法 {message.Method}");
                     }
 
-                    if (method.GetParameters().Length != obj.Arguments.Length)
-                    {
-                        throw new Exception($"方法 {obj.Method} 参数不匹配");
-                    }
+                    var arguments = ResolveArguments(method, message);
 
-                    var result = method.Invoke(this, obj.Arguments);
+                    var result = method.FastInvoke(this, arguments);
                     if (method.ReturnType.IsGenericType && method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
                     {
                         result = method.ReturnType.GetProperty("Result").GetValue(result);
@@ -220,17 +241,47 @@ namespace Fireasy.Web.Sockets
 
                     if (method.ReturnType != typeof(void))
                     {
-                        var ret = new InvokeMessage(obj.Method, 1, new[] { result });
-                        return Encoding.UTF8.GetBytes(serializer.Serialize(ret));
+                        var ret = new InvokeMessage(message.Method, 1, new[] { result });
+                        return acceptContext.Option.Encoding.GetBytes(acceptContext.Option.Formatter.FormatMessage(ret));
                     }
                 }
                 catch (Exception exp)
                 {
-                    OnResolveError(content, exp);
+                    OnInvokeError(message, exp);
                 }
             }
 
             return new byte[0];
+        }
+
+        private MethodInfo FindMethod(InvokeMessage message)
+        {
+            return this.GetType().GetMethod(message.Method, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+        }
+
+        private object[] ResolveArguments(MethodInfo method, InvokeMessage message)
+        {
+            var parameters = method.GetParameters();
+            if (parameters.Length != message.Arguments.Length)
+            {
+                throw new Exception($"方法 {message.Method} 参数不匹配");
+            }
+
+            //处理参数
+            var arguments = new object[message.Arguments.Length];
+            for (var i = 0; i < arguments.Length; i++)
+            {
+                if (parameters[i].ParameterType != message.Arguments[i].GetType())
+                {
+                    arguments[i] = message.Arguments[i].ToType(parameters[i].ParameterType);
+                }
+                else
+                {
+                    arguments[i] = message.Arguments[i];
+                }
+            }
+
+            return arguments;
         }
 
         /// <summary>
@@ -242,6 +293,22 @@ namespace Fireasy.Web.Sockets
         }
 
         /// <summary>
+        /// 手动关闭。
+        /// </summary>
+        private void ManualClose()
+        {
+            if (isClosing)
+            {
+                return;
+            }
+
+            isClosing = true;
+            OnDisconnected();
+            Clients.Remove(ConnectionId);
+            Dispose(true);
+        }
+
+        /// <summary>
         /// 监听心跳包。
         /// </summary>
         private void ListenHeartBeat()
@@ -249,15 +316,17 @@ namespace Fireasy.Web.Sockets
             timer = new Timer(o =>
                 {
                     //3次容错
-                    if (lastHeartbeatTime == null || 
-                        (DateTime.Now - (DateTime)lastHeartbeatTime).TotalMilliseconds > 
-                            acceptContext.HeartbeatInterval.TotalMilliseconds * acceptContext.HeartbeatTryTimes)
+                    if ((DateTime.Now - lastHeartbeatTime).TotalMilliseconds >=
+                        acceptContext.Option.HeartbeatInterval.TotalMilliseconds * acceptContext.Option.HeartbeatTryTimes)
                     {
-                        OnDisconnected();
-                        Clients.Remove(ConnectionId);
-                        Dispose(true);
+                        if (acceptContext.WebSocket.State == WebSocketState.Open)
+                        {
+                            acceptContext.WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
+                        }
+
+                        ManualClose();
                     }
-                }, null, acceptContext.HeartbeatInterval, acceptContext.HeartbeatInterval);
+                }, null, acceptContext.Option.HeartbeatInterval, acceptContext.Option.HeartbeatInterval);
         }
     }
 }
