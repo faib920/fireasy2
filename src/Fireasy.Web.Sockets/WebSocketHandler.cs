@@ -311,7 +311,7 @@ namespace Fireasy.Web.Sockets
         /// <summary>
         /// 监听心跳包。
         /// </summary>
-        private void ListenHeartBeat()
+        private async void ListenHeartBeat()
         {
             timer = new Timer(o =>
                 {
@@ -323,8 +323,10 @@ namespace Fireasy.Web.Sockets
                         {
                             acceptContext.WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
                         }
-
-                        ManualClose();
+                        else
+                        {
+                            ManualClose();
+                        }
                     }
                 }, null, acceptContext.Option.HeartbeatInterval, acceptContext.Option.HeartbeatInterval);
         }
