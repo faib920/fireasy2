@@ -311,7 +311,7 @@ namespace Fireasy.Web.Sockets
         /// <summary>
         /// 监听心跳包。
         /// </summary>
-        private async void ListenHeartBeat()
+        private void ListenHeartBeat()
         {
             timer = new Timer(o =>
                 {
