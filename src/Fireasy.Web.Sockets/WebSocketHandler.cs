@@ -8,6 +8,7 @@
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Serialization;
 using System;
+using System.Collections.Generic;
 using System.Net.WebSockets;
 using System.Reflection;
 using System.Text;
@@ -87,8 +88,11 @@ namespace Fireasy.Web.Sockets
             OnConnected();
             Clients.Add(ConnectionId, this);
 
-            var buffer = new byte[1024 * 4];
+            var buffer = new byte[acceptContext.Option.ReceiveBufferSize];
+            var data = new DataBuffer();
+
             var result = await acceptContext.WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+
             while (!result.CloseStatus.HasValue)
             {
                 if (result.MessageType == WebSocketMessageType.Close)
@@ -96,11 +100,18 @@ namespace Fireasy.Web.Sockets
                     break;
                 }
 
-                var bytes = HandleResult(result.MessageType, buffer, result.Count);
+                data.AddBuffer(buffer, result.Count);
 
-                if (bytes.Length > 0)
+                if (result.EndOfMessage)
                 {
-                    await acceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), result.MessageType, result.EndOfMessage, CancellationToken.None);
+                    var bytes = HandleResult(result.MessageType, data);
+
+                    data.Clear();
+
+                    if (bytes.Length > 0)
+                    {
+                        await acceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), result.MessageType, result.EndOfMessage, CancellationToken.None);
+                    }
                 }
 
                 result = await acceptContext.WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
@@ -196,20 +207,19 @@ namespace Fireasy.Web.Sockets
         /// 处理数据结果。
         /// </summary>
         /// <param name="type"></param>
-        /// <param name="buffer"></param>
-        /// <param name="length"></param>
+        /// <param name="data"></param>
         /// <returns></returns>
-        private byte[] HandleResult(WebSocketMessageType type, byte[] buffer, int length)
+        private byte[] HandleResult(WebSocketMessageType type, byte[] data)
         {
             ProcessHeartBeat();
 
             if (type == WebSocketMessageType.Binary)
             {
-                OnReceived(buffer);
+                OnReceived(data);
             }
             else if (type == WebSocketMessageType.Text)
             {
-                var content = acceptContext.Option.Encoding.GetString(buffer, 0, length);
+                var content = acceptContext.Option.Encoding.GetString(data);
                 InvokeMessage message = null;
 
                 try
@@ -254,11 +264,22 @@ namespace Fireasy.Web.Sockets
             return new byte[0];
         }
 
+        /// <summary>
+        /// 查找调用的方法。
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
         private MethodInfo FindMethod(InvokeMessage message)
         {
             return this.GetType().GetMethod(message.Method, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
         }
 
+        /// <summary>
+        /// 解析方法的参数。
+        /// </summary>
+        /// <param name="method"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
         private object[] ResolveArguments(MethodInfo method, InvokeMessage message)
         {
             var parameters = method.GetParameters();
@@ -329,6 +350,22 @@ namespace Fireasy.Web.Sockets
                         }
                     }
                 }, null, acceptContext.Option.HeartbeatInterval, acceptContext.Option.HeartbeatInterval);
+        }
+
+        private class DataBuffer : List<byte>
+        {
+            public static implicit operator byte[] (DataBuffer buffer)
+            {
+                return buffer.ToArray();
+            }
+
+            public void AddBuffer(byte[] buffer, int length)
+            {
+                for (var i = 0; i < length; i++)
+                {
+                    Add(buffer[i]);
+                }
+            }
         }
     }
 }

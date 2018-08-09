@@ -21,6 +21,17 @@ namespace Fireasy.Web.Sockets
         private ConcurrentDictionary<string, T> sessions = new ConcurrentDictionary<string, T>();
 
         /// <summary>
+        /// 获取当前会话个数。
+        /// </summary>
+        public int Count
+        {
+            get
+            {
+                return sessions.Count;
+            }
+        }
+
+        /// <summary>
         /// 将客户端连接标识与用户标识进行关联。
         /// </summary>
         /// <param name="connectionId">客户端连接标识。></param>

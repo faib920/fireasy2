@@ -28,9 +28,9 @@ namespace Fireasy.Web.Sockets
         public TimeSpan KeepAliveInterval { get; set; }
 
         /// <summary>
-        /// 获取或设置接收数据的缓冲区大小。
+        /// 获取或设置接收数据的缓冲区大小。默认为 1024 字节。
         /// </summary>
-        public int ReceiveBufferSize { get; set; }
+        public int ReceiveBufferSize { get; set; } = 1024;
 
         /// <summary>
         /// 获取或设置心跳的时间间隔。默认 30 秒。
