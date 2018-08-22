@@ -1,4 +1,4 @@
-﻿    该程序集提供 Redis 缓存及消息订阅两个实现。
+该程序集提供 Redis 缓存及消息订阅两个实现。
 
 一、缓存
     实现了 ICacheManager 接口，用时只需使用 CacheManagerFactory.CreateManager() 即可。
