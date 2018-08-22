@@ -1,5 +1,5 @@
-﻿==== .net framework 配置 ====
-
+==== .net framework 配置 ====
+```XML
 <?xml version="1.0" encoding="utf-8" ?>
 <configuration>
   <configSections>
@@ -12,9 +12,10 @@
     </loggings>
   </fireasy>
 </configuration>
+```
 
 ==== .net core 配置 ====
-
+```json
 {
   "fireasy": {
     "loggings": {
@@ -26,3 +27,4 @@
     }
   }
 }
+```
