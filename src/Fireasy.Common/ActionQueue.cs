@@ -18,21 +18,12 @@ namespace Fireasy.Common
     public static class ActionQueue
     {
         private static ConcurrentQueue<ActionEntry> queue = new ConcurrentQueue<ActionEntry>();
-        private readonly static Thread thread;
-        private static TimeSpan time = TimeSpan.FromSeconds(1);
+        private static Timer timer = new Timer(ProcessQueue, null, TimeSpan.FromMilliseconds(0), TimeSpan.FromSeconds(10));
 
         /// <summary>
         /// 用于处理异常的委托。
         /// </summary>
         public static Action<Action, Exception> ExceptionHandler { get; set; }
-
-        static ActionQueue()
-        {
-            thread = new Thread(new ThreadStart(ProcessQueue));
-            thread.IsBackground = true;
-            thread.Priority = ThreadPriority.Highest;
-            thread.Start();
-        }
 
         /// <summary>
         /// 将一个委托添加到队列中。
@@ -44,6 +35,7 @@ namespace Fireasy.Common
         {
             Guard.ArgumentNull(action, nameof(action));
 
+            action.Method.Invoke(action.Target, null);
             var entry = new ActionEntry(action, tryTimes);
             queue.Enqueue(entry);
             return entry.Id;
@@ -55,36 +47,32 @@ namespace Fireasy.Common
         /// <param name="time">后台线程执行的间隔时间。</param>
         public static void SetPeriod(TimeSpan time)
         {
-            ActionQueue.time = time;
+            timer.Change(TimeSpan.FromSeconds(1), time);
         }
 
         /// <summary>
         /// 处理队列内的委托。
         /// </summary>
-        private static void ProcessQueue()
+        /// <param name="state"></param>
+        private static void ProcessQueue(object state)
         {
-            while (true)
+            while (queue.TryDequeue(out ActionEntry entry))
             {
-                while (queue.TryDequeue(out ActionEntry entry))
+                try
                 {
-                    try
+                    entry.Action();
+                }
+                catch (Exception exp)
+                {
+                    if (entry.CanTry())
                     {
-                        entry.Action();
+                        queue.Enqueue(entry);
                     }
-                    catch (Exception exp)
+                    else if (ExceptionHandler != null)
                     {
-                        if (entry.CanTry())
-                        {
-                            queue.Enqueue(entry);
-                        }
-                        else
-                        {
-                            ExceptionHandler?.Invoke(entry.Action, exp);
-                        }
+                        ExceptionHandler.Invoke(entry.Action, exp);
                     }
                 }
-
-                Thread.Sleep(time);
             }
         }
 

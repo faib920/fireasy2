@@ -58,6 +58,11 @@ namespace Fireasy.Data.Entity.Properties
         public Type RelationType { get; set; }
 
         /// <summary>
+        /// 获取或设置关联键。
+        /// </summary>
+        public string RelationKey { get; set; }
+
+        /// <summary>
         /// 获取关联属性类型。
         /// </summary>
         internal RelationPropertyType RelationPropertyType { get; private set; }

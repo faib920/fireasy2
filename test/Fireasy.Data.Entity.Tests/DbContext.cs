@@ -7,7 +7,7 @@ namespace Fireasy.Data.Entity.Tests
     public class DbContext : EntityContext
     {
         public DbContext()
-            : base (new EntityContextOptions { AutoCreateTables = true })
+            : base (new EntityContextOptions { AutoCreateTables = true, NotifyEvents = true })
         {
         }
 

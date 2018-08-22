@@ -25,7 +25,7 @@ namespace Fireasy.Common.Caching
         public static ICacheManager CreateManager(string configName = null)
         {
             ICacheManager manager;
-            CachingConfigurationSetting setting = null;
+            IConfigurationSettingItem setting = null;
             var section = ConfigurationUnity.GetSection<CachingConfigurationSection>();
             if (section != null && section.Factory != null)
             {
@@ -38,42 +38,22 @@ namespace Fireasy.Common.Caching
 
             if (string.IsNullOrEmpty(configName))
             {
-                if (section == null || section.Default == null)
+                if (section == null || (setting = section.GetDefault()) == null)
                 {
                     return MemoryCacheManager.Instance;
                 }
-
-                setting = section.Default;
             }
             else if (section != null)
             {
-                setting = section.Settings[configName];
+                setting = section.GetSetting(configName);
             }
 
-            if (setting == null || setting.CacheType == null)
+            if (setting == null)
             {
                 return null;
             }
 
-            return CreateBySetting(setting);
-        }
-
-        /// <summary>
-        /// 根据提供的配置创建 <see cref="ICacheManager"/> 对象。
-        /// </summary>
-        /// <param name="setting"></param>
-        /// <returns></returns>
-        private static ICacheManager CreateBySetting(CachingConfigurationSetting setting)
-        {
-            var caching = setting.CacheType.New<ICacheManager>();
-            if (caching == null)
-            {
-                return null;
-            }
-
-            caching.As<IConfigurationSettingHostService>(s => ConfigurationUnity.AttachSetting(s, setting));
-
-            return caching;
+            return ConfigurationUnity.CreateInstance<CachingConfigurationSetting, ICacheManager>(setting, s => s.CacheType);
         }
     }
 }

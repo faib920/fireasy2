@@ -1,4 +1,11 @@
-﻿using Fireasy.Common.Subscribe;
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+using Fireasy.Common.Subscribes;
 using System;
 
 namespace Fireasy.Data.Entity.Subscribes
@@ -8,6 +15,12 @@ namespace Fireasy.Data.Entity.Subscribes
     /// </summary>
     public sealed class EntityPersistentSubject : ISubject
     {
+        public EntityPersistentSubject(Type entityType, EntityPersistentEventType eventType)
+        {
+            EntityType = entityType;
+            EventType = eventType;
+        }
+
         /// <summary>
         /// 获取实体类型。
         /// </summary>
@@ -19,31 +32,5 @@ namespace Fireasy.Data.Entity.Subscribes
         public EntityPersistentEventType EventType { get; private set; }
 
         internal object Argument { get; set; }
-
-        /// <summary>
-        /// 获取或设置过滤器。
-        /// </summary>
-        public Func<ISubscriber, bool> Filter { get; set; }
-
-        void ISubject.Initialize(params object[] arguments)
-        {
-            Argument = arguments[0];
-
-            switch (arguments[0])
-            {
-                case EntityEventArgs arg:
-                    EntityType = arg.EntityType;
-                    EventType = arg.EventType;
-                    break;
-                case EntitiesArgs arg:
-                    EntityType = arg.EntityType;
-                    EventType = arg.EventType;
-                    break;
-                case EntityEventTypeArgs arg:
-                    EntityType = arg.EntityType;
-                    EventType = arg.EventType;
-                    break;
-            }
-        }
     }
 }

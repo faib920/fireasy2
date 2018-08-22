@@ -41,6 +41,16 @@ namespace Fireasy.Web.EasyUI
         public bool? Novalidate { get; set; }
 
         /// <summary>
+        /// 获取或设置是否在创建该组件时进行验证。
+        /// </summary>
+        public bool? ValidateOnCreate { get; set; }
+
+        /// <summary>
+        /// 获取或设置是否失去焦点的时候进行验证。
+        /// </summary>
+        public bool? ValidateOnBlur { get; set; }
+
+        /// <summary>
         /// 根据模型类型设置参数选项。
         /// </summary>
         /// <param name="modelType">模型类型。</param>

@@ -559,6 +559,11 @@ namespace Fireasy.Data.Entity
         private string GenerateInnerId(string keyId, PropertyValue order, EntityTreePosition position)
         {
             var sOrder = order.ToString();
+            if (metaTree.SignLength - sOrder.Length < 0)
+            {
+                throw new EntityTreeCodeOutOfRangeException("末级编码超出预设的" + metaTree.SignLength + "位编码。");
+            }
+
             return position == EntityTreePosition.Children || keyId.Length < metaTree.SignLength ?
                 keyId + new string('0', metaTree.SignLength - sOrder.Length) + sOrder :
                 GetPreviousKey(keyId) + new string('0', metaTree.SignLength - sOrder.Length) + sOrder;

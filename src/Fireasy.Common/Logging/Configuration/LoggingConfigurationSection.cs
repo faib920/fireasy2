@@ -20,10 +20,8 @@ namespace Fireasy.Common.Logging.Configuration
     /// 表示日志的配置节。无法继承此类。
     /// </summary>
     [ConfigurationSectionStorage("fireasy/loggings")]
-    public sealed class LoggingConfigurationSection : InstanceConfigurationSection<LoggingConfigurationSetting>
+    public sealed class LoggingConfigurationSection : ManagableConfigurationSection<LoggingConfigurationSetting>
     {
-        private string defaultInstanceName;
-
         /// <summary>
         /// 使用配置节点对当前配置进行初始化。
         /// </summary>
@@ -39,7 +37,7 @@ namespace Fireasy.Common.Logging.Configuration
                     });
 
             //取默认实例
-            defaultInstanceName = section.GetAttributeValue("default");
+            DefaultInstanceName = section.GetAttributeValue("default");
             Level = GetLevel(section.GetAttributeValue("level"));
 
             base.Initialize(section);
@@ -60,30 +58,12 @@ namespace Fireasy.Common.Logging.Configuration
                         LogType = Type.GetType(c.GetSection("type").Value, false, true)
                     });
 
-            defaultInstanceName = configuration.GetSection("default").Value;
+            DefaultInstanceName = configuration.GetSection("default").Value;
             Level = GetLevel(configuration.GetSection("level").Value);
 
             base.Bind(configuration);
         }
 #endif
-
-        /// <summary>
-        /// 获取默认的日志配置。
-        /// </summary>
-        public LoggingConfigurationSetting Default
-        {
-            get
-            {
-                if (Settings.Count == 0)
-                {
-                    return null;
-                }
-
-                return string.IsNullOrEmpty(defaultInstanceName) ?
-                    (Settings.ContainsKey("setting0") ? Settings["setting0"] : Settings.FirstOrDefault().Value) :
-                    Settings[defaultInstanceName];
-            }
-        }
 
         /// <summary>
         /// 获取或设置日志级别。

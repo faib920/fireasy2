@@ -94,6 +94,24 @@ namespace Fireasy.Common.Tests.Serialization
         }
 
         /// <summary>
+        /// 使用字符串测试Deserialize方法。
+        /// </summary>
+        [TestMethod()]
+        public void TestSerializePath()
+        {
+            var serializer = new JsonSerializer();
+
+            var s1 = "path/a.gif";
+            var str = serializer.Serialize(s1);
+            Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(s1));
+            Console.WriteLine(str);
+            s1 = "c:\\path\\a.gif";
+            str = serializer.Serialize(s1);
+            Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(s1));
+            Console.WriteLine(str);
+        }
+
+        /// <summary>
         /// 使用字符串测试Serialize方法。
         /// </summary>
         [TestMethod()]
@@ -858,9 +876,8 @@ studio");
         {
             var serializer = new JsonSerializer();
 
-            var s1 = "2015/2/2";
             var str = serializer.Deserialize<string>("\"<span style=\\\"background-color:#ffffff\\\">201/12/12</span>\"");
-            Console.WriteLine(serializer.Serialize(s1));
+            Console.WriteLine(str);
             //Assert.AreEqual("<span style=\"background-color:#ffffff\"></span>", str);
         }
 
@@ -872,10 +889,19 @@ studio");
         {
             var serializer = new JsonSerializer();
 
-            var s1 = "\"e:\\doct\\test.doc\"";
+            var s1 = "\"e:\\\\doct\\\\test.doc\"";
+
             var str = serializer.Deserialize<string>(s1);
-            Console.WriteLine(serializer.Serialize(s1));
-            //Assert.AreEqual("<span style=\"background-color:#ffffff\"></span>", str);
+            Console.WriteLine(Newtonsoft.Json.JsonConvert.DeserializeObject<string>(s1));
+            Console.WriteLine(str);
+            s1 = "\"/doct/test.doc\"";
+            str = serializer.Deserialize<string>(s1);
+            Console.WriteLine(Newtonsoft.Json.JsonConvert.DeserializeObject<string>(s1));
+            Console.WriteLine(str);
+            s1 = "\"/doct/test.doc\"";
+            str = serializer.Deserialize<string>(s1);
+            Console.WriteLine(Newtonsoft.Json.JsonConvert.DeserializeObject<string>(s1));
+            Console.WriteLine(str);
         }
 
         /// <summary>

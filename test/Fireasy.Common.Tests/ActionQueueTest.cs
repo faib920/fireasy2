@@ -11,21 +11,26 @@ namespace Fireasy.Common.Tests
     [TestClass]
     public class ActionQueueTest
     {
+        private string str = "ddd";
+
         [TestMethod]
         public void TestException()
         {
+            var ss = "dfasdfaf";
+            var dd = 1;
             ActionQueue.SetPeriod(TimeSpan.FromMilliseconds(500));
-            ActionQueue.Push(() =>
-            {
-                Console.WriteLine("yes");
-                throw new Exception("error");
-            });
-            ActionQueue.ExceptionHandler = (action, exp) =>
-            {
-                Console.WriteLine(exp.Message);
-            };
+            Test(ss, dd);
 
             Thread.Sleep(5000);
+        }
+
+        private void Test(string ss, int dd)
+        {
+            ActionQueue.Push(() =>
+            {
+                Console.WriteLine(str + ss + dd);
+                //throw new Exception("error");
+            });
         }
     }
 }

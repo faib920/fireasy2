@@ -1,4 +1,5 @@
 ﻿using Fireasy.Common.Serialization;
+using System;
 
 namespace Fireasy.Redis
 {
@@ -29,10 +30,21 @@ namespace Fireasy.Redis
         /// <returns></returns>
         public virtual T Deserialize<T>(string str)
         {
+            return (T)Deserialize(typeof(T), str);
+        }
+
+        /// <summary>
+        /// 反序列化。
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public virtual object Deserialize(Type type, string str)
+        {
             var option = new JsonSerializeOption();
             option.Converters.Add(new FullDateTimeJsonConverter());
             var serializer = new JsonSerializer(option);
-            return serializer.Deserialize<T>(str);
+            return serializer.Deserialize(str, type);
         }
     }
 }

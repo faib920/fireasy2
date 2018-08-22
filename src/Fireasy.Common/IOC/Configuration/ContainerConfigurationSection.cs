@@ -24,10 +24,8 @@ namespace Fireasy.Common.Ioc.Configuration
     /// 表示容器的配置节。无法继承此类。
     /// </summary>
     [ConfigurationSectionStorage("fireasy/containers")]
-    public sealed class ContainerConfigurationSection : ConfigurationSection<ContainerConfigurationSetting>
+    public sealed class ContainerConfigurationSection : DefaultInstaneConfigurationSection<ContainerConfigurationSetting>
     {
-        private string defaultInstanceName;
-
         /// <summary>
         /// 使用配置节点对当前配置进行初始化。
         /// </summary>
@@ -44,7 +42,7 @@ namespace Fireasy.Common.Ioc.Configuration
                 }, node));
 
             //取默认实例
-            defaultInstanceName = section.GetAttributeValue("default");
+            DefaultInstanceName = section.GetAttributeValue("default");
 
             base.Initialize(section);
         }
@@ -63,31 +61,11 @@ namespace Fireasy.Common.Ioc.Configuration
                         Name = c.Key
                     }));
 
-            defaultInstanceName = configuration.GetSection("default").Value;
+            DefaultInstanceName = configuration.GetSection("default").Value;
 
             base.Bind(configuration);
         }
-#endif
 
-        /// <summary>
-        /// 获取默认的配置项。
-        /// </summary>
-        public ContainerConfigurationSetting Default
-        {
-            get
-            {
-                if (Settings.Count == 0)
-                {
-                    return null;
-                }
-
-                return string.IsNullOrEmpty(defaultInstanceName) ?
-                    (Settings.ContainsKey("setting0") ? Settings["setting0"] : Settings.FirstOrDefault().Value) :
-                    Settings[defaultInstanceName];
-            }
-        }
-
-#if NETSTANDARD2_0
         private ContainerConfigurationSetting InitializeSetting(IConfiguration config, ContainerConfigurationSetting setting)
         {
             var list = new List<RegistrationSetting>();

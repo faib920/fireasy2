@@ -1,4 +1,10 @@
-﻿using Fireasy.Common.Subscribe;
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
 
@@ -7,25 +13,19 @@ namespace Fireasy.Data.Entity.Subscribes
     /// <summary>
     /// 实体持久化的事件订阅器抽象类。
     /// </summary>
-    public abstract class EntityPersistentSubscriber : ISubscriber
+    public abstract class EntityPersistentSubscriber
     {
         /// <summary>
-        /// 接收主题信息。
+        /// 接收主题信息并进行处理。
         /// </summary>
         /// <param name="subject"></param>
-        void ISubscriber.Accept(ISubject subject)
+        public void Accept(EntityPersistentSubject subject)
         {
-            var esub = subject as EntityPersistentSubject;
-            if (esub == null)
-            {
-                return;
-            }
-
-            switch (esub.EventType)
+            switch (subject.EventType)
             {
                 case EntityPersistentEventType.BeforeCreate:
                     {
-                        if (esub.Argument is EntityEventArgs arg)
+                        if (subject.Argument is EntityEventArgs arg)
                         {
                             OnBeforeCreate(arg.Entity);
                         }
@@ -33,17 +33,17 @@ namespace Fireasy.Data.Entity.Subscribes
                     break;
                 case EntityPersistentEventType.AfterCreate:
                     {
-                        if (esub.Argument is EntityEventArgs arg)
+                        if (subject.Argument is EntityEventArgs arg)
                         {
                             OnAfterCreate(arg.Entity);
                         }
                     }
 
-                    OnCreate(esub.EntityType);
+                    OnCreate(subject.EntityType);
                     break;
                 case EntityPersistentEventType.BeforeUpdate:
                     {
-                        if (esub.Argument is EntityEventArgs arg)
+                        if (subject.Argument is EntityEventArgs arg)
                         {
                             OnBeforeUpdate(arg.Entity);
                         }
@@ -51,17 +51,17 @@ namespace Fireasy.Data.Entity.Subscribes
                     break;
                 case EntityPersistentEventType.AfterUpdate:
                     {
-                        if (esub.Argument is EntityEventArgs arg)
+                        if (subject.Argument is EntityEventArgs arg)
                         {
                             OnAfterUpdate(arg.Entity);
                         }
                     }
 
-                    OnUpdate(esub.EntityType);
+                    OnUpdate(subject.EntityType);
                     break;
                 case EntityPersistentEventType.BeforeRemove:
                     {
-                        if (esub.Argument is EntityEventArgs arg)
+                        if (subject.Argument is EntityEventArgs arg)
                         {
                             OnBeforeRemove(arg.Entity);
                         }
@@ -69,35 +69,35 @@ namespace Fireasy.Data.Entity.Subscribes
                     break;
                 case EntityPersistentEventType.AfterRemove:
                     {
-                        if (esub.Argument is EntityEventArgs arg)
+                        if (subject.Argument is EntityEventArgs arg)
                         {
                             OnAfterRemove(arg.Entity);
                         }
                     }
 
-                    OnRemove(esub.EntityType);
+                    OnRemove(subject.EntityType);
                     break;
                 case EntityPersistentEventType.BeforeBatch:
                     {
-                        var arg = esub.Argument as EntitiesArgs;
+                        var arg = subject.Argument as EntitiesArgs;
                         OnBeforeBatch(arg.Entities, arg.OperType);
                     }
                     break;
                 case EntityPersistentEventType.AfterBatch:
                     {
-                        var arg = esub.Argument as EntitiesArgs;
+                        var arg = subject.Argument as EntitiesArgs;
                         OnAfterBatch(arg.Entities, arg.OperType);
 
                         switch (arg.OperType)
                         {
                             case EntityPersistentOperater.Create:
-                                OnCreate(esub.EntityType);
+                                OnCreate(subject.EntityType);
                                 break;
                             case EntityPersistentOperater.Update:
-                                OnUpdate(esub.EntityType);
+                                OnUpdate(subject.EntityType);
                                 break;
                             case EntityPersistentOperater.Remove:
-                                OnRemove(esub.EntityType);
+                                OnRemove(subject.EntityType);
                                 break;
                         }
                     }

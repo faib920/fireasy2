@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 using Fireasy.Common.Extensions;
@@ -48,13 +49,9 @@ namespace Fireasy.Common.Configuration
     /// <typeparam name="T"></typeparam>
     public abstract class ConfigurationSection<T> : ConfigurationSection where T : IConfigurationSettingItem
     {
-        /// <summary>
-        /// 初始化 <see cref="ConfigurationSection{T}"/> 类的新实例。
-        /// </summary>
-        protected ConfigurationSection()
-        {
-            Settings = new ConfigurationSettings<T>();
-        }
+        private ConfigurationSettings<IConfigurationSettingItem> innerSettings = new ConfigurationSettings<IConfigurationSettingItem>();
+        private ConfigurationSettings<T> settings;
+        private static object locker = new object();
 
         /// <summary>
         /// 解析配置节下的所有子节点。
@@ -63,7 +60,7 @@ namespace Fireasy.Common.Configuration
         /// <param name="nodeName">要枚举的子节点的名称。</param>
         /// <param name="typeNodeName">如果配置类中存在 <see cref="Type"/> 的属性，则指定该属性的名称。</param>
         /// <param name="func">用于初始化设置项的函数。</param>
-        protected void InitializeNode(XmlNode section, string nodeName, string typeNodeName = "type", Func<XmlNode, T> func = null)
+        protected void InitializeNode(XmlNode section, string nodeName, string typeNodeName = "type", Func<XmlNode, IConfigurationSettingItem> func = null)
         {
             section.EachChildren(
                 nodeName, node =>
@@ -71,12 +68,12 @@ namespace Fireasy.Common.Configuration
                     var name = node.GetAttributeValue("name");
                     if (string.IsNullOrEmpty(name))
                     {
-                        name = "setting" + Settings.Count;
+                        name = string.Concat("setting", Settings.Count);
                     }
 
                     try
                     {
-                        var setting = default(T);
+                        var setting = func(node);
                         if (!string.IsNullOrEmpty(typeNodeName))
                         {
                             var typeName = node.GetAttributeValue(typeNodeName);
@@ -84,27 +81,22 @@ namespace Fireasy.Common.Configuration
                             {
                                 var type = Type.GetType(typeName, false, true);
 
-                                setting = ParseSetting(node, type);
-                                if (setting == null && func != null)
+                                var extend = ParseSetting(node, type);
+                                if (extend != null)
                                 {
-                                    setting = func(node);
+                                    setting = new ExtendConfigurationSetting { Base = setting, Extend = extend };
                                 }
                             }
                         }
 
-                        if (setting == null && func != null)
-                        {
-                            setting = func(node);
-                        }
-
                         if (setting != null)
                         {
-                            Settings.Add(name, setting);
+                            innerSettings.Add(name, setting);
                         }
                     }
                     catch (Exception ex)
                     {
-                        Settings.AddInvalidSetting(name, ex);
+                        innerSettings.AddInvalidSetting(name, ex);
                     }
                 });
         }
@@ -117,19 +109,19 @@ namespace Fireasy.Common.Configuration
         /// <param name="nodeName">要枚举的子节点的名称。</param>
         /// <param name="typeNodeName">如果配置类中存在 <see cref="Type"/> 的属性，则指定该属性的名称。</param>
         /// <param name="func">用于初始化设置项的函数。</param>
-        protected void Bind(IConfiguration configuration, string nodeName, string typeNodeName = "type", Func<Microsoft.Extensions.Configuration.IConfigurationSection, T> func = null)
+        protected void Bind(IConfiguration configuration, string nodeName, string typeNodeName = "type", Func<Microsoft.Extensions.Configuration.IConfigurationSection, IConfigurationSettingItem> func = null)
         {
             foreach (var child in configuration.GetSection(nodeName).GetChildren())
             {
                 var name = child.Key;
                 if (string.IsNullOrEmpty(name))
                 {
-                    name = "setting" + Settings.Count;
+                    name = string.Concat("setting", Settings.Count);
                 }
 
                 try
                 {
-                    var setting = default(T);
+                    var setting = func(child);
                     if (!string.IsNullOrEmpty(typeNodeName))
                     {
                         var typeName = child.GetSection(typeNodeName).Value;
@@ -137,27 +129,22 @@ namespace Fireasy.Common.Configuration
                         {
                             var type = Type.GetType(typeName, false, true);
 
-                            setting = ParseSetting(child, type);
-                            if (setting == null && func != null)
+                            var extend = ParseSetting(child, type);
+                            if (extend != null)
                             {
-                                setting = func(child);
+                                setting = new ExtendConfigurationSetting { Base = setting, Extend = extend };
                             }
                         }
                     }
 
-                    if (setting == null && func != null)
-                    {
-                        setting = func(child);
-                    }
-
                     if (setting != null)
                     {
-                        Settings.Add(name, setting);
+                        innerSettings.Add(name, setting);
                     }
                 }
                 catch (Exception ex)
                 {
-                    Settings.AddInvalidSetting(name, ex);
+                    innerSettings.AddInvalidSetting(name, ex);
                 }
             }
         }
@@ -166,7 +153,48 @@ namespace Fireasy.Common.Configuration
         /// <summary>
         /// 返回当前节的配置项集合。
         /// </summary>
-        public ConfigurationSettings<T> Settings { get; private set; }
+        public ConfigurationSettings<T> Settings
+        {
+            get
+            {
+                if (settings == null)
+                {
+                    lock (locker)
+                    {
+                        settings = new ConfigurationSettings<T>();
+
+                        foreach (var kvp in innerSettings)
+                        {
+                            if (kvp.Value is ExtendConfigurationSetting extend)
+                            {
+                                settings.Add(kvp.Key, (T)extend.Base);
+                            }
+                            else
+                            {
+                                settings.Add(kvp.Key, (T)kvp.Value);
+                            }
+                        }
+                    }
+                }
+
+                return settings;
+            }
+        }
+
+        public IEnumerable<IConfigurationSettingItem> GetSettings()
+        {
+            return innerSettings.Values;
+        }
+
+        public IConfigurationSettingItem GetSetting(string name)
+        {
+            if (innerSettings.ContainsKey(name))
+            {
+                return innerSettings[name];
+            }
+
+            return null;
+        }
 
         /// <summary>
         /// 根据是否忽略配置节处理接口来进行构造。
@@ -185,7 +213,7 @@ namespace Fireasy.Common.Configuration
             return default(T);
         }
 
-        private T ParseSetting(XmlNode node, Type type)
+        private IConfigurationSettingItem ParseSetting(XmlNode node, Type type)
         {
             var att = type.GetCustomAttributes<ConfigurationSettingAttribute>().FirstOrDefault();
             if (att != null)
@@ -193,23 +221,23 @@ namespace Fireasy.Common.Configuration
                 var att1 = att.Type.GetCustomAttributes<ConfigurationSettingParseTypeAttribute>().FirstOrDefault();
                 if (att1 == null)
                 {
-                    return att.Type.New<T>();
+                    return att.Type.New<IConfigurationSettingItem>();
                 }
                 else
                 {
                     var handler = att1.HandlerType.New<IConfigurationSettingParseHandler>();
                     if (handler != null)
                     {
-                        return (T)handler.Parse(node);
+                        return handler.Parse(node);
                     }
                 }
             }
 
-            return default(T);
+            return null;
         }
 
 #if NETSTANDARD2_0
-        private T ParseSetting(IConfiguration configuration, Type type)
+        private IConfigurationSettingItem ParseSetting(IConfiguration configuration, Type type)
         {
             var att = type.GetCustomAttributes<ConfigurationSettingAttribute>().FirstOrDefault();
             if (att != null)
@@ -217,29 +245,83 @@ namespace Fireasy.Common.Configuration
                 var att1 = att.Type.GetCustomAttributes<ConfigurationSettingParseTypeAttribute>().FirstOrDefault();
                 if (att1 == null)
                 {
-                    return att.Type.New<T>();
+                    return att.Type.New<IConfigurationSettingItem>();
                 }
                 else
                 {
                     var handler = att1.HandlerType.New<IConfigurationSettingParseHandler>();
                     if (handler != null)
                     {
-                        return (T)handler.Parse(configuration);
+                        return handler.Parse(configuration);
                     }
                 }
             }
 
-            return default(T);
+            return null;
         }
 #endif
 
     }
 
     /// <summary>
-    /// 基于实例的配置节。
+    /// 具有默认实例配置的配置节。
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class InstanceConfigurationSection<T> : ConfigurationSection<T> where T : IConfigurationSettingItem
+    public abstract class DefaultInstaneConfigurationSection<T> : ConfigurationSection<T> where T : IConfigurationSettingItem
+    {
+        /// <summary>
+        /// 获取或设置默认配置实例名称。
+        /// </summary>
+        public string DefaultInstanceName { get; set; }
+
+        public IConfigurationSettingItem GetDefault()
+        {
+            if (Settings.Count == 0)
+            {
+                return null;
+            }
+
+            if (string.IsNullOrEmpty(DefaultInstanceName))
+            {
+                if (Settings.ContainsKey("setting0"))
+                {
+                    return GetSetting("setting0");
+                }
+
+                return GetSettings().FirstOrDefault();
+            }
+
+            return GetSetting(DefaultInstanceName);
+        }
+
+        /// <summary>
+        /// 获取默认的配置项。
+        /// </summary>
+        public T Default
+        {
+            get
+            {
+                var setting = GetDefault();
+                if (setting == null)
+                {
+                    return default(T);
+                }
+
+                if (setting is ExtendConfigurationSetting extend)
+                {
+                    return (T)extend.Base;
+                }
+
+                return (T)setting;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 可托管的基于实例的配置节。
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public abstract class ManagableConfigurationSection<T> : DefaultInstaneConfigurationSection<T> where T : IConfigurationSettingItem
     {
         /// <summary>
         /// 获取实例创建工厂。

@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.Caching.Configuration;
 using Fireasy.Common.Configuration;
 using System;
 using System.Collections.Generic;
@@ -15,12 +14,12 @@ namespace Fireasy.Redis
     /// <summary>
     /// Redis 的基本配置。
     /// </summary>
-    [ConfigurationSettingParseType(typeof(RedisCacheSettingParser))]
-    public class RedisCacheSetting : CachingConfigurationSetting
+    [ConfigurationSettingParseType(typeof(RedisConfigurationSettingParser))]
+    public class RedisConfigurationSetting : IConfigurationSettingItem
     {
-        public RedisCacheSetting()
+        public RedisConfigurationSetting()
         {
-            Hosts = new List<RedisCacheHost>();
+            Hosts = new List<RedisHost>();
         }
 
         /// <summary>
@@ -31,7 +30,7 @@ namespace Fireasy.Redis
         /// <summary>
         /// 获取 Redis 主机群。
         /// </summary>
-        public List<RedisCacheHost> Hosts { get; private set; }
+        public List<RedisHost> Hosts { get; private set; }
 
         /// <summary>
         /// 获取或设置最大读连接数。
@@ -59,9 +58,9 @@ namespace Fireasy.Redis
         public Type SerializerType { get; set; }
 
         /// <summary>
-        /// 获取或设置连接超时时间。默认为 2 秒。
+        /// 获取或设置连接超时时间。
         /// </summary>
-        public int ConnectTimeout { get; set; } = 2;
+        public int? ConnectTimeout { get; set; }
 
         /// <summary>
         /// 获取或设置是否启用 Twemproxy 代理。
@@ -72,7 +71,7 @@ namespace Fireasy.Redis
     /// <summary>
     /// Redis 主机配置。
     /// </summary>
-    public class RedisCacheHost
+    public class RedisHost
     {
         /// <summary>
         /// 获取或设置主机IP。

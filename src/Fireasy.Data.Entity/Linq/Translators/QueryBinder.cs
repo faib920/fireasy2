@@ -81,10 +81,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 return BindQueryableMethod(node);
             }
-            else if (node.Method.DeclaringType.IsGenericType && 
-                node.Method.DeclaringType.GetGenericTypeDefinition() == typeof(ITreeRepository<>))
+            else if (typeof(ITreeRepository).IsAssignableFrom(node.Method.DeclaringType))
             {
-                return ChangePersisterMethod(node);
+                return BindTreeRepositoryMethod(node);
             }
             else if (typeof(IList).IsAssignableFrom(node.Method.DeclaringType))
             {
@@ -1047,11 +1046,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
         }
 
         /// <summary>
-        /// 改变 EntityPersister 的方法。
+        /// 改变 <see cref="ITreeRepository"/> 的方法。
         /// </summary>
         /// <param name="m"></param>
         /// <returns></returns>
-        private Expression ChangePersisterMethod(MethodCallExpression m)
+        private Expression BindTreeRepositoryMethod(MethodCallExpression m)
         {
             if (m.Method.Name == nameof(ITreeRepository<VirEntity>.HasChildren))
             {

@@ -3,6 +3,7 @@ using Fireasy.Common.Extensions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Fireasy.Common.Tests
 {
@@ -217,6 +218,15 @@ namespace Fireasy.Common.Tests
             Console.WriteLine(proxy.TestMethod("huangxd"));
         }
 
+        [TestMethod]
+        public void TestAsyncMethod()
+        {
+            var proxy = AspectFactory.BuildProxy<AspectTester>();
+
+            var str = proxy.TestAsync("fireasy").Result;
+            Assert.AreEqual("hello fireasy", str);
+        }
+
         [Intercept(typeof(SampleInterceptor))]
         public interface IAopTester : IAopSupport
         {
@@ -319,6 +329,12 @@ namespace Fireasy.Common.Tests
             [Intercept(typeof(PrintParameterInterceptor))]
             public virtual void MultiCall(string name)
             {
+            }
+
+            [Intercept(typeof(AsyncInterceptor))]
+            public virtual async Task<string> TestAsync(string str)
+            {
+                return str;
             }
         }
 
@@ -513,6 +529,19 @@ namespace Fireasy.Common.Tests
                 Assert.IsNotNull(target);
 
                 base.Initialize(context);
+            }
+        }
+
+        public class AsyncInterceptor : SampleInterceptor
+        {
+            public override void Intercept(InterceptCallInfo info)
+            {
+                if (info.InterceptType == InterceptType.AfterMethodCall)
+                {
+                    info.ReturnValue = Task.FromResult("hello " + (info.ReturnValue as Task<string>).Result);
+                }
+
+                base.Intercept(info);
             }
         }
 

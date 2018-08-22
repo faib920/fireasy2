@@ -37,6 +37,16 @@ namespace Fireasy.Web.EasyUI
         public bool? Multiple { get; set; }
 
         /// <summary>
+        /// 获取或设置支持多值提交。
+        /// </summary>
+        public bool? Multivalue { get; set; }
+
+        /// <summary>
+        /// 获取或设置在失去焦点的时候是否恢复原始值。
+        /// </summary>
+        public bool Reversed { get; set; }
+
+        /// <summary>
         /// 重写序列化属性值的方法。
         /// </summary>
         /// <param name="property"></param>
@@ -46,7 +56,7 @@ namespace Fireasy.Web.EasyUI
         protected override string SerializePropertyValue(PropertyInfo property, object value, ITextSerializer serializer)
         {
             //PanelHeight 为 0 时输出 auto
-            if (property.Name == "PanelHeight" && value.To<int?>() == 0)
+            if (property.Name == nameof(PanelHeight) && value.To<int?>() == 0)
             {
                 return "'auto'";
             }

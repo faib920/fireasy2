@@ -19,7 +19,7 @@ namespace Fireasy.Common.Caching
         /// </summary>
         /// <param name="exception">具体的异常信息。</param>
         public CacheServerException(Exception exception)
-            : base (SR.GetString(SRKind.CacheServerAnomaly, exception))
+            : base (SR.GetString(SRKind.CacheServerAnomaly), exception)
         {
         }
     }

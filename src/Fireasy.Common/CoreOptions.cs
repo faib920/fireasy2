@@ -6,15 +6,21 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if NETSTANDARD2_0
-using Fireasy.Common.Subscribe;
+using Fireasy.Common.Subscribes;
+using System;
 
 namespace Fireasy.Common
 {
     public class CoreOptions
     {
-        public void AddSubscribe<T>(ISubscriber subscriber) where T : ISubject
+        /// <summary>
+        /// 注册消息订阅器。
+        /// </summary>
+        /// <param name="name">配置实例名称。</param>
+        /// <param name="subscriber">消息订阅器。</param>
+        public void AddSubscriber<TSubject>(string name, Action<TSubject> subscriber) where TSubject : ISubject
         {
-            SubscribeManager.Register<T>(subscriber);
+            SubscribeManagerFactory.CreateManager(name)?.AddSubscriber(subscriber);
         }
     }
 }

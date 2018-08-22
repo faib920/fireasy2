@@ -171,18 +171,39 @@ namespace Fireasy.Data.Entity
 
         private static RelationshipMetadata CheckSingleKey(IEnumerable<RelationshipMetadata> list, RelationProperty relationPro)
         {
-            return list.FirstOrDefault(item =>
-                (item.ThisType == relationPro.RelationType &&
-                item.OtherType == relationPro.EntityType &&
-                item.Style == RelationshipStyle.One2Many) ||
-                (item.ThisType == relationPro.EntityType &&
-                item.OtherType == relationPro.RelationType &&
-                item.Style == RelationshipStyle.Many2One) ||
-                (((item.ThisType == relationPro.EntityType &&
-                item.OtherType == relationPro.RelationType) ||
-                (item.ThisType == relationPro.RelationType &&
-                item.OtherType == relationPro.EntityType)) &&
-                item.Style == RelationshipStyle.One2One));
+            foreach (var item in list)
+            {
+                if (item.Style == RelationshipStyle.One2Many && item.ThisType == relationPro.RelationType && item.OtherType == relationPro.EntityType)
+                {
+                    if (!string.IsNullOrEmpty(relationPro.RelationKey))
+                    {
+                        if (item.Keys.Any(s => s.OtherKey == relationPro.RelationKey))
+                        {
+                            return item;
+                        }
+                    }
+                    else
+                    {
+                        return item;
+                    }
+                }
+                else if (item.Style == RelationshipStyle.Many2One && item.ThisType == relationPro.EntityType && item.OtherType == relationPro.RelationType)
+                {
+                    if (!string.IsNullOrEmpty(relationPro.RelationKey))
+                    {
+                        if (item.Keys.Any(s => s.ThisKey == relationPro.RelationKey))
+                        {
+                            return item;
+                        }
+                    }
+                    else
+                    {
+                        return item;
+                    }
+                }
+            }
+
+            return null;
         }
 
         /// <summary>

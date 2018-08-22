@@ -18,13 +18,11 @@ namespace Fireasy.Redis
     /// <summary>
     /// Redis 配置的解析处理器。
     /// </summary>
-    public class RedisCacheSettingParser : IConfigurationSettingParseHandler
+    public class RedisConfigurationSettingParser : IConfigurationSettingParseHandler
     {
         public IConfigurationSettingItem Parse(System.Xml.XmlNode section)
         {
-            var setting = new RedisCacheSetting();
-            setting.Name = section.GetAttributeValue("name");
-            setting.CacheType = Type.GetType(section.GetAttributeValue("type"), false, true);
+            var setting = new RedisConfigurationSetting();
             setting.ConnectionString = section.GetAttributeValue("connectionString");
             setting.Twemproxy = section.GetAttributeValue<bool>("twemproxy");
             var configNode = section.SelectSingleNode("config");
@@ -40,11 +38,11 @@ namespace Fireasy.Redis
                 setting.MaxWritePoolSize = configNode.GetAttributeValue("maxWritePoolSize", 5);
                 setting.DefaultDb = configNode.GetAttributeValue("defaultDb", 0);
                 setting.Password = configNode.GetAttributeValue("password");
-                setting.ConnectTimeout = configNode.GetAttributeValue("connectTimeout", 2);
+                setting.ConnectTimeout = configNode.GetAttributeValue<int?>("connectTimeout");
 
                 foreach (XmlNode nd in configNode.SelectNodes("host"))
                 {
-                    var host = new RedisCacheHost();
+                    var host = new RedisHost();
                     host.Server = nd.GetAttributeValue("server");
                     host.Port = nd.GetAttributeValue("port", 0);
                     host.ReadOnly = nd.GetAttributeValue("readonly", false);
@@ -59,8 +57,7 @@ namespace Fireasy.Redis
 #if NETSTANDARD2_0
         public IConfigurationSettingItem Parse(IConfiguration configuration)
         {
-            var setting = new RedisCacheSetting();
-            setting.CacheType = Type.GetType(configuration["type"], false, true);
+            var setting = new RedisConfigurationSetting();
             setting.ConnectionString = configuration["connectionString"];
             setting.Twemproxy = configuration["twemproxy"].To(false);
             var configNode = configuration.GetSection("config");
@@ -76,11 +73,11 @@ namespace Fireasy.Redis
                 setting.MaxWritePoolSize = configNode["maxWritePoolSize"].To(5);
                 setting.DefaultDb = configNode["defaultDb"].To(0);
                 setting.Password = configNode["password"];
-                setting.ConnectTimeout = configNode["connectTimeout"].To(2);
+                setting.ConnectTimeout = configNode["connectTimeout"].To<int?>();
 
                 foreach (var nd in configNode.GetSection("host").GetChildren())
                 {
-                    var host = new RedisCacheHost();
+                    var host = new RedisHost();
                     host.Server = nd["server"];
                     host.Port = nd["port"].To(0);
                     host.ReadOnly = nd["readonly"].To(false);

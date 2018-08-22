@@ -49,15 +49,30 @@ namespace Fireasy.Web.EasyUI
         public string Mode { get; set; }
 
         /// <summary>
+        /// 获取或设置输入的值是否只能是列表框中的内容。
+        /// </summary>
+        public bool? LimitToList { get; set; }
+
+        /// <summary>
+        /// 获取或设置定位分组选项。
+        /// </summary>
+        public bool? ShowItemIcon { get; set; }
+
+        /// <summary>
+        /// 获取或设置是否显示选中项的图标。可用值有: static 和 sticky。
+        /// </summary>
+        public string GroupPosition { get; set; }
+
+        /// <summary>
         /// 获取或设置加载远程数据成功的时候触发的函数。
         /// </summary>
-        [EventFunctionAttribute]
+        [EventFunction]
         public string OnLoadSuccess { get; set; }
 
         /// <summary>
         /// 获取或设置用户选择列表项的时候触发的函数。
         /// </summary>
-        [EventFunctionAttribute]
+        [EventFunction]
         public string OnSelect { get; set; }
 
         /// <summary>

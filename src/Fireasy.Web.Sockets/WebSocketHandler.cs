@@ -324,8 +324,8 @@ namespace Fireasy.Web.Sockets
             }
 
             isClosing = true;
-            OnDisconnected();
             Clients.Remove(ConnectionId);
+            OnDisconnected();
             Dispose(true);
         }
 

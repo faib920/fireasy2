@@ -25,7 +25,7 @@ namespace Fireasy.Common.Logging
         public static ILogger CreateLogger(string configName = null)
         {
             ILogger logger;
-            LoggingConfigurationSetting setting = null;
+            IConfigurationSettingItem setting = null;
             var section = ConfigurationUnity.GetSection<LoggingConfigurationSection>();
             if (section != null && section.Factory != null)
             {
@@ -38,45 +38,22 @@ namespace Fireasy.Common.Logging
 
             if (string.IsNullOrEmpty(configName))
             {
-                if (section == null || section.Default == null)
+                if (section == null || (setting = section.GetDefault()) == null)
                 {
                     return DefaultLogger.Instance;
                 }
-                else
-                {
-                    setting = section.Default;
-                }
-
             }
             else if (section != null)
             {
-                setting = section.Settings[configName];
+                setting = section.GetSetting(configName);
             }
 
-            if (setting == null || setting.LogType == null)
+            if (setting == null)
             {
                 return null;
             }
 
-            return CreateBySetting(setting);
-        }
-
-        /// <summary>
-        /// 根据提供的配置创建 <see cref="ILogger"/> 对象。
-        /// </summary>
-        /// <param name="setting"></param>
-        /// <returns></returns>
-        private static ILogger CreateBySetting(LoggingConfigurationSetting setting)
-        {
-            var caching = setting.LogType.New<ILogger>();
-            if (caching == null)
-            {
-                return null;
-            }
-
-            caching.As<IConfigurationSettingHostService>(s => ConfigurationUnity.AttachSetting(s, setting));
-
-            return caching;
+            return ConfigurationUnity.CreateInstance<LoggingConfigurationSetting, ILogger>(setting, s => s.LogType);
         }
     }
 }

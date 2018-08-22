@@ -19,7 +19,7 @@ namespace Fireasy.Web.EasyUI
         /// <summary>
         /// 获取或设置用户选择了一个日期的时候触发的函数。
         /// </summary>
-        [EventFunctionAttribute]
+        [EventFunction]
         public string OnSelect { get; set; }
 
         /// <summary>

@@ -32,7 +32,7 @@ namespace Fireasy.Log4net
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        public void Error(string message, Exception exception = null)
+        public void Error(object message, Exception exception = null)
         {
             log.Error(message, exception);
         }
@@ -42,7 +42,7 @@ namespace Fireasy.Log4net
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        public void Info(string message, Exception exception = null)
+        public void Info(object message, Exception exception = null)
         {
             log.Info(message, exception);
         }
@@ -52,7 +52,7 @@ namespace Fireasy.Log4net
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        public void Warn(string message, Exception exception = null)
+        public void Warn(object message, Exception exception = null)
         {
             log.Warn(message, exception);
         }
@@ -62,7 +62,7 @@ namespace Fireasy.Log4net
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        public void Debug(string message, Exception exception = null)
+        public void Debug(object message, Exception exception = null)
         {
             log.Debug(message, exception);
         }
@@ -72,7 +72,7 @@ namespace Fireasy.Log4net
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        public void Fatal(string message, Exception exception = null)
+        public void Fatal(object message, Exception exception = null)
         {
             log.Fatal(message, exception);
         }

@@ -49,7 +49,7 @@ namespace Fireasy.Common.Logging
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        public void Error(string message, Exception exception = null)
+        public void Error(object message, Exception exception = null)
         {
             if (level == LogLevel.Default || level.HasFlag(LogLevel.Error))
             {
@@ -62,7 +62,7 @@ namespace Fireasy.Common.Logging
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        public void Info(string message, Exception exception = null)
+        public void Info(object message, Exception exception = null)
         {
             if (level == LogLevel.Default || level.HasFlag(LogLevel.Info))
             {
@@ -75,7 +75,7 @@ namespace Fireasy.Common.Logging
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        public void Warn(string message, Exception exception = null)
+        public void Warn(object message, Exception exception = null)
         {
             if (level == LogLevel.Default || level.HasFlag(LogLevel.Warn))
             {
@@ -88,7 +88,7 @@ namespace Fireasy.Common.Logging
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        public void Debug(string message, Exception exception = null)
+        public void Debug(object message, Exception exception = null)
         {
             if (level == LogLevel.Default || level.HasFlag(LogLevel.Debug))
             {
@@ -101,7 +101,7 @@ namespace Fireasy.Common.Logging
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        public void Fatal(string message, Exception exception = null)
+        public void Fatal(object message, Exception exception = null)
         {
             if (level == LogLevel.Default || level.HasFlag(LogLevel.Fatal))
             {
@@ -115,7 +115,7 @@ namespace Fireasy.Common.Logging
         /// <param name="logType">信息类别。</param>
         /// <param name="message">异常的说明信息。</param>
         /// <param name="exception">应用程序异常。</param>
-        private void Write(string logType, string message, Exception exception)
+        private void Write(string logType, object message, Exception exception)
         {
             locker.LockWrite(() =>
                 {

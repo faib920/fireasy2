@@ -27,9 +27,9 @@ namespace Fireasy.NLog
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        public void Error(string message, Exception exception = null)
+        public void Error(object message, Exception exception = null)
         {
-            log.Error(exception, message);
+            log.Error(exception, message?.ToString());
         }
 
         /// <summary>
@@ -37,9 +37,9 @@ namespace Fireasy.NLog
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        public void Info(string message, Exception exception = null)
+        public void Info(object message, Exception exception = null)
         {
-            log.Info(exception, message);
+            log.Info(exception, message?.ToString());
         }
 
         /// <summary>
@@ -47,9 +47,9 @@ namespace Fireasy.NLog
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        public void Warn(string message, Exception exception = null)
+        public void Warn(object message, Exception exception = null)
         {
-            log.Warn(exception, message);
+            log.Warn(exception, message?.ToString());
         }
 
         /// <summary>
@@ -57,9 +57,9 @@ namespace Fireasy.NLog
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        public void Debug(string message, Exception exception = null)
+        public void Debug(object message, Exception exception = null)
         {
-            log.Debug(exception, message);
+            log.Debug(exception, message?.ToString());
         }
 
         /// <summary>
@@ -67,9 +67,9 @@ namespace Fireasy.NLog
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        public void Fatal(string message, Exception exception = null)
+        public void Fatal(object message, Exception exception = null)
         {
-            log.Fatal(exception, message);
+            log.Fatal(exception, message?.ToString());
         }
     }
 }

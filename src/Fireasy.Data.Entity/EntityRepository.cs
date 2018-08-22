@@ -82,7 +82,7 @@ namespace Fireasy.Data.Entity
             int func() => repositoryProxy.Insert(entity);
 
             return context.Options.NotifyEvents ?
-                EntityPersistentSubscribePublisher.OnCreate(entity, func) : func();
+                EntityPersistentSubscribeManager.OnCreate(entity, func) : func();
         }
 
         /// <summary>
@@ -124,11 +124,11 @@ namespace Fireasy.Data.Entity
             {
                 if (entity.EntityState == EntityState.Attached)
                 {
-                    return EntityPersistentSubscribePublisher.OnCreate(entity, () => repositoryProxy.Insert(entity));
+                    return EntityPersistentSubscribeManager.OnCreate(entity, () => repositoryProxy.Insert(entity));
                 }
                 else
                 {
-                    return EntityPersistentSubscribePublisher.OnUpdate(entity, () => repositoryProxy.Update(entity));
+                    return EntityPersistentSubscribeManager.OnUpdate(entity, () => repositoryProxy.Update(entity));
                 }
             }
 
@@ -148,7 +148,7 @@ namespace Fireasy.Data.Entity
             int func() => repositoryProxy.Delete(entity, logicalDelete);
 
             return context.Options.NotifyEvents ?
-                EntityPersistentSubscribePublisher.OnRemove(entity, func) : func();
+                EntityPersistentSubscribeManager.OnRemove(entity, func) : func();
         }
 
         /// <summary>
@@ -161,7 +161,7 @@ namespace Fireasy.Data.Entity
             var ret = repositoryProxy.Delete(primaryValues, true);
             if (ret > 0 && context.Options.NotifyEvents)
             {
-                EntityPersistentSubscribePublisher.RaiseEvent<TEntity>(EntityPersistentEventType.AfterRemove);
+                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -178,7 +178,7 @@ namespace Fireasy.Data.Entity
             var ret = repositoryProxy.Delete(primaryValues, logicalDelete);
             if (ret > 0 && context.Options.NotifyEvents)
             {
-                EntityPersistentSubscribePublisher.RaiseEvent<TEntity>(EntityPersistentEventType.AfterRemove);
+                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -195,7 +195,7 @@ namespace Fireasy.Data.Entity
             var ret = repositoryProxy.Delete(primaryValues, logicalDelete);
             if (ret > 0 && context.Options.NotifyEvents)
             {
-                EntityPersistentSubscribePublisher.RaiseEvent<TEntity>(EntityPersistentEventType.AfterRemove);
+                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -212,7 +212,7 @@ namespace Fireasy.Data.Entity
             var ret = repositoryProxy.Delete(predicate, logicalDelete);
             if (ret > 0 && context.Options.NotifyEvents)
             {
-                EntityPersistentSubscribePublisher.RaiseEvent<TEntity>(EntityPersistentEventType.AfterRemove);
+                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -235,7 +235,7 @@ namespace Fireasy.Data.Entity
             int func() => repositoryProxy.Update(entity);
 
             return context.Options.NotifyEvents ?
-                EntityPersistentSubscribePublisher.OnUpdate(entity, func) : func();
+                EntityPersistentSubscribeManager.OnUpdate(entity, func) : func();
         }
 
         /// <summary>
@@ -249,7 +249,7 @@ namespace Fireasy.Data.Entity
             var ret = repositoryProxy.Update(entity, predicate);
             if (ret > 0 && context.Options.NotifyEvents)
             {
-                EntityPersistentSubscribePublisher.RaiseEvent<TEntity>(EntityPersistentEventType.AfterUpdate);
+                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterUpdate);
             }
 
             return ret;
@@ -280,7 +280,7 @@ namespace Fireasy.Data.Entity
             var ret = repositoryProxy.Update(calculator, predicate);
             if (ret > 0 && context.Options.NotifyEvents)
             {
-                EntityPersistentSubscribePublisher.RaiseEvent<TEntity>(EntityPersistentEventType.AfterUpdate);
+                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterUpdate);
             }
 
             return ret;
@@ -305,7 +305,7 @@ namespace Fireasy.Data.Entity
             int func() => repositoryProxy.Batch(instances, fnOperation);
 
             return context.Options.NotifyEvents ?
-                EntityPersistentSubscribePublisher.OnBatch(instances.Cast<IEntity>(), eventType, func) :
+                EntityPersistentSubscribeManager.OnBatch(instances.Cast<IEntity>(), eventType, func) :
                 func();
         }
 

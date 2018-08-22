@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if NETSTANDARD2_0
+using Fireasy.Common.Aop;
 using Fireasy.Common.Caching;
 using Fireasy.Common.Caching.Configuration;
 using Fireasy.Common.Configuration;
@@ -14,6 +15,8 @@ using Fireasy.Common.Ioc.Configuration;
 using Fireasy.Common.Ioc.Registrations;
 using Fireasy.Common.Logging;
 using Fireasy.Common.Logging.Configuration;
+using Fireasy.Common.Subscribes;
+using Fireasy.Common.Subscribes.Configuration;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Reflection;
@@ -51,7 +54,7 @@ namespace Microsoft.Extensions.DependencyInjection
             {
                 if (reg is SingletonRegistration singReg)
                 {
-                    services.AddSingleton(singReg.ServiceType, singReg.ComponentType);
+                    services.AddSingleton(singReg.ServiceType, CheckAopProxyType(singReg.ComponentType));
                 }
                 else if (reg.GetType().IsGenericType && reg.GetType().GetGenericTypeDefinition() == typeof(FuncRegistration<>))
                 {
@@ -59,11 +62,26 @@ namespace Microsoft.Extensions.DependencyInjection
                 }
                 else
                 {
-                    services.AddTransient(reg.ServiceType, reg.ComponentType);
+                    services.AddTransient(reg.ServiceType, CheckAopProxyType(reg.ComponentType));
                 }
             }
 
             return services;
+        }
+
+        /// <summary>
+        /// 检查是否支持 <see cref="IAopSupport"/> 接口。
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        private static Type CheckAopProxyType(Type type)
+        {
+            if (typeof(IAopSupport).IsAssignableFrom(type) && !typeof(IAopImplement).IsAssignableFrom(type))
+            {
+                return AspectFactory.GetProxyType(type);
+            }
+
+            return type;
         }
     }
 
@@ -74,11 +92,13 @@ namespace Microsoft.Extensions.DependencyInjection
             ConfigurationUnity.Bind<LoggingConfigurationSection>(configuration);
             ConfigurationUnity.Bind<CachingConfigurationSection>(configuration);
             ConfigurationUnity.Bind<ContainerConfigurationSection>(configuration);
+            ConfigurationUnity.Bind<SubscribeConfigurationSection>(configuration);
 
             if (services != null)
             {
                 services.AddSingleton(typeof(ILogger), s => LoggerFactory.CreateLogger());
                 services.AddSingleton(typeof(ICacheManager), s => CacheManagerFactory.CreateManager());
+                services.AddSingleton(typeof(ISubscribeManager), s => SubscribeManagerFactory.CreateManager());
             }
         }
     }

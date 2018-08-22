@@ -1,41 +1,45 @@
-﻿using System;
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright company="Fireasy"
 //      email="faib920@126.com"
 //      qq="55570729">
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System.Collections.Generic;
+using System;
 
-namespace Fireasy.Common.Subscribe
+namespace Fireasy.Common.Subscribes
 {
     /// <summary>
     /// 提供订阅的主题接口。
     /// </summary>
     public interface ISubject
     {
-        /// <summary>
-        /// 初始化主题数据。
-        /// </summary>
-        /// <param name="arguments"></param>
-        void Initialize(params object[] arguments);
-
-        /// <summary>
-        /// 获取或设置订阅者的过滤器。
-        /// </summary>
-        Func<ISubscriber, bool> Filter { get; set; }
     }
 
     /// <summary>
-    /// 主题的订阅者接口。
+    /// 订阅管理器接口。
     /// </summary>
-    public interface ISubscriber
+    public interface ISubscribeManager
     {
         /// <summary>
-        /// 接收主题信息。
+        /// 向管理器发送主题。
         /// </summary>
-        /// <param name="subject"></param>
-        void Accept(ISubject subject);
+        /// <typeparam name="TSubject"></typeparam>
+        /// <param name="subject">主题内容。</param>
+        void Publish<TSubject>(TSubject subject) where TSubject : ISubject;
+
+        /// <summary>
+        /// 添加一个订阅方法。
+        /// </summary>
+        /// <typeparam name="TSubject"></typeparam>
+        /// <param name="subscribe">读取主题的方法。</param>
+        void AddSubscriber<TSubject>(Action<TSubject> subscribe) where TSubject: ISubject;
+
+        /// <summary>
+        /// 添加一个订阅方法。
+        /// </summary>
+        /// <param name="subjectType">主题的类型。</param>
+        /// <param name="subscriber">读取主题的方法。</param>
+        void AddSubscriber(Type subjectType, Delegate subscriber);
     }
 }

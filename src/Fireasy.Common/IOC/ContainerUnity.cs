@@ -60,7 +60,7 @@ namespace Fireasy.Common.Ioc
         {
             var section = ConfigurationUnity.GetSection<ContainerConfigurationSection>();
 
-            ContainerConfigurationSetting setting;
+            IConfigurationSettingItem setting;
 
             if (section == null)
             {
@@ -76,7 +76,7 @@ namespace Fireasy.Common.Ioc
                 return;
             }
 
-            foreach (var reg in setting.Registrations)
+            foreach (var reg in ((ContainerConfigurationSetting)setting).Registrations)
             {
                 if (reg.Assembly != null)
                 {

@@ -21,10 +21,8 @@ namespace Fireasy.Common.Caching.Configuration
     /// 提供对缓存管理器的配置管理。对应的配置节为 fireasy/cachings。
     /// </summary>
     [ConfigurationSectionStorage("fireasy/cachings")]
-    public sealed class CachingConfigurationSection : InstanceConfigurationSection<CachingConfigurationSetting>
+    public sealed class CachingConfigurationSection : ManagableConfigurationSection<CachingConfigurationSetting>
     {
-        private string defaultInstanceName = string.Empty;
-
         /// <summary>
         /// 使用配置节点对当前配置进行初始化。
         /// </summary>
@@ -41,7 +39,7 @@ namespace Fireasy.Common.Caching.Configuration
                     });
 
             //取默认实例
-            defaultInstanceName = section.GetAttributeValue("default");
+            DefaultInstanceName = section.GetAttributeValue("default");
 
             base.Initialize(section);
         }
@@ -62,28 +60,10 @@ namespace Fireasy.Common.Caching.Configuration
                     });
 
             //取默认实例
-            defaultInstanceName = configuration.GetSection("default").Value;
+            DefaultInstanceName = configuration.GetSection("default").Value;
 
             base.Bind(configuration);
         }
 #endif
-
-        /// <summary>
-        /// 获取默认的配置项。
-        /// </summary>
-        public CachingConfigurationSetting Default
-        {
-            get
-            {
-                if (Settings.Count == 0)
-                {
-                    return null;
-                }
-
-                return string.IsNullOrEmpty(defaultInstanceName) ?
-                    (Settings.ContainsKey("setting0") ? Settings["setting0"] : Settings.FirstOrDefault().Value) :
-                    Settings[defaultInstanceName];
-            }
-        }
     }
 }

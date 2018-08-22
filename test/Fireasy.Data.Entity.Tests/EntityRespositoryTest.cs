@@ -1,6 +1,7 @@
-﻿using Fireasy.Common.Extensions;
+﻿using Fireasy.Common.Caching;
+using Fireasy.Common.Extensions;
 using Fireasy.Common.Serialization;
-using Fireasy.Common.Subscribe;
+using Fireasy.Common.Subscribes;
 using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Translators;
@@ -108,6 +109,47 @@ namespace Fireasy.Data.Entity.Tests
                     Console.WriteLine(detail.Orders.Customers.Address);
                 }
             }
+        }
+
+        public Products TestCache1()
+        {
+            var cacheMgr = CacheManagerFactory.CreateManager();
+
+            using (var db = new DbContext())
+            {
+                if (cacheMgr.Contains("p"))
+                {
+                    return (Products)cacheMgr.Get("p");
+                }
+
+                var product = db.Products.FirstOrDefault();
+                cacheMgr.Add("p", product);
+                return product;
+            }
+        }
+
+        public Products TestCache2()
+        {
+            var cacheMgr = CacheManagerFactory.CreateManager();
+
+            using (var db = new DbContext())
+            {
+                return GetProduct(() => db.Products.FirstOrDefault());
+            }
+        }
+
+        private Products GetProduct(Func<Products> factory)
+        {
+            var cacheMgr = CacheManagerFactory.CreateManager();
+
+            if (cacheMgr.Contains("p"))
+            {
+                return (Products)cacheMgr.Get("p");
+            }
+
+            var product = factory();
+            cacheMgr.Add("p", product);
+            return product;
         }
 
         [TestMethod]
@@ -241,6 +283,8 @@ namespace Fireasy.Data.Entity.Tests
                     .ToList();
 
                 Assert.AreEqual("Queso Cabrales", list[0].ProductName);
+
+                var ss = db.OrderDetails.Select(s => new { s.ProductID, a = db.Orders.FirstOrDefault(t => t.OrderID == s.OrderID).OrderDate }).ToList();
             }
         }
 
@@ -1082,7 +1126,10 @@ namespace Fireasy.Data.Entity.Tests
         [TestMethod]
         public void TestSubscriberForBatch()
         {
-            SubscribeManager.Register<EntityPersistentSubject>(new EntitySubscriber());
+            EntityPersistentSubscribeManager.AddSubscriber(subject =>
+            {
+                new EntitySubscriber().Accept(subject);
+            });
 
             using (var db = new DbContext())
             {
@@ -1106,12 +1153,15 @@ namespace Fireasy.Data.Entity.Tests
         [TestMethod]
         public void TestSubscriberForUpdate()
         {
-            SubscribeManager.Register<EntityPersistentSubject>(new EntitySubscriber());
+            EntityPersistentSubscribeManager.AddSubscriber(subject =>
+            {
+                new EntitySubscriber().Accept(subject);
+            });
 
             using (var db = new DbContext())
             {
                 var order = db.Orders.FirstOrDefault();
-                order.ShipName = "1";
+                order.ShipName = "2";
                 db.Orders.Update(order);
             }
         }
@@ -1119,7 +1169,10 @@ namespace Fireasy.Data.Entity.Tests
         [TestMethod]
         public void TestSubscriberForUpdateLinq()
         {
-            SubscribeManager.Register<EntityPersistentSubject>(new EntitySubscriber());
+            EntityPersistentSubscribeManager.AddSubscriber(subject =>
+            {
+                new EntitySubscriber().Accept(subject);
+            });
 
             using (var db = new DbContext())
             {

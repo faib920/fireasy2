@@ -69,21 +69,46 @@ namespace Fireasy.Web.EasyUI
         public string Value { get; set; }
 
         /// <summary>
+        /// 获取或设置自定义Css类名。
+        /// </summary>
+        public string Cls { get; set; }
+
+        /// <summary>
+        /// 获取或设置文本框标签。
+        /// </summary>
+        public string Label { get; set; }
+
+        /// <summary>
+        /// 获取或设置文本框标签宽度。
+        /// </summary>
+        public int? LabelWidth { get; set; }
+
+        /// <summary>
+        /// 获取或设置文本框标签位置。
+        /// </summary>
+        public string LabelPosition { get; set; }
+
+        /// <summary>
+        /// 获取或设置文本框标签对齐方式。
+        /// </summary>
+        public string LabelAlign { get; set; }
+
+        /// <summary>
         /// 获取或设置字段值改变的时候触发的函数。
         /// </summary>
-        [EventFunctionAttribute]
+        [EventFunction]
         public string OnChange { get; set; }
 
         /// <summary>
         /// 获取或设置用户点击按钮的时候触发。
         /// </summary>
-        [EventFunctionAttribute]
+        [EventFunction]
         public string OnClickButton { get; set; }
 
         /// <summary>
         /// 获取或设置用户点击图标的时候触发。
         /// </summary>
-        [EventFunctionAttribute]
+        [EventFunction]
         public string OnClickIcon { get; set; }
 
     }

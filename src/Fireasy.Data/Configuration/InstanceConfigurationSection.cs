@@ -21,10 +21,8 @@ namespace Fireasy.Data.Configuration
     /// 数据库实例配置类。
     /// </summary>
     [ConfigurationSectionStorage("fireasy/dataInstances")]
-    public sealed class InstanceConfigurationSection : ConfigurationSection<IInstanceConfigurationSetting>
+    public sealed class InstanceConfigurationSection : DefaultInstaneConfigurationSection<IInstanceConfigurationSetting>
     {
-        private string defaultInstanceName;
-
         /// <summary>
         /// 使用配置节点对当前配置进行初始化。
         /// </summary>
@@ -38,7 +36,7 @@ namespace Fireasy.Data.Configuration
                 CreateDataInstanceSetting);
 
             //取默认实例
-            defaultInstanceName = section.GetAttributeValue("default");
+            DefaultInstanceName = section.GetAttributeValue("default");
         }
 
 #if NETSTANDARD2_0
@@ -53,29 +51,11 @@ namespace Fireasy.Data.Configuration
                 null,
                 CreateDataInstanceSetting);
 
-            defaultInstanceName = configuration.GetSection("default").Value;
+            DefaultInstanceName = configuration.GetSection("default").Value;
 
             base.Bind(configuration);
         }
 #endif
-
-        /// <summary>
-        /// 获取默认的配置实例。
-        /// </summary>
-        public IInstanceConfigurationSetting Default
-        {
-            get
-            {
-                if (Settings.Count == 0)
-                {
-                    return null;
-                }
-
-                return string.IsNullOrEmpty(defaultInstanceName) ?
-                    (Settings.ContainsKey("setting0") ? Settings["setting0"] : Settings.FirstOrDefault().Value) :
-                    Settings[defaultInstanceName];
-            }
-        }
 
         /// <summary>
         /// 根据实例名创建相应的配置实例。

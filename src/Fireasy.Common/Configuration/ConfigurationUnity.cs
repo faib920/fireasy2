@@ -213,5 +213,39 @@ namespace Fireasy.Common.Configuration
         }
 
 #endif
+        /// <summary>
+        /// 根据提供的配置创建实例对象。
+        /// </summary>
+        /// <param name="setting"></param>
+        /// <returns></returns>
+        public static TInstance CreateInstance<TSetting, TInstance>(IConfigurationSettingItem setting, Func<TSetting, Type> typeFunc) where TSetting : class, IConfigurationSettingItem
+        {
+            var relSetting = setting as TSetting;
+            IConfigurationSettingItem extendSetting = null;
+            if (setting is ExtendConfigurationSetting wsetting)
+            {
+                relSetting = wsetting.Base as TSetting;
+                extendSetting = wsetting.Extend;
+            }
+
+            if (relSetting == null || typeFunc(relSetting) == null)
+            {
+                return default(TInstance);
+            }
+
+            var instance = typeFunc(relSetting).New<TInstance>();
+            if (instance == null)
+            {
+                return default(TInstance);
+            }
+
+            if (extendSetting != null)
+            {
+                instance.As<IConfigurationSettingHostService>(s => ConfigurationUnity.AttachSetting(s, extendSetting));
+            }
+
+            return instance;
+        }
+
     }
 }

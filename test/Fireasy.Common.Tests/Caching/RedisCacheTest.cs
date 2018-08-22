@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Fireasy.Common.Caching;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Fireasy.Common.Caching;
+using System;
 using System.Threading;
 
 namespace Fireasy.Common.Tests.Caching
@@ -8,9 +8,16 @@ namespace Fireasy.Common.Tests.Caching
     [TestClass]
     public class RedisCacheTest
     {
+        public RedisCacheTest()
+        {
+            InitConfig.Init();
+        }
+
         [TestMethod]
         public void TestTryGet()
         {
+
+
             var cacheMgr = CacheManagerFactory.CreateManager("redis");
             var value = cacheMgr.TryGet("test1", () => 100);
             Assert.AreEqual(100, value);

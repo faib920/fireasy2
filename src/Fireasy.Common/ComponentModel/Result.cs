@@ -11,10 +11,28 @@ using System;
 
 namespace Fireasy.Common.ComponentModel
 {
+    public interface IResult
+    {
+        /// <summary>
+        /// 获取或设置是否调用成功。
+        /// </summary>
+        bool Succeed { get; set; }
+
+        /// <summary>
+        /// 获取或设置调用的信息。
+        /// </summary>
+        string Message { get; set; }
+
+        /// <summary>
+        /// 获取或设置客户端接收的数据。
+        /// </summary>
+        object Data { get; set; }
+    }
+
     /// <summary>
     /// 返回结果的结构定义。
     /// </summary>
-    public class Result
+    public class Result : IResult
     {
         /// <summary>
         /// 获取或设置是否调用成功。
@@ -143,7 +161,7 @@ namespace Fireasy.Common.ComponentModel
     /// 返回结果的结构定义，采用泛型。
     /// </summary>
     /// <typeparam name="T">数据类型。</typeparam>
-    public class Result<T>
+    public class Result<T> : IResult
     {
         /// <summary>
         /// 获取或设置是否调用成功。
@@ -161,7 +179,19 @@ namespace Fireasy.Common.ComponentModel
         /// 获取或设置客户端接收的数据。
         /// </summary>
         [TextSerializeElement("data")]
-        public new T Data { get; set; }
+        public T Data { get; set; }
+
+        object IResult.Data
+        {
+            get
+            {
+                return Data;
+            }
+            set
+            {
+                Data = (T)value;
+            }
+        }
 
         public static implicit operator Result<T>(T data)
         {

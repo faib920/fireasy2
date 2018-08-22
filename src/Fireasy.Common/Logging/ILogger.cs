@@ -20,34 +20,34 @@ namespace Fireasy.Common.Logging
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        void Error(string message, Exception exception = null);
+        void Error(object message, Exception exception = null);
 
         /// <summary>
         /// 记录一般的信息到日志。
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        void Info(string message, Exception exception = null);
+        void Info(object message, Exception exception = null);
 
         /// <summary>
         /// 记录警告信息到日志。
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        void Warn(string message, Exception exception = null);
+        void Warn(object message, Exception exception = null);
 
         /// <summary>
         /// 记录调试信息到日志。
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        void Debug(string message, Exception exception = null);
+        void Debug(object message, Exception exception = null);
 
         /// <summary>
         /// 记录致命信息到日志。
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        void Fatal(string message, Exception exception = null);
+        void Fatal(object message, Exception exception = null);
     }
 }

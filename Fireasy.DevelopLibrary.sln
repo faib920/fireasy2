@@ -46,6 +46,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Memcached", "src\Fi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Web.Sockets", "src\Fireasy.Web.Sockets\Fireasy.Web.Sockets.csproj", "{8747065E-838B-467B-9E2D-5E6BBDF4CBB5}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.RabbitMQ", "src\Fireasy.RabbitMQ\Fireasy.RabbitMQ.csproj", "{263ED332-48D8-4410-8333-73D83C4104CD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -116,6 +118,10 @@ Global
 		{8747065E-838B-467B-9E2D-5E6BBDF4CBB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8747065E-838B-467B-9E2D-5E6BBDF4CBB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8747065E-838B-467B-9E2D-5E6BBDF4CBB5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{263ED332-48D8-4410-8333-73D83C4104CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{263ED332-48D8-4410-8333-73D83C4104CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{263ED332-48D8-4410-8333-73D83C4104CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{263ED332-48D8-4410-8333-73D83C4104CD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -137,6 +143,7 @@ Global
 		{C08AE411-3443-4EFC-9106-072487604D16} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
 		{2515F46D-E23F-43FB-994E-EC5AEED85A82} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
 		{8747065E-838B-467B-9E2D-5E6BBDF4CBB5} = {C17CFE8E-2A64-4E6E-9720-4C8681AF3DC3}
+		{263ED332-48D8-4410-8333-73D83C4104CD} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {72E7FC59-9162-48A8-B31F-CB0FEE862E56}
