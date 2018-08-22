@@ -21,7 +21,7 @@ public void TestContains()
 
 public void TestExpired()
 {
-    var cacheMgr = CacheManagerFactory.CreateManager(s");
+    var cacheMgr = CacheManagerFactory.CreateManager();
     var value = cacheMgr.TryGet("test3", () => 100, () => new RelativeTime(TimeSpan.FromSeconds(2)));
     Assert.AreEqual(true, cacheMgr.Contains("test3"));
     Thread.Sleep(3000);
