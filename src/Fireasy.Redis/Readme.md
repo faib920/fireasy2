@@ -44,7 +44,7 @@ public void TestClear()
 ```
 
 ==== .net framework 配置 ====
-
+```XML
 <?xml version="1.0" encoding="utf-8" ?>
 <configuration>
   <configSections>
@@ -62,9 +62,10 @@ public void TestClear()
     </cachings>
   </fireasy>
 </configuration>
+```
 
 ==== .net core 配置 ====
-
+```json
 {
   "fireasy": {
     "cachings": {
@@ -81,9 +82,10 @@ public void TestClear()
           }
         }
       }
-	}
+    }
   }
 }
+```
 
 二、消息订阅
     实现了 ISubscribeManager 接口，用时只需使用 SubscribeManagerFactory.CreateManager() 即可。
@@ -111,7 +113,7 @@ public void TestSubscribe()
 ```
 
 ==== .net framework 配置 ====
-
+```XML
 <?xml version="1.0" encoding="utf-8" ?>
 <configuration>
   <configSections>
@@ -129,9 +131,10 @@ public void TestSubscribe()
     </subscribers>
   </fireasy>
 </configuration>
+```
 
 ==== .net core 配置 ====
-
+```json
 {
   "fireasy": {
     "subscribers": {
@@ -148,6 +151,7 @@ public void TestSubscribe()
           }
         }
       }
-	}
+    }
   }
 }
+```
