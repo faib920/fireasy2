@@ -1,6 +1,6 @@
-﻿    该程序集提供 RibbitMQ 消息订阅的实现。
+该程序集提供 RibbitMQ 消息订阅的实现。
 
-    实现了 ISubscribeManager 接口，用时只需使用 SubscribeManagerFactory.CreateManager() 即可。
+实现了 ISubscribeManager 接口，用时只需使用 SubscribeManagerFactory.CreateManager() 即可。
 
 ```C#
 //主题的定义
