@@ -356,7 +356,7 @@ namespace Fireasy.Data.Entity.Linq
 
             var delegateType = typeof(Func<,>).MakeGenericType(sourceType, propertyType);
             var lambda = Expression.Lambda(delegateType, expression, parExp);
-            expression = Expression.Call(typeof(Queryable), methodName, new [] { sourceType, propertyType }, source.Expression, lambda);
+            expression = Expression.Call(typeof(Queryable), methodName, new[] { sourceType, propertyType }, source.Expression, lambda);
 
             return source.Provider.CreateQuery<T>(expression);
         }
@@ -549,7 +549,7 @@ namespace Fireasy.Data.Entity.Linq
         internal static LambdaExpression CreateInsertExpression(this IQueryable queryable)
         {
             var rpType = typeof(IRepository<>).MakeGenericType(queryable.ElementType);
-            var method = rpType.GetMethod(nameof(IRepository.Insert));
+            var method = rpType.GetMethod(nameof(IRepository.Insert), new[] { queryable.ElementType });
             var parSet = Expression.Parameter(rpType, "u");
             var parEle = Expression.Parameter(queryable.ElementType, "s");
             return Expression.Lambda(Expression.Call(parSet, method, parEle), parSet, parEle);

@@ -1,5 +1,4 @@
 ﻿using System;
-using Fireasy.Data.Entity;
 using Fireasy.Data.Entity.Tests.Models;
 
 namespace Fireasy.Data.Entity.Tests
@@ -7,7 +6,7 @@ namespace Fireasy.Data.Entity.Tests
     public class DbContext : EntityContext
     {
         public DbContext()
-            : base (new EntityContextOptions { AutoCreateTables = true, NotifyEvents = true })
+            : base(new EntityContextOptions { AutoCreateTables = true, NotifyEvents = true })
         {
         }
 

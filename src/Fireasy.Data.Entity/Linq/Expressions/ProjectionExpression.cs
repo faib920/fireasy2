@@ -40,7 +40,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         public LambdaExpression Aggregator { get; private set; }
 
         /// <summary>
-        /// 获取是否为单例。
+        /// 获取是否返回单列。
         /// </summary>
         public bool IsSingleton
         {

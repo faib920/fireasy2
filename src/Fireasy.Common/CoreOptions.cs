@@ -18,7 +18,7 @@ namespace Fireasy.Common
         /// </summary>
         /// <param name="name">配置实例名称。</param>
         /// <param name="subscriber">消息订阅器。</param>
-        public void AddSubscriber<TSubject>(string name, Action<TSubject> subscriber) where TSubject : ISubject
+        public void AddSubscriber<TSubject>(string name, Action<TSubject> subscriber) where TSubject : class
         {
             SubscribeManagerFactory.CreateManager(name)?.AddSubscriber(subscriber);
         }

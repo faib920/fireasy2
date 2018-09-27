@@ -167,7 +167,7 @@ namespace Fireasy.Common.Configuration
                 var type = assembly.GetType("Microsoft.Extensions.DependencyInjection.ConfigurationBinder");
                 if (type != null)
                 {
-                    var method = type.GetMethod("Bind", BindingFlags.Static | BindingFlags.NonPublic);
+                    var method = type.GetMethod("Bind", BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(IServiceCollection), typeof(IConfiguration) }, null);
                     if (method != null)
                     {
                         method.Invoke(null, new object[] { services, configuration });

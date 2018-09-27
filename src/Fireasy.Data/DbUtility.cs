@@ -23,7 +23,7 @@ namespace Fireasy.Data
         /// </summary>
         /// <param name="urlExpression">数据库文件名表达式。</param>
         /// <example>如 |datadirectory|..\data\db1.mdf &lt;br&gt; |system|db1.mdb 等等。</example>
-        public static void ParseDataDirectory(ref string urlExpression)
+        public static string ResolveFullPath(string urlExpression)
         {
             int dirIndex;
             if ((dirIndex = urlExpression.LastIndexOf("|")) != -1)
@@ -57,8 +57,18 @@ namespace Fireasy.Data
                     directory += "\\";
                 }
 
-                urlExpression = new Uri(new Uri(directory), file).LocalPath;
+                var uri = new Uri(new Uri(directory), file);
+                if (uri.IsFile)
+                {
+                    return uri.LocalPath.Replace("file:", string.Empty);
+                }
+                else
+                {
+                    return uri.OriginalString;
+                }
             }
+
+            return urlExpression;
         }
 
         /// <summary>

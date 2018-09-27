@@ -1,7 +1,6 @@
 ﻿using Fireasy.Common.Caching;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Serialization;
-using Fireasy.Common.Subscribes;
 using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Translators;
@@ -9,6 +8,7 @@ using Fireasy.Data.Entity.Subscribes;
 using Fireasy.Data.Entity.Tests.Models;
 using Fireasy.Data.Extensions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -137,6 +137,7 @@ namespace Fireasy.Data.Entity.Tests
                 return GetProduct(() => db.Products.FirstOrDefault());
             }
         }
+
 
         private Products GetProduct(Func<Products> factory)
         {
@@ -368,6 +369,19 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var list = db.OrderDetails
                     .ExtendSelect(s => new OrderDetailsEx { ProductName = s.Products.ProductName })
+                    .ToList();
+
+                Assert.AreEqual("Queso Cabrales", list[0].ProductName);
+            }
+        }
+
+        [TestMethod]
+        public void TestSubSelect()
+        {
+            using (var db = new DbContext())
+            {
+                var list = db.OrderDetails
+                    .Select(s => new { s.OrderID, s.Products.ProductName, db.Orders.FirstOrDefault(t => t.OrderID == s.OrderID).OrderDate, Count = db.Orders.Count(t => t.OrderID == s.OrderID) })
                     .ToList();
 
                 Assert.AreEqual("Queso Cabrales", list[0].ProductName);
@@ -800,14 +814,19 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var context = new DbContext())
             {
-                //使用 string 的自定义扩展方法筛选以 ee 结尾的数据
-                var list = context.Products.Where(s => s.ProductName.RightString(2) == "ee");
+                var list = context.Products.Where(s => RightString(s.ProductName, 12) == "ee");
 
                 foreach (var item in list)
                 {
                     Console.WriteLine(item.ProductName);
                 }
             }
+        }
+
+        [MethodCallBind(typeof(Funcs.RightStringBinder))]
+        public string RightString(string str, int length)
+        {
+            throw new NotImplementedException();
         }
 
         [TestMethod]
@@ -1085,13 +1104,26 @@ namespace Fireasy.Data.Entity.Tests
             }
         }
 
+        private string key1 = "Lond";
+        private string key2 = "Lond";
+
         [TestMethod]
         public void TestTranslateCache()
         {
+            InnerTestTranslateCache(key1);
+        }
+
+        private void InnerTestTranslateCache(string str)
+        {
             using (var context = new DbContext())
             {
-                var customer1 = context.Customers.FirstOrDefault();
-                var customer2 = context.Customers.FirstOrDefault();
+                var ids1 = context.Customers.Where(s => s.City == str).Select(s => s.CustomerID);
+                var ids2 = context.Customers.Where(s => s.City == "AA").Select(s => s.CustomerID);
+
+                var customer1 = context.Orders.Where(s => s.CustomerID == str && ids1.Contains(s.CustomerID)).FirstOrDefault();
+                var customer2 = context.Orders.Where(s => ids2.Contains(s.CustomerID)).FirstOrDefault();
+                var customer3 = context.Orders.Where(s => ids1.Contains(s.CustomerID)).FirstOrDefault();
+                var customer4 = context.Orders.Where(s => ids2.Contains(s.CustomerID)).FirstOrDefault();
             }
         }
 
@@ -1120,6 +1152,18 @@ namespace Fireasy.Data.Entity.Tests
                 {
                     ser.Serialize(m, customer);
                 }
+            }
+        }
+
+        [TestMethod]
+        public void TestNewtonsoftSerialize()
+        {
+            using (var context = new DbContext())
+            {
+                var customer = context.Customers.FirstOrDefault();
+
+                var str = JsonConvert.SerializeObject(customer, new Newtonsoft.LazyObjectJsonConverter());
+                Console.WriteLine(str);
             }
         }
 
@@ -1273,7 +1317,7 @@ namespace Fireasy.Data.Entity.Tests
         /// <summary>
         /// 方法 RightString 的绑定。
         /// </summary>
-        private class RightStringBinder : IMethodCallBinder
+        public class RightStringBinder : IMethodCallBinder
         {
             public Expression Bind(MethodCallBindContext context)
             {

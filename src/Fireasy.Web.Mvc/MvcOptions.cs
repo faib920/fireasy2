@@ -8,6 +8,7 @@
 #if NETSTANDARD2_0
 using Fireasy.Common.Serialization;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using System;
 using System.Collections.Generic;
 
 namespace Fireasy.Web.Mvc
@@ -20,9 +21,10 @@ namespace Fireasy.Web.Mvc
         public bool UseTypicalJsonSerializer { get; set; } = true;
 
         /// <summary>
-        /// 获取或设置是否替换 <see cref="MetadataReferenceFeatureProvider"/>。默认为 true。
+        /// 获取或设置是否替换 <see cref="MetadataReferenceFeatureProvider"/>。默认为 false。
         /// </summary>
-        public bool UseReferenceAssembly { get; set; } = true;
+        [Obsolete]
+        public bool UseReferenceAssembly { get; set; } = false;
 
         /// <summary>
         /// 获取或设置是否使用 <see cref="JsonModelBinder"/>。默认为 true。

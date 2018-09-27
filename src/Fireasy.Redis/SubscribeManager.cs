@@ -15,14 +15,14 @@ namespace Fireasy.Redis
     /// /// 基于 Redis 的消息订阅管理器。
     /// </summary>
     [ConfigurationSetting(typeof(RedisConfigurationSetting))]
-    public class RedisSubscribeManager : RedisComponent, ISubscribeManager
+    public class SubscribeManager : RedisComponent, ISubscribeManager
     {
         /// <summary>
         /// 在 Redis 服务器中添加一个订阅方法。
         /// </summary>
         /// <typeparam name="TSubject"></typeparam>
-        /// <param name="subscribe">读取主题的方法。</param>
-        public void AddSubscriber<TSubject>(Action<TSubject> subscriber) where TSubject : ISubject
+        /// <param name="subscriber">读取主题的方法。</param>
+        public void AddSubscriber<TSubject>(Action<TSubject> subscriber) where TSubject : class
         {
             var client = GetConnection();
             client.GetSubscriber().Subscribe(typeof(TSubject).FullName, (channel, value) =>
@@ -55,7 +55,7 @@ namespace Fireasy.Redis
         /// </summary>
         /// <typeparam name="TSubject"></typeparam>
         /// <param name="subject">主题内容。</param>
-        public void Publish<TSubject>(TSubject subject) where TSubject : ISubject
+        public void Publish<TSubject>(TSubject subject) where TSubject : class
         {
             var client = GetConnection();
             client.GetSubscriber().Publish(typeof(TSubject).FullName, Serialize(subject));

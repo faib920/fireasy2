@@ -24,6 +24,8 @@ namespace Fireasy.Data.Configuration
                     return new RegistryInstanceSetting.SettingParseHandler();
                 case "xml":
                     return new XmlInstanceSetting.SettingParseHandler();
+                case "json":
+                    return new JsonInstanceSetting.SettingParseHandler();
                 case "binary":
                     return new BinaryInstanceSetting.SettingParseHandler();
                 case "route":

@@ -1381,6 +1381,15 @@ WHERE (t0.City = 'London')").ToList();
         }
 
         [TestMethod]
+        public void TestDateTimeConvert()
+        {
+            var v = db.Orders.Where(o => o.OrderDate == Convert.ToDateTime(o.CustomerID))
+                .Take(1).Max(o => o.OrderDate.Value.Month);
+
+            Assert.AreEqual(8, v);
+        }
+
+        [TestMethod]
         public void TestDateTimeYear()
         {
             Console.WriteLine(db.Orders.Where(o => o.OrderDate > new DateTime(1997, 8, 25)).Count());

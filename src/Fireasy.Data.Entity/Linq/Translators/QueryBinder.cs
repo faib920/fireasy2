@@ -155,9 +155,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         protected override Expression VisitConstant(ConstantExpression c)
         {
-            if (IsQueryable(c))
+            IQueryable q = null;
+            if (IsQueryable(c) && (q = (IQueryable)c.Value).Expression != null)
             {
-                var q = (IQueryable)c.Value;
                 var rowType = c.Type.GetEnumerableElementType();
                 if (typeof(IEntity).IsAssignableFrom(rowType) && 
                     q.Expression.NodeType == ExpressionType.Constant)

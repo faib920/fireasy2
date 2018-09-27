@@ -1,7 +1,13 @@
-﻿using Fireasy.Common;
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+using Fireasy.Common;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
-using Fireasy.Common.Serialization;
 using Fireasy.Common.Subscribes;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -13,7 +19,7 @@ using System.Text;
 namespace Fireasy.RabbitMQ
 {
     [ConfigurationSetting(typeof(RabbitConfigurationSetting))]
-    public class RabbitSubscribeManager : ISubscribeManager, IConfigurationSettingHostService
+    public class SubscribeManager : ISubscribeManager, IConfigurationSettingHostService
     {
         private RabbitConfigurationSetting setting;
 
@@ -26,7 +32,7 @@ namespace Fireasy.RabbitMQ
         /// </summary>
         /// <typeparam name="TSubject"></typeparam>
         /// <param name="subscriber">读取主题的方法。</param>
-        public void AddSubscriber<TSubject>(Action<TSubject> subscriber) where TSubject : ISubject
+        public void AddSubscriber<TSubject>(Action<TSubject> subscriber) where TSubject : class
         {
             AddSubscriber(typeof(TSubject), subscriber);
         }
@@ -49,13 +55,13 @@ namespace Fireasy.RabbitMQ
             list.Add(subscriber);
         }
 
-        public void Publish<TSubject>(TSubject subject) where TSubject : ISubject
+        public void Publish<TSubject>(TSubject subject) where TSubject : class
         {
             var queueName = typeof(TSubject).FullName;
 
             using (var model = connection.CreateModel())
             {
-                model.QueueDeclare(queueName, true, false, false, null);
+                model.QueueDeclare(queueName, true, false, true, null);
 
                 var properties = model.CreateBasicProperties();
                 properties.Persistent = true;
@@ -140,11 +146,8 @@ namespace Fireasy.RabbitMQ
         {
             var queueName = subjectType.FullName;
 
-            var model = channels.GetOrAdd(subjectType, k => connection.CreateModel());
-            var queue = model.QueueDeclare(queueName, true, false, false, null);
-
-            //公平分发,不要同一时间给一个工作者发送多于一个消息
-            model.BasicQos(0, 1, false);
+            var model = channels.GetOrAdd(subjectType, k => GetConnection().CreateModel());
+            var queue = model.QueueDeclare(queueName, true, false, true, null);
 
             //创建事件驱动的消费者类型，不要用下边的死循环来消费消息
             var consumer = new EventingBasicConsumer(model);
@@ -162,7 +165,6 @@ namespace Fireasy.RabbitMQ
             //消费消息
             model.BasicConsume(queueName, false, consumer);
         }
-
 
         void IConfigurationSettingHostService.Attach(IConfigurationSettingItem setting)
         {

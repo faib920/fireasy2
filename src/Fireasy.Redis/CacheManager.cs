@@ -11,6 +11,8 @@ using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fireasy.Redis
 {
@@ -46,12 +48,7 @@ namespace Fireasy.Redis
         public T Add<T>(string cacheKey, T value, ICacheItemExpiration expiration, CacheItemRemovedCallback removeCallback = null)
         {
             var client = GetConnection();
-            TimeSpan? expiry = null;
-
-            if (expiration is RelativeTime)
-            {
-                expiry = ((RelativeTime)expiration).Expiration;
-            }
+            var expiry = GetExpiryTime(expiration);
 
             GetDb(client).StringSet(cacheKey, Serialize(value), expiry);
             return value;
@@ -63,6 +60,7 @@ namespace Fireasy.Redis
         public void Clear()
         {
             var client = GetConnection();
+            var db = GetDb(client);
             foreach (var endpoint in client.GetEndPoints())
             {
                 var server = client.GetServer(endpoint);
@@ -70,7 +68,7 @@ namespace Fireasy.Redis
 
                 foreach (var key in keys)
                 {
-                    GetDb(client).KeyDelete(key);
+                    db.KeyDelete(key);
                 }
             }
         }
@@ -135,31 +133,35 @@ namespace Fireasy.Redis
         public T TryGet<T>(string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration = null)
         {
             var client = GetConnection();
-            if (GetDb(client).KeyExists(cacheKey))
-            {
-                var redisValue = GetDb(client).StringGet(cacheKey);
-                if (!string.IsNullOrEmpty(redisValue))
-                {
-                    return Deserialize<T>(redisValue);
-                }
+            var db = GetDb(client);
+            var token = Guid.NewGuid().ToString();
+            var lockKey = $"{cacheKey}:LOCK_TOKEN";
 
-                return default(T);
-            }
-            else
+            while (true)
             {
-                TimeSpan? expiry = null;
-                if (expiration != null)
+                if (db.LockTake(lockKey, token, TimeSpan.FromMinutes(30)))
                 {
-                    var exValue = expiration();
-                    if (exValue is RelativeTime)
+                    try
                     {
-                        expiry = ((RelativeTime)exValue).Expiration;
+                        T result = default(T);
+                        if (db.KeyExists(cacheKey))
+                        {
+                            var redisValue = db.StringGet(cacheKey);
+                            if (!string.IsNullOrEmpty(redisValue))
+                            {
+                                CheckPredictToDelay(db, cacheKey, factory, expiration);
+
+                                result = Deserialize<T>(redisValue);
+                            }
+                        }
+
+                        return result != null? result : PutToCache(db, cacheKey, factory, expiration);
+                    }
+                    finally
+                    {
+                        db.LockRelease(lockKey, token);
                     }
                 }
-
-                var value = factory();
-                GetDb(client).StringSet(cacheKey, Serialize(value), expiry);
-                return value;
             }
         }
 
@@ -173,9 +175,10 @@ namespace Fireasy.Redis
         public bool TryGet<T>(string cacheKey, out T value)
         {
             var client = GetConnection();
-            if (GetDb(client).KeyExists(cacheKey))
+            var db = GetDb(client);
+            if (db.KeyExists(cacheKey))
             {
-                var redisValue = GetDb(client).StringGet(cacheKey);
+                var redisValue = db.StringGet(cacheKey);
                 if (!string.IsNullOrEmpty(redisValue))
                 {
                     value = Deserialize<T>(redisValue);
@@ -190,6 +193,92 @@ namespace Fireasy.Redis
         private IDatabase GetDb(IConnectionMultiplexer conn)
         {
             return conn.GetDatabase(Options.DefaultDatabase ?? 0);
+        }
+
+        /// <summary>
+        /// 检查是否需要自动提前延期。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="db"></param>
+        /// <param name="cacheKey"></param>
+        /// <param name="factory"></param>
+        /// <param name="expiration"></param>
+        private void CheckPredictToDelay<T>(IDatabase db, string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration = null)
+        {
+            if (Setting.AdvanceDelay == null)
+            {
+                return;
+            }
+
+            var expiry = GetExpiryTime(expiration);
+
+            if (expiry != null)
+            {
+                //判断过期时间，如果小于指定的时间比例，则提前进行预存
+                var liveExpiry = db.KeyTimeToLive(cacheKey);
+                if (liveExpiry != null &&
+                    (liveExpiry.Value.TotalMilliseconds / expiry.Value.TotalMilliseconds) <= Setting.AdvanceDelay.Value)
+                {
+                    Task.Run(() =>
+                        {
+                            var value = factory();
+                            db.StringSet(cacheKey, Serialize(value), expiry);
+                        });
+                }
+            }
+        }
+
+        /// <summary>
+        /// 将数据放入到缓存服务器中。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="db"></param>
+        /// <param name="cacheKey"></param>
+        /// <param name="factory"></param>
+        /// <param name="expiration"></param>
+        /// <returns></returns>
+        private T PutToCache<T>(IDatabase db, string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration = null)
+        {
+            var expiry = GetExpiryTime(expiration);
+            var value = factory();
+
+            db.StringSet(cacheKey, Serialize(value), expiry);
+
+            return value;
+        }
+
+        /// <summary>
+        /// 获取缓存的有效期时间。
+        /// </summary>
+        /// <param name="expiration"></param>
+        /// <returns></returns>
+        private TimeSpan? GetExpiryTime(Func<ICacheItemExpiration> expiration)
+        {
+            return expiration == null ? null : GetExpiryTime(expiration());
+        }
+
+        /// <summary>
+        /// 获取缓存的有效期时间。
+        /// </summary>
+        /// <param name="expiration"></param>
+        /// <returns></returns>
+        private TimeSpan? GetExpiryTime(ICacheItemExpiration expiration)
+        {
+            if (expiration == null)
+            {
+                return null;
+            }
+
+            if (expiration is RelativeTime relative) //相对时间
+            {
+                return relative.Expiration;
+            }
+            else if (expiration is AbsoluteTime absolute) //绝对时间
+            {
+                return absolute.ExpirationTime - DateTime.Now;
+            }
+
+            return null;
         }
     }
 }

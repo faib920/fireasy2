@@ -39,6 +39,7 @@ namespace Fireasy.Redis
                 setting.DefaultDb = configNode.GetAttributeValue("defaultDb", 0);
                 setting.Password = configNode.GetAttributeValue("password");
                 setting.ConnectTimeout = configNode.GetAttributeValue<int?>("connectTimeout");
+                setting.AdvanceDelay = configNode.GetAttributeValue<double?>("advanceDelay");
 
                 foreach (XmlNode nd in configNode.SelectNodes("host"))
                 {
@@ -74,6 +75,7 @@ namespace Fireasy.Redis
                 setting.DefaultDb = configNode["defaultDb"].To(0);
                 setting.Password = configNode["password"];
                 setting.ConnectTimeout = configNode["connectTimeout"].To<int?>();
+                setting.AdvanceDelay = configNode["advanceDelay"].To<double?>();
 
                 foreach (var nd in configNode.GetSection("host").GetChildren())
                 {

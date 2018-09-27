@@ -76,6 +76,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         internal static bool CanBeColumnExpression(Expression expression)
         {
+            if (expression is ProjectionExpression proj && proj.IsSingleton && proj.Type.IsDbTypeSupported())
+            {
+                return true;
+            }
+
             switch (expression.NodeType)
             {
                 case (ExpressionType)DbExpressionType.Column:

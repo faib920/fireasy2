@@ -131,7 +131,7 @@ namespace Fireasy.Data
 
                     if (!ParseParameter(name, value))
                     {
-                        DbUtility.ParseDataDirectory(ref value);
+                        value = DbUtility.ResolveFullPath(value);
                         builder.AppendFormat("{0}={1};", name, value);
                     }
 
@@ -152,7 +152,7 @@ namespace Fireasy.Data
 
                 if (!ParseParameter(name, value))
                 {
-                    DbUtility.ParseDataDirectory(ref value);
+                    value = DbUtility.ResolveFullPath(value);
                     builder.AppendFormat("{0}={1};", name, value);
                 }
 

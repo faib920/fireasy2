@@ -4,7 +4,7 @@
 
 ```C#
 //主题的定义
-public class TestSubject : ISubject
+public class TestSubject
 {
     public string Message { get; set; }
 }
@@ -36,7 +36,7 @@ public void TestSubscribe()
   <fireasy>
     <subscribers>
       <subscriber type="Fireasy.RabbitMQ.RabbitSubscribeManager, Fireasy.RabbitMQ">
-        <config userName="test" password="test" server="127.0.0.1" />
+        <config userName="guest" password="123" server="amqp://127.0.0.1:5672" />
       </subscriber>
     </subscribers>
   </fireasy>
@@ -52,9 +52,9 @@ public void TestSubscribe()
         "redis": {
           "type": "Fireasy.RabbitMQ.RabbitSubscribeManager, Fireasy.RabbitMQ",
           "config": {
-             "userName": "test",
-             "passwprd": "test",
-             "server": "127.0.0.1"
+             "userName": "guest",
+             "passwprd": "123",
+             "server": "amqp://127.0.0.1:5672"
           }
         }
       }

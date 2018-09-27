@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace Fireasy.Common.Linq.Expressions
 {
@@ -93,19 +94,24 @@ namespace Fireasy.Common.Linq.Expressions
                     return new SubtreeEvaluator(candidates).Visit(exp);
                 }
 
-                public override Expression Visit(Expression exp)
+                public override Expression Visit(Expression expression)
                 {
-                    if (exp == null)
+                    if (expression == null)
                     {
                         return null;
                     }
 
-                    if (candidates.Contains(exp))
+                    var query = QueryableHelper.GetQuerableMember(expression);
+                    if (query != null)
                     {
-                        return Evaluate(exp);
+                        return Visit(query.Expression);
+                    }
+                    else if (candidates.Contains(expression))
+                    {
+                        return Evaluate(expression);
                     }
 
-                    return base.Visit(exp);
+                    return base.Visit(expression);
                 }
 
                 private Expression Evaluate(Expression e)
@@ -145,7 +151,15 @@ namespace Fireasy.Common.Linq.Expressions
                         var ce = me.Expression as ConstantExpression;
                         if (ce != null)
                         {
-                            return Expression.Constant(me.Member.GetMemberValue(ce.Value), type);
+                            var value = me.Member.GetMemberValue(ce.Value);
+                            if (value is IQueryable queryable)
+                            {
+                                var exp1 = Visit(queryable.Expression);
+                            }
+                            else
+                            {
+                                return Expression.Constant(value, type);
+                            }
                         }
                     }
 
@@ -185,7 +199,16 @@ namespace Fireasy.Common.Linq.Expressions
                     {
                         var saveCannotBeEvaluated = cannotBeEvaluated;
                         cannotBeEvaluated = false;
-                        base.Visit(expression);
+
+                        var query = QueryableHelper.GetQuerableMember(expression);
+                        if (query != null)
+                        {
+                            Visit(query.Expression);
+                        }
+                        else
+                        {
+                            base.Visit(expression);
+                        }
 
                         if (!cannotBeEvaluated)
                         {
@@ -203,6 +226,21 @@ namespace Fireasy.Common.Linq.Expressions
                     }
 
                     return expression;
+                }
+            }
+
+            class QueryableHelper
+            {
+                internal static IQueryable GetQuerableMember(Expression expression)
+                {
+                    if (expression is MemberExpression member && typeof(IQueryable).IsAssignableFrom(member.Type) &&
+                        member.Expression is ConstantExpression constant)
+                    {
+                        var value = member.Member.GetMemberValue(constant.Value);
+                        return value as IQueryable;
+                    }
+
+                    return null;
                 }
             }
         }

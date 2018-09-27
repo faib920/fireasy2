@@ -6,7 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
-using Fireasy.Common.Serialization;
 using System;
 using System.Net.WebSockets;
 using System.Text;
@@ -21,6 +20,21 @@ namespace Fireasy.Web.Sockets
     public class WebSocketClient
     {
         private ClientWebSocket client;
+
+        /// <summary>
+        /// 获取或设置接收数据的缓冲区大小。
+        /// </summary>
+        public int ReceiveBufferSize { get; set; } = 1024 * 4;
+
+        /// <summary>
+        /// 获取或设置编码格式。
+        /// </summary>
+        public Encoding Encoding { get; set; } = Encoding.UTF8;
+
+        /// <summary>
+        /// 获取或设置消息格式化器。
+        /// </summary>
+        public IMessageFormatter Formatter { get; set; } = new MessageFormatter();
 
         /// <summary>
         /// 打开连接。
@@ -61,10 +75,10 @@ namespace Fireasy.Web.Sockets
         /// <typeparam name="T"></typeparam>
         /// <param name="bytes"></param>
         /// <returns></returns>
-        public async Task<byte[]> SendAndReturnAsync(byte[] bytes)
+        public async Task<byte[]> SendBinaryAsync(byte[] bytes)
         {
-            await client.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Text, true, CancellationToken.None);
-            var buffer = new byte[1024 * 4];
+            await client.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Binary, true, CancellationToken.None);
+            var buffer = new byte[ReceiveBufferSize];
             var result = await client.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
             if (!result.CloseStatus.HasValue)
             {
@@ -84,11 +98,9 @@ namespace Fireasy.Web.Sockets
         /// <returns></returns>
         public async Task SendAsync(string method, params object[] arguments)
         {
-            var serializer = new JsonSerializer();
-
             var message = new InvokeMessage(method, 0, arguments);
-            var json = serializer.Serialize(message);
-            var bytes = Encoding.UTF8.GetBytes(json);
+            var json = Formatter.FormatMessage(message);
+            var bytes = Encoding.GetBytes(json);
 
             await client.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Text, true, CancellationToken.None);
         }
@@ -102,15 +114,13 @@ namespace Fireasy.Web.Sockets
         /// <returns></returns>
         public async Task<T> SendAsync<T>(string method, params object[] arguments)
         {
-            var serializer = new JsonSerializer();
-
-            var message = new InvokeMessage(method, 0, arguments);
-            var json = serializer.Serialize(message);
-            var bytes = Encoding.UTF8.GetBytes(json);
+            var message = new InvokeMessage(method, 0, arguments) { IsReturn = 1 };
+            var json = Formatter.FormatMessage(message);
+            var bytes = Encoding.GetBytes(json);
 
             await client.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Text, true, CancellationToken.None);
 
-            var buffer = new byte[1024 * 4];
+            var buffer = new byte[ReceiveBufferSize];
             var result = await client.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
 
             if (result.CloseStatus.HasValue)
@@ -118,10 +128,17 @@ namespace Fireasy.Web.Sockets
                 return default(T);
             }
 
-            var obj = serializer.Deserialize<InvokeMessage>(Encoding.UTF8.GetString(buffer, 0, result.Count));
-            if (obj.Direction == 1)
+            try
             {
-                return obj.Arguments[0].To<T>();
+                var obj = Formatter.ResolveMessage(Encoding.GetString(buffer, 0, result.Count));
+                if (obj != null && obj.Direction == 1)
+                {
+                    return obj.Arguments[0].To<T>();
+                }
+            }
+            catch (Exception exp)
+            {
+                throw new InvalidOperationException($"发送 {method} 时发生异常。", exp);
             }
 
             return default(T);

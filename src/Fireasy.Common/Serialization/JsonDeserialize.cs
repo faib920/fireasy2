@@ -633,9 +633,9 @@ namespace Fireasy.Common.Serialization
 
         private string DeserializeString(string value)
         {
-            if (value.IndexOf("\\u") != -1)
+            if (Regex.IsMatch(value, "(?<code>\\\\u[a-z0-9]{4})", RegexOptions.IgnoreCase))
             {
-                value = value.DeUnicode();
+                return value.DeUnicode();
             }
 
             return value;

@@ -85,9 +85,9 @@ namespace Fireasy.Common.Ioc.Registrations
             var method = typeof(Container).GetMethod("Resolve", new [] { typeof(Type) });
             var bindings = from s in ServiceType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
                              let registration = Container.GetRegistration(s.PropertyType)
-                             let p = implType.GetProperty(s.Name)
+                             let property = implType.GetProperty(s.Name)
                              where s.CanWrite && registration != null
-                                && (p != null && !p.IsDefined<IgnoreInjectPropertyAttribute>())
+                                && (property != null && !property.IsDefined<IgnoreInjectPropertyAttribute>())
                                 && parameters.FirstOrDefault(t => t.ParameterType == s.PropertyType) == null
                                 select (MemberBinding)Expression.Bind(s, Expression.Convert(
                                     Expression.Call(ParameterExpression, method, new Expression[]

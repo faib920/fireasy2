@@ -2,6 +2,20 @@
 
   <PropertyGroup>
     <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
+    <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
+    <Authors>Huangxd</Authors>
+    <Company>Fireasy</Company>
+    <FileVersion>2.0.0.46106</FileVersion>
+    <Copyright>Copyright © Fireasy 2013-2018</Copyright>
+    <AssemblyVersion>2.0.0.46104</AssemblyVersion>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>False</DelaySign>
+    <Product>Fireasy NLog Provider</Product>
+    <Version>2.0.16</Version>
+    <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
+    <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
+    <Description>NLog for Fireasy。</Description>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>

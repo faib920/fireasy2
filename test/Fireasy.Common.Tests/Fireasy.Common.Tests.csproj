@@ -32,6 +32,7 @@
     <ProjectReference Include="..\..\src\Fireasy.Common\Fireasy.Common.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.Log4net\Fireasy.Log4net.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.NLog\Fireasy.NLog.csproj" />
+    <ProjectReference Include="..\..\src\Fireasy.RabbitMQ\Fireasy.RabbitMQ.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.Redis\Fireasy.Redis.csproj" />
   </ItemGroup>
   <ItemGroup>

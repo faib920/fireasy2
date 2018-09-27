@@ -28,8 +28,7 @@ namespace Fireasy.Common.Dynamic
         /// <returns></returns>
         public bool TryGetMember(IDynamicMetaObjectProvider dynamicProvider, string name, out object value)
         {
-            CallSite<Func<CallSite, object, object>> callSite;
-            if (!getCallSites.TryGetValue(name, out callSite))
+            if (!getCallSites.TryGetValue(name, out CallSite<Func<CallSite, object, object>> callSite))
             {
                 callSite = CallSite<Func<CallSite, object, object>>.Create(new NoThrowGetBinderMember((GetMemberBinder)BinderWrapper.GetMember(name)));
             }
@@ -57,8 +56,7 @@ namespace Fireasy.Common.Dynamic
         /// <returns></returns>
         public bool TrySetMember(IDynamicMetaObjectProvider dynamicProvider, string name, object value)
         {
-            CallSite<Func<CallSite, object, object, object>> callSite;
-            if (!setCallSites.TryGetValue(name, out callSite))
+            if (!setCallSites.TryGetValue(name, out CallSite<Func<CallSite, object, object, object>> callSite))
             {
                 callSite = CallSite<Func<CallSite, object, object, object>>.Create(new NoThrowSetBinderMember((SetMemberBinder)BinderWrapper.SetMember(name)));
             }

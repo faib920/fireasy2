@@ -6,12 +6,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
-using Fireasy.Common.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Net.WebSockets;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -71,14 +69,18 @@ namespace Fireasy.Web.Sockets
 
         async Task IClientProxy.SendAsync(string method, params object[] arguments)
         {
-            var option = new JsonSerializeOption() { Indent = false };
-            var serializer = new JsonSerializer(option);
-
             var message = new InvokeMessage(method, 0, arguments);
-            var json = serializer.Serialize(message);
-            var bytes = Encoding.UTF8.GetBytes(json);
+            var json = acceptContext.Option.Formatter.FormatMessage(message);
+            var bytes = acceptContext.Option.Encoding.GetBytes(json);
 
-            await acceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Text, true, CancellationToken.None);
+            try
+            {
+                await acceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Text, true, CancellationToken.None);
+            }
+            catch (Exception exp)
+            {
+                OnInvokeError(message, new WebSocketHandleException(ConnectionId, "调用客户端方法时发生异常。", exp));
+            }
         }
 
         private async Task Invoke()
@@ -108,7 +110,7 @@ namespace Fireasy.Web.Sockets
 
                     data.Clear();
 
-                    if (bytes.Length > 0)
+                    if (bytes != null)
                     {
                         await acceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), result.MessageType, result.EndOfMessage, CancellationToken.None);
                     }
@@ -117,7 +119,10 @@ namespace Fireasy.Web.Sockets
                 result = await acceptContext.WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
             }
 
-            await acceptContext.WebSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
+            if (result.CloseStatus.HasValue)
+            {
+                await acceptContext.WebSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
+            }
 
             ManualClose();
         }
@@ -173,7 +178,7 @@ namespace Fireasy.Web.Sockets
         /// <summary>
         /// 释放对象所占用的所有资源。
         /// </summary>
-            public void Dispose()
+        public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
@@ -230,8 +235,10 @@ namespace Fireasy.Web.Sockets
                 catch (Exception exp)
                 {
                     OnResolveError(content, exp);
-                    return new byte[0];
+                    return null;
                 }
+
+                Type returnType = null;
 
                 try
                 {
@@ -246,22 +253,45 @@ namespace Fireasy.Web.Sockets
                     var result = method.FastInvoke(this, arguments);
                     if (method.ReturnType.IsGenericType && method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
                     {
+                        returnType = method.ReturnType.GetGenericArguments()[0];
                         result = method.ReturnType.GetProperty("Result").GetValue(result);
                     }
-
-                    if (method.ReturnType != typeof(void))
+                    else if (method.ReturnType != typeof(void))
                     {
-                        var ret = new InvokeMessage(message.Method, 1, new[] { result });
-                        return acceptContext.Option.Encoding.GetBytes(acceptContext.Option.Formatter.FormatMessage(ret));
+                        returnType = method.ReturnType;
+                    }
+
+                    if (returnType != null)
+                    {
+                        message.IsReturn = 1;
+                        return ReturnValue(message, result);
                     }
                 }
                 catch (Exception exp)
                 {
-                    OnInvokeError(message, exp);
+                    OnInvokeError(message, new WebSocketHandleException(ConnectionId, "处理接收到的数据时发生异常。", exp));
+                    return ReturnValue(message, returnType?.GetDefaultValue());
                 }
             }
 
-            return new byte[0];
+            return null;
+        }
+
+        /// <summary>
+        /// 返回数据。
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        private byte[] ReturnValue(InvokeMessage message, object result)
+        {
+            if (message.IsReturn == 0 || result == null)
+            {
+                return new byte[0];
+            }
+
+            var retMsg = new InvokeMessage(message.Method, 1, new[] { result });
+            return acceptContext.Option.Encoding.GetBytes(acceptContext.Option.Formatter.FormatMessage(retMsg));
         }
 
         /// <summary>
@@ -292,7 +322,7 @@ namespace Fireasy.Web.Sockets
             var arguments = new object[message.Arguments.Length];
             for (var i = 0; i < arguments.Length; i++)
             {
-                if (parameters[i].ParameterType != message.Arguments[i].GetType())
+                if (message.Arguments[i] != null && parameters[i].ParameterType != message.Arguments[i].GetType())
                 {
                     arguments[i] = message.Arguments[i].ToType(parameters[i].ParameterType);
                 }

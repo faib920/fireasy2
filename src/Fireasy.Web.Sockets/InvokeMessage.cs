@@ -51,5 +51,11 @@ namespace Fireasy.Web.Sockets
         /// </summary>
         [TextSerializeElement("A")]
         public object[] Arguments { get; set; }
+
+        /// <summary>
+        /// 获取或设置是否有返回值。
+        /// </summary>
+        [TextSerializeElement("R")]
+        public int IsReturn { get; set; }
     }
 }

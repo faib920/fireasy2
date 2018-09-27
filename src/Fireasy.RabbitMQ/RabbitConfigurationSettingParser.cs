@@ -1,4 +1,11 @@
-﻿using Fireasy.Common.Configuration;
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 #if NETSTANDARD2_0
 using Microsoft.Extensions.Configuration;

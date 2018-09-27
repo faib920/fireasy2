@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net45;net40;net35;netstandard2.0</TargetFrameworks>
-    <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
     <FileVersion>2.0.0.46106</FileVersion>
@@ -13,7 +13,7 @@
     <DelaySign>False</DelaySign>
     <Product>Fireasy Entity Framework</Product>
     <Version>2.0.16</Version>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>类似于 Entity framework，也提供了 LINQ to Entities 大众化的查询方法，相比之下更容易使用多种数据库，比如SqlServer、Oracle、MySQL、SQLite、PostgreSQL等等。独创性地提供树持久化方法，使用AOP代理技术管理实体对象的状态变更，提供更贴合SQL语言的Update、Delete语句。
 
 示例源码：https://github.com/faib920/zero</Description>

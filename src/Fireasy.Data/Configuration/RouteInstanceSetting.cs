@@ -61,7 +61,7 @@ namespace Fireasy.Data.Configuration
         /// <summary>
         /// 获取或设置路由服务对象。
         /// </summary>
-        public IInstanceRouteService RouteService { get; set; }
+        public IInstanceRouteService RouteService { get; private set; }
 
         private IInstanceConfigurationSetting GetSetting()
         {

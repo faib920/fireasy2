@@ -917,6 +917,22 @@ studio");
             Assert.AreEqual(null, str);
         }
 
+        /// <summary>
+        /// 使用字符串测试Deserialize方法。
+        /// </summary>
+        [TestMethod()]
+        public void TestDeserializeStringUnicode()
+        {
+            var serializer = new JsonSerializer();
+
+            var str = serializer.Deserialize<string>("\"\\user\"");
+
+            Assert.AreEqual("\\user", str);
+
+            str = serializer.Deserialize<string>("\"\\u4e2d\\u56fd\"");
+
+            Assert.AreEqual("中国", str);
+        }
 
         /// <summary>
         /// 测试Deserialize方法，返回布尔。

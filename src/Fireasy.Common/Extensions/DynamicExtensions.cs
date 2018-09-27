@@ -40,6 +40,11 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static bool TryGetMember(this IDynamicMetaObjectProvider dynamicProvider, string name, out object value)
         {
+            if (dynamicProvider is IDictionary<string, object> dict)
+            {
+                return dict.TryGetValue(name, out value);
+            }
+
             return new DynamicManager().TryGetMember(dynamicProvider, name, out value);
         }
 
@@ -52,6 +57,12 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static bool TrySetMember(this IDynamicMetaObjectProvider dynamicProvider, string name, object value)
         {
+            if (dynamicProvider is IDictionary<string, object> dict)
+            {
+                dict.AddOrReplace(name, value);
+                return true;
+            }
+
             return new DynamicManager().TrySetMember(dynamicProvider, name, value);
         }
     }

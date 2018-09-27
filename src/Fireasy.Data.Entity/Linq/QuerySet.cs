@@ -22,38 +22,23 @@ namespace Fireasy.Data.Entity.Linq
     /// <typeparam name="T">数据类型。</typeparam>
     public class QuerySet<T> : IOrderedQueryable<T>, IListSource, IQueryExportation
     {
-        private Expression expression;
-        private IQueryProvider provider;
         private IList<T> list;
 
-        public QuerySet(IQueryProvider provider)
-            : this(provider, null)
+        protected QuerySet()
         {
         }
 
-        public QuerySet(IQueryProvider provider, Type staticType)
+        public QuerySet(IQueryProvider provider)
         {
-            if (provider == null)
-            {
-                throw new ArgumentNullException(nameof(provider));
-            }
-            this.provider = provider;
-            this.expression = staticType != null ? Expression.Constant(this, staticType) : Expression.Constant(this);
+            Provider = provider ?? throw new ArgumentNullException(nameof(provider));
+            var instance = new QuerySet<T> { Expression = Expression.Constant(null, typeof(T)), Provider = provider };
+            Expression = Expression.Constant(instance, typeof(QuerySet<T>));
         }
 
         public QuerySet(QueryProvider provider, Expression expression)
         {
-            if (provider == null)
-            {
-                throw new ArgumentNullException(nameof(provider));
-            }
-            if (expression == null)
-            {
-                throw new ArgumentNullException(nameof(expression));
-            }
-
-            this.provider = provider;
-            this.expression = expression;
+            Provider = provider ?? throw new ArgumentNullException(nameof(provider));
+            Expression = expression ?? throw new ArgumentNullException(nameof(expression));
         }
 
         /// <summary>
@@ -63,10 +48,10 @@ namespace Fireasy.Data.Entity.Linq
         {
             get
             {
-                var translator = provider as ITranslateSupport;
+                var translator = Provider as ITranslateSupport;
                 if (translator != null)
                 {
-                    return translator.Translate(expression).ToString();
+                    return translator.Translate(Expression).ToString();
                 }
 
                 return string.Empty;
@@ -108,15 +93,9 @@ namespace Fireasy.Data.Entity.Linq
             get { return typeof(T); }
         }
 
-        public Expression Expression
-        {
-            get { return expression; }
-        }
+        public Expression Expression { get; private set; }
 
-        public IQueryProvider Provider
-        {
-            get { return provider; }
-        }
+        public IQueryProvider Provider { get; private set; }
 
         #endregion 实现IQueryable接口
 
@@ -124,13 +103,13 @@ namespace Fireasy.Data.Entity.Linq
         {
             if (list == null)
             {
-                if (provider == null)
+                if (Provider == null)
                 {
                     list = new List<T>();
                 }
                 else
                 {
-                    list = ExecuteCache.TryGet(expression, () => provider.Execute<IEnumerable<T>>(expression)?.ToList());
+                    list = ExecuteCache.TryGet(Expression, () => Provider.Execute<IEnumerable<T>>(Expression)?.ToList());
                 }
             }
             return list;

@@ -26,7 +26,7 @@ namespace Fireasy.Web.Mvc
         /// </summary>
         /// <param name="next"></param>
         /// <param name="notification"></param>
-        public SessionReviveMiddleware( RequestDelegate next, ISessionReviveNotification notification)
+        public SessionReviveMiddleware(RequestDelegate next, ISessionReviveNotification notification)
         {
             this.next = next;
             this.notification = notification;
@@ -34,9 +34,9 @@ namespace Fireasy.Web.Mvc
 
         public async Task Invoke(HttpContext context)
         {
-            if (notification != null && 
-                context.Session != null && 
-                context.Session.Keys.Count() == 0 && 
+            if (notification != null &&
+                context.Session != null &&
+                context.Session.Keys.Count() == 0 &&
                 context.User.Identity.IsAuthenticated)
             {
                 notification.Invoke(context);

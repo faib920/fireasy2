@@ -14,9 +14,9 @@ namespace Fireasy.Redis
 {
     public class RedisComponent : IConfigurationSettingHostService
     {
-        private RedisConfigurationSetting setting;
-        private static ConnectionMultiplexer connection;
-        private static object locker = new object();
+        private Lazy<ConnectionMultiplexer> connectionLazy;
+
+        protected RedisConfigurationSetting Setting { get; private set; }
 
         protected ConfigurationOptions Options { get; private set; }
 
@@ -58,9 +58,9 @@ namespace Fireasy.Redis
 
         private RedisSerializer CreateSerializer()
         {
-            if (setting.SerializerType != null)
+            if (Setting.SerializerType != null)
             {
-                var serializer = setting.SerializerType.New<RedisSerializer>();
+                var serializer = Setting.SerializerType.New<RedisSerializer>();
                 if (serializer != null)
                 {
                     return serializer;
@@ -72,42 +72,34 @@ namespace Fireasy.Redis
 
         protected ConnectionMultiplexer GetConnection()
         {
-            if (connection == null)
-            {
-                lock (locker)
-                {
-                    connection = ConnectionMultiplexer.Connect(Options);
-                }
-            }
-
-            return connection;
+            return connectionLazy.Value;
         }
 
         void IConfigurationSettingHostService.Attach(IConfigurationSettingItem setting)
         {
-            this.setting = (RedisConfigurationSetting)setting;
+            this.Setting = (RedisConfigurationSetting)setting;
 
-            if (!string.IsNullOrEmpty(this.setting.ConnectionString))
+            if (!string.IsNullOrEmpty(this.Setting.ConnectionString))
             {
-                Options = ConfigurationOptions.Parse(this.setting.ConnectionString);
+                Options = ConfigurationOptions.Parse(this.Setting.ConnectionString);
             }
             else
             {
                 Options = new ConfigurationOptions
                 {
-                    DefaultDatabase = this.setting.DefaultDb,
-                    Password = this.setting.Password,
+                    DefaultDatabase = this.Setting.DefaultDb,
+                    Password = this.Setting.Password,
                     AllowAdmin = true,
-                    Proxy = this.setting.Twemproxy ? Proxy.Twemproxy : Proxy.None,
+                    Proxy = this.Setting.Twemproxy ? Proxy.Twemproxy : Proxy.None,
                     AbortOnConnectFail = false
                 };
 
-                if (this.setting.ConnectTimeout != null)
+                if (this.Setting.ConnectTimeout != null)
                 {
-                    Options.ConnectTimeout = (int)this.setting.ConnectTimeout;
+                    Options.ConnectTimeout = (int)this.Setting.ConnectTimeout;
                 }
 
-                foreach (var host in this.setting.Hosts)
+                foreach (var host in this.Setting.Hosts)
                 {
                     if (host.Port == 0)
                     {
@@ -119,11 +111,13 @@ namespace Fireasy.Redis
                     }
                 }
             }
+
+            connectionLazy = new Lazy<ConnectionMultiplexer>(() => ConnectionMultiplexer.Connect(Options));
         }
 
         IConfigurationSettingItem IConfigurationSettingHostService.GetSetting()
         {
-            return setting;
+            return Setting;
         }
     }
 }

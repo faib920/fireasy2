@@ -1,6 +1,7 @@
 ﻿using Fireasy.Common.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.IO;
 
 namespace Fireasy.Data.Tests
@@ -16,7 +17,7 @@ namespace Fireasy.Data.Tests
         [TestMethod]
         public void TestMsSql()
         {
-            using (var db = DatabaseFactory.CreateDatabase("mssql"))
+            using (var db = DatabaseFactory.CreateDatabase())
             {
                 var exception = db.TryConnect();
                 Assert.IsNull(exception);
@@ -104,6 +105,26 @@ namespace Fireasy.Data.Tests
         }
 
         [TestMethod]
+        public void TestXmlStore()
+        {
+            using (var db = DatabaseFactory.CreateDatabase("xmlStore"))
+            {
+                var exception = db.TryConnect();
+                Assert.IsNull(exception);
+            }
+        }
+
+        [TestMethod]
+        public void TestJsonStore()
+        {
+            using (var db = DatabaseFactory.CreateDatabase("jsonStore"))
+            {
+                var exception = db.TryConnect();
+                Assert.IsNull(exception);
+            }
+        }
+
+        [TestMethod]
         public void TestCluster()
         {
             using (var db = DatabaseFactory.CreateDatabase("cluster"))
@@ -111,6 +132,17 @@ namespace Fireasy.Data.Tests
                 var exception = db.TryConnect();
                 Assert.IsNull(exception);
             }
+        }
+
+        [TestMethod]
+        public void TestEncrypt()
+        {
+            var mthEncrypt = Type.GetType("Fireasy.Data.ConnectionStringEncryptHelper, Fireasy.Data").GetMethod("Encrypt", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            var mthDecrypt = Type.GetType("Fireasy.Data.ConnectionStringEncryptHelper, Fireasy.Data").GetMethod("Decrypt", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+
+            Console.WriteLine(mthEncrypt.Invoke(null, new[] { "Data Source=" }));
+
+            Console.WriteLine(mthDecrypt.Invoke(null, new[] { "" }));
         }
     }
 }

@@ -36,7 +36,7 @@ namespace Fireasy.Data.Entity
             var entityQueryProvider = new EntityQueryProvider(context);
             context.As<IEntityPersistentInstanceContainer>(s => entityQueryProvider.InitializeInstanceName(s.InstanceName));
             QueryProvider = new QueryProvider(entityQueryProvider);
-            Queryable = new QuerySet<TEntity>(QueryProvider, null);
+            Queryable = new QuerySet<TEntity>(QueryProvider);
         }
 
         /// <summary>

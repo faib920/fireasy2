@@ -24,8 +24,8 @@ namespace Fireasy.Data
     {
         private Func<IDataReader, T> funcDataRecd;
         private Func<DataRow, T> funcDataRow;
-        private static MethodInfo isNullMethod = typeof(IDataRecord).GetMethod("IsDBNull", new[] { typeof(int) });
-        private static MethodInfo convertMethod = typeof(Extensions.DataExtension).GetMethod("ToTypeEx", BindingFlags.NonPublic | BindingFlags.Static);
+        private static MethodInfo isNullMethod = typeof(IDataRecord).GetMethod(nameof(IDataReader.IsDBNull), new[] { typeof(int) });
+        private static MethodInfo convertMethod = typeof(Extensions.DataExtension).GetMethod(nameof(Extensions.DataExtension.ToTypeEx), BindingFlags.NonPublic | BindingFlags.Static);
 
         /// <summary>
         /// 将一个 <see cref="IDataReader"/> 转换为一个 <typeparamref name="T"/> 的对象。
@@ -40,10 +40,7 @@ namespace Fireasy.Data
             }
 
             var result = funcDataRecd(reader);
-            if (Initializer != null)
-            {
-                Initializer(result);
-            }
+            Initializer?.Invoke(result);
 
             return result;
         }
@@ -61,10 +58,7 @@ namespace Fireasy.Data
             }
 
             var result = funcDataRow(row);
-            if (Initializer != null)
-            {
-                Initializer(result);
-            }
+            Initializer?.Invoke(result);
 
             return result;
         }

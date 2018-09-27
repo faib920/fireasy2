@@ -92,7 +92,7 @@ public void TestClear()
 
 ```C#
 //主题的定义
-public class TestSubject : ISubject
+public class TestSubject
 {
     public string Message { get; set; }
 }

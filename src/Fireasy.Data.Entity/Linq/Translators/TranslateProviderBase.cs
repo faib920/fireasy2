@@ -136,7 +136,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             if (expression is ConstantExpression cex)
             {
-                if (cex.Value is IQueryable query && query.Provider is QueryProvider)
+                if (cex.Value is IQueryable query)
                 {
                     return false;
                 }

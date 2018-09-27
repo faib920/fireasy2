@@ -48,7 +48,7 @@ namespace Fireasy.Data.Configuration
             {
                 var setting = new BinaryInstanceSetting();
 
-                DbUtility.ParseDataDirectory(ref fileName);
+                fileName = DbUtility.ResolveFullPath(fileName);
                 setting.FileName = fileName;
                 if (!File.Exists(setting.FileName))
                 {

@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fireasy.Common.Tests.Caching
 {
@@ -55,6 +56,31 @@ namespace Fireasy.Common.Tests.Caching
             Assert.AreEqual(false, cacheMgr.Contains("test4"));
             Assert.AreEqual(false, cacheMgr.Contains("test5"));
             Assert.AreEqual(false, cacheMgr.Contains("test6"));
+        }
+
+        [TestMethod]
+        public void TestParallel()
+        {
+            var cacheMgr = CacheManagerFactory.CreateManager("redis");
+
+            int Get()
+            {
+                Console.WriteLine("get");
+                return 100;
+            }
+
+            Parallel.For(0, 3, (i, s) => Console.WriteLine(cacheMgr.TryGet("test", () => Get(), () => new RelativeTime(TimeSpan.FromSeconds(5)))));
+        }
+
+        [TestMethod]
+        public void TestAdvanceDelay()
+        {
+            var cacheMgr = CacheManagerFactory.CreateManager("redis");
+            var value = cacheMgr.TryGet("test1", () => 100, () => new RelativeTime(TimeSpan.FromSeconds(1)));
+            Thread.Sleep(1100);
+            value = cacheMgr.TryGet("test1", () => 100, () => new RelativeTime(TimeSpan.FromSeconds(1)));
+            Thread.Sleep(720);
+            value = cacheMgr.TryGet("test1", () => 100, () => new RelativeTime(TimeSpan.FromSeconds(1)));
         }
     }
 }

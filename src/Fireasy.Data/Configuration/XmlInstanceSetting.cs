@@ -50,27 +50,43 @@ namespace Fireasy.Data.Configuration
 
             private IConfigurationSettingItem Parse(string fileName, string xpath)
             {
-                var setting = new XmlInstanceSetting();
-                DbUtility.ParseDataDirectory(ref fileName);
-                setting.FileName = fileName;
-                if (!File.Exists(setting.FileName))
+                fileName = DbUtility.ResolveFullPath(fileName);
+
+                if (!File.Exists(fileName))
                 {
-                    throw new FileNotFoundException(SR.GetString(SRKind.FileNotFound, setting.FileName), setting.FileName);
+                    throw new FileNotFoundException(SR.GetString(SRKind.FileNotFound, fileName), fileName);
                 }
 
+                var setting = new XmlInstanceSetting();
+                setting.FileName = fileName;
 
                 var xmlDoc = new XmlDocument();
-                xmlDoc.Load(setting.FileName);
-                var connNode = xmlDoc.SelectSingleNode(xpath);
-                if (connNode == null)
+                xmlDoc.Load(fileName);
+                XmlNode connNode = null;
+
+                if (!string.IsNullOrEmpty(xpath))
                 {
-                    throw new XPathException(xpath);
+                    xmlDoc.SelectSingleNode(xpath);
+                    if (connNode == null)
+                    {
+                        throw new XPathException(xpath);
+                    }
+                }
+                else
+                {
+                    connNode = xmlDoc.DocumentElement;
                 }
 
-                setting.ProviderName = connNode.GetAttributeValue("providerName");
-                setting.ProviderType = connNode.GetAttributeValue("providerType");
-                setting.DatabaseType = Type.GetType(connNode.GetAttributeValue("databaseType"), false, true);
-                setting.ConnectionString = ConnectionStringHelper.GetConnectionString(connNode.GetAttributeValue("connectionString"));
+                setting.ProviderName = connNode.SelectSingleNode("providerName")?.InnerText ?? connNode.GetAttributeValue("providerName");
+                setting.ProviderType = connNode.SelectSingleNode("providerType")?.InnerText ?? connNode.GetAttributeValue("providerType");
+
+                var databaseType = connNode.SelectSingleNode("databaseType")?.InnerText ?? connNode.GetAttributeValue("databaseType");
+                if (!string.IsNullOrEmpty(databaseType))
+                {
+                    setting.DatabaseType = Type.GetType(databaseType, false, true);
+                }
+
+                setting.ConnectionString = ConnectionStringHelper.GetConnectionString(connNode.SelectSingleNode("connectionString")?.InnerText ?? connNode.GetAttributeValue("connectionString"));
 
                 return setting;
             }

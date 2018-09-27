@@ -28,7 +28,7 @@ namespace Fireasy.Common.Subscribes
         /// </summary>
         /// <typeparam name="TSubject"></typeparam>
         /// <param name="subject">主题内容。</param>
-        public void Publish<TSubject>(TSubject subject) where TSubject : ISubject
+        public void Publish<TSubject>(TSubject subject) where TSubject : class
         {
             if (subscribers.TryGetValue(typeof(TSubject), out List<Delegate> list))
             {
@@ -44,7 +44,7 @@ namespace Fireasy.Common.Subscribes
         /// </summary>
         /// <typeparam name="TSubject"></typeparam>
         /// <param name="subscriber">读取主题的方法。</param>
-        public void AddSubscriber<TSubject>(Action<TSubject> subscriber) where TSubject : ISubject
+        public void AddSubscriber<TSubject>(Action<TSubject> subscriber) where TSubject : class
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 

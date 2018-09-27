@@ -376,21 +376,17 @@ namespace Fireasy.Common.Linq.Expressions
                     Write("@");
                 }
 
-                Write("\"");
-                Write(c.Value.ToString());
-                Write("\"");
+                Write($"\"{c.Value}\"");
             }
             else if (c.Type == typeof(DateTime))
             {
-                Write("new DateTime(\"");
-                Write(c.Value.ToString());
-                Write("\")");
+                Write($"new DateTime(\"{c.Value}\")");
             }
             else if (typeof(IQueryable).IsAssignableFrom(c.Type))
             {
                 var elementType = c.Type.GetEnumerableElementType();
-                Write("Queryable(");
-                Write(elementType.ToString());
+                Write($"Queryable<{elementType}>(");
+                Visit(((IQueryable)c.Value).Expression);
                 Write(")");
             }
             else if (c.Type.IsArray || typeof(IEnumerable).IsAssignableFrom(c.Type))
@@ -408,7 +404,7 @@ namespace Fireasy.Common.Linq.Expressions
             }
             else
             {
-                Write(string.Concat("new ", c.Type.Name, " "));
+                Write($"new {c.Type} ");
                 Write("{ ");
                 var assert = new AssertFlag();
                 var lazyMgr = c.Value as ILazyManager;
@@ -434,7 +430,7 @@ namespace Fireasy.Common.Linq.Expressions
                     Write(p.Name + " = ");
                     if (p.PropertyType.IsStringOrDateTime())
                     {
-                        Write(string.Concat("\"", value, "\""));
+                        Write($"\"{value}\"");
                     }
                     else
                     {

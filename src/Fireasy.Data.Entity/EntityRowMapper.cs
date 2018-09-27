@@ -63,10 +63,7 @@ namespace Fireasy.Data.Entity
                 return default(T);
             }
 
-            if (Initializer != null)
-            {
-                Initializer(entity);
-            }
+            Initializer?.Invoke(entity);
 
             entity.SetState(EntityState.Unchanged);
             entity.As<ISupportInitializeNotification>(s => s.BeginInit());

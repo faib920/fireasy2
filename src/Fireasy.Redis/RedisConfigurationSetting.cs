@@ -66,6 +66,11 @@ namespace Fireasy.Redis
         /// 获取或设置是否启用 Twemproxy 代理。
         /// </summary>
         public bool Twemproxy { get; set; }
+
+        /// <summary>
+        /// 获取或设置提前延期的时间比例。
+        /// </summary>
+        public double? AdvanceDelay { get; set; }
     }
 
     /// <summary>

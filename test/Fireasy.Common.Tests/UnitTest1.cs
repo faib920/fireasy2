@@ -4,6 +4,7 @@ using Fireasy.Common;
 using System.Collections.Generic;
 using Fireasy.Common.Extensions;
 using System.Linq.Expressions;
+using System.Dynamic;
 
 namespace Fireasy.Common.Tests
 {
@@ -13,15 +14,20 @@ namespace Fireasy.Common.Tests
         [TestMethod]
         public void TestMethod1()
         {
-            var types = typeof(LambdaExpression).Assembly.GetTypes();
-            var type = Type.GetType("System.Linq.Expressions.LambdaExpression, System.Linq.Expressions");
-            foreach (var t in type.GetMethods(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Instance))
-            {
-                Console.WriteLine(t);
-            }
-            var assert = new AssertFlag();
-            Assert.IsTrue(assert.AssertTrue());
+            IDynamicMetaObjectProvider b = new ExpandoObject();
+            b.TrySetMember("dd", "dd");
         }
+
+        private bool A1()
+        {
+            return false;
+        }
+
+        private bool A2()
+        {
+            return false;
+        }
+
         public class Data1
         {
             public string Name { get; set; }

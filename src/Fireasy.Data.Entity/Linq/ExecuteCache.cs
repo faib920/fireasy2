@@ -7,7 +7,6 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Caching;
 using Fireasy.Common.Configuration;
-using Fireasy.Common.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Linq.Translators.Configuration;
 using System;
@@ -15,8 +14,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Fireasy.Data.Entity.Linq
 {
@@ -62,7 +59,7 @@ namespace Fireasy.Data.Entity.Linq
                 return func();
             }
 
-            var cacheKey = GetKey(expression);
+            var cacheKey = ExpressionKeyGenerator.GetKey(expression, "Exec");
 
             Reference(cacheKey, expression);
 
@@ -124,22 +121,6 @@ namespace Fireasy.Data.Entity.Linq
             /// 数据的总记录数。
             /// </summary>
             public int Total { get; set; }
-        }
-
-        /// <summary>
-        /// 通过表达式计算出对应的缓存键。
-        /// </summary>
-        /// <param name="expression"></param>
-        /// <returns></returns>
-        private static string GetKey(Expression expression)
-        {
-            var evalExp = PartialEvaluator.Eval(expression, TranslateProviderBase.EvaluatedLocallyFunc);
-            var cacheKey = ExpressionWriter.WriteToString(evalExp);
-
-            //使用md5进行hash编码
-            var md5 = new MD5CryptoServiceProvider();
-            byte[] data = md5.ComputeHash(Encoding.Unicode.GetBytes(cacheKey));
-            return "$." + Convert.ToBase64String(data, Base64FormattingOptions.None);
         }
 
         /// <summary>

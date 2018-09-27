@@ -10,13 +10,6 @@ using System;
 namespace Fireasy.Common.Subscribes
 {
     /// <summary>
-    /// 提供订阅的主题接口。
-    /// </summary>
-    public interface ISubject
-    {
-    }
-
-    /// <summary>
     /// 订阅管理器接口。
     /// </summary>
     public interface ISubscribeManager
@@ -26,14 +19,14 @@ namespace Fireasy.Common.Subscribes
         /// </summary>
         /// <typeparam name="TSubject"></typeparam>
         /// <param name="subject">主题内容。</param>
-        void Publish<TSubject>(TSubject subject) where TSubject : ISubject;
+        void Publish<TSubject>(TSubject subject) where TSubject : class;
 
         /// <summary>
         /// 添加一个订阅方法。
         /// </summary>
         /// <typeparam name="TSubject"></typeparam>
         /// <param name="subscribe">读取主题的方法。</param>
-        void AddSubscriber<TSubject>(Action<TSubject> subscribe) where TSubject: ISubject;
+        void AddSubscriber<TSubject>(Action<TSubject> subscribe) where TSubject : class;
 
         /// <summary>
         /// 添加一个订阅方法。

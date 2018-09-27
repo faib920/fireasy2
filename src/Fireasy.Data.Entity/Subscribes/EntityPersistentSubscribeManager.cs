@@ -9,7 +9,6 @@
 using Fireasy.Common.Subscribes;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Fireasy.Data.Entity.Subscribes
 {
@@ -65,30 +64,21 @@ namespace Fireasy.Data.Entity.Subscribes
 
         public static void Publish<TEntity>(IEnumerable<IEntity> entities, EntityPersistentOperater operType, EntityPersistentEventType eventType)
         {
-            var subject = new EntityPersistentSubject(typeof(TEntity), eventType)
-                {
-                    Argument = new EntitiesArgs(entities, operType, eventType)
-                };
+            var subject = new EntityPersistentSubject(typeof(TEntity), eventType, new EntitiesArgs(entities, operType, eventType));
 
             DefaultSubscribeManager.Instance.Publish(subject);
         }
 
         public static void Publish<TEntity>(EntityPersistentEventType eventType)
         {
-            var subject = new EntityPersistentSubject(typeof(TEntity), eventType)
-                {
-                    Argument = new EntityEventTypeArgs(eventType)
-                };
+            var subject = new EntityPersistentSubject(typeof(TEntity), eventType, new EntityEventTypeArgs(eventType));
 
             DefaultSubscribeManager.Instance.Publish(subject);
         }
 
         public static void Publish(IEntity entity, EntityPersistentEventType eventType)
         {
-            var subject = new EntityPersistentSubject(entity.EntityType, eventType)
-                {
-                    Argument = new EntityEventArgs(entity, eventType)
-                };
+            var subject = new EntityPersistentSubject(entity.EntityType, eventType, new EntityEventArgs(entity, eventType));
 
             DefaultSubscribeManager.Instance.Publish(subject);
         }
