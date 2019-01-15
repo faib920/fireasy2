@@ -123,7 +123,7 @@ public void TestSubscribe()
   </configSections>
   <fireasy>
     <subscribers>
-      <subscriber type="Fireasy.Redis.RedisSubscribeManager, Fireasy.Redis">
+      <subscriber type="Fireasy.Redis.SubscribeManager, Fireasy.Redis">
         <config defaultDb="2">
           <host server="localhost"></host>
         </config>
@@ -140,7 +140,7 @@ public void TestSubscribe()
     "subscribers": {
       "settings": {
         "redis": {
-          "type": "Fireasy.Redis.RedisSubscribeManager, Fireasy.Redis",
+          "type": "Fireasy.Redis.SubscribeManager, Fireasy.Redis",
           "config": {
             "defaultDb": 1,
             "host": [
