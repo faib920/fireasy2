@@ -27,25 +27,33 @@ namespace Fireasy.Common.Serialization
         /// 从文本中解析出类型 <typeparamref name="T"/> 的对象。
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="text">表示对象的文本。</param>
+        /// <param name="content">表示对象的文本。</param>
         /// <returns>解析后的对象。</returns>
-        T Deserialize<T>(string text);
+        T Deserialize<T>(string content);
 
         /// <summary>
         /// 从文本中解析出类型 <typeparamref name="T"/> 的对象，<typeparamref name="T"/> 可以是匿名类型。
         /// </summary>
         /// <typeparam name="T">自定义匿名类型。</typeparam>
-        /// <param name="text">表示对象的文本</param>
+        /// <param name="content">表示对象的文本</param>
         /// <param name="anyObj">为构造 <typeparamref name="T"/> 类型而初始化的对象。</param>
         /// <returns>解析后的对象。</returns>
-        T Deserialize<T>(string text, T anyObj);
+        T Deserialize<T>(string content, T anyObj);
 
         /// <summary>
         /// 从文本中解析出类型 <paramref name="type"/> 的对象。
         /// </summary>
-        /// <param name="text">表示对象的文本。</param>
+        /// <param name="content">表示对象的文本。</param>
         /// <param name="type">可序列化的对象类型。</param>
         /// <returns>对象。</returns>
-        object Deserialize(string text, Type type);
+        object Deserialize(string content, Type type);
+    }
+
+    /// <summary>
+    /// 表示限定 <typeparamref name="TOption"/> 的文本序列化与反序列化方法。
+    /// </summary>
+    /// <typeparam name="TOption"></typeparam>
+    public interface ITextSerializer<TOption> : ITextSerializer where TOption : SerializeOption
+    {
     }
 }

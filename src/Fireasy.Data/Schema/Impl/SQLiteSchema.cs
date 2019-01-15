@@ -19,7 +19,7 @@ namespace Fireasy.Data.Schema
     {
         public SQLiteSchema()
         {
-            AddRestrictionIndex<Table>(s => s.Catalog, null, s => s.Name, s => s.Type);
+            AddRestrictionIndex<Table>(s => s.Catalog, s => s.Name);
             AddRestrictionIndex<Column>(s => s.Catalog, null, s => s.TableName, s => s.Name);
             AddRestrictionIndex<View>(s => s.Catalog, s => null, s => s.Name);
             AddRestrictionIndex<ViewColumn>(s => s.Catalog, null, s => s.ViewName, s => s.Name);
@@ -31,120 +31,66 @@ namespace Fireasy.Data.Schema
             AddRestrictionIndex<ForeignKey>(s => s.Catalog, s => s.Schema, s => s.TableName, s => s.Name);
         }
 
-        /// <summary>
-        /// 获取 <see cref="Column"/> 元数据序列。
-        /// </summary>
-        /// <param name="table">架构信息的表。</param>
-        /// <param name="action">用于填充元数据的方法。</param>
-        /// <returns></returns>
-        protected override IEnumerable<Column> GetColumns(DataTable table, Action<Column, DataRow> action)
+        protected override IEnumerable<Table> GetTables(IDatabase database, string[] restrictionValues)
         {
-            return base.GetColumns(table, (t, r) =>
+            var parameters = new ParameterCollection();
+
+            var catalog = restrictionValues.Length == 0 || string.IsNullOrEmpty(restrictionValues[0]) ? "main" : restrictionValues[0];
+            var table = (string.Compare(catalog, "temp", StringComparison.OrdinalIgnoreCase) == 0) ? "sqlite_temp_master" : "sqlite_master";
+
+            SqlCommand sql = $@"
+SELECT name, type FROM {catalog}.{table}
+WHERE type LIKE 'table'
+AND (name = @NAME OR @NAME IS NULL)";
+
+            ParameteRestrition(parameters, "NAME", 1, restrictionValues);
+
+            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new Table
                 {
-                    t.Autoincrement = r["AUTOINCREMENT"] != DBNull.Value && r["AUTOINCREMENT"].ToString() == "True";
-                    t.IsPrimaryKey = r["PRIMARY_KEY"] != DBNull.Value && r["PRIMARY_KEY"].ToString() == "True";
+                    Name = wrapper.GetString(reader, 0),
+                    Type = wrapper.GetString(reader, 1)
                 });
         }
 
-        /// <summary>
-        /// 获取 <see cref="ForeignKey"/> 元数据序列。
-        /// </summary>
-        /// <param name="table">架构信息的表。</param>
-        /// <param name="action">用于填充元数据的方法。</param>
-        /// <returns></returns>
-        protected override IEnumerable<ForeignKey> GetForeignKeys(DataTable table, Action<ForeignKey, DataRow> action)
+        protected override IEnumerable<Column> GetColumns(IDatabase database, string[] restrictionValues)
         {
-            foreach (DataRow row in table.Rows)
-            {
-                var item = new ForeignKey
-                {
-                    Catalog = row["CONSTRAINT_CATALOG"].ToString(),
-                    Schema = row["CONSTRAINT_SCHEMA"].ToString(),
-                    Name = row["CONSTRAINT_NAME"].ToString(),
-                    TableName = row["TABLE_NAME"].ToString().Replace("\"", ""),
-                    PKTable = row["FKEY_TO_TABLE"].ToString().Replace("\"", ""),
-                    PKColumn = row["FKEY_TO_COLUMN"].ToString().Replace("\"", ""),
-                    ColumnName = row["FKEY_FROM_COLUMN"].ToString().Replace("\"", "")
-                };
-                if (action != null)
-                {
-                    action(item, row);
-                }
-                yield return item;
-            }
-        }
+            var parameters = new ParameterCollection();
 
-        /// <summary>
-        /// 获取 <see cref="ViewColumn"/> 元数据序列。
-        /// </summary>
-        /// <param name="table">架构信息的表。</param>
-        /// <param name="action">用于填充元数据的方法。</param>
-        /// <returns></returns>
-        protected override IEnumerable<ViewColumn> GetViewColumns(DataTable table, Action<ViewColumn, DataRow> action)
-        {
-            return base.GetViewColumns(table, (t, r) =>
-                 {
-                    t.Default = r["COLUMN_DEFAULT"].ToString();
-                    t.DataType = r["DATA_TYPE"].ToString();
-                    t.NumericPrecision = r["NUMERIC_PRECISION"].To<int>();
-                    t.NumericScale = r["NUMERIC_SCALE"].To<int>();
-                    t.IsNullable = r["IS_NULLABLE"] == DBNull.Value ? false : r["IS_NULLABLE"].ToString() == "True";
-                    t.Size = r["CHARACTER_MAXIMUM_LENGTH"].To<long>();
-                    t.Position = r["ORDINAL_POSITION"].To<int>();
+            var catalog = restrictionValues.Length == 0 || string.IsNullOrEmpty(restrictionValues[0]) ? "main" : restrictionValues[0];
+            var table = (string.Compare(catalog, "temp", StringComparison.OrdinalIgnoreCase) == 0) ? "sqlite_temp_master" : "sqlite_master";
+
+            SqlCommand sql = $@"
+SELECT name, type FROM {catalog}.{table}
+WHERE type LIKE 'table'
+AND (name = @NAME OR @NAME IS NULL)";
+
+            ParameteRestrition(parameters, "NAME", 1, restrictionValues);
+
+            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new Column
+                {
+                    Name = wrapper.GetString(reader, 0)
                 });
         }
-        
-        /// <summary>
-        /// 获取 <see cref="Index"/> 元数据序列。
-        /// </summary>
-        /// <param name="table">架构信息的表。</param>
-        /// <param name="action">用于填充元数据的方法。</param>
-        /// <returns></returns>
-        protected override IEnumerable<Index> GetIndexs(DataTable table, Action<Index, DataRow> action)
-        {
-            foreach (DataRow row in table.Rows)
-            {
-                var item = new Index
-                    {
-                        Catalog = row["INDEX_CATALOG"].ToString(),
-                        Schema = row["INDEX_SCHEMA"].ToString(),
-                        Name = row["INDEX_NAME"].ToString(),
-                        TableName = row["TABLE_NAME"].ToString().Replace("\"", ""),
-                        IsPrimaryKey = row["PRIMARY_KEY"].ToString() == "True",
-                        IsUnique = row["UNIQUE"].ToString() == "True"
-                    };
-                if (action != null)
-                {
-                    action(item, row);
-                }
-                yield return item;
-            }
-        }
 
-        /// <summary>
-        /// 获取 <see cref="IndexColumn"/> 元数据序列。
-        /// </summary>
-        /// <param name="table">架构信息的表。</param>
-        /// <param name="action">用于填充元数据的方法。</param>
-        /// <returns></returns>
-        protected override IEnumerable<IndexColumn> GetIndexColumns(DataTable table, Action<IndexColumn, DataRow> action)
+        protected override IEnumerable<ForeignKey> GetForeignKeys(IDatabase database, string[] restrictionValues)
         {
-            foreach (DataRow row in table.Rows)
-            {
-                var item = new IndexColumn
-                    {
-                        Catalog = row["CONSTRAINT_CATALOG"].ToString(),
-                        Schema = row["CONSTRAINT_SCHEMA"].ToString(),
-                        Name = row["CONSTRAINT_NAME"].ToString(),
-                        TableName = row["TABLE_NAME"].ToString().Replace("\"", ""),
-                        ColumnName = row["COLUMN_NAME"].ToString()
-                    };
-                if (action != null)
+            var parameters = new ParameterCollection();
+
+            var catalog = restrictionValues.Length == 0 || string.IsNullOrEmpty(restrictionValues[0]) ? "main" : restrictionValues[0];
+            var table = (string.Compare(catalog, "temp", StringComparison.OrdinalIgnoreCase) == 0) ? "sqlite_temp_master" : "sqlite_master";
+
+            SqlCommand sql = $@"
+PRAGMA {catalog}.FOREIGN_KEY_LIST({restrictionValues[2]})";
+
+            ParameteRestrition(parameters, "NAME", 1, restrictionValues);
+
+            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new ForeignKey
                 {
-                    action(item, row);
-                }
-                yield return item;
-            }
+                    TableName = restrictionValues[2],
+                    ColumnName = wrapper.GetString(reader, 4),
+                    PKTable = wrapper.GetString(reader, 2),
+                    PKColumn = wrapper.GetString(reader, 3)
+                });
         }
     }
 }

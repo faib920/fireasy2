@@ -20,6 +20,11 @@ namespace Fireasy.Common.Ioc
         Type ServiceType { get; }
 
         /// <summary>
+        /// 获取实现的类型。
+        /// </summary>
+        Type ImplementationType { get; }
+
+        /// <summary>
         /// 从容器里解析出实现类的实例。
         /// </summary>
         /// <returns></returns>

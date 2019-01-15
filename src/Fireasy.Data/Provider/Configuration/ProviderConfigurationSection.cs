@@ -11,7 +11,7 @@ using System.Collections.Generic;
 using System.Xml;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
-#if NETSTANDARD2_0
+#if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
 
@@ -32,7 +32,7 @@ namespace Fireasy.Data.Provider.Configuration
             InitializeNode(section, "provider", null, ParseProviderSetting);
         }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
         /// <summary>
         /// 使用配置节点对当前配置进行初始化。
         /// </summary>
@@ -70,7 +70,7 @@ namespace Fireasy.Data.Provider.Configuration
             return types;
         }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
         private ProviderConfigurationSetting ParseProviderSetting(IConfiguration configuration)
         {
             return new ProviderConfigurationSetting(LoadServices(configuration))

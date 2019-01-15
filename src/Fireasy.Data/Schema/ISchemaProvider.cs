@@ -8,7 +8,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq.Expressions;
 using Fireasy.Data.Provider;
 
@@ -27,14 +26,5 @@ namespace Fireasy.Data.Schema
         /// <param name="predicate">用于测试架构信息是否满足条件的函数。</param>
         /// <returns></returns>
         IEnumerable<T> GetSchemas<T>(IDatabase database, Expression<Func<T, bool>> predicate = null) where T : ISchemaMetadata;
-
-        /// <summary>
-        /// 获取指定类型的数据库架构信息。
-        /// </summary>
-        /// <param name="database">提供给当前插件的 <see cref="IDatabase"/> 对象。</param>
-        /// <param name="collectionName">架构信息类别名称。</param>
-        /// <param name="restrictionValues">列限制数组。</param>
-        /// <returns></returns>
-        DataTable GetSchema(IDatabase database, string collectionName, string[] restrictionValues);
     }
 }

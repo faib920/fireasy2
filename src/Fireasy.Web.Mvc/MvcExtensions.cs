@@ -6,7 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Serialization;
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
 using System.Web.Mvc;
 #else
 using Microsoft.AspNetCore.Mvc;

@@ -38,20 +38,6 @@ namespace Fireasy.Data.Entity.Tests.Models
         /// 获取或设置。
         /// </summary>
 
-        [PropertyMapping(ColumnName = "Attributes", Description = "", Length = 15, DataType = System.Data.DbType.String, IsNullable = false)]
-        public virtual int[] Attributes { get; set; }
-
-        /// <summary>
-        /// 获取或设置。
-        /// </summary>
-
-        [PropertyMapping(ColumnName = "Image", Description = "", Length = 15, IsNullable = false)]
-        public virtual byte[] Image { get; set; }
-
-        /// <summary>
-        /// 获取或设置。
-        /// </summary>
-
         [PropertyMapping(ColumnName = "DeptCode", Description = "", DataType = System.Data.DbType.String, Length = 2147483647, IsNullable = true)]
         public virtual string DeptCode { get; set; }
 

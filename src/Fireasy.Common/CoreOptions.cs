@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if NETSTANDARD2_0
+#if NETSTANDARD
 using Fireasy.Common.Subscribes;
 using System;
 
@@ -19,6 +19,36 @@ namespace Fireasy.Common
         /// <param name="name">配置实例名称。</param>
         /// <param name="subscriber">消息订阅器。</param>
         public void AddSubscriber<TSubject>(string name, Action<TSubject> subscriber) where TSubject : class
+        {
+            SubscribeManagerFactory.CreateManager(name)?.AddSubscriber(subscriber);
+        }
+
+        /// <summary>
+        /// 配置消息订阅器。
+        /// </summary>
+        /// <param name="name">配置实例名称。</param>
+        /// <returns></returns>
+        public SubscribeOptions ConfigSubscribers(string name)
+        {
+            return new SubscribeOptions(name);
+        }
+    }
+
+    public class SubscribeOptions
+    {
+        private string name;
+
+        public SubscribeOptions(string name)
+        {
+            this.name = name;
+        }
+
+        /// <summary>
+        /// 注册消息订阅器。
+        /// </summary>
+        /// <param name="name">配置实例名称。</param>
+        /// <param name="subscriber">消息订阅器。</param>
+        public void Add<TSubject>(Action<TSubject> subscriber) where TSubject : class
         {
             SubscribeManagerFactory.CreateManager(name)?.AddSubscriber(subscriber);
         }

@@ -7,18 +7,28 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
+using System.Collections.Generic;
+#if NETSTANDARD
+using CSRedis;
+using System.Text;
+#else
 using StackExchange.Redis;
+#endif
 using System;
 
 namespace Fireasy.Redis
 {
     public class RedisComponent : IConfigurationSettingHostService
     {
+#if NETSTANDARD
+        private Lazy<CSRedisClient> connectionLazy;
+#else
         private Lazy<ConnectionMultiplexer> connectionLazy;
 
-        protected RedisConfigurationSetting Setting { get; private set; }
-
         protected ConfigurationOptions Options { get; private set; }
+#endif
+
+        protected RedisConfigurationSetting Setting { get; private set; }
 
         /// <summary>
         /// 序列化对象。
@@ -70,15 +80,61 @@ namespace Fireasy.Redis
             return new RedisSerializer();
         }
 
+#if NETSTANDARD
+        protected CSRedisClient GetConnection()
+        {
+            return connectionLazy.Value;
+        }
+
+#else
         protected ConnectionMultiplexer GetConnection()
         {
             return connectionLazy.Value;
         }
+#endif
 
         void IConfigurationSettingHostService.Attach(IConfigurationSettingItem setting)
         {
             this.Setting = (RedisConfigurationSetting)setting;
 
+#if NETSTANDARD
+            var connectionStrs = new List<string>();
+            if (!string.IsNullOrEmpty(this.Setting.ConnectionString))
+            {
+                connectionStrs.Add(this.Setting.ConnectionString);
+            }
+            else
+            {
+
+                foreach (var host in this.Setting.Hosts)
+                {
+                    var connStr = new StringBuilder($"{host.Server}");
+
+                    #region connection build
+                    if (host.Port != 0)
+                    {
+                        connStr.Append($":{host.Port}");
+                    }
+
+                    if (!string.IsNullOrEmpty(this.Setting.Password))
+                    {
+                        connStr.Append($",password={this.Setting.Password}");
+                    }
+
+                    if (this.Setting.DefaultDb != 0)
+                    {
+                        connStr.Append($",defaultDatabase={this.Setting.DefaultDb}");
+                    }
+
+                    connStr.Append(",allowAdmin=true");
+                    #endregion
+
+                    connectionStrs.Add(connStr.ToString());
+                }
+            }
+
+            connectionLazy = new Lazy<CSRedisClient>(() => new CSRedisClient(null, connectionStrs.ToArray()));
+#else
             if (!string.IsNullOrEmpty(this.Setting.ConnectionString))
             {
                 Options = ConfigurationOptions.Parse(this.Setting.ConnectionString);
@@ -113,6 +169,7 @@ namespace Fireasy.Redis
             }
 
             connectionLazy = new Lazy<ConnectionMultiplexer>(() => ConnectionMultiplexer.Connect(Options));
+#endif
         }
 
         IConfigurationSettingItem IConfigurationSettingHostService.GetSetting()

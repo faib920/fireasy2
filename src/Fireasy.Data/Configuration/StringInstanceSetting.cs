@@ -11,7 +11,7 @@ using System.Xml;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using System.Collections.Generic;
-#if NETSTANDARD2_0
+#if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #else
 using System.Configuration;
@@ -51,7 +51,7 @@ namespace Fireasy.Data.Configuration
                 return Parse(storeType, providerName, providerType, databaseType, key, connectionString);
             }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
             public IConfigurationSettingItem Parse(IConfiguration configuration)
             {
                 var storeType = configuration.GetSection("storeType").Value;
@@ -83,7 +83,7 @@ namespace Fireasy.Data.Configuration
                 switch (string.Concat(string.Empty, storeType).ToLower())
                 {
                     case "appsettings":
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
                         setting.ReferenceType = StringReferenceType.AppSettings;
                         if (!string.IsNullOrEmpty(key))
                         {
@@ -92,7 +92,7 @@ namespace Fireasy.Data.Configuration
 #endif
                         break;
                     case "connectionstrings":
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
                         setting.ReferenceType = StringReferenceType.ConnectionStrings;
                         if (!string.IsNullOrEmpty(key))
                         {
@@ -152,7 +152,7 @@ namespace Fireasy.Data.Configuration
                 return setting;
             }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
             private IConfigurationSettingItem Parse(string storeType, string providerName, string providerType, string databaseType, string key, IConfiguration clusters)
             {
                 var setting = new StringInstanceSetting();

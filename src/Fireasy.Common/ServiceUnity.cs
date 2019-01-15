@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if NETSTANDARD2_0
+#if NETSTANDARD
 using Microsoft.Extensions.DependencyInjection;
 using System;
 

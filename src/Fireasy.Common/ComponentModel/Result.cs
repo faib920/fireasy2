@@ -11,6 +11,9 @@ using System;
 
 namespace Fireasy.Common.ComponentModel
 {
+    /// <summary>
+    /// 提供一个通用的返回结构。
+    /// </summary>
     public interface IResult
     {
         /// <summary>
@@ -30,7 +33,7 @@ namespace Fireasy.Common.ComponentModel
     }
 
     /// <summary>
-    /// 返回结果的结构定义。
+    /// 提供一个通用的返回结构。
     /// </summary>
     public class Result : IResult
     {
@@ -158,7 +161,7 @@ namespace Fireasy.Common.ComponentModel
     }
 
     /// <summary>
-    /// 返回结果的结构定义，采用泛型。
+    /// 提供一个通用的泛型返回结构。
     /// </summary>
     /// <typeparam name="T">数据类型。</typeparam>
     public class Result<T> : IResult

@@ -7,10 +7,9 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
-#if NETSTANDARD2_0
+#if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
-using System;
 using System.Xml;
 
 namespace Fireasy.RabbitMQ
@@ -37,7 +36,7 @@ namespace Fireasy.RabbitMQ
             return setting;
         }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
         public IConfigurationSettingItem Parse(IConfiguration configuration)
         {
             var setting = new RabbitConfigurationSetting();

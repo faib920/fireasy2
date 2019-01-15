@@ -19,7 +19,7 @@ namespace Fireasy.Data.Provider
     /// MsSql数据库提供者。
     /// </summary>
     public class MsSqlProvider :
-#if NETSTANDARD2_0
+#if NETSTANDARD
         AssemblyProvider
 #else
         ProviderBase
@@ -34,7 +34,7 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="MsSqlProvider"/> 类的新实例。
         /// </summary>
         public MsSqlProvider()
-#if NETSTANDARD2_0
+#if NETSTANDARD
             : base("System.Data.SqlClient.SqlClientFactory, System.Data.SqlClient")
 #else
             : base("System.Data.SqlClient")

@@ -17,8 +17,6 @@ namespace Fireasy.Common.Tests.Caching
         [TestMethod]
         public void TestTryGet()
         {
-
-
             var cacheMgr = CacheManagerFactory.CreateManager("redis");
             var value = cacheMgr.TryGet("test1", () => 100);
             Assert.AreEqual(100, value);
@@ -31,6 +29,14 @@ namespace Fireasy.Common.Tests.Caching
             var value = cacheMgr.TryGet("test1", () => 100);
             Assert.AreEqual(true, cacheMgr.Contains("test1"));
             Assert.AreEqual(false, cacheMgr.Contains("test2"));
+        }
+
+        [TestMethod]
+        public void TestExpireTimes()
+        {
+            var cacheMgr = CacheManagerFactory.CreateManager("redis");
+            var value = cacheMgr.TryGet("test7", () => 100, () => new RelativeTime(TimeSpan.FromSeconds(10)));
+            Console.WriteLine(cacheMgr.GetExpirationTime("test7"));
         }
 
         [TestMethod]
@@ -81,6 +87,28 @@ namespace Fireasy.Common.Tests.Caching
             value = cacheMgr.TryGet("test1", () => 100, () => new RelativeTime(TimeSpan.FromSeconds(1)));
             Thread.Sleep(720);
             value = cacheMgr.TryGet("test1", () => 100, () => new RelativeTime(TimeSpan.FromSeconds(1)));
+        }
+
+        [TestMethod]
+        public void TestIncrement()
+        {
+            Parallel.For(0, 10, i =>
+                {
+                    var cacheMgr = CacheManagerFactory.CreateManager("redis") as IDistributedCacheManager;
+                    var inc = cacheMgr.TryIncrement("inc1", () => 0);
+                    Console.WriteLine(inc);
+                });
+        }
+
+        [TestMethod]
+        public void TestDecrement()
+        {
+            Parallel.For(0, 10, i =>
+                {
+                    var cacheMgr = CacheManagerFactory.CreateManager("redis") as IDistributedCacheManager;
+                    var dec = cacheMgr.TryDecrement("dec1", () => 100);
+                    Console.WriteLine(dec);
+                });
         }
     }
 }

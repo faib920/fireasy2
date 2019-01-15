@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
 using Fireasy.Common.ComponentModel;
 using Fireasy.Data.Entity.Validation;
 using System.Collections;

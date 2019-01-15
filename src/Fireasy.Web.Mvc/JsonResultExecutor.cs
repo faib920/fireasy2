@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if NETSTANDARD2_0
+#if NETSTANDARD
 using Fireasy.Common.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -27,12 +27,19 @@ namespace Fireasy.Web.Mvc
             Encoding = Encoding.UTF8
         }.ToString();
 
-        public JsonResultExecutor(IHttpResponseStreamWriterFactory writerFactory, ILogger<JsonResultExecutor> logger, IOptions<MvcJsonOptions> options, ArrayPool<char> charPool)
-            : base(writerFactory, logger, options, charPool)
+        private MvcOptions mvcOptions;
+
+        public JsonResultExecutor(IHttpResponseStreamWriterFactory writerFactory, 
+            ILogger<JsonResultExecutor> logger, 
+            IOptions<MvcJsonOptions> jsonOptions, 
+            IOptions<MvcOptions> mvcOptions,
+            ArrayPool<char> charPool)
+            : base(writerFactory, logger, jsonOptions, charPool)
         {
+            this.mvcOptions = mvcOptions.Value;
         }
 
-        public override Task ExecuteAsync(Microsoft.AspNetCore.Mvc.ActionContext context, JsonResult result)
+        public override Task ExecuteAsync(ActionContext context, JsonResult result)
         {
             if (context == null)
             {
@@ -65,12 +72,9 @@ namespace Fireasy.Web.Mvc
                         option = wrapper.Option;
                     }
 
-                    option = option ?? new JsonSerializeOption();
-
-                    var globalconverters = GlobalSetting.Converters.Where(s => s is JsonConverter).Cast<JsonConverter>();
-                    option.Converters.AddRange(globalconverters);
-
+                    option = option ?? mvcOptions.JsonSerializeOption;
                     var serializer = new JsonSerializer(option);
+
                     using (var jsonWriter = new JsonWriter(writer))
                     {
                         serializer.Serialize(result.Value, jsonWriter);

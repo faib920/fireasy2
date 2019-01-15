@@ -13,7 +13,7 @@ using System.Xml;
 using System.Xml.XPath;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
-#if NETSTANDARD2_0
+#if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
 
@@ -39,7 +39,7 @@ namespace Fireasy.Data.Configuration
                 return Parse(fileName, xpath);
             }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
             public IConfigurationSettingItem Parse(IConfiguration configuration)
             {
                 var fileName = configuration.GetSection("fileName").Value;

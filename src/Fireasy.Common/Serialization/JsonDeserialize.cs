@@ -24,21 +24,20 @@ using Fireasy.Common.Reflection;
 
 namespace Fireasy.Common.Serialization
 {
-    internal sealed class JsonDeserialize : IDisposable
+    internal sealed class JsonDeserialize : DeserializeBase
     {
         private readonly JsonSerializeOption option;
         private readonly JsonSerializer serializer;
         private JsonReader jsonReader;
         private bool isDisposed;
-        private SerializeContext context;
         private static MethodInfo mthToArray = typeof(Enumerable).GetMethod(nameof(Enumerable.ToArray), BindingFlags.Public | BindingFlags.Static);
 
         internal JsonDeserialize(JsonSerializer serializer, JsonReader reader, JsonSerializeOption option)
+            : base (option)
         {
             this.serializer = serializer;
             jsonReader = reader;
             this.option = option;
-            context = new SerializeContext { Option = option };
         }
 
         internal T Deserialize<T>()
@@ -148,9 +147,7 @@ namespace Fireasy.Common.Serialization
                 return false;
             }
 
-            value = converter.Streaming ?
-                converter.ReadJson(serializer, jsonReader, type) :
-                converter.ReadJson(serializer, type, jsonReader.ReadRaw());
+            value = converter.ReadJson(serializer, jsonReader, type);
 
             return true;
         }
@@ -364,25 +361,6 @@ namespace Fireasy.Common.Serialization
             return container;
         }
 
-        private void CreateListContainer(Type listType, out Type elementType, out IList container)
-        {
-            if (listType.IsArray)
-            {
-                elementType = listType.GetElementType();
-                container = typeof(List<>).MakeGenericType(elementType).New<IList>();
-            }
-            else if (listType.IsInterface && !listType.IsGenericType)
-            {
-                elementType = null;
-                container = new ArrayList();
-            }
-            else
-            {
-                elementType = listType.GetGenericImplementType(typeof(IList<>)).GetGenericArguments()[0];
-                container = listType.New<IList>();
-            }
-        }
-
         private IDictionary DeserializeDictionary(Type dictType)
         {
             IDictionary container = null;
@@ -415,20 +393,6 @@ namespace Fireasy.Common.Serialization
             }
 
             return container;
-        }
-
-        private void CreateDictionaryContainer(Type dictType, out Type[] keyValueTypes, out IDictionary container)
-        {
-            if (dictType.IsInterface)
-            {
-                keyValueTypes = dictType.GetGenericArguments();
-                container = typeof(Dictionary<,>).MakeGenericType(keyValueTypes).New<IDictionary>();
-            }
-            else
-            {
-                keyValueTypes = dictType.GetGenericImplementType(typeof(IDictionary<,>)).GetGenericArguments();
-                container = dictType.New<IDictionary>();
-            }
         }
 
         private object DeserializeIntelligently(Type type)
@@ -633,7 +597,7 @@ namespace Fireasy.Common.Serialization
 
         private string DeserializeString(string value)
         {
-            if (Regex.IsMatch(value, "(?<code>\\\\u[a-z0-9]{4})", RegexOptions.IgnoreCase))
+            if (Regex.IsMatch(value, "(?<code>\\\\u[0-9a-fA-F]{4})", RegexOptions.IgnoreCase))
             {
                 return value.DeUnicode();
             }
@@ -772,31 +736,6 @@ namespace Fireasy.Common.Serialization
         }
 
         /// <summary>
-        /// 获取指定类型的属性访问缓存。
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        private Dictionary<string, PropertyAccessor> GetAccessorCache(Type type)
-        {
-            return context.SetAccessors.TryGetValue(type, () =>
-                {
-                    return type.GetProperties()
-                        .Where(s => s.CanWrite && !SerializerUtil.IsNoSerializable(option, s))
-                        .Select(s =>
-                            {
-                                var ele = s.GetCustomAttributes<TextSerializeElementAttribute>().FirstOrDefault();
-                                //如果使用Camel命名，则名称第一位小写
-                                var name = ele != null ?
-                                    ele.Name : (option.CamelNaming ?
-                                        char.ToLower(s.Name[0]) + s.Name.Substring(1) : s.Name);
-
-                                return new { name, p = s };
-                            })
-                        .ToDictionary(s => s.name, s => ReflectionCache.GetAccessor(s.p));
-                });
-        }
-
-        /// <summary>
         /// 释放对象所占用的非托管和托管资源。
         /// </summary>
         /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
@@ -809,7 +748,6 @@ namespace Fireasy.Common.Serialization
 
             if (disposing)
             {
-                context.Dispose();
                 jsonReader.Dispose();
                 jsonReader = null;
             }

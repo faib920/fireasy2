@@ -13,7 +13,7 @@ using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Serialization;
 using Microsoft.Win32;
-#if NETSTANDARD2_0
+#if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
 
@@ -90,7 +90,7 @@ namespace Fireasy.Data.Configuration
                 return Parse(rootKey, subKey, valueKey);
             }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
             public IConfigurationSettingItem Parse(IConfiguration configuration)
             {
                 var setting = new RegistryInstanceSetting();

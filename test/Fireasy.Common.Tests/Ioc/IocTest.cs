@@ -1,10 +1,9 @@
-﻿using Fireasy.Common.Extensions;
+﻿using Fireasy.Common.Aop;
 using Fireasy.Common.Ioc;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.IO;
-using Fireasy.Common.Aop;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Fireasy.Common.Tests.Ioc
@@ -48,11 +47,9 @@ namespace Fireasy.Common.Tests.Ioc
 
     public class AClass : IAClass
     {
-        private readonly IBClass b;
-
         public AClass(IBClass b)
         {
-            this.b = b;
+            this.B = b;
         }
 
         /// <summary>
@@ -62,9 +59,11 @@ namespace Fireasy.Common.Tests.Ioc
         {
             get
             {
-                return b != null;
+                return B != null;
             }
         }
+
+        public IBClass B { get; set; }
     }
 
     public class BClass : IBClass
@@ -81,12 +80,27 @@ namespace Fireasy.Common.Tests.Ioc
 
     public class CClass : ICClass
     {
-        [IgnoreInjectProperty]
+        //[IgnoreInjectProperty]
+        public IDClass D { get; set; }
+    }
+
+    public class CClass2 : ICClass
+    {
         public IDClass D { get; set; }
     }
 
     public class DClass : IDClass
     {
+    }
+
+    public class DClass1 : IDClass
+    {
+        public DClass1()
+        {
+
+        }
+
+        public IEnumerable<ICClass> Clss { get; set; }
     }
 
     [TestClass]
@@ -123,6 +137,19 @@ namespace Fireasy.Common.Tests.Ioc
         }
 
         [TestMethod]
+        public void TestSigletonInjection()
+        {
+            var container = ContainerUnity.GetContainer();
+            container.RegisterSingleton<IAClass, AClass>();
+            container.RegisterSingleton<IBClass, BClass>();
+
+            var a = container.Resolve<IAClass>();
+            var b = container.Resolve<IBClass>();
+
+            Assert.IsTrue((a as AClass).B == b);
+        }
+
+        [TestMethod]
         public void TestInstance()
         {
             var container = ContainerUnity.GetContainer();
@@ -135,6 +162,46 @@ namespace Fireasy.Common.Tests.Ioc
             var obj2 = container.Resolve<IMainService>();
 
             Assert.IsTrue(obj1 != obj2);
+        }
+
+        [TestMethod]
+        public void TestEnumerable()
+        {
+            var container = ContainerUnity.GetContainer();
+            container.Register<IMainService>(() => new MainService());
+            container.Register<IMainService>(() => new MainService());
+            container.Register<IMainService>(() => new MainService());
+
+            var list = container.Resolve<IEnumerable<IMainService>>();
+            var obj = container.Resolve<IMainService>();
+
+            Assert.IsTrue(list.Count() == 3);
+        }
+
+        [TestMethod]
+        public void TestEnumerableInjection()
+        {
+            var container = ContainerUnity.GetContainer();
+            container.Register<ICClass, CClass>();
+            container.Register<ICClass, CClass>();
+            container.Register<IDClass, DClass1>();
+
+            var obj = container.Resolve<IDClass>();
+
+            Assert.IsTrue(obj != null);
+        }
+
+        [TestMethod]
+        public void TestEnumerableInjectionSingleton()
+        {
+            var container = ContainerUnity.GetContainer();
+            container.RegisterSingleton<ICClass, CClass>();
+            container.RegisterSingleton<ICClass, CClass2>();
+            container.RegisterSingleton<IDClass, DClass1>();
+
+            var obj = container.Resolve<IDClass>();
+
+            Assert.IsTrue(obj != null);
         }
 
         [TestMethod]
@@ -229,6 +296,14 @@ namespace Fireasy.Common.Tests.Ioc
             var container = ContainerUnity.GetContainer(path, "*.ioc.xml");
             var service = container.Resolve<IMainService>();
             Assert.IsNotNull(service);
+        }
+
+        [TestMethod]
+        public void TestSelf()
+        {
+            var container = ContainerUnity.GetContainer();
+            var obj = container.Resolve<BClass>();
+            Assert.IsNotNull(obj);
         }
 
         [TestMethod]

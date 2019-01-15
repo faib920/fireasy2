@@ -18,6 +18,8 @@ namespace Fireasy.Common.Ioc.Registrations
         where TImplementation : class, TService
         where TService : class
     {
+        private static MethodInfo MthResolve = typeof(Container).GetMethod(nameof(Container.Resolve), new[] { typeof(Type) });
+
         public TransientRegistration()
             : base(typeof(TService), typeof(TImplementation))
         {
@@ -68,10 +70,16 @@ namespace Fireasy.Common.Ioc.Registrations
 
         private Expression BuildParameterExpression(Type parameterType)
         {
-            var registration = Container.GetRegistration(parameterType).As<AbstractRegistration>();
-            if (registration != null)
+            var regs = Container.GetRegistrations(parameterType);
+            if (regs.Any())
             {
-                return registration.BuildExpression();
+                if (Container.IsEnumerableResolve(parameterType))
+                {
+                    var elementType = parameterType.GetEnumerableElementType();
+                    return Expression.NewArrayInit(elementType, regs.Select(s => (s as AbstractRegistration).BuildExpression()));
+                }
+
+                return (regs.LastOrDefault() as AbstractRegistration).BuildExpression();
             }
 
             return Expression.Constant(null, parameterType);
@@ -80,20 +88,17 @@ namespace Fireasy.Common.Ioc.Registrations
         private Expression BuildMemberInitExpression(NewExpression newExpression)
         {
             var parameters = newExpression.Constructor.GetParameters();
-            var implType = typeof(TImplementation);
 
-            var method = typeof(Container).GetMethod("Resolve", new [] { typeof(Type) });
-            var bindings = from s in ServiceType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                             let registration = Container.GetRegistration(s.PropertyType)
-                             let property = implType.GetProperty(s.Name)
-                             where s.CanWrite && registration != null
-                                && (property != null && !property.IsDefined<IgnoreInjectPropertyAttribute>())
-                                && parameters.FirstOrDefault(t => t.ParameterType == s.PropertyType) == null
+            var bindings = from s in ImplementationType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                             where s.CanWrite && Container.GetRegistrations(s.PropertyType).Any()
+                                && !s.IsDefined<IgnoreInjectPropertyAttribute>()
+                                && !parameters.Any(t => t.ParameterType == s.PropertyType) //如果构造器里已经有这个类型，则不使用属性注入
                                 select (MemberBinding)Expression.Bind(s, Expression.Convert(
-                                    Expression.Call(ParameterExpression, method, new Expression[]
+                                    Expression.Call(Container.GetParameterExpression(), MthResolve, new Expression[]
                                         {
                                             Expression.Constant(s.PropertyType)
                                         }) , s.PropertyType));
+
             return Expression.MemberInit(newExpression, bindings);
         }
     }

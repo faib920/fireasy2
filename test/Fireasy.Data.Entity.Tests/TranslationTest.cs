@@ -1377,6 +1377,12 @@ namespace Fireasy.Data.Entity.Tests
         }
 
         [TestMethod()]
+        public void TestDateTimeDiff1()
+        {
+            TestQuery(db.Orders.Where(s => (s.OrderDate.Value - s.RequiredDate.Value).TotalHours > 0));
+        }
+
+        [TestMethod()]
         public void TestDateTimeDayOfWeek()
         {
             TestQuery(db.Orders.Where(o => o.OrderDate.Value.DayOfWeek == DayOfWeek.Friday));

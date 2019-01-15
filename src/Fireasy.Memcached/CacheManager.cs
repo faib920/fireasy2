@@ -63,6 +63,11 @@ namespace Fireasy.Memcached
             return cacheClient.ExecuteGet(cacheKey);
         }
 
+        public TimeSpan? GetExpirationTime(string cacheKey)
+        {
+            throw new NotImplementedException();
+        }
+
         public IEnumerable<string> GetKeys()
         {
             throw new NotImplementedException();
@@ -89,6 +94,16 @@ namespace Fireasy.Memcached
 
             value = default(T);
             return false;
+        }
+
+        public long TryIncrement(string cacheKey, Func<long> factory, int step = 1, Func<ICacheItemExpiration> expiration = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public long TryDecrement(string cacheKey, Func<long> factory, int step = 1, Func<ICacheItemExpiration> expiration = null)
+        {
+            throw new NotImplementedException();
         }
     }
 }

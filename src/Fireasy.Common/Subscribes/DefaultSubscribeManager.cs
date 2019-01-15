@@ -64,5 +64,38 @@ namespace Fireasy.Common.Subscribes
             var list = subscribers.GetOrAdd(subjectType, k => new List<Delegate>());
             list.Add(subscriber);
         }
+
+        /// <summary>
+        /// 移除相关的订阅方法。
+        /// </summary>
+        /// <typeparam name="TSubject"></typeparam>
+        public void RemoveSubscriber<TSubject>()
+        {
+            RemoveSubscriber(typeof(TSubject));
+        }
+
+        /// <summary>
+        /// 移除相关的订阅方法。
+        /// </summary>
+        /// <param name="subjectType">主题的类型。</param>
+        public void RemoveSubscriber(Type subjectType)
+        {
+            subscribers.TryRemove(subjectType, out List<Delegate> delegates);
+        }
+
+        void ISubscribeManager.Publish(string channel, byte[] data)
+        {
+            throw new NotImplementedException();
+        }
+
+        void ISubscribeManager.AddSubscriber(string channel, Action<byte[]> subscriber)
+        {
+            throw new NotImplementedException();
+        }
+
+        void ISubscribeManager.RemoveSubscriber(string channel)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

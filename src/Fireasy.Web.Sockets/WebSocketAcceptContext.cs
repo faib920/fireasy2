@@ -18,6 +18,8 @@ namespace Fireasy.Web.Sockets
 
         public WebSocketBuildOption Option { get; }
 
+        public string ConnectionId { get; internal set; }
+
         public WebSocketAcceptContext(WebSocket webSocket, IPrincipal user, WebSocketBuildOption option)
         {
             WebSocket = webSocket;

@@ -6,6 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+
 namespace Fireasy.Data.Schema
 {
     /// <summary>
@@ -17,5 +19,10 @@ namespace Fireasy.Data.Schema
         /// 获取用户名称。
         /// </summary>
         public string Name { get; set; }
+
+        /// <summary>
+        /// 获取或设置创建时间。
+        /// </summary>
+        public DateTime? CreateDate { get; set; }
     }
 }

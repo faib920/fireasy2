@@ -5,11 +5,10 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if NETSTANDARD2_0
+#if NETSTANDARD
 using Fireasy.Common.Serialization;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Net.Http.Headers;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -32,13 +31,17 @@ namespace Fireasy.Web.Mvc
                 = MediaTypeHeaderValue.Parse("application/*+json").CopyAsReadOnly();
         }
 
-        public JsonOutputFormatter()
+        private MvcOptions mvcOptions;
+
+        public JsonOutputFormatter(MvcOptions mvcOptions)
         {
             SupportedEncodings.Add(Encoding.UTF8);
             SupportedEncodings.Add(Encoding.Unicode);
             SupportedMediaTypes.Add(MediaTypeHeaderValues.ApplicationJson);
             SupportedMediaTypes.Add(MediaTypeHeaderValues.TextJson);
             SupportedMediaTypes.Add(MediaTypeHeaderValues.ApplicationAnyJsonSyntax);
+
+            this.mvcOptions = mvcOptions;
         }
 
         public override Task WriteResponseBodyAsync(OutputFormatterWriteContext context, Encoding selectedEncoding)
@@ -53,12 +56,9 @@ namespace Fireasy.Web.Mvc
                     option = wrapper.Option;
                 }
 
-                option = option ?? new JsonSerializeOption();
-
-                var globalconverters = GlobalSetting.Converters.Where(s => s is JsonConverter).Cast<JsonConverter>();
-                option.Converters.AddRange(globalconverters);
-
+                option = option ?? mvcOptions.JsonSerializeOption;
                 var serializer = new JsonSerializer(option);
+
                 using (var jsonWriter = new JsonWriter(writer))
                 {
                     serializer.Serialize(context.Object, jsonWriter);

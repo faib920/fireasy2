@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 
 using Fireasy.Common;
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Translators;
@@ -43,6 +44,20 @@ namespace Fireasy.Data.Entity.Linq
                 new[] { source.Expression, Expression.Constant(segment) });
 
             return source.Provider.CreateQuery<T>(expression);
+        }
+
+        /// <summary>
+        /// 将查询转换为带分页信息的结构输出。查询中需要使用 Segment 扩展方法带入 <see cref="IPager"/> 分页对象。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        public static PaginalResult<T> ToPaginalResult<T>(this IQueryable<T> source)
+        {
+            var segment = SegmentFinder.Find(source.Expression);
+            var list = source.ToList();
+
+            return new PaginalResult<T>(list, segment as IPager);
         }
 
         /// <summary>
@@ -149,7 +164,7 @@ namespace Fireasy.Data.Entity.Linq
                 return source;
             }
 
-            var parExp = Expression.Parameter(source.ElementType, "s");
+            var parExp = Expression.Parameter(typeof(TSource), "s");
 
             Expression joinExp = null;
             foreach (var item in collection)
@@ -185,7 +200,7 @@ namespace Fireasy.Data.Entity.Linq
                 return source;
             }
 
-            var parExp = Expression.Parameter(source.ElementType, "s");
+            var parExp = Expression.Parameter(typeof(TSource), "s");
             Expression joinExp = null;
             foreach (var item in collection)
             {
@@ -435,7 +450,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = BindPrimaryExpression(entity);
             if (expression == null)
             {
-                return 0;
+                expression = BindAllFieldExpression(entity);
             }
 
             return queryable.UpdateWhere(entity, expression);
@@ -453,7 +468,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = BindPrimaryExpression(entity);
             if (expression == null)
             {
-                return 0;
+                expression = BindAllFieldExpression(entity);
             }
 
             return queryable.RemoveWhere(expression, logicalDelete);
@@ -592,23 +607,31 @@ namespace Fireasy.Data.Entity.Linq
                 return null;
             }
 
+            var expressions = new List<Expression>();
             var parExp = Expression.Parameter(entity.EntityType, "s");
-            Expression expression = null;
-            foreach (var p in primaryProperties)
+
+            foreach (var property in primaryProperties)
             {
-                var kv = entity.GetValue(p);
-                var condition = Expression.MakeMemberAccess(parExp, p.Info.ReflectionInfo).Equal(Expression.Constant(kv));
-                if (expression == null)
+                var value = entity.GetValue(property);
+                if (PropertyValue.IsEmpty(value))
                 {
-                    expression = condition;
+                    continue;
                 }
-                else
+
+                var getValExp = BindGetValueExpression(property, value);
+                if (getValExp == null)
                 {
-                    expression = Expression.And(expression, condition);
+                    continue;
                 }
+
+                var equalExp = Expression.MakeMemberAccess(parExp, property.Info.ReflectionInfo).Equal(getValExp);
+
+                expressions.Add(equalExp);
             }
 
-            return Expression.Lambda(expression, parExp);
+            var predicate = expressions.Aggregate(Expression.And);
+
+            return Expression.Lambda(predicate, parExp);
         }
 
         /// <summary>
@@ -633,8 +656,9 @@ namespace Fireasy.Data.Entity.Linq
                 throw new EntityPersistentException(SR.GetString(SRKind.DisaccordArgument, pkProperties.Count, primaryValues.Length), null);
             }
 
+            var expressions = new List<Expression>();
             var parExp = Expression.Parameter(type, "s");
-            Expression predicate = null;
+
             for (var i = 0; i < primaryValues.Length; i++)
             {
                 var pkValue = primaryValues[i];
@@ -643,20 +667,62 @@ namespace Fireasy.Data.Entity.Linq
                     return null;
                 }
 
-                var expression = Expression.MakeMemberAccess(parExp, pkProperties[i].Info.ReflectionInfo)
+                var equalExp = Expression.MakeMemberAccess(parExp, pkProperties[i].Info.ReflectionInfo)
                     .Equal(Expression.Constant(pkValue));
 
-                if (predicate == null)
-                {
-                    predicate = expression;
-                }
-                else
-                {
-                    predicate = Expression.And(predicate, expression);
-                }
+                expressions.Add(equalExp);
             }
 
+            var predicate = expressions.Aggregate(Expression.And);
+
             return Expression.Lambda(predicate, parExp);
+        }
+
+        /// <summary>
+        /// 构造所有字段的查询表达式。
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        private static LambdaExpression BindAllFieldExpression(IEntity entity)
+        {
+            var expressions = new List<Expression>();
+            var parExp = Expression.Parameter(entity.EntityType, "s");
+
+            foreach (var property in PropertyUnity.GetPersistentProperties(entity.EntityType))
+            {
+                var oldValue = entity.GetOldValue(property);
+                if (PropertyValue.IsEmpty(oldValue))
+                {
+                    continue;
+                }
+
+                var getValExp = BindGetValueExpression(property, oldValue);
+                if (getValExp == null)
+                {
+                    continue;
+                }
+
+                var equalExp = Expression.MakeMemberAccess(parExp, property.Info.ReflectionInfo)
+                    .Equal(getValExp);
+
+                expressions.Add(equalExp);
+            }
+
+            var predicate = expressions.Aggregate(Expression.And);
+
+            return Expression.Lambda(predicate, parExp);
+        }
+
+        private static Expression BindGetValueExpression(IProperty property, PropertyValue value)
+        {
+            var op_Explicit = typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == "op_Explicit" && s.ReturnType == property.Type);
+            if (op_Explicit == null)
+            {
+                return null;
+            }
+
+            var constExp = Expression.Constant(value);
+            return Expression.Call(op_Explicit, constExp);
         }
 
         /// <summary>

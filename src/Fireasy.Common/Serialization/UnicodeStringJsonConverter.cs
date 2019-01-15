@@ -26,32 +26,17 @@ namespace Fireasy.Common.Serialization
             return type == typeof(string);
         }
 
+        public override bool CanRead => false;
+
         /// <summary>
         /// 将字符串写为 Json 文本。
         /// </summary>
-        /// <param name="serializer">一个 <see cref="JsonSerializer"/> 对象。</param>
+        /// <param name="serializer">当前的 <see cref="JsonSerializer"/> 对象。</param>
+        /// <param name="writer"><see cref="JsonWriter"/>对象。</param>
         /// <param name="obj">要序列化的字符串。</param>
-        /// <returns>表示对象的 Json 文本。</returns>
-        public override string WriteJson(JsonSerializer serializer, object obj)
+        public override void WriteJson(JsonSerializer serializer, JsonWriter writer, object obj)
         {
-            if (obj == null)
-            {
-                return "null";
-            }
-
-            return QuoteString(obj.ToString());
-        }
-
-        /// <summary>
-        /// 从 Json 中读取字符串对象。
-        /// </summary>
-        /// <param name="serializer">一个 <see cref="JsonSerializer"/> 对象。</param>
-        /// <param name="type">要读取的对象的类型。</param>
-        /// <param name="json">表示对象的 Json 文本。</param>
-        /// <returns>反序列化后的字符串。</returns>
-        public override object ReadJson(JsonSerializer serializer, Type type, string json)
-        {
-            return serializer.Deserialize<string>(json);
+            writer.WriteString(obj == null ? "null" : QuoteString(obj.ToString()));
         }
 
         private string QuoteString(string value)

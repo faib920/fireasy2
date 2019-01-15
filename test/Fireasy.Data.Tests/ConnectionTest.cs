@@ -1,5 +1,4 @@
 ﻿using Fireasy.Common.Configuration;
-using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;

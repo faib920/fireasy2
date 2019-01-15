@@ -186,7 +186,7 @@ namespace Fireasy.Common.Emit
             return this;
         }
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
         /// <summary>
         /// 在 Microsoft 中间语言 (MSIL) 流中标记序列点。
         /// </summary>

@@ -1,13 +1,19 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Xml;
 
 namespace Fireasy.Common.Serialization
 {
-    public class XmlSerializer : ITextSerializer
+    public class XmlSerializer : ITextSerializer<XmlSerializeOption>
     {
         /// <summary>
         /// 初始化 <see cref="XmlSerializer"/> 类的新实例。
@@ -84,20 +90,17 @@ namespace Fireasy.Common.Serialization
         [SuppressMessage("Microsoft.Usage", "CA2202")]
         public T Deserialize<T>(string xml)
         {
-            throw new NotImplementedException();
-            /*
             if (string.IsNullOrEmpty(xml))
             {
                 return default(T);
             }
 
             using (var sr = new StringReader(xml))
-            using (var reader = new XmlTextReader(sr))
+            using (var reader = XmlReader.Create(sr))
             using (var deser = new XmlDeserialize(this, reader, Option))
             {
                 return deser.Deserialize<T>();
             }
-             */
         }
 
         /// <summary>
@@ -125,15 +128,12 @@ namespace Fireasy.Common.Serialization
                 return null;
             }
 
-            throw new NotImplementedException();
-            /*
             using (var sr = new StringReader(xml))
-            using (var reader = new XmlTextReader(sr))
+            using (var reader = XmlReader.Create(sr))
             using (var deser = new XmlDeserialize(this, reader, Option))
             {
                 return deser.Deserialize(type);
             }
-             */
         }
 
         /// <summary>

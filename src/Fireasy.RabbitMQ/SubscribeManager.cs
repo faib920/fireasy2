@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Subscribes;
@@ -24,11 +23,43 @@ namespace Fireasy.RabbitMQ
         private RabbitConfigurationSetting setting;
 
         private static IConnection connection;
-        private static ConcurrentDictionary<Type, List<Delegate>> subscribers = new ConcurrentDictionary<Type, List<Delegate>>();
-        private static ConcurrentDictionary<Type, IModel> channels = new ConcurrentDictionary<Type, IModel>();
+        private static ConcurrentDictionary<string, List<Delegate>> subscribers = new ConcurrentDictionary<string, List<Delegate>>();
+        private static ConcurrentDictionary<string, IModel> channels = new ConcurrentDictionary<string, IModel>();
 
         /// <summary>
-        /// 添加一个订阅方法。
+        /// 向 Rabbit 服务器发送消息主题。
+        /// </summary>
+        /// <typeparam name="TSubject"></typeparam>
+        /// <param name="subject">主题内容。</param>
+        public void Publish<TSubject>(TSubject subject) where TSubject : class
+        {
+            var channelName = ChannelHelper.GetChannelName(typeof(TSubject));
+            var data = Encoding.UTF8.GetBytes(Serialize(subject));
+
+            Publish(channelName, data);
+        }
+
+        /// <summary>
+        /// 向指定的 Rabbit 通道发送数据。
+        /// </summary>
+        /// <param name="channel">通道名称。</param>
+        /// <param name="data">发送的数据。</param>
+        public void Publish(string channel, byte[] data)
+        {
+            using (var model = connection.CreateModel())
+            {
+                model.QueueDeclare(channel, true, false, true, null);
+
+                var properties = model.CreateBasicProperties();
+                properties.Persistent = true;
+                properties.DeliveryMode = 2;
+
+                model.BasicPublish(string.Empty, channel, properties, data);
+            }
+        }
+
+        /// <summary>
+        /// 在 Rabbit 服务器中添加一个订阅方法。
         /// </summary>
         /// <typeparam name="TSubject"></typeparam>
         /// <param name="subscriber">读取主题的方法。</param>
@@ -38,38 +69,67 @@ namespace Fireasy.RabbitMQ
         }
 
         /// <summary>
-        /// 添加一个订阅方法。
+        /// 在 Rabbit 服务器中添加一个订阅方法。
         /// </summary>
         /// <param name="subjectType">主题的类型。</param>
         /// <param name="subscriber">读取主题的方法。</param>
         public void AddSubscriber(Type subjectType, Delegate subscriber)
         {
-            Guard.ArgumentNull(subscriber, nameof(subscriber));
-
-            var list = subscribers.GetOrAdd(subjectType, k =>
+            var channelName = ChannelHelper.GetChannelName(subjectType);
+            var list = subscribers.GetOrAdd(channelName, k =>
                 {
-                    StartQueue(subjectType);
+                    StartQueue(channelName);
                     return new List<Delegate>();
                 });
 
             list.Add(subscriber);
         }
 
-        public void Publish<TSubject>(TSubject subject) where TSubject : class
+        /// <summary>
+        /// 在 Rabbit 服务器中添加一个订阅方法。
+        /// </summary>
+        /// <param name="channel">通道名称。</param>
+        /// <param name="subscriber">读取数据的方法。</param>
+        public void AddSubscriber(string channel, Action<byte[]> subscriber)
         {
-            var queueName = typeof(TSubject).FullName;
+            var list = subscribers.GetOrAdd(channel, k =>
+                {
+                    StartQueue(channel);
+                    return new List<Delegate>();
+                });
 
-            using (var model = connection.CreateModel())
+            list.Add(subscriber);
+        }
+
+        /// <summary>
+        /// 移除相关的订阅方法。
+        /// </summary>
+        /// <typeparam name="TSubject"></typeparam>
+        public void RemoveSubscriber<TSubject>()
+        {
+            RemoveSubscriber(typeof(TSubject));
+        }
+
+        /// <summary>
+        /// 移除相关的订阅方法。
+        /// </summary>
+        /// <param name="subjectType">主题的类型。</param>
+        public void RemoveSubscriber(Type subjectType)
+        {
+            var channelName = ChannelHelper.GetChannelName(subjectType);
+            RemoveSubscriber(channelName);
+        }
+
+        /// <summary>
+        /// 移除指定通道的订阅方法。
+        /// </summary>
+        /// <param name="channel">通道名称。</param>
+        public void RemoveSubscriber(string channel)
+        {
+            if (channels.TryGetValue(channel, out IModel model))
             {
-                model.QueueDeclare(queueName, true, false, true, null);
-
-                var properties = model.CreateBasicProperties();
-                properties.Persistent = true;
-                properties.DeliveryMode = 2;
-
-                var msgBody = Encoding.UTF8.GetBytes(Serialize(subject));
-
-                model.BasicPublish(string.Empty, queueName, properties, msgBody);
+                model.QueueDelete(channel);
+                subscribers.TryRemove(channel, out List<Delegate> delegates);
             }
         }
 
@@ -142,28 +202,41 @@ namespace Fireasy.RabbitMQ
             return connection;
         }
 
-        private void StartQueue(Type subjectType)
+        private void StartQueue(string channel)
         {
-            var queueName = subjectType.FullName;
-
-            var model = channels.GetOrAdd(subjectType, k => GetConnection().CreateModel());
-            var queue = model.QueueDeclare(queueName, true, false, true, null);
+            var model = channels.GetOrAdd(channel, k => GetConnection().CreateModel());
+            var queue = model.QueueDeclare(channel, true, false, true, null);
 
             //创建事件驱动的消费者类型，不要用下边的死循环来消费消息
             var consumer = new EventingBasicConsumer(model);
             consumer.Received += (sender, args) =>
                 {
-                    if (subscribers.TryGetValue(subjectType, out List<Delegate> list))
+                    if (subscribers.TryGetValue(channel, out List<Delegate> delegates))
                     {
-                        var message = Encoding.UTF8.GetString(args.Body);
-                        var subject = Deserialize(subjectType, message);
+                        foreach (var dele in delegates)
+                        {
+                            var actType = dele.GetType();
+                            if (!actType.IsGenericType || actType.GetGenericTypeDefinition() != typeof(Action<>))
+                            {
+                                continue;
+                            }
 
-                        list.ForEach(s => s.DynamicInvoke(subject));
+                            var subType = actType.GetGenericArguments()[0];
+                            if (subType == typeof(byte[]))
+                            {
+                                dele.DynamicInvoke(args.Body);
+                            }
+                            else
+                            {
+                                var body = Deserialize(subType, Encoding.UTF8.GetString(args.Body));
+                                dele.DynamicInvoke(body);
+                            }
+                        }
                     }
                 };
 
             //消费消息
-            model.BasicConsume(queueName, false, consumer);
+            model.BasicConsume(channel, false, consumer);
         }
 
         void IConfigurationSettingHostService.Attach(IConfigurationSettingItem setting)

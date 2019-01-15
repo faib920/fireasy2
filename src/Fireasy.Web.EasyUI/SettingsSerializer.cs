@@ -45,9 +45,9 @@ namespace Fireasy.Web.EasyUI
                 get { return false; }
             }
 
-            public override string WriteJson(JsonSerializer serializer, object obj)
+            public override void WriteJson(JsonSerializer serializer, JsonWriter writer, object obj)
             {
-                return string.Format("'{0}'", obj);
+                writer.WriteRaw($"'{obj}'");
             }
         }
     }

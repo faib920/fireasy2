@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NET35 && !NETSTANDARD2_0
+#if !NET35 && !NETSTANDARD
 using System.ComponentModel.Composition.Hosting;
 using System.Reflection;
 

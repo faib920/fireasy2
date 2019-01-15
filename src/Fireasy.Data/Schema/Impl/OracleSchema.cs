@@ -23,7 +23,7 @@ namespace Fireasy.Data.Schema
     {
         public OracleSchema()
         {
-            AddRestrictionIndex<DataBase>(s => s.Name);
+            AddRestrictionIndex<Database>(s => s.Name);
             AddRestrictionIndex<Table>(s => s.Schema, s => s.Name);
             AddRestrictionIndex<Column>(s => s.Schema, s => s.TableName, s => s.Name);
             AddRestrictionIndex<View>(s => s.Schema, s => s.Name);
@@ -33,168 +33,6 @@ namespace Fireasy.Data.Schema
             AddRestrictionIndex<Index>(s => s.Schema, s => s.Name, null, s => s.TableName);
             AddRestrictionIndex<IndexColumn>(s => s.Schema, s => s.Name, null, s => s.TableName, s => s.ColumnName);
             AddRestrictionIndex<ForeignKey>(s => s.Schema, s => s.TableName, s => s.Name);
-        }
-
-        protected override IEnumerable<T> GetSchemas<T>(IDatabase database, SchemaCategory category, string[] restrictionValues)
-        {
-            switch (category)
-            {
-                case SchemaCategory.Table:
-                    return GetTables(database, restrictionValues).Cast<T>();
-                case SchemaCategory.Column:
-                    return GetColumns(database, restrictionValues).Cast<T>();
-                case SchemaCategory.ForeignKey:
-                    return GetForeignKeys(database, restrictionValues).Cast<T>();
-            }
-
-            return base.GetSchemas<T>(database, category, restrictionValues);
-        }
-
-        /// <summary>
-        /// 获取 <see cref="User"/> 元数据序列。
-        /// </summary>
-        /// <param name="table">架构信息的表。</param>
-        /// <param name="action">用于填充元数据的方法。</param>
-        /// <returns></returns>
-        protected override IEnumerable<User> GetUsers(DataTable table, Action<User, DataRow> action)
-        {
-            foreach (DataRow row in table.Rows)
-            {
-                var item = new User
-                    {
-                        Name = row["NAME"].ToString()
-                    };
-                if (action != null)
-                {
-                    action(item, row);
-                }
-                yield return item;
-            }
-        }
-
-        /// <summary>
-        /// 获取 <see cref="View"/> 元数据序列。
-        /// </summary>
-        /// <param name="table">架构信息的表。</param>
-        /// <param name="action">用于填充元数据的方法。</param>
-        /// <returns></returns>
-        protected override IEnumerable<View> GetViews(DataTable table, Action<View, DataRow> action)
-        {
-            foreach (DataRow row in table.Rows)
-            {
-                var item = new View
-                    {
-                        Schema = row["OWNER"].ToString(),
-                        Name = row["VIEW_NAME"].ToString(),
-                    };
-
-                if (action != null)
-                {
-                    action(item, row);
-                }
-                yield return item;
-            }
-        }
-
-        /// <summary>
-        /// 获取 <see cref="Procedure"/> 元数据序列。
-        /// </summary>
-        /// <param name="table">架构信息的表。</param>
-        /// <param name="action">用于填充元数据的方法。</param>
-        /// <returns></returns>
-        protected override IEnumerable<Procedure> GetProcedures(DataTable table, Action<Procedure, DataRow> action)
-        {
-            foreach (DataRow row in table.Rows)
-            {
-                var item = new Procedure
-                    {
-                        Schema = row["OWNER"].ToString(),
-                        Name = row["OBJECT_NAME"].ToString()
-                    };
-                if (action != null)
-                {
-                    action(item, row);
-                }
-                yield return item;
-            }
-        }
-
-        /// <summary>
-        /// 获取 <see cref="ProcedureParameter"/> 元数据序列。
-        /// </summary>
-        /// <param name="table">架构信息的表。</param>
-        /// <param name="action">用于填充元数据的方法。</param>
-        /// <returns></returns>
-        protected override IEnumerable<ProcedureParameter> GetProcedureParameters(DataTable table, Action<ProcedureParameter, DataRow> action)
-        {
-            foreach (DataRow row in table.Rows)
-            {
-                var item = new ProcedureParameter
-                    {
-                        Schema = row["OWNER"].ToString(),
-                        ProcedureName = row["OBJECT_NAME"].ToString(),
-                        Name = row["ARGUMENT_NAME"].ToString(),
-                        DataType = row["DATA_TYPE"].ToString(),
-                        Direction = GetDirection(row["IN_OUT"].ToString()),
-                        NumericPrecision = row["DATA_PRECISION"].To<int>(),
-                        NumericScale = row["DATA_SCALE"].To<int>(),
-                        Length = row["DATA_LENGTH"].To<int>(),
-                    };
-                if (action != null)
-                {
-                    action(item, row);
-                }
-                yield return item;
-            }
-        }
-
-        /// <summary>
-        /// 获取 <see cref="Index"/> 元数据序列。
-        /// </summary>
-        /// <param name="table">架构信息的表。</param>
-        /// <param name="action">用于填充元数据的方法。</param>
-        /// <returns></returns>
-        protected override IEnumerable<Index> GetIndexs(DataTable table, Action<Index, DataRow> action)
-        {
-            foreach (DataRow row in table.Rows)
-            {
-                var item = new Index
-                    {
-                        Schema = row["OWNER"].ToString(),
-                        Name = row["INDEX_NAME"].ToString(),
-                        TableName = row["TABLE_NAME"].ToString().Replace("\"", "")
-                    };
-                if (action != null)
-                {
-                    action(item, row);
-                }
-                yield return item;
-            }
-        }
-        
-        /// <summary>
-        /// 获取 <see cref="IndexColumn"/> 元数据序列。
-        /// </summary>
-        /// <param name="table">架构信息的表。</param>
-        /// <param name="action">用于填充元数据的方法。</param>
-        /// <returns></returns>
-        protected override IEnumerable<IndexColumn> GetIndexColumns(DataTable table, Action<IndexColumn, DataRow> action)
-        {
-            foreach (DataRow row in table.Rows)
-            {
-                var item = new IndexColumn
-                    {
-                        Schema = row["INDEX_OWNER"].ToString(),
-                        Name = row["INDEX_NAME"].ToString(),
-                        TableName = row["TABLE_NAME"].ToString().Replace("\"", ""),
-                        ColumnName = row["COLUMN_NAME"].ToString()
-                    };
-                if (action != null)
-                {
-                    action(item, row);
-                }
-                yield return item;
-            }
         }
 
         private ParameterDirection GetDirection(string direction)
@@ -209,7 +47,7 @@ namespace Fireasy.Data.Schema
             }
         }
 
-        private IEnumerable<Table> GetTables(IDatabase database, string[] restrictionValues)
+        protected override IEnumerable<Table> GetTables(IDatabase database, string[] restrictionValues)
         {
             var parameters = new ParameterCollection();
 
@@ -254,23 +92,16 @@ SELECT T.OWNER,
             ParameteRestrition(parameters, "OWNER", 0, restrictionValues);
             ParameteRestrition(parameters, "TABLENAME", 1, restrictionValues);
 
-            using (var reader = database.ExecuteReader(sql, parameters: parameters))
-            {
-                var wrapper = database.Provider.GetService<IRecordWrapper>();
-                while (reader.Read())
+            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new Table
                 {
-                    yield return new Table
-                        {
-                            Schema = wrapper.GetString(reader, 0),
-                            Name = wrapper.GetString(reader, 1),
-                            Type = wrapper.GetString(reader, 2),
-                            Description = wrapper.GetString(reader, 3)
-                        };
-                }
-            }
+                    Schema = wrapper.GetString(reader, 0),
+                    Name = wrapper.GetString(reader, 1),
+                    Type = wrapper.GetString(reader, 2),
+                    Description = wrapper.GetString(reader, 3)
+                });
         }
 
-        private IEnumerable<Column> GetColumns(IDatabase database, string[] restrictionValues)
+        protected override IEnumerable<Column> GetColumns(IDatabase database, string[] restrictionValues)
         {
             var parameters = new ParameterCollection();
 
@@ -317,30 +148,23 @@ SELECT T.OWNER,
             ParameteRestrition(parameters, "TABLENAME", 1, restrictionValues);
             ParameteRestrition(parameters, "COLUMNNAME", 2, restrictionValues);
 
-            using (var reader = database.ExecuteReader(sql, parameters: parameters))
-            {
-                var wrapper = database.Provider.GetService<IRecordWrapper>();
-                while (reader.Read())
+            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new Column
                 {
-                    yield return new Column
-                        {
-                            Schema = wrapper.GetString(reader, 0),
-                            TableName = wrapper.GetString(reader, 1),
-                            Name = wrapper.GetString(reader, 2),
-                            DataType = wrapper.GetString(reader, 3),
-                            Length = wrapper.GetInt32(reader, 4),
-                            NumericPrecision = wrapper.GetInt32(reader, 5),
-                            NumericScale = wrapper.GetInt32(reader, 6),
-                            IsNullable = wrapper.GetString(reader, 7) == "Y",
-                            IsPrimaryKey = wrapper.GetString(reader, 8) == "Y",
-                            Default = wrapper.GetString(reader, 9),
-                            Description = wrapper.GetString(reader, 10),
-                        };
-                }
-            }
+                    Schema = wrapper.GetString(reader, 0),
+                    TableName = wrapper.GetString(reader, 1),
+                    Name = wrapper.GetString(reader, 2),
+                    DataType = wrapper.GetString(reader, 3),
+                    Length = wrapper.GetInt32(reader, 4),
+                    NumericPrecision = wrapper.GetInt32(reader, 5),
+                    NumericScale = wrapper.GetInt32(reader, 6),
+                    IsNullable = wrapper.GetString(reader, 7) == "Y",
+                    IsPrimaryKey = wrapper.GetString(reader, 8) == "Y",
+                    Default = wrapper.GetString(reader, 9),
+                    Description = wrapper.GetString(reader, 10),
+                });
         }
 
-        private IEnumerable<ForeignKey> GetForeignKeys(IDatabase database, string[] restrictionValues)
+        protected override IEnumerable<ForeignKey> GetForeignKeys(IDatabase database, string[] restrictionValues)
         {
             var parameters = new ParameterCollection();
 
@@ -383,22 +207,15 @@ SELECT PKCON.CONSTRAINT_NAME AS PRIMARY_KEY_CONSTRAINT_NAME,
             ParameteRestrition(parameters, "TABLENAME", 1, restrictionValues);
             ParameteRestrition(parameters, "CONSTRAINTNAME", 2, restrictionValues);
 
-            using (var reader = database.ExecuteReader(sql, parameters: parameters))
-            {
-                var wrapper = database.Provider.GetService<IRecordWrapper>();
-                while (reader.Read())
+            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new ForeignKey
                 {
-                    yield return new ForeignKey
-                        {
-                            Schema = reader["FOREIGN_KEY_OWNER"].ToString(),
-                            Name = reader["FOREIGN_KEY_CONSTRAINT_NAME"].ToString(),
-                            TableName = reader["FOREIGN_KEY_TABLE_NAME"].ToString().Replace("\"", ""),
-                            ColumnName = reader["FOREIGN_KEY_COLUMN_NAME"].ToString(),
-                            PKTable = reader["PRIMARY_KEY_TABLE_NAME"].ToString(),
-                            PKColumn = reader["PRIMARY_KEY_COLUMN_NAME"].ToString()
-                        };
-                }
-            }
+                    Schema = reader["FOREIGN_KEY_OWNER"].ToString(),
+                    Name = reader["FOREIGN_KEY_CONSTRAINT_NAME"].ToString(),
+                    TableName = reader["FOREIGN_KEY_TABLE_NAME"].ToString().Replace("\"", ""),
+                    ColumnName = reader["FOREIGN_KEY_COLUMN_NAME"].ToString(),
+                    PKTable = reader["PRIMARY_KEY_TABLE_NAME"].ToString(),
+                    PKColumn = reader["PRIMARY_KEY_COLUMN_NAME"].ToString()
+                });
         }
     }
 }

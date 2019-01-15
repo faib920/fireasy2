@@ -126,7 +126,7 @@ namespace Fireasy.Web.Sockets
                     proxy.SendAsync(method, arguments);
                 }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
                 return Task.CompletedTask;
 #else
                 return new Task(null);
@@ -140,7 +140,7 @@ namespace Fireasy.Web.Sockets
 
             public Task SendAsync(string method, params object[] arguments)
             {
-#if NETSTANDARD2_0
+#if NETSTANDARD
                 return Task.CompletedTask;
 #else
                 return new Task(null);

@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if NETSTANDARD2_0
+#if NETSTANDARD
 using Fireasy.Common.Aop;
 using Fireasy.Common.Caching;
 using Fireasy.Common.Caching.Configuration;
@@ -15,6 +15,7 @@ using Fireasy.Common.Ioc.Configuration;
 using Fireasy.Common.Ioc.Registrations;
 using Fireasy.Common.Logging;
 using Fireasy.Common.Logging.Configuration;
+using Fireasy.Common.Serialization;
 using Fireasy.Common.Subscribes;
 using Fireasy.Common.Subscribes.Configuration;
 using Microsoft.Extensions.Configuration;
@@ -54,7 +55,7 @@ namespace Microsoft.Extensions.DependencyInjection
             {
                 if (reg is SingletonRegistration singReg)
                 {
-                    services.AddSingleton(singReg.ServiceType, CheckAopProxyType(singReg.ComponentType));
+                    services.AddSingleton(singReg.ServiceType, CheckAopProxyType(singReg.ImplementationType));
                 }
                 else if (reg.GetType().IsGenericType && reg.GetType().GetGenericTypeDefinition() == typeof(FuncRegistration<>))
                 {
@@ -62,7 +63,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 }
                 else
                 {
-                    services.AddTransient(reg.ServiceType, CheckAopProxyType(reg.ComponentType));
+                    services.AddTransient(reg.ServiceType, CheckAopProxyType(reg.ImplementationType));
                 }
             }
 
@@ -99,6 +100,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 services.AddSingleton(typeof(ILogger), s => LoggerFactory.CreateLogger());
                 services.AddSingleton(typeof(ICacheManager), s => CacheManagerFactory.CreateManager());
                 services.AddSingleton(typeof(ISubscribeManager), s => SubscribeManagerFactory.CreateManager());
+                services.AddSingleton(typeof(ITextSerializer), s => SerializerFactory.CreateSerializer());
             }
         }
     }

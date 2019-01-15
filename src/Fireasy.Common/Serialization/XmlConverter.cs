@@ -6,6 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Globalization;
+using System.IO;
 using System.Xml;
 
 namespace Fireasy.Common.Serialization
@@ -50,17 +52,6 @@ namespace Fireasy.Common.Serialization
         /// 将对象写为 Xml 文本。
         /// </summary>
         /// <param name="serializer">一个 <see cref="XmlSerializer"/> 对象。</param>
-        /// <param name="obj">要序列化的对象。</param>
-        /// <returns>表示对象的 Xml 文本。</returns>
-        public virtual string WriteXml(XmlSerializer serializer, object obj)
-        {
-            return string.Empty;
-        }
-
-        /// <summary>
-        /// 将对象写为 Xml 文本。
-        /// </summary>
-        /// <param name="serializer">一个 <see cref="XmlSerializer"/> 对象。</param>
         /// <param name="writer"></param>
         /// <param name="obj">要序列化的对象。</param>
         public virtual void WriteXml(XmlSerializer serializer, XmlWriter writer, object obj)
@@ -69,19 +60,12 @@ namespace Fireasy.Common.Serialization
 
         string ITextConverter.WriteObject(ITextSerializer serializer, object obj)
         {
-            return WriteXml((XmlSerializer)serializer, obj);
-        }
-
-        /// <summary>
-        /// 从 Xml 中读取对象。
-        /// </summary>
-        /// <param name="serializer">一个 <see cref="XmlSerializer"/> 对象。</param>
-        /// <param name="dataType">将要读取的类型。</param>
-        /// <param name="xml">表示对象的 Xml 文本。</param>
-        /// <returns>反序列化后的对象。</returns>
-        public virtual object ReadXml(XmlSerializer serializer, Type dataType, string xml)
-        {
-            return null;
+            using (var sw = new StringWriter(CultureInfo.InvariantCulture))
+            using (var writer = new XmlTextWriter(sw))
+            {
+                WriteXml((XmlSerializer)serializer, writer, obj);
+                return sw.ToString();
+            }
         }
 
         /// <summary>
@@ -98,7 +82,11 @@ namespace Fireasy.Common.Serialization
 
         object ITextConverter.ReadObject(ITextSerializer serializer, Type dataType, string text)
         {
-            return ReadXml((XmlSerializer)serializer, dataType, text);
+            using (var sr = new StringReader(text))
+            using (var reader = new XmlTextReader(sr))
+            {
+                return ReadXml((XmlSerializer)serializer, reader, dataType);
+            }
         }
     }
 

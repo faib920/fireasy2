@@ -6,10 +6,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Serialization;
+#if !NETSTANDARD
 using System;
 using System.Linq;
-using System.Threading.Tasks;
-#if !NETSTANDARD2_0
 using System.Web.Mvc;
 #else
 using Microsoft.AspNetCore.Mvc;
@@ -27,11 +26,11 @@ namespace Fireasy.Web.Mvc
         /// <param name="value"></param>
         /// <param name="option"></param>
         public JsonResultWrapper(object value, JsonSerializeOption option = null)
-#if NETSTANDARD2_0
+#if NETSTANDARD
             : base(value)
 #endif
         {
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             this.result = new JsonResult { Data = value, JsonRequestBehavior = JsonRequestBehavior.AllowGet };
 #endif
             Option = option;
@@ -39,7 +38,7 @@ namespace Fireasy.Web.Mvc
 
         public JsonSerializeOption Option { get; set; }
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
         private JsonResult result;
 
         /// <summary>

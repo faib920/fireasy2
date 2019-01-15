@@ -149,14 +149,8 @@ namespace Fireasy.Common.Serialization
             {
                 return false;
             }
-            else if (converter.Streaming)
-            {
-                converter.WriteJson(serializer, jsonWriter, value);
-            }
-            else if (converter != null)
-            {
-                jsonWriter.WriteValue(converter.WriteJson(serializer, value));
-            }
+
+            converter.WriteJson(serializer, jsonWriter, value);
 
             return true;
         }

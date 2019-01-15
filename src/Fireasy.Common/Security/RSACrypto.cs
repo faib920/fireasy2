@@ -151,7 +151,7 @@ namespace Fireasy.Common.Security
 
         private string ToXmlString(bool includePrivateParameters)
         {
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             return rsa.ToXmlString(includePrivateParameters);
 #else
             var parameters = rsa.ExportParameters(includePrivateParameters);
@@ -182,7 +182,7 @@ namespace Fireasy.Common.Security
 
         private void FromXmlString(string xmlString)
         {
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             rsa.FromXmlString(xmlString);
 #else
             var parameters = new RSAParameters();

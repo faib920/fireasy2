@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
 using System.CodeDom;
 using System.CodeDom.Compiler;
 using Microsoft.CSharp;
@@ -34,13 +34,13 @@ namespace Fireasy.Common.Compiler
         /// </summary>
         public CodeCompiler()
         {
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             CodeProvider = new CSharpCodeProvider();
 #endif
             Assemblies = new List<string>();
         }
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
         /// <summary>
         /// 获取或设置代码编译的提供者，默认为 <see cref="CSharpCodeProvider"/>。
         /// </summary>
@@ -62,7 +62,7 @@ namespace Fireasy.Common.Compiler
         /// </summary>
         public List<string> Assemblies { get; private set; }
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
         /// <summary>
         /// 编译代码并返回指定方法的委托。如果未指定方法名称，则返回类的第一个方法。
         /// </summary>
@@ -128,7 +128,7 @@ namespace Fireasy.Common.Compiler
         /// <returns>由代码编译成的程序集。</returns>
         public Assembly CompileAssembly(string source)
         {
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             var compileOption = GetCompilerParameters();
 
             var compileResult = CodeProvider.CompileAssemblyFromSource(compileOption, source);
@@ -190,7 +190,7 @@ namespace Fireasy.Common.Compiler
             return GetTypeFromAssembly(assembly, typeName);
         }
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
         /// <summary>
         /// 编译代码并返回指定方法的委托。如果未指定方法名称，则返回类的第一个方法。
         /// </summary>
@@ -255,7 +255,7 @@ namespace Fireasy.Common.Compiler
             return null;
         }
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
        private CompilerParameters GetCompilerParameters()
         {
             var option = new CompilerParameters();

@@ -9,7 +9,7 @@ using System;
 using System.Linq.Expressions;
 using Fireasy.Web.EasyUI;
 using Fireasy.Web.Mvc;
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
 using System.Web.Mvc;
 #else
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -28,7 +28,7 @@ namespace Fireasy.Web.EasyUI
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
         public static ExtendHtmlString ValidateBox(this
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             HtmlHelper htmlHelper
 #else
             IHtmlHelper htmlHelper
@@ -60,7 +60,7 @@ namespace Fireasy.Web.EasyUI
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
         public static ExtendHtmlString ValidateMultiBox(this
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             HtmlHelper htmlHelper
 #else
             IHtmlHelper htmlHelper
@@ -80,7 +80,7 @@ namespace Fireasy.Web.EasyUI
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
         public static ExtendHtmlString ValidateMultiBox<TModel, TProperty>(this
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             HtmlHelper<TModel> htmlHelper
 #else
             IHtmlHelper<TModel> htmlHelper
@@ -98,7 +98,7 @@ namespace Fireasy.Web.EasyUI
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
         public static ExtendHtmlString ValidatePasswordBox(this
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             HtmlHelper htmlHelper
 #else
             IHtmlHelper htmlHelper
@@ -116,7 +116,7 @@ namespace Fireasy.Web.EasyUI
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
         public static ExtendHtmlString ValidatePasswordBox<TModel, TProperty>(this
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             HtmlHelper<TModel> htmlHelper
 #else
             IHtmlHelper<TModel> htmlHelper

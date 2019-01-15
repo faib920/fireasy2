@@ -782,12 +782,13 @@ studio");
                 Age = 12,
                 Name = "huangxd",
                 Birthday = DateTime.Parse("1982-9-20"),
-                WorkTime = DateTime.Parse("2000-9-20")
+                WorkTime = DateTime.Parse("2000-9-20"),
+                Record = new WorkRecord {  StartDate = DateTime.Now, Company = "dd" }
             };
 
-            var converter = new CompositeJsonConverter<JsonData>();
-            converter.AddConverter(s => s.Birthday, new DateTimeJsonConverter("yyyy-MM"));
-            var option = new JsonSerializeOption();
+            var converter = new CompositeJsonConverter<WorkRecord>();
+            converter.AddConverter(s => s.StartDate, new DateTimeJsonConverter("yyyy-MM"));
+            var option = new JsonSerializeOption() { Indent = true };
             option.Converters.Add(converter);
             var serializer = new JsonSerializer(option);
 
@@ -889,7 +890,7 @@ studio");
         {
             var serializer = new JsonSerializer();
 
-            var s1 = "\"e:\\\\doct\\\\test.doc\"";
+            var s1 = "\"C:\\\\Users\\\\faib\\\\Desktop\"";
 
             var str = serializer.Deserialize<string>(s1);
             Console.WriteLine(Newtonsoft.Json.JsonConvert.DeserializeObject<string>(s1));
@@ -915,6 +916,19 @@ studio");
             var str = serializer.Deserialize<string>("\"null\"");
 
             Assert.AreEqual(null, str);
+        }
+
+        /// <summary>
+        /// 使用字符串测试Deserialize方法。
+        /// </summary>
+        [TestMethod()]
+        public void TestDeserializeUnicodeString()
+        {
+            var serializer = new JsonSerializer();
+
+            var str = serializer.Deserialize<string>("\"\\\\u4e2d\\\\u56fd\"");
+
+            Assert.AreEqual("中国", str);
         }
 
         /// <summary>
@@ -1192,7 +1206,7 @@ studio");
         public void TestDeserializeType()
         {
             var serializer = new JsonSerializer(new JsonSerializeOption { IgnoreType = false });
-            var json = new JsonText(@"{'Name':null,'WorkRecords':null,'DataType':'Fireasy.Common.Serialization.Test.JsonSerializerTests+WorkRecord, Fireasy.CommonTests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null'}").ToString();
+            var json = new JsonText(@"{'Name':null,'WorkRecords':null,'DataType':'Fireasy.Common.Serialization.Test.JsonSerializerTests+WorkRecord, Fireasy.Common.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null'}").ToString();
             var obj = serializer.Deserialize<JsonData>(json);
             Assert.IsNotNull(obj);
             Console.WriteLine(obj.DataType);
@@ -1202,7 +1216,7 @@ studio");
         public void TestDeserializeTypeIgnore()
         {
             var serializer = new JsonSerializer();
-            var json = new JsonText(@"{'Name':null,'WorkRecords':null,'DataType':'Fireasy.Common.Serialization.Test.JsonSerializerTests+WorkRecord, Fireasy.CommonTests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null'}").ToString();
+            var json = new JsonText(@"{'Name':null,'WorkRecords':null,'DataType':'Fireasy.Common.Serialization.Test.JsonSerializerTests+WorkRecord, Fireasy.Common.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null'}").ToString();
             var obj = serializer.Deserialize<JsonData>(json);
             Assert.IsNotNull(obj);
             Console.WriteLine(obj.DataType);
@@ -1349,7 +1363,7 @@ studio");
             option.Converters.Add(new ExpressionJsonConverter());
             var serializer = new JsonSerializer(option);
 
-            var json = new JsonText(@"{Lambda:{Parameters:[{Parameter:{Name:'s',Type:'Fireasy.Common.Serialization.Test.JsonSerializerTests+JsonData, Fireasy.CommonTests, Version=1.0.0.2, Culture=neutral, PublicKeyToken=null'}}],Body:{OrElse:{Left:{OrElse:{Left:{OrElse:{Left:{Equal:{Left:{MemberAccess:{Type:'Fireasy.Common.Serialization.Test.JsonSerializerTests+JsonData, Fireasy.CommonTests, Version=1.0.0.2, Culture=neutral, PublicKeyToken=null',Member:'Age',Expression:{Parameter:{Name:'s'}}}},Right:{Constant:{Type:'System.Nullable`1[[System.Decimal, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]',Value:'44'}}}},Right:{AndAlso:{Left:{AndAlso:{Left:{Equal:{Left:{MemberAccess:{Type:'Fireasy.Common.Serialization.Test.JsonSerializerTests+JsonData, Fireasy.CommonTests, Version=1.0.0.2, Culture=neutral, PublicKeyToken=null',Member:'Age',Expression:{Parameter:{Name:'s'}}}},Right:{Constant:{Type:'System.Nullable`1[[System.Decimal, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]',Value:'34'}}}},Right:{Equal:{Left:{MemberAccess:{Type:'Fireasy.Common.Serialization.Test.JsonSerializerTests+JsonData, Fireasy.CommonTests, Version=1.0.0.2, Culture=neutral, PublicKeyToken=null',Member:'Age',Expression:{Parameter:{Name:'s'}}}},Right:{Constant:{Type:'System.Nullable`1[[System.Decimal, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]',Value:'34'}}}}}},Right:{Equal:{Left:{Call:{Type:'System.String',Method:'Substring',Object:{MemberAccess:{Type:'Fireasy.Common.Serialization.Test.JsonSerializerTests+JsonData, Fireasy.CommonTests, Version=1.0.0.2, Culture=neutral, PublicKeyToken=null',Member:'Name',Expression:{Parameter:{Name:'s'}}}},Arguments:[{Constant:{Type:'System.Int32',Value:'1'}},{Constant:{Type:'System.Int32',Value:'2'}}],GenericArgTypes:[],ParameterTypes:['System.Int32','System.Int32']}},Right:{Constant:{Type:'System.String',Value:'\'12\''}}}}}}}},Right:{Call:{Type:'System.Linq.Enumerable, System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089',Method:'Contains',Object:null,Arguments:[{Constant:{Type:'System.Decimal[]',Value:'[34,55,66]'}},{Convert:{Type:'System.Decimal',Operand:{MemberAccess:{Type:'Fireasy.Common.Serialization.Test.JsonSerializerTests+JsonData, Fireasy.CommonTests, Version=1.0.0.2, Culture=neutral, PublicKeyToken=null',Member:'Age',Expression:{Parameter:{Name:'s'}}}}}}],GenericArgTypes:['System.Decimal'],ParameterTypes:['System.Collections.Generic.IEnumerable`1[[System.Decimal, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]','System.Decimal']}}}},Right:{Equal:{Left:{MemberAccess:{Type:'Fireasy.Common.Serialization.Test.JsonSerializerTests+JsonData, Fireasy.CommonTests, Version=1.0.0.2, Culture=neutral, PublicKeyToken=null',Member:'Name',Expression:{Parameter:{Name:'s'}}}},Right:{Constant:{Type:'System.String',Value:'\'12\''}}}}}}}}").ToString();
+            var json = new JsonText(@"{Lambda:{Parameters:[{Parameter:{Name:'s',Type:'Fireasy.Common.Tests.Serialization.JsonSerializerTest+JsonData, Fireasy.Common.Tests'}}],Body:{OrElse:{Left:{OrElse:{Left:{OrElse:{Left:{Equal:{Left:{MemberAccess:{Type:'Fireasy.Common.Tests.Serialization.JsonSerializerTest+JsonData, Fireasy.Common.Tests',Member:'Age',Expression:{Parameter:{Name:'s'}}}},Right:{Constant:{Type:'System.Nullable`1[[System.Decimal, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]',Value:'44'}}}},Right:{AndAlso:{Left:{AndAlso:{Left:{Equal:{Left:{MemberAccess:{Type:'Fireasy.Common.Tests.Serialization.JsonSerializerTest+JsonData, Fireasy.Common.Tests',Member:'Age',Expression:{Parameter:{Name:'s'}}}},Right:{Constant:{Type:'System.Nullable`1[[System.Decimal, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]',Value:'34'}}}},Right:{Equal:{Left:{MemberAccess:{Type:'Fireasy.Common.Tests.Serialization.JsonSerializerTest+JsonData, Fireasy.Common.Tests',Member:'Age',Expression:{Parameter:{Name:'s'}}}},Right:{Constant:{Type:'System.Nullable`1[[System.Decimal]]',Value:'34'}}}}}},Right:{Equal:{Left:{Call:{Type:'System.String',Method:'Substring',Object:{MemberAccess:{Type:'Fireasy.Common.Tests.Serialization.JsonSerializerTest+JsonData, Fireasy.Common.Tests',Member:'Name',Expression:{Parameter:{Name:'s'}}}},Arguments:[{Constant:{Type:'System.Int32',Value:'1'}},{Constant:{Type:'System.Int32',Value:'2'}}],GenericArgTypes:[],ParameterTypes:['System.Int32','System.Int32']}},Right:{Constant:{Type:'System.String',Value:'\'12\''}}}}}}}},Right:{Call:{Type:'System.Linq.Enumerable, System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089',Method:'Contains',Object:null,Arguments:[{Constant:{Type:'System.Decimal[]',Value:'[34,55,66]'}},{Convert:{Type:'System.Decimal',Operand:{MemberAccess:{Type:'Fireasy.Common.Tests.Serialization.JsonSerializerTest+JsonData, Fireasy.Common.Tests',Member:'Age',Expression:{Parameter:{Name:'s'}}}}}}],GenericArgTypes:['System.Decimal'],ParameterTypes:['System.Collections.Generic.IEnumerable`1[[System.Decimal, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]','System.Decimal']}}}},Right:{Equal:{Left:{MemberAccess:{Type:'Fireasy.Common.Tests.Serialization.JsonSerializerTest+JsonData, Fireasy.Common.Tests',Member:'Name',Expression:{Parameter:{Name:'s'}}}},Right:{Constant:{Type:'System.String',Value:'\'12\''}}}}}}}}").ToString();
 
             var expression = serializer.Deserialize<Expression>(json);
 
@@ -1491,13 +1505,14 @@ studio");
 
         public class AttrTestConverter : JsonConverter<AttrTest>
         {
-            public override string WriteJson(JsonSerializer serializer, object obj)
+            public override void WriteJson(JsonSerializer serializer, JsonWriter writer, object obj)
             {
-                return $"\"{((AttrTest)obj).Name}\"";
+                writer.WriteRaw($"\"{((AttrTest)obj).Name}\"");
             }
 
-            public override object ReadJson(JsonSerializer serializer, Type dataType, string json)
+            public override object ReadJson(JsonSerializer serializer, JsonReader reader, Type dataType)
             {
+                var json = reader.ReadRaw();
                 return new AttrTest { Name = json };
             }
         }

@@ -1,4 +1,4 @@
-﻿#if NETSTANDARD2_0
+﻿#if NETSTANDARD
 using Fireasy.Common.Logging;
 using Fireasy.Common.Serialization;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -13,6 +13,13 @@ namespace Fireasy.Web.Mvc
     /// </summary>
     public class JsonModelBinder : IModelBinder
     {
+        private MvcOptions mvcOptions;
+
+        public JsonModelBinder(MvcOptions mvcOptions)
+        {
+            this.mvcOptions = mvcOptions;
+        }
+
         public Task BindModelAsync(ModelBindingContext bindingContext)
         {
             var value = bindingContext.ValueProvider.GetValue(bindingContext.ModelName);
@@ -24,11 +31,7 @@ namespace Fireasy.Web.Mvc
             var modelState = bindingContext.ModelState;
             modelState.SetModelValue(bindingContext.ModelName, value);
 
-            var option = new JsonSerializeOption();
-
-            var globalconverters = GlobalSetting.Converters.Where(s => s is JsonConverter).Cast<JsonConverter>();
-            option.Converters.AddRange(globalconverters);
-
+            var option = mvcOptions.JsonSerializeOption;
             var serializer = new JsonSerializer(option);
 
             try

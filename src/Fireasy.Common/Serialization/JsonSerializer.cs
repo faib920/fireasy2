@@ -10,14 +10,13 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 
 namespace Fireasy.Common.Serialization
 {
     /// <summary>
     /// Json 文本序列化器。
     /// </summary>
-    public class JsonSerializer : ITextSerializer
+    public class JsonSerializer : ITextSerializer<JsonSerializeOption>
     {
         /// <summary>
         /// 初始化 <see cref="JsonSerializer"/> 类的新实例。

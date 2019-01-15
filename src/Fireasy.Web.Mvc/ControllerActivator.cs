@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Ioc;
 using System;

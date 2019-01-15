@@ -29,7 +29,7 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="OracleProvider"/> 类的新实例。
         /// </summary>
         public OracleProvider()
-#if NETSTANDARD2_0
+#if NETSTANDARD
             : base("System.Data.OracleClient.OracleClientFactory, Mono.Data.OracleClientCore", 
                   "Oracle.ManagedDataAccess.Client.OracleClientFactory, Oracle.ManagedDataAccess",
                   "Devart.Data.Oracle.OracleClientFactory, Devart.Data.Oracle")

@@ -424,7 +424,7 @@ namespace System.Collections.Specialized
 namespace System.Collections.ObjectModel
 {
     /// <summary>
-    /// Implementation of a dynamic data collection based on generic Collection&lt;T&gt;,
+    /// Implementation of a dynamic data collection based on generic <see cref="Collection{T}"/>,
     /// implementing INotifyCollectionChanged to notify listeners
     /// when items get added, removed or the whole list is refreshed.
     /// </summary>
@@ -573,7 +573,7 @@ namespace System.Collections.ObjectModel
 #region Protected Methods
 
         /// <summary>
-        /// Called by base class Collection&lt;T&gt; when the list is being cleared;
+        /// Called by base class <see cref="Collection{T}"/> when the list is being cleared;
         /// raises a CollectionChanged event to any listeners.
         /// </summary>
         protected override void ClearItems()
@@ -586,7 +586,7 @@ namespace System.Collections.ObjectModel
         }
 
         /// <summary>
-        /// Called by base class Collection&lt;T&gt; when an item is removed from list;
+        /// Called by base class <see cref="Collection{T}"/> when an item is removed from list;
         /// raises a CollectionChanged event to any listeners.
         /// </summary>
         protected override void RemoveItem(int index)
@@ -602,7 +602,7 @@ namespace System.Collections.ObjectModel
         }
 
         /// <summary>
-        /// Called by base class Collection&lt;T&gt; when an item is added to list;
+        /// Called by base class <see cref="Collection{T}"/> when an item is added to list;
         /// raises a CollectionChanged event to any listeners.
         /// </summary>
         protected override void InsertItem(int index, T item)
@@ -616,7 +616,7 @@ namespace System.Collections.ObjectModel
         }
 
         /// <summary>
-        /// Called by base class Collection&lt;T&gt; when an item is set in list;
+        /// Called by base class <see cref="Collection{T}"/> when an item is set in list;
         /// raises a CollectionChanged event to any listeners.
         /// </summary>
         protected override void SetItem(int index, T item)
@@ -630,7 +630,7 @@ namespace System.Collections.ObjectModel
         }
 
         /// <summary>
-        /// Called by base class ObservableCollection&lt;T&gt; when an item is to be moved within the list;
+        /// Called by base class <see cref="ObservableCollection{T}"/> when an item is to be moved within the list;
         /// raises a CollectionChanged event to any listeners.
         /// </summary>
         protected virtual void MoveItem(int oldIndex, int newIndex)

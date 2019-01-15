@@ -49,7 +49,7 @@ namespace Fireasy.Common.Ioc
         public static Container GetContainer(string path, string pattern)
         {
             var cacheMgr = MemoryCacheManager.Instance;
-            return cacheMgr.TryGet<Container>(path + "/" + pattern, () =>
+            return cacheMgr.TryGet(path + "/" + pattern, () =>
                 {
                     var container = new Container();
                     return container.Config(path, pattern);
@@ -82,9 +82,9 @@ namespace Fireasy.Common.Ioc
                 {
                     container.RegisterAssembly(reg.Assembly, reg.Singleton ? Lifetime.Singleton : Lifetime.Transient);
                 }
-                else if (reg.ServiceType != null && reg.ComponentType != null)
+                else if (reg.ServiceType != null && reg.ImplementationType != null)
                 {
-                    container.Register(reg.ServiceType, reg.ComponentType, reg.Singleton ? Lifetime.Singleton : Lifetime.Transient);
+                    container.Register(reg.ServiceType, reg.ImplementationType, reg.Singleton ? Lifetime.Singleton : Lifetime.Transient);
                 }
             }
         }

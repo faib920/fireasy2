@@ -211,7 +211,7 @@ namespace Fireasy.Common.Security
 
         private SymmetricAlgorithm CreateAlgorithm(string algorithmName)
         {
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             return SymmetricAlgorithm.Create(algorithmName);
 #endif
             switch (algorithmName.ToUpper())

@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if NETSTANDARD2_0
+#if NETSTANDARD
 using Fireasy.Common.Serialization;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using System;
@@ -42,9 +42,9 @@ namespace Fireasy.Web.Mvc
         public bool DisableModelValidator { get; set; } = true;
 
         /// <summary>
-        /// 获取转换器。
+        /// 获取或设置 Json 序列化选项。
         /// </summary>
-        public List<ITextConverter> Converters { get; private set; } = new List<ITextConverter>();
+        public JsonSerializeOption JsonSerializeOption { get; set; } = new JsonSerializeOption();
     }
 }
 #endif

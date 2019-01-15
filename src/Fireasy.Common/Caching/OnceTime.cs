@@ -23,11 +23,19 @@ namespace Fireasy.Common.Caching
         /// <summary>
         /// 检查缓存项是否达到过期时间。
         /// </summary>
-        /// <param name="cacheItem">要检查的缓存项。</param>
         /// <returns>过期为 true，有效为 false。</returns>
-        public bool HasExpired(CacheItem cacheItem)
+        public bool HasExpired()
         {
             return times++ >= 1;//OK
+        }
+
+        /// <summary>
+        /// 获取到期时间。
+        /// </summary>
+        /// <returns></returns>
+        public TimeSpan? GetExpirationTime()
+        {
+            return times < 1 ? TimeSpan.MaxValue : (TimeSpan?)null;
         }
     }
 }

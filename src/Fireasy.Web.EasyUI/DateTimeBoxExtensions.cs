@@ -9,7 +9,7 @@ using Fireasy.Web.Mvc;
 using System;
 using System.Linq.Expressions;
 using Fireasy.Web.EasyUI;
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
 using System.Web.Mvc;
 #else
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -28,7 +28,7 @@ namespace Fireasy.Web.EasyUI
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
         public static ExtendHtmlString DateTimeBox(this
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             HtmlHelper htmlHelper
 #else
             IHtmlHelper htmlHelper
@@ -55,7 +55,7 @@ namespace Fireasy.Web.EasyUI
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
         public static ExtendHtmlString DateTimeBox<TModel, TProperty>(this
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             HtmlHelper<TModel> htmlHelper
 #else
             IHtmlHelper<TModel> htmlHelper

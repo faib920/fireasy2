@@ -8,7 +8,7 @@
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using System.Xml;
-#if NETSTANDARD2_0
+#if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
 
@@ -34,7 +34,7 @@ namespace Fireasy.Data.Entity.Linq.Translators.Configuration
             }
         }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
         /// <summary>
         /// 使用配置节点对当前配置进行初始化。
         /// </summary>

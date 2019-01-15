@@ -5,8 +5,8 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using Fireasy.Common.Serialization;
+using System;
 
 namespace Fireasy.Data.Entity
 {
@@ -33,13 +33,14 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 将 Json 转换为 <paramref name="dataType"/> 的代理对象。
         /// </summary>
-        /// <param name="serializer"></param>
-        /// <param name="dataType"></param>
-        /// <param name="json"></param>
+        /// <param name="serializer">当前的 <see cref="JsonSerializer"/> 对象。</param>
+        /// <param name="reader"><see cref="JsonReader"/> 对象。</param>
+        /// <param name="dataType">要反序列化的对象类型。</param>
         /// <returns></returns>
-        public override object ReadJson(JsonSerializer serializer, Type dataType, string json)
+        public override object ReadJson(JsonSerializer serializer, JsonReader reader, Type dataType)
         {
             var proxyType = EntityProxyManager.GetType(dataType);
+            var json = reader.ReadRaw();
             return serializer.Deserialize(json, proxyType);
         }
     }

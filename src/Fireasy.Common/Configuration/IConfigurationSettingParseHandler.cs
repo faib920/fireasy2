@@ -6,7 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Xml;
-#if NETSTANDARD2_0
+#if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
 
@@ -24,7 +24,7 @@ namespace Fireasy.Common.Configuration
         /// <returns></returns>
         IConfigurationSettingItem Parse(XmlNode section);
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
         /// <summary>
         /// 将节点信息解析为配置项。
         /// </summary>

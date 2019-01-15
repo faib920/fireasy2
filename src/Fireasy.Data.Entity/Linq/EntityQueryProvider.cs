@@ -10,8 +10,6 @@ using Fireasy.Common.Configuration;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Linq.Translators.Configuration;
 using Fireasy.Data.Entity.Providers;
-using Fireasy.Data.Provider;
-using Fireasy.Data.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -179,36 +177,5 @@ namespace Fireasy.Data.Entity.Linq
             var section = ConfigurationUnity.GetSection<TranslatorConfigurationSection>();
             return (section != null ? section.Options : Translators.TranslateOptions.Default).Clone();
         }
-
-        /// <summary>
-        /// <see cref="IDataSegment"/> 查找器。
-        /// </summary>
-        private class SegmentFinder : Common.Linq.Expressions.ExpressionVisitor
-        {
-            private IDataSegment dataSegment;
-
-            /// <summary>
-            /// <see cref="IDataSegment"/> 查找器。
-            /// </summary>
-            /// <param name="expression"></param>
-            /// <returns></returns>
-            public static IDataSegment Find(Expression expression)
-            {
-                var replaer = new SegmentFinder();
-                replaer.Visit(expression);
-                return replaer.dataSegment;
-            }
-
-            protected override Expression VisitConstant(ConstantExpression constExp)
-            {
-                if (constExp.Value is IDataSegment)
-                {
-                    dataSegment = constExp.Value as IDataSegment;
-                }
-
-                return constExp;
-            }
-        }
-
     }
 }

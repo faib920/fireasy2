@@ -12,7 +12,7 @@ using System.Linq;
 using System.Reflection;
 using Fireasy.Common.Caching;
 using Fireasy.Common.Extensions;
-#if NETSTANDARD2_0
+#if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 #else
@@ -43,7 +43,7 @@ namespace Fireasy.Common.Configuration
                 return default(T);
             }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
             var cacheMgr = MemoryCacheManager.Instance;
             return (T)cacheMgr.Get(attribute.Name);
 #else
@@ -64,7 +64,7 @@ namespace Fireasy.Common.Configuration
             }
         }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
         /// <summary>
         /// 将配置信息绑定到 <typeparamref name="T"/> 对象内部。
         /// </summary>
@@ -89,7 +89,7 @@ namespace Fireasy.Common.Configuration
         }
 #endif
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
         private static IConfigurationSection GetSection(string sectionName)
         {
             var cacheMgr = MemoryCacheManager.Instance;
@@ -149,7 +149,7 @@ namespace Fireasy.Common.Configuration
         }
 #endif
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
         /// <summary>
         /// 绑定所有和 fireasy 有关的配置项。
         /// </summary>
@@ -216,6 +216,8 @@ namespace Fireasy.Common.Configuration
         /// <summary>
         /// 根据提供的配置创建实例对象。
         /// </summary>
+        /// <typeparam name="TSetting"></typeparam>
+        /// <typeparam name="TInstance"></typeparam>
         /// <param name="setting"></param>
         /// <returns></returns>
         public static TInstance CreateInstance<TSetting, TInstance>(IConfigurationSettingItem setting, Func<TSetting, Type> typeFunc) where TSetting : class, IConfigurationSettingItem
@@ -241,7 +243,7 @@ namespace Fireasy.Common.Configuration
 
             if (extendSetting != null)
             {
-                instance.As<IConfigurationSettingHostService>(s => ConfigurationUnity.AttachSetting(s, extendSetting));
+                instance.As<IConfigurationSettingHostService>(s => AttachSetting(s, extendSetting));
             }
 
             return instance;

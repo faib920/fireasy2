@@ -1,6 +1,4 @@
-﻿#if !NETSTANDARD2_0
-
-namespace Fireasy.Common.Drawing
+﻿namespace Fireasy.Common.Drawing
 {
     /// <summary>
     /// 缩略图样式。
@@ -21,4 +19,3 @@ namespace Fireasy.Common.Drawing
         Center
     }
 }
-#endif

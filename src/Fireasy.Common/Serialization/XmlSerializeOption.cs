@@ -1,4 +1,10 @@
-﻿using System.Collections.Generic;
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace Fireasy.Common.Serialization
 {
@@ -25,5 +31,10 @@ namespace Fireasy.Common.Serialization
         /// 获取或设置是否输出元素起始，默认为 true。
         /// </summary>
         public bool StartElement { get; set; }
+
+        /// <summary>
+        /// 获取或设置是否忽略为 null 的值。默认为 true。
+        /// </summary>
+        public bool IgnoreNull { get; set; } = true;
     }
 }

@@ -14,7 +14,7 @@ using System.Reflection;
 using System.Xml;
 using System;
 using System.Diagnostics;
-#if NETSTANDARD2_0
+#if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
 
@@ -47,7 +47,7 @@ namespace Fireasy.Common.Ioc.Configuration
             base.Initialize(section);
         }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
         /// <summary>
         /// 使用配置节点对当前配置进行初始化。
         /// </summary>
@@ -73,6 +73,11 @@ namespace Fireasy.Common.Ioc.Configuration
             {
                 var serviceType = child.GetSection("serviceType").Value;
                 var componentType = child.GetSection("componentType").Value;
+                if (string.IsNullOrEmpty(componentType))
+                {
+                    componentType = child.GetSection("implementationType").Value;
+                }
+
                 var singleton = child.GetSection("singleton").Value.To<bool>();
 
                 var assembly = child.GetSection("assembly").Value;
@@ -92,7 +97,7 @@ namespace Fireasy.Common.Ioc.Configuration
                 list.Add(new RegistrationSetting
                 {
                     ServiceType = serviceType.ParseType(),
-                    ComponentType = componentType.ParseType(),
+                    ImplementationType = componentType.ParseType(),
                     Singleton = singleton
                 });
 
@@ -110,6 +115,11 @@ namespace Fireasy.Common.Ioc.Configuration
             {
                 var serviceType = child.GetAttributeValue("serviceType");
                 var componentType = child.GetAttributeValue("componentType");
+                if (string.IsNullOrEmpty(componentType))
+                {
+                    componentType = child.GetAttributeValue("implementationType");
+                }
+
                 var singleton = child.GetAttributeValue<bool>("singleton");
 
                 var assembly = child.GetAttributeValue("assembly");
@@ -129,7 +139,7 @@ namespace Fireasy.Common.Ioc.Configuration
                 list.Add(new RegistrationSetting
                 {
                     ServiceType = serviceType.ParseType(),
-                    ComponentType = componentType.ParseType(),
+                    ImplementationType = componentType.ParseType(),
                     Singleton = singleton
                 });
             }

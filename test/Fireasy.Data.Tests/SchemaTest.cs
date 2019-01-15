@@ -14,7 +14,7 @@ namespace Fireasy.Data.Tests
 
         private void Invoke(Action<IDatabase, ISchemaProvider> action)
         {
-            using (var db = DatabaseFactory.CreateDatabase("sqlite"))
+            using (var db = DatabaseFactory.CreateDatabase("mysql"))
             {
                 var schema = db.Provider.GetService<ISchemaProvider>();
                 action(db, schema);
@@ -38,7 +38,7 @@ namespace Fireasy.Data.Tests
         {
             Invoke((db, schema) =>
             {
-                foreach (var database in schema.GetSchemas<DataBase>(db))
+                foreach (var database in schema.GetSchemas<Schema.Database>(db))
                 {
                     Console.WriteLine(database.Name);
                 }
@@ -88,9 +88,9 @@ namespace Fireasy.Data.Tests
             Invoke((db, schema) =>
             {
                 var parameter = db.Provider.GetConnectionParameter(db.ConnectionString);
-                foreach (var column in schema.GetSchemas<Column>(db, s => s.Schema == parameter.Schema && s.TableName == "SysOrg"))
+                foreach (var column in schema.GetSchemas<Column>(db, s => s.Schema == parameter.Schema && s.TableName == "orders"))
                 {
-                    Console.WriteLine($"Name: {column.Name}\tIsPrimaryKey: {column.IsNullable}\tDescription: {column.Description}");
+                    Console.WriteLine($"Name: {column.Name}\tIsPrimaryKey: {column.IsPrimaryKey}\tDescription: {column.Description}");
                 }
             });
         }

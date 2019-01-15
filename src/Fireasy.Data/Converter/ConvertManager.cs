@@ -64,7 +64,7 @@ namespace Fireasy.Data.Converter
                 return new SizeConverter();
             }
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             if (conversionType == typeof(Image)
                 || conversionType == typeof(Bitmap))
             {
@@ -108,7 +108,7 @@ namespace Fireasy.Data.Converter
                 || conversionType == typeof(Point)
                 || conversionType == typeof(Rectangle)
                 || conversionType == typeof(Size)
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
                 || conversionType == typeof(Image)
                 || conversionType == typeof(Bitmap)
                 || conversionType == typeof(Font)

@@ -70,7 +70,7 @@ namespace Fireasy.Common.Emit
                 var an = new AssemblyName(AssemblyName);
                 if (string.IsNullOrEmpty(OutputAssembly))
                 {
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
                     assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(an, AssemblyBuilderAccess.Run);
 #else
                     assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(an, AssemblyBuilderAccess.RunAndCollect);
@@ -84,7 +84,7 @@ namespace Fireasy.Common.Emit
                         Directory.CreateDirectory(dir);
                     }
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
                     assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(an, AssemblyBuilderAccess.RunAndSave, dir);
 #else
                     assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(an, AssemblyBuilderAccess.Run);
@@ -119,7 +119,7 @@ namespace Fireasy.Common.Emit
                 else
                 {
                     var fileName = OutputAssembly.Substring(OutputAssembly.LastIndexOf("\\") + 1);
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
                     moduleBuilder = AssemblyBuilder.DefineDynamicModule(fileName, fileName);
 #else
                     moduleBuilder = AssemblyBuilder.DefineDynamicModule(fileName);
@@ -182,7 +182,7 @@ namespace Fireasy.Common.Emit
             return enumBuilder;
         }
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
         /// <summary>
         /// 将所有的动态类型保存到程序集。
         /// </summary>

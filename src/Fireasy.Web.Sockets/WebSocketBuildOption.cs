@@ -18,7 +18,7 @@ namespace Fireasy.Web.Sockets
     {
         private Dictionary<string, Type> mapping = new Dictionary<string, Type>();
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
         public static readonly WebSocketBuildOption Default = new WebSocketBuildOption();
 #endif
 

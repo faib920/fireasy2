@@ -52,9 +52,9 @@ namespace Fireasy.Common.ComponentModel
     /// <summary>
     /// 表示树节点，Id 的类型可以指定。
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="TNode"></typeparam>
     /// <typeparam name="TID"></typeparam>
-    public interface ITreeNode<T, TID> : ITreeNode<T>
+    public interface ITreeNode<TNode, TID> : ITreeNode<TNode>
     {
         /// <summary>
         /// 获取表示节点的唯一编码。

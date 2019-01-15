@@ -28,7 +28,7 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="SQLiteProvider"/> 类的新实例。
         /// </summary>
         public SQLiteProvider()
-#if NETSTANDARD2_0
+#if NETSTANDARD
             : base("Microsoft.Data.Sqlite.SqliteFactory, Microsoft.Data.Sqlite",
                     "Microsoft.Data.Sqlite.SqliteFactory, Spreads.SQLite", 
                     "Devart.Data.SQLite.SQLiteProviderFactory, Devart.Data.SQLite")

@@ -1,4 +1,11 @@
-﻿using Fireasy.Common.Extensions;
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections;
 using System.Data;
@@ -78,7 +85,7 @@ namespace Fireasy.Common.Serialization
                 return;
             }
 
-#if !NET35 && !NETSTANDARD2_0
+#if !NET35 && !NETSTANDARD
             if (typeof(IDynamicMetaObjectProvider).IsAssignableFrom(type))
             {
                 SerializeDynamicObject((IDynamicMetaObjectProvider)value, startEle);
@@ -140,25 +147,14 @@ namespace Fireasy.Common.Serialization
                 converter = option.Converters.GetWritableConverter(type, new[] { typeof(XmlConverter) }) as XmlConverter;
             }
 
-            if ((converter is XmlConverter || converter is ValueConverter) && converter.CanWrite)
+            if (converter == null || !converter.CanWrite)
             {
-                WriteXmlElement(GetElementName(type), startEle, () =>
-                    {
-                        var xmlConvert = converter as XmlConverter;
-                        if (xmlConvert != null && xmlConvert.Streaming)
-                        {
-                            xmlConvert.WriteXml(serializer, xmlWriter, value);
-                        }
-                        else
-                        {
-                            xmlWriter.WriteRaw(converter.WriteXml(serializer, value));
-                        }
-                    });
-
-                return true;
+                return false;
             }
 
-            return false;
+            converter.WriteXml(serializer, xmlWriter, value);
+
+            return true;
         }
 
         private string GetElementName(Type type)
@@ -182,13 +178,13 @@ namespace Fireasy.Common.Serialization
             }
             else
             {
-                sb.Append(type.Name);
+                sb.Append(GetSimpleTypeName(type));
             }
 
             return sb.ToString();
         }
 
-#if !NET35 && !NETSTANDARD2_0
+#if !NET35 && !NETSTANDARD
         private void SerializeDynamicObject(IDynamicMetaObjectProvider dynamicObject, bool startEle)
         {
             var flag = new AssertFlag();
@@ -308,7 +304,7 @@ namespace Fireasy.Common.Serialization
                 switch (Type.GetTypeCode(type))
                 {
                     case TypeCode.Boolean:
-                        xmlWriter.WriteValue(value.ToString());
+                        xmlWriter.WriteValue((bool)value == true ? "true" : "false");
                         break;
                     case TypeCode.SByte:
                     case TypeCode.Byte:
@@ -399,9 +395,7 @@ namespace Fireasy.Common.Serialization
                     continue;
                 }
 
-                xmlWriter.WriteStartElement(acc.PropertyName);
-                Serialize(value, type: acc.PropertyInfo.PropertyType);
-                xmlWriter.WriteEndElement();
+                WriteXmlElement(acc.PropertyName, true, () => Serialize(value, type: acc.PropertyInfo.PropertyType));
             }
 
             if (startEle)
@@ -422,7 +416,7 @@ namespace Fireasy.Common.Serialization
         {
             if (startEle)
             {
-                xmlWriter.WriteStartElement(name);
+                xmlWriter.WriteStartElement(option.CamelNaming ? char.ToLower(name[0]) + name.Substring(1) : name);
             }
 
             if (action != null)
@@ -471,6 +465,45 @@ namespace Fireasy.Common.Serialization
                 {
                     yield return column;
                 }
+            }
+        }
+
+        private string GetSimpleTypeName(Type type)
+        {
+            switch (Type.GetTypeCode(type))
+            {
+                case TypeCode.Boolean:
+                    return "boolean";
+                case TypeCode.String:
+                    return "string";
+                case TypeCode.DateTime:
+                    return "dateTime";
+                case TypeCode.Char:
+                    return "char";
+                case TypeCode.SByte:
+                    return "sbyte";
+                case TypeCode.Byte:
+                    return "byte";
+                case TypeCode.Int16:
+                    return "short";
+                case TypeCode.UInt16:
+                    return "ushort";
+                case TypeCode.Int32:
+                    return "int";
+                case TypeCode.UInt32:
+                    return "uint";
+                case TypeCode.Int64:
+                    return "long";
+                case TypeCode.UInt64:
+                    return "ulong";
+                case TypeCode.Single:
+                    return "float";
+                case TypeCode.Decimal:
+                    return "decimal";
+                case TypeCode.Double:
+                    return "double";
+                default:
+                    return option.CamelNaming ? char.ToLower(type.Name[0]) + type.Name.Substring(1) : type.Name;
             }
         }
 

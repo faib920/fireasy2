@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Globalization;
+using System.IO;
 
 namespace Fireasy.Common.Serialization
 {
@@ -31,55 +33,30 @@ namespace Fireasy.Common.Serialization
         }
 
         /// <summary>
-        /// 获取是否使用流对象方式，即使用 <see cref="JsonReader"/> 和 <see cref="JsonWriter"/> 对象，默认为 false。
-        /// </summary>
-        public virtual bool Streaming
-        {
-            get { return false; }
-        }
-
-        /// <summary>
         /// 将对象写为 Json 文本。
         /// </summary>
-        /// <param name="serializer">一个 <see cref="JsonSerializer"/> 对象。</param>
-        /// <param name="obj">要序列化的对象。</param>
-        /// <returns>表示对象的 Json 文本。</returns>
-        public virtual string WriteJson(JsonSerializer serializer, object obj)
-        {
-            return string.Empty;
-        }
-
-        /// <summary>
-        /// 将对象写为 Json 文本。
-        /// </summary>
-        /// <param name="serializer">一个 <see cref="JsonSerializer"/> 对象。</param>
-        /// <param name="writer"></param>
+        /// <param name="serializer">当前的 <see cref="JsonSerializer"/> 对象。</param>
+        /// <param name="writer"><see cref="JsonWriter"/>对象。</param>
+        /// <param name="obj"></param>
         public virtual void WriteJson(JsonSerializer serializer, JsonWriter writer, object obj)
         {
         }
 
         string ITextConverter.WriteObject(ITextSerializer serializer, object obj)
         {
-            return WriteJson((JsonSerializer)serializer, obj);
+            using (var sw = new StringWriter(CultureInfo.InvariantCulture))
+            using (var writer = new JsonWriter(sw))
+            {
+                WriteJson((JsonSerializer)serializer, writer, obj);
+                return sw.ToString();
+            }
         }
 
         /// <summary>
         /// 从 Json 中读取对象。
         /// </summary>
-        /// <param name="serializer">一个 <see cref="JsonSerializer"/> 对象。</param>
-        /// <param name="dataType">将要读取的类型。</param>
-        /// <param name="json">表示对象的 Json 文本。</param>
-        /// <returns>反序列化后的对象。</returns>
-        public virtual object ReadJson(JsonSerializer serializer, Type dataType, string json)
-        {
-            return null;
-        }
-
-        /// <summary>
-        /// 从 Json 中读取对象。
-        /// </summary>
-        /// <param name="serializer">一个 <see cref="JsonSerializer"/> 对象。</param>
-        /// <param name="reader"></param>
+        /// <param name="serializer">当前的 <see cref="JsonSerializer"/> 对象。</param>
+        /// <param name="reader"><see cref="JsonReader"/>对象。</param>
         /// <param name="dataType">将要读取的类型。</param>
         /// <returns>反序列化后的对象。</returns>
         public virtual object ReadJson(JsonSerializer serializer, JsonReader reader, Type dataType)
@@ -89,7 +66,11 @@ namespace Fireasy.Common.Serialization
 
         object ITextConverter.ReadObject(ITextSerializer serializer, Type dataType, string text)
         {
-            return ReadJson((JsonSerializer)serializer, dataType, text);
+            using (var sr = new StringReader(text))
+            using (var reader = new JsonReader(sr))
+            {
+                return ReadJson((JsonSerializer)serializer, reader, dataType);
+            }
         }
     }
 

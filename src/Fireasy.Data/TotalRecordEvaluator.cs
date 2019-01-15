@@ -52,16 +52,13 @@ namespace Fireasy.Data
         private int GetRecordCountFromDatabase(CommandContext context)
         {
             var count = 0;
-            var orderBy = DbUtility.FindOrderBy(context.Command.CommandText);
-
-            var sql = string.IsNullOrEmpty(orderBy) ? context.Command.CommandText : context.Command.CommandText.Replace(orderBy, string.Empty);
-            sql = string.Format("SELECT COUNT(*) FROM ({0}) TEMP", sql);
+            var cullingOrderBy = DbUtility.CullingOrderBy(context.Command.CommandText);
 
             using (var connection = context.Database.CreateConnection(DistributedMode.Slave))
             {
                 connection.OpenClose(() =>
                     {
-                        using (var command = context.Database.Provider.CreateCommand(connection, null, sql, parameters: context.Parameters))
+                        using (var command = context.Database.Provider.CreateCommand(connection, null, cullingOrderBy, parameters: context.Parameters))
                         {
                             using (var reader = command.ExecuteReader())
                             {

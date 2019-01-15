@@ -6,111 +6,88 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Collections.Concurrent;
-using System.Linq;
-using Fireasy.Common.Caching;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Ioc.Registrations;
-using System.Reflection;
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Xml;
-using Fireasy.Common.Aop;
 
 namespace Fireasy.Common.Ioc
 {
     /// <summary>
     /// 控制反转的容器，用于存放描述组件与服务的联系。
     /// </summary>
-    public sealed class Container : IServiceProvider, IDisposable
+    public sealed class Container : IServiceProvider
     {
-        private ConcurrentDictionary<Type, IRegistration> registrations = new ConcurrentDictionary<Type, IRegistration>();
+        private ParameterExpression parExp = null;
+        private List<IRegistration> registrations = new List<IRegistration>();
         private readonly List<InstanceInitializer> instanceInitializers = new List<InstanceInitializer>();
 
         /// <summary>
-        /// 使用选项初始化 <see cref="Container"/> 类的新实例。
-        /// </summary>
-        /// <param name="options">容器的选项。</param>
-        public Container(ContainerOptions options)
-        {
-            Options = options;
-        }
-
-        /// <summary>
-        /// 初始化 <see cref="Container"/> 类的新实例。
-        /// </summary>
-        public Container()
-            : this(new ContainerOptions())
-        {
-        }
-
-        /// <summary>
-        /// 获取或设置 IOC 容器的选项。
-        /// </summary>
-        public ContainerOptions Options { get; set; }
-
-        /// <summary>
-        /// 注册服务类型及实现类型，<typeparamref name="TComponent"/> 是 <typeparamref name="TService"/> 的实现类。
+        /// 注册服务类型及实现类型，<typeparamref name="TImplementation"/> 是 <typeparamref name="TService"/> 的实现类。
         /// </summary>
         /// <typeparam name="TService">服务类型。</typeparam>
-        /// <typeparam name="TComponent">组件类型。</typeparam>
+        /// <typeparam name="TImplementation">实现类型。</typeparam>
         /// <returns>当前的 IOC 容器。</returns>
-        public Container Register<TService, TComponent>()
-            where TComponent : class, TService
+        public Container Register<TService, TImplementation>()
+            where TImplementation : class, TService
             where TService : class
         {
-            AddRegistration(new TransientRegistration<TService, TComponent>());
+            AddRegistration(new TransientRegistration<TService, TImplementation>());
             return this;
         }
 
         /// <summary>
-        /// 注册服务类型及实现类型，<typeparamref name="TComponent"/> 是 <typeparamref name="TService"/> 的实现类。
+        /// 注册服务类型及实现类型，<typeparamref name="TImplementation"/> 是 <typeparamref name="TService"/> 的实现类。
         /// </summary>
         /// <typeparam name="TService">服务类型。</typeparam>
-        /// <typeparam name="TComponent">组件类型。</typeparam>
+        /// <typeparam name="TImplementation">实现类型。</typeparam>
         /// <param name="lifetime">生命周期。</param>
         /// <returns>当前的 IOC 容器。</returns>
-        public Container Register<TService, TComponent>(Lifetime lifetime)
-            where TComponent : class, TService
+        public Container Register<TService, TImplementation>(Lifetime lifetime)
+            where TImplementation : class, TService
             where TService : class
         {
             if (lifetime == Lifetime.Singleton)
             {
-                return RegisterSingleton(() => typeof(TComponent).New<TService>());
+                return RegisterSingleton<TService, TImplementation>();
             }
 
-            return Register<TService, TComponent>();
+            return Register<TService, TImplementation>();
         }
 
         /// <summary>
-        /// 注册服务类型及实现类型，<paramref name="componentType"/> 是 <paramref name="serviceType"/> 的实现类。
+        /// 注册服务类型及实现类型，<paramref name="implementationType"/> 是 <paramref name="serviceType"/> 的实现类。
         /// </summary>
         /// <param name="serviceType">服务类型。</param>
-        /// <param name="componentType">组件类型。</param>
+        /// <param name="implementationType">实现类型。</param>
         /// <returns>当前的 IOC 容器。</returns>
-        public Container Register(Type serviceType, Type componentType)
+        public Container Register(Type serviceType, Type implementationType)
         {
-            var type = typeof(TransientRegistration<,>).MakeGenericType(serviceType, componentType);
-            AddRegistration(type.New<IRegistration>());
+            AddRegistration(Creator.CreateTransient(serviceType, implementationType));
             return this;
         }
 
         /// <summary>
-        /// 注册服务类型及实现类型，<paramref name="componentType"/> 是 <paramref name="serviceType"/> 的实现类。
+        /// 注册服务类型及实现类型，<paramref name="implementationType"/> 是 <paramref name="serviceType"/> 的实现类。
         /// </summary>
         /// <param name="serviceType">服务类型。</param>
-        /// <param name="componentType">组件类型。</param>
+        /// <param name="implementationType">实现类型。</param>
         /// <param name="lifetime">生命周期。</param>
         /// <returns>当前的 IOC 容器。</returns>
-        public Container Register(Type serviceType, Type componentType, Lifetime lifetime)
+        public Container Register(Type serviceType, Type implementationType, Lifetime lifetime)
         {
             if (lifetime == Lifetime.Singleton)
             {
-                return RegisterSingleton(serviceType, componentType);
+                return RegisterSingleton(serviceType, implementationType);
             }
 
-            return Register(serviceType, componentType);
+            return Register(serviceType, implementationType);
         }
 
         /// <summary>
@@ -138,9 +115,8 @@ namespace Fireasy.Common.Ioc
         /// <returns>当前的 IOC 容器。</returns>
         public Container Register(Type serviceType, Func<object> instanceCreator)
         {
-            var type = typeof(FuncRegistration<>).MakeGenericType(serviceType);
-            var constructor = type.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance)[0];
-            AddRegistration((IRegistration)constructor.Invoke(new[] { instanceCreator }));
+            var registration = Creator.CreateFunc(serviceType, instanceCreator);
+            AddRegistration(registration);
             return this;
         }
 
@@ -152,7 +128,7 @@ namespace Fireasy.Common.Ioc
         /// <returns>当前的 IOC 容器。</returns>
         public Container RegisterSingleton<TService>(Func<TService> instanceCreator) where TService : class
         {
-            AddRegistration(new SingletonRegistration<TService>(instanceCreator));
+            AddRegistration(new SingletonRegistration(typeof(TService), instanceCreator()));
             return this;
         }
 
@@ -164,7 +140,7 @@ namespace Fireasy.Common.Ioc
         /// <returns>当前的 IOC 容器。</returns>
         public Container RegisterSingleton<TService>(TService instance) where TService : class
         {
-            AddRegistration(new SingletonRegistration<TService>(instance));
+            AddRegistration(new SingletonRegistration(typeof(TService), instance));
             return this;
         }
 
@@ -183,12 +159,25 @@ namespace Fireasy.Common.Ioc
         /// <summary>
         /// 使用服务对象的构造器注册它的服务类型，该对象是一个单例。
         /// </summary>
-        /// <param name="serviceType">服务类型。</param>
-        /// <param name="componentType">组件类型。</param>
+        /// <typeparam name="TService">服务类型。</typeparam>
+        /// <typeparam name="TImplementation">实现类型。</typeparam>
         /// <returns>当前的 IOC 容器。</returns>
-        public Container RegisterSingleton(Type serviceType, Type componentType)
+        public Container RegisterSingleton<TService, TImplementation>()
+            where TImplementation : class, TService
+            where TService : class
         {
-            AddRegistration(new SingletonRegistration(serviceType, componentType.New()));
+            return RegisterSingleton(typeof(TService), typeof(TImplementation));
+        }
+
+        /// <summary>
+        /// 使用服务对象的构造器注册它的服务类型，该对象是一个单例。
+        /// </summary>
+        /// <param name="serviceType">服务类型。</param>
+        /// <param name="implementationType">实现类型。</param>
+        /// <returns>当前的 IOC 容器。</returns>
+        public Container RegisterSingleton(Type serviceType, Type implementationType)
+        {
+            AddRegistration(Creator.RelyWithTransient(serviceType, implementationType, this));
             return this;
         }
 
@@ -248,8 +237,11 @@ namespace Fireasy.Common.Ioc
         /// <param name="serviceType">服务类型。</param>
         public void UnRegister(Type serviceType)
         {
-            IRegistration registration;
-            registrations.TryRemove(serviceType, out registration);
+            var regs = registrations.Where(s => s.ServiceType == serviceType).ToArray();
+            for (var i = regs.Length - 1; i >= 0; i--)
+            {
+                registrations.Remove(regs[i]);
+            }
         }
 
         /// <summary>
@@ -267,7 +259,7 @@ namespace Fireasy.Common.Ioc
         /// <returns>类型的实例对象。如果没有注册，则为 null。</returns>
         public TService Resolve<TService>() where TService : class
         {
-            return Resolve(typeof(TService)).As<TService>();
+            return (TService)Resolve(typeof(TService));
         }
 
         /// <summary>
@@ -277,16 +269,31 @@ namespace Fireasy.Common.Ioc
         /// <returns>类型的实例对象。如果没有注册，则为 null。</returns>
         public object Resolve(Type serviceType)
         {
-            var registration = GetRegistration(serviceType);
-            if (registration == null && !serviceType.IsAbstract && !serviceType.IsInterface)
+            if (IsEnumerableResolve(serviceType))
             {
-                var type = typeof(TransientRegistration<,>).MakeGenericType(serviceType, serviceType);
-                registration = type.New<IRegistration>();
-                AddRegistration(registration);
+                var elementType = serviceType.GetEnumerableElementType();
+                var regs = GetRegistrations(elementType);
+                var list = CreateEnumerable(elementType);
+
+                foreach (var reg in regs)
+                {
+                    list.Add(reg.Resolve());
+                }
+
+                return list;
             }
 
-            if (registration != null)
+            IRegistration registration;
+            if ((registration = GetRegistrations(serviceType).LastOrDefault()) != null)
             {
+                return registration.Resolve();
+            }
+
+            if (!serviceType.IsAbstract && !serviceType.IsInterface)
+            {
+                registration = Creator.CreateTransient(serviceType, serviceType);
+                AddRegistration(registration);
+
                 return registration.Resolve();
             }
 
@@ -299,7 +306,7 @@ namespace Fireasy.Common.Ioc
         /// <returns>所有在该容器注册的注册器。</returns>
         public IEnumerable<IRegistration> GetRegistrations()
         {
-            return registrations.Values;
+            return registrations;
         }
 
         /// <summary>
@@ -307,9 +314,9 @@ namespace Fireasy.Common.Ioc
         /// </summary>
         /// <typeparam name="TService">服务类型。</typeparam>
         /// <returns>类型的注册器。</returns>
-        public IRegistration GetRegistration<TService>() where TService : class
+        public IEnumerable<IRegistration> GetRegistrations<TService>() where TService : class
         {
-            return GetRegistration(typeof(TService));
+            return GetRegistrations(typeof(TService));
         }
 
         /// <summary>
@@ -317,11 +324,15 @@ namespace Fireasy.Common.Ioc
         /// </summary>
         /// <param name="serviceType">服务类型。</param>
         /// <returns>类型的注册器。</returns>
-        public IRegistration GetRegistration(Type serviceType)
+        public IEnumerable<IRegistration> GetRegistrations(Type serviceType)
         {
-            IRegistration registration;
-            registrations.TryGetValue(serviceType, out registration);
-            return registration;
+            if (IsEnumerableResolve(serviceType))
+            {
+                var elementType = serviceType.GetEnumerableElementType();
+                return registrations.Where(s => s.ServiceType == elementType);
+            }
+
+            return registrations.Where(s => s.ServiceType == serviceType);
         }
 
         /// <summary>
@@ -341,7 +352,7 @@ namespace Fireasy.Common.Ioc
         /// <returns></returns>
         public bool IsRegistered(Type serviceType)
         {
-            return registrations.ContainsKey(serviceType);
+            return registrations.Any(s => s.ServiceType == serviceType);
         }
 
         /// <summary>
@@ -364,7 +375,7 @@ namespace Fireasy.Common.Ioc
 
         object IServiceProvider.GetService(Type serviceType)
         {
-            return GetRegistration(serviceType);
+            return Resolve(serviceType);
         }
 
         /// <summary>
@@ -404,27 +415,15 @@ namespace Fireasy.Common.Ioc
 
         private void AddRegistration(IRegistration registration)
         {
-            if (!Options.AllowOverriding && registrations.ContainsKey(registration.ServiceType))
-            {
-                return;
-            }
-
-            registration.As<AbstractRegistration>(e => e.Container = this);
-            registrations.AddOrReplace(registration.ServiceType, registration);
-        }
-
-        /// <summary>
-        /// 释放对象所占用的所有资源。
-        /// </summary>
-        public void Dispose()
-        {
+            registration.As<AbstractRegistration>(e => e.SetContainer(this));
+            registrations.Add(registration);
         }
 
         /// <summary>
         /// 通过配置文件进行注册。
         /// </summary>
-        /// <param name="path"></param>
-        /// <param name="pattern"></param>
+        /// <param name="path">文件路径。</param>
+        /// <param name="pattern">文件通配符。</param>
         /// <returns></returns>
         public Container Config(string path, string pattern)
         {
@@ -459,6 +458,25 @@ namespace Fireasy.Common.Ioc
             return this;
         }
 
+        /// <summary>
+        /// 判断是否需要反转为 <see cref="IEnumerable{T}"/> 类型的对象。
+        /// </summary>
+        /// <param name="serviceType"></param>
+        /// <returns></returns>
+        public bool IsEnumerableResolve(Type serviceType)
+        {
+            Type definitionType;
+
+            return serviceType.IsGenericType &&
+                (definitionType = serviceType.GetGenericTypeDefinition()) != null
+                && (definitionType == typeof(IEnumerable<>) || definitionType == typeof(IList<>) || definitionType == typeof(IList<>));
+        }
+
+        internal ParameterExpression GetParameterExpression()
+        {
+            return parExp ?? (parExp = Expression.Parameter(typeof(Container), "c"));
+        }
+
         private void LoadXmlConfig(string fileName)
         {
             var xmlDoc = new XmlDocument();
@@ -467,21 +485,26 @@ namespace Fireasy.Common.Ioc
             foreach (XmlNode nd in xmlDoc.SelectNodes("container/registration"))
             {
                 var serviceType = nd.GetAttributeValue("serviceType").ParseType();
-                var componentType = nd.GetAttributeValue("componentType").ParseType();
+                var implementationType = (nd.Attributes["implementationType"] ?? nd.Attributes["componentType"])?.Value.ParseType();
                 var singleton = nd.GetAttributeValue<bool>("singleton");
 
-                if (serviceType != null && componentType != null)
+                if (serviceType != null && implementationType != null)
                 {
                     if (singleton)
                     {
-                        RegisterSingleton(serviceType, componentType);
+                        RegisterSingleton(serviceType, implementationType);
                     }
                     else
                     {
-                        Register(serviceType, componentType);
+                        Register(serviceType, implementationType);
                     }
                 }
             }
+        }
+
+        private IList CreateEnumerable(Type serviceType)
+        {
+            return typeof(List<>).MakeGenericType(serviceType).New<IList>();
         }
     }
 }

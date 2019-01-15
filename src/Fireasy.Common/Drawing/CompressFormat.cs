@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NETSTANDARD2_0
 
 namespace Fireasy.Common.Drawing
 {
@@ -21,4 +20,3 @@ namespace Fireasy.Common.Drawing
         TIFF,
     }
 }
-#endif

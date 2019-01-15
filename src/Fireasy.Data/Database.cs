@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
@@ -80,7 +81,7 @@ namespace Fireasy.Data
         {
             Guard.ArgumentNull(provider, nameof(provider));
             Provider = provider;
-            DistributedConnectionStrings = connectionStrings;
+            DistributedConnectionStrings = connectionStrings.ToReadOnly();
             ConnectionString = connectionStrings.Find(s => s.Mode == DistributedMode.Master);
             Track = DefaultCommandTracker.Instance;
         }
@@ -99,9 +100,9 @@ namespace Fireasy.Data
         public ConnectionString ConnectionString { get; set; }
 
         /// <summary>
-        /// 获取或设置分布式数据库连接字符串组。
+        /// 获取分布式数据库连接字符串组。
         /// </summary>
-        public List<DistributedConnectionString> DistributedConnectionStrings { get; set; }
+        public ReadOnlyCollection<DistributedConnectionString> DistributedConnectionStrings { get; private set; }
 
         /// <summary>
         /// 获取数据库提供者。
@@ -150,7 +151,7 @@ namespace Fireasy.Data
         /// </summary>
         /// <param name="level">事务的锁定行为。</param>
         /// <returns>如果当前实例首次启动事务，则为 true，否则为 false。</returns>
-        public virtual bool BeginTransaction(IsolationLevel level = IsolationLevel.ReadCommitted)
+        public virtual bool BeginTransaction(IsolationLevel level = IsolationLevel.ReadUncommitted)
         {
             tranStack.Push();
             if (Transaction != null)
@@ -334,7 +335,7 @@ namespace Fireasy.Data
                             throw new CommandException(command, exp);
                         }
                     }
-                });
+                }, mode: DistributedMode.Master);
         }
 
         /// <summary>
@@ -514,7 +515,7 @@ namespace Fireasy.Data
 
                     builder.FillAdapter(adapter);
                     adapter.Update(dataTable);
-                }, false);
+                }, false, DistributedMode.Master);
         }
 
         /// <summary>
@@ -548,7 +549,7 @@ namespace Fireasy.Data
 
                     result = adapter.Update(dataTable);
 
-                }, false);
+                }, false, DistributedMode.Master);
 
             return result;
         }
@@ -578,7 +579,7 @@ namespace Fireasy.Data
 
                         throw new CommandException(command, exp);
                     }
-                });
+                }, mode: DistributedMode.Master);
         }
 
         /// <summary>
@@ -609,7 +610,7 @@ namespace Fireasy.Data
 
                         throw new CommandException(command, exp);
                     }
-                });
+                }, mode: DistributedMode.Slave);
         }
 
         /// <summary>
@@ -636,7 +637,7 @@ namespace Fireasy.Data
 
                         throw new CommandException(command, exp);
                     }
-                });
+                }, mode: DistributedMode.Slave);
         }
 
         /// <summary>
@@ -1045,7 +1046,7 @@ namespace Fireasy.Data
                             throw new CommandException(command, exp);
                         }
                     }
-                });
+                }, mode: DistributedMode.Master);
 
             return result;
         }

@@ -131,7 +131,7 @@ namespace Fireasy.Common.Security
 
         private string ToXmlString(bool includePrivateParameters)
         {
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             return dsa.ToXmlString(includePrivateParameters);
 #else
             var parameters = dsa.ExportParameters(includePrivateParameters);
@@ -171,7 +171,7 @@ namespace Fireasy.Common.Security
 
         private void FromXmlString(string xmlString)
         {
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             dsa.FromXmlString(xmlString);
 #else
             var parameters = new DSAParameters();

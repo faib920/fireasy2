@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+#if !NETSTANDARD
 using Fireasy.Common.Serialization;
 using System.Collections.Generic;
 
@@ -21,3 +22,4 @@ namespace Fireasy.Web.Mvc
         public static List<ITextConverter> Converters { get; private set; } = new List<ITextConverter>();
     }
 }
+#endif

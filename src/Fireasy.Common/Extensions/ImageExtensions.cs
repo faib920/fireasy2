@@ -5,8 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NETSTANDARD2_0
-
 using Fireasy.Common.Drawing;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -208,4 +206,3 @@ namespace Fireasy.Common.Extensions
         }
     }
 }
-#endif

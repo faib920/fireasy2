@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if NETSTANDARD2_0
+#if NETSTANDARD
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters.Json.Internal;
@@ -28,16 +28,11 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IMvcBuilder ConfigureFireasyMvc(this IMvcBuilder builder, Action<Fireasy.Web.Mvc.MvcOptions> setupAction = null)
         {
             var options = new Fireasy.Web.Mvc.MvcOptions();
-            if (setupAction != null)
-            {
-                setupAction(options);
-
-                Fireasy.Web.Mvc.GlobalSetting.Converters.AddRange(options.Converters);
-            }
+            setupAction?.Invoke(options);
 
             if (options.UseTypicalJsonSerializer)
             {
-                builder.Services.Configure<MvcOptions>(s => s.OutputFormatters.Insert(0, new Fireasy.Web.Mvc.JsonOutputFormatter()));
+                builder.Services.Configure<MvcOptions>(s => s.OutputFormatters.Insert(0, new Fireasy.Web.Mvc.JsonOutputFormatter(options)));
                 builder.Services.AddSingleton<JsonResultExecutor, Fireasy.Web.Mvc.JsonResultExecutor>();
             }
 
@@ -66,10 +61,11 @@ namespace Microsoft.Extensions.DependencyInjection
             {
                 builder.Services.Configure<MvcOptions>(s =>
                     {
-                        s.ModelBinderProviders.Insert(0, new Fireasy.Web.Mvc.JsonModelBinderProvider());
+                        s.ModelBinderProviders.Insert(0, new Fireasy.Web.Mvc.JsonModelBinderProvider(options));
                     });
             }
 
+            builder.Services.Configure(setupAction);
             return builder;
         }
 

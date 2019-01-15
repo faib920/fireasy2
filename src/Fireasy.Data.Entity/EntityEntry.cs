@@ -93,7 +93,14 @@ namespace Fireasy.Data.Entity
         /// <param name="value"></param>
         internal void Initializate(PropertyValue value)
         {
-            oldValue = value;
+            if (IsModified)
+            {
+                newValue = value;
+            }
+            else
+            {
+                oldValue = value;
+            }
         }
 
         /// <summary>

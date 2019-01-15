@@ -70,7 +70,7 @@ namespace Fireasy.Data.Provider
         private static void InitializeProviders()
         {
             //内置的提供者
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             dicProviders.TryAdd("OleDb", OleDbProvider.Instance);
             dicProviders.TryAdd("Odbc", OdbcProvider.Instance);
 #endif

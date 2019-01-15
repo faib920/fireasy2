@@ -189,7 +189,7 @@ namespace System
             return IsValueCreated ? Value.ToString() : "Lazy_ToString_ValueNotCreated";
         }
 
-        /// <summary>Gets the value of the Lazy&lt;T&gt; for debugging display purposes.</summary>
+        /// <summary>Gets the value of the <see cref="Lazy{T}"/> for debugging display purposes.</summary>
         internal T ValueForDebugDisplay
         {
             get
@@ -388,7 +388,7 @@ namespace System
 
     }
 
-    /// <summary>A debugger view of the Lazy&lt;T&gt; to surface additional debugging properties and 
+    /// <summary>A debugger view of the <see cref="Lazy{T}"/> to surface additional debugging properties and 
     /// to ensure that the Lazy&lt;T&gt; does not become initialized if it was not already.</summary>
     internal sealed class System_LazyDebugView<T>
     {

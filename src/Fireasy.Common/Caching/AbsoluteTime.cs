@@ -13,7 +13,7 @@ namespace Fireasy.Common.Caching
     /// 使用一个绝对时间作为缓存的过期检测策略，缓存项生命周期是到达该时间时为止。无法继承此类。
     /// </summary>
     [Serializable]
-    public sealed class AbsoluteTime : ICacheItemExpiration
+    public sealed class AbsoluteTime : ICacheItemExpiration, IExpirationTime
     {
         /// <summary>
         /// 使用一个绝对时间初始化 <see cref="AbsoluteTime"/> 类的新实例。
@@ -22,6 +22,7 @@ namespace Fireasy.Common.Caching
         public AbsoluteTime(DateTime absoluteTime)
         {
             ExpirationTime = absoluteTime.ToUniversalTime();
+            Expiration = absoluteTime - DateTime.Now;
         }
 
         /// <summary>
@@ -39,14 +40,27 @@ namespace Fireasy.Common.Caching
         public DateTime ExpirationTime { get; private set; }
 
         /// <summary>
+        /// 获取时间间隔。
+        /// </summary>
+        public TimeSpan Expiration { get; private set; }
+
+        /// <summary>
         /// 检查缓存项是否达到过期时间。
         /// </summary>
-        /// <param name="cacheItem">要检查的缓存项。</param>
         /// <returns>过期为 true，有效为 false。</returns>
-        public bool HasExpired(CacheItem cacheItem)
+        public bool HasExpired()
         {
             var nowDateTime = DateTime.Now.ToUniversalTime();
             return nowDateTime.Ticks >= ExpirationTime.Ticks;
+        }
+
+        /// <summary>
+        /// 获取到期时间。
+        /// </summary>
+        /// <returns></returns>
+        public TimeSpan? GetExpirationTime()
+        {
+            return ExpirationTime - DateTime.Now;
         }
     }
 }

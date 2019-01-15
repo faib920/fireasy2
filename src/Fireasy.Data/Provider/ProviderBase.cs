@@ -178,7 +178,7 @@ namespace Fireasy.Data.Provider
         /// <returns></returns>
         protected virtual DbProviderFactory InitDbProviderFactory()
         {
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             return DbProviderFactories.GetFactory(providerName);
 #else
             return null;

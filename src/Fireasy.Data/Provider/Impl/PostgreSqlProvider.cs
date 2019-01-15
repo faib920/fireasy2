@@ -28,7 +28,7 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="PostgreSqlProvider"/> 类的新实例。
         /// </summary>
         public PostgreSqlProvider()
-#if NETSTANDARD2_0
+#if NETSTANDARD
             : base("Npgsql.NpgsqlFactory, Npgsql",
                   "Devart.Data.PostgreSql.PgSqlProviderFactory, Devart.Data.PostgreSql")
 #else

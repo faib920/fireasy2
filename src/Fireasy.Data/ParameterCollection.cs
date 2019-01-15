@@ -61,16 +61,16 @@ namespace Fireasy.Data
         /// <summary>
         /// 使用一个对象初始化参数集合，该实例化方法产生的参数将以对象的属性名称进行命名。
         /// </summary>
-        /// <param name="obj"></param>
+        /// <param name="paramters"></param>
         /// <returns></returns>
-        public ParameterCollection(object obj)
+        public ParameterCollection(object paramters)
         {
-            Guard.ArgumentNull(obj, nameof(obj));
+            Guard.ArgumentNull(paramters, nameof(paramters));
             arrayList = new ArrayList();
 
-            foreach (PropertyDescriptor property in TypeDescriptor.GetProperties(obj))
+            foreach (PropertyDescriptor property in TypeDescriptor.GetProperties(paramters))
             {
-                Add(property.Name, property.GetValue(obj));
+                Add(property.Name, property.GetValue(paramters));
             }
         }
 

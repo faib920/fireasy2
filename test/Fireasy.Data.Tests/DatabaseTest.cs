@@ -185,10 +185,29 @@ namespace Fireasy.Data.Tests
         [TestMethod]
         public void TestExecuteEnumerableByPager()
         {
-            using (var db = DatabaseFactory.CreateDatabase())
+            using (var db = DatabaseFactory.CreateDatabase("mssql"))
             {
+                var sql = @"
+select r.StockedID, 
+			r.OrgID,
+			o.Code OrgCode,
+			o.Name OrgName,
+			o.FullName OrgFullName,
+			r.StoreID,
+			s.Name StoreName,
+			r.KindID,
+			k.Name KindName,
+			r.Amount,
+			(select top 1 BatchNo from GrainStockRecordRice where KindID=r.KindID and StoreID=r.StoreID and State=1 order by OperateTime desc) BatchNo 
+from  GrainStocked r 
+inner join SysOrg o on r.OrgID = o.OrgID 
+inner join Kind k on r.KindID = k.KindID 
+inner join Store s on r.StoreID = s.StoreID  
+where r.State=1 and o.Attribute=3 and o.SchemaID=15 and o.Code like '00%'
+order by o.Code";
+
                 var pager = new DataPager(5, 0);
-                var result = db.ExecuteEnumerable<Customer>((SqlCommand)"select * from customers", pager);
+                var result = db.ExecuteEnumerable<Customer>((SqlCommand)sql, pager);
                 Console.WriteLine($"执行完毕 结果为{result.Count()}");
             }
         }

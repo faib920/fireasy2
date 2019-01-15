@@ -13,42 +13,47 @@ namespace Fireasy.Common.Ioc.Registrations
 {
     internal abstract class AbstractRegistration : IRegistration
     {
+        private static object locker = new object();
         private Func<Container, object> instanceCreator;
 
-        protected AbstractRegistration(Type serviceType, Type componetType)
+        protected AbstractRegistration(Type serviceType, Type implementationType)
         {
             ServiceType = serviceType;
-            ComponentType = componetType;
-            ParameterExpression = Expression.Parameter(typeof(Container), "s");
+            ImplementationType = implementationType;
         }
 
         public Type ServiceType { get; private set; }
 
-        public Type ComponentType { get; set; }
+        public Type ImplementationType { get; set; }
 
-        internal Container Container { get; set; }
-
-        internal ParameterExpression ParameterExpression { get; private set; }
+        internal Container Container { get; private set; }
 
         public object Resolve()
         {
-            if (instanceCreator == null)
+            lock (locker)
             {
-                instanceCreator = BuildInstanceCreator();
+                if (instanceCreator == null)
+                {
+                    instanceCreator = BuildInstanceCreator();
+                }
             }
 
-            var instance = instanceCreator(Container);
-
-            return instance;
+            return instanceCreator(Container);
         }
 
         private Func<Container, object> BuildInstanceCreator()
         {
             var expression = BuildExpression();
-            var newInstanceMethod = Expression.Lambda<Func<Container, object>>(expression, ParameterExpression);
+            var newInstanceMethod = Expression.Lambda<Func<Container, object>>(expression, Container.GetParameterExpression());
             return newInstanceMethod.Compile();
         }
 
         internal abstract Expression BuildExpression();
+
+        internal AbstractRegistration SetContainer(Container container)
+        {
+            Container = container;
+            return this;
+        }
     }
 }

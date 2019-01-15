@@ -1,6 +1,7 @@
 ﻿using Fireasy.Common.Subscribes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Text;
 using System.Threading;
 
 namespace Fireasy.Common.Tests.Subscribes
@@ -25,6 +26,10 @@ namespace Fireasy.Common.Tests.Subscribes
             subMgr.AddSubscriber<TestSubject>(s =>
             {
                 Console.WriteLine("2:" + s.Key);
+            });
+            subMgr.AddSubscriber(typeof(TestSubject).FullName, (s) =>
+            {
+                Console.WriteLine(Encoding.UTF8.GetString(s));
             });
 
             subMgr.Publish(new TestSubject { Key = "fireasy1" });

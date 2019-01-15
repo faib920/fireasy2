@@ -10,7 +10,7 @@ using System;
 using System.Linq.Expressions;
 using System.Text;
 using Fireasy.Web.Mvc;
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
 using System.Web.Mvc;
 #else
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
@@ -22,7 +22,7 @@ namespace Fireasy.Web.Mvc
     public static class RadioGroupExtensions
     {
         public static ExtendHtmlString RadioGroup(this
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             HtmlHelper htmlHelper
 #else
             IHtmlHelper htmlHelper
@@ -37,7 +37,7 @@ namespace Fireasy.Web.Mvc
         }
 
         public static ExtendHtmlString RadioGroup(this
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             HtmlHelper htmlHelper
 #else
             IHtmlHelper htmlHelper
@@ -52,7 +52,7 @@ namespace Fireasy.Web.Mvc
         }
 
         public static ExtendHtmlString RadioGroup<TModel, TProperty>(this
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             HtmlHelper<TModel> htmlHelper
 #else
             IHtmlHelper<TModel> htmlHelper
@@ -68,7 +68,7 @@ namespace Fireasy.Web.Mvc
         }
 
         public static ExtendHtmlString RadioGroup<TModel, TProperty>(this
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             HtmlHelper<TModel> htmlHelper
 #else
             IHtmlHelper<TModel> htmlHelper

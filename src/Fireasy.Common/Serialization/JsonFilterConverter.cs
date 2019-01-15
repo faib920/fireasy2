@@ -36,18 +36,20 @@ namespace Fireasy.Common.Serialization
         /// 将对象写为 Json 文本。
         /// </summary>
         /// <param name="serializer">一个 <see cref="JsonSerializer"/> 对象。</param>
+        /// <param name="writer"><see cref="JsonWriter"/>对象。</param>
         /// <param name="obj">要序列化的 <see cref="DateTime"/> 值。</param>
-        /// <returns>表示值的 Json 文本。</returns>
-        public override string WriteJson(JsonSerializer serializer, object obj)
+        public override void WriteJson(JsonSerializer serializer, JsonWriter writer, object obj)
         {
             if (exclusiveNames == null)
             {
-                return serializer.Serialize(obj);
+                serializer.Serialize(obj);
             }
-
-            serializer.Option.ExclusiveNames = exclusiveNames;
-            serializer.Option.Converters.RemoveAll(s => s is JsonFilterConverter<T>);
-            return serializer.Serialize(obj);
+            else
+            {
+                serializer.Option.ExclusiveNames = exclusiveNames;
+                serializer.Option.Converters.RemoveAll(s => s is JsonFilterConverter<T>);
+                serializer.Serialize(obj);
+            }
         }
 
         private class ExclusiveNameFinder : Linq.Expressions.ExpressionVisitor

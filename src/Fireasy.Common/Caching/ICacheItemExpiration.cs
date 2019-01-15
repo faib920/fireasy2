@@ -6,6 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+
 namespace Fireasy.Common.Caching
 {
     /// <summary>
@@ -16,8 +18,18 @@ namespace Fireasy.Common.Caching
         /// <summary>
         /// 返回缓存项是否过期。
         /// </summary>
-        /// <param name="cacheItem">要检查的缓存项。</param>
         /// <returns>过期为 true，否则为 false。</returns>
-        bool HasExpired(CacheItem cacheItem);
+        bool HasExpired();
+
+        /// <summary>
+        /// 获取到期时间。
+        /// </summary>
+        /// <returns></returns>
+        TimeSpan? GetExpirationTime();
+    }
+
+    public interface IExpirationTime
+    {
+        TimeSpan Expiration { get; }
     }
 }

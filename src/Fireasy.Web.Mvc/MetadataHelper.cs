@@ -6,7 +6,7 @@ namespace Fireasy.Web.Mvc
     {
         public static string GetPropertyName(LambdaExpression expression)
         {
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             return System.Web.Mvc.ExpressionHelper.GetExpressionText(expression);
 #else
             return Microsoft.AspNetCore.Mvc.ViewFeatures.Internal.ExpressionHelper.GetExpressionText(expression);

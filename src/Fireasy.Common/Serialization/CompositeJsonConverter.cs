@@ -1,4 +1,11 @@
-﻿using Fireasy.Common.ComponentModel;
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
@@ -14,11 +21,6 @@ namespace Fireasy.Common.Serialization
     public class CompositeJsonConverter<T> : JsonConverter<T>
     {
         private Dictionary<PropertyInfo, ITextConverter> converters = new Dictionary<PropertyInfo, ITextConverter>();
-
-        /// <summary>
-        /// 使用流方式序列化对象。
-        /// </summary>
-        public override bool Streaming => true;
 
         /// <summary>
         /// 不支持反序列化。
@@ -44,9 +46,9 @@ namespace Fireasy.Common.Serialization
         /// <summary>
         /// 将一个对象转换为 Json 文本。
         /// </summary>
-        /// <param name="serializer"></param>
-        /// <param name="writer"></param>
-        /// <param name="obj"></param>
+        /// <param name="serializer">当前的 <see cref="JsonSerializer"/> 对象。</param>
+        /// <param name="writer"><see cref="JsonWriter"/>对象。</param>
+        /// <param name="obj">要序列化对象。</param>
         public override void WriteJson(JsonSerializer serializer, JsonWriter writer, object obj)
         {
             var lazyMgr = obj.As<ILazyManager>();

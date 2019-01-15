@@ -143,5 +143,47 @@ namespace Fireasy.Data
             return string.Empty;
         }
 
+        /// <summary>
+        /// 在命令文本中查找 Order By 子句。
+        /// </summary>
+        /// <param name="commandText"></param>
+        /// <returns></returns>
+        internal static string CullingOrderBy(string commandText)
+        {
+            var regx = new Regex(@"order\s*by", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            Match match;
+            while ((match = regx.Match(commandText)).Success)
+            {
+                var index = match.Groups[match.Groups.Count - 1].Index;
+                var start = index;
+                var len = commandText.Length;
+                var count = 0;
+                var finded = false;
+                while (index < len)
+                {
+                    if (commandText[index] == '(')
+                    {
+                        count++;
+                        finded = true;
+                    }
+                    else if (commandText[index] == ')')
+                    {
+                        count--;
+                        finded = true;
+                    }
+                    if (finded && count == -1)
+                    {
+                        break;
+                    }
+
+                    index++;
+                }
+
+                commandText = commandText.Replace(commandText.Substring(start, index - start), "");
+            }
+
+            return commandText;
+        }
+
     }
 }

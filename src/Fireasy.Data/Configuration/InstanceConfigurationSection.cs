@@ -11,7 +11,7 @@ using System.Xml;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using System.Linq;
-#if NETSTANDARD2_0
+#if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
 
@@ -39,7 +39,7 @@ namespace Fireasy.Data.Configuration
             DefaultInstanceName = section.GetAttributeValue("default");
         }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
         /// <summary>
         /// 使用配置节点对当前配置进行初始化。
         /// </summary>
@@ -76,7 +76,7 @@ namespace Fireasy.Data.Configuration
             return null;
         }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
         /// <summary>
         /// 根据实例名创建相应的配置实例。
         /// </summary>

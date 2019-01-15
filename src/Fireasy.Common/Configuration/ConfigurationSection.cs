@@ -11,7 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 using Fireasy.Common.Extensions;
-#if NETSTANDARD2_0
+#if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
 
@@ -31,7 +31,7 @@ namespace Fireasy.Common.Configuration
         }
 
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
         /// <summary>
         /// 使用配置节点对当前配置进行初始化。
         /// </summary>
@@ -68,7 +68,7 @@ namespace Fireasy.Common.Configuration
                     var name = node.GetAttributeValue("name");
                     if (string.IsNullOrEmpty(name))
                     {
-                        name = string.Concat("setting", Settings.Count);
+                        name = string.Concat("setting", innerSettings.Count);
                     }
 
                     try
@@ -101,7 +101,7 @@ namespace Fireasy.Common.Configuration
                 });
         }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
         /// <summary>
         /// 解析配置节下的所有子节点。
         /// </summary>
@@ -116,7 +116,7 @@ namespace Fireasy.Common.Configuration
                 var name = child.Key;
                 if (string.IsNullOrEmpty(name))
                 {
-                    name = string.Concat("setting", Settings.Count);
+                    name = string.Concat("setting", innerSettings.Count);
                 }
 
                 try
@@ -236,7 +236,7 @@ namespace Fireasy.Common.Configuration
             return null;
         }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
         private IConfigurationSettingItem ParseSetting(IConfiguration configuration, Type type)
         {
             var att = type.GetCustomAttributes<ConfigurationSettingAttribute>().FirstOrDefault();
@@ -343,7 +343,7 @@ namespace Fireasy.Common.Configuration
             base.Initialize(section);
         }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
         public override void Bind(IConfiguration configuration)
         {
             var factory = configuration.GetSection("managed").Value;

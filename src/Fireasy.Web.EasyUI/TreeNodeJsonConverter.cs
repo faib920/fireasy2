@@ -49,17 +49,18 @@ namespace Fireasy.Web.EasyUI
         }
 
         /// <summary>
-        /// 返回不支持读。
+        /// 不支持反序列化。
         /// </summary>
         public override bool CanRead { get; } = false;
 
         /// <summary>
         /// 将对象写为 Json 文本。
         /// </summary>
-        /// <param name="serializer"></param>
-        /// <param name="obj"></param>
+        /// <param name="serializer">当前的 <see cref="JsonSerializer"/> 对象。</param>
+        /// <param name="writer"><see cref="JsonWriter"/>对象。</param>
+        /// <param name="obj">要序列化的 <see cref="ITreeNode"/> 对象。</param>
         /// <returns></returns>
-        public override string WriteJson(JsonSerializer serializer, object obj)
+        public override void WriteJson(JsonSerializer serializer, JsonWriter writer, object obj)
         {
             var node = obj as ITreeNode;
             var sb = new StringBuilder();
@@ -89,7 +90,7 @@ namespace Fireasy.Web.EasyUI
             sb.AppendFormat("\"children\": {0}", serializer.Serialize(node.Children));
             sb.Append("}");
 
-            return sb.ToString();
+            writer.WriteRaw(sb.ToString());
         }
 
         protected virtual string WriteState(ITreeNode node)

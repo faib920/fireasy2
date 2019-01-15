@@ -1,4 +1,4 @@
-﻿#if NETSTANDARD2_0
+﻿#if NETSTANDARD
 using Fireasy.Web.EasyUI.Binders;
 using System.Collections.Generic;
 

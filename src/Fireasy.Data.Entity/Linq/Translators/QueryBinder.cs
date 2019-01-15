@@ -1052,7 +1052,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         private Expression BindTreeRepositoryMethod(MethodCallExpression m)
         {
-            if (m.Method.Name == nameof(ITreeRepository<VirEntity>.HasChildren))
+            if (m.Method.Name == nameof(ITreeRepository.HasChildren))
             {
                 var eleType = (m.Arguments[0] as ParameterExpression).Type;
                 var parExp = Expression.Parameter(eleType, "s");

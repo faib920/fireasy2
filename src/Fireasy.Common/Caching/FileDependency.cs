@@ -46,11 +46,10 @@ namespace Fireasy.Common.Caching
         /// <summary>
         /// 检查缓存项是否达到过期时间。
         /// </summary>
-        /// <param name="cacheItem">要检查的缓存项。</param>
         /// <returns>过期为 true，有效为 false。</returns>
-        public bool HasExpired(CacheItem cacheItem)
+        public bool HasExpired()
         {
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             var permission = new FileIOPermission(FileIOPermissionAccess.Read, FilePath);
             permission.Demand();
 #endif
@@ -62,6 +61,15 @@ namespace Fireasy.Common.Caching
 
             var currentModifiedTime = File.GetLastWriteTime(FilePath);
             return DateTime.Compare(lastModifiedTime, currentModifiedTime) != 0;
+        }
+
+        /// <summary>
+        /// 获取到期时间。
+        /// </summary>
+        /// <returns></returns>
+        public TimeSpan? GetExpirationTime()
+        {
+            throw new NotImplementedException();
         }
     }
 }

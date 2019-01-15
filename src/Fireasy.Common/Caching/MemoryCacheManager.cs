@@ -78,6 +78,21 @@ namespace Fireasy.Common.Caching
         }
 
         /// <summary>
+        /// 获取缓存的有效时间。
+        /// </summary>
+        /// <param name="cacheKey">用于引用对象的缓存键。</param>
+        /// <returns></returns>
+        public TimeSpan? GetExpirationTime(string cacheKey)
+        {
+            if (cacheDictionary.TryGetValue(cacheKey, out CacheItem entry))
+            {
+                return entry.Expiration?.GetExpirationTime();
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// 获取缓存中指定缓存键的对象。
         /// </summary>
         /// <param name="cacheKey">用于引用对象的缓存键。</param>

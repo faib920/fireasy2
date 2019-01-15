@@ -3,13 +3,18 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Fireasy.Data.Entity.Tests.Models
 {
+    public interface IOrder
+    {
+        long OrderID { get; set; }
+    }
+
     /// <summary>
     ///  实体类。
     /// </summary>
     [Serializable]
     [EntityMapping("orders", Description = "")]
     [MetadataType(typeof(OrdersMetadata))]
-    public partial class Orders : LightEntity<Orders>
+    public partial class Orders : LightEntity<Orders>, IOrder
     {
         /// <summary>
         /// 获取或设置。

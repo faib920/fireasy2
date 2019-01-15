@@ -29,7 +29,7 @@ namespace Fireasy.Data.Entity.Providers
                     provider.RegisterService(serviceType, new MsSqlTranslateProvider());
                     break;
                 case OracleProvider op:
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
                 case OracleDAProvider odp:
                 case OracleMDAProvider mdap:
 #endif
@@ -69,7 +69,7 @@ namespace Fireasy.Data.Entity.Providers
                     provider.RegisterService(serviceType, new MsSqlTableGenerator());
                     break;
                 case OracleProvider op:
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
                 case OracleDAProvider odp:
                 case OracleMDAProvider mdap:
 #endif
@@ -81,7 +81,7 @@ namespace Fireasy.Data.Entity.Providers
                 case SQLiteProvider sqlite:
                     provider.RegisterService(serviceType, new SQLiteTableGenerator());
                     break;
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
                 case OleDbProvider oledb:
                     break;
 #endif

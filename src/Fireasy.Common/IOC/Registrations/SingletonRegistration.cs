@@ -12,7 +12,9 @@ namespace Fireasy.Common.Ioc.Registrations
 {
     internal class SingletonRegistration : AbstractRegistration
     {
-        private readonly object instance;
+        private static object locker = new object();
+        private object instance;
+        private Func<object> instanceCreator;
 
         internal SingletonRegistration(Type serviceType, object instance) :
             base(serviceType, instance.GetType())
@@ -20,35 +22,22 @@ namespace Fireasy.Common.Ioc.Registrations
             this.instance = instance;
         }
 
-        internal SingletonRegistration(Type serviceType, Func<object> instanceCreator) :
-            this(serviceType, instanceCreator())
+        internal SingletonRegistration(Type serviceType, Type implementationType, Func<object> instanceCreator) :
+            base(serviceType, implementationType)
         {
+            this.instanceCreator = instanceCreator;
         }
 
         internal override Expression BuildExpression()
         {
-            return Expression.Constant(instance, ServiceType);
-        }
+            lock (locker)
+            {
+                if (instance == null && instanceCreator != null)
+                {
+                    instance = instanceCreator();
+                }
+            }
 
-    }
-
-    internal class SingletonRegistration<TService> : AbstractRegistration where TService : class
-    {
-        private readonly TService instance;
-
-        internal SingletonRegistration(TService instance) :
-            base(typeof(TService), instance.GetType())
-        {
-            this.instance = instance;
-        }
-
-        internal SingletonRegistration(Func<TService> instanceCreator) :
-            this (instanceCreator())
-        {
-        }
-
-        internal override Expression BuildExpression()
-        {
             return Expression.Constant(instance, ServiceType);
         }
     }

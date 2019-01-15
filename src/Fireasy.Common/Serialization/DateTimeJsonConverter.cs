@@ -43,41 +43,39 @@ namespace Fireasy.Common.Serialization
         /// <summary>
         /// 将 <see cref="DateTime"/> 值写为 Json 文本。
         /// </summary>
-        /// <param name="serializer">一个 <see cref="JsonSerializer"/> 对象。</param>
+        /// <param name="serializer">当前的 <see cref="JsonSerializer"/> 对象。</param>
+        /// <param name="writer"><see cref="JsonWriter"/>对象。</param>
         /// <param name="obj">要序列化的 <see cref="DateTime"/> 值。</param>
-        /// <returns>表示值的 Json 文本。</returns>
-        public override string WriteJson(JsonSerializer serializer, object obj)
+        public override void WriteJson(JsonSerializer serializer, JsonWriter writer, object obj)
         {
             var value = (DateTime?)obj;
             if (value == null || ((DateTime)value).Year <= 1900)
             {
-                return "\"\"";
+                writer.WriteNull();
             }
-
-            return string.Format("\"{0}\"", value.Value.ToString(Formatter));
+            else
+            {
+                writer.WriteString(value.Value.ToString(Formatter, CultureInfo.CurrentCulture));
+            }
         }
 
         /// <summary>
         /// 从 Json 中读取 <see cref="DateTime"/> 对象。
         /// </summary>
-        /// <param name="serializer">一个 <see cref="JsonSerializer"/> 对象。</param>
-        /// <param name="type">要读取的对象的类型。</param>
-        /// <param name="json">表示对象的 Json 文本。</param>
-        /// <returns>反序列化后的 <see cref="DateTime"/> 值。</returns>
-        public override object ReadJson(JsonSerializer serializer, Type type, string json)
+        /// <param name="serializer">当前的 <see cref="JsonSerializer"/> 对象。</param>
+        /// <param name="reader"><see cref="JsonReader"/>对象。</param>
+        /// <param name="dataType">将要读取的类型。</param>
+        /// <returns>反序列化后的对象。</returns>
+        public override object ReadJson(JsonSerializer serializer, JsonReader reader, Type dataType)
         {
-            if ((string.IsNullOrEmpty(json) || json == "\"\"" || json == "null") && type == typeof(DateTime?))
+            var json = reader.ReadRaw();
+
+            if (DateTime.TryParseExact(json, Formatter, CultureInfo.CurrentCulture.DateTimeFormat, DateTimeStyles.None, out DateTime time))
             {
-                return null;
+                return time;
             }
 
-            json = json.Replace("\"", "");
-            if (DateTime.TryParse(json, out DateTime value))
-            {
-                return value;
-            }
-
-            return DateTime.MinValue;
+            return null;
         }
     }
 }

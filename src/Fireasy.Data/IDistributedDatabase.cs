@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace Fireasy.Data
 {
@@ -15,8 +15,8 @@ namespace Fireasy.Data
     public interface IDistributedDatabase
     {
         /// <summary>
-        /// 获取或设置分布式数据库连接字符串组。
+        /// 获取分布式数据库连接字符串组。
         /// </summary>
-        List<DistributedConnectionString> DistributedConnectionStrings { get; set; }
+        ReadOnlyCollection<DistributedConnectionString> DistributedConnectionStrings { get; }
     }
 }

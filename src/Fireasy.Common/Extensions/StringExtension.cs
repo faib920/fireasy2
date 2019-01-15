@@ -219,7 +219,7 @@ namespace Fireasy.Common.Extensions
         public static string DeUnicode(this string source)
         {
             Match m;
-            var r = new Regex("(?<code>\\\\u[a-z0-9]{4})", RegexOptions.IgnoreCase);
+            var r = new Regex("(?<code>\\\\u[[0-9a-fA-F]{4})", RegexOptions.IgnoreCase);
             for (m = r.Match(source); m.Success; m = m.NextMatch())
             {
                 var strValue = m.Result("${code}");   //代码
@@ -254,7 +254,7 @@ namespace Fireasy.Common.Extensions
                 return source;
             }
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             return Strings.StrConv(source, VbStrConv.SimplifiedChinese);
 #else
             throw new NotSupportedException();
@@ -273,45 +273,31 @@ namespace Fireasy.Common.Extensions
                 return source;
             }
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
             return Strings.StrConv(source, VbStrConv.TraditionalChinese);
 #else
             throw new NotSupportedException();
 #endif
         }
 
-
         /// <summary>
         /// 将中文字符转换为汉语拼音的首字母。
         /// </summary>
         /// <param name="source">将要转换的字符串。</param>
-        /// <param name="containRare">是否搜索生僻字。</param>
         /// <returns>转换后的字符串。</returns>
-        public static string ToPinyin(this string source, bool containRare = false)
+        public static string ToPinyin(this string source)
         {
-            if (string.IsNullOrEmpty(source))
-            {
-                return source;
-            }
-            var output = new StringBuilder(source.Length);
-            foreach (var c in source)
-            {
-                if (c.IsChinese())
-                {
-                    var ascii = CharExtension.GetAsciiCode(c);
-                    var key = ChineseSpellHelper.FindBaseDictionary(ascii, c);
-                    if (key == c && containRare)
-                    {
-                        key = ChineseSpellHelper.FindRareDictionary(ascii, c);
-                    }
-                    output.Append(key);
-                }
-                else
-                {
-                    output.Append(c);
-                }
-            }
-            return output.ToString();
+            return ChineseSpellHelper.GetPinyinFirstLetter(source);
+        }
+
+        /// <summary>
+        /// 将中文字符转换为汉语拼音的全拼。
+        /// </summary>
+        /// <param name="source">将要转换的字符串。</param>
+        /// <returns>转换后的字符串。</returns>
+        public static string ToFullPinyin(this string source)
+        {
+            return ChineseSpellHelper.GetPinyin(source);
         }
 
         /// <summary>

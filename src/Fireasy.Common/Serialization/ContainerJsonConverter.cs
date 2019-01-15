@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Ioc;
 using System;
+using System.Linq;
 
 namespace Fireasy.Common.Serialization
 {
@@ -27,7 +28,7 @@ namespace Fireasy.Common.Serialization
         }
 
         /// <summary>
-        /// 不支付序列化。
+        /// 不支持序列化。
         /// </summary>
         public override bool CanWrite => false;
 
@@ -44,26 +45,20 @@ namespace Fireasy.Common.Serialization
         /// <summary>
         /// 从 Json 中读取一个可由 <see cref="Container"/> 反转的对象。
         /// </summary>
-        /// <param name="serializer">一个 <see cref="JsonSerializer"/> 对象。</param>
+        /// <param name="serializer">当前的 <see cref="JsonSerializer"/> 对象。</param>
+        /// <param name="reader"><see cref="JsonReader"/> 对象。</param>
         /// <param name="dataType">要读取的对象的类型。</param>
-        /// <param name="json">表示对象的 Json 文本。</param>
         /// <returns></returns>
-        public override object ReadJson(JsonSerializer serializer, Type dataType, string json)
+        public override object ReadJson(JsonSerializer serializer, JsonReader reader, Type dataType)
         {
-            var registration = container.GetRegistration(dataType);
+            var registration = container.GetRegistrations(dataType).FirstOrDefault();
             if (registration == null)
             {
                 return null;
             }
 
-            var obj = registration.Resolve();
-            if (obj == null)
-            {
-                return null;
-            }
-
-            return serializer.Deserialize(json, obj.GetType());
+            var json = reader.ReadRaw();
+            return serializer.Deserialize(json, registration.ImplementationType);
         }
-
     }
 }

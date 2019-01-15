@@ -38,6 +38,23 @@ namespace Fireasy.Data.Entity.Tests
         }
 
         [TestMethod]
+        public void TestInterfaceGet()
+        {
+            using (var context = new DbContext())
+            {
+                var queryable = (IQueryable<IOrder>)context.Set(typeof(Orders));
+
+                var c = queryable.Where(s => s.OrderID == 10251).Count();
+
+                Assert.AreEqual(1, c);
+
+                var q = queryable.BatchOr(new long[] { 10251, 10252, 10253 }, (s, t) => s.OrderID == t);
+
+                Assert.AreEqual(3, q.Count());
+            }
+        }
+
+        [TestMethod]
         public void TestArray()
         {
             using (var context = new DbContext())
@@ -264,6 +281,18 @@ namespace Fireasy.Data.Entity.Tests
                 pager1.Evaluator = new TryNextEvaluator();
                 var detail1 = db.OrderDetails.Segment(pager1).ToList();
                 Console.WriteLine(pager1.PageCount);
+            }
+        }
+
+        [TestMethod]
+        public void TestPaginalList()
+        {
+            using (var db = new DbContext())
+            {
+                var pager = new DataPager(50, 216);
+                var result = db.Orders.Segment(pager).ToPaginalResult();
+                Assert.AreEqual(10834, result.Total);
+                Assert.AreEqual(217, result.Pages);
             }
         }
 
@@ -599,6 +628,17 @@ namespace Fireasy.Data.Entity.Tests
                 }
 
                 db.Products.Batch(sss, (u, s) => u.Insert(s));
+            }
+        }
+
+        [TestMethod]
+        public void TestUpdateByNoPrimary()
+        {
+            using (var db = new DbContext())
+            {
+                var order = db.Orders.FirstOrDefault();
+                order.ShipName = null;
+                db.Orders.Update(order);
             }
         }
 

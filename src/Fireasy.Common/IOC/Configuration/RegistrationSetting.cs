@@ -21,9 +21,9 @@ namespace Fireasy.Common.Ioc.Configuration
         public Type ServiceType { get; set; }
 
         /// <summary>
-        /// 获取或设置组件的类型。
+        /// 获取或设置实现的类型。
         /// </summary>
-        public Type ComponentType { get; set; }
+        public Type ImplementationType { get; set; }
 
         /// <summary>
         /// 获取或设置程序集。

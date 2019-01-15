@@ -8,7 +8,7 @@
 using System.Xml;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
-#if NETSTANDARD2_0
+#if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
 
@@ -29,7 +29,7 @@ namespace Fireasy.Data.Configuration
             }
         }
 
-#if NETSTANDARD2_0
+#if NETSTANDARD
         public override void Bind(IConfiguration configuration)
         {
             var ndOption = configuration.GetSection("options");
