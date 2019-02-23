@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 
 using Fireasy.Common;
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Emit;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Properties;
@@ -38,7 +39,7 @@ namespace Fireasy.Data.Entity.Dynamic
         private Dictionary<IProperty, List<Expression<Func<Attribute>>>> validations;
         private List<Expression<Func<Attribute>>> eValidations;
 
-        private static ConcurrentDictionary<string, Dictionary<string, Delegate>> cache = new ConcurrentDictionary<string, Dictionary<string, Delegate>>();
+        private static SafetyDictionary<string, Dictionary<string, Delegate>> cache = new SafetyDictionary<string, Dictionary<string, Delegate>>();
 
         /// <summary>
         /// 初始化 <see cref="EntityTypeBuilder"/> 类的新实例。
@@ -180,7 +181,7 @@ namespace Fireasy.Data.Entity.Dynamic
                 return;
             }
 
-            var dict = cache.GetOrAdd($"{assemblyBuilder.AssemblyName}-{TypeName}", k => new Dictionary<string, Delegate>());
+            var dict = cache.GetOrAdd($"{assemblyBuilder.AssemblyName}-{TypeName}", () => new Dictionary<string, Delegate>());
 
             foreach (var property in Properties)
             {

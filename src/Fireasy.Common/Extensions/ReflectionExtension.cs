@@ -156,6 +156,37 @@ namespace Fireasy.Common.Extensions
                 case TypeCode.UInt64:
                 case TypeCode.Single:
                 case TypeCode.Double:
+                case TypeCode.Decimal:
+                    return true;
+            }
+            return false;
+        }
+
+        public static bool IsStringable(this Type type)
+        {
+            type = type.GetNonNullableType();
+            if (type.IsEnum || type == typeof(Guid))
+            {
+                return true;
+            }
+
+            switch (Type.GetTypeCode(type))
+            {
+                case TypeCode.Boolean:
+                case TypeCode.Char:
+                case TypeCode.SByte:
+                case TypeCode.Byte:
+                case TypeCode.Int16:
+                case TypeCode.UInt16:
+                case TypeCode.Int32:
+                case TypeCode.UInt32:
+                case TypeCode.Int64:
+                case TypeCode.UInt64:
+                case TypeCode.Single:
+                case TypeCode.Double:
+                case TypeCode.String:
+                case TypeCode.Decimal:
+                case TypeCode.DateTime:
                     return true;
             }
             return false;

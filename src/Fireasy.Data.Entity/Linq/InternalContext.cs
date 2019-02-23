@@ -44,8 +44,9 @@ namespace Fireasy.Data.Entity.Linq
             InstanceName = options.ConfigName;
         }
 
-        public InternalContext(IDatabase database)
+        public InternalContext(IDatabase database, EntityContextOptions options = null)
         {
+            Options = options ?? new EntityContextOptions();
             Database = database;
         }
 

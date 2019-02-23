@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Fireasy.Common.Caching;
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
@@ -29,6 +30,7 @@ namespace Fireasy.Common.Configuration
     public static class ConfigurationUnity
     {
         private const string CUSTOM_CONFIG_NAME = "my-config-file";
+        private static readonly SafetyDictionary<string, object> cache = new SafetyDictionary<string, object>();
 
         /// <summary>
         /// 获取配置节实例。
@@ -219,6 +221,7 @@ namespace Fireasy.Common.Configuration
         /// <typeparam name="TSetting"></typeparam>
         /// <typeparam name="TInstance"></typeparam>
         /// <param name="setting"></param>
+        /// <param name="typeFunc"></param>
         /// <returns></returns>
         public static TInstance CreateInstance<TSetting, TInstance>(IConfigurationSettingItem setting, Func<TSetting, Type> typeFunc) where TSetting : class, IConfigurationSettingItem
         {
@@ -249,5 +252,22 @@ namespace Fireasy.Common.Configuration
             return instance;
         }
 
+        /// <summary>
+        /// 缓存配置项创建的实例。
+        /// </summary>
+        /// <typeparam name="TSetting"></typeparam>
+        /// <param name="cacheKey"></param>
+        /// <param name="factory"></param>
+        /// <returns></returns>
+        public static TInstance Cached<TInstance>(string cacheKey, Func<object> factory)
+        {
+            var obj = cache.GetOrAdd(cacheKey, factory);
+            if (obj != null)
+            {
+                return (TInstance)obj;
+            }
+
+            return default(TInstance);
+        }
     }
 }

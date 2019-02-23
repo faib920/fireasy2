@@ -29,6 +29,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         private ISyntaxProvider syntax;
         private List<OrderExpression> thenBys;
         private Expression batchSource;
+        private bool isNoTracking = false;
 
         private QueryBinder(Expression root)
         {
@@ -121,6 +122,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
 #endif
                     case nameof(Extensions.ExtendAs):
                         return BindExtendAs(node.Type, node.Arguments[0], GetLambda(node.Arguments[1]));
+                    case nameof(Extensions.AsNoTracking):
+                        isNoTracking = true;
+                        return Visit(node.Arguments[0]);
+                    case nameof(Extensions.CacheParsing):
+                    case nameof(Extensions.CacheExecution):
+                        return Visit(node.Arguments[0]);
                 }
             }
             else if (typeof(IRepository).IsAssignableFrom(node.Method.DeclaringType))
@@ -159,15 +166,15 @@ namespace Fireasy.Data.Entity.Linq.Translators
             if (IsQueryable(c) && (q = (IQueryable)c.Value).Expression != null)
             {
                 var rowType = c.Type.GetEnumerableElementType();
-                if (typeof(IEntity).IsAssignableFrom(rowType) && 
+                if (typeof(IEntity).IsAssignableFrom(rowType) &&
                     q.Expression.NodeType == ExpressionType.Constant)
                 {
-                    return VisitSequence(QueryUtility.GetTableQuery(EntityMetadataUnity.GetEntityMetadata(rowType)));
+                    return VisitSequence(QueryUtility.GetTableQuery(EntityMetadataUnity.GetEntityMetadata(rowType), isNoTracking));
                 }
                 else if (q.Expression.NodeType == ExpressionType.Constant)
                 {
                     // assume this is also a table via some other implementation of IQueryable
-                    return VisitSequence(QueryUtility.GetTableQuery(EntityMetadataUnity.GetEntityMetadata(q.ElementType)));
+                    return VisitSequence(QueryUtility.GetTableQuery(EntityMetadataUnity.GetEntityMetadata(q.ElementType), isNoTracking));
                 }
                 else
                 {
@@ -222,7 +229,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 && !expMaps.ContainsKey((ParameterExpression)m.Expression)
                 && IsQueryable(m))
             {
-                return VisitSequence(QueryUtility.GetTableQuery(EntityMetadataUnity.GetEntityMetadata(m.Type.GetEnumerableElementType())));
+                return VisitSequence(QueryUtility.GetTableQuery(EntityMetadataUnity.GetEntityMetadata(m.Type.GetEnumerableElementType()), isNoTracking));
             }
 
             if (m.Member.DeclaringType.IsNullableType() && m.Member.Name == nameof(Nullable<int>.HasValue))
@@ -823,7 +830,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             switch (name)
             {
-                case nameof(Enumerable.Count): 
+                case nameof(Enumerable.Count):
                 case nameof(Enumerable.LongCount):
                     return AggregateType.Count;
                 case nameof(Enumerable.Min): return AggregateType.Min;
@@ -1061,8 +1068,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 var memberExp = Expression.MakeMemberAccess(parExp, metadata.InnerSign.Info.ReflectionInfo);
                 var noExp = Expression.MakeMemberAccess(m.Arguments[0], metadata.InnerSign.Info.ReflectionInfo);
                 var mthConcat = typeof(string).GetMethod(nameof(string.Concat), new[] { typeof(string), typeof(string) });
-                var condition = (Expression)Expression.Call(typeof(StringExtension), 
-                    nameof(StringExtension.Like), null, memberExp, 
+                var condition = (Expression)Expression.Call(typeof(StringExtension),
+                    nameof(StringExtension.Like), null, memberExp,
                     Expression.Call(null, mthConcat, noExp, Expression.Constant(new string('_', metadata.SignLength))));
 
                 var lambda = GetLambda(m.Arguments[1]);
@@ -1074,7 +1081,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
                 lambda = Expression.Lambda(condition, parExp);
                 var query = CreateQuery(eleType, m.Object);
-                condition = Expression.Call(typeof(Enumerable), nameof(Enumerable.Count), new [] { eleType }, query.Expression, lambda);
+                condition = Expression.Call(typeof(Enumerable), nameof(Enumerable.Count), new[] { eleType }, query.Expression, lambda);
 
                 return Visit(Expression.GreaterThan(condition, Expression.Constant(0)));
             }
@@ -1114,7 +1121,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 // convert query.Count(predicate) into query.Where(predicate).Count()
                 var type = typeof(IQueryable).IsAssignableFrom(source.Type) ? typeof(Queryable) : typeof(Enumerable);
-                source = Expression.Call(type, nameof(Queryable.Where), new Type [] { source.Type.GetEnumerableElementType() }, source, argument);
+                source = Expression.Call(type, nameof(Queryable.Where), new Type[] { source.Type.GetEnumerableElementType() }, source, argument);
                 argument = null;
                 argumentWasPredicate = true;
             }
@@ -1554,7 +1561,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 predicate = BindConcurrencyLockingExpression((ConstantExpression)instance, predicate);
             }
-            
+
             predicate = (LambdaExpression)Visit(predicate);
 
             return Visit(QueryUtility.GetUpdateExpression(instance, predicate));
@@ -1610,7 +1617,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         continue;
                     }
 
-                    var relationType = (property as RelationProperty).RelationType;
+                    var relationType = (property as RelationProperty).RelationalType;
                     var source = Expression.Constant(TranslateScope.Current.Context.GetDbSet(relationType));
 
                     if (property is EntitySetProperty)

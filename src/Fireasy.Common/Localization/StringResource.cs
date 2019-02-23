@@ -32,7 +32,11 @@ namespace Fireasy.Common.Localization
         public string GetString(string name, params object[] args)
         {
             var res = manager.GetString(name, cultureInfo);
-            Guard.NullReference(res);
+            if (res == null)
+            {
+                throw new System.Exception($"The resource '{name}' not found.");
+            }
+
             if (args != null && args.Length > 0)
             {
                 return string.Format(res, args);

@@ -26,10 +26,10 @@ namespace Fireasy.Data.Entity.Linq.Translators.Configuration
                     {
                         HideTableAliases = ndOption.GetAttributeValue("hideTableAliases", false),
                         HideColumnAliases = ndOption.GetAttributeValue("hideColumnAliases", false),
-                        ParseCacheEnabled = ndOption.GetAttributeValue("parseCacheEnabled", true),
-                        ParseCacheExpired = ndOption.GetAttributeValue("parseCacheExpired", 300),
-                        DataCacheEnabled = ndOption.GetAttributeValue("dataCacheEnabled", false),
-                        DataCacheExpired = ndOption.GetAttributeValue("dataCacheExpired", 60)
+                        CacheParsing = ndOption.GetAttributeValue("cacheParsing", true),
+                        CacheParsingTimes = ndOption.GetAttributeValue("cacheParsingTimes", 300),
+                        CacheExecution = ndOption.GetAttributeValue("cacheExecution", false),
+                        CacheExecutionTimes = ndOption.GetAttributeValue("cacheExecutionTimes", 60)
                     };
             }
         }
@@ -48,10 +48,10 @@ namespace Fireasy.Data.Entity.Linq.Translators.Configuration
                     {
                         HideTableAliases = ndOption.GetSection("hideTableAliases").Value.To(false),
                         HideColumnAliases = ndOption.GetSection("hideColumnAliases").Value.To(false),
-                        ParseCacheEnabled = ndOption.GetSection("parseCacheEnabled").Value.To(true),
-                        ParseCacheExpired = ndOption.GetSection("parseCacheExpired").Value.To(300),
-                        DataCacheEnabled = ndOption.GetSection("dataCacheEnabled").Value.To(false),
-                        DataCacheExpired = ndOption.GetSection("dataCacheExpired").Value.To(60)
+                        CacheParsing = ndOption.GetSection("parseCacheEnabled").Value.To(true),
+                        CacheParsingTimes = ndOption.GetSection("parseCacheExpired").Value.To(300),
+                        CacheExecution = ndOption.GetSection("dataCacheEnabled").Value.To(false),
+                        CacheExecutionTimes = ndOption.GetSection("dataCacheExpired").Value.To(60)
                     };
             }
         }

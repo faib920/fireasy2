@@ -202,7 +202,7 @@ LIMIT {1}{2}",
                 case DbType.AnsiStringFixedLength:
                 case DbType.String:
                 case DbType.StringFixedLength:
-                    return "TEXT";
+                    return length != null ? $"TEXT({length})" : "TEXT";
                 case DbType.Binary:
                     return "BLOB";
                 case DbType.Boolean:

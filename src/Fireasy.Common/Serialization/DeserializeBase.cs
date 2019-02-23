@@ -19,7 +19,7 @@ namespace Fireasy.Common.Serialization
             context = new SerializeContext { Option = option };
         }
 
-        
+
         /// <summary>
         /// 获取指定类型的属性访问缓存。
         /// </summary>
@@ -56,6 +56,11 @@ namespace Fireasy.Common.Serialization
             {
                 elementType = null;
                 container = new ArrayList();
+            }
+            else if (listType.IsInterface && listType.IsGenericType)
+            {
+                elementType = listType.GetEnumerableElementType();
+                container = (IList)typeof(List<>).MakeGenericType(elementType).New();
             }
             else
             {

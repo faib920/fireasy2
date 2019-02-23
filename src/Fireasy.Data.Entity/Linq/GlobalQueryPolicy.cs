@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common;
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Concurrent;
@@ -25,8 +26,8 @@ namespace Fireasy.Data.Entity.Linq
         /// </summary>
         public static readonly GlobalQueryPolicySession Default = new GlobalQueryPolicySession();
 
-        private static ConcurrentDictionary<string, GlobalQueryPolicySession> sessions = new ConcurrentDictionary<string, GlobalQueryPolicySession>();
-        private static ConcurrentDictionary<string, GlobalQueryPolicySession> caches = new ConcurrentDictionary<string, GlobalQueryPolicySession>();
+        private static SafetyDictionary<string, GlobalQueryPolicySession> sessions = new SafetyDictionary<string, GlobalQueryPolicySession>();
+        private static SafetyDictionary<string, GlobalQueryPolicySession> caches = new SafetyDictionary<string, GlobalQueryPolicySession>();
 
         /// <summary>
         /// 多用户环境下创建一个会话。
@@ -40,7 +41,7 @@ namespace Fireasy.Data.Entity.Linq
 
             var sessionId = sessionIdFactory();
             var lazy = new Lazy<GlobalQueryPolicySession>(() => new GlobalQueryPolicySession() { SessionIdFactory = sessionIdFactory });
-            return sessions.GetOrAdd(sessionId, k => string.IsNullOrEmpty(ident) ? lazy.Value : caches.GetOrAdd(ident, v => lazy.Value));
+            return sessions.GetOrAdd(sessionId, () => string.IsNullOrEmpty(ident) ? lazy.Value : caches.GetOrAdd(ident, () => lazy.Value));
         }
 
         /// <summary>
@@ -65,7 +66,7 @@ namespace Fireasy.Data.Entity.Linq
             var result = Default.GetPolicies(objType);
             if (sessions.Count > 0)
             {
-                var sresult = sessions.Where(s => s.Key == s.Value.SessionIdFactory())
+                var sresult = sessions.Where(s => s.Value != null && s.Key == s.Value.SessionIdFactory())
                     .SelectMany(s => s.Value.GetPolicies(objType));
 
                 result = sresult.Union(sresult);

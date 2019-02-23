@@ -8,7 +8,6 @@
 
 using System.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Translators;
-using Fireasy.Data.Provider;
 
 namespace Fireasy.Data.Entity.Linq
 {

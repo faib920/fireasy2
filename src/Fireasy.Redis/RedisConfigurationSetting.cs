@@ -33,19 +33,24 @@ namespace Fireasy.Redis
         public List<RedisHost> Hosts { get; private set; }
 
         /// <summary>
-        /// 获取或设置最大读连接数。
+        /// 获取或设置连接池大小。
         /// </summary>
-        public int MaxReadPoolSize { get; set; }
+        public int? PoolSize { get; set; }
 
         /// <summary>
-        /// 获取或设置最大写连接数。
+        /// 获取或设置是否使用SSL连接。
         /// </summary>
-        public int MaxWritePoolSize { get; set; }
+        public bool Ssl { get; set; }
 
         /// <summary>
         /// 获取或设置缺省的数据库编号。
         /// </summary>
         public int DefaultDb { get; set; }
+
+        /// <summary>
+        /// 获取或设置写入缓冲区大小。
+        /// </summary>
+        public int? WriteBuffer { get; set; }
 
         /// <summary>
         /// 获取或设置密码。
@@ -56,11 +61,6 @@ namespace Fireasy.Redis
         /// 获取或设置对象序列化器的类型。
         /// </summary>
         public Type SerializerType { get; set; }
-
-        /// <summary>
-        /// 获取或设置连接超时时间。
-        /// </summary>
-        public int? ConnectTimeout { get; set; }
 
         /// <summary>
         /// 获取或设置是否启用 Twemproxy 代理。

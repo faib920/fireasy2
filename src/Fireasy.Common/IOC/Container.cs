@@ -27,6 +27,7 @@ namespace Fireasy.Common.Ioc
         private ParameterExpression parExp = null;
         private List<IRegistration> registrations = new List<IRegistration>();
         private readonly List<InstanceInitializer> instanceInitializers = new List<InstanceInitializer>();
+        private ResolveScope scope = null;
 
         /// <summary>
         /// 注册服务类型及实现类型，<typeparamref name="TImplementation"/> 是 <typeparamref name="TService"/> 的实现类。
@@ -57,6 +58,11 @@ namespace Fireasy.Common.Ioc
             {
                 return RegisterSingleton<TService, TImplementation>();
             }
+            else if (lifetime == Lifetime.Scoped)
+            {
+                AddRegistration(Creator.CreateScoped(typeof(TService), typeof(TImplementation)));
+                return this;
+            }
 
             return Register<TService, TImplementation>();
         }
@@ -85,6 +91,11 @@ namespace Fireasy.Common.Ioc
             if (lifetime == Lifetime.Singleton)
             {
                 return RegisterSingleton(serviceType, implementationType);
+            }
+            else if (lifetime == Lifetime.Scoped)
+            {
+                AddRegistration(Creator.CreateScoped(serviceType, implementationType));
+                return this;
             }
 
             return Register(serviceType, implementationType);
@@ -269,6 +280,11 @@ namespace Fireasy.Common.Ioc
         /// <returns>类型的实例对象。如果没有注册，则为 null。</returns>
         public object Resolve(Type serviceType)
         {
+            if (scope == null)
+            {
+                scope = new ResolveScope();
+            }
+
             if (IsEnumerableResolve(serviceType))
             {
                 var elementType = serviceType.GetEnumerableElementType();
@@ -420,7 +436,7 @@ namespace Fireasy.Common.Ioc
         }
 
         /// <summary>
-        /// 通过配置文件进行注册。
+        /// 通过 XML 配置文件进行注册。
         /// </summary>
         /// <param name="path">文件路径。</param>
         /// <param name="pattern">文件通配符。</param>
@@ -482,7 +498,13 @@ namespace Fireasy.Common.Ioc
             var xmlDoc = new XmlDocument();
             xmlDoc.Load(fileName);
 
-            foreach (XmlNode nd in xmlDoc.SelectNodes("container/registration"))
+            var nodes = xmlDoc.SelectNodes("container/registration");
+            if (nodes == null)
+            {
+                return;
+            }
+
+            foreach (XmlNode nd in nodes)
             {
                 var serviceType = nd.GetAttributeValue("serviceType").ParseType();
                 var implementationType = (nd.Attributes["implementationType"] ?? nd.Attributes["componentType"])?.Value.ParseType();

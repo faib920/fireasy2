@@ -26,4 +26,13 @@ namespace Fireasy.Data.Entity
         /// </summary>
         One2One
     }
+
+    /// <summary>
+    /// 描述关系的来源。
+    /// </summary>
+    internal enum RelationshipSource
+    {
+        AssemblyAttribute,
+        AutomaticallyAssign
+    }
 }

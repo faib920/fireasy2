@@ -57,6 +57,7 @@ namespace Fireasy.Common
         internal const string MethodNotOverride = "MethodNotOverride";
         internal const string AlgorithmNotSupported = "AlgorithmNotSupported";
         internal const string CacheServerAnomaly = "CacheServerAnomaly";
+        internal const string KeyMustBeStringable = "KeyMustBeStringable";
     }
 
     internal class SR

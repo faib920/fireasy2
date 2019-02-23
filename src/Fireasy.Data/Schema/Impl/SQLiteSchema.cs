@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using Fireasy.Common.Extensions;
 
 namespace Fireasy.Data.Schema
@@ -57,19 +58,44 @@ AND (name = @NAME OR @NAME IS NULL)";
             var parameters = new ParameterCollection();
 
             var catalog = restrictionValues.Length == 0 || string.IsNullOrEmpty(restrictionValues[0]) ? "main" : restrictionValues[0];
-            var table = (string.Compare(catalog, "temp", StringComparison.OrdinalIgnoreCase) == 0) ? "sqlite_temp_master" : "sqlite_master";
+            var columns = new List<Column>();
 
-            SqlCommand sql = $@"
-SELECT name, type FROM {catalog}.{table}
-WHERE type LIKE 'table'
-AND (name = @NAME OR @NAME IS NULL)";
+            if (restrictionValues.Length >= 2)
+            {
+                SqlCommand sql = $@"
+PRAGMA {catalog}.TABLE_INFO('{restrictionValues[2]}')";
 
-            ParameteRestrition(parameters, "NAME", 1, restrictionValues);
-
-            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new Column
+                columns.AddRange(ParseMetadata(database, sql, parameters, (wrapper, reader) => new Column
+                    {
+                        TableName = restrictionValues[2],
+                        Name = wrapper.GetString(reader, 1),
+                        IsNullable = wrapper.GetInt32(reader, 3) == 1,
+                        IsPrimaryKey = wrapper.GetInt32(reader, 4) == 1
+                    }));
+            }
+            else
+            {
+                foreach (var tb in GetTables(database, new string[0]))
                 {
-                    Name = wrapper.GetString(reader, 0)
-                });
+                    SqlCommand sql = $@"
+PRAGMA {catalog}.TABLE_INFO('{tb.Name}')";
+
+                    columns.AddRange(ParseMetadata(database, sql, parameters, (wrapper, reader) => new Column
+                        {
+                            TableName = restrictionValues[2],
+                            Name = wrapper.GetString(reader, 1),
+                            IsNullable = wrapper.GetInt32(reader, 3) == 1,
+                            IsPrimaryKey = wrapper.GetInt32(reader, 4) == 1
+                        }));
+                }
+            }
+
+            if (restrictionValues.Length >= 3)
+            {
+                columns = columns.Where(s => s.Name == restrictionValues[3]).ToList();
+            }
+
+            return columns;
         }
 
         protected override IEnumerable<ForeignKey> GetForeignKeys(IDatabase database, string[] restrictionValues)
@@ -80,9 +106,7 @@ AND (name = @NAME OR @NAME IS NULL)";
             var table = (string.Compare(catalog, "temp", StringComparison.OrdinalIgnoreCase) == 0) ? "sqlite_temp_master" : "sqlite_master";
 
             SqlCommand sql = $@"
-PRAGMA {catalog}.FOREIGN_KEY_LIST({restrictionValues[2]})";
-
-            ParameteRestrition(parameters, "NAME", 1, restrictionValues);
+PRAGMA {catalog}.FOREIGN_KEY_LIST('{restrictionValues[2]}')";
 
             return ParseMetadata(database, sql, parameters, (wrapper, reader) => new ForeignKey
                 {

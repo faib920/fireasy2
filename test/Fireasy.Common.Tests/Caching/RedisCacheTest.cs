@@ -71,11 +71,12 @@ namespace Fireasy.Common.Tests.Caching
 
             int Get()
             {
+                Thread.Sleep(100);
                 Console.WriteLine("get");
                 return 100;
             }
 
-            Parallel.For(0, 3, (i, s) => Console.WriteLine(cacheMgr.TryGet("test", () => Get(), () => new RelativeTime(TimeSpan.FromSeconds(5)))));
+            Parallel.For(0, 5, (i, s) => Console.WriteLine(cacheMgr.TryGet("test", () => Get(), () => new RelativeTime(TimeSpan.FromSeconds(5)))));
         }
 
         [TestMethod]

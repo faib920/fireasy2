@@ -5,8 +5,10 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Provider;
 using System;
+using System.Collections.Generic;
 
 namespace Fireasy.Data.Entity.Generation
 {
@@ -19,15 +21,22 @@ namespace Fireasy.Data.Entity.Generation
         /// 判断实体类型对应的数据表是否已经存在。
         /// </summary>
         /// <param name="database">提供给当前插件的 <see cref="IDatabase"/> 对象。</param>
-        /// <param name="entityType">实体类型。</param>
+        /// <param name="metadata">实体元数据。</param>
         /// <returns></returns>
-        bool IsExists(IDatabase database, Type entityType);
+        bool IsExists(IDatabase database, EntityMetadata metadata);
 
         /// <summary>
         /// 尝试创建实体类型对应的数据表。
         /// </summary>
         /// <param name="database">提供给当前插件的 <see cref="IDatabase"/> 对象。</param>
-        /// <param name="entityType">实体类型。</param>
-        void TryCreate(IDatabase database, Type entityType);
+        /// <param name="metadata">实体元数据。</param>
+        void TryCreate(IDatabase database, EntityMetadata metadata);
+
+        /// <summary>
+        /// 尝试添加新的字段。
+        /// </summary>
+        /// <param name="database">提供给当前插件的 <see cref="IDatabase"/> 对象。</param>
+        /// <param name="metadata">实体元数据。</param>
+        void TryAddFields(IDatabase database, EntityMetadata metadata);
     }
 }

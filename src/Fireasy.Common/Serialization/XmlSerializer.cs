@@ -65,7 +65,7 @@ namespace Fireasy.Common.Serialization
         /// <typeparam name="T"></typeparam>
         /// <param name="value"></param>
         /// <param name="writer"></param>
-        public void Serialize<T>(T value, XmlWriter writer)
+        public void Serialize<T>(T value, XmlTextWriter writer)
         {
             var ser = new XmlSerialize(this, writer, Option);
             if (Option.Declaration)

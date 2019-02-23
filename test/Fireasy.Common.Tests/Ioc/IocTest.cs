@@ -289,16 +289,6 @@ namespace Fireasy.Common.Tests.Ioc
         }
 
         [TestMethod]
-        public void TestConfig()
-        {
-            //查找config目录下的 *.ioc.config 文件
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Config");
-            var container = ContainerUnity.GetContainer(path, "*.ioc.xml");
-            var service = container.Resolve<IMainService>();
-            Assert.IsNotNull(service);
-        }
-
-        [TestMethod]
         public void TestSelf()
         {
             var container = ContainerUnity.GetContainer();

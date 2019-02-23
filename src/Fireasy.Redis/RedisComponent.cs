@@ -7,10 +7,10 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
-using System.Collections.Generic;
 #if NETSTANDARD
 using CSRedis;
 using System.Text;
+using System.Collections.Generic;
 #else
 using StackExchange.Redis;
 #endif
@@ -21,9 +21,9 @@ namespace Fireasy.Redis
     public class RedisComponent : IConfigurationSettingHostService
     {
 #if NETSTANDARD
-        private Lazy<CSRedisClient> connectionLazy;
+        private static Lazy<CSRedisClient> connectionLazy;
 #else
-        private Lazy<ConnectionMultiplexer> connectionLazy;
+        private static Lazy<ConnectionMultiplexer> connectionLazy;
 
         protected ConfigurationOptions Options { get; private set; }
 #endif
@@ -126,6 +126,21 @@ namespace Fireasy.Redis
                         connStr.Append($",defaultDatabase={this.Setting.DefaultDb}");
                     }
 
+                    if (this.Setting.Ssl)
+                    {
+                        connStr.Append($",ssl=true");
+                    }
+
+                    if (this.Setting.WriteBuffer != null)
+                    {
+                        connStr.Append($",writeBuffer={this.Setting.WriteBuffer}");
+                    }
+
+                    if (this.Setting.PoolSize != null)
+                    {
+                        connStr.Append($",poolsize={this.Setting.PoolSize}");
+                    }
+
                     connStr.Append(",allowAdmin=true");
                     #endregion
 
@@ -133,7 +148,10 @@ namespace Fireasy.Redis
                 }
             }
 
-            connectionLazy = new Lazy<CSRedisClient>(() => new CSRedisClient(null, connectionStrs.ToArray()));
+            if (connectionLazy == null)
+            {
+                connectionLazy = new Lazy<CSRedisClient>(() => new CSRedisClient(null, connectionStrs.ToArray()));
+            }
 #else
             if (!string.IsNullOrEmpty(this.Setting.ConnectionString))
             {
@@ -146,13 +164,14 @@ namespace Fireasy.Redis
                     DefaultDatabase = this.Setting.DefaultDb,
                     Password = this.Setting.Password,
                     AllowAdmin = true,
+                    Ssl = this.Setting.Ssl,
                     Proxy = this.Setting.Twemproxy ? Proxy.Twemproxy : Proxy.None,
                     AbortOnConnectFail = false
                 };
 
-                if (this.Setting.ConnectTimeout != null)
+                if (this.Setting.WriteBuffer != null)
                 {
-                    Options.ConnectTimeout = (int)this.Setting.ConnectTimeout;
+                    Options.WriteBuffer = (int)this.Setting.WriteBuffer;
                 }
 
                 foreach (var host in this.Setting.Hosts)
@@ -168,7 +187,10 @@ namespace Fireasy.Redis
                 }
             }
 
-            connectionLazy = new Lazy<ConnectionMultiplexer>(() => ConnectionMultiplexer.Connect(Options));
+            if (connectionLazy == null)
+            {
+                connectionLazy = new Lazy<ConnectionMultiplexer>(() => ConnectionMultiplexer.Connect(Options));
+            }
 #endif
         }
 

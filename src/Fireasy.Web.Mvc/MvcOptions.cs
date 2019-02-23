@@ -42,6 +42,11 @@ namespace Fireasy.Web.Mvc
         public bool DisableModelValidator { get; set; } = true;
 
         /// <summary>
+        /// 获取或设置是否使用错误处理过滤器。默认为 true。
+        /// </summary>
+        public bool UseErrorHandleFilter { get; set; } = true;
+
+        /// <summary>
         /// 获取或设置 Json 序列化选项。
         /// </summary>
         public JsonSerializeOption JsonSerializeOption { get; set; } = new JsonSerializeOption();

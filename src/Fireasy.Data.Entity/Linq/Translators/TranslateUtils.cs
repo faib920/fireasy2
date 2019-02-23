@@ -10,6 +10,7 @@ using System.Reflection;
 using Fireasy.Common.Extensions;
 using System.Linq;
 using System;
+using Fireasy.Common.ComponentModel;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
@@ -18,9 +19,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class TranslateUtils
     {
-        private static ConcurrentDictionary<MethodInfo, IMethodCallBinder> defBinders = new ConcurrentDictionary<MethodInfo, IMethodCallBinder>();
-        private static ConcurrentDictionary<Func<MethodInfo, bool>, IMethodCallBinder> matchBinders = new ConcurrentDictionary<Func<MethodInfo, bool>, IMethodCallBinder>();
-        private static ConcurrentDictionary<MethodInfo, string> functions = new ConcurrentDictionary<MethodInfo, string>();
+        private static SafetyDictionary<MethodInfo, IMethodCallBinder> defBinders = new SafetyDictionary<MethodInfo, IMethodCallBinder>();
+        private static SafetyDictionary<Func<MethodInfo, bool>, IMethodCallBinder> matchBinders = new SafetyDictionary<Func<MethodInfo, bool>, IMethodCallBinder>();
+        private static SafetyDictionary<MethodInfo, string> functions = new SafetyDictionary<MethodInfo, string>();
 
         /// <summary>
         /// 添加方法调用的绑定。

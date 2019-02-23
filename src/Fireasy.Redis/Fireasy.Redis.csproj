@@ -6,18 +6,20 @@
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
     <FileVersion>2.0.0.46108</FileVersion>
-    <Copyright>Copyright © Fireasy 2013-2018</Copyright>
+    <Copyright>Copyright © Fireasy 2013-2019</Copyright>
     <AssemblyVersion>2.0.0.46108</AssemblyVersion>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Redis Cache Provider</Product>
-    <Version>2.0.18-beta1</Version>
+    <Version>2.0.18-beta2</Version>
     <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
-    <Description>Redis 缓存及消息订阅/发布的实现。
+    <Description>
+      Redis 缓存及消息订阅/发布的实现。
 
-示例源码：https://github.com/faib920/zero</Description>
+      示例源码：https://github.com/faib920/zero
+    </Description>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
@@ -25,7 +27,7 @@
     <DocumentationFile>..\..\Release\net45\Fireasy.Redis.xml</DocumentationFile>
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
-  
+
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <DocumentationFile>..\..\Release\netstandard2.0\Fireasy.Redis.xml</DocumentationFile>

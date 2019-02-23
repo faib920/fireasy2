@@ -5,9 +5,12 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Data.Entity.Linq;
+using System;
+
 namespace Fireasy.Data.Entity
 {
-    public class EntityContextOptions
+    public sealed class EntityContextOptions
     {
         /// <summary>
         /// 初始化 <see cref="EntityContextOptions"/> 类的新实例。
@@ -26,7 +29,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 获取或设置是否自动创建数据表。默认为 false。
+        /// 获取或设置是否自动创建数据表，或添加新的字段。默认为 false。
         /// </summary>
         public bool AutoCreateTables { get; set; }
 
@@ -44,5 +47,10 @@ namespace Fireasy.Data.Entity
         /// 获取实例名称。
         /// </summary>
         public string ConfigName { get; private set; }
+
+        /// <summary>
+        /// 获取或设置 <see cref="InternalContext"/> 实例创建工厂。
+        /// </summary>
+        public Func<InternalContext> ContextFactory { get; set; }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Fireasy.Common.Caching;
+﻿using Fireasy.Common;
+using Fireasy.Common.Caching;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Serialization;
 using Fireasy.Data.Entity.Linq;
@@ -145,13 +146,37 @@ namespace Fireasy.Data.Entity.Tests
             }
         }
 
-        public Products TestCache2()
+        [TestMethod]
+        public void TestCache2()
         {
-            var cacheMgr = CacheManagerFactory.CreateManager();
-
             using (var db = new DbContext())
             {
-                return GetProduct(() => db.Products.FirstOrDefault());
+                var a1 = new DataPager(10, 2);
+                var a2 = new DataPager(10, 2);
+
+                var t = TimeWatcher.Watch(() =>
+                {
+                    var list1 = db.Orders
+                        .Segment(a1)
+                        .CacheParsing(true, TimeSpan.FromDays(1))
+                        .CacheExecution(true, TimeSpan.FromDays(1))
+                        .AsNoTracking()
+                        .ToList();
+                });
+
+                Console.WriteLine(t);
+
+                t = TimeWatcher.Watch(() =>
+                {
+                    var list2 = db.Orders
+                        .Segment(a2)
+                        .CacheParsing(true, TimeSpan.FromDays(1))
+                        .CacheExecution(true, TimeSpan.FromDays(1))
+                        .AsNoTracking()
+                        .ToList();
+                });
+
+                Console.WriteLine(t);
             }
         }
 
@@ -326,7 +351,8 @@ namespace Fireasy.Data.Entity.Tests
                 var list = db.OrderDetails.Select(s =>
                     s.Extend(() => new
                     {
-                        ProductName = s.Products.ProductName
+                        ProductName = s.Products.ProductName,
+                        BName = s.Products1.ProductName
                     }))
                     .ToList();
 

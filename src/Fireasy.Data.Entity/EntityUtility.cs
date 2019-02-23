@@ -54,7 +54,7 @@ namespace Fireasy.Data.Entity
             {
                 return value;
             }
-            switch (relationPro.RelationPropertyType)
+            switch (relationPro.RelationalPropertyType)
             {
                 case RelationPropertyType.Entity:
                     return CheckReturnEntityValue(value.GetValue().As<IEntity>(), value);
@@ -123,7 +123,7 @@ namespace Fireasy.Data.Entity
         {
             var relationPro = property.As<RelationProperty>();
             if (relationPro == null || PropertyValue.IsEmpty(value) ||
-                relationPro.RelationPropertyType != RelationPropertyType.Entity)
+                relationPro.RelationalPropertyType != RelationPropertyType.Entity)
             {
                 return;
             }

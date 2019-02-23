@@ -19,30 +19,6 @@ namespace Fireasy.Common.Tests
         {
         }
 
-        private bool A1()
-        {
-            return false;
-        }
-
-        private bool A2()
-        {
-            return false;
-        }
-
-        public class Data1
-        {
-            public string Name { get; set; }
-        }
-
-        public class Data2
-        {
-            public string Name { get; set; }
-
-            public int Age { get; set; }
-
-            public string Sex { get; set; }
-        }
-
         [TestMethod]
         public void Test()
         {

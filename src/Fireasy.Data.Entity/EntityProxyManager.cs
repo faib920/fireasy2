@@ -5,10 +5,10 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Emit;
 using Fireasy.Common.Extensions;
 using System;
-using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
 
@@ -19,7 +19,7 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public static class EntityProxyManager
     {
-        private static ConcurrentDictionary<string, Assembly> cache = new ConcurrentDictionary<string, Assembly>();
+        private static SafetyDictionary<string, Assembly> cache = new SafetyDictionary<string, Assembly>();
 
         /// <summary>
         /// 获取类型的代理类型。
@@ -34,7 +34,7 @@ namespace Fireasy.Data.Entity
 
         private static Assembly GetAssemblyFromCache(Assembly assembly)
         {
-            var lazy = new Lazy<Assembly>(() =>
+            return cache.GetOrAdd(assembly.FullName, () =>
                 {
                     var assemblyName = string.Concat(assembly.GetName().Name, "_Dynamic");
                     var assemblyBuilder = new DynamicAssemblyBuilder(assemblyName);
@@ -45,8 +45,6 @@ namespace Fireasy.Data.Entity
 
                     return assemblyBuilder.AssemblyBuilder;
                 });
-
-            return cache.GetOrAdd(assembly.FullName, t => lazy.Value);
         }
     }
 }

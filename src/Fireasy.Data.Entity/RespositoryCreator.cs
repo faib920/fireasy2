@@ -5,11 +5,13 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.ComponentModel;
 using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Entity.Providers;
+using Fireasy.Data.Schema;
 using System;
-using System.Collections.Concurrent;
+using System.Linq;
 
 namespace Fireasy.Data.Entity
 {
@@ -19,7 +21,7 @@ namespace Fireasy.Data.Entity
     public class RespositoryCreator
     {
         //存放实体类型对应的表有没有创建
-        private static ConcurrentDictionary<string, bool> cache = new ConcurrentDictionary<string, bool>();
+        private static SafetyDictionary<string, bool> cache = new SafetyDictionary<string, bool>();
 
         /// <summary>
         /// 尝试创建对应的表。
@@ -29,19 +31,30 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static bool TryCreate(Type entityType, InternalContext context, Action<Type> succeed, Action<Type, Exception> failed)
         {
+            var service = context.Database.Provider.GetTableGenerateProvider();
+            if (service == null)
+            {
+                return false;
+            }
+
             var metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
 
-            var lazy = new Lazy<bool>(() =>
+            var cacheKey = string.Format("{0}:{1}", context.InstanceName, entityType.FullName);
+            return cache.GetOrAdd(cacheKey, () =>
                 {
-                    var service = context.Database.Provider.GetTableGenerateProvider();
-                    if (service == null || service.IsExists(context.Database, entityType))
-                    {
-                        return true;
-                    }
-
                     try
                     {
-                        service.TryCreate(context.Database, entityType);
+                        //判断数据表是否已存在
+                        if (service.IsExists(context.Database, metadata))
+                        {
+                            //尝试添加新的字段
+                            service.TryAddFields(context.Database, metadata);
+                        }
+                        else
+                        {
+                            //尝试创建数据表
+                            service.TryCreate(context.Database, metadata);
+                        }
 
                         //通知 context 仓储已经创建
                         succeed?.Invoke(entityType);
@@ -54,9 +67,6 @@ namespace Fireasy.Data.Entity
                         return false;
                     }
                 });
-
-            var cacheKey = string.Format("{0}:{1}", context.InstanceName, entityType.FullName);
-            return cache.GetOrAdd(cacheKey, key => lazy.Value);
         }
     }
 }

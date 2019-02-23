@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common;
 using Fireasy.Data.Entity.Linq;
 using System;
 using System.Collections;
@@ -36,7 +37,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="instanceName">实例名称。</param>
         public EntityContext(string instanceName)
-            : this (new EntityContextOptions(instanceName))
+            : this(new EntityContextOptions(instanceName))
         {
         }
 
@@ -46,6 +47,7 @@ namespace Fireasy.Data.Entity
         /// <param name="options">选项参数。</param>
         public EntityContext(EntityContextOptions options)
         {
+            OnConfiguring(new EntityContextOptionsBuilder(options));
             Initialize(options);
 
             new EntityRepositoryDiscoveryService(this).InitializeSets();
@@ -229,11 +231,20 @@ namespace Fireasy.Data.Entity
         /// </summary>
         private void Initialize(EntityContextOptions options)
         {
-            context = new InternalContext(options)
-                {
-                    OnRespositoryCreated = OnRespositoryCreated,
-                    OnRespositoryCreateFailed = OnRespositoryCreateFailed
-            };
+            Guard.ArgumentNull(options, nameof(options));
+
+            context = options.ContextFactory != null ? options.ContextFactory() : new InternalContext(options);
+
+            context.OnRespositoryCreated = OnRespositoryCreated;
+            context.OnRespositoryCreateFailed = OnRespositoryCreateFailed;
+        }
+
+        /// <summary>
+        /// 使用构造器进行配置。
+        /// </summary>
+        /// <param name="builder">构造器。</param>
+        protected virtual void OnConfiguring(EntityContextOptionsBuilder builder)
+        {
         }
 
         /// <summary>

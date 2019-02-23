@@ -40,22 +40,6 @@ namespace Fireasy.Common.Ioc
                 }, () => NeverExpired.Instance);
         }
 
-        /// <summary>
-        /// 从路径的多个配置文件中读取容器。
-        /// </summary>
-        /// <param name="path">存放路径。</param>
-        /// <param name="pattern">配置文件的通配符。</param>
-        /// <returns></returns>
-        public static Container GetContainer(string path, string pattern)
-        {
-            var cacheMgr = MemoryCacheManager.Instance;
-            return cacheMgr.TryGet(path + "/" + pattern, () =>
-                {
-                    var container = new Container();
-                    return container.Config(path, pattern);
-                }, () => NeverExpired.Instance);
-        }
-
         private static void ConfigureContainer(string name, Container container)
         {
             var section = ConfigurationUnity.GetSection<ContainerConfigurationSection>();

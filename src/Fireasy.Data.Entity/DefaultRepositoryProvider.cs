@@ -306,9 +306,9 @@ namespace Fireasy.Data.Entity
         {
             foreach (RelationProperty property in properties)
             {
-                var queryable = (IQueryable)context.GetDbSet(property.RelationType);
+                var queryable = (IQueryable)context.GetDbSet(property.RelationalType);
 
-                switch (property.RelationPropertyType)
+                switch (property.RelationalPropertyType)
                 {
                     case RelationPropertyType.Entity:
                         var refEntity = (IEntity)entity.GetValue(property).GetValue();

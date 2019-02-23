@@ -35,13 +35,13 @@ namespace Fireasy.Common.Serialization
 
         internal T Deserialize<T>()
         {
+            xmlReader.Read();
+            XmlReaderHelper.ReadUntilTypeReached(xmlReader, XmlNodeType.Element);
             return (T)Deserialize(typeof(T));
         }
 
         internal object Deserialize(Type type)
         {
-            while (xmlReader.NodeType != XmlNodeType.Element && xmlReader.Read()) ;
-
             object value = null;
             if (WithSerializable(type, ref value))
             {
@@ -51,17 +51,6 @@ namespace Fireasy.Common.Serialization
             if (WithConverter(type, ref value))
             {
                 return value;
-            }
-
-#if !SILVERLIGHT
-            if (type == typeof(Color))
-            {
-                //return DeserializeColor();
-            }
-#endif
-            if (type == typeof(Type))
-            {
-                //return DeserializeType();
             }
 
 #if !NET35
@@ -74,7 +63,7 @@ namespace Fireasy.Common.Serialization
 
             if (typeof(IDictionary).IsAssignableFrom(type) && type != typeof(string))
             {
-                //return DeserializeDictionary(type);
+                return DeserializeDictionary(type);
             }
 
             if (typeof(IEnumerable).IsAssignableFrom(type) && type != typeof(string))
@@ -144,21 +133,26 @@ namespace Fireasy.Common.Serialization
                 return ParseObject(type);
             }
 
-            if (type.IsNullableType() && xmlReader.HasValue)
+            if (xmlReader.IsEmptyElement)
             {
-                return null;
+                if (xmlReader.NodeType == XmlNodeType.Element)
+                {
+                    XmlReaderHelper.ReadAndConsumeMatchingEndElement(xmlReader);
+                }
+
+                return type.GetDefaultValue();
             }
 
-            var beStartEle = false;
+            bool beStartEle;
             if ((beStartEle = (xmlReader.NodeType == XmlNodeType.Element)))
             {
-                xmlReader.Read();
+                XmlReaderHelper.ReadUntilAnyTypesReached(xmlReader, new[] { XmlNodeType.EndElement, XmlNodeType.Text, XmlNodeType.CDATA });
             }
 
-            var value = xmlReader.ReadContentAsString();
+            var value = xmlReader.NodeType == XmlNodeType.EndElement ? string.Empty : xmlReader.ReadContentAsString();
             if (beStartEle)
             {
-                while (xmlReader.NodeType != XmlNodeType.EndElement && xmlReader.Read()) ;
+                XmlReaderHelper.ReadAndConsumeMatchingEndElement(xmlReader);
             }
 
             return value.ToType(type);
@@ -172,16 +166,24 @@ namespace Fireasy.Common.Serialization
 
             while (xmlReader.Read())
             {
+                XmlReaderHelper.ReadUntilTypeReached(xmlReader, XmlNodeType.Element);
+
                 if (xmlReader.NodeType == XmlNodeType.Element)
                 {
-                    var value = Deserialize(typeof(string));
+                    var name = xmlReader.Name;
+                    var value = Deserialize(typeof(object));
                     if (value != null)
                     {
-                        dynamicObject.Add(xmlReader.Name, value);
+                        dynamicObject.Add(name, value);
                     }
                 }
-                else if (xmlReader.NodeType == XmlNodeType.EndElement)
+                else
                 {
+                    if (xmlReader.NodeType == XmlNodeType.EndElement)
+                    {
+                        xmlReader.ReadEndElement();
+                    }
+
                     break;
                 }
             }
@@ -202,11 +204,31 @@ namespace Fireasy.Common.Serialization
 
             CreateListContainer(listType, out elementType, out container);
 
-            while (xmlReader.Read())
+            xmlReader.ReadStartElement();
+
+            while (true)
             {
-                if (xmlReader.NodeType == XmlNodeType.Element && xmlReader.Name == elementType.Name)
+                XmlReaderHelper.ReadUntilAnyTypesReached(xmlReader, new[] { XmlNodeType.Element, XmlNodeType.Text, XmlNodeType.CDATA });
+
+                if (xmlReader.NodeType == XmlNodeType.Element)
                 {
                     container.Add(Deserialize(elementType));
+                }
+                else if (xmlReader.NodeType == XmlNodeType.Text || xmlReader.NodeType == XmlNodeType.CDATA)
+                {
+                    foreach (var str in xmlReader.ReadContentAsString().Split(',', ';'))
+                    {
+                        container.Add(str);
+                    }
+                }
+                else
+                {
+                    if (xmlReader.NodeType == XmlNodeType.EndElement)
+                    {
+                        xmlReader.ReadEndElement();
+                    }
+
+                    break;
                 }
             }
 
@@ -224,6 +246,36 @@ namespace Fireasy.Common.Serialization
             return container;
         }
 
+        private IDictionary DeserializeDictionary(Type dictType)
+        {
+            IDictionary container = null;
+            Type[] keyValueTypes = null;
+
+            CreateDictionaryContainer(dictType, out keyValueTypes, out container);
+
+            while (xmlReader.Read())
+            {
+                XmlReaderHelper.ReadUntilTypeReached(xmlReader, XmlNodeType.Element);
+
+                if (xmlReader.NodeType == XmlNodeType.Element)
+                {
+                    var key = xmlReader.Name;
+                    var value = Deserialize(keyValueTypes[1]);
+
+                    container.Add(Convert.ChangeType(key, keyValueTypes[0]), value);
+                }
+                else
+                {
+                    if (xmlReader.NodeType == XmlNodeType.EndElement)
+                    {
+                        xmlReader.ReadEndElement();
+                    }
+                }
+            }
+
+            return container;
+        }
+
         private object ParseObject(Type type)
         {
             return type.IsAnonymousType() ? ParseAnonymousObject(type) : ParseGeneralObject(type);
@@ -231,27 +283,78 @@ namespace Fireasy.Common.Serialization
 
         private object ParseGeneralObject(Type type)
         {
-            if (xmlReader.NodeType == XmlNodeType.None)
-            {
-                return null;
-            }
-
             var instance = type.New();
 
             var cache = GetAccessorCache(instance.GetType());
 
-            while (xmlReader.Read())
+            if (xmlReader.AttributeCount > 0)
             {
-                if (xmlReader.NodeType == XmlNodeType.Element && cache.TryGetValue(xmlReader.Name, out PropertyAccessor accessor))
+                for (var i = 0; i < xmlReader.AttributeCount; i++)
                 {
-                    var value = Deserialize(accessor.PropertyInfo.PropertyType);
-                    if (value != null)
+                    xmlReader.MoveToAttribute(i);
+
+                    if (cache.TryGetValue(xmlReader.Name, out PropertyAccessor accessor))
                     {
-                        accessor.SetValue(instance, value);
+                        if (!string.IsNullOrEmpty(xmlReader.Value))
+                        {
+                            accessor.SetValue(instance, xmlReader.Value.ToType(accessor.PropertyInfo.PropertyType));
+                        }
                     }
                 }
-                else if (xmlReader.NodeType == XmlNodeType.EndElement)
+
+                xmlReader.MoveToElement();
+            }
+
+            if (xmlReader.IsEmptyElement)
+            {
+                xmlReader.ReadStartElement();
+                return instance;
+            }
+
+            xmlReader.ReadStartElement();
+
+            while (true)
+            {
+                XmlReaderHelper.ReadUntilAnyTypesReached(xmlReader, new XmlNodeType[] { XmlNodeType.Element, XmlNodeType.EndElement, XmlNodeType.Text, XmlNodeType.CDATA });
+
+                if (xmlReader.NodeType == XmlNodeType.Element)
                 {
+                    if (cache.TryGetValue(xmlReader.Name, out PropertyAccessor accessor))
+                    {
+                        var value = Deserialize(accessor.PropertyInfo.PropertyType);
+                        if (value != null)
+                        {
+                            accessor.SetValue(instance, value);
+                        }
+                    }
+                    else
+                    {
+                        XmlReaderHelper.ReadAndConsumeMatchingEndElement(xmlReader);
+                    }
+                }
+                else if (xmlReader.NodeType == XmlNodeType.Text || xmlReader.NodeType == XmlNodeType.CDATA)
+                {
+                    if (xmlReader.HasValue)
+                    {
+                        if (cache.TryGetValue(xmlReader.Name, out PropertyAccessor accessor))
+                        {
+                            var value = Deserialize(accessor.PropertyInfo.PropertyType);
+                            if (value != null)
+                            {
+                                accessor.SetValue(instance, value);
+                            }
+                        }
+
+                        xmlReader.Read();
+                    }
+                }
+                else
+                {
+                    if (xmlReader.NodeType == XmlNodeType.EndElement)
+                    {
+                        xmlReader.ReadEndElement();
+                    }
+
                     break;
                 }
             }
@@ -264,24 +367,154 @@ namespace Fireasy.Common.Serialization
             return null;
         }
 
-        /// <summary>
-        /// 释放对象所占用的非托管和托管资源。
-        /// </summary>
-        /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
-        private void Dispose(bool disposing)
+        internal class XmlReaderHelper
         {
-            if (isDisposed)
+            public static readonly XmlNodeType[] ElementOrEndElement = { XmlNodeType.Element, XmlNodeType.EndElement };
+
+            public static void ReadAndConsumeMatchingEndElement(XmlReader reader)
             {
-                return;
+                var x = 0;
+                var start = reader.Name;
+
+                if (reader.IsEmptyElement)
+                {
+                    reader.Read();
+
+                    return;
+                }
+
+                while (true)
+                {
+                    if (reader.IsEmptyElement)
+                    {
+                        reader.Read();
+                        continue;
+                    }
+
+                    if (reader.NodeType == XmlNodeType.Element && !(x == 0 && start == reader.Name))
+                    {
+                        x++;
+                    }
+
+                    if (reader.NodeType == XmlNodeType.EndElement)
+                    {
+                        if (x == 0)
+                        {
+                            reader.ReadEndElement();
+
+                            break;
+                        }
+
+                        x--;
+                    }
+
+                    if (reader.ReadState != ReadState.Interactive)
+                    {
+                        break;
+                    }
+
+                    reader.Read();
+                }
             }
 
-            if (disposing)
+            public static void ReadAndApproachMatchingEndElement(XmlReader reader)
             {
-                xmlReader.TryDispose();
-                xmlReader = null;
+                var x = 0;
+
+                if (reader.IsEmptyElement)
+                {
+                    reader.Read();
+
+                    return;
+                }
+
+                while (true)
+                {
+                    if (reader.NodeType == XmlNodeType.Element)
+                    {
+                        x++;
+                    }
+
+                    if (reader.NodeType == XmlNodeType.EndElement)
+                    {
+                        if (x == 0)
+                        {
+                            break;
+                        }
+
+                        x--;
+                    }
+
+                    if (reader.ReadState != ReadState.Interactive)
+                    {
+                        break;
+                    }
+
+                    reader.Read();
+                }
             }
 
-            isDisposed = true;
+            public static void ReadUntilTypeReached(XmlReader reader, XmlNodeType nodeType)
+            {
+                ReadUntilAnyTypesReached(reader, new XmlNodeType[] { nodeType });
+            }
+
+            public static void ReadUntilAnyTypesReached(XmlReader reader, XmlNodeType[] nodeTypes)
+            {
+                while (true)
+                {
+                    if (Array.IndexOf(nodeTypes, reader.NodeType) >= 0)
+                    {
+                        break;
+                    }
+
+                    if (reader.ReadState != ReadState.Interactive)
+                    {
+                        break;
+                    }
+
+                    reader.Read();
+                }
+            }
+
+            /// <summary>
+            /// Reads the current node in the reader's value.
+            /// </summary>
+            /// <param name="reader"></param>
+            /// <returns></returns>
+            public static string ReadCurrentNodeValue(XmlReader reader)
+            {
+                var fromElement = (reader.NodeType == XmlNodeType.Element);
+
+                // If we're deserializing from an element,
+
+                if (fromElement)
+                {
+                    // read the start node.
+
+                    if (reader.IsEmptyElement)
+                    {
+                        reader.Read();
+
+                        return "";
+                    }
+
+                    reader.ReadStartElement();
+                }
+
+                var s = reader.Value;
+
+                // If we're deserializing from an element,
+
+                if (fromElement)
+                {
+                    // read the end node.
+
+                    ReadAndConsumeMatchingEndElement(reader);
+                }
+
+                return s;
+            }
         }
     }
 }

@@ -329,7 +329,7 @@ LIMIT {1}{2}",
         /// <returns></returns>
         public string ExistsTable(string tableName)
         {
-            return string.Format("SELECT COUNT(1) FROM `INFORMATION_SCHEMA`.`TABLES` WHERE `TABLE_NAME`='{0}'", tableName);
+            return string.Format("show tables like '{0}'", tableName);
         }
         
         /// <summary>

@@ -41,22 +41,22 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <summary>
         /// 获取或设置是否开启解析缓存。默认为 true。
         /// </summary>
-        public bool ParseCacheEnabled { get; set; } = true;
+        public bool CacheParsing { get; set; } = true;
 
         /// <summary>
         /// 获取或设置解析缓存过期时间(秒)。默认为300。
         /// </summary>
-        public int ParseCacheExpired { get; set; } = 300;
+        public int CacheParsingTimes { get; set; } = 300;
 
         /// <summary>
         /// 获取或设置是否开启数据缓存。默认为 false。
         /// </summary>
-        public bool DataCacheEnabled { get; set; }
+        public bool CacheExecution { get; set; }
 
         /// <summary>
         /// 获取或设置数据缓存过期时间(秒)。默认为60。
         /// </summary>
-        public int DataCacheExpired { get; set; } = 60;
+        public int CacheExecutionTimes { get; set; } = 60;
 
         /// <summary>
         /// 克隆一份选项。
@@ -69,10 +69,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     AttachParameter = AttachParameter,
                     HideTableAliases = HideTableAliases,
                     HideColumnAliases = HideColumnAliases,
-                    ParseCacheEnabled = ParseCacheEnabled,
-                    ParseCacheExpired = ParseCacheExpired,
-                    DataCacheEnabled = DataCacheEnabled,
-                    DataCacheExpired = DataCacheExpired,
+                    CacheParsing = CacheParsing,
+                    CacheParsingTimes = CacheParsingTimes,
+                    CacheExecution = CacheExecution,
+                    CacheExecutionTimes = CacheExecutionTimes,
                     WhereOnly = WhereOnly
                 };
         }

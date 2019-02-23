@@ -26,6 +26,12 @@ namespace Fireasy.Common.Ioc.Registrations
             return type.New<IRegistration>();
         }
 
+        internal static IRegistration CreateScoped(Type serviceType, Type implementationType)
+        {
+            var type = typeof(ScopedRegistration<,>).MakeGenericType(serviceType, implementationType);
+            return type.New<IRegistration>();
+        }
+
         internal static IRegistration RelyWithTransient(Type serviceType, Type implementationType, Container container)
         {
             Func<object> func = () => typeof(TransientRegistration<,>)

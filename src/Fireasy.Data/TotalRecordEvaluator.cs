@@ -53,12 +53,13 @@ namespace Fireasy.Data
         {
             var count = 0;
             var cullingOrderBy = DbUtility.CullingOrderBy(context.Command.CommandText);
+            var sqlCount = $"SELECT COUNT(1) FROM ({cullingOrderBy}) TEMP";
 
             using (var connection = context.Database.CreateConnection(DistributedMode.Slave))
             {
                 connection.OpenClose(() =>
                     {
-                        using (var command = context.Database.Provider.CreateCommand(connection, null, cullingOrderBy, parameters: context.Parameters))
+                        using (var command = context.Database.Provider.CreateCommand(connection, null, sqlCount, parameters: context.Parameters))
                         {
                             using (var reader = command.ExecuteReader())
                             {

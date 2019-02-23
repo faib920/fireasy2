@@ -235,6 +235,8 @@ namespace Fireasy.Data.Entity
         private static IProperty RegisterSupposedProperty(PropertyInfo propertyInfo, Type entityType, IProperty referenceProperty = null, RelationOptions options = null)
         {
             IProperty property;
+            var useAttr = propertyInfo.GetCustomAttributes<RelationshipUseAttribute>().FirstOrDefault();
+
             if (referenceProperty != null)
             {
                 if (referenceProperty.Type.IsEnum)
@@ -244,7 +246,7 @@ namespace Fireasy.Data.Entity
                         Name = propertyInfo.Name,
                         Type = propertyInfo.PropertyType,
                         EntityType = entityType,
-                        RelationType = referenceProperty.Type,
+                        RelationalType = referenceProperty.Type,
                         Reference = referenceProperty,
                         Info = InitRelatedPropertyInfo(propertyInfo),
                         Options = options ?? RelationOptions.Default
@@ -258,7 +260,7 @@ namespace Fireasy.Data.Entity
                         Name = propertyInfo.Name,
                         Type = propertyInfo.PropertyType,
                         EntityType = entityType,
-                        RelationType = referenceProperty.EntityType,
+                        RelationalType = referenceProperty.EntityType,
                         Reference = referenceProperty,
                         Info = InitRelatedPropertyInfo(propertyInfo),
                         Options = options ?? RelationOptions.Default
@@ -270,10 +272,11 @@ namespace Fireasy.Data.Entity
                 //实体引用属性
                 property = new EntityProperty
                 {
-                    RelationType = propertyInfo.PropertyType,
+                    RelationalType = propertyInfo.PropertyType,
                     Name = propertyInfo.Name,
                     Type = propertyInfo.PropertyType,
                     EntityType = entityType,
+                    RelationalKey = useAttr?.ForeignKey,
                     Info = InitRelatedPropertyInfo(propertyInfo),
                     Options = options ?? RelationOptions.Default
                 };
@@ -284,10 +287,11 @@ namespace Fireasy.Data.Entity
                 //实体集属性
                 property = new EntitySetProperty
                 {
-                    RelationType = propertyInfo.PropertyType.GetGenericArguments()[0],
+                    RelationalType = propertyInfo.PropertyType.GetGenericArguments()[0],
                     Name = propertyInfo.Name,
                     Type = propertyInfo.PropertyType,
                     EntityType = entityType,
+                    RelationalKey = useAttr?.ForeignKey,
                     Info = InitRelatedPropertyInfo(propertyInfo),
                     Options = options ?? RelationOptions.Default
                 };
@@ -342,12 +346,7 @@ namespace Fireasy.Data.Entity
             if (property.Info.ReflectionInfo == null)
             {
                 var propertyInfo = entityType.GetProperty(property.Name);
-                if (propertyInfo == null)
-                {
-                    throw new PropertyNotFoundException(property.Name);
-                }
-
-                property.Info.ReflectionInfo = propertyInfo;
+                property.Info.ReflectionInfo = propertyInfo ?? throw new PropertyNotFoundException(property.Name);
                 property.Type = propertyInfo.PropertyType;
             }
 

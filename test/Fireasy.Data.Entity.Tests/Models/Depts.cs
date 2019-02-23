@@ -48,6 +48,12 @@ namespace Fireasy.Data.Entity.Tests.Models
         [PropertyMapping(ColumnName = "DeptType", Description = "", IsNullable = true)]
         public virtual DeptType DeptType { get; set; }
 
+        [PropertyMapping(ColumnName = "test1", Description = "", DefaultValue = true, IsNullable = true)]
+        public virtual bool test1 { get; set; }
+
+        [PropertyMapping(ColumnName = "test2", Length =32, Description = "", IsNullable = true)]
+        public virtual string test2 { get; set; }
+
         public System.Collections.Generic.List<Depts> Children { get; set; }
 
         System.Collections.IList ITreeNode.Children

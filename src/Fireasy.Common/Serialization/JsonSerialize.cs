@@ -299,7 +299,8 @@ namespace Fireasy.Common.Serialization
                 }
 
                 jsonWriter.WriteKey(SerializeName(acc.PropertyName));
-                JsonConvertContext.Current.Assign(acc.Accessor.PropertyInfo.Name, value, () => Serialize(value, acc.PropertyInfo.PropertyType));
+                var objType = acc.PropertyInfo.PropertyType == typeof(object) ? value.GetType() : acc.PropertyInfo.PropertyType;
+                JsonConvertContext.Current.Assign(acc.Accessor.PropertyInfo.Name, value, () => Serialize(value, objType));
             }
 
             jsonWriter.WriteEndObject();

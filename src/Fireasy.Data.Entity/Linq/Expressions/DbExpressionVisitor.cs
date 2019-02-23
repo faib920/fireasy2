@@ -88,7 +88,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         protected virtual Expression VisitEntity(EntityExpression entity)
         {
             var exp = Visit(entity.Expression);
-            return entity.Update(exp);
+            return entity.Update(exp, entity.IsNoTracking);
         }
 
         /// <summary>

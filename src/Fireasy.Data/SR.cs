@@ -40,6 +40,7 @@ namespace Fireasy.Data
         internal const string ConnectionError = "ConnectionError";
         internal const string UnableCastRowMapper = "UnableCastRowMapper";
         internal const string PropertyTypeIsNull = "PropertyTypeIsNull";
+        internal const string InstallProviderAssembly = "InstallProviderAssembly";
     }
 
     internal class SR

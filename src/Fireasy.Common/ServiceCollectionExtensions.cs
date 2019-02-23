@@ -9,6 +9,7 @@
 using Fireasy.Common.Aop;
 using Fireasy.Common.Caching;
 using Fireasy.Common.Caching.Configuration;
+using Fireasy.Common.Composition.Configuration;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Ioc;
 using Fireasy.Common.Ioc.Configuration;
@@ -94,6 +95,7 @@ namespace Microsoft.Extensions.DependencyInjection
             ConfigurationUnity.Bind<CachingConfigurationSection>(configuration);
             ConfigurationUnity.Bind<ContainerConfigurationSection>(configuration);
             ConfigurationUnity.Bind<SubscribeConfigurationSection>(configuration);
+            ConfigurationUnity.Bind<ImportConfigurationSection>(configuration);
 
             if (services != null)
             {

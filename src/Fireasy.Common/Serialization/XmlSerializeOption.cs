@@ -36,5 +36,16 @@ namespace Fireasy.Common.Serialization
         /// 获取或设置是否忽略为 null 的值。默认为 true。
         /// </summary>
         public bool IgnoreNull { get; set; } = true;
+
+        /// <summary>
+        /// 获取或设置输出的风格。
+        /// </summary>
+        public OutputStyle OutputStyle { get; set; }
+    }
+
+    public enum OutputStyle
+    {
+        Element,
+        Attribute
     }
 }

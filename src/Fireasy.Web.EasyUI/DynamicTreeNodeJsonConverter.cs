@@ -28,6 +28,15 @@ namespace Fireasy.Web.EasyUI
         {
         }
 
+        /// <summary>
+        /// 初始化 <see cref="DynamicTreeNodeJsonConverter"/> 类的新实例。
+        /// </summary>
+        /// <param name="attExps">其他附加的成员表达式。</param>
+        public DynamicTreeNodeJsonConverter(Dictionary<string, Func<T, object>> attExps)
+            : base(attExps)
+        {
+        }
+
         private static Dictionary<string, Func<T, object>> GetProperties(Expression<Func<T, object>> textExp, params Expression<Func<T, object>>[] attExps)
         {
             var dict = new Dictionary<string, Func<T, object>>();

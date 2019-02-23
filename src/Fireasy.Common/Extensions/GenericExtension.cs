@@ -698,7 +698,8 @@ namespace Fireasy.Common.Extensions
                             descExp = Expression.Call(null, MthToType,
                                 Expression.Convert(descExp, typeof(object)),
                                 Expression.Constant(property.PropertyType),
-                                Expression.Constant(null));
+                                Expression.Constant(null),
+                                Expression.Constant(null, typeof(ConvertMapper)));
                             descExp = Expression.Convert(descExp, property.PropertyType);
                         }
                     }

@@ -23,14 +23,18 @@ namespace Fireasy.Data.Entity.Metadata
         /// <param name="thisType"></param>
         /// <param name="otherType"></param>
         /// <param name="style"></param>
+        /// <param name="source"></param>
         /// <param name="keys"></param>
-        internal RelationshipMetadata(Type thisType, Type otherType, RelationshipStyle style, IEnumerable<RelationshipKey> keys)
+        internal RelationshipMetadata(Type thisType, Type otherType, RelationshipStyle style, RelationshipSource source, IEnumerable<RelationshipKey> keys)
         {
             ThisType = thisType;
             OtherType = otherType;
             Style = style;
             Keys = keys.ToReadOnly();
+            Source = source;
         }
+
+        internal RelationshipSource Source { get; set; }
 
         /// <summary>
         /// 获取或设置作为主体实体的类型。

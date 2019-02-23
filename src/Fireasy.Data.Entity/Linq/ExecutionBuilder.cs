@@ -226,31 +226,46 @@ namespace Fireasy.Data.Entity.Linq
 
             var properties = new List<Expression>();
             var values = new List<Expression>();
+            var bindings = new List<MemberBinding>();
 
             mbmInitExp.Bindings.ForEach(s =>
                 {
                     if (s is MemberAssignment assign)
                     {
-                        var proprety = PropertyUnity.GetProperty(mbmInitExp.Type, assign.Member.Name);
-                        properties.Add(Expression.Constant(proprety));
                         var expression = Visit(assign.Expression);
-                        if (PropertyValue.IsSupportedType(proprety.Type))
+                        if (entity.IsNoTracking)
                         {
-                            if (expression.Type.GetNonNullableType().IsEnum)
-                            {
-                                expression = Expression.Convert(expression, typeof(Enum));
-                            }
-
-                            var pValue = Expression.Convert(expression, typeof(PropertyValue));
-                            values.Add(pValue);
+                            bindings.Add(Expression.Bind(assign.Member, expression));
                         }
                         else
                         {
-                            var pValue = Expression.Call(null, MthNewPropertyValue, expression, Expression.Constant(null, typeof(Type)));
-                            values.Add(pValue);
+                            var proprety = PropertyUnity.GetProperty(mbmInitExp.Type, assign.Member.Name);
+                            properties.Add(Expression.Constant(proprety));
+
+                            if (PropertyValue.IsSupportedType(proprety.Type))
+                            {
+                                if (expression.Type.GetNonNullableType().IsEnum)
+                                {
+                                    expression = Expression.Convert(expression, typeof(Enum));
+                                }
+
+                                var pValue = Expression.Convert(expression, typeof(PropertyValue));
+                                values.Add(pValue);
+                            }
+                            else
+                            {
+                                var pValue = Expression.Call(null, MthNewPropertyValue, expression, Expression.Constant(null, typeof(Type)));
+                                values.Add(pValue);
+                            }
                         }
                     }
                 });
+
+            if (entity.IsNoTracking)
+            {
+                var mbmInitNewExp = Expression.MemberInit(mbmInitExp.NewExpression, bindings);
+                return Expression.Convert(mbmInitNewExp, entity.Type);
+            }
 
             var e = TranslateScope.Current.Context as IEntityPersistentEnvironment;
             var c = TranslateScope.Current.Context as IEntityPersistentInstanceContainer;

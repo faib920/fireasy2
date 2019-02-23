@@ -1,4 +1,4 @@
-﻿#if !NET35 && !NETSTANDARD
+﻿#if !NET35
 using System;
 
 namespace Fireasy.Common.Composition

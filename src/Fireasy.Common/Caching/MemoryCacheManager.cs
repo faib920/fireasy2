@@ -6,8 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.ComponentModel;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -23,7 +23,7 @@ namespace Fireasy.Common.Caching
         /// </summary>
         public readonly static MemoryCacheManager Instance = new MemoryCacheManager();
 
-        private readonly ConcurrentDictionary<string, CacheItem> cacheDictionary = new ConcurrentDictionary<string, CacheItem>();
+        private readonly SafetyDictionary<string, CacheItem> cacheDictionary = new SafetyDictionary<string, CacheItem>();
         private readonly CacheOptimizer optimizer;
 
         /// <summary>
@@ -44,8 +44,7 @@ namespace Fireasy.Common.Caching
         /// <param name="removeCallback">当对象从缓存中移除时，使用该回调方法通知应用程序。</param>
         public T Add<T>(string cacheKey, T value, TimeSpan? expire = null, CacheItemRemovedCallback removeCallback = null)
         {
-            var entry = CreateCacheItem(cacheKey, () => value, () => expire == null ? NeverExpired.Instance : new RelativeTime(expire.Value), removeCallback);
-            cacheDictionary.AddOrUpdate(cacheKey, entry, (s, o) => entry);
+            cacheDictionary.AddOrUpdate(cacheKey, () => CreateCacheItem(cacheKey, () => value, () => expire == null ? NeverExpired.Instance : new RelativeTime(expire.Value), removeCallback));
 
             return value;
         }
@@ -60,8 +59,7 @@ namespace Fireasy.Common.Caching
         /// <param name="removeCallback">当对象从缓存中移除时，使用该回调方法通知应用程序。</param>
         public T Add<T>(string cacheKey, T value, ICacheItemExpiration expiration, CacheItemRemovedCallback removeCallback = null)
         {
-            var entry = CreateCacheItem(cacheKey, () => value, () => expiration, removeCallback);
-            cacheDictionary.AddOrUpdate(cacheKey, entry, (s, o) => entry);
+            cacheDictionary.AddOrUpdate(cacheKey, () => CreateCacheItem(cacheKey, () => value, () => expiration, removeCallback));
 
             return value;
         }
@@ -127,24 +125,22 @@ namespace Fireasy.Common.Caching
         /// <returns></returns>
         public T TryGet<T>(string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration = null)
         {
-            var lazy = new Lazy<CacheItem>(() => CreateCacheItem(cacheKey, factory, expiration, null));
-
             if (cacheDictionary.TryGetValue(cacheKey, out CacheItem entry))
             {
                 //判断是否过期，移除后再添加
-                if (optimizer.Update(entry) == null)
+                if (entry != null && entry.Value != null && optimizer.Update(entry) == null)
                 {
                     if (cacheDictionary.TryRemove(cacheKey, out entry))
                     {
                         NotifyCacheRemoved(entry);
                     }
 
-                    entry = cacheDictionary.GetOrAdd(cacheKey, s => lazy.Value);
+                    entry = cacheDictionary.GetOrAdd(cacheKey, () => CreateCacheItem(cacheKey, factory, expiration, null));
                 }
             }
             else
             {
-                entry = cacheDictionary.GetOrAdd(cacheKey, s => lazy.Value);
+                entry = cacheDictionary.GetOrAdd(cacheKey, () => CreateCacheItem(cacheKey, factory, expiration, null));
             }
 
             return (T)entry.Value;
@@ -162,7 +158,7 @@ namespace Fireasy.Common.Caching
             if (cacheDictionary.TryGetValue(cacheKey, out CacheItem entry))
             {
                 //判断是否过期
-                if (optimizer.Update(entry) == null)
+                if (entry != null && entry.Value != null && optimizer.Update(entry) == null)
                 {
                     if (cacheDictionary.TryRemove(cacheKey, out entry))
                     {
@@ -221,11 +217,11 @@ namespace Fireasy.Common.Caching
         {
             CheckCapacity();
 
-            return optimizer.Update(new CacheItem(
+            return new CacheItem(
                 cacheKey,
                 factory(),
                 expiration == null ? null : expiration(),
-                removeCallback), false);
+                removeCallback);
         }
 
         /// <summary>

@@ -38,6 +38,7 @@ namespace Fireasy.Data
                         stream.WriteLine("timer(s): " + period);
                         stream.WriteLine("===========================================================");
                         stream.WriteLine();
+                        stream.Flush();
                     }
                 });
         }
@@ -56,6 +57,7 @@ namespace Fireasy.Data
                         stream.WriteLine("error: " + exception.Message);
                         stream.WriteLine("===========================================================");
                         stream.WriteLine();
+                        stream.Flush();
                     }
                 });
         }

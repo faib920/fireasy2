@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 
 using Fireasy.Common;
+using Fireasy.Common.ComponentModel;
 using System.Collections.Concurrent;
 
 namespace Fireasy.Data.Entity
@@ -16,7 +17,7 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public class EntityTransactionScope : Scope<EntityTransactionScope>
     {
-        private ConcurrentDictionary<string, IDatabase> databases = new ConcurrentDictionary<string,IDatabase>();
+        private SafetyDictionary<string, IDatabase> databases = new SafetyDictionary<string,IDatabase>();
         private bool isDisposed;
 
         /// <summary>

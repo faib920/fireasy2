@@ -52,10 +52,13 @@ namespace Microsoft.Extensions.DependencyInjection
                 builder.Services.AddSingleton<RazorProjectFileSystem, Fireasy.Web.Mvc.BasedRazorProject>();
             }
 
-            builder.Services.Configure<MvcOptions>(s =>
-                {
-                    s.Filters.Add(new Fireasy.Web.Mvc.HandleErrorAttribute());
-                });
+            if (options.UseErrorHandleFilter)
+            {
+                builder.Services.Configure<MvcOptions>(s =>
+                    {
+                        s.Filters.Add(new Fireasy.Web.Mvc.HandleErrorAttribute());
+                    });
+            }
 
             if (options.UseJsonModelBinder)
             {

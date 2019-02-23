@@ -18,19 +18,13 @@ namespace Fireasy.Common.Tests
         {
             var ss = "dfasdfaf";
             var dd = 1;
-            ActionQueue.SetPeriod(TimeSpan.FromMilliseconds(500));
-            Test(ss, dd);
-
-            Thread.Sleep(5000);
-        }
-
-        private void Test(string ss, int dd)
-        {
             ActionQueue.Push(() =>
             {
                 Console.WriteLine(str + ss + dd);
-                //throw new Exception("error");
-            });
+                throw new Exception("error");
+            }, 2);
+
+            Thread.Sleep(5000);
         }
     }
 }

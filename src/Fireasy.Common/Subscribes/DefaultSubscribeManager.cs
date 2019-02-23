@@ -5,8 +5,8 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.ComponentModel;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace Fireasy.Common.Subscribes
@@ -16,7 +16,7 @@ namespace Fireasy.Common.Subscribes
     /// </summary>
     public class DefaultSubscribeManager : ISubscribeManager
     {
-        private static ConcurrentDictionary<Type, List<Delegate>> subscribers = new ConcurrentDictionary<Type, List<Delegate>>();
+        private static SafetyDictionary<Type, List<Delegate>> subscribers = new SafetyDictionary<Type, List<Delegate>>();
 
         /// <summary>
         /// 缺省实例。
@@ -48,8 +48,11 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            var list = subscribers.GetOrAdd(typeof(TSubject), k => new List<Delegate>());
-            list.Add(subscriber);
+            var list = subscribers.GetOrAdd(typeof(TSubject), () => new List<Delegate>());
+            if (list != null)
+            {
+                list.Add(subscriber);
+            }
         }
 
         /// <summary>
@@ -61,8 +64,11 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            var list = subscribers.GetOrAdd(subjectType, k => new List<Delegate>());
-            list.Add(subscriber);
+            var list = subscribers.GetOrAdd(subjectType, () => new List<Delegate>());
+            if (list != null)
+            {
+                list.Add(subscriber);
+            }
         }
 
         /// <summary>

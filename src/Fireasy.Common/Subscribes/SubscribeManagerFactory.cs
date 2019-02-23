@@ -27,7 +27,7 @@ namespace Fireasy.Common.Subscribes
             var section = ConfigurationUnity.GetSection<SubscribeConfigurationSection>();
             if (section != null && section.Factory != null)
             {
-                manager = section.Factory.CreateInstance(configName) as ISubscribeManager;
+                manager = ConfigurationUnity.Cached<ISubscribeManager>($"Subscribe_{configName}", () => section.Factory.CreateInstance(configName) as ISubscribeManager);
                 if (manager != null)
                 {
                     return manager;
@@ -51,7 +51,7 @@ namespace Fireasy.Common.Subscribes
                 return null;
             }
 
-            return ConfigurationUnity.CreateInstance<SubscribeConfigurationSetting, ISubscribeManager>(setting, s => s.SubscriberType);
+            return ConfigurationUnity.Cached<ISubscribeManager>($"Subscribe_{configName}", () => ConfigurationUnity.CreateInstance<SubscribeConfigurationSetting, ISubscribeManager>(setting, s => s.SubscriberType));
         }
     }
 }

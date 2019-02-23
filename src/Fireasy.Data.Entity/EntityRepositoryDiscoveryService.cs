@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Concurrent;
@@ -20,8 +21,8 @@ namespace Fireasy.Data.Entity
         #region Fields and constructors
 
         // AppDomain cache collection initializers for a known type.
-        private static readonly ConcurrentDictionary<Type, EntityContextTypesInitializersPair> _objectSetInitializers =
-            new ConcurrentDictionary<Type, EntityContextTypesInitializersPair>();
+        private static readonly SafetyDictionary<Type, EntityContextTypesInitializersPair> _objectSetInitializers =
+            new SafetyDictionary<Type, EntityContextTypesInitializersPair>();
 
         // Used by the code below to create DbSet instances
         public static readonly MethodInfo SetMethod = typeof(EntityContext).GetMethods().FirstOrDefault(s => s.Name == "Set" && s.IsGenericMethod);
@@ -126,7 +127,10 @@ namespace Fireasy.Data.Entity
         public void InitializeSets()
         {
             GetSets(); // Ensures sets have been discovered
-            _objectSetInitializers[_context.GetType()].SetsInitializer(_context);
+            if (_objectSetInitializers[_context.GetType()] != null)
+            {
+                _objectSetInitializers[_context.GetType()].SetsInitializer(_context);
+            }
         }
 
         #endregion

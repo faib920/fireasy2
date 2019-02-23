@@ -29,7 +29,7 @@ namespace Fireasy.Common.Logging
             var section = ConfigurationUnity.GetSection<LoggingConfigurationSection>();
             if (section != null && section.Factory != null)
             {
-                logger = section.Factory.CreateInstance(configName) as ILogger;
+                logger = ConfigurationUnity.Cached<ILogger>($"Logger_{configName}", () => section.Factory.CreateInstance(configName) as ILogger);
                 if (logger != null)
                 {
                     return logger;
@@ -53,7 +53,7 @@ namespace Fireasy.Common.Logging
                 return null;
             }
 
-            return ConfigurationUnity.CreateInstance<LoggingConfigurationSetting, ILogger>(setting, s => s.LogType);
+            return ConfigurationUnity.Cached<ILogger>($"Logger_{configName}", () => ConfigurationUnity.CreateInstance<LoggingConfigurationSetting, ILogger>(setting, s => s.LogType));
         }
     }
 }

@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Serialization;
+using System.Linq;
 #if !NETSTANDARD
 using System.Web.Mvc;
 #else
@@ -26,7 +27,11 @@ namespace Fireasy.Web.Mvc
         public static JsonResult Json(this Controller controller, object value, params JsonConverter[] converters)
         {
             var option = new JsonSerializeOption();
-            option.Converters.AddRange(converters);
+
+            if (converters != null)
+            {
+                option.Converters.AddRange(converters.Where(s => s != null));
+            }
 
             return new JsonResultWrapper(value, option);
         }

@@ -8,6 +8,8 @@
 
 using System.Collections.Generic;
 using System.Data.Common;
+using System.IO;
+using System.Linq;
 
 namespace Fireasy.Data.Provider
 {
@@ -42,7 +44,7 @@ namespace Fireasy.Data.Provider
                 }
             }
 
-            return null;
+            throw new FileNotFoundException(SR.GetString(SRKind.InstallProviderAssembly, string.Join("、", typeNames.Select(s => s.Substring(s.LastIndexOf(",") + 1).Trim() + ".dll").ToArray())));
         }
     }
 }

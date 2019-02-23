@@ -276,7 +276,9 @@ studio");
             {
                 Age = 12,
                 Name = "huangxd",
-                Birthday = DateTime.Parse("1981-1-10 12:33:55")
+                Birthday = DateTime.Parse("1981-1-10 12:33:55"),
+                Record = new WorkRecord { Company = "aa" },
+                WorkRecords = new List<WorkRecord> { new WorkRecord { Company = "bb" } }
             };
 
             var xml = serializer.Serialize(obj);
@@ -1032,30 +1034,39 @@ studio");
         public void TestDeserializeObject()
         {
             var serializer = new XmlSerializer();
-            var obj = serializer.Deserialize<JsonData>(@"<?xml version=""1.0"" encoding=""utf-16""?>
-<JsonData>
-  <Name>fireasy</Name>
-  <Birthday>2018-12-1</Birthday>
-  <Age>12</Age>
+            var xml = @"<JsonData>
+ <Name>huangxd</Name>
+ <Birthday>2019-1-1</Birthday>
+ <Record>
+   <Company>fireasy</Company>
+ </Record>
+ <WorkRecords>
   <Record>
     <Company>fireasy</Company>
-    <StartDate>2018-12-1</StartDate>
   </Record>
-</JsonData>");
+  <Record>
+    <Company>fireasy</Company>
+  </Record>
+ </WorkRecords>
+</JsonData>
+";
+
+            var obj = serializer.Deserialize<JsonData>(xml);
 
             Assert.IsNotNull(obj);
-            Console.WriteLine(obj.Name);
         }
 
         /// <summary>
         /// 测试Deserialize方法，返回object。
         /// </summary>
         [TestMethod()]
-        public void TestDeserializeObject1()
+        public void TestDeserializeDynamicObject()
         {
-            var serializer = new XmlSerializer();
+            var option = new XmlSerializeOption();
+            var serializer = new XmlSerializer(option);
 
-            var obj = serializer.Deserialize<ComponentModel.Result<object>>(@"<?xml version=""1.0"" encoding=""utf-16""?>
+            var obj = serializer.Deserialize<ComponentModel.Result<object>>(
+@"<?xml version=""1.0"" encoding=""utf-16""?>
 <Result>
   <succeed>true</succeed>
   <data>
@@ -1080,12 +1091,19 @@ studio");
         public void TestDeserializeObject2()
         {
             var serializer = new XmlSerializer();
+            var xml = @"<JsonData Name=""fireasy"" Birthday=""2019-1-1"">
+ <Record Company=""fireasy"" />
+ <WorkRecords>
+  <Record Company=""fireasy"" />
+  <Record Company=""fireasy"" />
+ </WorkRecords>
+</JsonData>
+";
 
-            var obj = serializer.Deserialize<object>(
-                new JsonText(@"[{'Name':null,'Birthday':'\/Date(401299200000+0800)\/','Age':12,'WorkRecords':null}]").ToString()
-                );
+            var obj = serializer.Deserialize<JsonData>(xml);
 
             Assert.IsNotNull(obj);
+            Assert.AreEqual(obj.WorkRecords[0].Company, "fireasy");
         }
 
         /// <summary>
@@ -1196,11 +1214,11 @@ studio");
             var serializer = new XmlSerializer(new XmlSerializeOption { CamelNaming = true });
 
             var obj = serializer.Deserialize<ElementData>(
-                new JsonText(@"{'xm':'huangxd'}").ToString()
+                "<ElementData><xm>huangxd</xm></ElementData>"
                 );
 
             Assert.IsNotNull(obj);
-            Console.WriteLine(obj.Name);
+            Assert.AreEqual(obj.Name, "huangxd");
         }
 
         [TestMethod()]
@@ -1288,16 +1306,17 @@ studio");
     <Age>12</Age>
   </JsonData>
   <JsonData>
-    <Name>huangxd</Name>
+    <Name>lilei</Name>
     <Birthday>1982-09-20</Birthday>
     <WorkTime />
-    <Age>12</Age>
+    <Age />
   </JsonData>
 </ArrayOfJsonData>";
 
             var list = serializer.Deserialize<List<JsonData>>(xml);
-
-
+            Assert.AreEqual(list.Count, 10);
+            Assert.AreEqual(list[9].Name, "lilei");
+            Assert.AreEqual(list[9].Age, null);
         }
 
         /// <summary>
@@ -1308,12 +1327,78 @@ studio");
         {
             var serializer = new XmlSerializer();
 
-            var xml = new JsonText(@"[{'Name':'huangxd','Birthday':'\/Date(401299200000+0800)\/','Age':12,'WorkRecords':null},{'Name':'liping','Birthday':'\/Date(401299200000+0800)\/','Age':22,'WorkRecords':null}]").ToString();
+            var xml = @"<?xml version=""1.0"" encoding=""utf-16""?>
+<ArrayOfJsonData>
+  <JsonData>
+    <Name>huangxd</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age>12</Age>
+  </JsonData>
+  <JsonData>
+    <Name>huangxd</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age>12</Age>
+  </JsonData>
+  <JsonData>
+    <Name>huangxd</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age>12</Age>
+  </JsonData>
+  <JsonData>
+    <Name>huangxd</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age>12</Age>
+  </JsonData>
+  <JsonData>
+    <Name>huangxd</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age>12</Age>
+  </JsonData>
+  <JsonData>
+    <Name>huangxd</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age>12</Age>
+  </JsonData>
+  <JsonData>
+    <Name>huangxd</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age>12</Age>
+  </JsonData>
+  <JsonData>
+    <Name>huangxd</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age>12</Age>
+  </JsonData>
+  <JsonData>
+    <Name>huangxd</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age>12</Age>
+  </JsonData>
+  <JsonData>
+    <Name>lilei</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age />
+    <Record><Company><![CDATA[ 
+fireasy
+total co.ltd
+]]></Company></Record>
+  </JsonData>
+</ArrayOfJsonData>";
 
             var array = serializer.Deserialize<JsonData[]>(xml);
 
             Assert.IsNotNull(array);
-            Assert.AreEqual(2, array.Length);
+            Assert.AreEqual(10, array.Length);
         }
 
         /// <summary>
@@ -1340,12 +1425,12 @@ studio");
         {
             var serializer = new XmlSerializer();
 
-            var xml = new JsonText(@"[12,33,44.55,'55',{'Name':'fireasy'}]").ToString();
+            var xml = @"<Array><string>a</string><string>b</string></Array>";
 
             var array = serializer.Deserialize<ArrayList>(xml);
 
             Assert.IsNotNull(array);
-            Assert.AreEqual(5, array.Count);
+            Assert.AreEqual(2, array.Count);
         }
 
         /// <summary>
@@ -1356,12 +1441,74 @@ studio");
         {
             var serializer = new XmlSerializer();
 
-            var xml = new JsonText(@"{'huangxd':{'Name':'huangxd','Birthday':'\/Date(401299200000+0800)\/','Age':12,'WorkRecords':null},'liping':{'Name':'liping','Birthday':'\/Date(401299200000+0800)\/','Age':22,'WorkRecords':null}}").ToString();
+            var xml = @"<Dictionary>
+  <h0>
+    <Name>huangxd</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age>12</Age>
+  </h0>
+  <h1>
+    <Name>huangxd</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age>12</Age>
+  </h1>
+  <h2>
+    <Name>huangxd</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age>12</Age>
+  </h2>
+  <h3>
+    <Name>huangxd</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age>12</Age>
+  </h3>
+  <h4>
+    <Name>huangxd</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age>12</Age>
+  </h4>
+  <h5>
+    <Name>huangxd</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age>12</Age>
+  </h5>
+  <h6>
+    <Name>huangxd</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age>12</Age>
+  </h6>
+  <h7>
+    <Name>huangxd</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age>12</Age>
+  </h7>
+  <h8>
+    <Name>huangxd</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age>12</Age>
+  </h8>
+  <h9>
+    <Name>huangxd</Name>
+    <Birthday>1982-09-20</Birthday>
+    <WorkTime />
+    <Age>12</Age>
+  </h9>
+</Dictionary>
+";
 
             var dictionary = serializer.Deserialize<Dictionary<string, JsonData>>(xml);
 
             Assert.IsNotNull(dictionary);
-            Assert.AreEqual(2, dictionary.Count);
+            Assert.AreEqual(10, dictionary.Count);
         }
 
         /// <summary>
@@ -1424,19 +1571,6 @@ studio");
         }
 
         [TestMethod()]
-        public void TestDeserializeDynamicObject()
-        {
-            var serializer = new XmlSerializer();
-
-            var obj = serializer.Deserialize<dynamic>(
-                new JsonText(@"{'xm':'huangxd','age':33}").ToString()
-                );
-
-            Assert.IsNotNull(obj);
-            Assert.AreEqual("huangxd", obj.xm);
-        }
-
-        [TestMethod()]
         public void TestDeserializeDynamicObject1()
         {
             var serializer = new XmlSerializer();
@@ -1467,8 +1601,6 @@ studio");
         [TestMethod]
         public void TestDeserializeComplex()
         {
-            var ret = DD().Result;
-            Console.WriteLine(ret);
         }
 
         [TestMethod]
@@ -1497,13 +1629,18 @@ studio");
             Console.WriteLine(attr.Name);
         }
 
-        private async Task<Result<MedInpatientsViewModel>> DD()
+        [TestMethod]
+        public void TestDeserializeArrayConverter()
         {
-            var s = new JsonText(@"{'data':[{'MedId':25437,'InhCode':'0001410726','InfoId':467,'MedName':'周伟','MedOutdate':'2015-10-16','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25282,'InhCode':'0001410501','InfoId':312,'MedName':'陶寿明','MedOutdate':'2015-10-16','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25322,'InhCode':'0001410525','InfoId':352,'MedName':'左凤云','MedOutdate':'2015-10-16','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25439,'InhCode':'0001410731','InfoId':469,'MedName':'叶应珠','MedOutdate':'2015-10-16','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25390,'InhCode':'0001410606','InfoId':420,'MedName':'徐远达','MedOutdate':'2015-10-16','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25405,'InhCode':'0001410664','InfoId':435,'MedName':'罗朝兰','MedOutdate':'2015-10-16','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25349,'InhCode':'0001410553','InfoId':379,'MedName':'黄新芝','MedOutdate':'2015-10-15','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25297,'InhCode':'0001410497','InfoId':327,'MedName':'余焕珍','MedOutdate':'2015-10-14','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25333,'InhCode':'0001410547','InfoId':363,'MedName':'全顺祥','MedOutdate':'2015-10-14','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25408,'InhCode':'0001410667','InfoId':438,'MedName':'柳卫民','MedOutdate':'2015-10-12','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25072,'InhCode':'0001410187','InfoId':102,'MedName':'张可栋','MedOutdate':'2015-10-12','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25248,'InhCode':'0001410431','InfoId':278,'MedName':'杨云芬','MedOutdate':'2015-10-11','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25263,'InhCode':'0001410456','InfoId':293,'MedName':'王正平','MedOutdate':'2015-10-10','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25125,'InhCode':'0001410289','InfoId':155,'MedName':'张仕追','MedOutdate':'2015-10-10','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25063,'InhCode':'0001410157','InfoId':93,'MedName':'张顺德','MedOutdate':'2015-10-10','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':24998,'InhCode':'0001409857','InfoId':28,'MedName':'李丽华','MedOutdate':'2015-10-09','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25008,'InhCode':'0001409938','InfoId':38,'MedName':'陈志珍','MedOutdate':'2015-10-09','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25037,'InhCode':'0001410084','InfoId':67,'MedName':'何世凤','MedOutdate':'2015-10-09','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':24972,'InhCode':'0001408306','InfoId':2,'MedName':'秦计明','MedOutdate':'2015-10-09','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'W','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25021,'InhCode':'0001410033','InfoId':51,'MedName':'彭豫斌','MedOutdate':'2015-10-08','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25005,'InhCode':'0001409941','InfoId':35,'MedName':'胡斌','MedOutdate':'2015-10-06','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25262,'InhCode':'0001410454','InfoId':292,'MedName':'杨冬梅','MedOutdate':'2015-10-06','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25025,'InhCode':'0001410056','InfoId':55,'MedName':'王秀华','MedOutdate':'2015-10-04','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25089,'InhCode':'0001410218','InfoId':119,'MedName':'杨琦','MedOutdate':'2015-10-02','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25143,'InhCode':'0001410304','InfoId':173,'MedName':'汤凤新','MedOutdate':'2015-10-02','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25075,'InhCode':'0001410186','InfoId':105,'MedName':'周晓东','MedOutdate':'2015-10-01','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25116,'InhCode':'0001410273','InfoId':146,'MedName':'三保','MedOutdate':'2015-10-01','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''},{'MedId':25118,'InhCode':'0001410271','InfoId':148,'MedName':'李长凤','MedOutdate':'2015-10-01','MedVisit':null,'DeptName':'糖尿病科','DeptId':1076,'WeChatSign':'','TelStatus':null,'InHospCount':'1','HasMedTel':'','HasMedPlan':''}],'succeed':true,'msg':''}");
+            var ss = @"<ArrayData>
+  <Address>a,b,c,d,e,f,g</Address>
+</ArrayData>
+";
 
             var serializer = new XmlSerializer();
-            var ret = serializer.Deserialize<Result<MedInpatientsViewModel>>(s.ToString());
-            return await Task.FromResult(ret);
+
+            var attr = serializer.Deserialize<ArrayData>(ss);
+            Assert.AreEqual(7, attr.Address.Count);
         }
 
         public class Result<T>
@@ -1645,84 +1782,6 @@ studio");
             C
         }
 
-        public class MedInpatientsViewModel
-        {
-            /// <summary>
-            /// 基本信息ID
-            /// </summary>
-            public int MedId { get; set; }
-
-            /// <summary>
-            /// 住院号
-            /// </summary>
-            public string InhCode { get; set; }
-
-            /// <summary>
-            /// 住院病历ID
-            /// </summary>
-            public int InfoId { get; set; }
-
-            /// <summary>
-            /// 患者姓名
-            /// </summary>
-            public string MedName { get; set; }
-
-            /// <summary>
-            /// 出院日期
-            /// </summary>
-            public string MedOutdate { get; set; }
-
-            /// <summary>
-            /// 计划随访状态
-            /// </summary>
-            public string MedVisit { get; set; }
-
-            /// <summary>
-            /// 科室名称
-            /// </summary>
-            public string DeptName { get; set; }
-
-            /// <summary>
-            /// 科室ID
-            /// </summary>
-            public int? DeptId { get; set; }
-
-            /// <summary>
-            /// 是否是微信用户
-            /// </summary>
-            public string WeChatSign { get; set; }
-
-            /// <summary>
-            /// 电话随访状态
-            /// </summary>
-            public string TelStatus { get; set; }
-
-            /// <summary>
-            /// 住院次数
-            /// </summary>
-            public string InHospCount { get; set; }
-
-            /// <summary>
-            /// 之前住院是否有电话随访
-            /// </summary>
-            public string HasMedTel { get; set; }
-
-            /// <summary>
-            /// 之前住院是否有计划随访
-            /// </summary>
-            public string HasMedPlan { get; set; }
-
-            /// <summary>
-            /// 云医平台患者ID。
-            /// </summary>
-            public int? UserId { get; set; }
-
-            /// <summary>
-            /// 云医平台患者姓名。
-            /// </summary>
-            public string UserName { get; set; }
-        }
-
         [TestMethod]
         public void TestNew()
         {
@@ -1793,6 +1852,11 @@ studio");
             string Address { get; }
 
             IList<string> C { get; set; }
+        }
+
+        public class ArrayData
+        {
+            public List<string> Address { get; set; }
         }
     }
 }

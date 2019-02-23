@@ -34,11 +34,11 @@ namespace Fireasy.Redis
                     setting.SerializerType = serializerType.ParseType();
                 }
 
-                setting.MaxReadPoolSize = configNode.GetAttributeValue("maxReadPoolSize", 5);
-                setting.MaxWritePoolSize = configNode.GetAttributeValue("maxWritePoolSize", 5);
+                setting.PoolSize = configNode.GetAttributeValue<int?>("poolSize");
                 setting.DefaultDb = configNode.GetAttributeValue("defaultDb", 0);
                 setting.Password = configNode.GetAttributeValue("password");
-                setting.ConnectTimeout = configNode.GetAttributeValue<int?>("connectTimeout");
+                setting.Ssl = configNode.GetAttributeValue<bool>("ssl");
+                setting.WriteBuffer = configNode.GetAttributeValue<int?>("writeBuffer");
                 setting.AdvanceDelay = configNode.GetAttributeValue<double?>("advanceDelay");
 
                 foreach (XmlNode nd in configNode.SelectNodes("host"))
@@ -70,11 +70,11 @@ namespace Fireasy.Redis
                     setting.SerializerType = serializerType.ParseType();
                 }
 
-                setting.MaxReadPoolSize = configNode["maxReadPoolSize"].To(5);
-                setting.MaxWritePoolSize = configNode["maxWritePoolSize"].To(5);
+                setting.PoolSize = configNode["poolSize"].To<int?>();
                 setting.DefaultDb = configNode["defaultDb"].To(0);
                 setting.Password = configNode["password"];
-                setting.ConnectTimeout = configNode["connectTimeout"].To<int?>();
+                setting.Ssl = configNode["ssl"].To<bool>();
+                setting.WriteBuffer = configNode["writeBuffer"].To<int?>();
                 setting.AdvanceDelay = configNode["advanceDelay"].To<double?>();
 
                 foreach (var nd in configNode.GetSection("host").GetChildren())

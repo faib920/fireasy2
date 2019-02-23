@@ -135,7 +135,7 @@ WHERE (T.TABLE_CATALOG = @CATALOG OR (@CATALOG IS NULL)) AND
                     TableName = wrapper.GetString(reader, 2),
                     Name = wrapper.GetString(reader, 3),
                     DataType = wrapper.GetString(reader, 4),
-                    Length = wrapper.GetInt32(reader, 5),
+                    Length = wrapper.GetInt64(reader, 5),
                     NumericPrecision = wrapper.GetInt32(reader, 6),
                     NumericScale = wrapper.GetInt32(reader, 7),
                     IsNullable = wrapper.GetString(reader, 8) == "YES",

@@ -107,14 +107,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return expression;
         }
 
-        internal static ProjectionExpression GetTableQuery(EntityMetadata entity)
+        internal static ProjectionExpression GetTableQuery(EntityMetadata entity, bool isNoTracking)
         {
             var tableAlias = new TableAlias();
             var selectAlias = new TableAlias();
             var entityType = entity.EntityType;
             var table = new TableExpression(tableAlias, entity.TableName, entityType);
 
-            var projector = GetTypeProjection(table, entity);
+            var projector = GetTypeProjection(table, entity, isNoTracking);
             var pc = ColumnProjector.ProjectColumns(CanBeColumnExpression, projector, null, selectAlias, tableAlias);
 
             var proj = new ProjectionExpression(
@@ -125,7 +125,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return (ProjectionExpression)ApplyPolicy(proj, entityType);
         }
 
-        internal static Expression GetTypeProjection(Expression root, EntityMetadata entity)
+        internal static Expression GetTypeProjection(Expression root, EntityMetadata entity, bool isNoTracking)
         {
             var entityType = entity.EntityType;
             var bindings = new List<MemberBinding>();
@@ -141,7 +141,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 }
             }
 
-            return new EntityExpression(entity, Expression.MemberInit(Expression.New(entityType), bindings));
+            return new EntityExpression(entity, Expression.MemberInit(Expression.New(entityType), bindings), isNoTracking);
         }
 
         internal static Expression GetMemberExpression(Expression root, IProperty property)
@@ -149,8 +149,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
             if (property is RelationProperty relationProprety)
             {
                 //所关联的实体类型
-                var relMetadata = EntityMetadataUnity.GetEntityMetadata(relationProprety.RelationType);
-                var projection = GetTableQuery(relMetadata);
+                var relMetadata = EntityMetadataUnity.GetEntityMetadata(relationProprety.RelationalType);
+                var projection = GetTableQuery(relMetadata, false);
 
                 Expression parentExp = null, childExp = null;
                 var ship = RelationshipUnity.GetRelationship(relationProprety);
@@ -210,7 +210,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 if (replace)
                 {
-                    var row = GetTypeProjection(table, metadata);
+                    var row = GetTypeProjection(table, metadata, false);
                     where = DbExpressionReplacer.Replace(predicate.Body, predicate.Parameters[0], row);
                 }
                 else
@@ -235,7 +235,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             if (predicate != null)
             {
-                var row = GetTypeProjection(table, metadata);
+                var row = GetTypeProjection(table, metadata, false);
                 where = DbExpressionReplacer.Replace(predicate.Body, predicate.Parameters[0], row);
             }
 
@@ -292,7 +292,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             if (predicate != null)
             {
-                var row = GetTypeProjection(table, metadata);
+                var row = GetTypeProjection(table, metadata, false);
                 where = DbExpressionReplacer.Replace(predicate.Body, predicate.Parameters[0], row);
             }
 
@@ -315,7 +315,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
             var table = new TableExpression(new TableAlias(), metadata.TableName, metadata.EntityType);
             Expression where = null;
-            var row = GetTypeProjection(table, metadata);
+            var row = GetTypeProjection(table, metadata, false);
 
             if (predicate != null)
             {

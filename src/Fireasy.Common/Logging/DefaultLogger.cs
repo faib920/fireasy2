@@ -10,6 +10,7 @@ using Fireasy.Common.Logging.Configuration;
 using System;
 using System.IO;
 using System.Text;
+using System.Threading;
 #if NET35
 using Fireasy.Common.Extensions;
 #endif
@@ -22,8 +23,9 @@ namespace Fireasy.Common.Logging
     public sealed class DefaultLogger : ILogger
     {
         private static readonly string logFilePath;
-        private static readonly ReadWriteLocker locker = new ReadWriteLocker();
+        private readonly ReadWriteLocker locker = new ReadWriteLocker();
         private LogLevel level;
+        private Mutex mutex = new Mutex(false, "DefaultLogLock");
 
         /// <summary>
         /// 获取 <see cref="DefaultLogger"/> 的静态实例。
@@ -117,45 +119,47 @@ namespace Fireasy.Common.Logging
         /// <param name="exception">应用程序异常。</param>
         private void Write(string logType, object message, Exception exception)
         {
-            locker.LockWrite(() =>
+            mutex.WaitOne();
+
+            var fileName = CreateLogFileName(logType);
+            using (var writer = new StreamWriter(fileName, true, Encoding.GetEncoding(0)))
+            {
+                writer.WriteLine("Time: " + DateTime.Now);
+                writer.WriteLine();
+                if (message != null)
                 {
-                    var fileName = CreateLogFileName(logType);
-                    using (var writer = new StreamWriter(fileName, true, Encoding.GetEncoding(0)))
-                    {
-                        writer.WriteLine("Time: " + DateTime.Now);
-                        writer.WriteLine();
-                        if (message != null)
-                        {
-                            writer.WriteLine(message);
-                        }
+                    writer.WriteLine(message);
+                }
 
-                        writer.WriteLine();
+                writer.WriteLine();
 
-                        if (exception != null)
-                        {
-                            writer.WriteLine("--Exceptions--");
+                if (exception != null)
+                {
+                    writer.WriteLine("--Exceptions--");
 
 #if !NET35
-                            var aggExp = exception as AggregateException;
-                            if (aggExp != null && aggExp.InnerExceptions.Count > 0)
-                            {
-                                foreach (var e in aggExp.InnerExceptions)
-                                {
-                                    WriteException(writer, e);
-                                }
-                            }
-                            else
-                            {
-                                WriteException(writer, exception);
-                            }
-#else
-                            WriteException(writer, exception);
-#endif
+                    var aggExp = exception as AggregateException;
+                    if (aggExp != null && aggExp.InnerExceptions.Count > 0)
+                    {
+                        foreach (var e in aggExp.InnerExceptions)
+                        {
+                            WriteException(writer, e);
                         }
-
-                        writer.WriteLine("*****************************************************************");
                     }
-                });
+                    else
+                    {
+                        WriteException(writer, exception);
+                    }
+#else
+                    WriteException(writer, exception);
+#endif
+                }
+
+                writer.WriteLine("*****************************************************************");
+                writer.Flush();
+            }
+
+            mutex.ReleaseMutex();
         }
 
         private string CreateLogFileName(string logType)
@@ -177,7 +181,7 @@ namespace Fireasy.Common.Logging
             {
                 var prefix = new string(' ', (ident++) * 2);
                 writer.WriteLine(prefix + e.GetType().Name + " => " + e.Message);
-                
+
                 if (e.StackTrace != null)
                 {
                     writer.WriteLine();

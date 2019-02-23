@@ -6,14 +6,16 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Caching;
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Configuration;
+using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Linq.Translators.Configuration;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace Fireasy.Data.Entity.Linq
 {
@@ -23,7 +25,8 @@ namespace Fireasy.Data.Entity.Linq
     internal class ExecuteCache
     {
         //缓存着每个实体类型所产生的相关联的缓存键名
-        private static ConcurrentDictionary<Type, List<string>> referKeys = new ConcurrentDictionary<Type, List<string>>();
+        private static SafetyDictionary<Type, List<string>> referKeys = new SafetyDictionary<Type, List<string>>();
+        private static MethodInfo MthToList = typeof(Enumerable).GetMethod(nameof(Enumerable.ToList));
 
         /// <summary>
         /// 判断是否被缓存。
@@ -32,7 +35,11 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         internal static bool CanCache(Expression expression)
         {
-            return !typeof(IQueryable).IsAssignableFrom(expression.Type);
+            var section = ConfigurationUnity.GetSection<TranslatorConfigurationSection>();
+            var option = section == null ? TranslateOptions.Default : section.Options;
+            var result = CacheableChecker.Check(expression);
+
+            return typeof(IQueryable).IsAssignableFrom(expression.Type) && (result.Enabled == true || (result.Enabled == null && option.CacheExecution));
         }
 
         /// <summary>
@@ -46,9 +53,10 @@ namespace Fireasy.Data.Entity.Linq
         {
             var section = ConfigurationUnity.GetSection<TranslatorConfigurationSection>();
             var option = section == null ? TranslateOptions.Default : section.Options;
+            var result = CacheableChecker.Check(expression);
 
             //没有开启数据缓存
-            if (!option.DataCacheEnabled)
+            if ((result.Enabled == null && !option.CacheExecution) || result.Enabled == false)
             {
                 return func();
             }
@@ -68,7 +76,16 @@ namespace Fireasy.Data.Entity.Linq
 
             var cacheFunc = new Func<CacheItem<T>>(() =>
                 {
-                    var data = func();
+                    var data = EnumerateData(func());
+
+                    var isEnumerable = typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(IEnumerable<>);
+                    if (isEnumerable)
+                    {
+                        var elementType = typeof(T).GetEnumerableElementType();
+                        var method = typeof(Enumerable).GetMethod(nameof(Enumerable.ToList)).MakeGenericMethod(elementType);
+                        data = (T)method.Invoke(null, new object[] { data });
+                    }
+
                     var total = 0;
                     if (pager != null)
                     {
@@ -78,7 +95,7 @@ namespace Fireasy.Data.Entity.Linq
                     return new CacheItem<T> { Data = data, Total = total };
                 });
 
-            var cacheItem = cacheMgr.TryGet(cacheKey, cacheFunc, () => new RelativeTime(TimeSpan.FromSeconds(option.DataCacheExpired)));
+            var cacheItem = cacheMgr.TryGet(cacheKey, cacheFunc, () => new RelativeTime(result.Expired ?? TimeSpan.FromSeconds(option.CacheExecutionTimes)));
 
             if (pager != null)
             {
@@ -104,6 +121,24 @@ namespace Fireasy.Data.Entity.Linq
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// 遍列数据。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        private static T EnumerateData<T>(T data)
+        {
+            if (data != null && typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(IEnumerable<>))
+            {
+                var elementType = typeof(T).GetEnumerableElementType();
+                var method = MthToList.MakeGenericMethod(elementType);
+                return (T)method.Invoke(null, new object[] { data });
+            }
+
+            return data;
         }
 
         /// <summary>
@@ -143,8 +178,7 @@ namespace Fireasy.Data.Entity.Linq
                 }
                 else
                 {
-                    var lazy = new Lazy<List<string>>(() => new List<string> { key });
-                    referKeys.GetOrAdd(type, k => lazy.Value);
+                    referKeys.GetOrAdd(type, () => new List<string> { key });
                 }
             }
         }
@@ -163,32 +197,54 @@ namespace Fireasy.Data.Entity.Linq
         }
 
         /// <summary>
-        /// <see cref="IDataSegment"/> 查找器。
+        /// 缓存检查的返回结果。
         /// </summary>
-        private class SegmentFinder : Common.Linq.Expressions.ExpressionVisitor
+        private class CacheableCheckResult
         {
-            private IDataSegment dataSegment;
+            /// <summary>
+            /// 是否开启缓存。
+            /// </summary>
+            public bool? Enabled { get; set; }
 
             /// <summary>
-            /// 查找表达式中的 <see cref="IDataSegment"/> 对象。
+            /// 过期时间。
+            /// </summary>
+            public TimeSpan? Expired { get; set; }
+        }
+
+        /// <summary>
+        /// 缓存检查器。
+        /// </summary>
+        private class CacheableChecker : Common.Linq.Expressions.ExpressionVisitor
+        {
+            private CacheableCheckResult result = new CacheableCheckResult();
+
+            /// <summary>
+            /// 检查表达式是否能够被缓存。
             /// </summary>
             /// <param name="expression"></param>
             /// <returns></returns>
-            public static IDataSegment Find(Expression expression)
+            public static CacheableCheckResult Check(Expression expression)
             {
-                var replaer = new SegmentFinder();
-                replaer.Visit(expression);
-                return replaer.dataSegment;
+                var checker = new CacheableChecker();
+                checker.Visit(expression);
+                return checker.result;
             }
 
-            protected override Expression VisitConstant(ConstantExpression constExp)
+            protected override Expression VisitMethodCall(MethodCallExpression node)
             {
-                if (constExp.Value is IDataSegment)
+                switch (node.Method.Name)
                 {
-                    dataSegment = constExp.Value as IDataSegment;
+                    case nameof(Extensions.CacheExecution):
+                        result.Enabled = (bool)((ConstantExpression)node.Arguments[1]).Value;
+                        if (result.Enabled == true && node.Arguments.Count == 3)
+                        {
+                            result.Expired = (TimeSpan?)((ConstantExpression)node.Arguments[2]).Value;
+                        }
+                        break;
                 }
 
-                return constExp;
+                return base.VisitMethodCall(node);
             }
         }
 

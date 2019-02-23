@@ -109,7 +109,7 @@ namespace Fireasy.Data.Entity.Linq
                 }
                 else
                 {
-                    list = ExecuteCache.TryGet(Expression, () => Provider.Execute<IEnumerable<T>>(Expression)?.ToList());
+                    list = Provider.Execute<IEnumerable<T>>(Expression)?.ToList();
                 }
             }
             return list;

@@ -19,7 +19,7 @@ namespace Fireasy.Data.Entity.Properties
         /// </summary>
         protected RelationProperty()
         {
-            RelationPropertyType = RelationPropertyType.Other;
+            RelationalPropertyType = RelationPropertyType.Other;
             Options = RelationOptions.Default;
         }
 
@@ -29,7 +29,7 @@ namespace Fireasy.Data.Entity.Properties
         /// <param name="relationType"></param>
         internal RelationProperty(RelationPropertyType relationType)
         {
-            RelationPropertyType = relationType;
+            RelationalPropertyType = relationType;
         }
 
         /// <summary>
@@ -55,17 +55,17 @@ namespace Fireasy.Data.Entity.Properties
         /// <summary>
         /// 获取或设置关联的实体类型。
         /// </summary>
-        public Type RelationType { get; set; }
+        public Type RelationalType { get; set; }
 
         /// <summary>
-        /// 获取或设置关联键。
+        /// 获取或设置关联的属性。
         /// </summary>
-        public string RelationKey { get; set; }
+        public string RelationalKey { get; set; }
 
         /// <summary>
         /// 获取关联属性类型。
         /// </summary>
-        internal RelationPropertyType RelationPropertyType { get; private set; }
+        internal RelationPropertyType RelationalPropertyType { get; private set; }
 
         /// <summary>
         /// 获取或设置关联选项。

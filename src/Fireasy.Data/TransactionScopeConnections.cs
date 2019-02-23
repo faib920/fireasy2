@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.ComponentModel;
 using Fireasy.Data.Extensions;
 using System.Collections.Concurrent;
 using System.Data.Common;
@@ -18,8 +19,8 @@ namespace Fireasy.Data
     /// </summary>
     public sealed class TransactionScopeConnections
     {
-        private static readonly ConcurrentDictionary<Transaction, ConcurrentDictionary<string, DbConnection>> transConns =
-            new ConcurrentDictionary<Transaction, ConcurrentDictionary<string, DbConnection>>();
+        private static readonly SafetyDictionary<Transaction, SafetyDictionary<string, DbConnection>> transConns =
+            new SafetyDictionary<Transaction, SafetyDictionary<string, DbConnection>>();
 
 
         /// <summary>
@@ -36,9 +37,9 @@ namespace Fireasy.Data
                 return null;
             }
 
-            if (!transConns.TryGetValue(curTrans, out ConcurrentDictionary<string, DbConnection> connDictionary))
+            if (!transConns.TryGetValue(curTrans, out SafetyDictionary<string, DbConnection> connDictionary))
             {
-                connDictionary = new ConcurrentDictionary<string, DbConnection>();
+                connDictionary = new SafetyDictionary<string, DbConnection>();
                 transConns.TryAdd(curTrans, connDictionary);
 
                 Debug.WriteLine("Transaction registered.");
@@ -74,7 +75,7 @@ namespace Fireasy.Data
         /// <param name="e"></param>
         static void OnTransactionCompleted(object sender, TransactionEventArgs e)
         {
-            if (!transConns.TryGetValue(e.Transaction, out ConcurrentDictionary<string, DbConnection> connDictionary))
+            if (!transConns.TryGetValue(e.Transaction, out SafetyDictionary<string, DbConnection> connDictionary))
             {
                 return;
             }

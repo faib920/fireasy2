@@ -11,10 +11,10 @@ using Fireasy.Common.Configuration;
 using CSRedis;
 #else
 using StackExchange.Redis;
+using System.Linq;
 #endif
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Fireasy.Redis
@@ -466,16 +466,14 @@ namespace Fireasy.Redis
             var token = Guid.NewGuid().ToString();
             var lockKey = $"{cacheKey}:LOCK_TOKEN";
 
-            using (var locker = client.Lock(lockKey, 10))
-            {
-                if (locker == null)
-                {
-                    return default(TOut);
-                }
+            CSRedisClientLock locker = null;
+            while ((locker = client.Lock(lockKey, 10)) == null) ;
 
-                return func();
-            }
+            var result = func();
+            locker.Dispose();
+            return result;
         }
+
         /// <summary>
         /// 检查是否需要自动提前延期。
         /// </summary>

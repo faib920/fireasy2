@@ -5,8 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
-using System.Collections.Concurrent;
+using Fireasy.Common.ComponentModel;
 using System.Reflection;
 
 namespace Fireasy.Common.Reflection
@@ -16,10 +15,10 @@ namespace Fireasy.Common.Reflection
     /// </summary>
     public static class ReflectionCache
     {
-        private static ConcurrentDictionary<FieldInfo, FieldAccessor> fieldAccessors = new ConcurrentDictionary<FieldInfo, FieldAccessor>();
-        private static ConcurrentDictionary<PropertyInfo, PropertyAccessor> propertyAccessors = new ConcurrentDictionary<PropertyInfo, PropertyAccessor>();
-        private static ConcurrentDictionary<MethodInfo, MethodInvoker> methodInvoker = new ConcurrentDictionary<MethodInfo, MethodInvoker>();
-        private static ConcurrentDictionary<ConstructorInfo, ConstructorInvoker> construtorInvoker = new ConcurrentDictionary<ConstructorInfo, ConstructorInvoker>();
+        private static SafetyDictionary<FieldInfo, FieldAccessor> fieldAccessors = new SafetyDictionary<FieldInfo, FieldAccessor>();
+        private static SafetyDictionary<PropertyInfo, PropertyAccessor> propertyAccessors = new SafetyDictionary<PropertyInfo, PropertyAccessor>();
+        private static SafetyDictionary<MethodInfo, MethodInvoker> methodInvoker = new SafetyDictionary<MethodInfo, MethodInvoker>();
+        private static SafetyDictionary<ConstructorInfo, ConstructorInvoker> construtorInvoker = new SafetyDictionary<ConstructorInfo, ConstructorInvoker>();
 
         /// <summary>
         /// 获取字段的访问器。
@@ -28,8 +27,7 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public static FieldAccessor GetAccessor(FieldInfo field)
         {
-            var lazy = new Lazy<FieldAccessor>(() => new FieldAccessor(field));
-            return fieldAccessors.GetOrAdd(field, s => lazy.Value);
+            return fieldAccessors.GetOrAdd(field, () => new FieldAccessor(field));
         }
 
         /// <summary>
@@ -39,8 +37,7 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public static PropertyAccessor GetAccessor(PropertyInfo property)
         {
-            var lazy = new Lazy<PropertyAccessor>(() => new PropertyAccessor(property));
-            return propertyAccessors.GetOrAdd(property, s => lazy.Value);
+            return propertyAccessors.GetOrAdd(property, () => new PropertyAccessor(property));
         }
 
         /// <summary>
@@ -50,8 +47,7 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public static MethodInvoker GetInvoker(MethodInfo method)
         {
-            var lazy = new Lazy<MethodInvoker>(() => new MethodInvoker(method));
-            return methodInvoker.GetOrAdd(method, s => lazy.Value);
+            return methodInvoker.GetOrAdd(method, () => new MethodInvoker(method));
         }
 
         /// <summary>
@@ -61,8 +57,7 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public static ConstructorInvoker GetInvoker(ConstructorInfo constructor)
         {
-            var lazy = new Lazy<ConstructorInvoker>(() => new ConstructorInvoker(constructor));
-            return construtorInvoker.GetOrAdd(constructor, s => lazy.Value);
+            return construtorInvoker.GetOrAdd(constructor, () => new ConstructorInvoker(constructor));
         }
     }
 }

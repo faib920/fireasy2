@@ -1,6 +1,9 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 
+//[assembly: Fireasy.Data.Entity.Relationship("dff1", typeof(Fireasy.Data.Entity.Tests.Models.Products), typeof(Fireasy.Data.Entity.Tests.Models.OrderDetails), "ProductID=>ProductID")]
+//[assembly: Fireasy.Data.Entity.Relationship("dff2", typeof(Fireasy.Data.Entity.Tests.Models.Products), typeof(Fireasy.Data.Entity.Tests.Models.OrderDetails), "ProductID=>Quantity")]
+
 namespace Fireasy.Data.Entity.Tests.Models
 {
     [Serializable]
@@ -46,7 +49,16 @@ namespace Fireasy.Data.Entity.Tests.Models
         /// <summary>
         /// 获取或设置关联 <see cref="products"/> 对象。
         /// </summary>
+        [RelationshipAssign("ProductID", "ProductID")]
+        //[RelationshipUse("ProductID")]
         public virtual Products Products { get; set; }
+
+        /// <summary>
+        /// 获取或设置关联 <see cref="products"/> 对象。
+        /// </summary>
+        [RelationshipAssign("ProductID", "Quantity")]
+        //[RelationshipUse("Quantity")]
+        public virtual Products Products1 { get; set; }
 
         /// <summary>
         /// 获取或设置关联 <see cref="orders"/> 对象。

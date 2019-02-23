@@ -54,3 +54,4 @@ TelhponeValideError=字段 {0} 不是有效的电话号码。
 WebSiteValideError=字段 {0} 不是有效的网址。
 ZipCodeValideError=字段 {0} 不是有效的邮政编码。
 EmailValideError=字段 {0} 不是有效的电子邮件。
+InvalidOperationAsNoTracking=使用 AsNoTracking 模式时不允许此操作。

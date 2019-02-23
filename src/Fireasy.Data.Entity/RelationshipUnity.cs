@@ -6,11 +6,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common;
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Entity.Properties;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -22,8 +22,8 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public static class RelationshipUnity
     {
-        private static readonly ConcurrentDictionary<Assembly, ConcurrentDictionary<string, RelationshipMetadata>> relationCache =
-            new ConcurrentDictionary<Assembly, ConcurrentDictionary<string, RelationshipMetadata>>();
+        private static readonly SafetyDictionary<Assembly, SafetyDictionary<string, RelationshipMetadata>> relationCache =
+            new SafetyDictionary<Assembly, SafetyDictionary<string, RelationshipMetadata>>();
 
         /// <summary>
         /// 根据关联属性获取相应的实体关系。
@@ -36,30 +36,42 @@ namespace Fireasy.Data.Entity
             Guard.Argument(relProperty != null, nameof(property), SR.GetString(SRKind.NotRelationProperty));
 
             var relations = GetAssemblyRelationships(relProperty.EntityType.Assembly);
+            RelationshipMetadata metadata = null;
 
-            RelationshipMetadata metadta = null;
-            switch (relProperty.RelationPropertyType)
+            switch (relProperty.RelationalPropertyType)
             {
                 case RelationPropertyType.EntitySet:
-                    metadta = CheckSetKey(relations, relProperty);
+                    metadata = CheckSetKey(relations, relProperty);
                     break;
                 case RelationPropertyType.RefProperty:
                 case RelationPropertyType.Entity:
-                    metadta = CheckSingleKey(relations, relProperty);
+                    metadata = CheckSingleKey(relations, relProperty);
                     break;
             }
 
-            if (metadta == null)
+            if (metadata == null)
             {
-                metadta = GetMetadataByRule(relProperty);
+                metadata = GetMetadataByAssignment(relProperty);
             }
 
-            if (metadta == null)
+            if (metadata == null)
             {
                 throw new RelationshipException(SR.GetString(SRKind.NotDefinedRelationship));
             }
 
-            return metadta;
+            return metadata;
+        }
+
+        /// <summary>
+        /// 获取指定程序集中定义的所有关系。
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="relationKey"></param>
+        /// <returns></returns>
+        public static RelationshipMetadata GetRelationship(Assembly assembly, string relationKey)
+        {
+            var metadata = GetRelationships(assembly);
+            return metadata.ContainsKey(relationKey) ? metadata[relationKey] : null;
         }
 
         /// <summary>
@@ -69,23 +81,26 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         private static IEnumerable<RelationshipMetadata> GetAssemblyRelationships(Assembly assembly)
         {
-            var lazy = new Lazy<ConcurrentDictionary<string, RelationshipMetadata>>(() =>
-                {
-                    try
-                    {
-                        var dict = assembly.GetCustomAttributes<RelationshipAttribute>()
-                            .ToDictionary(s => s.Name, s => new RelationshipMetadata(s.ThisType, s.OtherType,
-                                GetDirection(s.KeyExpression), ParseRelationshipKeys(s.ThisType, s.OtherType, s.KeyExpression)));
-                        
-                        return new ConcurrentDictionary<string, RelationshipMetadata>(dict);
-                    }
-                    catch (ArgumentException exp)
-                    {
-                        throw new ArgumentException(SR.GetString(SRKind.RelationNameRepeated), exp);
-                    }
-                });
+            return GetRelationships(assembly).Values;
+        }
 
-            return relationCache.GetOrAdd(assembly, s => lazy.Value).Values;
+        private static SafetyDictionary<string, RelationshipMetadata> GetRelationships(Assembly assembly)
+        {
+            return relationCache.GetOrAdd(assembly, () =>
+            {
+                try
+                {
+                    var dict = assembly.GetCustomAttributes<RelationshipAttribute>()
+                        .ToDictionary(s => s.Name, s => new RelationshipMetadata(s.ThisType, s.OtherType,
+                            GetDirection(s.KeyExpression), RelationshipSource.AssemblyAttribute, ParseRelationshipKeys(s.ThisType, s.OtherType, s.KeyExpression)));
+
+                    return new SafetyDictionary<string, RelationshipMetadata>(dict);
+                }
+                catch (ArgumentException exp)
+                {
+                    throw new ArgumentException(SR.GetString(SRKind.RelationNameRepeated), exp);
+                }
+            });
         }
 
         /// <summary>
@@ -93,50 +108,65 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="relProperty"></param>
         /// <returns></returns>
-        private static RelationshipMetadata GetMetadataByRule(RelationProperty relProperty)
+        private static RelationshipMetadata GetMetadataByAssignment(RelationProperty relProperty)
         {
-            switch (relProperty.RelationPropertyType)
+            switch (relProperty.RelationalPropertyType)
             {
                 case RelationPropertyType.Entity:
-                    return MakeOne2ManyMetadataCached(relProperty.RelationType, relProperty.EntityType);
+                    return CachedRelationshipMetadata(relProperty, relProperty.RelationalType, relProperty.EntityType);
                 case RelationPropertyType.EntitySet:
-                    return MakeOne2ManyMetadataCached(relProperty.EntityType, relProperty.RelationType);
+                    return CachedRelationshipMetadata(relProperty, relProperty.EntityType, relProperty.RelationalType);
                 case RelationPropertyType.RefProperty:
-                    var p = relProperty as ReferenceProperty;
                     break;
             }
 
             return null;
         }
 
-        private static RelationshipMetadata MakeOne2ManyMetadataCached(Type thisType, Type otherType)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="relProperty"></param>
+        /// <param name="thisType"></param>
+        /// <param name="otherType"></param>
+        /// <returns></returns>
+        private static RelationshipMetadata CachedRelationshipMetadata(RelationProperty relProperty, Type thisType, Type otherType)
         {
-            RelationshipMetadata metadata = null;
-            var key = string.Format("{0}:{1}",
-                EntityMetadataUnity.GetEntityMetadata(thisType).TableName,
-                EntityMetadataUnity.GetEntityMetadata(otherType).TableName);
-
-            ConcurrentDictionary<string, RelationshipMetadata> relations;
-            if (relationCache.TryGetValue(thisType.Assembly, out relations))
+            if (relationCache.TryGetValue(thisType.Assembly, out SafetyDictionary<string, RelationshipMetadata> relations))
             {
-                if (!relations.TryGetValue(key, out metadata))
-                {
-                    var lazy = new Lazy<RelationshipMetadata>(() => MakeOne2ManyMetadata(thisType, otherType));
-                    metadata = relations.GetOrAdd(key, s => lazy.Value);
-                }
+                var key = string.Format("{0}:{1}:{2}",
+                   EntityMetadataUnity.GetEntityMetadata(thisType).TableName,
+                   EntityMetadataUnity.GetEntityMetadata(otherType).TableName, relProperty.Name);
+
+                return relations.GetOrAdd(key, () => MakeRelationshipMetadata(relProperty, thisType, otherType));
             }
 
-            return metadata;
+            return null;
         }
 
         /// <summary>
         /// 使用主键和外键对应构造一对多的关系。
         /// </summary>
+        /// <param name="relProperty"></param>
         /// <param name="thisType"></param>
         /// <param name="otherType"></param>
         /// <returns></returns>
-        private static RelationshipMetadata MakeOne2ManyMetadata(Type thisType, Type otherType)
+        private static RelationshipMetadata MakeRelationshipMetadata(RelationProperty relProperty, Type thisType, Type otherType)
         {
+            //是否使用了 ForeignKeyAttribute 来指定对应的外键
+            var assignAttr = relProperty.Info.ReflectionInfo.GetCustomAttributes<RelationshipAssignAttribute>().FirstOrDefault();
+            if (assignAttr != null)
+            {
+                var fkPro = PropertyUnity.GetProperty(otherType, assignAttr.ForeignKey);
+                var pkPro = PropertyUnity.GetProperty(thisType, assignAttr.PrimaryKey);
+                if (fkPro != null && pkPro != null)
+                {
+                    var key = new RelationshipKey { ThisKey = pkPro.Name, ThisProperty = pkPro, OtherKey = fkPro.Name, OtherProperty = fkPro };
+                    return new RelationshipMetadata(thisType, otherType, RelationshipStyle.One2Many, RelationshipSource.AutomaticallyAssign, new[] { key });
+                }
+            }
+
+            //使用名称相同的主键进行匹配
             var pks = PropertyUnity.GetPrimaryProperties(thisType).ToList();
             if (pks.Count > 0)
             {
@@ -152,7 +182,7 @@ namespace Fireasy.Data.Entity
                     keys[i] = new RelationshipKey { ThisKey = pks[i].Name, ThisProperty = pks[i], OtherKey = fks[i].Name, OtherProperty = fks[i] };
                 }
 
-                return new RelationshipMetadata(thisType, otherType, RelationshipStyle.One2Many, keys);
+                return new RelationshipMetadata(thisType, otherType, RelationshipStyle.One2Many, RelationshipSource.AutomaticallyAssign, keys);
             }
 
             return null;
@@ -162,22 +192,22 @@ namespace Fireasy.Data.Entity
         {
             return list.FirstOrDefault(item =>
                 (item.ThisType == relationPro.EntityType &&
-                item.OtherType == relationPro.RelationType &&
+                item.OtherType == relationPro.RelationalType &&
                 item.Style == RelationshipStyle.One2Many) ||
-                (item.ThisType == relationPro.RelationType &&
+                (item.ThisType == relationPro.RelationalType &&
                 item.OtherType == relationPro.EntityType &&
                 item.Style == RelationshipStyle.Many2One));
         }
 
         private static RelationshipMetadata CheckSingleKey(IEnumerable<RelationshipMetadata> list, RelationProperty relationPro)
         {
-            foreach (var item in list)
+            foreach (var item in list.Where(s => s.Source == RelationshipSource.AssemblyAttribute))
             {
-                if (item.Style == RelationshipStyle.One2Many && item.ThisType == relationPro.RelationType && item.OtherType == relationPro.EntityType)
+                if (item.Style == RelationshipStyle.One2Many && item.ThisType == relationPro.RelationalType && item.OtherType == relationPro.EntityType)
                 {
-                    if (!string.IsNullOrEmpty(relationPro.RelationKey))
+                    if (!string.IsNullOrEmpty(relationPro.RelationalKey))
                     {
-                        if (item.Keys.Any(s => s.OtherKey == relationPro.RelationKey))
+                        if (item.Keys.Any(s => s.OtherKey == relationPro.RelationalKey))
                         {
                             return item;
                         }
@@ -187,11 +217,11 @@ namespace Fireasy.Data.Entity
                         return item;
                     }
                 }
-                else if (item.Style == RelationshipStyle.Many2One && item.ThisType == relationPro.EntityType && item.OtherType == relationPro.RelationType)
+                else if (item.Style == RelationshipStyle.Many2One && item.ThisType == relationPro.EntityType && item.OtherType == relationPro.RelationalType)
                 {
-                    if (!string.IsNullOrEmpty(relationPro.RelationKey))
+                    if (!string.IsNullOrEmpty(relationPro.RelationalKey))
                     {
-                        if (item.Keys.Any(s => s.ThisKey == relationPro.RelationKey))
+                        if (item.Keys.Any(s => s.ThisKey == relationPro.RelationalKey))
                         {
                             return item;
                         }
@@ -227,12 +257,12 @@ namespace Fireasy.Data.Entity
                     continue;
                 }
                 list.Add(new RelationshipKey
-                    {
-                        ThisKey = thisKey,
-                        ThisProperty = PropertyUnity.GetProperty(thisType, thisKey),
-                        OtherKey = otherKey,
-                        OtherProperty = PropertyUnity.GetProperty(otherType, otherKey)
-                    });
+                {
+                    ThisKey = thisKey,
+                    ThisProperty = PropertyUnity.GetProperty(thisType, thisKey),
+                    OtherKey = otherKey,
+                    OtherProperty = PropertyUnity.GetProperty(otherType, otherKey)
+                });
             }
             return list;
         }

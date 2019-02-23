@@ -30,11 +30,11 @@ namespace Fireasy.Common.Serialization
     {
         private readonly XmlSerializeOption option;
         private readonly XmlSerializer serializer;
-        private XmlWriter xmlWriter;
+        private XmlTextWriter xmlWriter;
         private readonly SerializeContext context;
         private bool isDisposed;
 
-        internal XmlSerialize(XmlSerializer serializer, XmlWriter writer, XmlSerializeOption option)
+        internal XmlSerialize(XmlSerializer serializer, XmlTextWriter writer, XmlSerializeOption option)
         {
             this.serializer = serializer;
             xmlWriter = writer;
@@ -85,7 +85,7 @@ namespace Fireasy.Common.Serialization
                 return;
             }
 
-#if !NET35 && !NETSTANDARD
+#if !NET35
             if (typeof(IDynamicMetaObjectProvider).IsAssignableFrom(type))
             {
                 SerializeDynamicObject((IDynamicMetaObjectProvider)value, startEle);
@@ -184,7 +184,7 @@ namespace Fireasy.Common.Serialization
             return sb.ToString();
         }
 
-#if !NET35 && !NETSTANDARD
+#if !NET35
         private void SerializeDynamicObject(IDynamicMetaObjectProvider dynamicObject, bool startEle)
         {
             var flag = new AssertFlag();
@@ -258,6 +258,11 @@ namespace Fireasy.Common.Serialization
 
         private void SerializeDictionary(IDictionary dictionary, bool startEle)
         {
+            if (!dictionary.GetType().GetGenericArguments()[0].IsStringable())
+            {
+                throw new InvalidOperationException(SR.GetString(SRKind.KeyMustBeStringable));
+            }
+
             if (startEle)
             {
                 xmlWriter.WriteStartElement("Dictionary");
@@ -265,14 +270,8 @@ namespace Fireasy.Common.Serialization
 
             foreach (var key in dictionary.Keys)
             {
-                xmlWriter.WriteStartElement("Item");
-                xmlWriter.WriteStartElement("Key");
-                Serialize(key);
-                xmlWriter.WriteEndElement();
-
-                xmlWriter.WriteStartElement("Value");
+                xmlWriter.WriteStartElement(key.ToString());
                 Serialize(dictionary[key]);
-                xmlWriter.WriteEndElement();
                 xmlWriter.WriteEndElement();
             }
 
@@ -395,7 +394,15 @@ namespace Fireasy.Common.Serialization
                     continue;
                 }
 
-                WriteXmlElement(acc.PropertyName, true, () => Serialize(value, type: acc.PropertyInfo.PropertyType));
+                var objType = acc.PropertyInfo.PropertyType == typeof(object) ? value.GetType() : acc.PropertyInfo.PropertyType;
+                if (option.OutputStyle == OutputStyle.Attribute && objType.IsStringable())
+                {
+                    xmlWriter.WriteAttributeString(acc.PropertyName, value.ToString());
+                }
+                else
+                {
+                    WriteXmlElement(acc.PropertyName, true, () => Serialize(value, type: objType));
+                }
             }
 
             if (startEle)
@@ -443,15 +450,15 @@ namespace Fireasy.Common.Serialization
                         .Where(s => s.CanRead && !SerializerUtil.IsNoSerializable(option, s))
                         .Distinct(new SerializerUtil.PropertyEqualityComparer())
                         .Select(s => new PropertyGetAccessorCache
-                            {
-                                Accessor = ReflectionCache.GetAccessor(s),
-                                Filter = (p, l) =>
-                                    {
-                                        return !SerializerUtil.CheckLazyValueCreate(l, p.Name);
-                                    },
-                                PropertyInfo = s,
-                                PropertyName = SerializerUtil.GetPropertyName(s)
-                            })
+                        {
+                            Accessor = ReflectionCache.GetAccessor(s),
+                            Filter = (p, l) =>
+                                {
+                                    return !SerializerUtil.CheckLazyValueCreate(l, p.Name);
+                                },
+                            PropertyInfo = s,
+                            PropertyName = SerializerUtil.GetPropertyName(s)
+                        })
                         .Where(s => !string.IsNullOrEmpty(s.PropertyName))
                         .ToList();
                 });

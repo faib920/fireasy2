@@ -35,7 +35,7 @@ namespace Fireasy.Data.Entity.Linq
                 dataSegment = constExp.Value as IDataSegment;
             }
 
-            return constExp;
+            return base.VisitConstant(constExp);
         }
     }
 }

@@ -76,7 +76,7 @@ namespace Fireasy.Data.Entity.Providers
                     provider.RegisterService(serviceType, new OracleTableGenerator());
                     break;
                 case MySqlProvider mysql:
-                    provider.RegisterService(serviceType, new MsSqlTableGenerator());
+                    provider.RegisterService(serviceType, new MySqlTableGenerator());
                     break;
                 case SQLiteProvider sqlite:
                     provider.RegisterService(serviceType, new SQLiteTableGenerator());

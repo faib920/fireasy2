@@ -8,7 +8,6 @@
 using System;
 using Fireasy.Common.Caching.Configuration;
 using Fireasy.Common.Configuration;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Common.Caching
 {
@@ -29,7 +28,7 @@ namespace Fireasy.Common.Caching
             var section = ConfigurationUnity.GetSection<CachingConfigurationSection>();
             if (section != null && section.Factory != null)
             {
-                manager = section.Factory.CreateInstance(configName) as ICacheManager;
+                manager = ConfigurationUnity.Cached<ICacheManager>($"CacheManager_{configName}", () => section.Factory.CreateInstance(configName) as ICacheManager);
                 if (manager != null)
                 {
                     return manager;
@@ -53,7 +52,7 @@ namespace Fireasy.Common.Caching
                 return null;
             }
 
-            return ConfigurationUnity.CreateInstance<CachingConfigurationSetting, ICacheManager>(setting, s => s.CacheType);
+            return ConfigurationUnity.Cached<ICacheManager>($"CacheManager_{configName}", () => ConfigurationUnity.CreateInstance<CachingConfigurationSetting, ICacheManager>(setting, s => s.CacheType));
         }
     }
 }

@@ -5,13 +5,13 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Subscribes;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 
@@ -22,9 +22,9 @@ namespace Fireasy.RabbitMQ
     {
         private RabbitConfigurationSetting setting;
 
-        private static IConnection connection;
-        private static ConcurrentDictionary<string, List<Delegate>> subscribers = new ConcurrentDictionary<string, List<Delegate>>();
-        private static ConcurrentDictionary<string, IModel> channels = new ConcurrentDictionary<string, IModel>();
+        private static Lazy<IConnection> connectionLazy;
+        private static SafetyDictionary<string, List<Delegate>> subscribers = new SafetyDictionary<string, List<Delegate>>();
+        private static SafetyDictionary<string, IModel> channels = new SafetyDictionary<string, IModel>();
 
         /// <summary>
         /// 向 Rabbit 服务器发送消息主题。
@@ -46,7 +46,7 @@ namespace Fireasy.RabbitMQ
         /// <param name="data">发送的数据。</param>
         public void Publish(string channel, byte[] data)
         {
-            using (var model = connection.CreateModel())
+            using (var model = GetConnection().CreateModel())
             {
                 model.QueueDeclare(channel, true, false, true, null);
 
@@ -76,7 +76,7 @@ namespace Fireasy.RabbitMQ
         public void AddSubscriber(Type subjectType, Delegate subscriber)
         {
             var channelName = ChannelHelper.GetChannelName(subjectType);
-            var list = subscribers.GetOrAdd(channelName, k =>
+            var list = subscribers.GetOrAdd(channelName, () =>
                 {
                     StartQueue(channelName);
                     return new List<Delegate>();
@@ -92,7 +92,7 @@ namespace Fireasy.RabbitMQ
         /// <param name="subscriber">读取数据的方法。</param>
         public void AddSubscriber(string channel, Action<byte[]> subscriber)
         {
-            var list = subscribers.GetOrAdd(channel, k =>
+            var list = subscribers.GetOrAdd(channel, () =>
                 {
                     StartQueue(channel);
                     return new List<Delegate>();
@@ -185,26 +185,24 @@ namespace Fireasy.RabbitMQ
 
         private IConnection GetConnection()
         {
-            if (connection == null)
+            if (connectionLazy == null)
             {
-                var factory = new ConnectionFactory
-                    {
-                        UserName = setting.UserName,
-                        Password = setting.Password,
-                        Endpoint = new AmqpTcpEndpoint(new Uri(setting.Server)),
-                        RequestedHeartbeat = 12,
-                        AutomaticRecoveryEnabled = true
-                    };
-
-                connection = factory.CreateConnection();
+                connectionLazy = new Lazy<IConnection>(() => new ConnectionFactory
+                {
+                    UserName = setting.UserName,
+                    Password = setting.Password,
+                    Endpoint = new AmqpTcpEndpoint(new Uri(setting.Server)),
+                    RequestedHeartbeat = 12,
+                    AutomaticRecoveryEnabled = true
+                }.CreateConnection());
             }
 
-            return connection;
+            return connectionLazy.Value;
         }
 
         private void StartQueue(string channel)
         {
-            var model = channels.GetOrAdd(channel, k => GetConnection().CreateModel());
+            var model = channels.GetOrAdd(channel, () => GetConnection().CreateModel());
             var queue = model.QueueDeclare(channel, true, false, true, null);
 
             //创建事件驱动的消费者类型，不要用下边的死循环来消费消息

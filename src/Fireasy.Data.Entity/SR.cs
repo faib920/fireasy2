@@ -67,6 +67,7 @@ namespace Fireasy.Data.Entity
         internal const string WebSiteValideError = "WebSiteValideError";
         internal const string ZipCodeValideError = "ZipCodeValideError";
         internal const string EmailValideError = "EmailValideError";
+        internal const string InvalidOperationAsNoTracking = "InvalidOperationAsNoTracking";
     }
 
     internal sealed class SR

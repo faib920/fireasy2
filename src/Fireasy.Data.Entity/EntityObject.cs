@@ -34,14 +34,14 @@ namespace Fireasy.Data.Entity
         IEntityRelation,
         IPropertyFieldMappingResolver
     {
-        private readonly EntityEntryDictionary valueEntry = new EntityEntryDictionary();
+        private EntityEntryDictionary valueEntry = null;
         private EntityOwner owner;
         [NonSerialized]
         private bool isModifing;
         [NonSerialized]
         private EntityPersistentEnvironment environment;
         [NonSerialized]
-        private EntityLzayManager lazyMgr;
+        private EntityLzayManager lazyMgr = null;
 
         /// <summary>
         /// 在属性即将修改时，通知客户端应用程序。
@@ -69,7 +69,6 @@ namespace Fireasy.Data.Entity
         {
             entityType = GetEntityType();
             state = EntityState.Attached;
-            lazyMgr = new EntityLzayManager(entityType);
         }
 
         /// <summary>
@@ -88,6 +87,8 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public virtual PropertyValue GetValue(IProperty property)
         {
+            CheckAsNoTracking();
+
             var hasValue = valueEntry.Has(property.Name);
             var value = PropertyValue.Empty;
             if (hasValue)
@@ -115,6 +116,8 @@ namespace Fireasy.Data.Entity
         /// <param name="value">要设置的值。</param>
         public virtual void SetValue(IProperty property, PropertyValue value)
         {
+            CheckAsNoTracking();
+
             PropertyValue oldValue;
             //如果赋值相同则忽略更改
             if (CheckValueEquals(property, value, out oldValue))
@@ -146,12 +149,15 @@ namespace Fireasy.Data.Entity
         /// <param name="value"></param>
         public virtual void InitializeValue(IProperty property, PropertyValue value)
         {
-            if (property is RelationProperty)
+            if (lazyMgr != null && property is RelationProperty)
             {
                 lazyMgr.SetValueCreated(property.Name);
             }
 
-            valueEntry.Initializate(property.Name, value);
+            if (valueEntry != null)
+            {
+                valueEntry.Initializate(property.Name, value);
+            }
         }
 
         /// <summary>
@@ -258,6 +264,8 @@ namespace Fireasy.Data.Entity
 
         string[] IEntity.GetModifiedProperties()
         {
+            CheckAsNoTracking();
+
             return (from s in valueEntry.GetModifiedProperties()
                    let p = PropertyUnity.GetProperty(entityType, s)
                    where p != null && (!p.Info.IsPrimaryKey || (p.Info.IsPrimaryKey && p.Info.GenerateType == IdentityGenerateType.None))
@@ -266,11 +274,15 @@ namespace Fireasy.Data.Entity
 
         PropertyValue IEntity.GetOldValue(IProperty property)
         {
+            CheckAsNoTracking();
+
             return valueEntry.Has(property.Name) ? valueEntry[property.Name].GetOldValue() : PropertyValue.Empty;
         }
 
         PropertyValue IEntity.GetDirectValue(IProperty property)
         {
+            CheckAsNoTracking();
+
             return valueEntry.Has(property.Name) ? valueEntry[property.Name].GetCurrentValue() : PropertyValue.Empty;
         }
 
@@ -282,6 +294,8 @@ namespace Fireasy.Data.Entity
 
         void IEntity.NotifyModified(string propertyName)
         {
+            CheckAsNoTracking();
+
             valueEntry.Modify(propertyName);
 
             if (state == EntityState.Unchanged)
@@ -297,6 +311,8 @@ namespace Fireasy.Data.Entity
 
         bool IEntity.IsModified(string propertyName)
         {
+            CheckAsNoTracking();
+
             return valueEntry.Has(propertyName) && valueEntry[propertyName].IsModified;
         }
 
@@ -335,6 +351,9 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public virtual void BeginInit()
         {
+            lazyMgr = new EntityLzayManager(entityType);
+            valueEntry = new EntityEntryDictionary();
+
             isInitialized = false;
         }
 
@@ -364,6 +383,11 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         bool ILazyManager.IsValueCreated(string propertyName)
         {
+            if (lazyMgr == null)
+            {
+                return true;
+            }
+
             return lazyMgr.IsValueCreated(propertyName);
         }
         #endregion
@@ -474,6 +498,8 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         private PropertyValue ProcessSupposedProperty(IProperty property)
         {
+            CheckAsNoTracking();
+
             var relationProperty = property.As<RelationProperty>();
             if (relationProperty != null &&
                 relationProperty.Options.LoadBehavior != LoadBehavior.None)
@@ -609,7 +635,7 @@ namespace Fireasy.Data.Entity
                 return false;
             }
 
-            switch (relationPro.RelationPropertyType)
+            switch (relationPro.RelationalPropertyType)
             {
                 case RelationPropertyType.Entity:
                     EntityUtility.SetEntityToNull(oldValue);
@@ -620,6 +646,17 @@ namespace Fireasy.Data.Entity
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// 检查是否为 AsNoTracking 模式。
+        /// </summary>
+        private void CheckAsNoTracking()
+        {
+            if (valueEntry == null || lazyMgr == null)
+            {
+                throw new InvalidOperationException(SR.GetString(SRKind.InvalidOperationAsNoTracking));
+            }
         }
 
         /// <summary>

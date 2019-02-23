@@ -132,6 +132,11 @@ namespace Fireasy.Common.Linq.Expressions
         /// <returns></returns>
         protected virtual Expression VisitConstant(ConstantExpression constExp)
         {
+            if (constExp.Value is IQueryable queryable)
+            {
+                Visit(queryable.Expression);
+            }
+
             return constExp;
         }
 
@@ -338,6 +343,16 @@ namespace Fireasy.Common.Linq.Expressions
             var obj = Visit(node.Object);
             var args = VisitExpressionList(node.Arguments);
             return node.Update(obj, node.Method, args);
+        }
+
+        protected override Expression VisitConstant(ConstantExpression constExp)
+        {
+            if (constExp.Value is IQueryable queryable)
+            {
+                Visit(queryable.Expression);
+            }
+
+            return constExp;
         }
 #endif
 

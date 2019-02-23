@@ -67,7 +67,7 @@ namespace Fireasy.Data.Entity.Properties
                 return null;
             }
 
-            var parExp = Expression.Parameter(relationProperty.RelationType, "s");
+            var parExp = Expression.Parameter(relationProperty.RelationalType, "s");
             Expression binExp = null;
 
             foreach (var key in relationKey.Keys)
@@ -102,7 +102,7 @@ namespace Fireasy.Data.Entity.Properties
         {
             var entityProperty = property.As<EntityProperty>();
 
-            var instanceName = GetInstanceName(entity, entityProperty.RelationType);
+            var instanceName = GetInstanceName(entity, entityProperty.RelationalType);
             var environment = GetEnvironment(entity);
 
             using (var context = new InternalContext(instanceName))
@@ -110,7 +110,7 @@ namespace Fireasy.Data.Entity.Properties
                 context.As<IEntityPersistentEnvironment>(s => s.Environment = environment);
                 context.As<IEntityPersistentInstanceContainer>(s => s.InstanceName = instanceName);
 
-                var provider = context.CreateRepositoryProvider(entityProperty.RelationType);
+                var provider = context.CreateRepositoryProvider(entityProperty.RelationalType);
                 var expression = BuidRelationExpression(entity, entityProperty);
                 if (expression != null)
                 {
@@ -166,7 +166,7 @@ namespace Fireasy.Data.Entity.Properties
         public override PropertyValue GetValue(IEntity entity, IProperty property)
         {
             var entityProperty = property.As<EntitySetProperty>();
-            var instanceName = GetInstanceName(entity, entityProperty.RelationType);
+            var instanceName = GetInstanceName(entity, entityProperty.RelationalType);
             var environment = GetEnvironment(entity);
 
             using (var context = new InternalContext(instanceName))
@@ -174,13 +174,13 @@ namespace Fireasy.Data.Entity.Properties
                 context.Environment = environment;
                 context.InstanceName = instanceName;
 
-                var provider = context.CreateRepositoryProvider(entityProperty.RelationType);
+                var provider = context.CreateRepositoryProvider(entityProperty.RelationalType);
                 var expression = BuidRelationExpression(entity, entityProperty);
                 object result = null;
                 if (expression != null)
                 {
                     result = Execute(provider.Queryable, expression);
-                    var querySetType = typeof(EntitySet<>).MakeGenericType(entityProperty.RelationType);
+                    var querySetType = typeof(EntitySet<>).MakeGenericType(entityProperty.RelationalType);
                     var list = querySetType.New(new[] { result });
 
                     //设置实体集所属的实体Owner
@@ -233,7 +233,7 @@ namespace Fireasy.Data.Entity.Properties
         public override PropertyValue GetValue(IEntity entity, IProperty property)
         {
             var referenceProperty = property.As<ReferenceProperty>();
-            var instanceName = GetInstanceName(entity, referenceProperty.RelationType);
+            var instanceName = GetInstanceName(entity, referenceProperty.RelationalType);
             var environment = GetEnvironment(entity);
 
             using (var context = new InternalContext(instanceName))
@@ -241,7 +241,7 @@ namespace Fireasy.Data.Entity.Properties
                 context.As<IEntityPersistentEnvironment>(s => s.Environment = environment);
                 context.As<IEntityPersistentInstanceContainer>(s => s.InstanceName = instanceName);
 
-                var provider = context.CreateRepositoryProvider(referenceProperty.RelationType);
+                var provider = context.CreateRepositoryProvider(referenceProperty.RelationalType);
                 var expression = BuidRelationExpression(entity, referenceProperty);
                 if (expression != null)
                 {

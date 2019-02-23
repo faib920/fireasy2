@@ -6,8 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common;
+using Fireasy.Common.ComponentModel;
 using System;
-using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
 
@@ -18,7 +18,7 @@ namespace Fireasy.Data.Entity.Metadata
     /// </summary>
     public static class EntityMetadataUnity
     {
-        private static ConcurrentDictionary<Type, EntityMetadata> cache = new ConcurrentDictionary<Type, EntityMetadata>();
+        private static SafetyDictionary<Type, EntityMetadata> cache = new SafetyDictionary<Type, EntityMetadata>();
 
         /// <summary>
         /// 获取指定类型的实体元数据。
@@ -31,33 +31,31 @@ namespace Fireasy.Data.Entity.Metadata
 
             entityType = entityType.GetDefinitionEntityType();
 
-            var lazy = new Lazy<EntityMetadata>(() =>
-                {
-                    var metadata = new EntityMetadata(entityType);
+            return cache.GetOrAdd(entityType, () =>
+            {
+                var metadata = new EntityMetadata(entityType);
 
-                    //由于此代码段是缓存项创建工厂函数，此时的 metadata 并未添加到缓存中，接下来 PropertyUnity 
-                    //会再一次获取 EntityMetadata，因此需要在此线程中共享出 EntityMetadata
-                    using (var scope = new MetadataScope { Metadata = metadata })
+                //由于此代码段是缓存项创建工厂函数，此时的 metadata 并未添加到缓存中，接下来 PropertyUnity 
+                //会再一次获取 EntityMetadata，因此需要在此线程中共享出 EntityMetadata
+                using (var scope = new MetadataScope { Metadata = metadata })
+                {
+                    if (typeof(ICompilableEntity).IsAssignableFrom(entityType))
                     {
-                        if (typeof(ICompilableEntity).IsAssignableFrom(entityType))
+                        PropertyUnity.Initialize(entityType);
+                    }
+                    else
+                    {
+                        //需要找出其中的一个字段，然后以引发 RegisterProperty 调用
+                        var field = entityType.GetFields(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public).FirstOrDefault();
+                        if (field != null)
                         {
-                            PropertyUnity.Initialize(entityType);
-                        }
-                        else
-                        {
-                            //需要找出其中的一个字段，然后以引发 RegisterProperty 调用
-                            var field = entityType.GetFields(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public).FirstOrDefault();
-                            if (field != null)
-                            {
-                                field.GetValue(null);
-                            }
+                            field.GetValue(null);
                         }
                     }
+                }
 
-                    return metadata;
-                });
-
-            return cache.GetOrAdd(entityType, k => lazy.Value);
+                return metadata;
+            });
         }
 
         /// <summary>

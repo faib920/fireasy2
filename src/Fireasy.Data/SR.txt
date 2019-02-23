@@ -28,3 +28,4 @@ UnableCloseConnection=无法关闭数据库连接，请检查服务器是否正�
 ConnectionError=未知的数据库连接错误，请检查服务器是否正常。
 UnableCastRowMapper=数据类型不匹配，{0} 无法读取为类型 {1}。
 PropertyTypeIsNull=类型 {0} 的属性 {1} 的类型为空。
+InstallProviderAssembly=必须引用 {0} 中的任意一个文件作为驱动。

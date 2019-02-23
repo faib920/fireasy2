@@ -28,20 +28,17 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         internal static Delegate TryGetDelegate(Expression expression, Func<LambdaExpression> func)
         {
-            if (!CachaebleChecker.Check(expression))
-            {
-                return func().Compile();
-            }
-
             var section = ConfigurationUnity.GetSection<TranslatorConfigurationSection>();
             var option = section == null ? TranslateOptions.Default : section.Options;
 
-            if (!option.ParseCacheEnabled)
+            var result = CacheableChecker.Check(expression);
+            if (!result.Required || (result.Enabled == null && !option.CacheParsing) || result.Enabled == false)
             {
                 return func().Compile();
             }
 
-            var lazy = new Lazy<Delegate>(() =>
+            var cacheKey = ExpressionKeyGenerator.GetKey(expression, "Trans");
+            return MemoryCacheManager.Instance.TryGet(cacheKey, () =>
                 {
                     //将表达式内的 Segment 替换成参数
                     var segParExp = Expression.Parameter(typeof(IDataSegment), "g");
@@ -50,29 +47,48 @@ namespace Fireasy.Data.Entity.Linq
                     lambdaExp = Expression.Lambda(newExp, lambdaExp.Parameters[0], segParExp);
 
                     return lambdaExp.Compile();
-                });
+                }, 
+            () => new RelativeTime(result.Expired ?? TimeSpan.FromSeconds(option.CacheParsingTimes)));
+        }
 
-            var cacheKey = ExpressionKeyGenerator.GetKey(expression, "Trans");
-            return MemoryCacheManager.Instance.TryGet(cacheKey, () => lazy.Value, () => new RelativeTime(TimeSpan.FromSeconds(option.ParseCacheExpired)));
+        /// <summary>
+        /// 缓存检查的返回结果。
+        /// </summary>
+        private class CacheableCheckResult
+        {
+            /// <summary>
+            /// 是否开启缓存。
+            /// </summary>
+            public bool? Enabled { get; set; }
+
+            /// <summary>
+            /// 是否必须的。
+            /// </summary>
+            public bool Required { get; set; } = true;
+
+            /// <summary>
+            /// 过期时间。
+            /// </summary>
+            public TimeSpan? Expired { get; set; }
         }
 
         /// <summary>
         /// 缓存检查器。
         /// </summary>
-        private class CachaebleChecker : Common.Linq.Expressions.ExpressionVisitor
+        private class CacheableChecker : Common.Linq.Expressions.ExpressionVisitor
         {
-            private bool cacheable = true;
+            private CacheableCheckResult result = new CacheableCheckResult();
 
             /// <summary>
             /// 检查表达式是否能够被缓存。
             /// </summary>
             /// <param name="expression"></param>
             /// <returns></returns>
-            public static bool Check(Expression expression)
+            public static CacheableCheckResult Check(Expression expression)
             {
-                var checker = new CachaebleChecker();
+                var checker = new CacheableChecker();
                 checker.Visit(expression);
-                return checker.cacheable;
+                return checker.result;
             }
 
             protected override Expression VisitMethodCall(MethodCallExpression node)
@@ -87,11 +103,18 @@ namespace Fireasy.Data.Entity.Linq
                     case nameof(IRepository.Insert):
                     case nameof(IRepository.Update):
                     case nameof(IRepository.Delete):
-                        cacheable = false;
+                        result.Required = false;
+                        break;
+                    case nameof(Extensions.CacheParsing):
+                        result.Enabled = (bool)((ConstantExpression)node.Arguments[1]).Value;
+                        if (result.Enabled == true && node.Arguments.Count == 3)
+                        {
+                            result.Expired = (TimeSpan?)((ConstantExpression)node.Arguments[2]).Value;
+                        }
                         break;
                 }
 
-                return node;
+                return base.VisitMethodCall(node);
             }
         }
 

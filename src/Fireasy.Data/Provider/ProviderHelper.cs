@@ -6,12 +6,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Extensions;
 using Fireasy.Data.Provider.Configuration;
 using System;
-using System.Collections.Concurrent;
 using System.Linq;
 
 namespace Fireasy.Data.Provider
@@ -21,7 +21,7 @@ namespace Fireasy.Data.Provider
     /// </summary>
     public static class ProviderHelper
     {
-        private static readonly ConcurrentDictionary<string, IProvider> dicProviders = new ConcurrentDictionary<string, IProvider>();
+        private static readonly SafetyDictionary<string, IProvider> dicProviders = new SafetyDictionary<string, IProvider>();
 
         static ProviderHelper()
         {
@@ -36,7 +36,7 @@ namespace Fireasy.Data.Provider
         public static IProvider GetDefinedProviderInstance(string providerName)
         {
             var provider = dicProviders.FirstOrDefault(s => s.Key.Equals(providerName, StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrEmpty(provider.Key))
+            if (!string.IsNullOrEmpty(provider.Key) && provider.Value != null)
             {
                 return provider.Value;
             }
