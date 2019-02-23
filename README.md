@@ -1,8 +1,18 @@
 # fireasy2
 
-Fireasy是一套基于.Net Framework应用开发组件，其主旨思想为“让开发变为更简单”，其义为，使用尽可能少的组件，实现你所需的功能。Fireasy几乎覆盖了开发中可能使用到的技术，比如Log、Cache、AOP、IOC、ORM、MVC等等。
+Fireasy是一套基于.Net Framework应用开发组件，其主旨思想为“让开发变为更简单”，其义为，使用尽可能少的组件，实现你所需的功能。Fireasy几乎覆盖了开发中可能使用到的技术，比如Log、Cache、AOP、IOC、ORM、MVC等等，并提供了Redis、RabbitMQ、NLog、Log4net等这些组件的适配。
 
 Fireasy 支持 net3.5/net4.0/net4.5/net4.6/net4.7/netstandard2.0，只需一个dll即可，已发布到 nuget ，搜索添加即可。
+
+*	[https://www.nuget.org/packages/Fireasy.Common](Fireasy.Common)
+*	[https://www.nuget.org/packages/Fireasy.Data](Fireasy.Data)
+*	[https://www.nuget.org/packages/Fireasy.Data.Entity](Fireasy.Data.Entity)
+*	[https://www.nuget.org/packages/Fireasy.Web.Mvc](Fireasy.Web.Mvc)
+*	[https://www.nuget.org/packages/Fireasy.Web.EasyUI](Fireasy.Web.EasyUI)
+*	[https://www.nuget.org/packages/Fireasy.Web.EasyUI](Fireasy.Web.EasyUI)
+*	[https://www.nuget.org/packages/Fireasy.RabbitMQ](Fireasy.RabbitMQ)
+*	[https://www.nuget.org/packages/Fireasy.NLog](Fireasy.NLog)
+*	[https://www.nuget.org/packages/Fireasy.Log4net](Fireasy.Log4net)
 
 Fireasy 的使用可链接开源库 [https://github.com/faib920/zero](https://github.com/faib920/zero) 进行学习。
 
@@ -102,7 +112,8 @@ public void Sample()
         var orders = context.Orders
             .AssertWhere(startTime != null, s => s.OrderDate >= startTime)
             .AssertWhere(endTime != null, s => s.OrderDate <= endTime)
-            .AssertWhere(state == 0, s => s.RequiredDate == DateTime.Now, s => s.RequiredDate >= DateTime.Now);
+            .AssertWhere(state == 0, s => s.RequiredDate == DateTime.Now, s => s.RequiredDate >= DateTime.Now)
+			.AsNoTracking();
 	
         //ExtandAs 扩展用法
         var details = context.OrderDetails.Select(s =>
