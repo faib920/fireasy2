@@ -4,15 +4,15 @@ Fireasy是一套基于.Net Framework应用开发组件，其主旨思想为“�
 
 Fireasy 支持 net3.5/net4.0/net4.5/net4.6/net4.7/netstandard2.0，只需一个dll即可，已发布到 nuget ，搜索添加即可。
 
-*	[https://www.nuget.org/packages/Fireasy.Common](Fireasy.Common)
-*	[https://www.nuget.org/packages/Fireasy.Data](Fireasy.Data)
-*	[https://www.nuget.org/packages/Fireasy.Data.Entity](Fireasy.Data.Entity)
-*	[https://www.nuget.org/packages/Fireasy.Web.Mvc](Fireasy.Web.Mvc)
-*	[https://www.nuget.org/packages/Fireasy.Web.EasyUI](Fireasy.Web.EasyUI)
-*	[https://www.nuget.org/packages/Fireasy.Web.EasyUI](Fireasy.Web.EasyUI)
-*	[https://www.nuget.org/packages/Fireasy.RabbitMQ](Fireasy.RabbitMQ)
-*	[https://www.nuget.org/packages/Fireasy.NLog](Fireasy.NLog)
-*	[https://www.nuget.org/packages/Fireasy.Log4net](Fireasy.Log4net)
+*	[Fireasy.Common](https://www.nuget.org/packages/Fireasy.Common)
+*	[Fireasy.Data](https://www.nuget.org/packages/Fireasy.Data)
+*	[Fireasy.Data.Entity](https://www.nuget.org/packages/Fireasy.Data.Entity)
+*	[Fireasy.Web.Mvc](https://www.nuget.org/packages/Fireasy.Web.Mvc)
+*	[Fireasy.Web.EasyUI](https://www.nuget.org/packages/Fireasy.Web.EasyUI)
+*	[Fireasy.Web.EasyUI](https://www.nuget.org/packages/Fireasy.Web.EasyUI)
+*	[Fireasy.RabbitMQ](https://www.nuget.org/packages/Fireasy.RabbitMQ)
+*	[Fireasy.NLog](https://www.nuget.org/packages/Fireasy.NLog)
+*	[Fireasy.Log4net](https://www.nuget.org/packages/Fireasy.Log4net)
 
 Fireasy 的使用可链接开源库 [https://github.com/faib920/zero](https://github.com/faib920/zero) 进行学习。
 
