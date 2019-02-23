@@ -58,7 +58,7 @@ namespace Fireasy.Data.Entity
             var method = (MethodInfo)MethodBase.GetCurrentMethod();
             method = method.MakeGenericMethod(typeof(T));
             var expression = Expression.Call(null, method,
-                new[] { Expression.Constant(source) });
+                new[] { source.Expression });
 
             return source.Provider.CreateQuery<T>(expression);
         }
@@ -76,7 +76,7 @@ namespace Fireasy.Data.Entity
             var method = (MethodInfo)MethodBase.GetCurrentMethod();
             method = method.MakeGenericMethod(typeof(T));
             var expression = Expression.Call(null, method,
-                new[] { Expression.Constant(source), Expression.Constant(enabled), Expression.Constant(expired, typeof(TimeSpan?)) });
+                new[] { source.Expression, Expression.Constant(enabled), Expression.Constant(expired, typeof(TimeSpan?)) });
 
             return source.Provider.CreateQuery<T>(expression);
         }
@@ -93,7 +93,7 @@ namespace Fireasy.Data.Entity
             var method = (MethodInfo)MethodBase.GetCurrentMethod();
             method = method.MakeGenericMethod(typeof(T));
             var expression = Expression.Call(null, method,
-                new[] { Expression.Constant(source), Expression.Constant(enabled) });
+                new[] { source.Expression, Expression.Constant(enabled) });
 
             return source.Provider.CreateQuery<T>(expression);
         }
@@ -111,7 +111,7 @@ namespace Fireasy.Data.Entity
             var method = (MethodInfo)MethodBase.GetCurrentMethod();
             method = method.MakeGenericMethod(typeof(T));
             var expression = Expression.Call(null, method,
-                new[] { Expression.Constant(source), Expression.Constant(enabled), Expression.Constant(expired, typeof(TimeSpan?)) });
+                new[] { source.Expression, Expression.Constant(enabled), Expression.Constant(expired, typeof(TimeSpan?)) });
 
             return source.Provider.CreateQuery<T>(expression);
         }
@@ -128,7 +128,7 @@ namespace Fireasy.Data.Entity
             var method = (MethodInfo)MethodBase.GetCurrentMethod();
             method = method.MakeGenericMethod(typeof(T));
             var expression = Expression.Call(null, method,
-                new[] { Expression.Constant(source), Expression.Constant(enabled) });
+                new[] { source.Expression, Expression.Constant(enabled) });
 
             return source.Provider.CreateQuery<T>(expression);
         }
