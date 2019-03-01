@@ -17,7 +17,7 @@ namespace Fireasy.Data.Provider
     /// <summary>
     /// Firebird数据库提供者。使用 FirebirdSql.Data.FirebirdClient 提供。
     /// </summary>
-    public class FirebirdProvider : AssemblyProvider
+    public class FirebirdProvider : ProviderBase
     {
         /// <summary>
         /// 提供 <see cref="FirebirdProvider"/> 的静态实例。
@@ -28,7 +28,7 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="PostgreSqlProvider"/> 类的新实例。
         /// </summary>
         public FirebirdProvider()
-            : base("FirebirdSql.Data.FirebirdClient.FirebirdClientFactory, FirebirdSql.Data.FirebirdClient")
+            : base(new AssemblyProviderFactoryResolver("FirebirdSql.Data.FirebirdClient.FirebirdClientFactory, FirebirdSql.Data.FirebirdClient"))
         {
             RegisterService<IGeneratorProvider, BaseSequenceGenerator>();
             RegisterService<ISyntaxProvider, FirebirdSyntax>();

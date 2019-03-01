@@ -29,7 +29,10 @@ namespace Fireasy.NLog
         /// <param name="exception">异常对象。</param>
         public void Error(object message, Exception exception = null)
         {
-            log.Error(exception, message?.ToString());
+            if (LogEnvironment.IsConfigured(LogLevel.Error))
+            {
+                log.Error(exception, message?.ToString());
+            }
         }
 
         /// <summary>
@@ -39,7 +42,10 @@ namespace Fireasy.NLog
         /// <param name="exception">异常对象。</param>
         public void Info(object message, Exception exception = null)
         {
-            log.Info(exception, message?.ToString());
+            if (LogEnvironment.IsConfigured(LogLevel.Info))
+            {
+                log.Info(exception, message?.ToString());
+            }
         }
 
         /// <summary>
@@ -49,7 +55,10 @@ namespace Fireasy.NLog
         /// <param name="exception">异常对象。</param>
         public void Warn(object message, Exception exception = null)
         {
-            log.Warn(exception, message?.ToString());
+            if (LogEnvironment.IsConfigured(LogLevel.Warn))
+            {
+                log.Warn(exception, message?.ToString());
+            }
         }
 
         /// <summary>
@@ -59,7 +68,10 @@ namespace Fireasy.NLog
         /// <param name="exception">异常对象。</param>
         public void Debug(object message, Exception exception = null)
         {
-            log.Debug(exception, message?.ToString());
+            if (LogEnvironment.IsConfigured(LogLevel.Debug))
+            {
+                log.Debug(exception, message?.ToString());
+            }
         }
 
         /// <summary>
@@ -69,7 +81,10 @@ namespace Fireasy.NLog
         /// <param name="exception">异常对象。</param>
         public void Fatal(object message, Exception exception = null)
         {
-            log.Fatal(exception, message?.ToString());
+            if (LogEnvironment.IsConfigured(LogLevel.Fatal))
+            {
+                log.Fatal(exception, message?.ToString());
+            }
         }
     }
 }

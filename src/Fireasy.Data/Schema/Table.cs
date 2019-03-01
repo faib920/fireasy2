@@ -31,11 +31,17 @@ namespace Fireasy.Data.Schema
         /// <summary>
         /// 获取表类型。
         /// </summary>
-        public string Type { get; set; }
+        public TableType Type { get; set; }
 
         /// <summary>
         /// 获取表的描述。
         /// </summary>
         public string Description { get; set; }
+    }
+
+    public enum TableType
+    {
+        BaseTable,
+        SystemTable
     }
 }

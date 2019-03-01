@@ -18,12 +18,7 @@ namespace Fireasy.Data.Provider
     /// <summary>
     /// MsSql数据库提供者。
     /// </summary>
-    public class MsSqlProvider :
-#if NETSTANDARD
-        AssemblyProvider
-#else
-        ProviderBase
-#endif
+    public class MsSqlProvider : ProviderBase
     {
         /// <summary>
         /// 提供 <see cref="MsSqlProvider"/> 的静态实例。
@@ -35,9 +30,9 @@ namespace Fireasy.Data.Provider
         /// </summary>
         public MsSqlProvider()
 #if NETSTANDARD
-            : base("System.Data.SqlClient.SqlClientFactory, System.Data.SqlClient")
+            : base(new AssemblyProviderFactoryResolver("System.Data.SqlClient.SqlClientFactory, System.Data.SqlClient"))
 #else
-            : base("System.Data.SqlClient")
+            : base(new InstallerProviderFactoryResolver("System.Data.SqlClient"))
 #endif
         {
             RegisterService<IGeneratorProvider, BaseSequenceGenerator>();
@@ -65,7 +60,7 @@ namespace Fireasy.Data.Provider
             return new ConnectionParameter
             {
                 Server = connectionString.Properties.TryGetValue("data source", "server"),
-                Database = connectionString.Properties.TryGetValue("initial catalog", "database"),
+                Database = connectionString.Properties.TryGetValueWithDefaultValue("master", "initial catalog", "database"),
                 UserId = connectionString.Properties.TryGetValue("user id", "uid"),
                 Password = connectionString.Properties.TryGetValue("password", "pwd"),
             };

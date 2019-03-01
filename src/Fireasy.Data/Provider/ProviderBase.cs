@@ -10,6 +10,7 @@ using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.IO;
 
 namespace Fireasy.Data.Provider
 {
@@ -19,7 +20,7 @@ namespace Fireasy.Data.Provider
     public abstract class ProviderBase : IProvider
     {
         private DbProviderFactory factory;
-        private readonly string providerName;
+        private IProviderFactoryResolver[] resolvers ;
         private Dictionary<string, IProviderService> services = new Dictionary<string, IProviderService>();
 
         /// <summary>
@@ -32,11 +33,11 @@ namespace Fireasy.Data.Provider
         /// <summary>
         /// 使用提供者名称初始化 <see cref="ProviderBase"/> 类的新实例。
         /// </summary>
-        /// <param name="providerName"></param>
-        protected ProviderBase(string providerName)
+        /// <param name="resolvers"></param>
+        protected ProviderBase(params IProviderFactoryResolver[] resolvers)
             : this()
         {
-            this.providerName = providerName;
+            this.resolvers = resolvers;
         }
 
         /// <summary>
@@ -178,11 +179,19 @@ namespace Fireasy.Data.Provider
         /// <returns></returns>
         protected virtual DbProviderFactory InitDbProviderFactory()
         {
-#if !NETSTANDARD
-            return DbProviderFactories.GetFactory(providerName);
-#else
-            return null;
-#endif
+            Exception exception = null;
+            foreach (var resolver in resolvers)
+            {
+                var factory = resolver.Resolve();
+                if (factory != null)
+                {
+                    return factory;
+                }
+
+                exception = resolver.Exception;
+            }
+
+            throw exception;
         }
     }
 }

@@ -27,7 +27,7 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="OleDbProvider"/> 类的新实例。
         /// </summary>
         public OleDbProvider()
-            : base("System.Data.OleDb")
+            : base(new InstallerProviderFactoryResolver("System.Data.OleDb"))
         {
             RegisterService<IGeneratorProvider, BaseSequenceGenerator>();
             RegisterService<IRecordWrapper, GeneralRecordWrapper>();

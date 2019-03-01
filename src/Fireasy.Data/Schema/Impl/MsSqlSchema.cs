@@ -17,56 +17,57 @@ namespace Fireasy.Data.Schema
     {
         public MsSqlSchema()
         {
-            AddRestrictionIndex<Database>(s => s.Name);
-            AddRestrictionIndex<Table>(s => s.Catalog, s => s.Schema, s => s.Name, s => s.Type);
-            AddRestrictionIndex<Column>(s => s.Catalog, s => s.Schema, s => s.TableName, s => s.Name);
-            AddRestrictionIndex<View>(s => s.Catalog, s => s.Schema, s => s.Name);
-            AddRestrictionIndex<ViewColumn>(s => s.Catalog, s => s.Schema, s => s.ViewName, s => s.Name);
-            AddRestrictionIndex<User>(s => s.Name);
-            AddRestrictionIndex<Procedure>(s => s.Catalog, s => s.Schema, s => s.Name, s => s.Type);
-            AddRestrictionIndex<ProcedureParameter>(s => s.Catalog, s => s.Schema, s => s.ProcedureName, s => s.Name);
-            AddRestrictionIndex<Index>(s => s.Catalog, s => s.Schema, s => s.TableName, s => s.Name);
-            AddRestrictionIndex<IndexColumn>(s => s.Catalog, s => s.Schema, s => s.TableName, s => s.Name, s => s.ColumnName);
-            AddRestrictionIndex<ForeignKey>(s => s.Catalog, s => s.Schema, s => s.TableName, s => s.Name);
+            AddRestriction<Database>(s => s.Name);
+            AddRestriction<Table>(s => s.Name, s => s.Type);
+            AddRestriction<Column>(s => s.TableName, s => s.Name);
+            AddRestriction<View>(s => s.Name);
+            AddRestriction<ViewColumn>(s => s.ViewName, s => s.Name);
+            AddRestriction<User>(s => s.Name);
+            AddRestriction<Procedure>(s => s.Name, s => s.Type);
+            AddRestriction<ProcedureParameter>(s => s.ProcedureName, s => s.Name);
+            AddRestriction<Index>(s => s.TableName, s => s.Name);
+            AddRestriction<IndexColumn>(s => s.TableName, s => s.Name, s => s.ColumnName);
+            AddRestriction<ForeignKey>(s => s.TableName, s => s.Name);
         }
 
-        protected override IEnumerable<Database> GetDatabases(IDatabase database, string[] restrictionValues)
+        protected override IEnumerable<Database> GetDatabases(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
 
             SqlCommand sql = @"
 SELECT NAME AS DATABASE_NAME, CRDATE AS CREATE_DATE FROM MASTER..SYSDATABASES WHERE (NAME = @NAME OR (@NAME IS NULL))";
 
-            ParameteRestrition(parameters, "NAME", 0, restrictionValues);
+            restrictionValues.Parameterize(parameters, "NAME", nameof(Database.Name));
 
-            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new Database
+            return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new Database
                 {
                     Name = wrapper.GetString(reader, 0),
                     CreateDate = wrapper.GetDateTime(reader, 1)
                 });
         }
         
-        protected override IEnumerable<User> GetUsers(IDatabase database, string[] restrictionValues)
+        protected override IEnumerable<User> GetUsers(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
 
             SqlCommand sql = @"
 SELECT UID, NAME AS USER_NAME, CREATEDATE, UPDATEDATE FROM SYSUSERS WHERE (NAME = @NAME OR (@NAME IS NULL))";
 
-            ParameteRestrition(parameters, "NAME", 0, restrictionValues);
+            restrictionValues.Parameterize(parameters, "NAME", nameof(User.Name));
 
-            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new User
+            return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new User
                 {
                     Name = wrapper.GetString(reader, 1),
                     CreateDate = wrapper.GetDateTime(reader, 2)
                 });
         }
 
-        protected override IEnumerable<Table> GetTables(IDatabase database, string[] restrictionValues)
+        protected override IEnumerable<Table> GetTables(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
+            var connpar = GetConnectionParameter(database);
 
-            SqlCommand sql = @"
+            SqlCommand sql = $@"
 SELECT T.TABLE_CATALOG, 
   T.TABLE_SCHEMA, 
   T.TABLE_NAME, 
@@ -74,32 +75,32 @@ SELECT T.TABLE_CATALOG,
   (SELECT VALUE FROM ::FN_LISTEXTENDEDPROPERTY('MS_Description','user',T.TABLE_SCHEMA,'table',T.TABLE_NAME,NULL,NULL)) COMMENTS
 FROM 
   INFORMATION_SCHEMA.TABLES T
-WHERE TABLE_TYPE <> 'view' AND (TABLE_CATALOG = @CATALOG OR (@CATALOG IS NULL))
-  AND (T.TABLE_SCHEMA = @OWNER OR (@OWNER IS NULL))
+WHERE TABLE_TYPE <> 'view'
+  AND (T.TABLE_CATALOG = '{connpar.Database}')
   AND (T.TABLE_NAME = @NAME OR (@NAME IS NULL))
-  AND (T.TABLE_TYPE = @TABLETYPE OR (@TABLETYPE IS NULL))
+  AND ((T.TABLE_TYPE = 'BASE TABLE' AND (@TABLETYPE IS NULL OR @TABLETYPE = 0)) OR (T.TABLE_TYPE = 'SYSTEM TABLE' AND @TABLETYPE = 1))
  ORDER BY T.TABLE_CATALOG, T.TABLE_SCHEMA, T.TABLE_NAME";
 
-            ParameteRestrition(parameters, "CATALOG", 0, restrictionValues);
-            ParameteRestrition(parameters, "OWNER", 1, restrictionValues);
-            ParameteRestrition(parameters, "NAME", 2, restrictionValues);
-            ParameteRestrition(parameters, "TABLETYPE", 3, restrictionValues);
+            restrictionValues
+                .Parameterize(parameters, "NAME", nameof(Table.Name))
+                .Parameterize(parameters, "TABLETYPE", nameof(Table.Type));
 
-            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new Table
+            return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new Table
                 {
                     Catalog = wrapper.GetString(reader, 0),
                     Schema = wrapper.GetString(reader, 1),
                     Name = wrapper.GetString(reader, 2),
-                    Type = wrapper.GetString(reader, 3),
+                    Type = wrapper.GetString(reader, 3) == "BASE TABLE" ? TableType.BaseTable : TableType.SystemTable,
                     Description = wrapper.GetString(reader, 4)
                 });
         }
         
-        protected override IEnumerable<Column> GetColumns(IDatabase database, string[] restrictionValues)
+        protected override IEnumerable<Column> GetColumns(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
+            var connpar = GetConnectionParameter(database);
 
-            SqlCommand sql = @"
+            SqlCommand sql = $@"
 SELECT T.TABLE_CATALOG,
        T.TABLE_SCHEMA,
        T.TABLE_NAME,
@@ -117,18 +118,16 @@ SELECT T.TABLE_CATALOG,
        (SELECT C.COLSTAT FROM SYSCOLUMNS C
             LEFT JOIN SYSOBJECTS O ON C.ID = O.ID WHERE O.XTYPE='U' AND O.NAME = T.TABLE_NAME AND C.NAME = T.COLUMN_NAME) AUTOINC
   FROM INFORMATION_SCHEMA.COLUMNS T
-WHERE (T.TABLE_CATALOG = @CATALOG OR (@CATALOG IS NULL)) AND 
-  (T.TABLE_SCHEMA = @OWNER OR (@OWNER IS NULL)) AND 
+WHERE  (T.TABLE_CATALOG = '{connpar.Database}') AND
   (T.TABLE_NAME = @TABLENAME OR (@TABLENAME IS NULL)) AND 
   (T.COLUMN_NAME = @COLUMNNAME OR (@COLUMNNAME IS NULL))
  ORDER BY T.TABLE_CATALOG, T.TABLE_SCHEMA, T.TABLE_NAME";
 
-            ParameteRestrition(parameters, "CATALOG", 0, restrictionValues);
-            ParameteRestrition(parameters, "OWNER", 1, restrictionValues);
-            ParameteRestrition(parameters, "TABLENAME", 2, restrictionValues);
-            ParameteRestrition(parameters, "COLUMNNAME", 3, restrictionValues);
+            restrictionValues
+                .Parameterize(parameters, "TABLENAME", nameof(Column.TableName))
+                .Parameterize(parameters, "COLUMNNAME", nameof(Column.Name));
 
-            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new Column
+            return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new Column
                 {
                     Catalog = wrapper.GetString(reader, 0),
                     Schema = wrapper.GetString(reader, 1),
@@ -146,11 +145,12 @@ WHERE (T.TABLE_CATALOG = @CATALOG OR (@CATALOG IS NULL)) AND
                 });
         }
 
-        protected override IEnumerable<View> GetViews(IDatabase database, string[] restrictionValues)
+        protected override IEnumerable<View> GetViews(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
+            var connpar = GetConnectionParameter(database);
 
-            SqlCommand sql = @"
+            SqlCommand sql = $@"
 SELECT T.TABLE_CATALOG,
   T.TABLE_SCHEMA,
   T.TABLE_NAME, 
@@ -158,16 +158,13 @@ SELECT T.TABLE_CATALOG,
 FROM 
   INFORMATION_SCHEMA.TABLES T
 WHERE TABLE_TYPE = 'view'
-  AND (T.TABLE_CATALOG = @CATALOG OR (@CATALOG IS NULL))
-  AND (T.TABLE_SCHEMA = @OWNER OR (@OWNER IS NULL))
+  AND (T.TABLE_CATALOG = '{connpar.Database}')
   AND (T.TABLE_NAME = @NAME OR (@NAME IS NULL))
  ORDER BY T.TABLE_CATALOG, T.TABLE_SCHEMA, T.TABLE_NAME";
 
-            ParameteRestrition(parameters, "CATALOG", 0, restrictionValues);
-            ParameteRestrition(parameters, "OWNER", 1, restrictionValues);
-            ParameteRestrition(parameters, "NAME", 2, restrictionValues);
+            restrictionValues.Parameterize(parameters, "NAME", nameof(View.Name));
 
-            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new View
+            return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new View
                 {
                     Catalog = wrapper.GetString(reader, 0),
                     Schema = wrapper.GetString(reader, 1),
@@ -176,11 +173,12 @@ WHERE TABLE_TYPE = 'view'
                 });
         }
 
-        protected override IEnumerable<ViewColumn> GetViewColumns(IDatabase database, string[] restrictionValues)
+        protected override IEnumerable<ViewColumn> GetViewColumns(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
+            var connpar = GetConnectionParameter(database);
 
-            SqlCommand sql = @"
+            SqlCommand sql = $@"
 SELECT
   VIEW_CATALOG,
   VIEW_SCHEMA,
@@ -190,18 +188,16 @@ SELECT
   TABLE_NAME,
   COLUMN_NAME
 FROM INFORMATION_SCHEMA.VIEW_COLUMN_USAGE
-WHERE (VIEW_CATALOG = @CATALOG OR (@CATALOG IS NULL))
-  AND (VIEW_SCHEMA = @OWNER OR (@OWNER IS NULL))
+WHERE (VIEW_CATALOG = '{connpar.Database}')
   AND (VIEW_NAME = @TABLE OR (@TABLE IS NULL))
   AND (COLUMN_NAME = @COLUMN OR (@COLUMN IS NULL))
 ORDER BY VIEW_CATALOG, VIEW_SCHEMA, VIEW_NAME";
 
-            ParameteRestrition(parameters, "CATALOG", 0, restrictionValues);
-            ParameteRestrition(parameters, "SCHEMA", 1, restrictionValues);
-            ParameteRestrition(parameters, "TABLE", 2, restrictionValues);
-            ParameteRestrition(parameters, "COLUMN", 3, restrictionValues);
+            restrictionValues
+                .Parameterize(parameters, "TABLE", nameof(ViewColumn.ViewName))
+                .Parameterize(parameters, "COLUMN", nameof(ViewColumn.Name));
 
-            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new ViewColumn
+            return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new ViewColumn
                 {
                     Catalog = wrapper.GetString(reader, 0),
                     Schema = wrapper.GetString(reader, 1),
@@ -211,11 +207,12 @@ ORDER BY VIEW_CATALOG, VIEW_SCHEMA, VIEW_NAME";
 
         }
 
-        protected override IEnumerable<ForeignKey> GetForeignKeys(IDatabase database, string[] restrictionValues)
+        protected override IEnumerable<ForeignKey> GetForeignKeys(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
+            var connpar = GetConnectionParameter(database);
 
-            SqlCommand sql = @"
+            SqlCommand sql = $@"
 SELECT
   TC.CONSTRAINT_CATALOG, 
   TC.CONSTRAINT_SCHEMA, 
@@ -239,17 +236,15 @@ LEFT JOIN [INFORMATION_SCHEMA].[KEY_COLUMN_USAGE] FKCU
   ON FKCU.CONSTRAINT_SCHEMA = FC.UNIQUE_CONSTRAINT_SCHEMA
   AND FKCU.CONSTRAINT_NAME = FC.UNIQUE_CONSTRAINT_NAME
 WHERE TC.CONSTRAINT_TYPE = 'FOREIGN KEY' AND
-   (TC.CONSTRAINT_CATALOG = @CATALOG OR @CATALOG IS NULL) AND 
-   (TC.CONSTRAINT_SCHEMA = @SCHEMA OR @SCHEMA IS NULL) AND 
+   (TC.CONSTRAINT_CATALOG = '{connpar.Database}') AND 
    (TC.TABLE_NAME = @TABLENAME OR @TABLENAME IS NULL) AND 
    (TC.CONSTRAINT_NAME = @NAME OR @NAME IS NULL)";
 
-            ParameteRestrition(parameters, "CATALOG", 0, restrictionValues);
-            ParameteRestrition(parameters, "SCHEMA", 1, restrictionValues);
-            ParameteRestrition(parameters, "TABLENAME", 2, restrictionValues);
-            ParameteRestrition(parameters, "NAME", 3, restrictionValues);
+            restrictionValues
+                .Parameterize(parameters, "TABLENAME", nameof(ForeignKey.TableName))
+                .Parameterize(parameters, "NAME", nameof(ForeignKey.Name));
 
-            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new ForeignKey
+            return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new ForeignKey
                 {
                     Catalog = wrapper.GetString(reader, 0),
                     Schema = wrapper.GetString(reader, 1),
@@ -260,12 +255,13 @@ WHERE TC.CONSTRAINT_TYPE = 'FOREIGN KEY' AND
                     PKColumn = wrapper.GetString(reader, 6),
                 });
         }
-        
-        protected override IEnumerable<Index> GetIndexs(IDatabase database, string[] restrictionValues)
+
+        protected override IEnumerable<Index> GetIndexs(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
+            var connpar = GetConnectionParameter(database);
 
-            SqlCommand sql = @"
+            SqlCommand sql = $@"
 SELECT DISTINCT
   DB_NAME() AS CONSTRAINT_CATALOG,
   CONSTRAINT_SCHEMA = USER_NAME(O.UID),
@@ -276,17 +272,15 @@ SELECT DISTINCT
   INDEX_NAME = X.NAME
 FROM SYSOBJECTS O, SYSINDEXES X, SYSINDEXKEYS XK
 WHERE O.TYPE IN ('U') AND X.ID = O.ID  AND O.ID = XK.ID AND X.INDID = XK.INDID AND XK.KEYNO &LT; = X.KEYCNT AND
- (DB_NAME() = @CATALOG OR (@CATALOG IS NULL)) AND
- (USER_NAME()= @OWNER OR (@OWNER IS NULL)) AND
+ (DB_NAME() = '{connpar.Database}') AND
  (O.NAME = @TABLE OR (@TABLE IS NULL)) AND
  (X.NAME = @NAME OR (@NAME IS NULL)) ORDER BY TABLE_NAME, INDEX_NAME";
 
-            ParameteRestrition(parameters, "Catalog", 0, restrictionValues);
-            ParameteRestrition(parameters, "Owner", 1, restrictionValues);
-            ParameteRestrition(parameters, "Table", 2, restrictionValues);
-            ParameteRestrition(parameters, "Name", 3, restrictionValues);
+            restrictionValues
+                .Parameterize(parameters, "TABLE", nameof(Index.TableName))
+                .Parameterize(parameters, "NAME", nameof(Index.Name));
 
-            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new Index
+            return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new Index
                 {
                     Catalog = wrapper.GetString(reader, 0),
                     Schema = wrapper.GetString(reader, 1),
@@ -295,11 +289,12 @@ WHERE O.TYPE IN ('U') AND X.ID = O.ID  AND O.ID = XK.ID AND X.INDID = XK.INDID A
                 });
         }
                 
-        protected override IEnumerable<IndexColumn> GetIndexColumns(IDatabase database, string[] restrictionValues)
+        protected override IEnumerable<IndexColumn> GetIndexColumns(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
+            var connpar = GetConnectionParameter(database);
 
-            SqlCommand sql = @"
+            SqlCommand sql = $@"
 SELECT DISTINCT
   DB_NAME() AS CONSTRAINT_CATALOG,
   CONSTRAINT_SCHEMA = USER_NAME(O.UID),
@@ -313,33 +308,33 @@ SELECT DISTINCT
   INDEX_NAME = X.NAME
 FROM SYSOBJECTS O, SYSINDEXES X, SYSCOLUMNS C, SYSINDEXKEYS XK
 WHERE O.TYPE IN ('U') AND X.ID = O.ID  AND O.ID = C.ID AND O.ID = XK.ID AND X.INDID = XK.INDID AND C.COLID = XK.COLID AND XK.KEYNO <= X.KEYCNT AND PERMISSIONS(O.ID, C.NAME) <> 0 
-  AND (DB_NAME() = @CATALOG OR (@CATALOG IS NULL))
+  AND (DB_NAME() = '{connpar.Database}')
   AND (USER_NAME()= @OWNER OR (@OWNER IS NULL))
-  AND (O.NAME = @TABLE OR (@TABLE IS NULL))
   AND (X.NAME = @CONSTRAINTNAME OR (@CONSTRAINTNAME IS NULL))
   AND (C.NAME = @COLUMN OR (@COLUMN IS NULL))
 ORDER BY TABLE_NAME, INDEX_NAME";
 
-            ParameteRestrition(parameters, "CATALOG", 0, restrictionValues);
-            ParameteRestrition(parameters, "OWNER", 1, restrictionValues);
-            ParameteRestrition(parameters, "TABLE", 2, restrictionValues);
-            ParameteRestrition(parameters, "CONSTRAINTNAME", 3, restrictionValues);
-            ParameteRestrition(parameters, "COLUMN", 4, restrictionValues);
+            restrictionValues
+                .Parameterize(parameters, "TABLE", nameof(IndexColumn.TableName))
+                .Parameterize(parameters, "CONSTRAINTNAME", nameof(IndexColumn.IndexName))
+                .Parameterize(parameters, "COLUMN", nameof(IndexColumn.ColumnName));
 
-            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new IndexColumn
+            return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new IndexColumn
                 {
                     Catalog = wrapper.GetString(reader, 0),
                     Schema = wrapper.GetString(reader, 1),
                     TableName = wrapper.GetString(reader, 5),
-                    Name = wrapper.GetString(reader, 6)
+                    IndexName = wrapper.GetString(reader, 2),
+                    ColumnName = wrapper.GetString(reader, 6)
                 });
         }
 
-        protected override IEnumerable<Procedure> GetProcedures(IDatabase database, string[] restrictionValues)
+        protected override IEnumerable<Procedure> GetProcedures(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
+            var connpar = GetConnectionParameter(database);
 
-            SqlCommand sql = @"
+            SqlCommand sql = $@"
 SELECT
   SPECIFIC_CATALOG,
   SPECIFIC_SCHEMA,
@@ -351,18 +346,16 @@ SELECT
   CREATED,
   LAST_ALTERED
 FROM INFORMATION_SCHEMA.ROUTINES
-WHERE (SPECIFIC_CATALOG = @CATALOG OR (@CATALOG IS NULL))
-  AND (SPECIFIC_SCHEMA = @OWNER OR (@OWNER IS NULL))
+WHERE (SPECIFIC_CATALOG = '{connpar.Database}')
   AND (SPECIFIC_NAME = @NAME OR (@NAME IS NULL))
   AND (ROUTINE_TYPE = @TYPE OR (@TYPE IS NULL))
 ORDER BY SPECIFIC_CATALOG, SPECIFIC_SCHEMA, SPECIFIC_NAME";
 
-            ParameteRestrition(parameters, "CATALOG", 0, restrictionValues);
-            ParameteRestrition(parameters, "OWNER", 1, restrictionValues);
-            ParameteRestrition(parameters, "NAME", 2, restrictionValues);
-            ParameteRestrition(parameters, "TYPE", 3, restrictionValues);
+            restrictionValues
+                .Parameterize(parameters, "NAME", nameof(Procedure.Name))
+                .Parameterize(parameters, "TYPE", nameof(Procedure.Type));
 
-            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new Procedure
+            return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new Procedure
                 {
                     Catalog = wrapper.GetString(reader, 0),
                     Schema = wrapper.GetString(reader, 1),
@@ -371,11 +364,12 @@ ORDER BY SPECIFIC_CATALOG, SPECIFIC_SCHEMA, SPECIFIC_NAME";
                 });
         }
 
-        protected override IEnumerable<ProcedureParameter> GetProcedureParameters(IDatabase database, string[] restrictionValues)
+        protected override IEnumerable<ProcedureParameter> GetProcedureParameters(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
+            var connpar = GetConnectionParameter(database);
 
-            SqlCommand sql = @"
+            SqlCommand sql = $@"
 SELECT
   SPECIFIC_CATALOG,
   SPECIFIC_SCHEMA,
@@ -401,18 +395,16 @@ SELECT
   INTERVAL_TYPE,
   INTERVAL_PRECISION
 FROM INFORMATION_SCHEMA.PARAMETERS
-WHERE (SPECIFIC_CATALOG = @CATALOG OR (@CATALOG IS NULL))
-  AND (SPECIFIC_SCHEMA = @OWNER OR (@OWNER IS NULL))
+WHERE (SPECIFIC_CATALOG = '{connpar.Database}')
   AND (SPECIFIC_NAME = @NAME OR (@NAME IS NULL))
   AND (PARAMETER_NAME = @PARAMETER OR (@PARAMETER IS NULL))
 ORDER BY SPECIFIC_CATALOG, SPECIFIC_SCHEMA, SPECIFIC_NAME, PARAMETER_NAME";
 
-            ParameteRestrition(parameters, "CATALOG", 0, restrictionValues);
-            ParameteRestrition(parameters, "OWNER", 1, restrictionValues);
-            ParameteRestrition(parameters, "NAME", 2, restrictionValues);
-            ParameteRestrition(parameters, "PARAMETER", 3, restrictionValues);
+            restrictionValues
+                .Parameterize(parameters, "NAME", nameof(ProcedureParameter.ProcedureName))
+                .Parameterize(parameters, "PARAMETER", nameof(ProcedureParameter.Name));
 
-            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new ProcedureParameter
+            return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new ProcedureParameter
                 {
                     Catalog = wrapper.GetString(reader, 0),
                     Schema = wrapper.GetString(reader, 1),

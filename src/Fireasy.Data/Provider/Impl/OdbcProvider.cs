@@ -24,7 +24,7 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="OdbcProvider"/> 类的新实例。
         /// </summary>
         public OdbcProvider()
-            : base("System.Data.Odbc")
+            : base(new InstallerProviderFactoryResolver("System.Data.Odbc"))
         {
         }
 

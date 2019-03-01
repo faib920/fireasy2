@@ -39,6 +39,11 @@ namespace Fireasy.Data.Provider.Configuration
         public Type Type { get; set; }
 
         /// <summary>
+        /// 获取或设置继承自的提供者名称。
+        /// </summary>
+        public string InheritedProvider { get; set; }
+
+        /// <summary>
         /// 获取提供服务的类型列表。
         /// </summary>
         public ReadOnlyCollection<Type> ServiceTypes { get; private set; }

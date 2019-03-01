@@ -1,6 +1,8 @@
 ﻿using Fireasy.Common.Configuration;
 using Fireasy.Data.Extensions;
+#if NETSTANDARD
 using Microsoft.Extensions.Configuration;
+#endif
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Data;

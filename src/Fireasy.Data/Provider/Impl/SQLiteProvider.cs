@@ -17,7 +17,7 @@ namespace Fireasy.Data.Provider
     /// <summary>
     /// SQLite数据库提供者。使用 System.Data.SQLite 提供。
     /// </summary>
-    public class SQLiteProvider : AssemblyProvider
+    public class SQLiteProvider : ProviderBase
     {
         /// <summary>
         /// 提供 <see cref="SQLiteProvider"/> 的静态实例。
@@ -29,11 +29,9 @@ namespace Fireasy.Data.Provider
         /// </summary>
         public SQLiteProvider()
 #if NETSTANDARD
-            : base("Microsoft.Data.Sqlite.SqliteFactory, Microsoft.Data.Sqlite",
-                    "Microsoft.Data.Sqlite.SqliteFactory, Spreads.SQLite", 
-                    "Devart.Data.SQLite.SQLiteProviderFactory, Devart.Data.SQLite")
+            : base(new AssemblyProviderFactoryResolver("System.Data.SQLite.SQLiteFactory, System.Data.SQLite", "Microsoft.Data.Sqlite.SqliteFactory, Microsoft.Data.Sqlite", "Microsoft.Data.Sqlite.SqliteFactory, Spreads.SQLite"))
 #else
-            : base("System.Data.SQLite.SQLiteFactory, System.Data.SQLite")
+            : base(new AssemblyProviderFactoryResolver("System.Data.SQLite.SQLiteFactory, System.Data.SQLite"))
 #endif
         {
             RegisterService<IGeneratorProvider, BaseSequenceGenerator>();

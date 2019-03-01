@@ -135,7 +135,7 @@ namespace Fireasy.Common.Serialization
         {
             JsonConverter converter;
             TextConverterAttribute attr;
-            if ((attr = type.GetCustomAttributes<TextConverterAttribute>().FirstOrDefault()) != null && 
+            if ((attr = type.GetCustomAttributes<TextConverterAttribute>().FirstOrDefault()) != null &&
                 typeof(JsonConverter).IsAssignableFrom(attr.ConverterType))
             {
                 converter = attr.ConverterType.New<JsonConverter>();
@@ -262,10 +262,13 @@ namespace Fireasy.Common.Serialization
                     jsonWriter.WriteComma();
                 }
 
-                jsonWriter.WriteKey(SerializeName(name));
+                dynamicObject.TryGetValue(name, out object value);
+                if (option.IgnoreNull && value == null)
+                {
+                    continue;
+                }
 
-                object value;
-                dynamicObject.TryGetValue(name, out value);
+                jsonWriter.WriteKey(SerializeName(name));
                 JsonConvertContext.Current.Assign(name, value, () => Serialize(value));
             }
 
@@ -299,8 +302,16 @@ namespace Fireasy.Common.Serialization
                 }
 
                 jsonWriter.WriteKey(SerializeName(acc.PropertyName));
-                var objType = acc.PropertyInfo.PropertyType == typeof(object) ? value.GetType() : acc.PropertyInfo.PropertyType;
-                JsonConvertContext.Current.Assign(acc.Accessor.PropertyInfo.Name, value, () => Serialize(value, objType));
+
+                if (value == null)
+                {
+                    jsonWriter.WriteNull();
+                }
+                else
+                {
+                    var objType = acc.PropertyInfo.PropertyType == typeof(object) ? value.GetType() : acc.PropertyInfo.PropertyType;
+                    JsonConvertContext.Current.Assign(acc.Accessor.PropertyInfo.Name, value, () => Serialize(value, objType));
+                }
             }
 
             jsonWriter.WriteEndObject();
@@ -398,6 +409,11 @@ namespace Fireasy.Common.Serialization
 
         private void SerializeKeyValue(object key, object value)
         {
+            if (option.IgnoreNull && value == null)
+            {
+                return;
+            }
+
             jsonWriter.WriteKey(SerializeName(key.ToString()));
             JsonConvertContext.Current.Assign(key.ToString(), value, () => Serialize(value));
         }

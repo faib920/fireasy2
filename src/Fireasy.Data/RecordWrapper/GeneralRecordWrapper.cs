@@ -85,6 +85,23 @@ namespace Fireasy.Data.RecordWrapper
         }
 
         /// <summary>
+        /// 获取指定列的布尔值形式的值。
+        /// </summary>
+        /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
+        /// <param name="name">字段的名称。</param>
+        /// <returns>字段的 <see cref="Boolean"/> 值。</returns>
+        public bool GetBoolean(IDataRecord reader, string name)
+        {
+            var index = reader.GetOrdinal(name);
+            if (index != -1)
+            {
+                return GetBoolean(reader, index);
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// 获取指定列的 8 位无符号整数值。
         /// </summary>
         /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
@@ -104,6 +121,23 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             return Convert.ToByte(GetValue(reader, i));
+        }
+
+        /// <summary>
+        /// 获取指定列的 8 位无符号整数值。
+        /// </summary>
+        /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
+        /// <param name="name">字段的名称。</param>
+        /// <returns>字段的 <see cref="Boolean"/> 值。</returns>
+        public byte GetByte(IDataRecord reader, string name)
+        {
+            var index = reader.GetOrdinal(name);
+            if (index != -1)
+            {
+                return GetByte(reader, index);
+            }
+
+            return 0;
         }
 
         /// <summary>
@@ -142,6 +176,23 @@ namespace Fireasy.Data.RecordWrapper
         }
 
         /// <summary>
+        /// 返回指定字段的字节数组。
+        /// </summary>
+        /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
+        /// <param name="name">字段的名称。</param>
+        /// <returns>字段的 <see cref="Boolean"/> 值。</returns>
+        public byte[] GetBytes(IDataRecord reader, string name)
+        {
+            var index = reader.GetOrdinal(name);
+            if (index != -1)
+            {
+                return GetBytes(reader, index);
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// 获取指定列的字符值。
         /// </summary>
         /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
@@ -161,6 +212,23 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             return Convert.ToChar(GetValue(reader, i));
+        }
+
+        /// <summary>
+        /// 获取指定列的字符值。
+        /// </summary>
+        /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
+        /// <param name="name">字段的名称。</param>
+        /// <returns>字段的 <see cref="Boolean"/> 值。</returns>
+        public char GetChar(IDataRecord reader, string name)
+        {
+            var index = reader.GetOrdinal(name);
+            if (index != -1)
+            {
+                return GetChar(reader, index);
+            }
+
+            return '\0';
         }
 
         /// <summary>
@@ -208,6 +276,23 @@ namespace Fireasy.Data.RecordWrapper
         }
 
         /// <summary>
+        /// 获取指定列的字符值。
+        /// </summary>
+        /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
+        /// <param name="name">字段的名称。</param>
+        /// <returns>字段的 <see cref="Boolean"/> 值。</returns>
+        public short GetInt16(IDataRecord reader, string name)
+        {
+            var index = reader.GetOrdinal(name);
+            if (index != -1)
+            {
+                return GetInt16(reader, index);
+            }
+
+            return 0;
+        }
+
+        /// <summary>
         /// 获取指定字段的 32 位有符号整数值。
         /// </summary>
         /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
@@ -227,6 +312,23 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             return Convert.ToInt32(GetValue(reader, i));
+        }
+
+        /// <summary>
+        /// 获取指定列的字符值。
+        /// </summary>
+        /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
+        /// <param name="name">字段的名称。</param>
+        /// <returns>字段的 <see cref="Boolean"/> 值。</returns>
+        public int GetInt32(IDataRecord reader, string name)
+        {
+            var index = reader.GetOrdinal(name);
+            if (index != -1)
+            {
+                return GetInt32(reader, index);
+            }
+
+            return 0;
         }
 
         /// <summary>
@@ -252,6 +354,23 @@ namespace Fireasy.Data.RecordWrapper
         }
 
         /// <summary>
+        /// 获取指定列的字符值。
+        /// </summary>
+        /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
+        /// <param name="name">字段的名称。</param>
+        /// <returns>字段的 <see cref="Boolean"/> 值。</returns>
+        public long GetInt64(IDataRecord reader, string name)
+        {
+            var index = reader.GetOrdinal(name);
+            if (index != -1)
+            {
+                return GetInt64(reader, index);
+            }
+
+            return 0;
+        }
+
+        /// <summary>
         /// 获取指定字段的单精度浮点数。
         /// </summary>
         /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
@@ -271,6 +390,23 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             return Convert.ToSingle(GetValue(reader, i));
+        }
+
+        /// <summary>
+        /// 获取指定列的字符值。
+        /// </summary>
+        /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
+        /// <param name="name">字段的名称。</param>
+        /// <returns>字段的 <see cref="Boolean"/> 值。</returns>
+        public float GetFloat(IDataRecord reader, string name)
+        {
+            var index = reader.GetOrdinal(name);
+            if (index != -1)
+            {
+                return GetFloat(reader, index);
+            }
+
+            return 0;
         }
 
         /// <summary>
@@ -296,6 +432,23 @@ namespace Fireasy.Data.RecordWrapper
         }
 
         /// <summary>
+        /// 获取指定列的字符值。
+        /// </summary>
+        /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
+        /// <param name="name">字段的名称。</param>
+        /// <returns>字段的 <see cref="Boolean"/> 值。</returns>
+        public double GetDouble(IDataRecord reader, string name)
+        {
+            var index = reader.GetOrdinal(name);
+            if (index != -1)
+            {
+                return GetDouble(reader, index);
+            }
+
+            return 0;
+        }
+
+        /// <summary>
         /// 获取指定字段的字符串值。
         /// </summary>
         /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
@@ -318,6 +471,23 @@ namespace Fireasy.Data.RecordWrapper
         }
 
         /// <summary>
+        /// 获取指定列的字符值。
+        /// </summary>
+        /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
+        /// <param name="name">字段的名称。</param>
+        /// <returns>字段的 <see cref="Boolean"/> 值。</returns>
+        public string GetString(IDataRecord reader, string name)
+        {
+            var index = reader.GetOrdinal(name);
+            if (index != -1)
+            {
+                return GetString(reader, index);
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
         /// 获取指定字段的固定位置的数值。
         /// </summary>
         /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
@@ -337,6 +507,23 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             return Convert.ToDecimal(GetValue(reader, i));
+        }
+
+        /// <summary>
+        /// 获取指定列的字符值。
+        /// </summary>
+        /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
+        /// <param name="name">字段的名称。</param>
+        /// <returns>字段的 <see cref="Boolean"/> 值。</returns>
+        public decimal GetDecimal(IDataRecord reader, string name)
+        {
+            var index = reader.GetOrdinal(name);
+            if (index != -1)
+            {
+                return GetDecimal(reader, index);
+            }
+
+            return 0;
         }
 
         /// <summary>
@@ -373,6 +560,23 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             return Convert.ToDateTime(GetValue(reader, i));
+        }
+
+        /// <summary>
+        /// 获取指定字段的固定位置的日期和时间。
+        /// </summary>
+        /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
+        /// <param name="name">字段的名称。</param>
+        /// <returns>字段的 <see cref="Boolean"/> 值。</returns>
+        public DateTime GetDateTime(IDataRecord reader, string name)
+        {
+            var index = reader.GetOrdinal(name);
+            if (index != -1)
+            {
+                return GetDateTime(reader, index);
+            }
+
+            return DateTime.MinValue;
         }
 
         /// <summary>

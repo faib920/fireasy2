@@ -23,7 +23,7 @@ namespace Fireasy.Data.Schema
         /// </summary>
         /// <typeparam name="T">架构信息的类型。</typeparam>
         /// <param name="database">提供给当前插件的 <see cref="IDatabase"/> 对象。</param>
-        /// <param name="predicate">用于测试架构信息是否满足条件的函数。</param>
+        /// <param name="predicate">用于限制查询的表达式。此方法只识别 x => x.TableName == "table" && x.Name == "name" 这样的表达式。</param>
         /// <returns></returns>
         IEnumerable<T> GetSchemas<T>(IDatabase database, Expression<Func<T, bool>> predicate = null) where T : ISchemaMetadata;
     }

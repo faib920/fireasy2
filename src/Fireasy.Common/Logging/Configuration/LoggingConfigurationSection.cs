@@ -79,7 +79,7 @@ namespace Fireasy.Common.Logging.Configuration
                 return level;
             }
 
-            foreach (var segment in levels.Split('|'))
+            foreach (var segment in levels.Split(new[] { '|', ';', ',' }))
             {
                 if (segment.Equals("info", StringComparison.InvariantCultureIgnoreCase))
                 {

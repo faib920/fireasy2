@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 
 using Fireasy.Common.Extensions;
+using Fireasy.Data.Batcher;
 using Fireasy.Data.Identity;
 using Fireasy.Data.RecordWrapper;
 using Fireasy.Data.Schema;
@@ -18,7 +19,7 @@ namespace Fireasy.Data.Provider
     /// <summary>
     /// Oracle数据库提供者。
     /// </summary>
-    public class OracleProvider : AssemblyProvider
+    public class OracleProvider : ProviderBase
     {
         /// <summary>
         /// 提供 <see cref="OracleProvider"/> 的静态实例。
@@ -30,18 +31,16 @@ namespace Fireasy.Data.Provider
         /// </summary>
         public OracleProvider()
 #if NETSTANDARD
-            : base("System.Data.OracleClient.OracleClientFactory, Mono.Data.OracleClientCore", 
-                  "Oracle.ManagedDataAccess.Client.OracleClientFactory, Oracle.ManagedDataAccess",
-                  "Devart.Data.Oracle.OracleClientFactory, Devart.Data.Oracle")
+            : base(new AssemblyProviderFactoryResolver("Oracle.ManagedDataAccess.Client.OracleClientFactory, Oracle.ManagedDataAccess", "System.Data.OracleClient.OracleClientFactory, Mono.Data.OracleClientCore"))
 #else
-            : base("System.Data.OracleClient.OracleClientFactory, System.Data.OracleClient",
-                  "Oracle.DataAccess.Client.OracleClientFactory, Oracle.DataAccess",
-                  "Oracle.ManagedDataAccess.Client.OracleClientFactory, Oracle.ManagedDataAccess")
+            : base(new AssemblyProviderFactoryResolver("Oracle.ManagedDataAccess.Client.OracleClientFactory, Oracle.ManagedDataAccess", "Oracle.DataAccess.Client.OracleClientFactory, Oracle.DataAccess"),
+                  new InstallerProviderFactoryResolver("System.Data.OracleClient"))
 #endif
         {
             RegisterService<IGeneratorProvider, OracleSequenceGenerator>();
             RegisterService<ISyntaxProvider, OracleSyntax>();
             RegisterService<ISchemaProvider, OracleSchema>();
+            RegisterService<IBatcherProvider, OracleDABatcher>();
             RegisterService<IRecordWrapper, OracleRecordWrapper>();
         }
 

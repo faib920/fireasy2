@@ -10,7 +10,6 @@ using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Properties;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -34,14 +33,14 @@ namespace Fireasy.Data.Entity
         IEntityRelation,
         IPropertyFieldMappingResolver
     {
-        private EntityEntryDictionary valueEntry = null;
+        private EntityEntryDictionary valueEntry;
         private EntityOwner owner;
         [NonSerialized]
         private bool isModifing;
         [NonSerialized]
         private EntityPersistentEnvironment environment;
         [NonSerialized]
-        private EntityLzayManager lazyMgr = null;
+        private EntityLzayManager lazyMgr;
 
         /// <summary>
         /// 在属性即将修改时，通知客户端应用程序。
@@ -80,6 +79,22 @@ namespace Fireasy.Data.Entity
             return GetType().GetDefinitionEntityType();
         }
 
+        private EntityLzayManager InnerLazyMgr
+        {
+            get
+            {
+                return lazyMgr ?? (lazyMgr = new EntityLzayManager(entityType));
+            }
+        }
+
+        private EntityEntryDictionary InnerEntry
+        {
+            get
+            {
+                return valueEntry ?? (valueEntry = new EntityEntryDictionary());
+            }
+        }
+
         /// <summary>
         /// 获取指定属性的值。
         /// </summary>
@@ -87,13 +102,16 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public virtual PropertyValue GetValue(IProperty property)
         {
-            CheckAsNoTracking();
+            if (property == null)
+            {
+                return PropertyValue.Empty;
+            }
 
-            var hasValue = valueEntry.Has(property.Name);
+            var hasValue = InnerEntry.Has(property.Name);
             var value = PropertyValue.Empty;
             if (hasValue)
             {
-                value = valueEntry[property.Name].GetCurrentValue();
+                value = InnerEntry[property.Name].GetCurrentValue();
             }
             else if (property.Type.IsValueType)
             {
@@ -116,8 +134,6 @@ namespace Fireasy.Data.Entity
         /// <param name="value">要设置的值。</param>
         public virtual void SetValue(IProperty property, PropertyValue value)
         {
-            CheckAsNoTracking();
-
             PropertyValue oldValue;
             //如果赋值相同则忽略更改
             if (CheckValueEquals(property, value, out oldValue))
@@ -149,15 +165,12 @@ namespace Fireasy.Data.Entity
         /// <param name="value"></param>
         public virtual void InitializeValue(IProperty property, PropertyValue value)
         {
-            if (lazyMgr != null && property is RelationProperty)
+            if (property is RelationProperty)
             {
-                lazyMgr.SetValueCreated(property.Name);
+                InnerLazyMgr.SetValueCreated(property.Name);
             }
 
-            if (valueEntry != null)
-            {
-                valueEntry.Initializate(property.Name, value);
-            }
+            InnerEntry.Initializate(property.Name, value);
         }
 
         /// <summary>
@@ -259,31 +272,25 @@ namespace Fireasy.Data.Entity
         void IEntity.ResetUnchanged()
         {
             state = EntityState.Unchanged;
-            valueEntry.Reset();
+            InnerEntry.Reset();
         }
 
         string[] IEntity.GetModifiedProperties()
         {
-            CheckAsNoTracking();
-
-            return (from s in valueEntry.GetModifiedProperties()
-                   let p = PropertyUnity.GetProperty(entityType, s)
-                   where p != null && (!p.Info.IsPrimaryKey || (p.Info.IsPrimaryKey && p.Info.GenerateType == IdentityGenerateType.None))
-                   select s).ToArray();
+            return (from s in InnerEntry.GetModifiedProperties()
+                    let p = PropertyUnity.GetProperty(entityType, s)
+                    where p != null && (!p.Info.IsPrimaryKey || (p.Info.IsPrimaryKey && p.Info.GenerateType == IdentityGenerateType.None))
+                    select s).ToArray();
         }
 
         PropertyValue IEntity.GetOldValue(IProperty property)
         {
-            CheckAsNoTracking();
-
-            return valueEntry.Has(property.Name) ? valueEntry[property.Name].GetOldValue() : PropertyValue.Empty;
+            return InnerEntry.Has(property.Name) ? InnerEntry[property.Name].GetOldValue() : PropertyValue.Empty;
         }
 
         PropertyValue IEntity.GetDirectValue(IProperty property)
         {
-            CheckAsNoTracking();
-
-            return valueEntry.Has(property.Name) ? valueEntry[property.Name].GetCurrentValue() : PropertyValue.Empty;
+            return InnerEntry.Has(property.Name) ? InnerEntry[property.Name].GetCurrentValue() : PropertyValue.Empty;
         }
 
         bool IEntity.IsModifyLocked
@@ -294,9 +301,7 @@ namespace Fireasy.Data.Entity
 
         void IEntity.NotifyModified(string propertyName)
         {
-            CheckAsNoTracking();
-
-            valueEntry.Modify(propertyName);
+            InnerEntry.Modify(propertyName);
 
             if (state == EntityState.Unchanged)
             {
@@ -311,11 +316,8 @@ namespace Fireasy.Data.Entity
 
         bool IEntity.IsModified(string propertyName)
         {
-            CheckAsNoTracking();
-
-            return valueEntry.Has(propertyName) && valueEntry[propertyName].IsModified;
+            return InnerEntry.Has(propertyName) && InnerEntry[propertyName].IsModified;
         }
-
         #endregion
 
         #region 实现IEntityRelation
@@ -329,7 +331,7 @@ namespace Fireasy.Data.Entity
         {
             if (!string.IsNullOrEmpty(propertyName))
             {
-                valueEntry.Modify(propertyName);
+                InnerEntry.Modify(propertyName);
             }
 
             if (state == EntityState.Unchanged)
@@ -351,9 +353,6 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public virtual void BeginInit()
         {
-            lazyMgr = new EntityLzayManager(entityType);
-            valueEntry = new EntityEntryDictionary();
-
             isInitialized = false;
         }
 
@@ -383,12 +382,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         bool ILazyManager.IsValueCreated(string propertyName)
         {
-            if (lazyMgr == null)
-            {
-                return true;
-            }
-
-            return lazyMgr.IsValueCreated(propertyName);
+            return InnerLazyMgr.IsValueCreated(propertyName);
         }
         #endregion
 
@@ -470,16 +464,16 @@ namespace Fireasy.Data.Entity
             entity.InitializeEnvironment(environment);
             this.TryLockModifing(() =>
                 {
-                    foreach (var k in valueEntry)
+                    foreach (var k in InnerEntry)
                     {
                         //保持状态且值没有修改
                         if (keepState && !k.Value.IsModified)
                         {
-                            entity.valueEntry.Initializate(k.Key, k.Value.GetOldValue().Clone());
+                            entity.InnerEntry.Initializate(k.Key, k.Value.GetOldValue().Clone());
                         }
                         else
                         {
-                            entity.valueEntry.Modify(k.Key, readOldValue
+                            entity.InnerEntry.Modify(k.Key, readOldValue
                                 ? k.Value.GetOldValue().Clone() :
                                 k.Value.GetCurrentValue().Clone());
                         }
@@ -498,17 +492,16 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         private PropertyValue ProcessSupposedProperty(IProperty property)
         {
-            CheckAsNoTracking();
-
             var relationProperty = property.As<RelationProperty>();
             if (relationProperty != null &&
                 relationProperty.Options.LoadBehavior != LoadBehavior.None)
             {
                 var value = EntityLazyloader.Load(this, relationProperty);
-                lazyMgr.SetValueCreated(property.Name);
+                InnerLazyMgr.SetValueCreated(property.Name);
+
                 if (value != null)
                 {
-                    valueEntry.Initializate(property.Name, value, () => value.DataType = property.Info.DataType);
+                    InnerEntry.Initializate(property.Name, value, () => value.DataType = property.Info.DataType);
                 }
 
                 return value;
@@ -526,7 +519,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         private bool CheckValueEquals(IProperty property, PropertyValue value, out PropertyValue oldValue)
         {
-            if (valueEntry.Has(property.Name) &&
+            if (InnerEntry.Has(property.Name) &&
                 (oldValue = (this as IEntity).GetDirectValue(property)) != null)
             {
                 oldValue.InitializeInstanceName(string.Empty);
@@ -611,10 +604,10 @@ namespace Fireasy.Data.Entity
 
             if (property is RelationProperty)
             {
-                lazyMgr.SetValueCreated(property.Name);
+                InnerLazyMgr.SetValueCreated(property.Name);
             }
 
-            valueEntry.Modify(property.Name, value);
+            InnerEntry.Modify(property.Name, value);
         }
 
         /// <summary>
@@ -649,17 +642,6 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 检查是否为 AsNoTracking 模式。
-        /// </summary>
-        private void CheckAsNoTracking()
-        {
-            if (valueEntry == null || lazyMgr == null)
-            {
-                throw new InvalidOperationException(SR.GetString(SRKind.InvalidOperationAsNoTracking));
-            }
-        }
-
-        /// <summary>
         /// 检查并懒加载属性的值。
         /// </summary>
         /// <param name="property"></param>
@@ -667,9 +649,9 @@ namespace Fireasy.Data.Entity
         private PropertyValue CheckAndLazyPropertyValue(IProperty property)
         {
             var value = PropertyValue.Empty;
-            if (valueEntry.Has(property.Name))
+            if (InnerEntry.Has(property.Name))
             {
-                value = valueEntry[property.Name].GetOldValue();
+                value = InnerEntry[property.Name].GetOldValue();
             }
 
             return PropertyValue.IsEmpty(value) ? ProcessSupposedProperty(property) : value;

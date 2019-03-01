@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace Fireasy.Data.Schema
 {
@@ -24,9 +25,14 @@ namespace Fireasy.Data.Schema
     /// </summary>
     public abstract class SchemaBase : ISchemaProvider
     {
-        private readonly Dictionary<Type, Dictionary<string, int>> dicRestrIndex = new Dictionary<Type, Dictionary<string, int>>();
+        private readonly Dictionary<Type, List<MemberInfo>> dicRestrMbrs = new Dictionary<Type, List<MemberInfo>>();
 
         public IProvider Provider { get; set; }
+
+        protected ConnectionParameter GetConnectionParameter(IDatabase database)
+        {
+            return database.Provider.GetConnectionParameter(database.ConnectionString);
+        }
 
         /// <summary>
         /// 获取指定类型的数据库架构信息。
@@ -37,8 +43,7 @@ namespace Fireasy.Data.Schema
         /// <returns></returns>
         public virtual IEnumerable<T> GetSchemas<T>(IDatabase database, Expression<Func<T, bool>> predicate = null) where T : ISchemaMetadata
         {
-            var indexes = dicRestrIndex.TryGetValue(typeof(T), () => new Dictionary<string, int>());
-            var restrictionValues = SchemaQueryTranslator.GetRestriction(indexes, typeof(T), predicate);
+            var restrictionValues = SchemaQueryTranslator.GetRestrictions<T>(predicate, dicRestrMbrs);
 
             using (var connection = database.CreateConnection())
             {
@@ -90,27 +95,33 @@ namespace Fireasy.Data.Schema
         }
 
         /// <summary>
-        /// 为 <typeparamref name="T"/> 类型添加约定限定的索引位置。
+        /// 为 <typeparamref name="T"/> 类型添加约定限定。
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="restrs"></param>
-        protected void AddRestrictionIndex<T>(params Expression<Func<T, string>>[] restrs) where T : ISchemaMetadata
+        protected void AddRestriction<T>(params Expression<Func<T, object>>[] restrs) where T : ISchemaMetadata
         {
             Guard.ArgumentNull(restrs, nameof(restrs));
-            var indexes = dicRestrIndex.TryGetValue(typeof(T), () => new Dictionary<string, int>());
+
+            var indexes = dicRestrMbrs.TryGetValue(typeof(T), () => new List<MemberInfo>());
+
             for (var i = 0; i < restrs.Length; i++)
             {
-                if (restrs[i] == null)
+                var mbr = restrs[i].Body as MemberExpression;
+                if (mbr == null && restrs[i].Body.NodeType == ExpressionType.Convert)
+                {
+                    mbr = (restrs[i].Body as UnaryExpression).Operand as MemberExpression;
+                }
+
+                if (mbr == null)
                 {
                     continue;
                 }
 
-                if (!(restrs[i].Body is MemberExpression mbr))
+                if (mbr.Member is PropertyInfo property)
                 {
-                    continue;
+                    indexes.Add(property);
                 }
-
-                indexes.Add(mbr.Member.Name, i);
             }
         }
 
@@ -120,7 +131,7 @@ namespace Fireasy.Data.Schema
         /// <param name="table">架构信息的表。</param>
         /// <param name="action">用于填充元数据的方法。</param>
         /// <returns></returns>
-        protected virtual IEnumerable<Column> GetColumns(IDatabase database, string[] restrictionValues)
+        protected virtual IEnumerable<Column> GetColumns(IDatabase database, RestrictionDictionary restrictionValues)
         {
             yield break;
         }
@@ -131,7 +142,7 @@ namespace Fireasy.Data.Schema
         /// <param name="table">架构信息的表。</param>
         /// <param name="action">用于填充元数据的方法。</param>
         /// <returns></returns>
-        protected virtual IEnumerable<Procedure> GetProcedures(IDatabase database, string[] restrictionValues)
+        protected virtual IEnumerable<Procedure> GetProcedures(IDatabase database, RestrictionDictionary restrictionValues)
         {
             yield break;
         }
@@ -142,7 +153,7 @@ namespace Fireasy.Data.Schema
         /// <param name="table">架构信息的表。</param>
         /// <param name="action">用于填充元数据的方法。</param>
         /// <returns></returns>
-        protected virtual IEnumerable<ProcedureParameter> GetProcedureParameters(IDatabase database, string[] restrictionValues)
+        protected virtual IEnumerable<ProcedureParameter> GetProcedureParameters(IDatabase database, RestrictionDictionary restrictionValues)
         {
             yield break;
         }
@@ -153,7 +164,7 @@ namespace Fireasy.Data.Schema
         /// <param name="table">架构信息的表。</param>
         /// <param name="action">用于填充元数据的方法。</param>
         /// <returns></returns>
-        protected virtual IEnumerable<Table> GetTables(IDatabase database, string[] restrictionValues)
+        protected virtual IEnumerable<Table> GetTables(IDatabase database, RestrictionDictionary restrictionValues)
         {
             yield break;
         }
@@ -164,7 +175,7 @@ namespace Fireasy.Data.Schema
         /// <param name="table">架构信息的表。</param>
         /// <param name="action">用于填充元数据的方法。</param>
         /// <returns></returns>
-        protected virtual IEnumerable<User> GetUsers(IDatabase database, string[] restrictionValues)
+        protected virtual IEnumerable<User> GetUsers(IDatabase database, RestrictionDictionary restrictionValues)
         {
             yield break;
         }
@@ -175,7 +186,7 @@ namespace Fireasy.Data.Schema
         /// <param name="table">架构信息的表。</param>
         /// <param name="action">用于填充元数据的方法。</param>
         /// <returns></returns>
-        protected virtual IEnumerable<View> GetViews(IDatabase database, string[] restrictionValues)
+        protected virtual IEnumerable<View> GetViews(IDatabase database, RestrictionDictionary restrictionValues)
         {
             yield break;
 
@@ -187,7 +198,7 @@ namespace Fireasy.Data.Schema
         /// <param name="table">架构信息的表。</param>
         /// <param name="action">用于填充元数据的方法。</param>
         /// <returns></returns>
-        protected virtual IEnumerable<ViewColumn> GetViewColumns(IDatabase database, string[] restrictionValues)
+        protected virtual IEnumerable<ViewColumn> GetViewColumns(IDatabase database, RestrictionDictionary restrictionValues)
         {
             yield break;
 
@@ -199,7 +210,7 @@ namespace Fireasy.Data.Schema
         /// <param name="table">架构信息的表。</param>
         /// <param name="action">用于填充元数据的方法。</param>
         /// <returns></returns>
-        protected virtual IEnumerable<Database> GetDatabases(IDatabase database, string[] restrictionValues)
+        protected virtual IEnumerable<Database> GetDatabases(IDatabase database, RestrictionDictionary restrictionValues)
         {
             yield break;
         }
@@ -210,7 +221,7 @@ namespace Fireasy.Data.Schema
         /// <param name="table">架构信息的表。</param>
         /// <param name="action">用于填充元数据的方法。</param>
         /// <returns></returns>
-        protected virtual IEnumerable<ReservedWord> GetReservedWords(IDatabase database, string[] restrictionValues)
+        protected virtual IEnumerable<ReservedWord> GetReservedWords(IDatabase database, RestrictionDictionary restrictionValues)
         {
             yield break;
 
@@ -222,7 +233,7 @@ namespace Fireasy.Data.Schema
         /// <param name="table">架构信息的表。</param>
         /// <param name="action">用于填充元数据的方法。</param>
         /// <returns></returns>
-        protected virtual IEnumerable<Restriction> GetRestrictions(IDatabase database, string[] restrictionValues)
+        protected virtual IEnumerable<Restriction> GetRestrictions(IDatabase database, RestrictionDictionary restrictionValues)
         {
             yield break;
 
@@ -234,7 +245,7 @@ namespace Fireasy.Data.Schema
         /// <param name="table">架构信息的表。</param>
         /// <param name="action">用于填充元数据的方法。</param>
         /// <returns></returns>
-        protected virtual IEnumerable<ForeignKey> GetForeignKeys(IDatabase database, string[] restrictionValues)
+        protected virtual IEnumerable<ForeignKey> GetForeignKeys(IDatabase database, RestrictionDictionary restrictionValues)
         {
             yield break;
         }
@@ -245,7 +256,7 @@ namespace Fireasy.Data.Schema
         /// <param name="table">架构信息的表。</param>
         /// <param name="action">用于填充元数据的方法。</param>
         /// <returns></returns>
-        protected virtual IEnumerable<DataType> GetDataTypes(IDatabase database, string[] restrictionValues)
+        protected virtual IEnumerable<DataType> GetDataTypes(IDatabase database, RestrictionDictionary restrictionValues)
         {
             yield break;
         }
@@ -256,7 +267,7 @@ namespace Fireasy.Data.Schema
         /// <param name="table">架构信息的表。</param>
         /// <param name="action">用于填充元数据的方法。</param>
         /// <returns></returns>
-        protected virtual IEnumerable<Index> GetIndexs(IDatabase database, string[] restrictionValues)
+        protected virtual IEnumerable<Index> GetIndexs(IDatabase database, RestrictionDictionary restrictionValues)
         {
             yield break;
         }
@@ -267,7 +278,7 @@ namespace Fireasy.Data.Schema
         /// <param name="table">架构信息的表。</param>
         /// <param name="action">用于填充元数据的方法。</param>
         /// <returns></returns>
-        protected virtual IEnumerable<IndexColumn> GetIndexColumns(IDatabase database, string[] restrictionValues)
+        protected virtual IEnumerable<IndexColumn> GetIndexColumns(IDatabase database, RestrictionDictionary restrictionValues)
         {
             yield break;
         }
@@ -278,24 +289,12 @@ namespace Fireasy.Data.Schema
         /// <param name="table">架构信息的表。</param>
         /// <param name="action">用于填充元数据的方法。</param>
         /// <returns></returns>
-        protected virtual IEnumerable<MetadataCollection> GetMetadataCollections(IDatabase database, string[] restrictionValues)
+        protected virtual IEnumerable<MetadataCollection> GetMetadataCollections(IDatabase database, RestrictionDictionary restrictionValues)
         {
             yield break;
         }
 
-        protected void ParameteRestrition(ParameterCollection parameters, string name, int index, string[] restrictionValues)
-        {
-            if (restrictionValues.Length >= index + 1)
-            {
-                parameters.Add(name, restrictionValues[index]);
-            }
-            else
-            {
-                parameters.Add(name, DBNull.Value);
-            }
-        }
-
-        protected IEnumerable<T> ParseMetadata<T>(IDatabase database, SqlCommand sql, ParameterCollection parameters, Func<IRecordWrapper, IDataReader, T> parser)
+        protected IEnumerable<T> ExecuteAndParseMetadata<T>(IDatabase database, SqlCommand sql, ParameterCollection parameters, Func<IRecordWrapper, IDataReader, T> parser)
         {
             using (var reader = database.ExecuteReader(sql, parameters: parameters))
             {
@@ -303,19 +302,6 @@ namespace Fireasy.Data.Schema
                 while (reader.Read())
                 {
                     yield return parser(wrapper, reader);
-                }
-            }
-        }
-
-        protected IEnumerable<T> GetSchemas<T>(IDatabase database, string collectionName, string[] restrictionValues, Func<DataRow, T> parser)
-        {
-            using (var connection = database.CreateConnection())
-            {
-                var table = connection.GetSchema(collectionName, restrictionValues);
-
-                foreach (DataRow row in table.Rows)
-                {
-                    yield return parser(row);
                 }
             }
         }

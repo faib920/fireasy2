@@ -17,7 +17,7 @@ namespace Fireasy.Data.Provider
     /// <summary>
     /// MySql或MairaDB数据库提供者。使用 MySql.Data 提供。
     /// </summary>
-    public class MySqlProvider : AssemblyProvider
+    public class MySqlProvider : ProviderBase
     {
         /// <summary>
         /// 提供 <see cref="MySqlProvider"/> 的静态实例。
@@ -28,13 +28,7 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="MySqlProvider"/> 类的新实例。
         /// </summary>
         public MySqlProvider()
-#if NETSTANDARD
-            : base("MySql.Data.MySqlClient.MySqlClientFactory, MySqlConnector", 
-                  "MySql.Data.MySqlClient.MySqlClientFactory, MySql.Data",
-                  "Devart.Data.MySql.MySqlProviderFactory, Devart.Data.MySql")
-#else
-            : base("MySql.Data.MySqlClient.MySqlClientFactory, MySql.Data")
-#endif
+            : base(new AssemblyProviderFactoryResolver("MySql.Data.MySqlClient.MySqlClientFactory, MySql.Data", "MySql.Data.MySqlClient.MySqlClientFactory, MySqlConnector"))
         {
             RegisterService<IGeneratorProvider, BaseSequenceGenerator>();
             RegisterService<ISyntaxProvider, MySqlSyntax>();
@@ -63,6 +57,7 @@ namespace Fireasy.Data.Provider
                 Database = connectionString.Properties["database"],
                 UserId = connectionString.Properties["user id"],
                 Password = connectionString.Properties["password"],
+                Schema = connectionString.Properties["database"]
             };
         }
 

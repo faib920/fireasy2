@@ -5,6 +5,9 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Configuration;
+using Fireasy.Common.Extensions;
+using Fireasy.Common.Logging.Configuration;
 using System;
 
 namespace Fireasy.Common.Logging
@@ -22,4 +25,26 @@ namespace Fireasy.Common.Logging
         Error = 8,
         Fatal = 16
     }
+
+    public static class LogEnvironment
+    {
+        static LogLevel _level = LogLevel.Default;
+
+        static LogEnvironment()
+        {
+            var section = ConfigurationUnity.GetSection<LoggingConfigurationSection>();
+            if (section != null)
+            {
+                _level = section.Level;
+            }
+        }
+
+        public static LogLevel Level { get; } = _level;
+
+        public static bool IsConfigured(LogLevel level)
+        {
+            return level == LogLevel.Default || _level.HasFlag(level);
+        }
+    }
+
 }

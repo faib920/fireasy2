@@ -12,7 +12,7 @@
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <DelaySign>False</DelaySign>
     <Product>Fireasy NLog Provider</Product>
-    <Version>2.0.18</Version>
+    <Version>2.0.18-beta4</Version>
     <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
     <Description>NLog 日志组件的实现。

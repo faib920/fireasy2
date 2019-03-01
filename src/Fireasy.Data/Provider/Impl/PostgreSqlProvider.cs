@@ -17,7 +17,7 @@ namespace Fireasy.Data.Provider
     /// <summary>
     /// PostgreSql数据库提供者。使用 Npgsql 提供。
     /// </summary>
-    public class PostgreSqlProvider : AssemblyProvider
+    public class PostgreSqlProvider : ProviderBase
     {
         /// <summary>
         /// 提供 <see cref="PostgreSqlProvider"/> 的静态实例。
@@ -28,12 +28,7 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="PostgreSqlProvider"/> 类的新实例。
         /// </summary>
         public PostgreSqlProvider()
-#if NETSTANDARD
-            : base("Npgsql.NpgsqlFactory, Npgsql",
-                  "Devart.Data.PostgreSql.PgSqlProviderFactory, Devart.Data.PostgreSql")
-#else
-            : base("Npgsql.NpgsqlFactory, Npgsql")
-#endif
+            : base(new AssemblyProviderFactoryResolver("Npgsql.NpgsqlFactory, Npgsql"))
         {
             RegisterService<IGeneratorProvider, BaseSequenceGenerator>();
             RegisterService<ISyntaxProvider, PostgreSqlSyntax>();
@@ -62,6 +57,7 @@ namespace Fireasy.Data.Provider
                 Database = connectionString.Properties["database"],
                 UserId = connectionString.Properties["userid"],
                 Password = connectionString.Properties["password"],
+                Schema = connectionString.Properties["database"]
             };
         }
 

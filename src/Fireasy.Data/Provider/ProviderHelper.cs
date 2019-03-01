@@ -99,7 +99,7 @@ namespace Fireasy.Data.Provider
             foreach (var key in section.Settings.Keys)
             {
                 var setting = section.Settings[key];
-                if (dicProviders.ContainsKey(setting.Name))
+                if (dicProviders.ContainsKey(setting.Name) || setting.Type == null)
                 {
                     continue;
                 }
@@ -108,6 +108,13 @@ namespace Fireasy.Data.Provider
                 if (provider == null)
                 {
                     continue;
+                }
+
+                IProvider inherProvider = null;
+                if (!string.IsNullOrEmpty(setting.InheritedProvider) && 
+                    (inherProvider = GetDefinedProviderInstance(setting.InheritedProvider)) != null)
+                {
+                    inherProvider.GetServices().ForEach(s => provider.RegisterService(s.GetType()));
                 }
 
                 //为提供者注册插件服务

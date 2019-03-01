@@ -29,3 +29,6 @@ ConnectionError=未知的数据库连接错误，请检查服务器是否正常�
 UnableCastRowMapper=数据类型不匹配，{0} 无法读取为类型 {1}。
 PropertyTypeIsNull=类型 {0} 的属性 {1} 的类型为空。
 InstallProviderAssembly=必须引用 {0} 中的任意一个文件作为驱动。
+ProviderNoFound={0} 未找到，请下载相关的程序进行安装。
+RestrictionNotSupportedOfMember=不能使用 {0} 限制查询，仅能使用 {1} 进行限制查询。
+RestrictionNotSupportedOfMetadata=不能对 {0} 使用限制查询。

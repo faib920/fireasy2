@@ -9,52 +9,42 @@
 using Fireasy.Common.Linq.Expressions;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace Fireasy.Data.Schema.Linq
 {
     internal sealed class SchemaQueryTranslator : Common.Linq.Expressions.ExpressionVisitor
     {
-        private readonly Dictionary<int, string> dicRestr;
-        private int currIndex = -1;
-        private int maxIndex;
-        private readonly Type metadataType;
-        private readonly Dictionary<string, int> indexes;
-
-        public SchemaQueryTranslator(Dictionary<string, int> indexes, Type metadataType)
-        {
-            this.indexes = indexes;
-            this.metadataType = metadataType;
-            dicRestr = new Dictionary<int, string>();
-            foreach (var index in indexes)
-            {
-                //使用索引作为键值
-                dicRestr.Add(index.Value, null);
-            }
-        }
+        private Type metadataType;
+        private string memberName;
+        private List<MemberInfo> mbrRestrs = null;
+        private readonly RestrictionDictionary dicRestr = new RestrictionDictionary();
 
         /// <summary>
-        /// 对表达式进行解析，并返回限制数组。
+        /// 对表达式进行解析，并返回限制值字典。
         /// </summary>
-        /// <param name="indexes">数据提供者类别。</param>
-        /// <param name="metadataType">架构元数组类型。</param>
         /// <param name="expression">查询表达式。</param>
+        /// <param name="dicRestrMbrs"></param>
         /// <returns></returns>
-        public static string[] GetRestriction(Dictionary<string, int> indexes, Type metadataType, Expression expression)
+        public static RestrictionDictionary GetRestrictions<T>(Expression expression, Dictionary<Type, List<MemberInfo>> dicRestrMbrs)
         {
-            var translator = new SchemaQueryTranslator(indexes, metadataType);
-            expression = PartialEvaluator.Eval(expression);
-            return translator.GetRestrictionValues(expression);
-        }
-
-        private string[] GetRestrictionValues(Expression expression)
-        {
-            if (expression != null)
+            if (expression == null)
             {
-                Visit(expression);
+                return RestrictionDictionary.Empty;
             }
-            return TrimEmptyArray();
+
+            var translator = new SchemaQueryTranslator { metadataType = typeof(T) };
+
+            if (!dicRestrMbrs.TryGetValue(typeof(T), out List<MemberInfo> properties))
+            {
+                throw new SchemaQueryTranslateException(typeof(T));
+            }
+
+            translator.mbrRestrs = properties;
+            expression = PartialEvaluator.Eval(expression);
+            translator.Visit(expression);
+            return translator.dicRestr;
         }
 
         /// <summary>
@@ -83,21 +73,24 @@ namespace Fireasy.Data.Schema.Linq
         /// <returns></returns>
         protected override Expression VisitBinary(BinaryExpression binaryExp)
         {
-            //属性在运算符的右边
-            var memberExp = binaryExp.Right as MemberExpression;
-            if (memberExp != null &&
-                memberExp.Member.DeclaringType == metadataType)
+            memberName = string.Empty;
+
+            if (binaryExp.Right is MemberExpression rmbr && rmbr.Member.DeclaringType == metadataType)
             {
                 Visit(binaryExp.Right);
                 Visit(binaryExp.Left);
+            }
+            else if (binaryExp.Left is MemberExpression lmbr && lmbr.Member.DeclaringType == metadataType)
+            {
+                Visit(binaryExp.Left);
+                Visit(binaryExp.Right);
             }
             else
             {
                 Visit(binaryExp.Left);
                 Visit(binaryExp.Right);
             }
-            //复位
-            currIndex = -1;
+
             return binaryExp;
         }
 
@@ -106,10 +99,12 @@ namespace Fireasy.Data.Schema.Linq
             //如果属性是架构元数据类的成员
             if (memberExp.Member.DeclaringType == metadataType)
             {
-                var mbr = indexes.FirstOrDefault(s => s.Key.Equals(memberExp.Member.Name));
-                //记录下当前的索引，以及目前的最大索引
-                currIndex = mbr.Value;
-                maxIndex = Math.Max(maxIndex, currIndex + 1);
+                if (!mbrRestrs.Contains(memberExp.Member))
+                {
+                    throw new SchemaQueryTranslateException(memberExp.Member, mbrRestrs);
+                }
+
+                memberName = memberExp.Member.Name;
                 return memberExp;
             }
 
@@ -119,40 +114,22 @@ namespace Fireasy.Data.Schema.Linq
             {
                 exp = Expression.Convert(memberExp, typeof(object));
             }
+
             var lambda = Expression.Lambda<Func<object>>(exp);
             var fn = lambda.Compile();
+
             //转换为常量表达式
             return Visit(Expression.Constant(fn(), memberExp.Type));
         }
 
         protected override Expression VisitConstant(ConstantExpression constExp)
         {
-            if (currIndex == -1 || constExp.Value == null)
+            if (!string.IsNullOrEmpty(memberName))
             {
-                return constExp;
+                dicRestr[memberName] = constExp.Value;
             }
 
-            //没有复位的情况下，记录值
-            dicRestr[currIndex] = constExp.Value.ToString();
             return constExp;
-        }
-
-        /// <summary>
-        /// 删除空的数据元素
-        /// </summary>
-        /// <returns></returns>
-        private string[] TrimEmptyArray()
-        {
-            //最大范围
-            var array = new string[maxIndex];
-            for (var i = 0; i < maxIndex; i++)
-            {
-                if (dicRestr.ContainsKey(i))
-                {
-                    array[i] = dicRestr[i];
-                }
-            }
-            return array;
         }
     }
 }

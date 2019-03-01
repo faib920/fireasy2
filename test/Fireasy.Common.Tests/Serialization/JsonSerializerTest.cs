@@ -1091,6 +1091,21 @@ studio");
         /// 测试Deserialize方法，返回object。
         /// </summary>
         [TestMethod()]
+        public void TestDeserializeObject3()
+        {
+            var serializer = new JsonSerializer();
+
+            var obj = serializer.Deserialize<JsonData>(
+                new JsonText(@"{}").ToString()
+                );
+
+            Assert.IsNotNull(obj);
+        }
+
+        /// <summary>
+        /// 测试Deserialize方法，返回object。
+        /// </summary>
+        [TestMethod()]
         public void TestDeserializeObjectByInterface()
         {
             var serializer = new JsonSerializer();

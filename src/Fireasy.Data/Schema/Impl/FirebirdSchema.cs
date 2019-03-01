@@ -9,7 +9,6 @@ using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 
 namespace Fireasy.Data.Schema
 {
@@ -17,19 +16,19 @@ namespace Fireasy.Data.Schema
     {
         public FirebirdSchema()
         {
-            AddRestrictionIndex<Table>(s => s.Catalog, s => s.Schema, s => s.Name, s => s.Type);
-            AddRestrictionIndex<Column>(s => s.Catalog, s => s.Schema, s => s.TableName, s => s.Name);
-            AddRestrictionIndex<View>(s => s.Catalog, s => s.Schema, s => s.Name);
-            AddRestrictionIndex<ViewColumn>(s => s.Catalog, s => s.Schema, s => s.ViewName, s => s.Name);
-            AddRestrictionIndex<User>(s => s.Name);
-            AddRestrictionIndex<Procedure>(s => s.Catalog, s => s.Schema, s => s.Name, s => s.Type);
-            AddRestrictionIndex<ProcedureParameter>(s => s.Catalog, s => s.Schema, s => s.ProcedureName, null, s => s.Name);
-            AddRestrictionIndex<Index>(s => s.Catalog, s => s.Schema, s => s.TableName, s => s.Name);
-            AddRestrictionIndex<IndexColumn>(s => s.Catalog, s => s.Schema, s => s.TableName, s => s.Name, s => s.ColumnName);
-            AddRestrictionIndex<ForeignKey>(s => s.Catalog, s => s.Schema, s => s.TableName, s => s.Name);
+            AddRestriction<Table>(s => s.Name, s => s.Type);
+            AddRestriction<Column>(s => s.TableName, s => s.Name);
+            AddRestriction<View>(s => s.Name);
+            AddRestriction<ViewColumn>(s => s.ViewName, s => s.Name);
+            AddRestriction<User>(s => s.Name);
+            AddRestriction<Procedure>(s => s.Name, s => s.Type);
+            AddRestriction<ProcedureParameter>(s => s.ProcedureName, s => s.Name);
+            AddRestriction<Index>(s => s.TableName, s => s.Name);
+            AddRestriction<IndexColumn>(s => s.TableName, s => s.Name, s => s.ColumnName);
+            AddRestriction<ForeignKey>(s => s.TableName, s => s.Name);
         }
 
-        protected override IEnumerable<Table> GetTables(IDatabase database, string[] restrictionValues)
+        protected override IEnumerable<Table> GetTables(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
 
@@ -45,29 +44,28 @@ rdb$view_source AS VIEW_SOURCE
 FROM rdb$relations
 WHERE 
   (rdb$relation_name = @NAME OR (@NAME IS NULL)) AND 
-  ((@TABLETYPE = 'SYSTEM_TABLE' and rdb$system_flag = 1) OR (@TABLETYPE = 'TABLE' and rdb$system_flag = 0) OR (@TABLETYPE IS NULL))
+  ((@TABLETYPE = 1 and rdb$system_flag = 1) OR ((@TABLETYPE = 0 or @TABLETYPE IS NULL) and rdb$system_flag = 0))
 ORDER BY rdb$system_flag, rdb$owner_name, rdb$relation_name";
 
-            ParameteRestrition(parameters, "CATALOG", 0, restrictionValues);
-            ParameteRestrition(parameters, "OWNER", 1, restrictionValues);
-            ParameteRestrition(parameters, "NAME", 2, restrictionValues);
-            ParameteRestrition(parameters, "TABLETYPE", 3, restrictionValues);
+            restrictionValues
+                .Parameterize(parameters, "NAME", nameof(Table.Name))
+                .Parameterize(parameters, "TABLETYPE", nameof(Table.Type));
 
             var table = database.ExecuteDataTable(sql, parameters: parameters);
             foreach (DataRow row in table.Rows)
             {
                 yield return new Table
-                    {
-                        Catalog = row["TABLE_CATALOG"].ToString(),
-                        Schema = row["TABLE_SCHEMA"].ToString(),
-                        Name = row["TABLE_NAME"].ToString(),
-                        Description = row["DESCRIPTION"].ToStringSafely(),
-                        Type = row["TABLE_TYPE"].ToString()
-                    };
+                {
+                    Catalog = row["TABLE_CATALOG"].ToString(),
+                    Schema = row["TABLE_SCHEMA"].ToString(),
+                    Name = row["TABLE_NAME"].ToString(),
+                    Description = row["DESCRIPTION"].ToStringSafely(),
+                    Type = row["TABLE_TYPE"].ToString() == "TABLE" ? TableType.BaseTable : TableType.SystemTable
+                };
             }
         }
 
-        protected override IEnumerable<Column> GetColumns(IDatabase database, string[] restrictionValues)
+        protected override IEnumerable<Column> GetColumns(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
 
@@ -107,8 +105,9 @@ WHERE (rfr.rdb$relation_name = @TABLENAME OR (@TABLENAME IS NULL)) AND
 ORDER BY rfr.rdb$relation_name, rfr.rdb$field_position
 ";
 
-            ParameteRestrition(parameters, "TABLENAME", 2, restrictionValues);
-            ParameteRestrition(parameters, "COLUMNNAME", 3, restrictionValues);
+            restrictionValues
+                .Parameterize(parameters, "TABLENAME", nameof(Column.TableName))
+                .Parameterize(parameters, "COLUMNNAME", nameof(Column.Name));
 
             var table = database.ExecuteDataTable(sql, parameters: parameters);
             foreach (DataRow row in table.Rows)
@@ -127,25 +126,25 @@ ORDER BY rfr.rdb$relation_name, rfr.rdb$field_position
 
                 var ftype = row["FIELD_TYPE"].To<int>();
                 yield return new Column
-                    {
-                        Catalog = row["TABLE_CATALOG"].ToString(),
-                        Schema = row["TABLE_SCHEMA"].ToString(),
-                        TableName = row["TABLE_NAME"].ToString(),
-                        Name = row["COLUMN_NAME"].ToString(),
-                        Default = row["COLUMN_DEFAULT"].ToString(),
-                        DataType = GetDbDataType(ftype, subtype, scale),
-                        NumericPrecision = row["NUMERIC_PRECISION"].To<int>(),
-                        NumericScale = scale,
-                        Description = row["DESCRIPTION"].ToString(),
-                        IsNullable = row["COLUMN_NULLABLE"].To<bool>(),
-                        Length = row["COLUMN_SIZE"].To<long>(),
-                        Position = row["ORDINAL_POSITION"].To<int>(),
-                        IsPrimaryKey = row["COLUMN_IS_PK"].To<bool>()
-                    };
+                {
+                    Catalog = row["TABLE_CATALOG"].ToString(),
+                    Schema = row["TABLE_SCHEMA"].ToString(),
+                    TableName = row["TABLE_NAME"].ToString(),
+                    Name = row["COLUMN_NAME"].ToString(),
+                    Default = row["COLUMN_DEFAULT"].ToString(),
+                    DataType = GetDbDataType(ftype, subtype, scale),
+                    NumericPrecision = row["NUMERIC_PRECISION"].To<int>(),
+                    NumericScale = scale,
+                    Description = row["DESCRIPTION"].ToString(),
+                    IsNullable = row["COLUMN_NULLABLE"].To<bool>(),
+                    Length = row["COLUMN_SIZE"].To<long>(),
+                    Position = row["ORDINAL_POSITION"].To<int>(),
+                    IsPrimaryKey = row["COLUMN_IS_PK"].To<bool>()
+                };
             }
         }
 
-        protected override IEnumerable<ForeignKey> GetForeignKeys(IDatabase database, string[] restrictionValues)
+        protected override IEnumerable<ForeignKey> GetForeignKeys(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
 
@@ -174,21 +173,22 @@ where co.rdb$constraint_type = 'FOREIGN KEY' AND
   (co.rdb$relation_name = @TABLENAME OR (@TABLENAME IS NULL)) AND 
   (co.rdb$constraint_name = @NAME OR (@NAME IS NULL))";
 
-            ParameteRestrition(parameters, "TABLENAME", 2, restrictionValues);
-            ParameteRestrition(parameters, "NAME", 3, restrictionValues);
+            restrictionValues
+                .Parameterize(parameters, "TABLENAME", nameof(ForeignKey.TableName))
+                .Parameterize(parameters, "NAME", nameof(ForeignKey.Name));
 
             var table = database.ExecuteDataTable(sql, parameters: parameters);
             foreach (DataRow row in table.Rows)
             {
-                yield return new  ForeignKey
-                    {
-                        Schema = row["CONSTRAINT_SCHEMA"].ToString(),
-                        Name = row["CONSTRAINT_NAME"].ToString(),
-                        TableName = row["TABLE_NAME"].ToString().Replace("\"", ""),
-                        PKTable = row["REFERENCED_TABLE_NAME"].ToString(),
-                        ColumnName = row["COLUMN_NAME"].ToString(),
-                        PKColumn = row["REFERENCED_COLUMN_NAME"].ToString(),
-                    };
+                yield return new ForeignKey
+                {
+                    Schema = row["CONSTRAINT_SCHEMA"].ToString(),
+                    Name = row["CONSTRAINT_NAME"].ToString(),
+                    TableName = row["TABLE_NAME"].ToString().Replace("\"", ""),
+                    PKTable = row["REFERENCED_TABLE_NAME"].ToString(),
+                    ColumnName = row["COLUMN_NAME"].ToString(),
+                    PKColumn = row["REFERENCED_COLUMN_NAME"].ToString(),
+                };
             }
         }
 

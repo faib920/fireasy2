@@ -17,7 +17,7 @@ namespace Fireasy.Data.Provider
     /// <summary>
     /// DB2数据库提供者。使用 IBM.Data.DB2 提供。
     /// </summary>
-    public class DB2Provider : AssemblyProvider
+    public class DB2Provider : ProviderBase
     {
         /// <summary>
         /// 提供 <see cref="DB2Provider"/> 的静态实例。
@@ -28,7 +28,7 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="DB2Provider"/> 类的新实例。
         /// </summary>
         public DB2Provider()
-            : base("IBM.Data.DB2.DB2Factory, IBM.Data.DB2")
+            : base(new AssemblyProviderFactoryResolver("IBM.Data.DB2.DB2Factory, IBM.Data.DB2"))
         {
             RegisterService<IGeneratorProvider, BaseSequenceGenerator>();
             RegisterService<ISyntaxProvider, MySqlSyntax>();

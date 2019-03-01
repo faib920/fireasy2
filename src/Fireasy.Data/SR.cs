@@ -41,6 +41,9 @@ namespace Fireasy.Data
         internal const string UnableCastRowMapper = "UnableCastRowMapper";
         internal const string PropertyTypeIsNull = "PropertyTypeIsNull";
         internal const string InstallProviderAssembly = "InstallProviderAssembly";
+        internal const string ProviderNoFound = "ProviderNoFound";
+        internal const string RestrictionNotSupportedOfMember = "RestrictionNotSupportedOfMember";
+        internal const string RestrictionNotSupportedOfMetadata = "RestrictionNotSupportedOfMetadata";
     }
 
     internal class SR

@@ -49,7 +49,7 @@ namespace Fireasy.Common.Serialization
         public override void WriteJson(JsonSerializer serializer, JsonWriter writer, object obj)
         {
             var value = (DateTime?)obj;
-            if (value == null || ((DateTime)value).Year <= 1900)
+            if (value == null)
             {
                 writer.WriteNull();
             }

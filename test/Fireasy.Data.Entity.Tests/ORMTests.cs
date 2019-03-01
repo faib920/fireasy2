@@ -5,13 +5,14 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using Fireasy.Data.Entity.Linq;
 
 namespace Fireasy.Data.Entity.Tests
 {
     [TestClass]
     public class ORMTests
     {
-        static string connstr = "data source=(local);user id=sa;password=123;initial catalog=test;";
+        static string connstr = "data source=(local);user id=sa;password=123;initial catalog=test";
 
         [SugarTable("SysUser")]
         [Table("SysUser")]
@@ -122,7 +123,10 @@ namespace Fireasy.Data.Entity.Tests
                 var t = TimeWatcher.Watch(() =>
                 {
                     var list1 = db.Users.Where(s => s.UserID != 0).ToList();
+                    list1[0].Name = "aa";
                 });
+
+                db.SaveChanges();
 
                 Console.WriteLine(t);
             }

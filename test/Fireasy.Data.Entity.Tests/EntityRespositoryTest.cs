@@ -154,7 +154,7 @@ namespace Fireasy.Data.Entity.Tests
                 var a1 = new DataPager(10, 2);
                 var a2 = new DataPager(10, 2);
 
-                var t = TimeWatcher.Watch(() =>
+                Console.WriteLine(TimeWatcher.Watch(() =>
                 {
                     var list1 = db.Orders
                         .Segment(a1)
@@ -162,11 +162,9 @@ namespace Fireasy.Data.Entity.Tests
                         .CacheExecution(true, TimeSpan.FromDays(1))
                         .AsNoTracking()
                         .ToList();
-                });
+                }));
 
-                Console.WriteLine(t);
-
-                t = TimeWatcher.Watch(() =>
+                Console.WriteLine(TimeWatcher.Watch(() =>
                 {
                     var list2 = db.Orders
                         .Segment(a2)
@@ -174,9 +172,7 @@ namespace Fireasy.Data.Entity.Tests
                         .CacheExecution(true, TimeSpan.FromDays(1))
                         .AsNoTracking()
                         .ToList();
-                });
-
-                Console.WriteLine(t);
+                }));
             }
         }
 
@@ -314,10 +310,23 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var db = new DbContext())
             {
-                var pager = new DataPager(50, 216);
+                var pager = new DataPager(50, 0);
                 var result = db.Orders.Segment(pager).ToPaginalResult();
-                Assert.AreEqual(10834, result.Total);
-                Assert.AreEqual(217, result.Pages);
+                Console.WriteLine(result.Pages);
+            }
+        }
+
+        [TestMethod]
+        public void TestAsNoTracking()
+        {
+            using (var db = new DbContext())
+            {
+                var result = db.Products.ToList();
+                result[0].ProductName = "aa";
+                result[0].QuantityPerUnit = "bb";
+                var modifiedPropeties = (result[0] as IEntity).GetModifiedProperties();
+                Assert.AreEqual(2, modifiedPropeties.Length);
+                Assert.AreEqual("33", (result[0] as IEntity).GetOldValue("ProductName"));
             }
         }
 

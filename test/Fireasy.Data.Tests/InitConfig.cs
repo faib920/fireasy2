@@ -2,10 +2,7 @@
 #if NETCOREAPP2_0
 using Microsoft.Extensions.Configuration;
 #endif
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace Fireasy.Data.Tests
 {

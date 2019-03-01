@@ -70,6 +70,25 @@ namespace Fireasy.Data
         }
 
         /// <summary>
+        /// 尝试在一组名称中获取属性值。当这一组值都不存在时，返回 <paramref name="defaultValue"/>。
+        /// </summary>
+        /// <param name="defaultValue">缺省值。</param>
+        /// <param name="names">一个数组，指定可能存在的属性名称。由于连接串可能有多种格式，因此属性名称可能有多个。</param>
+        /// <returns></returns>
+        public string TryGetValueWithDefaultValue(string defaultValue, params string[] names)
+        {
+            foreach (var name in names)
+            {
+                if (dictionary.ContainsKey(name))
+                {
+                    return dictionary[name];
+                }
+            }
+
+            return defaultValue;
+        }
+
+        /// <summary>
         /// 尝试设置一组属性的值。
         /// </summary>
         /// <param name="value">设置的属性值。</param>

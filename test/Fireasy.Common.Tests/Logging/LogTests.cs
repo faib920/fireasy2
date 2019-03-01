@@ -10,10 +10,15 @@ namespace Fireasy.Common.Tests.Logging
     [TestClass]
     public class LogTests
     {
+        public LogTests()
+        {
+            InitConfig.Init();
+        }
+
         [TestMethod]
         public void TestParallel()
         {
-            Parallel.For(0, 1000, i => LoggerFactory.CreateLogger().Info("dfafafdadf"));
+            Parallel.For(0, 1, i => LoggerFactory.CreateLogger().Warn("dfafafdadf"));
         }
     }
 }

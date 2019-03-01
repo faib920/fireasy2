@@ -9,10 +9,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using Fireasy.Common.Extensions;
-using System.Data.Common;
-using System.Linq;
-using Fireasy.Data.RecordWrapper;
 
 namespace Fireasy.Data.Schema
 {
@@ -23,16 +19,16 @@ namespace Fireasy.Data.Schema
     {
         public OracleSchema()
         {
-            AddRestrictionIndex<Database>(s => s.Name);
-            AddRestrictionIndex<Table>(s => s.Schema, s => s.Name);
-            AddRestrictionIndex<Column>(s => s.Schema, s => s.TableName, s => s.Name);
-            AddRestrictionIndex<View>(s => s.Schema, s => s.Name);
-            AddRestrictionIndex<User>(s => s.Name);
-            AddRestrictionIndex<Procedure>(s => s.Schema, s => s.Name);
-            AddRestrictionIndex<ProcedureParameter>(s => s.Schema, s => s.ProcedureName);
-            AddRestrictionIndex<Index>(s => s.Schema, s => s.Name, null, s => s.TableName);
-            AddRestrictionIndex<IndexColumn>(s => s.Schema, s => s.Name, null, s => s.TableName, s => s.ColumnName);
-            AddRestrictionIndex<ForeignKey>(s => s.Schema, s => s.TableName, s => s.Name);
+            AddRestriction<Database>(s => s.Name);
+            AddRestriction<Table>(s => s.Name, s => s.Type);
+            AddRestriction<Column>(s => s.TableName, s => s.Name);
+            AddRestriction<View>(s => s.Name);
+            AddRestriction<User>(s => s.Name);
+            AddRestriction<Procedure>(s => s.Name);
+            AddRestriction<ProcedureParameter>(s => s.ProcedureName);
+            AddRestriction<Index>(s => s.Name, s => s.TableName);
+            AddRestriction<IndexColumn>(s => s.Name, s => s.TableName, s => s.ColumnName);
+            AddRestriction<ForeignKey>(s => s.TableName, s => s.Name);
         }
 
         private ParameterDirection GetDirection(string direction)
@@ -47,12 +43,14 @@ namespace Fireasy.Data.Schema
             }
         }
 
-        protected override IEnumerable<Table> GetTables(IDatabase database, string[] restrictionValues)
+        protected override IEnumerable<Table> GetTables(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
+            var connpar = GetConnectionParameter(database);
 
-            SqlCommand sql = @"
-SELECT T.OWNER,
+            SqlCommand sql = $@"
+SELECT * FROM (
+    SELECT T.OWNER,
        T.TABLE_NAME,
        DECODE(T.OWNER,
               'SYS',
@@ -85,27 +83,31 @@ SELECT T.OWNER,
   JOIN ALL_TAB_COMMENTS C
     ON T.OWNER = C.OWNER
    AND T.TABLE_NAME = C.TABLE_NAME
- WHERE (T.OWNER = :OWNER OR :OWNER IS NULL) AND 
-   (T.TABLE_NAME = :TABLENAME OR :TABLENAME IS NULL)
+) T
+ WHERE (T.OWNER = '{connpar.UserId.ToUpper()}') AND 
+  (T.TABLE_NAME = :TABLENAME OR (:TABLENAME IS NULL)) AND
+  ((T.TYPE = 'USER' AND (:TABLETYPE IS NULL OR :TABLETYPE = 0)) OR (T.TYPE = 'SYSTEM' AND :TABLETYPE = 1))
   ORDER BY OWNER, TABLE_NAME";
 
-            ParameteRestrition(parameters, "OWNER", 0, restrictionValues);
-            ParameteRestrition(parameters, "TABLENAME", 1, restrictionValues);
+            restrictionValues
+                .Parameterize(parameters, "TABLENAME", nameof(Table.Name))
+                .Parameterize(parameters, "TABLETYPE", nameof(Table.Type));
 
-            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new Table
-                {
-                    Schema = wrapper.GetString(reader, 0),
-                    Name = wrapper.GetString(reader, 1),
-                    Type = wrapper.GetString(reader, 2),
-                    Description = wrapper.GetString(reader, 3)
-                });
+            return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new Table
+            {
+                Schema = wrapper.GetString(reader, 0),
+                Name = wrapper.GetString(reader, 1),
+                Type = wrapper.GetString(reader, 2) == "USER" ? TableType.BaseTable : TableType.SystemTable,
+                Description = wrapper.GetString(reader, 3)
+            });
         }
 
-        protected override IEnumerable<Column> GetColumns(IDatabase database, string[] restrictionValues)
+        protected override IEnumerable<Column> GetColumns(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
+            var connpar = GetConnectionParameter(database);
 
-            SqlCommand sql = @"
+            SqlCommand sql = $@"
 SELECT T.OWNER,
        T.TABLE_NAME,
        T.COLUMN_NAME,
@@ -139,36 +141,37 @@ SELECT T.OWNER,
     ON T.OWNER = P.OWNER
    AND T.TABLE_NAME =P.TABLE_NAME
    AND T.COLUMN_NAME = P.COLUMN_NAME
- WHERE (T.OWNER = :OWNER OR :OWNER IS NULL) AND 
+ WHERE (T.OWNER = '{connpar.UserId.ToUpper()}') AND 
    (T.TABLE_NAME = :TABLENAME OR :TABLENAME IS NULL) AND 
    (T.COLUMN_NAME = :COLUMNNAME OR :COLUMNNAME IS NULL)
  ORDER BY T.OWNER, T.TABLE_NAME, T.COLUMN_ID";
 
-            ParameteRestrition(parameters, "OWNER", 0, restrictionValues);
-            ParameteRestrition(parameters, "TABLENAME", 1, restrictionValues);
-            ParameteRestrition(parameters, "COLUMNNAME", 2, restrictionValues);
+            restrictionValues
+                .Parameterize(parameters, "TABLENAME", nameof(Column.TableName))
+                .Parameterize(parameters, "COLUMNNAME", nameof(Column.Name));
 
-            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new Column
-                {
-                    Schema = wrapper.GetString(reader, 0),
-                    TableName = wrapper.GetString(reader, 1),
-                    Name = wrapper.GetString(reader, 2),
-                    DataType = wrapper.GetString(reader, 3),
-                    Length = wrapper.GetInt32(reader, 4),
-                    NumericPrecision = wrapper.GetInt32(reader, 5),
-                    NumericScale = wrapper.GetInt32(reader, 6),
-                    IsNullable = wrapper.GetString(reader, 7) == "Y",
-                    IsPrimaryKey = wrapper.GetString(reader, 8) == "Y",
-                    Default = wrapper.GetString(reader, 9),
-                    Description = wrapper.GetString(reader, 10),
-                });
+            return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new Column
+            {
+                Schema = wrapper.GetString(reader, 0),
+                TableName = wrapper.GetString(reader, 1),
+                Name = wrapper.GetString(reader, 2),
+                DataType = wrapper.GetString(reader, 3),
+                Length = wrapper.GetInt32(reader, 4),
+                NumericPrecision = wrapper.GetInt32(reader, 5),
+                NumericScale = wrapper.GetInt32(reader, 6),
+                IsNullable = wrapper.GetString(reader, 7) == "Y",
+                IsPrimaryKey = wrapper.GetString(reader, 8) == "Y",
+                Default = wrapper.GetString(reader, 9),
+                Description = wrapper.GetString(reader, 10),
+            });
         }
 
-        protected override IEnumerable<ForeignKey> GetForeignKeys(IDatabase database, string[] restrictionValues)
+        protected override IEnumerable<ForeignKey> GetForeignKeys(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
+            var connpar = GetConnectionParameter(database);
 
-            SqlCommand sql = @"
+            SqlCommand sql = $@"
 SELECT PKCON.CONSTRAINT_NAME AS PRIMARY_KEY_CONSTRAINT_NAME,
        PKCON.OWNER AS PRIMARY_KEY_OWNER,
        PKCON.TABLE_NAME AS PRIMARY_KEY_TABLE_NAME,
@@ -200,22 +203,22 @@ SELECT PKCON.CONSTRAINT_NAME AS PRIMARY_KEY_CONSTRAINT_NAME,
  WHERE PKCON.OWNER = FKCON.R_OWNER
    AND PKCON.CONSTRAINT_NAME = FKCON.R_CONSTRAINT_NAME
    AND FKCON.CONSTRAINT_TYPE = 'R'
-   and (FKCON.OWNER = :OWNER OR :OWNER is null)
+   and (FKCON.OWNER = '{connpar.UserId.ToUpper()}')
    AND (FKCON.TABLE_NAME = :TABLENAME OR :TABLENAME is null) AND (FKCON.CONSTRAINT_NAME = :CONSTRAINTNAME OR :CONSTRAINTNAME is null)";
 
-            ParameteRestrition(parameters, "OWNER", 0, restrictionValues);
-            ParameteRestrition(parameters, "TABLENAME", 1, restrictionValues);
-            ParameteRestrition(parameters, "CONSTRAINTNAME", 2, restrictionValues);
+            restrictionValues
+                .Parameterize(parameters, "TABLENAME", nameof(ForeignKey.TableName))
+                .Parameterize(parameters, "CONSTRAINTNAME", nameof(ForeignKey.Name));
 
-            return ParseMetadata(database, sql, parameters, (wrapper, reader) => new ForeignKey
-                {
-                    Schema = reader["FOREIGN_KEY_OWNER"].ToString(),
-                    Name = reader["FOREIGN_KEY_CONSTRAINT_NAME"].ToString(),
-                    TableName = reader["FOREIGN_KEY_TABLE_NAME"].ToString().Replace("\"", ""),
-                    ColumnName = reader["FOREIGN_KEY_COLUMN_NAME"].ToString(),
-                    PKTable = reader["PRIMARY_KEY_TABLE_NAME"].ToString(),
-                    PKColumn = reader["PRIMARY_KEY_COLUMN_NAME"].ToString()
-                });
+            return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new ForeignKey
+            {
+                Schema = reader["FOREIGN_KEY_OWNER"].ToString(),
+                Name = reader["FOREIGN_KEY_CONSTRAINT_NAME"].ToString(),
+                TableName = reader["FOREIGN_KEY_TABLE_NAME"].ToString().Replace("\"", ""),
+                ColumnName = reader["FOREIGN_KEY_COLUMN_NAME"].ToString(),
+                PKTable = reader["PRIMARY_KEY_TABLE_NAME"].ToString(),
+                PKColumn = reader["PRIMARY_KEY_COLUMN_NAME"].ToString()
+            });
         }
     }
 }

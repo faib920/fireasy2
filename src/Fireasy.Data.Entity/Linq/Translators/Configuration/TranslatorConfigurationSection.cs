@@ -48,10 +48,10 @@ namespace Fireasy.Data.Entity.Linq.Translators.Configuration
                     {
                         HideTableAliases = ndOption.GetSection("hideTableAliases").Value.To(false),
                         HideColumnAliases = ndOption.GetSection("hideColumnAliases").Value.To(false),
-                        CacheParsing = ndOption.GetSection("parseCacheEnabled").Value.To(true),
-                        CacheParsingTimes = ndOption.GetSection("parseCacheExpired").Value.To(300),
-                        CacheExecution = ndOption.GetSection("dataCacheEnabled").Value.To(false),
-                        CacheExecutionTimes = ndOption.GetSection("dataCacheExpired").Value.To(60)
+                        CacheParsing = ndOption.GetSection("cacheParsing").Value.To(true),
+                        CacheParsingTimes = ndOption.GetSection("cacheParsingTimes").Value.To(300),
+                        CacheExecution = ndOption.GetSection("cacheExecution").Value.To(false),
+                        CacheExecutionTimes = ndOption.GetSection("cacheExecutionTimes").Value.To(60)
                     };
             }
         }

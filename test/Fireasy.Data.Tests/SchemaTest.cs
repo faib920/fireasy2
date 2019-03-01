@@ -14,7 +14,7 @@ namespace Fireasy.Data.Tests
 
         private void Invoke(Action<IDatabase, ISchemaProvider> action)
         {
-            using (var db = DatabaseFactory.CreateDatabase("mysql"))
+            using (var db = DatabaseFactory.CreateDatabase("sqlite"))
             {
                 var schema = db.Provider.GetService<ISchemaProvider>();
                 action(db, schema);
@@ -62,8 +62,7 @@ namespace Fireasy.Data.Tests
         {
             Invoke((db, schema) =>
             {
-                var parameter = db.Provider.GetConnectionParameter(db.ConnectionString);
-                foreach (var table in schema.GetSchemas<Table>(db, s => s.Schema == parameter.Schema))
+                foreach (var table in schema.GetSchemas<Table>(db))
                 {
                     Console.WriteLine(table.Name + "," + table.Description);
                 }
@@ -75,7 +74,7 @@ namespace Fireasy.Data.Tests
         {
             Invoke((db, schema) =>
             {
-                foreach (var table in schema.GetSchemas<Table>(db, s => s.Name == "customers"))
+                foreach (var table in schema.GetSchemas<Table>(db, s => s.Name == "products"))
                 {
                     Console.WriteLine(table.Name + "," + table.Description);
                 }
@@ -87,8 +86,31 @@ namespace Fireasy.Data.Tests
         {
             Invoke((db, schema) =>
             {
-                var parameter = db.Provider.GetConnectionParameter(db.ConnectionString);
-                foreach (var column in schema.GetSchemas<Column>(db, s => s.Schema == parameter.Schema && s.TableName == "orders"))
+                foreach (var column in schema.GetSchemas<Column>(db))
+                {
+                    Console.WriteLine($"Name: {column.Name}\tIsPrimaryKey: {column.IsPrimaryKey}\tDescription: {column.Description}");
+                }
+            });
+        }
+
+        [TestMethod]
+        public void TestGetColumns1()
+        {
+            Invoke((db, schema) =>
+            {
+                foreach (var column in schema.GetSchemas<Column>(db, s => s.TableName == "orders"))
+                {
+                    Console.WriteLine($"Name: {column.Name}\tIsPrimaryKey: {column.IsPrimaryKey}\tDescription: {column.Description}");
+                }
+            });
+        }
+
+        [TestMethod]
+        public void TestGetColumns2()
+        {
+            Invoke((db, schema) =>
+            {
+                foreach (var column in schema.GetSchemas<Column>(db, s => s.TableName == "orders" && s.Name == "OrderID"))
                 {
                     Console.WriteLine($"Name: {column.Name}\tIsPrimaryKey: {column.IsPrimaryKey}\tDescription: {column.Description}");
                 }
@@ -100,10 +122,21 @@ namespace Fireasy.Data.Tests
         {
             Invoke((db, schema) =>
             {
-                var parameter = db.Provider.GetConnectionParameter(db.ConnectionString);
-                foreach (var fk in schema.GetSchemas<ForeignKey>(db, s => s.Schema == parameter.Schema))
+                foreach (var fk in schema.GetSchemas<ForeignKey>(db))
                 {
-                    Console.WriteLine(fk.Name);
+                    Console.WriteLine(fk.PKTable + " " + fk.PKColumn + " " + fk.TableName + " " + fk.ColumnName);
+                }
+            });
+        }
+
+        [TestMethod]
+        public void TestForeignKeys1()
+        {
+            Invoke((db, schema) =>
+            {
+                foreach (var fk in schema.GetSchemas<ForeignKey>(db, s => s.TableName == "orders"))
+                {
+                    Console.WriteLine(fk.PKTable + " " + fk.PKColumn + " " + fk.TableName + " " + fk.ColumnName);
                 }
             });
         }
@@ -121,11 +154,47 @@ namespace Fireasy.Data.Tests
         }
 
         [TestMethod]
+        public void TestGetProcedures1()
+        {
+            Invoke((db, schema) =>
+            {
+                foreach (var pro in schema.GetSchemas<Procedure>(db, s => s.Name == "procProcessCountRice"))
+                {
+                    Console.WriteLine(pro.Name);
+                }
+            });
+        }
+
+        [TestMethod]
         public void TestGetProcedureParameters()
         {
             Invoke((db, schema) =>
             {
                 foreach (var pro in schema.GetSchemas<ProcedureParameter>(db))
+                {
+                    Console.WriteLine(pro.Name);
+                }
+            });
+        }
+
+        [TestMethod]
+        public void TestGetProcedureParameters1()
+        {
+            Invoke((db, schema) =>
+            {
+                foreach (var pro in schema.GetSchemas<ProcedureParameter>(db, s => s.ProcedureName == "procProcessCountRice"))
+                {
+                    Console.WriteLine(pro.Name);
+                }
+            });
+        }
+
+        [TestMethod]
+        public void TestGetProcedureParameters2()
+        {
+            Invoke((db, schema) =>
+            {
+                foreach (var pro in schema.GetSchemas<ProcedureParameter>(db, s => s.ProcedureName == "procProcessCountRice" && s.Name == "@endDate"))
                 {
                     Console.WriteLine(pro.Name);
                 }

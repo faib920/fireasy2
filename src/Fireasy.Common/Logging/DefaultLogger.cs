@@ -10,7 +10,6 @@ using Fireasy.Common.Logging.Configuration;
 using System;
 using System.IO;
 using System.Text;
-using System.Threading;
 #if NET35
 using Fireasy.Common.Extensions;
 #endif
@@ -20,12 +19,10 @@ namespace Fireasy.Common.Logging
     /// <summary>
     /// 默认的日志管理器，将日志记录到文本文件中。
     /// </summary>
-    public sealed class DefaultLogger : ILogger
+    public class DefaultLogger : ILogger
     {
         private static readonly string logFilePath;
         private readonly ReadWriteLocker locker = new ReadWriteLocker();
-        private LogLevel level;
-        private Mutex mutex = new Mutex(false, "DefaultLogLock");
 
         /// <summary>
         /// 获取 <see cref="DefaultLogger"/> 的静态实例。
@@ -40,12 +37,6 @@ namespace Fireasy.Common.Logging
             logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log");
         }
 
-        private DefaultLogger()
-        {
-            var section = ConfigurationUnity.GetSection<LoggingConfigurationSection>();
-            level = section == null ? LogLevel.Default : section.Level;
-        }
-
         /// <summary>
         /// 记录错误信息到日志。
         /// </summary>
@@ -53,7 +44,7 @@ namespace Fireasy.Common.Logging
         /// <param name="exception">异常对象。</param>
         public void Error(object message, Exception exception = null)
         {
-            if (level == LogLevel.Default || level.HasFlag(LogLevel.Error))
+            if (LogEnvironment.IsConfigured(LogLevel.Error))
             {
                 Write("error", message, exception);
             }
@@ -66,7 +57,7 @@ namespace Fireasy.Common.Logging
         /// <param name="exception">异常对象。</param>
         public void Info(object message, Exception exception = null)
         {
-            if (level == LogLevel.Default || level.HasFlag(LogLevel.Info))
+            if (LogEnvironment.IsConfigured(LogLevel.Info))
             {
                 Write("info", message, exception);
             }
@@ -79,7 +70,7 @@ namespace Fireasy.Common.Logging
         /// <param name="exception">异常对象。</param>
         public void Warn(object message, Exception exception = null)
         {
-            if (level == LogLevel.Default || level.HasFlag(LogLevel.Warn))
+            if (LogEnvironment.IsConfigured(LogLevel.Warn))
             {
                 Write("warn", message, exception);
             }
@@ -92,7 +83,7 @@ namespace Fireasy.Common.Logging
         /// <param name="exception">异常对象。</param>
         public void Debug(object message, Exception exception = null)
         {
-            if (level == LogLevel.Default || level.HasFlag(LogLevel.Debug))
+            if (LogEnvironment.IsConfigured(LogLevel.Debug))
             {
                 Write("debug", message, exception);
             }
@@ -105,10 +96,21 @@ namespace Fireasy.Common.Logging
         /// <param name="exception">异常对象。</param>
         public void Fatal(object message, Exception exception = null)
         {
-            if (level == LogLevel.Default || level.HasFlag(LogLevel.Fatal))
+            if (LogEnvironment.IsConfigured(LogLevel.Fatal))
             {
                 Write("fatal", message, exception);
             }
+        }
+
+        protected virtual string CreateLogFileName(string logType)
+        {
+            var path = Path.Combine(logFilePath, logType);
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
+            return Path.Combine(path, DateTime.Today.ToString("yyyy-MM-dd") + ".log");
         }
 
         /// <summary>
@@ -119,58 +121,46 @@ namespace Fireasy.Common.Logging
         /// <param name="exception">应用程序异常。</param>
         private void Write(string logType, object message, Exception exception)
         {
-            mutex.WaitOne();
-
-            var fileName = CreateLogFileName(logType);
-            using (var writer = new StreamWriter(fileName, true, Encoding.GetEncoding(0)))
+            locker.LockWrite(() =>
             {
-                writer.WriteLine("Time: " + DateTime.Now);
-                writer.WriteLine();
-                if (message != null)
+                var fileName = CreateLogFileName(logType);
+                using (var writer = new StreamWriter(fileName, true, Encoding.GetEncoding(0)))
                 {
-                    writer.WriteLine(message);
-                }
+                    writer.WriteLine("Time: " + DateTime.Now);
+                    writer.WriteLine();
+                    if (message != null)
+                    {
+                        writer.WriteLine(message);
+                    }
 
-                writer.WriteLine();
+                    writer.WriteLine();
 
-                if (exception != null)
-                {
-                    writer.WriteLine("--Exceptions--");
+                    if (exception != null)
+                    {
+                        writer.WriteLine("--Exceptions--");
 
 #if !NET35
-                    var aggExp = exception as AggregateException;
-                    if (aggExp != null && aggExp.InnerExceptions.Count > 0)
-                    {
-                        foreach (var e in aggExp.InnerExceptions)
+                        var aggExp = exception as AggregateException;
+                        if (aggExp != null && aggExp.InnerExceptions.Count > 0)
                         {
-                            WriteException(writer, e);
+                            foreach (var e in aggExp.InnerExceptions)
+                            {
+                                WriteException(writer, e);
+                            }
                         }
-                    }
-                    else
-                    {
-                        WriteException(writer, exception);
-                    }
+                        else
+                        {
+                            WriteException(writer, exception);
+                        }
 #else
                     WriteException(writer, exception);
 #endif
+                    }
+
+                    writer.WriteLine("*****************************************************************");
+                    writer.Flush();
                 }
-
-                writer.WriteLine("*****************************************************************");
-                writer.Flush();
-            }
-
-            mutex.ReleaseMutex();
-        }
-
-        private string CreateLogFileName(string logType)
-        {
-            var path = Path.Combine(logFilePath, logType);
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-            }
-
-            return Path.Combine(path, DateTime.Today.ToString("yyyy-MM-dd") + ".log");
+            });
         }
 
         private static void WriteException(StreamWriter writer, Exception exception)

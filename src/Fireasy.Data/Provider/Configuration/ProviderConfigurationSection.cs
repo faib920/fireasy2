@@ -48,6 +48,7 @@ namespace Fireasy.Data.Provider.Configuration
             return new ProviderConfigurationSetting (LoadServices(node))
                 {
                     Name = node.GetAttributeValue("name"),
+                    InheritedProvider = node.GetAttributeValue("inherited"),
                     Type = Type.GetType(GetEllipticalTypeName(node.GetAttributeValue("type")), false, true)
                 };
         }
@@ -59,7 +60,7 @@ namespace Fireasy.Data.Provider.Configuration
         private IEnumerable<Type> LoadServices(XmlNode section)
         {
             var types = new List<Type>();
-            section.EachChildren("service", node =>
+            section.EachChildren("services", node =>
                 {
                     var type = Type.GetType(GetEllipticalTypeName(node.GetAttributeValue("type")), false, true);
                     if (type != null)
@@ -76,6 +77,7 @@ namespace Fireasy.Data.Provider.Configuration
             return new ProviderConfigurationSetting(LoadServices(configuration))
                 {
                     Name = ((Microsoft.Extensions.Configuration.IConfigurationSection)configuration).Key,
+                    InheritedProvider = configuration.GetSection("inherited").Value,
                     Type = Type.GetType(GetEllipticalTypeName(configuration.GetSection("type").Value), false, true)
                 };
         }

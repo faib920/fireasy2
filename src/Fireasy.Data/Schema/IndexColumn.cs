@@ -34,6 +34,11 @@ namespace Fireasy.Data.Schema
         public string TableName { get; set; }
 
         /// <summary>
+        /// 获取索引的名称。
+        /// </summary>
+        public string IndexName { get; set; }
+
+        /// <summary>
         /// 获取列的名称。
         /// </summary>
         public string ColumnName { get; set; }

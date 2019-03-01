@@ -34,7 +34,10 @@ namespace Fireasy.Log4net
         /// <param name="exception">异常对象。</param>
         public void Error(object message, Exception exception = null)
         {
-            log.Error(message, exception);
+            if (LogEnvironment.IsConfigured(LogLevel.Error))
+            {
+                log.Error(message, exception);
+            }
         }
 
         /// <summary>
@@ -44,7 +47,10 @@ namespace Fireasy.Log4net
         /// <param name="exception">异常对象。</param>
         public void Info(object message, Exception exception = null)
         {
-            log.Info(message, exception);
+            if (LogEnvironment.IsConfigured(LogLevel.Info))
+            {
+                log.Info(message, exception);
+            }
         }
 
         /// <summary>
@@ -54,7 +60,10 @@ namespace Fireasy.Log4net
         /// <param name="exception">异常对象。</param>
         public void Warn(object message, Exception exception = null)
         {
-            log.Warn(message, exception);
+            if (LogEnvironment.IsConfigured(LogLevel.Warn))
+            {
+                log.Warn(message, exception);
+            }
         }
 
         /// <summary>
@@ -64,7 +73,10 @@ namespace Fireasy.Log4net
         /// <param name="exception">异常对象。</param>
         public void Debug(object message, Exception exception = null)
         {
-            log.Debug(message, exception);
+            if (LogEnvironment.IsConfigured(LogLevel.Debug))
+            {
+                log.Debug(message, exception);
+            }
         }
 
         /// <summary>
@@ -74,7 +86,10 @@ namespace Fireasy.Log4net
         /// <param name="exception">异常对象。</param>
         public void Fatal(object message, Exception exception = null)
         {
-            log.Fatal(message, exception);
+            if (LogEnvironment.IsConfigured(LogLevel.Fatal))
+            {
+                log.Fatal(message, exception);
+            }
         }
     }
 }

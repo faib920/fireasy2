@@ -25,26 +25,22 @@ namespace Fireasy.Data.Entity.Providers
             var serviceType = typeof(ITranslateProvider);
             switch (provider)
             {
-                case MsSqlProvider mssql:
+                case MsSqlProvider _:
                     provider.RegisterService(serviceType, new MsSqlTranslateProvider());
                     break;
-                case OracleProvider op:
-#if !NETSTANDARD
-                case OracleDAProvider odp:
-                case OracleMDAProvider mdap:
-#endif
+                case OracleProvider _:
                     provider.RegisterService(serviceType, new OracleTranslateProvider());
                     break;
-                case MySqlProvider mysql:
+                case MySqlProvider _:
                     provider.RegisterService(serviceType, new MySqlTranslateProvider());
                     break;
-                case SQLiteProvider sqlite:
+                case SQLiteProvider _:
                     provider.RegisterService(serviceType, new SQLiteTranslateProvider());
                     break;
-                case PostgreSqlProvider pgsql:
+                case PostgreSqlProvider _:
                     provider.RegisterService(serviceType, new PostgreSqlTranslateProvider());
                     break;
-                case FirebirdProvider fb:
+                case FirebirdProvider _:
                     provider.RegisterService(serviceType, new FirebirdTranslateProvider());
                     break;
                 default:
@@ -65,30 +61,26 @@ namespace Fireasy.Data.Entity.Providers
             var serviceType = typeof(ITableGenerateProvider);
             switch (provider)
             {
-                case MsSqlProvider mssql:
+                case MsSqlProvider _:
                     provider.RegisterService(serviceType, new MsSqlTableGenerator());
                     break;
-                case OracleProvider op:
-#if !NETSTANDARD
-                case OracleDAProvider odp:
-                case OracleMDAProvider mdap:
-#endif
+                case OracleProvider _:
                     provider.RegisterService(serviceType, new OracleTableGenerator());
                     break;
-                case MySqlProvider mysql:
+                case MySqlProvider _:
                     provider.RegisterService(serviceType, new MySqlTableGenerator());
                     break;
-                case SQLiteProvider sqlite:
+                case SQLiteProvider _:
                     provider.RegisterService(serviceType, new SQLiteTableGenerator());
                     break;
 #if !NETSTANDARD
-                case OleDbProvider oledb:
+                case OleDbProvider _:
                     break;
 #endif
-                case PostgreSqlProvider pgsql:
+                case PostgreSqlProvider _:
                     provider.RegisterService(serviceType, new PostgreSqlTableGenerator());
                     break;
-                case FirebirdProvider fb:
+                case FirebirdProvider _:
                     provider.RegisterService(serviceType, new FirebirdTableGenerator());
                     break;
                 default:

@@ -263,21 +263,20 @@ namespace Fireasy.Data.Entity.Linq
 
             if (entity.IsNoTracking)
             {
-                var mbmInitNewExp = Expression.MemberInit(mbmInitExp.NewExpression, bindings);
-                return Expression.Convert(mbmInitNewExp, entity.Type);
+                return Expression.MemberInit(mbmInitExp.NewExpression, bindings);
             }
 
             var e = TranslateScope.Current.Context as IEntityPersistentEnvironment;
             var c = TranslateScope.Current.Context as IEntityPersistentInstanceContainer;
 
-            var conExp = Expression.Call(null, MthConstruct,
+            var constCall = Expression.Call(null, MthConstruct,
                 Visit(mbmInitExp.NewExpression),
                 Expression.NewArrayInit(typeof(IProperty), properties.ToArray()),
                 Expression.NewArrayInit(typeof(PropertyValue), values.ToArray()),
                 Expression.Constant(c, typeof(IEntityPersistentInstanceContainer)),
                 Expression.Constant(e, typeof(IEntityPersistentEnvironment)));
 
-            return Expression.Convert(conExp, entity.Type);
+            return Expression.Convert(constCall, entity.Type);
         }
 
         protected override Expression VisitNew(NewExpression node)
