@@ -21,9 +21,9 @@ namespace Fireasy.Common.Caching
         public string Key { get; private set; }
 
         /// <summary>
-        /// 获取项的代数。
+        /// 获取项的代数。当被客户端访问时，代数递增。
         /// </summary>
-        public long Gen { get; internal set; }
+        public short Gen { get; internal set; }
 
         /// <summary>
         /// 获取数据的值。

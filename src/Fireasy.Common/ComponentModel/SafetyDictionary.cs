@@ -5,11 +5,13 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Fireasy.Common.ComponentModel
 {
@@ -21,6 +23,7 @@ namespace Fireasy.Common.ComponentModel
     public class SafetyDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
     {
         private readonly ConcurrentDictionary<TKey, Lazy<TValue>> dic = new ConcurrentDictionary<TKey, Lazy<TValue>>();
+        private LazyThreadSafetyMode mode = LazyThreadSafetyMode.PublicationOnly;
 
         /// <summary>
         /// 实例化 <see cref="SafetyDictionary"/> 类的新实例。 
@@ -39,7 +42,7 @@ namespace Fireasy.Common.ComponentModel
             {
                 foreach (var kvp in collection)
                 {
-                    dic.TryAdd(kvp.Key, new Lazy<TValue>(() => kvp.Value));
+                    dic.TryAdd(kvp.Key, new Lazy<TValue>(() => kvp.Value, mode));
                 }
             }
         }
@@ -52,8 +55,8 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public TValue GetOrAdd(TKey key, Func<TValue> valueFactory)
         {
-            var lazy = dic.GetOrAdd(key, k => new Lazy<TValue>(valueFactory));
-            return lazy != null ? lazy.Value : default(TValue);
+            var lazy = dic.GetOrAdd(key, k => new Lazy<TValue>(valueFactory, mode));
+            return lazy != null && lazy.Value != null ? lazy.Value : default(TValue);
         }
 
         /// <summary>
@@ -64,7 +67,7 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public bool TryAdd(TKey key, TValue value)
         {
-            return dic.TryAdd(key, new Lazy<TValue>(() => value));
+            return dic.TryAdd(key, new Lazy<TValue>(() => value, mode));
         }
 
         /// <summary>
@@ -75,7 +78,7 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public bool TryAdd(TKey key, Func<TValue> valueFactory)
         {
-            return dic.TryAdd(key, new Lazy<TValue>(valueFactory));
+            return dic.TryAdd(key, new Lazy<TValue>(valueFactory, mode));
         }
 
         /// <summary>
@@ -107,7 +110,10 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public TValue AddOrUpdate(TKey key, Func<TValue> addOrUpdateFactory)
         {
-            var lazy = dic.AddOrUpdate(key, k => new Lazy<TValue>(addOrUpdateFactory), (k, v) => new Lazy<TValue>(addOrUpdateFactory));
+            var lazy = dic.AddOrUpdate(key,
+                k => new Lazy<TValue>(addOrUpdateFactory, mode),
+                (k, v) => new Lazy<TValue>(addOrUpdateFactory, mode));
+
             if (lazy != null)
             {
                 return lazy.Value;
@@ -126,7 +132,7 @@ namespace Fireasy.Common.ComponentModel
         {
             if (dic.TryRemove(key, out Lazy<TValue> lazy))
             {
-                if (lazy.Value != null)
+                if (lazy.IsValueCreated && lazy.Value != null)
                 {
                     value = lazy.Value;
                     return true;
@@ -153,6 +159,24 @@ namespace Fireasy.Common.ComponentModel
         public void Clear()
         {
             dic.Clear();
+        }
+
+        /// <summary>
+        /// 获取内部的字典。
+        /// </summary>
+        public ConcurrentDictionary<TKey, Lazy<TValue>> LazyValues
+        {
+            get { return dic; }
+        }
+
+        public SafetyDictionary<TKey, TValue> TryRemoveDiscreated()
+        {
+            foreach (var item in dic.Skip(1).Where(s => !s.Value.IsValueCreated))
+            {
+                dic.TryRemove(item.Key, out Lazy<TValue> value);
+            }
+
+            return this;
         }
 
         /// <summary>

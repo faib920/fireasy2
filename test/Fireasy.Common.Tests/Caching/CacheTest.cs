@@ -20,12 +20,19 @@ namespace Fireasy.Common.Tests
 
             if (cache is MemoryCacheManager mem)
             {
-                mem.Capacity = 1000;
+                //mem.Capacity = 1000;
             }
 
-            for (var i = 0; i < 999; i++)
+            for (var i = 0; i < 100; i++)
             {
                 cache.Add("a" + i, i);
+            }
+
+            Assert.AreEqual(cache.Get("a0"), 0);
+
+            for (var i = 0; i < 200; i++)
+            {
+                cache.Add("b" + i, i);
             }
 
             Assert.AreEqual(cache.Get("a88"), 88);

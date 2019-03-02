@@ -17,9 +17,12 @@ namespace Fireasy.Common.Caching
     /// </summary>
     public class CacheOptimizer
     {
-        private long discarded;
-        private long current;
-        private Timer timer;
+        private readonly Timer timer;
+
+        /// <summary>
+        /// 最大代限制。
+        /// </summary>
+        public const short MAX_GEN_LIMIT = 30000;
 
         /// <summary>
         /// 初始化 <see cref="CacheOptimizer"/> 类的新实例。
@@ -27,34 +30,8 @@ namespace Fireasy.Common.Caching
         /// <param name="checkExpired">检查缓存过期的方法。</param>
         public CacheOptimizer(Action checkExpired)
         {
+            //5分钟清理一次过期的缓存
             timer = new Timer(state => checkExpired(), null, 1000 * 60, 1000 * 60 * 5);
-        }
-
-        /// <summary>
-        /// 获取或设置要被丢弃的代。
-        /// </summary>
-        public long Discarded
-        {
-            get { return discarded; }
-            set { discarded = value; }
-        }
-
-        /// <summary>
-        /// 获取或设置当前代。
-        /// </summary>
-        public long Current
-        {
-            get { return current; }
-            set { current = value; }
-        }
-
-        /// <summary>
-        /// 返回丢弃的代数，并置标志递增。
-        /// </summary>
-        /// <returns></returns>
-        public long Discard()
-        {
-            return Interlocked.Increment(ref discarded);
         }
 
         /// <summary>
@@ -70,7 +47,14 @@ namespace Fireasy.Common.Caching
                 return null;
             }
 
-            item.Gen = Interlocked.Increment(ref current);
+            if (item.Gen < MAX_GEN_LIMIT)
+            {
+                item.Gen++;
+            }
+            else
+            {
+                item.Gen = 0;
+            }
 
             return item;
         }

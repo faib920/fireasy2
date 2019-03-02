@@ -6,10 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using Fireasy.Common.ComponentModel;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Fireasy.Common.Caching
 {
@@ -23,7 +21,7 @@ namespace Fireasy.Common.Caching
         /// </summary>
         public readonly static MemoryCacheManager Instance = new MemoryCacheManager();
 
-        private readonly SafetyDictionary<string, CacheItem> cacheDictionary = new SafetyDictionary<string, CacheItem>();
+        private readonly MemoryDictionary cacheDictionary = new MemoryDictionary();
         private readonly CacheOptimizer optimizer;
 
         /// <summary>
@@ -209,38 +207,19 @@ namespace Fireasy.Common.Caching
         }
 
         /// <summary>
-        /// 获取或设容量大小。
+        /// 获取或设容量大小。默认为 1000。
         /// </summary>
-        public int Capacity { get; set; } = 1000;
+        public int Capacity { get; set; } = 100;
 
         private CacheItem CreateCacheItem<T>(string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration, CacheItemRemovedCallback removeCallback)
         {
-            CheckCapacity();
+            cacheDictionary.CheckCapacity(cacheKey, Capacity, NotifyCacheRemoved);
 
             return new CacheItem(
                 cacheKey,
                 factory(),
                 expiration == null ? null : expiration(),
                 removeCallback);
-        }
-
-        /// <summary>
-        /// 检查缓存的容量。
-        /// </summary>
-        private void CheckCapacity()
-        {
-            while (cacheDictionary.Count >= Capacity)
-            {
-                var genToDelete = optimizer.Discard();
-                var delete = cacheDictionary.FirstOrDefault(p => p.Value.Gen == genToDelete);
-                if (delete.Key != null)
-                {
-                    if (cacheDictionary.TryRemove(delete.Key, out CacheItem entry))
-                    {
-                        NotifyCacheRemoved(entry);
-                    }
-                }
-            }
         }
 
         /// <summary>
@@ -257,9 +236,9 @@ namespace Fireasy.Common.Caching
         /// </summary>
         private void CheckExpired()
         {
-            foreach (var kvp in cacheDictionary)
+            foreach (var kvp in cacheDictionary.LazyValues)
             {
-                if (kvp.Value.HasExpired())
+                if (kvp.Value.IsValueCreated && kvp.Value.Value.HasExpired())
                 {
                     if (cacheDictionary.TryRemove(kvp.Key, out CacheItem entry))
                     {
