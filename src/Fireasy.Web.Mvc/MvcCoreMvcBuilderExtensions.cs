@@ -30,6 +30,8 @@ namespace Microsoft.Extensions.DependencyInjection
             var options = new Fireasy.Web.Mvc.MvcOptions();
             setupAction?.Invoke(options);
 
+
+
             if (options.UseTypicalJsonSerializer)
             {
                 builder.Services.Configure<MvcOptions>(s => s.OutputFormatters.Insert(0, new Fireasy.Web.Mvc.JsonOutputFormatter(options)));
@@ -68,7 +70,11 @@ namespace Microsoft.Extensions.DependencyInjection
                     });
             }
 
-            builder.Services.Configure(setupAction);
+            if (setupAction != null)
+            {
+                builder.Services.Configure(setupAction);
+            }
+
             return builder;
         }
 

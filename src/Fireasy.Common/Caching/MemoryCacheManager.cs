@@ -209,7 +209,7 @@ namespace Fireasy.Common.Caching
         /// <summary>
         /// 获取或设容量大小。默认为 1000。
         /// </summary>
-        public int Capacity { get; set; } = 100;
+        public int Capacity { get; set; } = 1000;
 
         private CacheItem CreateCacheItem<T>(string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration, CacheItemRemovedCallback removeCallback)
         {

@@ -638,6 +638,7 @@ studio");
         [TestMethod()]
         public void TestSerializeArray()
         {
+            var o = new JsonSerializeOption { IgnoreNull = false };
             var serializer = new JsonSerializer();
 
             var array = new JsonData[]
@@ -1552,6 +1553,8 @@ studio");
             public DateTime Birthday { get; set; }
 
             public DateTime WorkTime { get; set; }
+
+            public int? A { get; set; }
 
             public decimal? Age { get; set; }
 

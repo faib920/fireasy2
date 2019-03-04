@@ -257,15 +257,15 @@ namespace Fireasy.Common.Serialization
             jsonWriter.WriteStartObject();
             foreach (var name in dynamicObject.Keys)
             {
-                if (!flag.AssertTrue())
-                {
-                    jsonWriter.WriteComma();
-                }
-
                 dynamicObject.TryGetValue(name, out object value);
                 if (option.IgnoreNull && value == null)
                 {
                     continue;
+                }
+
+                if (!flag.AssertTrue())
+                {
+                    jsonWriter.WriteComma();
                 }
 
                 jsonWriter.WriteKey(SerializeName(name));

@@ -37,6 +37,11 @@ namespace Microsoft.Extensions.DependencyInjection
                 }
             }
 
+            if (setupAction != null)
+            {
+                builder.Services.Configure(setupAction);
+            }
+
             return builder;
         }
     }

@@ -20,17 +20,30 @@ namespace Fireasy.Common.Dynamic
     {
         private Dictionary<string, object> values = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
-        public static implicit operator DynamicExpandoObject (KeyValuePair<string, object>[] sourceDic)
+        /// <summary>
+        /// 初始化 <see cref="DynamicExpandoObject"/> 类的新实例。
+        /// </summary>
+        public DynamicExpandoObject()
         {
-            var result = new DynamicExpandoObject();
-            var dictionary = (IDictionary<string, object>)result;
+        }
 
-            foreach (var kvp in sourceDic)
+        /// <summary>
+        /// 使用一组 <see cref="IEnumerable&lt;KeyValuePair&lt;string, object&gt;&gt;"/> 初始化 <see cref="DynamicExpandoObject"/> 类的新实例。
+        /// </summary>
+        /// <param name="source"></param>
+        public DynamicExpandoObject(IEnumerable<KeyValuePair<string, object>> source)
+        {
+            Guard.ArgumentNull(source, nameof(source));
+
+            foreach (var kvp in source)
             {
-                dictionary.Add(kvp.Key, kvp.Value);
+                values.Add(kvp.Key, kvp.Value);
             }
+        }
 
-            return result;
+        public static implicit operator DynamicExpandoObject (KeyValuePair<string, object>[] array)
+        {
+            return new DynamicExpandoObject(array);
         }
 
         /// <summary>

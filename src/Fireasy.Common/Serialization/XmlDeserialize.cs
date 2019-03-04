@@ -218,7 +218,7 @@ namespace Fireasy.Common.Serialization
                 {
                     foreach (var str in xmlReader.ReadContentAsString().Split(',', ';'))
                     {
-                        container.Add(str);
+                        container.Add(str.ToType(elementType));
                     }
                 }
                 else
