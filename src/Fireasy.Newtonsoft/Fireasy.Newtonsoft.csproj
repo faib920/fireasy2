@@ -6,7 +6,7 @@
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
     <FileVersion>2.0.0.46108</FileVersion>
-    <Copyright>Copyright © Fireasy 2013-2018</Copyright>
+    <Copyright>Copyright © Fireasy 2013-2019</Copyright>
     <AssemblyVersion>2.0.0.46108</AssemblyVersion>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>

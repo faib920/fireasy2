@@ -5,7 +5,9 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
+using System.Data;
 
 namespace Fireasy.Data.Schema
 {
@@ -16,9 +18,26 @@ namespace Fireasy.Data.Schema
     {
         public PostgreSqlSchema()
         {
+            AddRestriction<Database>(s => s.Name);
             AddRestriction<Table>(s => s.Name, s => s.Type);
             AddRestriction<Column>(s => s.TableName, s => s.Name);
             AddRestriction<ForeignKey>(s => s.TableName, s => s.Name);
+
+            AddDataType("bit", DbType.Byte, typeof(byte));
+            AddDataType("boolean", DbType.Boolean, typeof(bool));
+            AddDataType("smallint", DbType.Int16, typeof(short));
+            AddDataType("integer", DbType.Int32, typeof(int));
+            AddDataType("serial", DbType.Int32, typeof(int));
+            AddDataType("bigint", DbType.Int64, typeof(long));
+            AddDataType("bigserial", DbType.Int64, typeof(long));
+            AddDataType("real", DbType.Single, typeof(float));
+            AddDataType("bytea", DbType.Binary, typeof(byte[]));
+            AddDataType("char", DbType.String, typeof(string));
+            AddDataType("varchar", DbType.String, typeof(string));
+            AddDataType("text", DbType.String, typeof(string));
+            AddDataType("xml", DbType.Xml, typeof(string));
+            AddDataType("uuid", DbType.Guid, typeof(Guid));
+            AddDataType("timestamp", DbType.DateTime, typeof(DateTime));
         }
 
         protected override IEnumerable<Database> GetDatabases(IDatabase database, RestrictionDictionary restrictionValues)

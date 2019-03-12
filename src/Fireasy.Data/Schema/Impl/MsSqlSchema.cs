@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
 using System.Data;
 
@@ -28,6 +29,36 @@ namespace Fireasy.Data.Schema
             AddRestriction<Index>(s => s.TableName, s => s.Name);
             AddRestriction<IndexColumn>(s => s.TableName, s => s.Name, s => s.ColumnName);
             AddRestriction<ForeignKey>(s => s.TableName, s => s.Name);
+
+            AddDataType("bit", DbType.Boolean, typeof(bool));
+            AddDataType("smallint", DbType.Int16, typeof(short));
+            AddDataType("tinyint", DbType.SByte, typeof(sbyte));
+            AddDataType("int", DbType.Int32, typeof(int));
+            AddDataType("bigint", DbType.Int64, typeof(long));
+            AddDataType("real", DbType.Single, typeof(float));
+            AddDataType("float", DbType.Single, typeof(float));
+            AddDataType("money", DbType.Decimal, typeof(decimal));
+            AddDataType("smallmoney", DbType.Decimal, typeof(decimal));
+            AddDataType("varbinary", DbType.Binary, typeof(byte[]));
+            AddDataType("timestamp", DbType.Binary, typeof(byte[]));
+            AddDataType("binary", DbType.Binary, typeof(byte[]));
+            AddDataType("image", DbType.Binary, typeof(byte[]));
+            AddDataType("char", DbType.String, typeof(string));
+            AddDataType("nchar", DbType.String, typeof(string));
+            AddDataType("varchar", DbType.String, typeof(string));
+            AddDataType("nvarchar", DbType.String, typeof(string));
+            AddDataType("text", DbType.String, typeof(string));
+            AddDataType("ntext", DbType.String, typeof(string));
+            AddDataType("xml", DbType.Xml, typeof(string));
+            AddDataType("decimal", DbType.Decimal, typeof(decimal));
+            AddDataType("numeric", DbType.Decimal, typeof(decimal));
+            AddDataType("uniqueidentifier", DbType.Guid, typeof(Guid));
+            AddDataType("datetime", DbType.DateTime, typeof(DateTime));
+            AddDataType("smalldatetime", DbType.DateTime, typeof(DateTime));
+            AddDataType("date", DbType.Date, typeof(DateTime));
+            AddDataType("time", DbType.Time, typeof(DateTime));
+            AddDataType("datetime2", DbType.DateTime2, typeof(DateTime));
+            AddDataType("datetimeoffset", DbType.Int64, typeof(DateTimeOffset));
         }
 
         protected override IEnumerable<Database> GetDatabases(IDatabase database, RestrictionDictionary restrictionValues)
@@ -40,12 +71,12 @@ SELECT NAME AS DATABASE_NAME, CRDATE AS CREATE_DATE FROM MASTER..SYSDATABASES WH
             restrictionValues.Parameterize(parameters, "NAME", nameof(Database.Name));
 
             return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new Database
-                {
-                    Name = wrapper.GetString(reader, 0),
-                    CreateDate = wrapper.GetDateTime(reader, 1)
-                });
+            {
+                Name = wrapper.GetString(reader, 0),
+                CreateDate = wrapper.GetDateTime(reader, 1)
+            });
         }
-        
+
         protected override IEnumerable<User> GetUsers(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
@@ -56,10 +87,10 @@ SELECT UID, NAME AS USER_NAME, CREATEDATE, UPDATEDATE FROM SYSUSERS WHERE (NAME 
             restrictionValues.Parameterize(parameters, "NAME", nameof(User.Name));
 
             return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new User
-                {
-                    Name = wrapper.GetString(reader, 1),
-                    CreateDate = wrapper.GetDateTime(reader, 2)
-                });
+            {
+                Name = wrapper.GetString(reader, 1),
+                CreateDate = wrapper.GetDateTime(reader, 2)
+            });
         }
 
         protected override IEnumerable<Table> GetTables(IDatabase database, RestrictionDictionary restrictionValues)
@@ -86,15 +117,15 @@ WHERE TABLE_TYPE <> 'view'
                 .Parameterize(parameters, "TABLETYPE", nameof(Table.Type));
 
             return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new Table
-                {
-                    Catalog = wrapper.GetString(reader, 0),
-                    Schema = wrapper.GetString(reader, 1),
-                    Name = wrapper.GetString(reader, 2),
-                    Type = wrapper.GetString(reader, 3) == "BASE TABLE" ? TableType.BaseTable : TableType.SystemTable,
-                    Description = wrapper.GetString(reader, 4)
-                });
+            {
+                Catalog = wrapper.GetString(reader, 0),
+                Schema = wrapper.GetString(reader, 1),
+                Name = wrapper.GetString(reader, 2),
+                Type = wrapper.GetString(reader, 3) == "BASE TABLE" ? TableType.BaseTable : TableType.SystemTable,
+                Description = wrapper.GetString(reader, 4)
+            });
         }
-        
+
         protected override IEnumerable<Column> GetColumns(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
@@ -128,21 +159,21 @@ WHERE  (T.TABLE_CATALOG = '{connpar.Database}') AND
                 .Parameterize(parameters, "COLUMNNAME", nameof(Column.Name));
 
             return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new Column
-                {
-                    Catalog = wrapper.GetString(reader, 0),
-                    Schema = wrapper.GetString(reader, 1),
-                    TableName = wrapper.GetString(reader, 2),
-                    Name = wrapper.GetString(reader, 3),
-                    DataType = wrapper.GetString(reader, 4),
-                    Length = wrapper.GetInt64(reader, 5),
-                    NumericPrecision = wrapper.GetInt32(reader, 6),
-                    NumericScale = wrapper.GetInt32(reader, 7),
-                    IsNullable = wrapper.GetString(reader, 8) == "YES",
-                    IsPrimaryKey = wrapper.GetInt32(reader, 9) > 0,
-                    Default = wrapper.GetString(reader, 10),
-                    Description = wrapper.GetString(reader, 11),
-                    Autoincrement = wrapper.GetInt32(reader, 12) == 1
-                });
+            {
+                Catalog = wrapper.GetString(reader, 0),
+                Schema = wrapper.GetString(reader, 1),
+                TableName = wrapper.GetString(reader, 2),
+                Name = wrapper.GetString(reader, 3),
+                DataType = wrapper.GetString(reader, 4),
+                Length = wrapper.GetInt64(reader, 5),
+                NumericPrecision = wrapper.GetInt32(reader, 6),
+                NumericScale = wrapper.GetInt32(reader, 7),
+                IsNullable = wrapper.GetString(reader, 8) == "YES",
+                IsPrimaryKey = wrapper.GetInt32(reader, 9) > 0,
+                Default = wrapper.GetString(reader, 10),
+                Description = wrapper.GetString(reader, 11),
+                Autoincrement = wrapper.GetInt32(reader, 12) == 1
+            });
         }
 
         protected override IEnumerable<View> GetViews(IDatabase database, RestrictionDictionary restrictionValues)
@@ -165,12 +196,12 @@ WHERE TABLE_TYPE = 'view'
             restrictionValues.Parameterize(parameters, "NAME", nameof(View.Name));
 
             return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new View
-                {
-                    Catalog = wrapper.GetString(reader, 0),
-                    Schema = wrapper.GetString(reader, 1),
-                    Name = wrapper.GetString(reader, 2),
-                    Description = wrapper.GetString(reader, 3)
-                });
+            {
+                Catalog = wrapper.GetString(reader, 0),
+                Schema = wrapper.GetString(reader, 1),
+                Name = wrapper.GetString(reader, 2),
+                Description = wrapper.GetString(reader, 3)
+            });
         }
 
         protected override IEnumerable<ViewColumn> GetViewColumns(IDatabase database, RestrictionDictionary restrictionValues)
@@ -198,12 +229,12 @@ ORDER BY VIEW_CATALOG, VIEW_SCHEMA, VIEW_NAME";
                 .Parameterize(parameters, "COLUMN", nameof(ViewColumn.Name));
 
             return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new ViewColumn
-                {
-                    Catalog = wrapper.GetString(reader, 0),
-                    Schema = wrapper.GetString(reader, 1),
-                    ViewName = wrapper.GetString(reader, 2),
-                    Name = wrapper.GetString(reader, 6)
-                });
+            {
+                Catalog = wrapper.GetString(reader, 0),
+                Schema = wrapper.GetString(reader, 1),
+                ViewName = wrapper.GetString(reader, 2),
+                Name = wrapper.GetString(reader, 6)
+            });
 
         }
 
@@ -245,15 +276,15 @@ WHERE TC.CONSTRAINT_TYPE = 'FOREIGN KEY' AND
                 .Parameterize(parameters, "NAME", nameof(ForeignKey.Name));
 
             return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new ForeignKey
-                {
-                    Catalog = wrapper.GetString(reader, 0),
-                    Schema = wrapper.GetString(reader, 1),
-                    Name = wrapper.GetString(reader, 2),
-                    TableName = wrapper.GetString(reader, 3),
-                    ColumnName = wrapper.GetString(reader, 4),
-                    PKTable = wrapper.GetString(reader, 5),
-                    PKColumn = wrapper.GetString(reader, 6),
-                });
+            {
+                Catalog = wrapper.GetString(reader, 0),
+                Schema = wrapper.GetString(reader, 1),
+                Name = wrapper.GetString(reader, 2),
+                TableName = wrapper.GetString(reader, 3),
+                ColumnName = wrapper.GetString(reader, 4),
+                PKTable = wrapper.GetString(reader, 5),
+                PKColumn = wrapper.GetString(reader, 6),
+            });
         }
 
         protected override IEnumerable<Index> GetIndexs(IDatabase database, RestrictionDictionary restrictionValues)
@@ -281,14 +312,14 @@ WHERE O.TYPE IN ('U') AND X.ID = O.ID  AND O.ID = XK.ID AND X.INDID = XK.INDID A
                 .Parameterize(parameters, "NAME", nameof(Index.Name));
 
             return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new Index
-                {
-                    Catalog = wrapper.GetString(reader, 0),
-                    Schema = wrapper.GetString(reader, 1),
-                    TableName = wrapper.GetString(reader, 5),
-                    Name = wrapper.GetString(reader, 6)
-                });
+            {
+                Catalog = wrapper.GetString(reader, 0),
+                Schema = wrapper.GetString(reader, 1),
+                TableName = wrapper.GetString(reader, 5),
+                Name = wrapper.GetString(reader, 6)
+            });
         }
-                
+
         protected override IEnumerable<IndexColumn> GetIndexColumns(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var parameters = new ParameterCollection();
@@ -320,13 +351,13 @@ ORDER BY TABLE_NAME, INDEX_NAME";
                 .Parameterize(parameters, "COLUMN", nameof(IndexColumn.ColumnName));
 
             return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new IndexColumn
-                {
-                    Catalog = wrapper.GetString(reader, 0),
-                    Schema = wrapper.GetString(reader, 1),
-                    TableName = wrapper.GetString(reader, 5),
-                    IndexName = wrapper.GetString(reader, 2),
-                    ColumnName = wrapper.GetString(reader, 6)
-                });
+            {
+                Catalog = wrapper.GetString(reader, 0),
+                Schema = wrapper.GetString(reader, 1),
+                TableName = wrapper.GetString(reader, 5),
+                IndexName = wrapper.GetString(reader, 2),
+                ColumnName = wrapper.GetString(reader, 6)
+            });
         }
 
         protected override IEnumerable<Procedure> GetProcedures(IDatabase database, RestrictionDictionary restrictionValues)
@@ -356,12 +387,12 @@ ORDER BY SPECIFIC_CATALOG, SPECIFIC_SCHEMA, SPECIFIC_NAME";
                 .Parameterize(parameters, "TYPE", nameof(Procedure.Type));
 
             return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new Procedure
-                {
-                    Catalog = wrapper.GetString(reader, 0),
-                    Schema = wrapper.GetString(reader, 1),
-                    Name = wrapper.GetString(reader, 2),
-                    Type = wrapper.GetString(reader, 6)
-                });
+            {
+                Catalog = wrapper.GetString(reader, 0),
+                Schema = wrapper.GetString(reader, 1),
+                Name = wrapper.GetString(reader, 2),
+                Type = wrapper.GetString(reader, 6)
+            });
         }
 
         protected override IEnumerable<ProcedureParameter> GetProcedureParameters(IDatabase database, RestrictionDictionary restrictionValues)
@@ -405,17 +436,17 @@ ORDER BY SPECIFIC_CATALOG, SPECIFIC_SCHEMA, SPECIFIC_NAME, PARAMETER_NAME";
                 .Parameterize(parameters, "PARAMETER", nameof(ProcedureParameter.Name));
 
             return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new ProcedureParameter
-                {
-                    Catalog = wrapper.GetString(reader, 0),
-                    Schema = wrapper.GetString(reader, 1),
-                    ProcedureName = wrapper.GetString(reader, 2),
-                    Name = wrapper.GetString(reader, 7),
-                    Direction = wrapper.GetString(reader, 5) == "YES" ? ParameterDirection.ReturnValue : (wrapper.GetString(reader, 4) == "IN" ? ParameterDirection.Input : ParameterDirection.Output), 
-                    NumericPrecision = wrapper.GetInt32(reader, 17),
-                    NumericScale = wrapper.GetInt32(reader, 19),
-                    DataType = wrapper.GetString(reader, 8),
-                    Length = wrapper.GetInt64(reader, 9)
-                });
+            {
+                Catalog = wrapper.GetString(reader, 0),
+                Schema = wrapper.GetString(reader, 1),
+                ProcedureName = wrapper.GetString(reader, 2),
+                Name = wrapper.GetString(reader, 7),
+                Direction = wrapper.GetString(reader, 5) == "YES" ? ParameterDirection.ReturnValue : (wrapper.GetString(reader, 4) == "IN" ? ParameterDirection.Input : ParameterDirection.Output),
+                NumericPrecision = wrapper.GetInt32(reader, 17),
+                NumericScale = wrapper.GetInt32(reader, 19),
+                DataType = wrapper.GetString(reader, 8),
+                Length = wrapper.GetInt64(reader, 9)
+            });
         }
     }
 }

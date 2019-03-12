@@ -29,6 +29,54 @@ namespace Fireasy.Data.Schema
             AddRestriction<Index>(s => s.TableName, s => s.Name);
             AddRestriction<IndexColumn>(s => s.TableName, s => s.Name, s => s.ColumnName);
             AddRestriction<ForeignKey>(s => s.TableName, s => s.Name);
+
+            AddDataType("bit", DbType.Boolean, typeof(bool));
+            AddDataType("yesno", DbType.Boolean, typeof(bool));
+            AddDataType("logical", DbType.Boolean, typeof(bool));
+            AddDataType("bool", DbType.Boolean, typeof(bool));
+            AddDataType("boolean", DbType.Boolean, typeof(bool));
+            AddDataType("smallint", DbType.Int16, typeof(short));
+            AddDataType("tinyint", DbType.Byte, typeof(byte));
+            AddDataType("integer", DbType.Int32, typeof(int));
+            AddDataType("counter", DbType.Int64, typeof(long));
+            AddDataType("autoincrement", DbType.Int64, typeof(long));
+            AddDataType("identity", DbType.Int64, typeof(long));
+            AddDataType("long", DbType.Int64, typeof(long));
+            AddDataType("bigint", DbType.Int64, typeof(long));
+            AddDataType("real", DbType.Single, typeof(float));
+            AddDataType("single", DbType.Single, typeof(float));
+            AddDataType("float", DbType.Double, typeof(double));
+            AddDataType("double", DbType.Double, typeof(double));
+            AddDataType("money", DbType.Decimal, typeof(decimal));
+            AddDataType("currency", DbType.Decimal, typeof(decimal));
+            AddDataType("decimal", DbType.Decimal, typeof(decimal));
+            AddDataType("numeric", DbType.Decimal, typeof(decimal));
+            AddDataType("varbinary", DbType.Binary, typeof(byte[]));
+            AddDataType("blob", DbType.Binary, typeof(byte[]));
+            AddDataType("binary", DbType.Binary, typeof(byte[]));
+            AddDataType("image", DbType.Binary, typeof(byte[]));
+            AddDataType("general", DbType.Binary, typeof(byte[]));
+            AddDataType("oleobject", DbType.Binary, typeof(byte[]));
+            AddDataType("char", DbType.String, typeof(string));
+            AddDataType("nchar", DbType.String, typeof(string));
+            AddDataType("varchar", DbType.String, typeof(string));
+            AddDataType("nvarchar", DbType.String, typeof(string));
+            AddDataType("memo", DbType.String, typeof(string));
+            AddDataType("note", DbType.String, typeof(string));
+            AddDataType("string", DbType.String, typeof(string));
+            AddDataType("text", DbType.String, typeof(string));
+            AddDataType("ntext", DbType.String, typeof(string));
+            AddDataType("longtext", DbType.String, typeof(string));
+            AddDataType("xml", DbType.Xml, typeof(string));
+            AddDataType("decimal", DbType.Decimal, typeof(decimal));
+            AddDataType("numeric", DbType.Decimal, typeof(decimal));
+            AddDataType("guid", DbType.Guid, typeof(Guid));
+            AddDataType("uniqueidentifier", DbType.Guid, typeof(Guid));
+            AddDataType("datetime", DbType.DateTime, typeof(DateTime));
+            AddDataType("smalldate", DbType.DateTime, typeof(DateTime));
+            AddDataType("date", DbType.Date, typeof(DateTime));
+            AddDataType("time", DbType.Time, typeof(DateTime));
+            AddDataType("timestamp", DbType.DateTime2, typeof(DateTime));
         }
 
         protected override IEnumerable<Table> GetTables(IDatabase database, RestrictionDictionary restrictionValues)

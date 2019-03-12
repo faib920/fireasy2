@@ -174,6 +174,16 @@ namespace Fireasy.Data.Tests
         }
 
         [TestMethod]
+        public void TestExecuteEnumerableSingle()
+        {
+            using (var db = DatabaseFactory.CreateDatabase())
+            {
+                var result = db.ExecuteEnumerable<int>((SqlCommand)"select customerid from customers");
+                Console.WriteLine($"执行完毕 结果为{result.Count()}");
+            }
+        }
+
+        [TestMethod]
         public void TestExecuteDynamicEnumerable()
         {
             using (var db = DatabaseFactory.CreateDatabase())

@@ -29,6 +29,7 @@ namespace Fireasy.Data.Provider
         public OleDbProvider()
             : base(new InstallerProviderFactoryResolver("System.Data.OleDb"))
         {
+            RegisterService<ISchemaProvider, OleDbSchema>();
             RegisterService<IGeneratorProvider, BaseSequenceGenerator>();
             RegisterService<IRecordWrapper, GeneralRecordWrapper>();
         }
@@ -49,25 +50,17 @@ namespace Fireasy.Data.Provider
         {
             var provider = connectionString.Properties["provider"];
 
-            var parameter = new ConnectionParameter
+            if (provider.IndexOf("SQLOLEDB") != -1)
             {
-                Database = connectionString.Properties["data source"],
-                UserId = connectionString.Properties["user id"],
-                Password = connectionString.Properties["password"]
-            };
-
-            switch (provider.ToUpper())
-            {
-                case "SQLOLEDB":
-                    parameter.Schema = "dbo";
-                    break;
-                case "MSDAORA":
-                case "MSDAORA.1":
-                    parameter.Schema = connectionString.Properties["user id"].ToUpper();
-                    break;
+                return new ConnectionParameter
+                {
+                    Database = connectionString.Properties["initial catalog"],
+                    UserId = connectionString.Properties["user id"],
+                    Password = connectionString.Properties["password"]
+                };
             }
 
-            return parameter;
+            return null;
         }
 
         /// <summary>

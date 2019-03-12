@@ -35,7 +35,7 @@ public void TestSubscribe()
   </configSections>
   <fireasy>
     <subscribers>
-      <subscriber type="Fireasy.RabbitMQ.RabbitSubscribeManager, Fireasy.RabbitMQ">
+      <subscriber type="Fireasy.RabbitMQ.SubscribeManager, Fireasy.RabbitMQ">
         <config userName="guest" password="123" server="amqp://127.0.0.1:5672" />
       </subscriber>
     </subscribers>
@@ -50,7 +50,7 @@ public void TestSubscribe()
     "subscribers": {
       "settings": {
         "redis": {
-          "type": "Fireasy.RabbitMQ.RabbitSubscribeManager, Fireasy.RabbitMQ",
+          "type": "Fireasy.RabbitMQ.SubscribeManager, Fireasy.RabbitMQ",
           "config": {
              "userName": "guest",
              "passwprd": "123",

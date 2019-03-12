@@ -52,7 +52,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Newtonsoft", "src\F
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Kafka", "src\Fireasy.Kafka\Fireasy.Kafka.csproj", "{2367FCA7-2443-42A4-8787-3BCB4CB78351}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fireasy.MvcCore.Tests", "test\Fireasy.MvcCore.Tests\Fireasy.MvcCore.Tests.csproj", "{6F7308C6-BA41-41F2-BDE0-773A6DEBB359}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.MvcCore.Tests", "test\Fireasy.MvcCore.Tests\Fireasy.MvcCore.Tests.csproj", "{6F7308C6-BA41-41F2-BDE0-773A6DEBB359}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Aliyun", "src\Fireasy.Aliyun\Fireasy.Aliyun.csproj", "{E4F30462-AC92-4BDF-B875-16342BE9A894}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -140,6 +142,10 @@ Global
 		{6F7308C6-BA41-41F2-BDE0-773A6DEBB359}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6F7308C6-BA41-41F2-BDE0-773A6DEBB359}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6F7308C6-BA41-41F2-BDE0-773A6DEBB359}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4F30462-AC92-4BDF-B875-16342BE9A894}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4F30462-AC92-4BDF-B875-16342BE9A894}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4F30462-AC92-4BDF-B875-16342BE9A894}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4F30462-AC92-4BDF-B875-16342BE9A894}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -165,6 +171,7 @@ Global
 		{4A6B2C90-EF17-41F5-B418-DE570C01EC50} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
 		{2367FCA7-2443-42A4-8787-3BCB4CB78351} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
 		{6F7308C6-BA41-41F2-BDE0-773A6DEBB359} = {9E3A93FF-A335-4546-93AC-6DD95595FA71}
+		{E4F30462-AC92-4BDF-B875-16342BE9A894} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {72E7FC59-9162-48A8-B31F-CB0FEE862E56}

@@ -14,7 +14,7 @@ namespace Fireasy.Data.Tests
 
         private void Invoke(Action<IDatabase, ISchemaProvider> action)
         {
-            using (var db = DatabaseFactory.CreateDatabase("sqlite"))
+            using (var db = DatabaseFactory.CreateDatabase("access"))
             {
                 var schema = db.Provider.GetService<ISchemaProvider>();
                 action(db, schema);
@@ -52,7 +52,7 @@ namespace Fireasy.Data.Tests
             {
                 foreach (var dt in schema.GetSchemas<DataType>(db))
                 {
-                    Console.WriteLine(dt.Name);
+                    Console.WriteLine(dt.Name + " " + dt.DbType + " " + dt.SystemType);
                 }
             });
         }
@@ -64,7 +64,7 @@ namespace Fireasy.Data.Tests
             {
                 foreach (var table in schema.GetSchemas<Table>(db))
                 {
-                    Console.WriteLine(table.Name + "," + table.Description);
+                    Console.WriteLine(table.Name + "," + table.Type + "," + table.Description);
                 }
             });
         }

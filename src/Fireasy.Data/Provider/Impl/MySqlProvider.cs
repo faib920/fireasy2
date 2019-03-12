@@ -56,8 +56,7 @@ namespace Fireasy.Data.Provider
                 Server = connectionString.Properties["data source"],
                 Database = connectionString.Properties["database"],
                 UserId = connectionString.Properties["user id"],
-                Password = connectionString.Properties["password"],
-                Schema = connectionString.Properties["database"]
+                Password = connectionString.Properties["password"]
             };
         }
 

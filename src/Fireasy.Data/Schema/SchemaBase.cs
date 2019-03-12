@@ -26,6 +26,7 @@ namespace Fireasy.Data.Schema
     public abstract class SchemaBase : ISchemaProvider
     {
         private readonly Dictionary<Type, List<MemberInfo>> dicRestrMbrs = new Dictionary<Type, List<MemberInfo>>();
+        private readonly List<DataType> dataTypes = new List<DataType>();
 
         public IProvider Provider { get; set; }
 
@@ -123,6 +124,17 @@ namespace Fireasy.Data.Schema
                     indexes.Add(property);
                 }
             }
+        }
+
+        /// <summary>
+        /// 添加数据类型。
+        /// </summary>
+        /// <param name="name">类型名称。</param>
+        /// <param name="dbType"></param>
+        /// <param name="systemType"></param>
+        protected void AddDataType(string name, DbType dbType, Type systemType)
+        {
+            dataTypes.Add(new DataType { Name = name, DbType = dbType, SystemType = systemType });
         }
 
         /// <summary>
@@ -258,7 +270,7 @@ namespace Fireasy.Data.Schema
         /// <returns></returns>
         protected virtual IEnumerable<DataType> GetDataTypes(IDatabase database, RestrictionDictionary restrictionValues)
         {
-            yield break;
+            return dataTypes;
         }
 
         /// <summary>

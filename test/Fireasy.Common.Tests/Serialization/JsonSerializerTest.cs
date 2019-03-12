@@ -1309,6 +1309,22 @@ studio");
         }
 
         /// <summary>
+        /// 测试Deserialize方法，返回数组。
+        /// </summary>
+        [TestMethod()]
+        public void TestDeserializeDynamicArray1()
+        {
+            var serializer = new JsonSerializer();
+
+            var json = new JsonText(@"[{a:12,b:33,c:44.55,d:'55',e:null}]").ToString();
+
+            var array = serializer.Deserialize<object[]>(json);
+
+            Assert.IsNotNull(array);
+            Assert.AreEqual(4, array.Length);
+        }
+
+        /// <summary>
         /// 测试Deserialize方法，返回ArrayList。
         /// </summary>
         [TestMethod()]

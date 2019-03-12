@@ -61,7 +61,6 @@ namespace Fireasy.Data.Provider
             return new ConnectionParameter
             {
                 Server = connectionString.Properties["data source"],
-                Schema = connectionString.Properties["user id"].ToUpper(),
                 UserId = connectionString.Properties["user id"],
                 Password = connectionString.Properties["password"]
             };

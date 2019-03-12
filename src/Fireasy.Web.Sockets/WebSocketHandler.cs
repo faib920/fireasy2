@@ -75,7 +75,10 @@ namespace Fireasy.Web.Sockets
 
             try
             {
-                await acceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Text, true, CancellationToken.None);
+                if (IsValidState(WebSocketState.Open, WebSocketState.CloseReceived))
+                {
+                    await acceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Text, true, CancellationToken.None);
+                }
             }
             catch (Exception exp)
             {
@@ -112,16 +115,34 @@ namespace Fireasy.Web.Sockets
 
                     if (bytes != null)
                     {
-                        await acceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), result.MessageType, result.EndOfMessage, CancellationToken.None);
+                        try
+                        {
+                            await acceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), result.MessageType, result.EndOfMessage, CancellationToken.None);
+                        }
+                        catch
+                        {
+                            break;
+                        }
                     }
                 }
 
-                result = await acceptContext.WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                try
+                {
+                    result = await acceptContext.WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                }
+                catch
+                {
+                    break;
+                }
             }
 
             if (result.CloseStatus.HasValue)
             {
-                await acceptContext.WebSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
+                try
+                {
+                    await acceptContext.WebSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
+                }
+                catch { }
             }
 
             ManualClose();
@@ -154,6 +175,13 @@ namespace Fireasy.Web.Sockets
         /// </summary>
         /// <param name="bytes"></param>
         protected virtual void OnReceived(byte[] bytes)
+        {
+        }
+
+        /// <summary>
+        /// 检测到心跳。
+        /// </summary>
+        protected virtual void OnHeartBeating()
         {
         }
 
@@ -216,17 +244,24 @@ namespace Fireasy.Web.Sockets
         /// <returns></returns>
         private byte[] HandleResult(WebSocketMessageType type, byte[] data)
         {
-            ProcessHeartBeat();
-
             if (type == WebSocketMessageType.Binary)
             {
-                OnReceived(data);
+                //处理心跳
+                if (data.Length == 1 && data[0] == '\0')
+                {
+                    lastHeartbeatTime = DateTime.Now;
+                    OnHeartBeating();
+                    return data;
+                }
+                else
+                {
+                    OnReceived(data);
+                }
             }
             else if (type == WebSocketMessageType.Text)
             {
                 var content = acceptContext.Option.Encoding.GetString(data);
-                InvokeMessage message = null;
-
+                InvokeMessage message;
                 try
                 {
                     OnReceived(content);
@@ -336,14 +371,6 @@ namespace Fireasy.Web.Sockets
         }
 
         /// <summary>
-        /// 处理心跳包。
-        /// </summary>
-        private void ProcessHeartBeat()
-        {
-            lastHeartbeatTime = DateTime.Now;
-        }
-
-        /// <summary>
         /// 手动关闭。
         /// </summary>
         private void ManualClose()
@@ -372,7 +399,13 @@ namespace Fireasy.Web.Sockets
                     {
                         if (acceptContext.WebSocket.State == WebSocketState.Open)
                         {
-                            acceptContext.WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
+                            try
+                            {
+                                acceptContext.WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "heartbeat timeout", CancellationToken.None);
+                            }
+                            catch
+                            {
+                            }
                         }
                         else
                         {
@@ -396,6 +429,11 @@ namespace Fireasy.Web.Sockets
                     Add(buffer[i]);
                 }
             }
+        }
+
+        private bool IsValidState(params WebSocketState[] status)
+        {
+            return Array.IndexOf(status, acceptContext.WebSocket.State) >= 0;
         }
     }
 }

@@ -50,5 +50,18 @@ namespace Fireasy.Data.Schema
             value = null;
             return false;
         }
+
+        public string GetValue(string name)
+        {
+            if (TryGetValue(name, out object obj))
+            {
+                if (obj != null)
+                {
+                    return obj.ToString();
+                }
+            }
+
+            return null;
+        }
     }
 }

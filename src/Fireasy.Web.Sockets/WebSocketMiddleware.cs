@@ -42,11 +42,7 @@ namespace Fireasy.Web.Sockets
                 var webSocket = await context.WebSockets.AcceptWebSocketAsync();
                 var handlerType = option.GetHandlerType(context.Request.Path);
 
-                if (handlerType == null || !typeof(WebSocketHandler).IsAssignableFrom(handlerType))
-                {
-                    context.Response.StatusCode = 400;
-                }
-                else
+                if (handlerType != null && typeof(WebSocketHandler).IsAssignableFrom(handlerType))
                 {
                     var handler = GetHandler(handlerType);
                     if (handler != null)

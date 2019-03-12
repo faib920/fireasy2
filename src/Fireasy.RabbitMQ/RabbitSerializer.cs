@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Serialization;
 using System;
+using System.Text;
 
 namespace Fireasy.RabbitMQ
 {
@@ -21,37 +22,37 @@ namespace Fireasy.RabbitMQ
         /// <typeparam name="T"></typeparam>
         /// <param name="obj"></param>
         /// <returns></returns>
-        public virtual string Serialize<T>(T obj)
+        public virtual byte[] Serialize<T>(T obj)
         {
             var option = new JsonSerializeOption();
             option.Converters.Add(new FullDateTimeJsonConverter());
             var serializer = new JsonSerializer(option);
-            return serializer.Serialize(obj);
+            return Encoding.UTF8.GetBytes(serializer.Serialize(obj));
         }
 
         /// <summary>
         /// 反序列化。
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="str"></param>
+        /// <param name="data"></param>
         /// <returns></returns>
-        public virtual T Deserialize<T>(string str)
+        public virtual T Deserialize<T>(byte[] data)
         {
-            return (T)Deserialize(typeof(T), str);
+            return (T)Deserialize(typeof(T), data);
         }
 
         /// <summary>
         /// 反序列化。
         /// </summary>
         /// <param name="type"></param>
-        /// <param name="str"></param>
+        /// <param name="data"></param>
         /// <returns></returns>
-        public virtual object Deserialize(Type type, string str)
+        public virtual object Deserialize(Type type, byte[] data)
         {
             var option = new JsonSerializeOption();
             option.Converters.Add(new FullDateTimeJsonConverter());
             var serializer = new JsonSerializer(option);
-            return serializer.Deserialize(str, type);
+            return serializer.Deserialize(Encoding.UTF8.GetString(data), type);
         }
     }
 }

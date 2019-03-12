@@ -43,7 +43,7 @@ namespace Fireasy.Common.Logging
 
         public static bool IsConfigured(LogLevel level)
         {
-            return level == LogLevel.Default || _level.HasFlag(level);
+            return _level == LogLevel.Default || _level.HasFlag(level);
         }
     }
 

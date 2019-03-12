@@ -24,11 +24,6 @@ namespace Fireasy.Data
         public string Database { get; set; }
 
         /// <summary>
-        /// 获取或设置架构名称。
-        /// </summary>
-        public string Schema { get; set; }
-
-        /// <summary>
         /// 获取或设置用户名。
         /// </summary>
         public string UserId { get; set; }

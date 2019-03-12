@@ -26,6 +26,20 @@ namespace Fireasy.Data.Schema
             AddRestriction<Index>(s => s.TableName, s => s.Name);
             AddRestriction<IndexColumn>(s => s.TableName, s => s.Name, s => s.ColumnName);
             AddRestriction<ForeignKey>(s => s.TableName, s => s.Name);
+
+            AddDataType("smallint", DbType.Int16, typeof(short));
+            AddDataType("integer", DbType.Int32, typeof(int));
+            AddDataType("bigint", DbType.Int64, typeof(long));
+            AddDataType("float", DbType.Single, typeof(float));
+            AddDataType("numeric", DbType.Decimal, typeof(decimal));
+            AddDataType("decimal", DbType.Decimal, typeof(decimal));
+            AddDataType("double precision", DbType.Double, typeof(double));
+            AddDataType("blob", DbType.Binary, typeof(byte[]));
+            AddDataType("char", DbType.String, typeof(string));
+            AddDataType("varchar", DbType.String, typeof(string));
+            AddDataType("timestamp", DbType.DateTime, typeof(DateTime));
+            AddDataType("date", DbType.Date, typeof(DateTime));
+            AddDataType("time", DbType.Int64, typeof(TimeSpan));
         }
 
         protected override IEnumerable<Table> GetTables(IDatabase database, RestrictionDictionary restrictionValues)

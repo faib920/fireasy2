@@ -13,6 +13,7 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Fireasy.RabbitMQ
@@ -23,8 +24,7 @@ namespace Fireasy.RabbitMQ
         private RabbitConfigurationSetting setting;
 
         private static Lazy<IConnection> connectionLazy;
-        private static SafetyDictionary<string, List<Delegate>> subscribers = new SafetyDictionary<string, List<Delegate>>();
-        private static SafetyDictionary<string, IModel> channels = new SafetyDictionary<string, IModel>();
+        private static SafetyDictionary<string, RabbitChannelCollection> subscribers = new SafetyDictionary<string, RabbitChannelCollection>();
 
         /// <summary>
         /// 向 Rabbit 服务器发送消息主题。
@@ -34,7 +34,7 @@ namespace Fireasy.RabbitMQ
         public void Publish<TSubject>(TSubject subject) where TSubject : class
         {
             var channelName = ChannelHelper.GetChannelName(typeof(TSubject));
-            var data = Encoding.UTF8.GetBytes(Serialize(subject));
+            var data = Serialize(subject);
 
             Publish(channelName, data);
         }
@@ -76,13 +76,8 @@ namespace Fireasy.RabbitMQ
         public void AddSubscriber(Type subjectType, Delegate subscriber)
         {
             var channelName = ChannelHelper.GetChannelName(subjectType);
-            var list = subscribers.GetOrAdd(channelName, () =>
-                {
-                    StartQueue(channelName);
-                    return new List<Delegate>();
-                });
-
-            list.Add(subscriber);
+            var list = subscribers.GetOrAdd(channelName, () => new RabbitChannelCollection());
+            list.Add(new RabbitChannel(subscriber, StartQueue(channelName)));
         }
 
         /// <summary>
@@ -92,13 +87,8 @@ namespace Fireasy.RabbitMQ
         /// <param name="subscriber">读取数据的方法。</param>
         public void AddSubscriber(string channel, Action<byte[]> subscriber)
         {
-            var list = subscribers.GetOrAdd(channel, () =>
-                {
-                    StartQueue(channel);
-                    return new List<Delegate>();
-                });
-
-            list.Add(subscriber);
+            var list = subscribers.GetOrAdd(channel, () => new RabbitChannelCollection());
+            list.Add(new RabbitChannel(subscriber, StartQueue(channel)));
         }
 
         /// <summary>
@@ -126,10 +116,9 @@ namespace Fireasy.RabbitMQ
         /// <param name="channel">通道名称。</param>
         public void RemoveSubscriber(string channel)
         {
-            if (channels.TryGetValue(channel, out IModel model))
+            if (subscribers.TryGetValue(channel, out RabbitChannelCollection channels))
             {
-                model.QueueDelete(channel);
-                subscribers.TryRemove(channel, out List<Delegate> delegates);
+                channels.ForEach(s => s.Model.QueueDelete(channel));
             }
         }
 
@@ -139,7 +128,7 @@ namespace Fireasy.RabbitMQ
         /// <typeparam name="T"></typeparam>
         /// <param name="value"></param>
         /// <returns></returns>
-        protected virtual T Deserialize<T>(string value)
+        protected virtual T Deserialize<T>(byte[] value)
         {
             var serializer = CreateSerializer();
             return serializer.Deserialize<T>(value);
@@ -151,7 +140,7 @@ namespace Fireasy.RabbitMQ
         /// <param name="type"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        protected virtual object Deserialize(Type type, string value)
+        protected virtual object Deserialize(Type type, byte[] value)
         {
             var serializer = CreateSerializer();
             return serializer.Deserialize(type, value);
@@ -163,7 +152,7 @@ namespace Fireasy.RabbitMQ
         /// <typeparam name="T"></typeparam>
         /// <param name="value"></param>
         /// <returns></returns>
-        protected virtual string Serialize<T>(T value)
+        protected virtual byte[] Serialize<T>(T value)
         {
             var serializer = CreateSerializer();
             return serializer.Serialize(value);
@@ -193,48 +182,53 @@ namespace Fireasy.RabbitMQ
                     Password = setting.Password,
                     Endpoint = new AmqpTcpEndpoint(new Uri(setting.Server)),
                     RequestedHeartbeat = 12,
-                    AutomaticRecoveryEnabled = true
+                    AutomaticRecoveryEnabled = true,
                 }.CreateConnection());
             }
 
             return connectionLazy.Value;
         }
 
-        private void StartQueue(string channel)
+        private IModel StartQueue(string channel)
         {
-            var model = channels.GetOrAdd(channel, () => GetConnection().CreateModel());
+            var model = GetConnection().CreateModel();
+            model.BasicQos(0, 1, false);
             var queue = model.QueueDeclare(channel, true, false, true, null);
 
-            //创建事件驱动的消费者类型，不要用下边的死循环来消费消息
             var consumer = new EventingBasicConsumer(model);
             consumer.Received += (sender, args) =>
                 {
-                    if (subscribers.TryGetValue(channel, out List<Delegate> delegates))
+                    if (subscribers.TryGetValue(channel, out RabbitChannelCollection channels))
                     {
-                        foreach (var dele in delegates)
+                        var found = channels.Find(model);
+                        if (found == null)
                         {
-                            var actType = dele.GetType();
-                            if (!actType.IsGenericType || actType.GetGenericTypeDefinition() != typeof(Action<>))
-                            {
-                                continue;
-                            }
+                            return;
+                        }
 
-                            var subType = actType.GetGenericArguments()[0];
-                            if (subType == typeof(byte[]))
-                            {
-                                dele.DynamicInvoke(args.Body);
-                            }
-                            else
-                            {
-                                var body = Deserialize(subType, Encoding.UTF8.GetString(args.Body));
-                                dele.DynamicInvoke(body);
-                            }
+                        var actType = found.Handler.GetType();
+                        if (!actType.IsGenericType || actType.GetGenericTypeDefinition() != typeof(Action<>))
+                        {
+                            return;
+                        }
+
+                        var subType = actType.GetGenericArguments()[0];
+                        if (subType == typeof(byte[]))
+                        {
+                            found.Handler.DynamicInvoke(args.Body);
+                        }
+                        else
+                        {
+                            var body = Deserialize(subType, args.Body);
+                            found.Handler.DynamicInvoke(body);
                         }
                     }
                 };
 
             //消费消息
-            model.BasicConsume(channel, false, consumer);
+            model.BasicConsume(channel, true, consumer);
+
+            return model;
         }
 
         void IConfigurationSettingHostService.Attach(IConfigurationSettingItem setting)
@@ -245,6 +239,27 @@ namespace Fireasy.RabbitMQ
         IConfigurationSettingItem IConfigurationSettingHostService.GetSetting()
         {
             return setting;
+        }
+
+        private class RabbitChannelCollection : List<RabbitChannel>
+        {
+            public RabbitChannel Find(IModel model)
+            {
+                return this.FirstOrDefault(s => s.Model.Equals(model));
+            }
+        }
+
+        private class RabbitChannel
+        {
+            public RabbitChannel(Delegate handler, IModel model)
+            {
+                Handler = handler;
+                Model = model;
+            }
+
+            public Delegate Handler { get; set; }
+
+            public IModel Model { get; set; }
         }
     }
 }
