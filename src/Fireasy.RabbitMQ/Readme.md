@@ -2,6 +2,10 @@
 
 实现了 ISubscribeManager 接口，用时只需使用 SubscribeManagerFactory.CreateManager() 即可。
 
+Nuget 里搜索 Fireasy.RabbitMQ 或 通过程序包管理器控制台输入命令进行安装： 
+
+Install-Package Fireasy.RabbitMQ
+
 ```C#
 //主题的定义
 public class TestSubject

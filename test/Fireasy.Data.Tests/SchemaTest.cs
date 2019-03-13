@@ -14,7 +14,7 @@ namespace Fireasy.Data.Tests
 
         private void Invoke(Action<IDatabase, ISchemaProvider> action)
         {
-            using (var db = DatabaseFactory.CreateDatabase("access"))
+            using (var db = DatabaseFactory.CreateDatabase("pqsql"))
             {
                 var schema = db.Provider.GetService<ISchemaProvider>();
                 action(db, schema);

@@ -1,5 +1,9 @@
 该程序集提供 Redis 缓存及消息订阅两个实现。
 
+Nuget 里搜索 Fireasy.Redis 或 通过程序包管理器控制台输入命令进行安装： 
+
+Install-Package Fireasy.Redis
+
 一、缓存
     实现了 ICacheManager 接口，用时只需使用 CacheManagerFactory.CreateManager() 即可。
 
