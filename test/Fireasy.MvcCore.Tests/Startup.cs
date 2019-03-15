@@ -30,6 +30,8 @@ namespace Fireasy.MvcCore.Tests
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
+            services.AddTransient<IModel, TestModel>();
+
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
                 .ConfigureFireasyMvc(s => {  });
@@ -57,5 +59,15 @@ namespace Fireasy.MvcCore.Tests
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
         }
+    }
+
+    public interface IModel
+    {
+        string Name { get; set; }
+    }
+
+    public class TestModel : IModel
+    {
+        public string Name { get; set; }
     }
 }

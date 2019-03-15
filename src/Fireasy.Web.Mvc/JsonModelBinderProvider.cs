@@ -15,9 +15,9 @@ namespace Fireasy.Web.Mvc
 
         public IModelBinder GetBinder(ModelBinderProviderContext context)
         {
-            var type = context.Metadata.ModelType.GetNonNullableType();
-
-            if (!type.IsValueType && !type.IsEnum && type != typeof(string))
+            if ((context.BindingInfo.BindingSource != null &&
+                context.BindingInfo.BindingSource.Id != "Services") &&
+                context.Metadata.IsComplexType)
             {
                 return new JsonModelBinder(options);
             }

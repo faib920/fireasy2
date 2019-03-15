@@ -9,19 +9,19 @@ namespace Fireasy.Data
     {
         #region IRecordWrapper的方法
 
-        private static readonly MethodInfo GetCharMethod = typeof(IRecordWrapper).GetMethod("GetChar");
-        private static readonly MethodInfo GetByteMethod = typeof(IRecordWrapper).GetMethod("GetByte");
-        private static readonly MethodInfo GetBooleanMethod = typeof(IRecordWrapper).GetMethod("GetBoolean");
-        private static readonly MethodInfo GetInt16Method = typeof(IRecordWrapper).GetMethod("GetInt16");
-        private static readonly MethodInfo GetInt32Method = typeof(IRecordWrapper).GetMethod("GetInt32");
-        private static readonly MethodInfo GetInt64Method = typeof(IRecordWrapper).GetMethod("GetInt64");
-        private static readonly MethodInfo GetStringMethod = typeof(IRecordWrapper).GetMethod("GetString");
-        private static readonly MethodInfo GetDateTimeMethod = typeof(IRecordWrapper).GetMethod("GetDateTime");
-        private static readonly MethodInfo GetDecimalMethod = typeof(IRecordWrapper).GetMethod("GetDecimal");
-        private static readonly MethodInfo GetDoubleMethod = typeof(IRecordWrapper).GetMethod("GetDouble");
-        private static readonly MethodInfo GetSingleMethod = typeof(IRecordWrapper).GetMethod("GetFloat");
-        private static readonly MethodInfo GetGuidMethod = typeof(IRecordWrapper).GetMethod("GetGuid");
-        private static readonly MethodInfo GetBytesMethod = typeof(IRecordWrapper).GetMethod("GetBytes");
+        private static readonly MethodInfo GetCharMethod = typeof(IRecordWrapper).GetMethod(nameof(IRecordWrapper.GetChar), new[] { typeof(IDataRecord), typeof(int) });
+        private static readonly MethodInfo GetByteMethod = typeof(IRecordWrapper).GetMethod(nameof(IRecordWrapper.GetByte), new[] { typeof(IDataRecord), typeof(int) });
+        private static readonly MethodInfo GetBooleanMethod = typeof(IRecordWrapper).GetMethod(nameof(IRecordWrapper.GetBoolean), new[] { typeof(IDataRecord), typeof(int) });
+        private static readonly MethodInfo GetInt16Method = typeof(IRecordWrapper).GetMethod(nameof(IRecordWrapper.GetInt16), new[] { typeof(IDataRecord), typeof(int) });
+        private static readonly MethodInfo GetInt32Method = typeof(IRecordWrapper).GetMethod(nameof(IRecordWrapper.GetInt32), new[] { typeof(IDataRecord), typeof(int) });
+        private static readonly MethodInfo GetInt64Method = typeof(IRecordWrapper).GetMethod(nameof(IRecordWrapper.GetInt64), new[] { typeof(IDataRecord), typeof(int) });
+        private static readonly MethodInfo GetStringMethod = typeof(IRecordWrapper).GetMethod(nameof(IRecordWrapper.GetString), new[] { typeof(IDataRecord), typeof(int) });
+        private static readonly MethodInfo GetDateTimeMethod = typeof(IRecordWrapper).GetMethod(nameof(IRecordWrapper.GetDateTime), new[] { typeof(IDataRecord), typeof(int) });
+        private static readonly MethodInfo GetDecimalMethod = typeof(IRecordWrapper).GetMethod(nameof(IRecordWrapper.GetDecimal), new[] { typeof(IDataRecord), typeof(int) });
+        private static readonly MethodInfo GetDoubleMethod = typeof(IRecordWrapper).GetMethod(nameof(IRecordWrapper.GetDouble), new[] { typeof(IDataRecord), typeof(int) });
+        private static readonly MethodInfo GetSingleMethod = typeof(IRecordWrapper).GetMethod(nameof(IRecordWrapper.GetFloat), new[] { typeof(IDataRecord), typeof(int) });
+        private static readonly MethodInfo GetGuidMethod = typeof(IRecordWrapper).GetMethod(nameof(IRecordWrapper.GetGuid), new[] { typeof(IDataRecord), typeof(int) });
+        private static readonly MethodInfo GetBytesMethod = typeof(IRecordWrapper).GetMethod(nameof(IRecordWrapper.GetBytes), new[] { typeof(IDataRecord), typeof(int) });
 
         #endregion IRecordWrapper的方法
 

@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if NETSTANDARD
+using Fireasy.Common.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters.Json.Internal;
@@ -29,8 +30,6 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             var options = new Fireasy.Web.Mvc.MvcOptions();
             setupAction?.Invoke(options);
-
-
 
             if (options.UseTypicalJsonSerializer)
             {

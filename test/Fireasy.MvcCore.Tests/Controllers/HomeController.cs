@@ -1,5 +1,7 @@
-﻿using Fireasy.MvcCore.Tests.Models;
+﻿using Fireasy.Common.Serialization;
+using Fireasy.MvcCore.Tests.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using System.Diagnostics;
 
 namespace Fireasy.MvcCore.Tests.Controllers
@@ -21,5 +23,17 @@ namespace Fireasy.MvcCore.Tests.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
+        public JsonResult TestJsonSerializeOption([FromServices]IOptions<Fireasy.Web.Mvc.MvcOptions> options)
+        {
+            options.Value.JsonSerializeOption.Converters.Add(new FullDateTimeJsonConverter());
+            return Json(45);
+        }
+
+        public JsonResult TestFromServices([FromServices]IModel model)
+        {
+            return Json(45);
+        }
+
     }
 }

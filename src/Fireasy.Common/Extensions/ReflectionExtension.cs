@@ -157,6 +157,8 @@ namespace Fireasy.Common.Extensions
                 case TypeCode.Single:
                 case TypeCode.Double:
                 case TypeCode.Decimal:
+                case TypeCode.String:
+                case TypeCode.DateTime:
                     return true;
             }
             return false;
