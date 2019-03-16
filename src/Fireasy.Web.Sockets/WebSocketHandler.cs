@@ -18,7 +18,7 @@ namespace Fireasy.Web.Sockets
     public abstract class WebSocketHandler : IClientProxy, IDisposable
     {
         private WebSocketAcceptContext acceptContext;
-        private DateTime lastHeartbeatTime = DateTime.Now;
+        private DateTime lastReceivedTime = DateTime.Now;
         private Timer timer;
         private bool isDisposed = false;
         private bool isClosing = false;
@@ -109,6 +109,8 @@ namespace Fireasy.Web.Sockets
 
                 if (result.EndOfMessage)
                 {
+                    lastReceivedTime = DateTime.Now;
+
                     var bytes = HandleResult(result.MessageType, data);
 
                     data.Clear();
@@ -246,12 +248,9 @@ namespace Fireasy.Web.Sockets
         {
             if (type == WebSocketMessageType.Binary)
             {
-                //处理心跳
                 if (data.Length == 1 && data[0] == '\0')
                 {
-                    lastHeartbeatTime = DateTime.Now;
                     OnHeartBeating();
-                    return data;
                 }
                 else
                 {
@@ -394,7 +393,7 @@ namespace Fireasy.Web.Sockets
             timer = new Timer(o =>
                 {
                     //3次容错
-                    if ((DateTime.Now - lastHeartbeatTime).TotalMilliseconds >=
+                    if ((DateTime.Now - lastReceivedTime).TotalMilliseconds >=
                         acceptContext.Option.HeartbeatInterval.TotalMilliseconds * acceptContext.Option.HeartbeatTryTimes)
                     {
                         if (acceptContext.WebSocket.State == WebSocketState.Open)
