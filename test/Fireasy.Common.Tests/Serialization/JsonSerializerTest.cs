@@ -12,6 +12,7 @@ using System.Dynamic;
 using System.Linq;
 using Fireasy.Common.Extensions;
 using System.Drawing;
+using System.IO;
 
 namespace Fireasy.Common.Tests.Serialization
 {
@@ -215,11 +216,22 @@ studio");
         [TestMethod()]
         public void TestSerializeDateTime()
         {
-            var serializer = new JsonSerializer();
+            var option = new JsonSerializeOption();
+            option.DateFormatHandling = DateFormatHandling.JsonDateFormat;
+            var serializer = new JsonSerializer(option);
 
             var json = serializer.Serialize(DEFAULT_DATE);
 
             Console.WriteLine(json);
+
+            var s = new Newtonsoft.Json.JsonSerializer();
+            s.DateFormatHandling = Newtonsoft.Json.DateFormatHandling.MicrosoftDateFormat;
+            s.DateTimeZoneHandling = Newtonsoft.Json.DateTimeZoneHandling.Utc;
+            using (var t = new StringWriter())
+            {
+                s.Serialize(t, DEFAULT_DATE);
+                Console.WriteLine(t.ToString());
+            }
         }
 
         /// <summary>
@@ -243,7 +255,6 @@ studio");
         public void TestSerializeDateTimeWithConverter()
         {
             var option = new JsonSerializeOption();
-            option.Converters.Add(new DateTimeJsonConverter("yy-M-d HH:mm"));
             var serializer = new JsonSerializer(option);
             var obj = new JsonData
             {
@@ -1566,6 +1577,7 @@ studio");
 
             public string Name { get; set; }
 
+            [TextPropertyConverter(typeof(FullDateTimeXmlConverter))]
             public DateTime Birthday { get; set; }
 
             public DateTime WorkTime { get; set; }

@@ -39,7 +39,7 @@ namespace Fireasy.Common.Serialization
             this.serializer = serializer;
             xmlWriter = writer;
             this.option = option;
-            context = new SerializeContext();
+            context = new SerializeContext { Option = option };
         }
 
         /// <summary>
@@ -48,7 +48,8 @@ namespace Fireasy.Common.Serialization
         /// <param name="value">要序列化的值。</param>
         /// <param name="startEle"></param>
         /// <param name="type"></param>
-        internal void Serialize(object value, bool startEle = false, Type type = null)
+        /// <param name="formatter"></param>
+        internal void Serialize(object value, bool startEle = false, Type type = null, string formatter = null)
         {
             if (type == null && value != null)
             {
@@ -112,7 +113,7 @@ namespace Fireasy.Common.Serialization
                 return;
             }
 
-            SerializeValue(value, startEle);
+            SerializeValue(value, startEle, formatter);
         }
 
         private bool WithSerializable(Type type, object value, bool startEle)
@@ -281,7 +282,7 @@ namespace Fireasy.Common.Serialization
             }
         }
 
-        private void SerializeValue(object value, bool startEle)
+        private void SerializeValue(object value, bool startEle, string formatter)
         {
             var type = value.GetType();
             if (type.IsNullableType())
@@ -316,10 +317,10 @@ namespace Fireasy.Common.Serialization
                     case TypeCode.Decimal:
                     case TypeCode.Single:
                     case TypeCode.Double:
-                        xmlWriter.WriteValue(value.As<IFormattable>().ToString("G", CultureInfo.InvariantCulture));
+                        xmlWriter.WriteValue(value.As<IFormattable>().ToString(formatter ?? "G", CultureInfo.InvariantCulture));
                         break;
                     case TypeCode.DateTime:
-                        SerializeDateTime((DateTime)value);
+                        SerializeDateTime((DateTime)value, formatter);
                         break;
                     case TypeCode.Char:
                     case TypeCode.String:
@@ -337,12 +338,16 @@ namespace Fireasy.Common.Serialization
             }
         }
 
-        private void SerializeDateTime(DateTime value)
+        private void SerializeDateTime(DateTime value, string formatter)
         {
-            var offset = TimeZone.CurrentTimeZone.GetUtcOffset(value);
-            var time = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            var ticks = (value.ToUniversalTime().Ticks - time.Ticks) / 10000;
-            xmlWriter.WriteValue(value.Year <= 1 ? string.Empty : value.ToString("yyyy-MM-dd"));
+            if (option.DateFormatHandling == DateFormatHandling.Default)
+            {
+                xmlWriter.WriteValue(value.ToString(formatter ?? "yyyy-MM-dd", CultureInfo.InvariantCulture));
+            }
+            else if (option.DateFormatHandling == DateFormatHandling.IsoDateFormat)
+            {
+                xmlWriter.WriteValue(value.GetDateTimeFormats('s')[0].ToString());
+            }
         }
 
         private void SerializeString<T>(T value)
@@ -379,7 +384,7 @@ namespace Fireasy.Common.Serialization
                 xmlWriter.WriteStartElement(GetElementName(type));
             }
 
-            var cache = GetAccessorCache(type);
+            var cache = context.GetAccessorCache(type);
 
             foreach (var acc in cache)
             {
@@ -397,11 +402,25 @@ namespace Fireasy.Common.Serialization
                 var objType = acc.PropertyInfo.PropertyType == typeof(object) ? value.GetType() : acc.PropertyInfo.PropertyType;
                 if (option.OutputStyle == OutputStyle.Attribute && objType.IsStringable())
                 {
-                    xmlWriter.WriteAttributeString(acc.PropertyName, value.ToString());
+                    if (acc.Converter != null)
+                    {
+                        xmlWriter.WriteAttributeString(acc.PropertyName, acc.Converter.WriteObject(serializer, value));
+                    }
+                    else
+                    {
+                        xmlWriter.WriteAttributeString(acc.PropertyName, value.ToString());
+                    }
                 }
                 else
                 {
-                    WriteXmlElement(acc.PropertyName, true, () => Serialize(value, type: objType));
+                    if (acc.Converter != null && acc.Converter is XmlConverter converter)
+                    {
+                        WriteXmlElement(acc.PropertyName, true, () => converter.WriteXml(serializer, xmlWriter, value));
+                    }
+                    else
+                    {
+                        WriteXmlElement(acc.PropertyName, true, () => Serialize(value, type: objType, formatter: acc.Formatter));
+                    }
                 }
             }
 
@@ -435,33 +454,6 @@ namespace Fireasy.Common.Serialization
             {
                 xmlWriter.WriteEndElement();
             }
-        }
-
-        /// <summary>
-        /// 获取指定类型的属性访问缓存。
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        private List<PropertyGetAccessorCache> GetAccessorCache(Type type)
-        {
-            return context.GetAccessors.TryGetValue(type, () =>
-                {
-                    return type.GetProperties()
-                        .Where(s => s.CanRead && !SerializerUtil.IsNoSerializable(option, s))
-                        .Distinct(new SerializerUtil.PropertyEqualityComparer())
-                        .Select(s => new PropertyGetAccessorCache
-                        {
-                            Accessor = ReflectionCache.GetAccessor(s),
-                            Filter = (p, l) =>
-                                {
-                                    return !SerializerUtil.CheckLazyValueCreate(l, p.Name);
-                                },
-                            PropertyInfo = s,
-                            PropertyName = SerializerUtil.GetPropertyName(s)
-                        })
-                        .Where(s => !string.IsNullOrEmpty(s.PropertyName))
-                        .ToList();
-                });
         }
 
         private IEnumerable<DataColumn> GetDataColumns(DataTable table)

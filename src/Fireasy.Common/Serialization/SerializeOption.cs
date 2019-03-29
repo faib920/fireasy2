@@ -59,6 +59,16 @@ namespace Fireasy.Common.Serialization
         public bool Indent { get; set; } = true;
 
         /// <summary>
+        /// 获取或设置循环引用时如何处理。
+        /// </summary>
+        public ReferenceLoopHandling ReferenceLoopHandling { get; set; }
+
+        /// <summary>
+        /// 获取或设置日期如何序列化。
+        /// </summary>
+        public DateFormatHandling DateFormatHandling { get; set; }
+
+        /// <summary>
         /// 使用表达式指定在序列化 <typeparamref name="T"/> 时仅被序列化的成员列表。
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -126,5 +136,43 @@ namespace Fireasy.Common.Serialization
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// 循环引用时的处理策略。
+    /// </summary>
+    public enum ReferenceLoopHandling
+    {
+        /// <summary>
+        /// 抛出异常。
+        /// </summary>
+        Error,
+        /// <summary>
+        /// 忽略，不再序列化。
+        /// </summary>
+        Ignore,
+        /// <summary>
+        /// 继续序列化。
+        /// </summary>
+        Serialize
+    }
+
+    /// <summary>
+    /// 日期格式的序列化策略。
+    /// </summary>
+    public enum DateFormatHandling
+    {
+        /// <summary>
+        /// 缺省格式，如 "2010-12-01"。
+        /// </summary>
+        Default,
+        /// <summary>
+        /// ISO 格式，如 "2012-03-21T05:40Z"。
+        /// </summary>
+        IsoDateFormat,
+        /// <summary>
+        /// Json 格式，如 "\/Date(1198908717056)\/"。
+        /// </summary>
+        JsonDateFormat
     }
 }

@@ -17,6 +17,7 @@ using System.Dynamic;
 #endif
 using Fireasy.Common.ComponentModel;
 using System.Collections.Generic;
+using System.Text;
 
 namespace Fireasy.Common.Serialization
 {
@@ -41,7 +42,8 @@ namespace Fireasy.Common.Serialization
         /// </summary>
         /// <param name="value">要序列化的值。</param>
         /// <param name="type"></param>
-        internal void Serialize(object value, Type type = null)
+        /// <param name="formatter"></param>
+        internal void Serialize(object value, Type type = null, string formatter = null)
         {
             if ((type == null || type == typeof(object)) && value != null)
             {
@@ -115,7 +117,7 @@ namespace Fireasy.Common.Serialization
                 return;
             }
 
-            SerializeValue(value);
+            SerializeValue(value, formatter);
         }
 
         private bool WithSerializable(object value)
@@ -208,7 +210,7 @@ namespace Fireasy.Common.Serialization
                 }
 
                 jsonWriter.WriteKey(SerializeName(column.ColumnName));
-                JsonConvertContext.Current.Assign(column.ColumnName, row[column], () => SerializeValue(row[column]));
+                SerializeValue(row[column], null);
             }
 
             jsonWriter.WriteEndObject();
@@ -269,7 +271,7 @@ namespace Fireasy.Common.Serialization
                 }
 
                 jsonWriter.WriteKey(SerializeName(name));
-                JsonConvertContext.Current.Assign(name, value, () => Serialize(value));
+                 Serialize(value);
             }
 
             jsonWriter.WriteEndObject();
@@ -309,8 +311,16 @@ namespace Fireasy.Common.Serialization
                 }
                 else
                 {
-                    var objType = acc.PropertyInfo.PropertyType == typeof(object) ? value.GetType() : acc.PropertyInfo.PropertyType;
-                    JsonConvertContext.Current.Assign(acc.Accessor.PropertyInfo.Name, value, () => Serialize(value, objType));
+                    //如果在属性上指定了 JsonConverter
+                    if (acc.Converter is JsonConverter converter)
+                    {
+                        converter.WriteJson(serializer, jsonWriter, value);
+                    }
+                    else
+                    {
+                        var objType = acc.PropertyInfo.PropertyType == typeof(object) ? value.GetType() : acc.PropertyInfo.PropertyType;
+                        Serialize(value, objType, acc.Formatter);
+                    }
                 }
             }
 
@@ -322,7 +332,7 @@ namespace Fireasy.Common.Serialization
             jsonWriter.WriteValue(Convert.ToBase64String(bytes, 0, bytes.Length));
         }
 
-        private void SerializeValue(object value)
+        private void SerializeValue(object value, string formatter)
         {
             var type = value.GetType();
             if (type.IsNullableType())
@@ -332,7 +342,7 @@ namespace Fireasy.Common.Serialization
 
             if (type.IsEnum)
             {
-                jsonWriter.WriteValue(((Enum)value).ToString("D"));
+                jsonWriter.WriteValue(((Enum)value).ToString(formatter ?? "D"));
                 return;
             }
 
@@ -352,10 +362,10 @@ namespace Fireasy.Common.Serialization
                 case TypeCode.Decimal:
                 case TypeCode.Single:
                 case TypeCode.Double:
-                    jsonWriter.WriteValue(value.As<IFormattable>().ToString("G", CultureInfo.InvariantCulture));
+                    SerializeNumeric(value, formatter);
                     break;
                 case TypeCode.DateTime:
-                    SerializeDateTime((DateTime)value);
+                    SerializeDateTime((DateTime)value, formatter);
                     break;
                 case TypeCode.Char:
                 case TypeCode.String:
@@ -367,37 +377,53 @@ namespace Fireasy.Common.Serialization
             }
         }
 
-        private void SerializeDateTime(DateTime value)
+        private void SerializeDateTime(DateTime value, string formatter)
         {
-            var offset = TimeZone.CurrentTimeZone.GetUtcOffset(value);
-            var time = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            var ticks = (value.ToUniversalTime().Ticks - time.Ticks) / 10000;
-            if (option.Format == JsonFormat.String)
+            if (option.DateFormatHandling == DateFormatHandling.Default)
             {
-                jsonWriter.WriteValue("\"" + (value.Year <= 1 ? string.Empty : value.ToString("yyyy-MM-dd")) + "\"");
-                //var sb = new StringBuilder();
-                //sb.Append("\"\\/Date(" + ticks);
-                //sb.Append(offset.Ticks >= 0 ? "+" : "-");
-                //var h = Math.Abs(offset.Hours);
-                //var m = Math.Abs(offset.Minutes);
-                //if (h < 10)
-                //{
-                //    sb.Append(0);
-                //}
+                jsonWriter.WriteValue(string.Concat(JsonTokens.StringDelimiter, (value.Year <= 1 ? string.Empty : value.ToString(formatter ?? "yyyy-MM-dd")), JsonTokens.StringDelimiter));
+            }
+            else if (option.DateFormatHandling == DateFormatHandling.IsoDateFormat)
+            {
+                jsonWriter.WriteValue(string.Concat(JsonTokens.StringDelimiter, value.GetDateTimeFormats('s')[0].ToString(), JsonTokens.StringDelimiter));
+            }
+            else if (option.DateFormatHandling == DateFormatHandling.JsonDateFormat)
+            {
+                var offset = TimeZone.CurrentTimeZone.GetUtcOffset(value);
+                var time = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                var ticks = (value.ToUniversalTime().Ticks - time.Ticks) / 10000;
 
-                //sb.Append(h);
-                //if (m < 10)
-                //{
-                //    sb.Append(0);
-                //}
+                var sb = new StringBuilder();
+                sb.Append("\"\\/Date(" + ticks);
+                sb.Append(offset.Ticks >= 0 ? "+" : "-");
+                var h = Math.Abs(offset.Hours);
+                var m = Math.Abs(offset.Minutes);
+                if (h < 10)
+                {
+                    sb.Append(0);
+                }
 
-                //sb.Append(m);
-                //sb.Append(")\\/\"");
-                //jsonWriter.WriteValue(sb);
+                sb.Append(h);
+                if (m < 10)
+                {
+                    sb.Append(0);
+                }
+
+                sb.Append(m);
+                sb.Append(")\\/\"");
+                jsonWriter.WriteValue(sb);
+            }
+        }
+
+        private void SerializeNumeric(object value, string formatter)
+        {
+            if (string.IsNullOrEmpty(formatter))
+            {
+                jsonWriter.WriteValue(value);
             }
             else
             {
-                jsonWriter.WriteValue("new Date(" + ticks + ")");
+                jsonWriter.WriteValue(string.Concat(JsonTokens.StringDelimiter, value.As<IFormattable>().ToString(formatter, CultureInfo.InvariantCulture), JsonTokens.StringDelimiter));
             }
         }
 
@@ -415,7 +441,7 @@ namespace Fireasy.Common.Serialization
             }
 
             jsonWriter.WriteKey(SerializeName(key.ToString()));
-            JsonConvertContext.Current.Assign(key.ToString(), value, () => Serialize(value));
+            Serialize(value);
         }
 
         private string SerializeName(string name)
@@ -430,7 +456,7 @@ namespace Fireasy.Common.Serialization
                 return option.CamelNaming ? char.ToLower(name[0]) + name.Substring(1) : name;
             }
 
-            return JsonTokens.StringDelimiter + (option.CamelNaming ? char.ToLower(name[0]) + name.Substring(1) : name) + JsonTokens.StringDelimiter;
+            return string.Concat(JsonTokens.StringDelimiter, (option.CamelNaming ? char.ToLower(name[0]) + name.Substring(1) : name), JsonTokens.StringDelimiter);
         }
 
         private void SerializeType(Type type)

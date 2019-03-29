@@ -44,7 +44,6 @@ namespace Fireasy.Common.Serialization
             using (var sw = new StringWriter(CultureInfo.InvariantCulture))
             using (var writer = new JsonWriter(sw))
             using (var ser = new JsonSerialize(this, writer, Option))
-            using (var context = new JsonConvertContext())
             {
                 if (Option.Indent)
                 {
@@ -64,8 +63,7 @@ namespace Fireasy.Common.Serialization
         /// <param name="writer"></param>
         public void Serialize<T>(T value, JsonWriter writer)
         {
-            var ser = new JsonSerialize(this, writer, Option);
-            using (var context = new JsonConvertContext())
+            using (var ser = new JsonSerialize(this, writer, Option))
             {
                 ser.Serialize(value);
             }
@@ -88,7 +86,6 @@ namespace Fireasy.Common.Serialization
             using (var sr = new StringReader(json))
             using (var reader = new JsonReader(sr))
             using (var deser = new JsonDeserialize(this, reader, Option))
-            using (var context = new JsonConvertContext())
             {
                 return deser.Deserialize<T>();
             }
@@ -102,8 +99,7 @@ namespace Fireasy.Common.Serialization
         /// <returns></returns>
         public T Deserialize<T>(JsonReader reader)
         {
-            var deser = new JsonDeserialize(this, reader, Option);
-            using (var context = new JsonConvertContext())
+            using (var deser = new JsonDeserialize(this, reader, Option))
             {
                 return deser.Deserialize<T>();
             }
@@ -126,7 +122,6 @@ namespace Fireasy.Common.Serialization
             using (var sr = new StringReader(json))
             using (var reader = new JsonReader(sr))
             using (var deser = new JsonDeserialize(this, reader, Option))
-            using (var context = new JsonConvertContext())
             {
                 return deser.Deserialize(type);
             }
@@ -141,10 +136,7 @@ namespace Fireasy.Common.Serialization
         /// <returns>对象。</returns>
         public T Deserialize<T>(string json, T anyObj)
         {
-            using (var context = new JsonConvertContext())
-            {
-                return Deserialize<T>(json);
-            }
+            return Deserialize<T>(json);
         }
     }
 }

@@ -270,7 +270,6 @@ studio");
         public void TestSerializeDateTimeWithConverter()
         {
             var option = new XmlSerializeOption();
-            option.Converters.Add(new DateTimeJsonConverter("yy-M-d HH:mm"));
             var serializer = new XmlSerializer(option);
             var obj = new JsonData
             {
@@ -1711,6 +1710,7 @@ total co.ltd
 
             public string Name { get; set; }
 
+            [TextPropertyConverter(typeof(FullDateTimeXmlConverter))]
             public DateTime Birthday { get; set; }
 
             public DateTime WorkTime { get; set; }

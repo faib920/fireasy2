@@ -67,17 +67,19 @@ namespace Fireasy.Common.Serialization
         /// <param name="writer"></param>
         public void Serialize<T>(T value, XmlTextWriter writer)
         {
-            var ser = new XmlSerialize(this, writer, Option);
-            if (Option.Declaration)
+            using (var ser = new XmlSerialize(this, writer, Option))
             {
-                writer.WriteStartDocument();
-            }
+                if (Option.Declaration)
+                {
+                    writer.WriteStartDocument();
+                }
 
-            ser.Serialize(value, Option.StartElement);
+                ser.Serialize(value, Option.StartElement);
 
-            if (Option.Declaration)
-            {
-                writer.WriteEndDocument();
+                if (Option.Declaration)
+                {
+                    writer.WriteEndDocument();
+                }
             }
         }
 

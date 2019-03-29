@@ -50,6 +50,14 @@ namespace Fireasy.Common.Caching
         object Get(string cacheKey);
 
         /// <summary>
+        /// 获取缓存中指定缓存键的对象。
+        /// </summary>
+        /// <typeparam name="T">缓存对象的类型。</typeparam>
+        /// <param name="cacheKey">用于引用对象的缓存键。</param>
+        /// <returns>检索到的缓存对象，未找到时为 null。</returns>
+        T Get<T>(string cacheKey);
+
+        /// <summary>
         /// 获取缓存的有效时间。
         /// </summary>
         /// <param name="cacheKey">用于引用对象的缓存键。</param>
@@ -65,6 +73,16 @@ namespace Fireasy.Common.Caching
         /// <param name="expiration">判断对象过期的对象。</param>
         /// <returns></returns>
         T TryGet<T>(string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration = null);
+
+        /// <summary>
+        /// 尝试获取指定缓存键的对象，如果没有则使用工厂函数添加对象到缓存中。
+        /// </summary>
+        /// <param name="dataType">数据类型。</param>
+        /// <param name="cacheKey">用于引用对象的缓存键。</param>
+        /// <param name="factory">用于添加缓存对象的工厂函数。</param>
+        /// <param name="expiration">判断对象过期的对象。</param>
+        /// <returns></returns>
+        object TryGet(Type dataType, string cacheKey, Func<object> factory, Func<ICacheItemExpiration> expiration = null);
 
         /// <summary>
         /// 尝试获取指定缓存键的对象。

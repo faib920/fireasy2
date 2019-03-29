@@ -34,7 +34,7 @@ namespace Fireasy.MvcCore.Tests
 
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
-                .ConfigureFireasyMvc(s => {  });
+                .ConfigureFireasyMvc(s => { s.JsonSerializeOption.Converters.Add(new Fireasy.Data.Entity.LightEntityJsonConverter());  });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

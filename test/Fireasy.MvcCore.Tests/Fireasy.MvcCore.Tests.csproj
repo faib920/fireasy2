@@ -13,7 +13,9 @@
 
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Fireasy.Data.Entity\Fireasy.Data.Entity.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.Web.EasyUI\Fireasy.Web.EasyUI.csproj" />
+    <ProjectReference Include="..\..\src\Fireasy.Web.Mvc\Fireasy.Web.Mvc.csproj" />
   </ItemGroup>
 
 </Project>

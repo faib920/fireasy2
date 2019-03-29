@@ -105,5 +105,15 @@ namespace Fireasy.Memcached
         {
             throw new NotImplementedException();
         }
+
+        public T Get<T>(string cacheKey)
+        {
+            throw new NotImplementedException();
+        }
+
+        public object TryGet(Type dataType, string cacheKey, Func<object> factory, Func<ICacheItemExpiration> expiration = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

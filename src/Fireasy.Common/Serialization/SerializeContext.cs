@@ -66,7 +66,9 @@ namespace Fireasy.Common.Serialization
                             return !SerializerUtil.CheckLazyValueCreate(l, p.Name);
                         },
                         PropertyInfo = s,
-                        PropertyName = SerializerUtil.GetPropertyName(s)
+                        PropertyName = SerializerUtil.GetPropertyName(s),
+                        Formatter = s.GetCustomAttributes<TextFormatterAttribute>().FirstOrDefault()?.Formatter,
+                        Converter = s.GetCustomAttributes<TextPropertyConverterAttribute>().FirstOrDefault()?.ConverterType.New<ITextConverter>()
                     })
                     .Where(s => !string.IsNullOrEmpty(s.PropertyName))
                     .ToList();
@@ -89,7 +91,14 @@ namespace Fireasy.Common.Serialization
 
             if (objects.IndexOf(obj) != -1)
             {
-                throw new SerializationException(SR.GetString(SRKind.LoopReferenceSerialize, obj));
+                if (Option.ReferenceLoopHandling == ReferenceLoopHandling.Error)
+                {
+                    throw new SerializationException(SR.GetString(SRKind.LoopReferenceSerialize, obj));
+                }
+                else if (Option.ReferenceLoopHandling == ReferenceLoopHandling.Ignore)
+                {
+                    return;
+                }
             }
 
             try
@@ -137,5 +146,15 @@ namespace Fireasy.Common.Serialization
         /// 获取被缓存的属性名称。
         /// </summary>
         public string PropertyName { get; internal set; }
+
+        /// <summary>
+        /// 获取格式化文本的格式。
+        /// </summary>
+        public string Formatter { get; internal set; }
+
+        /// <summary>
+        /// 获取属性上的转换器。
+        /// </summary>
+        public ITextConverter Converter { get; internal set; }
     }
 }

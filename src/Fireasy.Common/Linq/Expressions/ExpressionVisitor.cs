@@ -363,8 +363,9 @@ namespace Fireasy.Common.Linq.Expressions
         /// <returns></returns>
         protected virtual Expression VisitLambda(LambdaExpression lambdaExp)
         {
+            var parameters = lambdaExp.Parameters.Select(s => (ParameterExpression)Visit(s)).ToArray();
             var body = Visit(lambdaExp.Body);
-            return lambdaExp.Update(lambdaExp.Type, body, lambdaExp.Parameters);
+            return lambdaExp.Update(lambdaExp.Type, body, parameters);
         }
 
         /// <summary>

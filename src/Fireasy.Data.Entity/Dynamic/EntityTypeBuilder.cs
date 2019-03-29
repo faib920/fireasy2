@@ -185,6 +185,11 @@ namespace Fireasy.Data.Entity.Dynamic
 
             foreach (var property in Properties)
             {
+                if (dict.ContainsKey(property.Name))
+                {
+                    continue;
+                }
+
                 dict.Add(property.Name, MakeLambdaExpression(property).Compile());
 
                 var fieldBuilder = InnerBuilder.DefineField(GetFieldName(property), typeof(IProperty), null, VisualDecoration.Public, CallingDecoration.Static);

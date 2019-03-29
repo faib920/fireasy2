@@ -16,13 +16,12 @@ namespace Fireasy.Web.Mvc
         public IModelBinder GetBinder(ModelBinderProviderContext context)
         {
             if ((context.BindingInfo.BindingSource != null &&
-                context.BindingInfo.BindingSource.Id != "Services") &&
-                context.Metadata.IsComplexType)
+                context.BindingInfo.BindingSource.Id == "Services") || !context.Metadata.IsComplexType)
             {
-                return new JsonModelBinder(options);
+                return null;
             }
 
-            return null;
+            return new JsonModelBinder(options);
         }
     }
 }

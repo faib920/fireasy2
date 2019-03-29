@@ -38,10 +38,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <param name="parExp">要搜寻的参数表达式。</param>
         /// <param name="obj">替换的常量。</param>
         /// <returns></returns>
-        public static Expression Rewrite(Expression expression, ParameterExpression parExp, object obj)
+        public static Expression Rewrite(Expression expression, ParameterExpression parExp, object obj = null)
         {
-            var lambda = (LambdaExpression)expression;
-            return new ParameterRewriter(parExp, obj).Visit(lambda.Body);
+            return new ParameterRewriter(parExp, obj).Visit(expression);
         }
 
         /// <summary>
