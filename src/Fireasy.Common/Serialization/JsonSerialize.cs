@@ -244,11 +244,11 @@ namespace Fireasy.Common.Serialization
                     jsonWriter.WriteComma();
                 }
 
-                context.SeriaizeInfo = new PropertySerialzeInfo(ObjectType.Dictionary, typeof(object), entry.Key.ToString());
+                context.SerializeInfo = new PropertySerialzeInfo(ObjectType.Dictionary, typeof(object), entry.Key.ToString());
 
                 SerializeKeyValue(entry.Key, entry.Value);
 
-                context.SeriaizeInfo = null;
+                context.SerializeInfo = null;
 
             }
 
@@ -274,12 +274,12 @@ namespace Fireasy.Common.Serialization
                     jsonWriter.WriteComma();
                 }
 
-                context.SeriaizeInfo = new PropertySerialzeInfo(ObjectType.DynamicObject, typeof(object), name);
+                context.SerializeInfo = new PropertySerialzeInfo(ObjectType.DynamicObject, typeof(object), name);
 
                 jsonWriter.WriteKey(SerializeName(name));
                 Serialize(value);
 
-                context.SeriaizeInfo = null;
+                context.SerializeInfo = null;
             }
 
             jsonWriter.WriteEndObject();
@@ -313,7 +313,7 @@ namespace Fireasy.Common.Serialization
 
                 jsonWriter.WriteKey(SerializeName(acc.PropertyName));
 
-                context.SeriaizeInfo = new PropertySerialzeInfo(acc);
+                context.SerializeInfo = new PropertySerialzeInfo(acc);
 
                 if (value == null)
                 {
@@ -333,7 +333,7 @@ namespace Fireasy.Common.Serialization
                     }
                 }
 
-                context.SeriaizeInfo = null;
+                context.SerializeInfo = null;
             }
 
             jsonWriter.WriteEndObject();
@@ -354,7 +354,7 @@ namespace Fireasy.Common.Serialization
 
             if (type.IsEnum)
             {
-                jsonWriter.WriteValue(((Enum)value).ToString(context.SeriaizeInfo?.Formatter ?? "D"));
+                jsonWriter.WriteValue(((Enum)value).ToString(context.SerializeInfo?.Formatter ?? "D"));
                 return;
             }
 
@@ -393,7 +393,7 @@ namespace Fireasy.Common.Serialization
         {
             if (option.DateFormatHandling == DateFormatHandling.Default)
             {
-                jsonWriter.WriteValue(string.Concat(JsonTokens.StringDelimiter, (value.Year <= 1 ? string.Empty : value.ToString(context.SeriaizeInfo?.Formatter ?? "yyyy-MM-dd")), JsonTokens.StringDelimiter));
+                jsonWriter.WriteValue(string.Concat(JsonTokens.StringDelimiter, (value.Year <= 1 ? string.Empty : value.ToString(context.SerializeInfo?.Formatter ?? "yyyy-MM-dd")), JsonTokens.StringDelimiter));
             }
             else if (option.DateFormatHandling == DateFormatHandling.IsoDateFormat)
             {
@@ -429,13 +429,13 @@ namespace Fireasy.Common.Serialization
 
         private void SerializeNumeric(object value)
         {
-            if (context.SeriaizeInfo == null || string.IsNullOrEmpty(context.SeriaizeInfo.Formatter))
+            if (context.SerializeInfo == null || string.IsNullOrEmpty(context.SerializeInfo.Formatter))
             {
                 jsonWriter.WriteValue(value);
             }
             else
             {
-                jsonWriter.WriteValue(string.Concat(JsonTokens.StringDelimiter, value.As<IFormattable>().ToString(context.SeriaizeInfo.Formatter, CultureInfo.InvariantCulture), JsonTokens.StringDelimiter));
+                jsonWriter.WriteValue(string.Concat(JsonTokens.StringDelimiter, value.As<IFormattable>().ToString(context.SerializeInfo.Formatter, CultureInfo.InvariantCulture), JsonTokens.StringDelimiter));
             }
         }
 

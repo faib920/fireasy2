@@ -12,11 +12,11 @@ namespace Fireasy.Common.Serialization
         /// <summary>
         /// 获取当前的属性信息。
         /// </summary>
-        public PropertySerialzeInfo SerialzeInfo
+        public PropertySerialzeInfo SerializeInfo
         {
             get
             {
-                return SerializeContext.Current != null ? SerializeContext.Current.SeriaizeInfo : null;
+                return SerializeContext.Current != null ? SerializeContext.Current.SerializeInfo : null;
             }
         }
 

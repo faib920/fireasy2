@@ -49,7 +49,7 @@ namespace Fireasy.Common.Serialization
         /// <summary>
         /// 获取当前的 <see cref="PropertySerialzeInfo"/> 对象。
         /// </summary>
-        public PropertySerialzeInfo SeriaizeInfo { get; internal set; }
+        public PropertySerialzeInfo SerializeInfo { get; internal set; }
 
         /// <summary>
         /// 获取指定类型的属性访问缓存。

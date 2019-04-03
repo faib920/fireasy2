@@ -205,13 +205,13 @@ namespace Fireasy.Common.Serialization
                     continue;
                 }
 
-                context.SeriaizeInfo = new PropertySerialzeInfo(ObjectType.DynamicObject, typeof(object), name);
+                context.SerializeInfo = new PropertySerialzeInfo(ObjectType.DynamicObject, typeof(object), name);
 
                 xmlWriter.WriteStartElement(name);
                 Serialize(value);
                 xmlWriter.WriteEndElement();
 
-                context.SeriaizeInfo = null;
+                context.SerializeInfo = null;
             }
 
             if (startEle)
@@ -274,13 +274,13 @@ namespace Fireasy.Common.Serialization
 
             foreach (var key in dictionary.Keys)
             {
-                context.SeriaizeInfo = new PropertySerialzeInfo(ObjectType.Dictionary, typeof(object), key.ToString());
+                context.SerializeInfo = new PropertySerialzeInfo(ObjectType.Dictionary, typeof(object), key.ToString());
 
                 xmlWriter.WriteStartElement(key.ToString());
                 Serialize(dictionary[key]);
                 xmlWriter.WriteEndElement();
 
-                context.SeriaizeInfo = null;
+                context.SerializeInfo = null;
             }
 
             if (startEle)
@@ -324,7 +324,7 @@ namespace Fireasy.Common.Serialization
                     case TypeCode.Decimal:
                     case TypeCode.Single:
                     case TypeCode.Double:
-                        xmlWriter.WriteValue(value.As<IFormattable>().ToString(context.SeriaizeInfo?.Formatter ?? "G", CultureInfo.InvariantCulture));
+                        xmlWriter.WriteValue(value.As<IFormattable>().ToString(context.SerializeInfo?.Formatter ?? "G", CultureInfo.InvariantCulture));
                         break;
                     case TypeCode.DateTime:
                         SerializeDateTime((DateTime)value);
@@ -349,7 +349,7 @@ namespace Fireasy.Common.Serialization
         {
             if (option.DateFormatHandling == DateFormatHandling.Default)
             {
-                xmlWriter.WriteValue(value.ToString(context.SeriaizeInfo?.Formatter ?? "yyyy-MM-dd", CultureInfo.InvariantCulture));
+                xmlWriter.WriteValue(value.ToString(context.SerializeInfo?.Formatter ?? "yyyy-MM-dd", CultureInfo.InvariantCulture));
             }
             else if (option.DateFormatHandling == DateFormatHandling.IsoDateFormat)
             {
@@ -406,7 +406,7 @@ namespace Fireasy.Common.Serialization
                     continue;
                 }
 
-                context.SeriaizeInfo = new PropertySerialzeInfo(acc);
+                context.SerializeInfo = new PropertySerialzeInfo(acc);
 
                 var objType = acc.PropertyInfo.PropertyType == typeof(object) ? value.GetType() : acc.PropertyInfo.PropertyType;
                 if (option.OutputStyle == OutputStyle.Attribute && objType.IsStringable())
@@ -432,7 +432,7 @@ namespace Fireasy.Common.Serialization
                     }
                 }
 
-                context.SeriaizeInfo = null;
+                context.SerializeInfo = null;
             }
 
             if (startEle)

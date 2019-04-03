@@ -13,8 +13,6 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// <summary>
     /// 用于将表达式中的参数表达式替换为常量表示。无法继承此类。
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <typeparam name="S"></typeparam>
     public sealed class ParameterRewriter : Common.Linq.Expressions.ExpressionVisitor
     {
         private readonly object obj;
