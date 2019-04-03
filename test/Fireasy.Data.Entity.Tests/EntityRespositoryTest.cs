@@ -658,7 +658,7 @@ namespace Fireasy.Data.Entity.Tests
                 {
                     var product = Products.New(); ;
 
-                    product.Photo = new byte[] { 45, 55, 34, 67, 133, 54, 213 };
+                    product.Photo = new int[] { 45, 55, 34, 67, 133, 54, 213 };
                     sss.Add(product);
                 }
 

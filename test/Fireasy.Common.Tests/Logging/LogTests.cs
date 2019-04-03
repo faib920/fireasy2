@@ -7,6 +7,29 @@ using System.Threading.Tasks;
 
 namespace Fireasy.Common.Tests.Logging
 {
+    public class TestLog : ILogger
+    {
+        public void Debug(object message, Exception exception = null)
+        {
+        }
+
+        public void Error(object message, Exception exception = null)
+        {
+        }
+
+        public void Fatal(object message, Exception exception = null)
+        {
+        }
+
+        public void Info(object message, Exception exception = null)
+        {
+        }
+
+        public void Warn(object message, Exception exception = null)
+        {
+        }
+    }
+
     [TestClass]
     public class LogTests
     {
@@ -18,7 +41,8 @@ namespace Fireasy.Common.Tests.Logging
         [TestMethod]
         public void TestParallel()
         {
-            Parallel.For(0, 1, i => LoggerFactory.CreateLogger().Warn("dfafafdadf"));
+            var a = LoggerFactory.CreateLogger();
+            a.Info("dddd");
         }
     }
 }

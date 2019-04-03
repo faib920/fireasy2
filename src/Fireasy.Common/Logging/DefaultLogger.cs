@@ -5,8 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.Configuration;
-using Fireasy.Common.Logging.Configuration;
 using System;
 using System.IO;
 using System.Text;

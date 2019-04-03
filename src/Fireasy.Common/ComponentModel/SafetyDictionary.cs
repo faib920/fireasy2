@@ -23,7 +23,7 @@ namespace Fireasy.Common.ComponentModel
     public class SafetyDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
     {
         private readonly ConcurrentDictionary<TKey, Lazy<TValue>> dic = new ConcurrentDictionary<TKey, Lazy<TValue>>();
-        private LazyThreadSafetyMode mode = LazyThreadSafetyMode.PublicationOnly;
+        private LazyThreadSafetyMode mode = LazyThreadSafetyMode.ExecutionAndPublication;
 
         /// <summary>
         /// 实例化 <see cref="SafetyDictionary"/> 类的新实例。 

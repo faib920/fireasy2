@@ -630,8 +630,8 @@ namespace Fireasy.Common.Serialization
 
 
             jsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
-            var instance = type.New();
 
+            var instance = CreateGeneralObject(type);
             var cache = GetAccessorCache(instance.GetType());
 
             while (true)

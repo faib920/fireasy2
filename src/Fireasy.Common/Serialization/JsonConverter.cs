@@ -10,6 +10,17 @@ namespace Fireasy.Common.Serialization
     public abstract class JsonConverter : ITextConverter
     {
         /// <summary>
+        /// 获取当前的属性信息。
+        /// </summary>
+        public PropertySerialzeInfo SerialzeInfo
+        {
+            get
+            {
+                return SerializeContext.Current != null ? SerializeContext.Current.SeriaizeInfo : null;
+            }
+        }
+
+        /// <summary>
         /// 判断指定的类型是否允许转换。
         /// </summary>
         /// <param name="type">要判断的类型。</param>

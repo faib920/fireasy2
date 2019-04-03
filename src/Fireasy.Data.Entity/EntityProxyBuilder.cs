@@ -67,7 +67,7 @@ namespace Fireasy.Data.Entity
                             .ldstr(property.Name)
                             .call(mthGetProperty)
                             .call(mthGetValue)
-                            .Assert(op_Explicit != null, e1 => e1.call(op_Explicit), e1 => e1.call(mthPVGetValue).isinst(opType))
+                            .Assert(op_Explicit != null, e1 => e1.call(op_Explicit), e1 => e1.call(mthPVGetValue).castclass(opType))
                             .Assert(isEnum, e1 => e1.unbox_any(property.PropertyType))
                             .stloc_0
                             .ldloc_0

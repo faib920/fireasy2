@@ -131,7 +131,7 @@ namespace Fireasy.Data.Entity.Dynamic
         /// <summary>
         /// 为动态类添加特性。
         /// </summary>
-        /// <param name="expression"></param>
+        /// <param name="expression">一个特性表达式，必须为 <see cref="NewExpression"/>。</param>
         public void SetCustomAttribute(Expression<Func<Attribute>> expression)
         {
             InnerBuilder.SetCustomAttribute(expression);
@@ -190,19 +190,31 @@ namespace Fireasy.Data.Entity.Dynamic
                     continue;
                 }
 
-                dict.Add(property.Name, MakeLambdaExpression(property).Compile());
+                var _property = property;
+                var pext = property as PropertyExtension;
+                if (pext != null)
+                {
+                    _property = pext.Property;
+                }
 
-                var fieldBuilder = InnerBuilder.DefineField(GetFieldName(property), typeof(IProperty), null, VisualDecoration.Public, CallingDecoration.Static);
-                var propertyBuider = InnerBuilder.DefineProperty(property.Name, property.Type, VisualDecoration.Public, CallingDecoration.Virtual);
-                var isEnum = property.Type.IsEnum;
-                var opType = isEnum ? typeof(Enum) : property.Type;
+                var fieldBuilder = InnerBuilder.DefineField(GetFieldName(_property), typeof(IProperty), null, VisualDecoration.Public, CallingDecoration.Static);
+                var propertyBuider = InnerBuilder.DefineProperty(_property.Name, _property.Type, VisualDecoration.Public, CallingDecoration.Virtual);
+                var isEnum = _property.Type.IsEnum;
+                var opType = isEnum ? typeof(Enum) : _property.Type;
 
-                var op_Explicit = typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == "op_Explicit" && s.ReturnType == property.Type);
-                var op_Implicit = typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == "op_Implicit" && s.GetParameters()[0].ParameterType == property.Type);
+                if (pext != null)
+                {
+                    pext.GetCustomAttributes().ForEach(s => propertyBuider.SetCustomAttribute(s));
+                }
+
+                dict.Add(_property.Name, MakeLambdaExpression(_property).Compile());
+
+                var op_Explicit = typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == "op_Explicit" && s.ReturnType == _property.Type);
+                var op_Implicit = typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == "op_Implicit" && s.GetParameters()[0].ParameterType == _property.Type);
 
                 var getMethod = propertyBuider.DefineGetMethod(calling: CallingDecoration.Virtual, ilCoding: bc =>
                     {
-                        bc.Emitter.DeclareLocal(property.Type);
+                        bc.Emitter.DeclareLocal(_property.Type);
                         bc.Emitter
                             .ldarg_0
                             .ldsfld(fieldBuilder.FieldBuilder)
@@ -220,7 +232,7 @@ namespace Fireasy.Data.Entity.Dynamic
                             .ldarg_0
                             .ldsfld(fieldBuilder.FieldBuilder)
                             .ldarg_1
-                            .Assert(isEnum, e1 => e1.box(property.Type))
+                            .Assert(isEnum, e1 => e1.box(_property.Type))
                             .Assert(op_Implicit != null, e1 => e1.call(op_Implicit))
                             .callvirt(SetValueMethod)
                             .ret();
@@ -228,7 +240,7 @@ namespace Fireasy.Data.Entity.Dynamic
 
                 setMethod.DefineParameter("value");
 
-                if (validations != null && validations.TryGetValue(property, out List<Expression<Func<Attribute>>> attribues))
+                if (validations != null && validations.TryGetValue(_property, out List<Expression<Func<Attribute>>> attribues))
                 {
                     attribues.ForEach(s => propertyBuider.SetCustomAttribute(s));
                 }

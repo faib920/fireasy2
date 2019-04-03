@@ -47,6 +47,11 @@ namespace Fireasy.Common.Serialization
         public SerializeOption Option { get; set; }
 
         /// <summary>
+        /// 获取当前的 <see cref="PropertySerialzeInfo"/> 对象。
+        /// </summary>
+        public PropertySerialzeInfo SeriaizeInfo { get; internal set; }
+
+        /// <summary>
         /// 获取指定类型的属性访问缓存。
         /// </summary>
         /// <param name="type"></param>
@@ -68,6 +73,7 @@ namespace Fireasy.Common.Serialization
                         PropertyInfo = s,
                         PropertyName = SerializerUtil.GetPropertyName(s),
                         Formatter = s.GetCustomAttributes<TextFormatterAttribute>().FirstOrDefault()?.Formatter,
+                        DefaultValue = s.GetCustomAttributes<DefaultValueAttribute>().FirstOrDefault()?.Value,
                         Converter = s.GetCustomAttributes<TextPropertyConverterAttribute>().FirstOrDefault()?.ConverterType.New<ITextConverter>()
                     })
                     .Where(s => !string.IsNullOrEmpty(s.PropertyName))
@@ -81,7 +87,7 @@ namespace Fireasy.Common.Serialization
         /// <param name="obj">要锁定的对象。</param>
         /// <param name="serializeMethod">被锁定的方法。</param>
         /// <exception cref="SerializationException">该对象被循环引用，即嵌套引用。</exception>
-        internal void TrySerialize(object obj, Action serializeMethod)
+        public void TrySerialize(object obj, Action serializeMethod)
         {
             if (obj == null)
             {
@@ -115,10 +121,12 @@ namespace Fireasy.Common.Serialization
         /// <summary>
         /// 释放对象所占用的所有资源。
         /// </summary>
-        public void Dispose()
+        /// <param name="disposing"></param>
+        protected override void Dispose(bool disposing)
         {
             GetAccessors.Clear();
             objects.Clear();
+            base.Dispose(disposing);
         }
     }
 
@@ -153,8 +161,73 @@ namespace Fireasy.Common.Serialization
         public string Formatter { get; internal set; }
 
         /// <summary>
+        /// 获取缺省的值。
+        /// </summary>
+        public object DefaultValue { get; internal set; }
+
+        /// <summary>
         /// 获取属性上的转换器。
         /// </summary>
         public ITextConverter Converter { get; internal set; }
+    }
+
+    /// <summary>
+    /// 属性的序列化信息。
+    /// </summary>
+    public class PropertySerialzeInfo
+    {
+        public PropertySerialzeInfo(PropertyGetAccessorCache cache)
+        {
+            ObjectType = ObjectType.GeneralObject;
+            PropertyType = cache.PropertyInfo.PropertyType;
+            PropertyName = cache.PropertyName;
+            Formatter = cache.Formatter;
+        }
+
+        public PropertySerialzeInfo(ObjectType objectType, Type propertyType, string propertyName)
+        {
+            ObjectType = objectType;
+            PropertyType = propertyType;
+            PropertyName = propertyName;
+        }
+
+        /// <summary>
+        /// 获取对象的类型。
+        /// </summary>
+        public ObjectType ObjectType { get; private set; }
+
+        /// <summary>
+        /// 获取属性名称。
+        /// </summary>
+        public string PropertyName { get; private set; }
+
+        /// <summary>
+        /// 获取属性的类型。
+        /// </summary>
+        public Type PropertyType { get; private set; }
+
+        /// <summary>
+        /// 获取文本格式化。
+        /// </summary>
+        public string Formatter { get; private set; }
+    }
+
+    /// <summary>
+    /// 对象类型。
+    /// </summary>
+    public enum ObjectType
+    {
+        /// <summary>
+        /// 一般的对象。
+        /// </summary>
+        GeneralObject,
+        /// <summary>
+        /// 动态对象。
+        /// </summary>
+        DynamicObject,
+        /// <summary>
+        /// 字典。
+        /// </summary>
+        Dictionary,
     }
 }

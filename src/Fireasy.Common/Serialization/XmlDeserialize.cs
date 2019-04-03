@@ -283,8 +283,7 @@ namespace Fireasy.Common.Serialization
 
         private object ParseGeneralObject(Type type)
         {
-            var instance = type.New();
-
+            var instance = CreateGeneralObject(type);
             var cache = GetAccessorCache(instance.GetType());
 
             if (xmlReader.AttributeCount > 0)

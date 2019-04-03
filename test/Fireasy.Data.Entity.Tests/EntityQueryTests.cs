@@ -39,8 +39,8 @@ namespace Fireasy.Data.Entity.Tests
         {
             //var c = db.Customers.Get("ALFKI");
             //Assert.IsNotNull(c);
-            //var d = db.Products.FirstOrDefault();
-            //Assert.IsNotNull(d);
+            var d = db.Products.FirstOrDefault();
+            Assert.IsNotNull(d);
 
             var l = new int?[] { 2, 3, 4 };
             var list = db.OrderDetails.Where(s => l.Contains(s.UnitPrice)).ToList();

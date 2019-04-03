@@ -1,4 +1,11 @@
-﻿using Fireasy.Common.Extensions;
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using Fireasy.Common.Reflection;
 using System;
 using System.Collections;
@@ -18,7 +25,6 @@ namespace Fireasy.Common.Serialization
             this.option = option;
             context = new SerializeContext { Option = option };
         }
-
 
         /// <summary>
         /// 获取指定类型的属性访问缓存。
@@ -45,6 +51,12 @@ namespace Fireasy.Common.Serialization
                 });
         }
 
+        /// <summary>
+        /// 创建一个 <see cref="IList"/> 对象。
+        /// </summary>
+        /// <param name="listType"></param>
+        /// <param name="elementType"></param>
+        /// <param name="container"></param>
         protected void CreateListContainer(Type listType, out Type elementType, out IList container)
         {
             if (listType.IsArray)
@@ -69,6 +81,12 @@ namespace Fireasy.Common.Serialization
             }
         }
 
+        /// <summary>
+        /// 创建一个 <see cref="IDictionary"/> 对象。
+        /// </summary>
+        /// <param name="dictType"></param>
+        /// <param name="keyValueTypes"></param>
+        /// <param name="container"></param>
         protected void CreateDictionaryContainer(Type dictType, out Type[] keyValueTypes, out IDictionary container)
         {
             if (dictType.IsInterface)
@@ -81,6 +99,22 @@ namespace Fireasy.Common.Serialization
                 keyValueTypes = dictType.GetGenericImplementType(typeof(IDictionary<,>)).GetGenericArguments();
                 container = dictType.New<IDictionary>();
             }
+        }
+
+        /// <summary>
+        /// 使用标注的缺省值创建一个新对象。
+        /// </summary>
+        /// <param name="objType"></param>
+        /// <returns></returns>
+        protected object CreateGeneralObject(Type objType)
+        {
+            var obj = objType.New();
+            foreach (var acc in context.GetAccessorCache(objType).Where(s => s.DefaultValue != null))
+            {
+                acc.Accessor.SetValue(obj, acc.DefaultValue.ToType(acc.PropertyInfo.PropertyType));
+            }
+
+            return obj;
         }
 
         protected virtual void Dispose(bool disposing)

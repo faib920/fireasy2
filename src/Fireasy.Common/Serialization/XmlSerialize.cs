@@ -48,8 +48,7 @@ namespace Fireasy.Common.Serialization
         /// <param name="value">要序列化的值。</param>
         /// <param name="startEle"></param>
         /// <param name="type"></param>
-        /// <param name="formatter"></param>
-        internal void Serialize(object value, bool startEle = false, Type type = null, string formatter = null)
+        internal void Serialize(object value, bool startEle = false, Type type = null)
         {
             if (type == null && value != null)
             {
@@ -113,7 +112,7 @@ namespace Fireasy.Common.Serialization
                 return;
             }
 
-            SerializeValue(value, startEle, formatter);
+            SerializeValue(value, startEle);
         }
 
         private bool WithSerializable(Type type, object value, bool startEle)
@@ -206,9 +205,13 @@ namespace Fireasy.Common.Serialization
                     continue;
                 }
 
+                context.SeriaizeInfo = new PropertySerialzeInfo(ObjectType.DynamicObject, typeof(object), name);
+
                 xmlWriter.WriteStartElement(name);
                 Serialize(value);
                 xmlWriter.WriteEndElement();
+
+                context.SeriaizeInfo = null;
             }
 
             if (startEle)
@@ -271,9 +274,13 @@ namespace Fireasy.Common.Serialization
 
             foreach (var key in dictionary.Keys)
             {
+                context.SeriaizeInfo = new PropertySerialzeInfo(ObjectType.Dictionary, typeof(object), key.ToString());
+
                 xmlWriter.WriteStartElement(key.ToString());
                 Serialize(dictionary[key]);
                 xmlWriter.WriteEndElement();
+
+                context.SeriaizeInfo = null;
             }
 
             if (startEle)
@@ -282,7 +289,7 @@ namespace Fireasy.Common.Serialization
             }
         }
 
-        private void SerializeValue(object value, bool startEle, string formatter)
+        private void SerializeValue(object value, bool startEle)
         {
             var type = value.GetType();
             if (type.IsNullableType())
@@ -317,10 +324,10 @@ namespace Fireasy.Common.Serialization
                     case TypeCode.Decimal:
                     case TypeCode.Single:
                     case TypeCode.Double:
-                        xmlWriter.WriteValue(value.As<IFormattable>().ToString(formatter ?? "G", CultureInfo.InvariantCulture));
+                        xmlWriter.WriteValue(value.As<IFormattable>().ToString(context.SeriaizeInfo?.Formatter ?? "G", CultureInfo.InvariantCulture));
                         break;
                     case TypeCode.DateTime:
-                        SerializeDateTime((DateTime)value, formatter);
+                        SerializeDateTime((DateTime)value);
                         break;
                     case TypeCode.Char:
                     case TypeCode.String:
@@ -338,11 +345,11 @@ namespace Fireasy.Common.Serialization
             }
         }
 
-        private void SerializeDateTime(DateTime value, string formatter)
+        private void SerializeDateTime(DateTime value)
         {
             if (option.DateFormatHandling == DateFormatHandling.Default)
             {
-                xmlWriter.WriteValue(value.ToString(formatter ?? "yyyy-MM-dd", CultureInfo.InvariantCulture));
+                xmlWriter.WriteValue(value.ToString(context.SeriaizeInfo?.Formatter ?? "yyyy-MM-dd", CultureInfo.InvariantCulture));
             }
             else if (option.DateFormatHandling == DateFormatHandling.IsoDateFormat)
             {
@@ -399,6 +406,8 @@ namespace Fireasy.Common.Serialization
                     continue;
                 }
 
+                context.SeriaizeInfo = new PropertySerialzeInfo(acc);
+
                 var objType = acc.PropertyInfo.PropertyType == typeof(object) ? value.GetType() : acc.PropertyInfo.PropertyType;
                 if (option.OutputStyle == OutputStyle.Attribute && objType.IsStringable())
                 {
@@ -419,9 +428,11 @@ namespace Fireasy.Common.Serialization
                     }
                     else
                     {
-                        WriteXmlElement(acc.PropertyName, true, () => Serialize(value, type: objType, formatter: acc.Formatter));
+                        WriteXmlElement(acc.PropertyName, true, () => Serialize(value, type: objType));
                     }
                 }
+
+                context.SeriaizeInfo = null;
             }
 
             if (startEle)

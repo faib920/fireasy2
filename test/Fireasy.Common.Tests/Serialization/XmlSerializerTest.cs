@@ -1710,7 +1710,7 @@ total co.ltd
 
             public string Name { get; set; }
 
-            [TextPropertyConverter(typeof(FullDateTimeXmlConverter))]
+            [TextFormatter("yy-MM-dd")]
             public DateTime Birthday { get; set; }
 
             public DateTime WorkTime { get; set; }
@@ -1728,6 +1728,7 @@ total co.ltd
         {
             public string Company { get; set; }
 
+            [DefaultValue("2019-3-3")]
             public DateTime StartDate { get; set; }
 
             public DateTime? EndDate { get; set; }

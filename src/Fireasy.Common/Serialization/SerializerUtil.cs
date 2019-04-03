@@ -28,18 +28,6 @@ namespace Fireasy.Common.Serialization
                 option.ExclusiveMembers.Contains(property)));
         }
 
-        internal static bool IsNoSerializable(PropertyDescriptor property, object value)
-        {
-            var defaultValue = property.GetCustomAttributes<DefaultValueAttribute>().FirstOrDefault();
-            return defaultValue == null || defaultValue.Value == null || !defaultValue.Value.ToType(property.PropertyType).Equals(value);
-        }
-
-        internal static bool IsNoSerializable(PropertyInfo property, object value)
-        {
-            var defaultValue = property.GetCustomAttributes<DefaultValueAttribute>().FirstOrDefault();
-            return defaultValue == null || defaultValue.Value == null || !defaultValue.Value.ToType(property.PropertyType).Equals(value);
-        }
-
         internal static bool IsNoSerializable(SerializeOption option, string propertyName)
         {
             return (((option.InclusiveNames != null) &&

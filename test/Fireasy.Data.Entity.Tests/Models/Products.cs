@@ -39,8 +39,19 @@ namespace Fireasy.Data.Entity.Tests.Models
         [PropertyMapping(ColumnName = "Discontinued", Description = "", IsNullable = false)]
         public virtual bool Discontinued { get; set; }
 
+        private IProperty p = PropertyUnity.RegisterProperty("1", typeof(int), typeof(Products));
         [PropertyMapping(ColumnName = "Photo", Description = "", IsNullable = true, DataType = System.Data.DbType.Binary)]
-        public virtual byte[] Photo { get; set; }
+        public virtual int[] Photo
+        {
+            get
+            {
+                return (int[])GetValue(p).GetValue();
+            }
+            set
+            {
+                SetValue(p, PropertyValue.NewValue(value));
+            }
+        }
 
         public virtual Categories categories { get; set; }
 

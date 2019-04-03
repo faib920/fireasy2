@@ -9,7 +9,6 @@ using System;
 using System.Xml;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
-using System.Linq;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
@@ -38,7 +37,7 @@ namespace Fireasy.Common.Logging.Configuration
 
             //取默认实例
             DefaultInstanceName = section.GetAttributeValue("default");
-            Level = GetLevel(section.GetAttributeValue("level"));
+            Level = LogEnvironment.GetLevel(section.GetAttributeValue("level"));
 
             base.Initialize(section);
         }
@@ -59,7 +58,7 @@ namespace Fireasy.Common.Logging.Configuration
                     });
 
             DefaultInstanceName = configuration.GetSection("default").Value;
-            Level = GetLevel(configuration.GetSection("level").Value);
+            Level = LogEnvironment.GetLevel(configuration.GetSection("level").Value);
 
             base.Bind(configuration);
         }
@@ -69,41 +68,5 @@ namespace Fireasy.Common.Logging.Configuration
         /// 获取或设置日志级别。
         /// </summary>
         public LogLevel Level { get; set; }
-
-        private LogLevel GetLevel(string levels)
-        {
-            var level = LogLevel.Default;
-
-            if (string.IsNullOrEmpty(levels))
-            {
-                return level;
-            }
-
-            foreach (var segment in levels.Split(new[] { '|', ';', ',' }))
-            {
-                if (segment.Equals("info", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    level |= LogLevel.Info;
-                }
-                else if (segment.Equals("error", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    level |= LogLevel.Error;
-                }
-                else if (segment.Equals("debug", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    level |= LogLevel.Debug;
-                }
-                else if (segment.Equals("warn", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    level |= LogLevel.Warn;
-                }
-                else if (segment.Equals("warn", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    level |= LogLevel.Fatal;
-                }
-            }
-
-            return level;
-        }
     }
 }
