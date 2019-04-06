@@ -14,22 +14,22 @@ namespace Fireasy.Data
 {
     public abstract class ExpressionRowMapper<T> : IDataRowMapper<T>
     {
-        private Func<IDataReader, T> funcDataRecd;
-        private Func<DataRow, T> funcDataRow;
+        private Func<IDatabase, IDataReader, T> funcDataRecd;
+        private Func<IDatabase, DataRow, T> funcDataRow;
 
         /// <summary>
         /// 将一个 <see cref="IDataReader"/> 转换为一个 <typeparamref name="T"/> 的对象。
         /// </summary>
         /// <param name="reader">一个 <see cref="IDataReader"/> 对象。</param>
         /// <returns>由当前 <see cref="IDataReader"/> 对象中的数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
-        public T Map(IDataReader reader)
+        public virtual T Map(IDatabase database, IDataReader reader)
         {
             if (funcDataRecd == null)
             {
                 funcDataRecd = BuildExpressionForDataReader().Compile();
             }
 
-            var result = funcDataRecd(reader);
+            var result = funcDataRecd(database, reader);
             if (Initializer != null)
             {
                 Initializer(result);
@@ -43,14 +43,14 @@ namespace Fireasy.Data
         /// </summary>
         /// <param name="row">一个 <see cref="DataRow"/> 对象。</param>
         /// <returns>由 <see cref="DataRow"/> 中数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
-        public T Map(DataRow row)
+        public virtual T Map(IDatabase database, DataRow row)
         {
             if (funcDataRow == null)
             {
                 funcDataRow = BuildExpressionForDataRow().Compile();
             }
 
-            var result = funcDataRow(row);
+            var result = funcDataRow(database, row);
             if (Initializer != null)
             {
                 Initializer(result);
@@ -69,18 +69,18 @@ namespace Fireasy.Data
         /// </summary>
         public Action<object> Initializer { get; set; }
 
-        object IDataRowMapper.Map(IDataReader reader)
+        object IDataRowMapper.Map(IDatabase database, IDataReader reader)
         {
-            return Map(reader);
+            return Map(database, reader);
         }
 
-        object IDataRowMapper.Map(DataRow row)
+        object IDataRowMapper.Map(IDatabase database, DataRow row)
         {
-            return Map(row);
+            return Map(database, row);
         }
 
-        protected abstract Expression<Func<IDataReader, T>> BuildExpressionForDataReader();
+        protected abstract Expression<Func<IDatabase, IDataReader, T>> BuildExpressionForDataReader();
 
-        protected abstract Expression<Func<DataRow, T>> BuildExpressionForDataRow();
+        protected abstract Expression<Func<IDatabase, DataRow, T>> BuildExpressionForDataRow();
     }
 }

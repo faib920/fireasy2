@@ -672,7 +672,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             var funcType = typeof(Func<,>).MakeGenericType(typeof(IDataReader), elementType);
             var lambda = Expression.Lambda(funcType, projector, scope.dataReader);
-            return typeof(ProjectionRowMapper<>).MakeGenericType(elementType).New<IDataRowMapper>(lambda, scope.recordWrapper, variables);
+            return typeof(ProjectionRowMapper<>).MakeGenericType(elementType).New<IDataRowMapper>(executor, lambda, scope.recordWrapper);
         }
 
         /// <summary>
@@ -911,27 +911,29 @@ namespace Fireasy.Data.Entity.Linq
 
         private class ProjectionRowMapper<T> : ExpressionRowMapper<T>
         {
-            private Expression expression;
+            private ParameterExpression executor;
+            private LambdaExpression lambda;
             private ParameterExpression recordWrapper;
-            private List<ParameterExpression> variables;
 
-            public ProjectionRowMapper(LambdaExpression expression, ParameterExpression recordWrapper, List<ParameterExpression> variables)
+            public ProjectionRowMapper(ParameterExpression executor, LambdaExpression lambda, ParameterExpression recordWrapper)
             {
-                this.expression = expression;
+                this.executor = executor;
+                this.lambda = lambda;
                 this.recordWrapper = recordWrapper;
-                this.variables = variables;
             }
 
-            protected override Expression<Func<IDataReader, T>> BuildExpressionForDataReader()
+            protected override Expression<Func<IDatabase, IDataReader, T>> BuildExpressionForDataReader()
             {
-                expression = DbExpressionReplacer.Replace(expression, recordWrapper, Expression.Constant(RecordWrapper, typeof(IRecordWrapper)));
-                return (Expression<Func<IDataReader, T>>)expression;
+                lambda = (LambdaExpression)DbExpressionReplacer.Replace(lambda, recordWrapper, Expression.Constant(RecordWrapper, typeof(IRecordWrapper)));
+                lambda = Expression.Lambda(lambda.Body, executor, lambda.Parameters[0]);
+                return (Expression<Func<IDatabase, IDataReader, T>>)lambda;
             }
 
-            protected override Expression<Func<DataRow, T>> BuildExpressionForDataRow()
+            protected override Expression<Func<IDatabase, DataRow, T>> BuildExpressionForDataRow()
             {
-                expression = DbExpressionReplacer.Replace(expression, recordWrapper, Expression.Constant(RecordWrapper, typeof(IRecordWrapper)));
-                return (Expression<Func<DataRow, T>>)expression;
+                lambda = (LambdaExpression)DbExpressionReplacer.Replace(lambda, recordWrapper, Expression.Constant(RecordWrapper, typeof(IRecordWrapper)));
+                lambda = Expression.Lambda(lambda.Body, executor, lambda.Parameters[0]);
+                return (Expression<Func<IDatabase, DataRow, T>>)lambda;
             }
         }
     }

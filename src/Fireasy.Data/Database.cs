@@ -255,7 +255,7 @@ namespace Fireasy.Data
             {
                 while (reader.Read())
                 {
-                    yield return rowMapper.Map(reader);
+                    yield return rowMapper.Map(this, reader);
                 }
             }
         }
@@ -672,7 +672,7 @@ namespace Fireasy.Data
             rowMapper.RecordWrapper = Provider.GetService<IRecordWrapper>();
 
             var reader = await ExecuteReaderAsync(queryCommand, segment, parameters, cancellationToken);
-            return new AsyncEnumerable<T>(reader, rowMapper);
+            return new AsyncEnumerable<T>(this, reader, rowMapper);
         }
 #endif
 
@@ -1067,9 +1067,9 @@ namespace Fireasy.Data
         {
             private IEnumerator<T> enumerator;
 
-            public AsyncEnumerable(IDataReader reader, IDataRowMapper<T> rowMapper)
+            public AsyncEnumerable(IDatabase database, IDataReader reader, IDataRowMapper<T> rowMapper)
             {
-                this.enumerator = new AsyncEnumerator<T>(reader, rowMapper);
+                this.enumerator = new AsyncEnumerator<T>(database, reader, rowMapper);
             }
 
 
@@ -1086,18 +1086,20 @@ namespace Fireasy.Data
 
         private class AsyncEnumerator<T> : IEnumerator<T>
         {
+            private IDatabase database;
             private IDataReader reader;
             private IDataRowMapper<T> rowMapper;
 
-            public AsyncEnumerator(IDataReader reader, IDataRowMapper<T> rowMapper)
+            public AsyncEnumerator(IDatabase database, IDataReader reader, IDataRowMapper<T> rowMapper)
             {
+                this.database = database;
                 this.reader = reader;
                 this.rowMapper = rowMapper;
             }
 
             public T Current
             {
-                get { return rowMapper.Map(reader); }
+                get { return rowMapper.Map(database, reader); }
             }
 
             public void Dispose()
