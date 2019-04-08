@@ -699,14 +699,12 @@ namespace Fireasy.Data.Entity.Linq
             entity.SetState(EntityState.Unchanged);
 
             //设置 InstanceName 和 Environment
-            var con = entity as IEntityPersistentInstanceContainer;
-            if (con != null && instanceContainer != null)
+            if (entity is IEntityPersistentInstanceContainer con && instanceContainer != null)
             {
                 con.InstanceName = instanceContainer.InstanceName;
             }
 
-            var env = entity as IEntityPersistentEnvironment;
-            if (env != null && environment != null)
+            if (entity is IEntityPersistentEnvironment env && environment != null)
             {
                 env.Environment = environment.Environment;
             }
@@ -753,8 +751,7 @@ namespace Fireasy.Data.Entity.Linq
             var tableName = metadata.TableName;
             var columnName = property.Info.FieldName;
 
-            var env = entity as IEntityPersistentEnvironment;
-            if (env != null && env.Environment != null)
+            if (entity is IEntityPersistentEnvironment env && env.Environment != null)
             {
                 tableName = env.Environment.GetVariableTableName(metadata);
             }
@@ -815,7 +812,7 @@ namespace Fireasy.Data.Entity.Linq
             internal ParameterExpression recordWrapper;
             internal ParameterExpression dataReader;
             internal TableAlias Alias { get; private set; }
-            Dictionary<string, int> nameMap;
+            private Dictionary<string, int> nameMap;
 
             internal Scope(Scope outer, ParameterExpression recordWrapper, ParameterExpression dataReader, TableAlias alias, IEnumerable<ColumnDeclaration> columns)
             {
@@ -848,22 +845,22 @@ namespace Fireasy.Data.Entity.Linq
         /// <summary>
         /// columns referencing the outer alias are turned into special named-value parameters
         /// </summary>
-        class OuterParameterizer : DbExpressionVisitor
+        private class OuterParameterizer : DbExpressionVisitor
         {
-            int iParam;
-            TableAlias outerAlias;
-            Dictionary<ColumnExpression, NamedValueExpression> map = new Dictionary<ColumnExpression, NamedValueExpression>();
+            private int iParam;
+            private TableAlias outerAlias;
+            private Dictionary<ColumnExpression, NamedValueExpression> map = new Dictionary<ColumnExpression, NamedValueExpression>();
 
             internal static Expression Parameterize(TableAlias outerAlias, Expression expr)
             {
-                OuterParameterizer op = new OuterParameterizer();
+                var op = new OuterParameterizer();
                 op.outerAlias = outerAlias;
                 return op.Visit(expr);
             }
 
             protected override Expression VisitProjection(ProjectionExpression proj)
             {
-                SelectExpression select = (SelectExpression)this.Visit(proj.Select);
+                var select = (SelectExpression)this.Visit(proj.Select);
                 return proj.Update(select, proj.Projector, proj.Aggregator);
             }
 
@@ -871,8 +868,7 @@ namespace Fireasy.Data.Entity.Linq
             {
                 if (column.Alias == this.outerAlias)
                 {
-                    NamedValueExpression nv;
-                    if (!this.map.TryGetValue(column, out nv))
+                    if (!this.map.TryGetValue(column, out NamedValueExpression nv))
                     {
                         nv = QueryUtility.GetNamedValueExpression($"n{(iParam++)}", column, (DbType)column.MapInfo.DataType);
                         this.map.Add(column, nv);
@@ -900,8 +896,7 @@ namespace Fireasy.Data.Entity.Linq
 
             protected override Expression VisitVariable(VariableExpression vex)
             {
-                Expression sub;
-                if (this.map.TryGetValue(vex.Name, out sub))
+                if (this.map.TryGetValue(vex.Name, out Expression sub))
                 {
                     return sub;
                 }
@@ -925,14 +920,22 @@ namespace Fireasy.Data.Entity.Linq
             protected override Expression<Func<IDatabase, IDataReader, T>> BuildExpressionForDataReader()
             {
                 lambda = (LambdaExpression)DbExpressionReplacer.Replace(lambda, recordWrapper, Expression.Constant(RecordWrapper, typeof(IRecordWrapper)));
-                lambda = Expression.Lambda(lambda.Body, executor, lambda.Parameters[0]);
+                if (lambda.Parameters.Count == 1 && lambda.Parameters[0].Type != typeof(IDatabase))
+                {
+                    return Expression.Lambda<Func<IDatabase, IDataReader, T>>(lambda.Body, executor, lambda.Parameters[0]);
+                }
+
                 return (Expression<Func<IDatabase, IDataReader, T>>)lambda;
             }
 
             protected override Expression<Func<IDatabase, DataRow, T>> BuildExpressionForDataRow()
             {
                 lambda = (LambdaExpression)DbExpressionReplacer.Replace(lambda, recordWrapper, Expression.Constant(RecordWrapper, typeof(IRecordWrapper)));
-                lambda = Expression.Lambda(lambda.Body, executor, lambda.Parameters[0]);
+                if (lambda.Parameters.Count == 1 && lambda.Parameters[0].Type != typeof(IDatabase))
+                {
+                    return Expression.Lambda<Func<IDatabase, DataRow, T>>(lambda.Body, executor, lambda.Parameters[0]);
+                }
+
                 return (Expression<Func<IDatabase, DataRow, T>>)lambda;
             }
         }
