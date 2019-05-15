@@ -25,6 +25,11 @@ namespace Fireasy.Common.Caching
         public const short MAX_GEN_LIMIT = 30000;
 
         /// <summary>
+        /// 获取当前最大的代。
+        /// </summary>
+        public int CurrentMaxGen { get; private set; }
+
+        /// <summary>
         /// 初始化 <see cref="CacheOptimizer"/> 类的新实例。
         /// </summary>
         /// <param name="checkExpired">检查缓存过期的方法。</param>
@@ -47,14 +52,19 @@ namespace Fireasy.Common.Caching
                 return null;
             }
 
-            if (item.Gen < MAX_GEN_LIMIT)
+            if (item.Gen != -1)
             {
-                item.Gen++;
+                if (item.Gen < MAX_GEN_LIMIT)
+                {
+                    item.Gen++;
+                }
+                else
+                {
+                    item.Gen = 0;
+                }
             }
-            else
-            {
-                item.Gen = 0;
-            }
+
+            CurrentMaxGen = Math.Max(CurrentMaxGen, item.Gen);
 
             return item;
         }

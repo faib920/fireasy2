@@ -21,20 +21,21 @@ namespace Fireasy.Data.Entity
         /// 否则由 <see cref="DatabaseFactory"/> 工厂进行创建。
         /// </summary>
         /// <param name="instanceName">配置实例名称。</param>
+        /// <param name="databaseFactory"><see cref="IDatabase"/> 的创建工厂。</param>
         /// <returns>一个 <see cref="Database"/> 实例对象。</returns>
-        public static IDatabase CreateDatabase(string instanceName = null)
+        public static IDatabase CreateDatabase(string instanceName, Func<IDatabase> databaseFactory)
         {
             if (EntityTransactionScope.Current == null)
             {
-                return DatabaseScope.Current != null && DatabaseScope.Current.InstanceName == instanceName ? DatabaseScope.Current.Database :
-                    DatabaseFactory.CreateDatabase(instanceName);
+                return DatabaseScope.Current != null && DatabaseScope.Current.InstanceName == instanceName ? 
+                    DatabaseScope.Current.Database : databaseFactory();
             }
 
             //首次请求不启动数据库事务
             var database = EntityTransactionScope.Current.GetDatabase(instanceName);
             if (database == null)
             {
-                database = new EntityDatabase(DatabaseFactory.CreateDatabase(instanceName));
+                database = new EntityDatabase(databaseFactory());
                 EntityTransactionScope.Current.SetDatabase(instanceName, database);
                 StartTransaction(database, EntityTransactionScope.Current.Option);
             }

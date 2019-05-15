@@ -518,7 +518,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             if (TranslateScope.Current != null)
             {
-                if (TranslateScope.Current.Context is IQueryPolicy policy)
+                if (TranslateScope.Current.ContextService is IQueryPolicy policy)
                 {
                     return policy.ApplyPolicy(expression, member);
                 }

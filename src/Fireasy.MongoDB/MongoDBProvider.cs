@@ -14,15 +14,14 @@ namespace Fireasy.MongoDB
 {
     public class MongoDBProvider : ProviderBase
     {
+        public static MongoDBProvider Instance = new MongoDBProvider();
+
         public MongoDBProvider()
         {
             RegisterService<IContextProvider, MongoDBContextProvider>();
         }
 
-        public override string DbName
-        {
-            get { return "mongodb"; }
-        }
+        public override string ProviderName => "MongoDB";
 
         public override ConnectionParameter GetConnectionParameter(ConnectionString connectionString)
         {

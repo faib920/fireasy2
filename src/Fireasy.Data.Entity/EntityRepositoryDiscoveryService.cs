@@ -8,7 +8,6 @@
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -25,9 +24,11 @@ namespace Fireasy.Data.Entity
             new SafetyDictionary<Type, EntityContextTypesInitializersPair>();
 
         // Used by the code below to create DbSet instances
-        public static readonly MethodInfo SetMethod = typeof(EntityContext).GetMethods().FirstOrDefault(s => s.Name == "Set" && s.IsGenericMethod);
+        public static readonly MethodInfo MthSetRep = typeof(EntityContext).GetMethods().FirstOrDefault(s => s.Name == nameof(EntityContext.Set) && s.IsGenericMethod);
+        public static readonly MethodInfo MthTryCreateRep = typeof(IContextService).GetMethods().FirstOrDefault(s => s.Name == nameof(IContextService.TryCreateRepositoryStorage));
 
         private readonly EntityContext _context;
+        private readonly IContextService _service;
 
         // <summary>
         // Creates a set discovery service for the given derived context.
@@ -35,6 +36,7 @@ namespace Fireasy.Data.Entity
         public EntityRepositoryDiscoveryService(EntityContext context)
         {
             _context = context;
+            _service = context.GetService<IContextService>();
         }
 
         #endregion
@@ -73,6 +75,8 @@ namespace Fireasy.Data.Entity
                     var entityType = GetSetType(propertyInfo.PropertyType);
                     if (entityType != null)
                     {
+                        EntityProxyManager.CompileAll(entityType.Assembly, _service.EntityInjection);
+
                         // We validate immediately because a DbSet/IDbSet must be of
                         // a valid entity type since otherwise you could never use an instance.
                         if (!entityType.IsValidStructuralType())
@@ -80,8 +84,7 @@ namespace Fireasy.Data.Entity
                             //throw Error.InvalidEntityType(entityType);
                         }
 
-                        List<string> properties;
-                        if (!typeMap.TryGetValue(entityType, out properties))
+                        if (!typeMap.TryGetValue(entityType, out List<string> properties))
                         {
                             properties = new List<string>();
                             typeMap[entityType] = properties;
@@ -92,13 +95,28 @@ namespace Fireasy.Data.Entity
                         var setter = propertyInfo.GetSetMethod();
                         if (setter != null && setter.IsPublic)
                         {
-                            var setMethod = SetMethod.MakeGenericMethod(entityType);
+                            var setMethod = MthSetRep.MakeGenericMethod(entityType);
 
-                            var newExpression = Expression.Call(dbContextParam, setMethod);
-                            var setExpression = Expression.Call(
-                                Expression.Convert(dbContextParam, contextType), setter, newExpression);
+                            Expression expression = Expression.Call(dbContextParam, setMethod);
+                            var pType = setter.GetParameters()[0].ParameterType;
+                            if (pType != expression.Type)
+                            {
+                                expression = Expression.Convert(expression, pType);
+                            }
+
+                            var setExp = Expression.Call(
+                                Expression.Convert(dbContextParam, contextType), setter, expression);
+
+#if !NET35
+                            var createExp = Expression.Call(Expression.Constant(_service), MthTryCreateRep, Expression.Constant(entityType));
+                            var blockExp = Expression.Block(setExp, createExp);
+
                             initDelegates.Add(
-                                Expression.Lambda<Action<EntityContext>>(setExpression, dbContextParam).Compile());
+                                Expression.Lambda<Action<EntityContext>>(blockExp, dbContextParam).Compile());
+#else
+                            initDelegates.Add(
+                                Expression.Lambda<Action<EntityContext>>(setExp, dbContextParam).Compile());
+#endif
                         }
                     }
                 }

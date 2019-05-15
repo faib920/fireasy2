@@ -6,7 +6,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common;
+using Fireasy.Common.Configuration;
+using Fireasy.Data.Configuration;
 using Fireasy.Data.Entity.Linq;
+using Fireasy.Data.Provider;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -18,11 +21,11 @@ namespace Fireasy.Data.Entity
     /// <summary>
     /// 提供以对象形式查询和使用实体数据的功能。
     /// </summary>
-    public abstract class EntityContext : IDisposable
+    public abstract class EntityContext : IDisposable, IServiceProvider
     {
-        private InternalContext context;
+        private EntityContextOptions options;
         private bool isDisposed;
-        private bool isBeginTransaction = false;
+        private IContextService service;
 
         /// <summary>
         /// 初始化 <see cref="EntityContext"/> 类的新实例。
@@ -47,6 +50,8 @@ namespace Fireasy.Data.Entity
         /// <param name="options">选项参数。</param>
         public EntityContext(EntityContextOptions options)
         {
+            this.options = options;
+
             OnConfiguring(new EntityContextOptionsBuilder(options));
             Initialize(options);
 
@@ -66,7 +71,10 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public IDatabase Database
         {
-            get { return context.Database; }
+            get
+            {
+                return service?.Database;
+            }
         }
 
         /// <summary>
@@ -82,20 +90,11 @@ namespace Fireasy.Data.Entity
         /// 销毁资源。
         /// </summary>
         /// <param name="disposing">如果为 true，则同时释放托管资源和非托管资源；如果为 false，则仅释放非托管资源。</param>
-        protected void Dispose(bool disposing)
+        protected virtual void Dispose(bool disposing)
         {
             if (!isDisposed)
             {
-                if (context != null)
-                {
-                    if (isBeginTransaction)
-                    {
-                        context.Database.RollbackTransaction();
-                    }
-
-                    context.Dispose();
-                }
-
+                service?.Dispose();
                 isDisposed = true;
             }
         }
@@ -105,20 +104,19 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <typeparam name="TEntity">实体类型。</typeparam>
         /// <returns></returns>
-        public EntityRepository<TEntity> Set<TEntity>() where TEntity : IEntity
+        public IRepository<TEntity> Set<TEntity>() where TEntity : IEntity
         {
-            Type entitytype = typeof(TEntity);
-            return context.GetDbSet(entitytype) as EntityRepository<TEntity>;
+            return (IRepository<TEntity>)service.GetDbSet(typeof(TEntity));
         }
 
         /// <summary>
         /// 为指定的类型返回 <see cref="IRepository"/>
         /// </summary>
-        /// <param name="entitytype">实体类型。</param>
+        /// <param name="entityType">实体类型。</param>
         /// <returns></returns>
-        public IRepository Set(Type entitytype)
+        public IRepository Set(Type entityType)
         {
-            return context.GetDbSet(entitytype);
+            return service.GetDbSet(entityType);
         }
 
         /// <summary>
@@ -129,7 +127,7 @@ namespace Fireasy.Data.Entity
         public ITreeRepository<TEntity> CreateTreeRepository<TEntity>() where TEntity : class, IEntity
         {
             var repository = Set<TEntity>();
-            return new EntityTreeRepository<TEntity>(repository, context);
+            return new EntityTreeRepository<TEntity>(repository, service);
         }
 
         /// <summary>
@@ -140,7 +138,11 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityContext Include<TEntity>(Expression<Func<TEntity, object>> fnMember) where TEntity : IEntity
         {
-            context.IncludeWith(fnMember);
+            if (service is IQueryPolicy policy)
+            {
+                policy.IncludeWith(fnMember);
+            }
+
             return this;
         }
 
@@ -152,7 +154,11 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityContext Associate<TEntity>(Expression<Func<TEntity, IEnumerable>> memberQuery) where TEntity : IEntity
         {
-            context.AssociateWith(memberQuery);
+            if (service is IQueryPolicy policy)
+            {
+                policy.AssociateWith(memberQuery);
+            }
+
             return this;
         }
 
@@ -164,7 +170,11 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityContext Apply<TEntity>(Expression<Func<IEnumerable<TEntity>, IEnumerable<TEntity>>> fnApply) where TEntity : IEntity
         {
-            context.Apply(fnApply);
+            if (service is IQueryPolicy policy)
+            {
+                policy.Apply(fnApply);
+            }
+
             return this;
         }
 
@@ -176,7 +186,11 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityContext Apply(Type entityType, LambdaExpression fnApply)
         {
-            context.Apply(entityType, fnApply);
+            if (service is IQueryPolicy policy)
+            {
+                policy.Apply(entityType, fnApply);
+            }
+
             return this;
         }
 
@@ -187,7 +201,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityContext ConfigOptions(Action<EntityContextOptions> configuration)
         {
-            configuration?.Invoke(context.Options);
+            configuration?.Invoke(options);
 
             return this;
         }
@@ -196,12 +210,9 @@ namespace Fireasy.Data.Entity
         /// 开始事务。
         /// </summary>
         /// <param name="level"></param>
-        public void BeginTransaction(IsolationLevel level = IsolationLevel.ReadCommitted)
+        public void BeginTransaction(IsolationLevel level = IsolationLevel.ReadUncommitted)
         {
-            if (context.Database.BeginTransaction())
-            {
-                isBeginTransaction = true;
-            }
+            service.BeginTransaction(level);
         }
 
         /// <summary>
@@ -209,10 +220,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public void CommitTransaction()
         {
-            if (context.Database.CommitTransaction())
-            {
-                isBeginTransaction = false;
-            }
+            service.CommitTransaction();
         }
 
         /// <summary>
@@ -220,10 +228,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public void RollbackTransaction()
         {
-            if (context.Database.RollbackTransaction())
-            {
-                isBeginTransaction = false;
-            }
+            service.RollbackTransaction();
         }
 
         /// <summary>
@@ -233,10 +238,45 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(options, nameof(options));
 
-            context = options.ContextFactory != null ? options.ContextFactory() : new InternalContext(options);
+            EntityContextInitializeContext initContext = null;
 
-            context.OnRespositoryCreated = OnRespositoryCreated;
-            context.OnRespositoryCreateFailed = OnRespositoryCreateFailed;
+            if (options.ContextFactory != null)
+            {
+                initContext = options.ContextFactory();
+                initContext.Options = options;
+            }
+            else
+            {
+                var section = ConfigurationUnity.GetSection<InstanceConfigurationSection>();
+                if (section != null)
+                {
+                    IInstanceConfigurationSetting setting;
+
+                    if (!string.IsNullOrEmpty(options.ConfigName))
+                    {
+                        setting = section.Settings[options.ConfigName];
+                    }
+                    else
+                    {
+                        setting = section.Default;
+                    }
+
+                    initContext = new EntityContextInitializeContext(options, ProviderHelper.GetDefinedProviderInstance(setting), setting.ConnectionString);
+                }
+            }
+
+            if (initContext == null || initContext.Provider == null)
+            {
+                throw new Exception("");
+            }
+
+            var provider = initContext.Provider.GetService<IContextProvider>();
+            service = provider.CreateContextService(initContext);
+
+            if (service != null)
+            {
+                service.OnRespositoryCreated = OnRespositoryCreated;
+            }
         }
 
         /// <summary>
@@ -248,20 +288,40 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 仓储创建时可进行数据初始化。
+        /// 仓储创建时收到的通知。
         /// </summary>
-        /// <param name="entityType">实体类型。</param>
-        protected virtual void OnRespositoryCreated(Type entityType)
+        /// <param name="args">通知参数。</param>
+        protected virtual void OnRespositoryCreated(RespositoryCreatedEventArgs args)
         {
         }
 
-        /// <summary>
-        /// 仓储创建失败时通知。
-        /// </summary>
-        /// <param name="entityType">实体类型。</param>
-        /// <param name="exception">触发的异常。</param>
-        protected virtual void OnRespositoryCreateFailed(Type entityType, Exception exception)
+        public object GetService(Type serviceType)
         {
+            if (serviceType == typeof(IContextService))
+            {
+                return service;
+            }
+            else if (serviceType == typeof(IDatabase))
+            {
+                return service.Database;
+            }
+            else if (serviceType == typeof(IProvider))
+            {
+                return service.InitializeContext.Provider;
+            }
+
+            return null;
+        }
+
+        public T GetService<T>()
+        {
+            var svr = GetService(typeof(T));
+            if (svr != null)
+            {
+                return (T)svr;
+            }
+
+            return default;
         }
     }
 }

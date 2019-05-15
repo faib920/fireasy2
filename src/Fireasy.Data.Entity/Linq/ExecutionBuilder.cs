@@ -266,8 +266,8 @@ namespace Fireasy.Data.Entity.Linq
                 return Expression.MemberInit(mbmInitExp.NewExpression, bindings);
             }
 
-            var e = TranslateScope.Current.Context as IEntityPersistentEnvironment;
-            var c = TranslateScope.Current.Context as IEntityPersistentInstanceContainer;
+            var e = TranslateScope.Current.ContextService as IEntityPersistentEnvironment;
+            var c = TranslateScope.Current.ContextService as IEntityPersistentInstanceContainer;
 
             var constCall = Expression.Call(null, MthConstruct,
                 Visit(mbmInitExp.NewExpression),
@@ -699,12 +699,12 @@ namespace Fireasy.Data.Entity.Linq
             entity.SetState(EntityState.Unchanged);
 
             //设置 InstanceName 和 Environment
-            if (entity is IEntityPersistentInstanceContainer con && instanceContainer != null)
+            if (!string.IsNullOrEmpty(instanceContainer.InstanceName) && entity is IEntityPersistentInstanceContainer con)
             {
                 con.InstanceName = instanceContainer.InstanceName;
             }
 
-            if (entity is IEntityPersistentEnvironment env && environment != null)
+            if (environment.Environment != null && entity is IEntityPersistentEnvironment env)
             {
                 env.Environment = environment.Environment;
             }

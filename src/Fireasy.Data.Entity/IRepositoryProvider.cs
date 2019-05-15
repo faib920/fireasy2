@@ -17,6 +17,8 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public interface IRepositoryProvider
     {
+        IRepository CreateRepository(EntityContextOptions options);
+
         /// <summary>
         /// 获取 <see cref="IQueryable"/> 对象。
         /// </summary>

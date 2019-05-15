@@ -18,9 +18,9 @@ namespace Fireasy.Data.Provider
     public interface IProvider
     {
         /// <summary>
-        /// 获取描述数据库的名称。
+        /// 获取描述实例的名称。
         /// </summary>
-        string DbName { get; }
+        string ProviderName { get; set; }
 
         /// <summary>
         /// 获取数据库提供者工厂。

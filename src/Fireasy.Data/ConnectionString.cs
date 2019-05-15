@@ -5,12 +5,11 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Fireasy.Common;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Provider;
+using System;
+using System.Text;
 
 namespace Fireasy.Data
 {
@@ -40,6 +39,26 @@ namespace Fireasy.Data
         public static explicit operator string(ConnectionString connectionString)
         {
             return connectionString != null ? connectionString.ToString() : string.Empty;
+        }
+
+        public static bool operator == (ConnectionString connStr1, ConnectionString connStr2)
+        {
+            if ((Equals(connStr1, null) && !Equals(connStr2, null)) || (!Equals(connStr1, null) && Equals(connStr2, null)))
+            {
+                return false;
+            }
+
+            return connStr1.connectionString == connStr2.connectionString;
+        }
+
+        public static bool operator !=(ConnectionString connStr1, ConnectionString connStr2)
+        {
+            if ((Equals(connStr1, null) && !Equals(connStr2, null)) || (!Equals(connStr1, null) && Equals(connStr2, null)))
+            {
+                return true;
+            }
+
+            return connStr1.connectionString != connStr2.connectionString;
         }
 
         /// <summary>
@@ -150,7 +169,11 @@ namespace Fireasy.Data
             {
                 value = constr.Substring(index);
 
-                if (!ParseParameter(name, value))
+                if (string.IsNullOrEmpty(name))
+                {
+                    builder.Append(value);
+                }
+                else if (!ParseParameter(name, value))
                 {
                     value = DbUtility.ResolveFullPath(value);
                     builder.AppendFormat("{0}={1};", name, value);

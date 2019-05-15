@@ -52,8 +52,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
             if (TranslateScope.Current != null)
             {
                 Options = TranslateScope.Current.Options;
-                Syntax = TranslateScope.Current.Context.Database.Provider.GetService<ISyntaxProvider>();
-                Environment = TranslateScope.Current.Context.Environment;
+                Syntax = TranslateScope.Current.ContextService.Provider.GetService<ISyntaxProvider>();
+                Environment = (TranslateScope.Current.ContextService as IEntityPersistentEnvironment)?.Environment;
             }
         }
 

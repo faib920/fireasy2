@@ -7,11 +7,40 @@
 // -----------------------------------------------------------------------
 #if NETSTANDARD
 using Fireasy.Common.Configuration;
+using Fireasy.Data.Entity;
 using Fireasy.Data.Entity.Linq.Translators.Configuration;
 using Microsoft.Extensions.Configuration;
+using System;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
+    public static class ServiceCollectionExtensions
+    {
+        /// <summary>
+        /// 使 <see cref="IServiceCollection"/> 能够使用 Fireasy 中的 <see cref="EntityContext"/> 对象。
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="setupAction"></param>
+        /// <returns></returns>
+        public static EntityContextOptionsBuilder AddEntityContext<TContext>(this IServiceCollection services, Action<EntityContextOptions> setupAction = null) where TContext : EntityContext
+        {
+            var options = new EntityContextOptions();
+            setupAction?.Invoke(options);
+
+            var builder = new EntityContextOptionsBuilder(options);
+
+            if (setupAction != null)
+            {
+                services.Configure(setupAction);
+            }
+
+            services.AddScoped(s => options);
+            services.AddScoped<TContext>();
+
+            return builder;
+        }
+    }
+
     internal class ConfigurationBinder
     {
         internal static void Bind(IServiceCollection services, IConfiguration configuration)

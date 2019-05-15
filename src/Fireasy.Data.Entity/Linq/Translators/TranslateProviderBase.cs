@@ -41,7 +41,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private Expression TranslateInternal(Expression expression)
         {
-            var syntax = TranslateScope.Current.Context.Database.Provider.GetService<ISyntaxProvider>();
+            var syntax = TranslateScope.Current.ContextService.Provider.GetService<ISyntaxProvider>();
             var translation = QueryBinder.Bind(expression, syntax);
 
             translation = LogicalDeleteFlagRewriter.Rewrite(translation);
@@ -59,16 +59,21 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 translation = RedundantColumnRemover.Remove(translation);
                 translation = RedundantJoinRemover.Remove(translation);
             }
+
             translation = ComparisonRewriter.Rewrite(translation);
 
-            var rewritten = RelationshipIncluder.Include(TranslateScope.Current.Context, translation);
-            if (rewritten != translation)
+            Expression rewritten;
+            if (TranslateScope.Current.ContextService is IQueryPolicy policy)
             {
-                translation = rewritten;
-                translation = UnusedColumnRemover.Remove(translation);
-                translation = RedundantColumnRemover.Remove(translation);
-                translation = RedundantSubqueryRemover.Remove(translation);
-                translation = RedundantJoinRemover.Remove(translation);
+                rewritten = RelationshipIncluder.Include(policy, translation);
+                if (rewritten != translation)
+                {
+                    translation = rewritten;
+                    translation = UnusedColumnRemover.Remove(translation);
+                    translation = RedundantColumnRemover.Remove(translation);
+                    translation = RedundantSubqueryRemover.Remove(translation);
+                    translation = RedundantJoinRemover.Remove(translation);
+                }
             }
 
             rewritten = SingletonProjectionRewriter.Rewrite(translation);

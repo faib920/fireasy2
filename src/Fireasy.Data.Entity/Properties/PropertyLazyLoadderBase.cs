@@ -29,29 +29,6 @@ namespace Fireasy.Data.Entity.Properties
         public abstract PropertyValue GetValue(IEntity entity, IProperty property);
 
         /// <summary>
-        /// 获取实例上的 <see cref="EntityPersistentEnvironment"/> 实例。
-        /// </summary>
-        /// <param name="entity"></param>
-        /// <returns></returns>
-        protected EntityPersistentEnvironment GetEnvironment(IEntity entity)
-        {
-            var env = entity.As<IEntityPersistentEnvironment>();
-            return env != null ? env.Environment : null;
-        }
-
-        /// <summary>
-        /// 从实体中取出 InstanceName，前提是实体实现了 <see cref="IEntityPersistentInstanceContainer"/> 接口。
-        /// </summary>
-        /// <param name="entity"></param>
-        /// <param name="relationType"></param>
-        /// <returns></returns>
-        protected string GetInstanceName(IEntity entity, Type relationType)
-        {
-            var con = entity.As<IEntityPersistentInstanceContainer>();
-            return con != null ? con.InstanceName : string.Empty;
-        }
-
-        /// <summary>
         /// 根据关系属性构造查询表达式。
         /// </summary>
         /// <param name="entity"></param>
@@ -102,19 +79,25 @@ namespace Fireasy.Data.Entity.Properties
         {
             var entityProperty = property.As<EntityProperty>();
 
-            var instanceName = GetInstanceName(entity, entityProperty.RelationalType);
-            var environment = GetEnvironment(entity);
+            var instanceName = entity.GetInstanceName();
+            var environment = entity.GetEnvironment();
 
-            using (var context = new InternalContext(instanceName))
+            var initContext = ContextInstanceManager.Get(instanceName);
+            if (initContext == null)
             {
-                context.As<IEntityPersistentEnvironment>(s => s.Environment = environment);
-                context.As<IEntityPersistentInstanceContainer>(s => s.InstanceName = instanceName);
+                return PropertyValue.Empty;
+            }
 
-                var provider = context.CreateRepositoryProvider(entityProperty.RelationalType);
+            var provider = initContext.Provider.GetService<IContextProvider>();
+            using (var service = provider.CreateContextService(initContext))
+            {
+                service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
+
+                var repProvider = provider.CreateRepositoryProvider(entityProperty.RelationalType, service);
                 var expression = BuidRelationExpression(entity, entityProperty);
                 if (expression != null)
                 {
-                    var value = Execute(provider.Queryable, expression);
+                    var value = Execute(repProvider.Queryable, expression);
 
                     //设置实体所属的实体Owner
                     value.As<IEntityRelation>(e => e.Owner = new EntityOwner(entity, property));
@@ -166,20 +149,26 @@ namespace Fireasy.Data.Entity.Properties
         public override PropertyValue GetValue(IEntity entity, IProperty property)
         {
             var entityProperty = property.As<EntitySetProperty>();
-            var instanceName = GetInstanceName(entity, entityProperty.RelationalType);
-            var environment = GetEnvironment(entity);
+            var instanceName = entity.GetInstanceName();
+            var environment = entity.GetEnvironment();
 
-            using (var context = new InternalContext(instanceName))
+            var initContext = ContextInstanceManager.Get(instanceName);
+            if (initContext == null)
             {
-                context.Environment = environment;
-                context.InstanceName = instanceName;
+                return PropertyValue.Empty;
+            }
 
-                var provider = context.CreateRepositoryProvider(entityProperty.RelationalType);
+            var provider = initContext.Provider.GetService<IContextProvider>();
+            using (var service = provider.CreateContextService(initContext))
+            {
+                service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
+
+                var repProvider = provider.CreateRepositoryProvider(entityProperty.RelationalType, service);
                 var expression = BuidRelationExpression(entity, entityProperty);
                 object result = null;
                 if (expression != null)
                 {
-                    result = Execute(provider.Queryable, expression);
+                    result = Execute(repProvider.Queryable, expression);
                     var querySetType = typeof(EntitySet<>).MakeGenericType(entityProperty.RelationalType);
                     var list = querySetType.New(new[] { result });
 
@@ -233,19 +222,25 @@ namespace Fireasy.Data.Entity.Properties
         public override PropertyValue GetValue(IEntity entity, IProperty property)
         {
             var referenceProperty = property.As<ReferenceProperty>();
-            var instanceName = GetInstanceName(entity, referenceProperty.RelationalType);
-            var environment = GetEnvironment(entity);
+            var instanceName = entity.GetInstanceName();
+            var environment = entity.GetEnvironment();
 
-            using (var context = new InternalContext(instanceName))
+            var initContext = ContextInstanceManager.Get(instanceName);
+            if (initContext == null)
             {
-                context.As<IEntityPersistentEnvironment>(s => s.Environment = environment);
-                context.As<IEntityPersistentInstanceContainer>(s => s.InstanceName = instanceName);
+                return PropertyValue.Empty;
+            }
 
-                var provider = context.CreateRepositoryProvider(referenceProperty.RelationalType);
+            var provider = initContext.Provider.GetService<IContextProvider>();
+            using (var service = provider.CreateContextService(initContext))
+            {
+                service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
+
+                var repProvider = provider.CreateRepositoryProvider(referenceProperty.RelationalType, service);
                 var expression = BuidRelationExpression(entity, referenceProperty);
                 if (expression != null)
                 {
-                    var value = Execute(provider.Queryable, expression);
+                    var value = Execute(repProvider.Queryable, expression);
                     return value == null ? PropertyValue.Empty : PropertyValue.NewValue(value);
                 }
 

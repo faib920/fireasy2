@@ -5,62 +5,60 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Linq.Expressions;
+using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Properties;
+using Fireasy.Data.Provider;
 using Fireasy.Data.Syntax;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Fireasy.Data.Entity.Linq
+namespace Fireasy.Data.Entity
 {
     /// <summary>
     /// 核心的组件，用于管理上下文中的各种组件。
     /// </summary>
-    public sealed class InternalContext :
-        IQueryPolicy,
-        IDisposable,
-        IEntityPersistentInstanceContainer,
-        IEntityPersistentEnvironment
+    public sealed class DefaultContextService :
+        ContextServiceBase,
+        IQueryPolicy
     {
         private HashSet<MemberInfo> included = new HashSet<MemberInfo>();
         private Dictionary<MemberInfo, List<LambdaExpression>> operations = new Dictionary<MemberInfo, List<LambdaExpression>>();
-        private Dictionary<Type, IRepository> holders = new Dictionary<Type, IRepository>();
 
-        public InternalContext(string instanceName)
-            : this(new EntityContextOptions(instanceName))
+        /// <summary>
+        /// 初始化 <see cref="DefaultContextService"/> 类的新实例。
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="databaseFactory">一个用于创建 <see cref="IDatabase"/> 的工厂函数。</param>
+        public DefaultContextService(EntityContextInitializeContext context, Func<IProvider, ConnectionString, IDatabase> databaseFactory)
+            : base (context)
         {
+            var options = context.Options;
+
+            Func<IDatabase> factory = null;
+            if (databaseFactory != null)
+            {
+                factory = () => databaseFactory(context.Provider, context.ConnectionString);
+            }
+            else if (options != null && !string.IsNullOrEmpty(options.ConfigName))
+            {
+                factory = () => DatabaseFactory.CreateDatabase(options.ConfigName);
+            }
+
+            if (factory != null)
+            {
+                Database = EntityDatabaseFactory.CreateDatabase(InstanceName, factory);
+                Provider = Database.Provider;
+            }
         }
-
-        public InternalContext(EntityContextOptions options)
-        {
-            Options = options;
-            Database = EntityDatabaseFactory.CreateDatabase(options.ConfigName);
-            InstanceName = options.ConfigName;
-        }
-
-        public InternalContext(IDatabase database, EntityContextOptions options = null)
-        {
-            Options = options ?? new EntityContextOptions();
-            Database = database;
-        }
-
-        public EntityContextOptions Options { get; private set; }
-
-        public string InstanceName { get; set; }
-
-        public EntityPersistentEnvironment Environment { get; set; }
-
-        public IDatabase Database { get; internal set; }
-
-        public Action<Type> OnRespositoryCreated { get; set; }
-
-        public Action<Type, Exception> OnRespositoryCreateFailed { get; set; }
 
         bool IQueryPolicy.IsIncluded(MemberInfo member)
         {
@@ -69,8 +67,7 @@ namespace Fireasy.Data.Entity.Linq
 
         Expression IQueryPolicy.ApplyPolicy(Expression expression, MemberInfo member)
         {
-            List<LambdaExpression> ops;
-            if (operations.TryGetValue(member, out ops))
+            if (operations.TryGetValue(member, out List<LambdaExpression> ops))
             {
                 var syntax = Database.Provider.GetService<ISyntaxProvider>();
                 var result = expression;
@@ -93,44 +90,29 @@ namespace Fireasy.Data.Entity.Linq
             return expression;
         }
 
-        public IRepository GetDbSet(Type entitytype)
+        /// <summary>
+        /// 开始事务。
+        /// </summary>
+        /// <param name="level"></param>
+        public override void BeginTransaction(IsolationLevel level)
         {
-            if (!this.holders.TryGetValue(entitytype, out IRepository set))
-            {
-                set = CreateDbSet(entitytype);
-                lock (this.holders)
-                {
-                    holders[entitytype] = set;
-                }
-            }
-
-            return set;
+            Database?.BeginTransaction(level);
         }
 
-        public IRepositoryProvider<TEntity> CreateRepositoryProvider<TEntity>() where TEntity : IEntity
+        /// <summary>
+        /// 提交事务。
+        /// </summary>
+        public override void CommitTransaction()
         {
-            var factory = Database.Provider.GetService<IContextProvider>() ?? new DefaultContextProvider();
-            var repository = factory.Create<TEntity>(this);
-
-            if (Options.AutoCreateTables)
-            {
-                RespositoryCreator.TryCreate(typeof(TEntity), this, OnRespositoryCreated, OnRespositoryCreateFailed);
-            }
-
-            return repository;
+            Database?.CommitTransaction();
         }
 
-        public IRepositoryProvider CreateRepositoryProvider(Type entityType)
+        /// <summary>
+        /// 回滚事务。
+        /// </summary>
+        public override void RollbackTransaction()
         {
-            var factory = Database.Provider.GetService<IContextProvider>() ?? new DefaultContextProvider();
-            var repository = factory.Create(entityType, this);
-
-            if (Options.AutoCreateTables)
-            {
-                RespositoryCreator.TryCreate(entityType, this, OnRespositoryCreated, OnRespositoryCreateFailed);
-            }
-
-            return repository;
+            Database?.RollbackTransaction();
         }
 
         public void IncludeWith<TEntity>(Expression<Func<TEntity, object>> fnMember) where TEntity : IEntity
@@ -154,26 +136,23 @@ namespace Fireasy.Data.Entity.Linq
 
         public void Apply<TEntity>(Expression<Func<IEnumerable<TEntity>, IEnumerable<TEntity>>> fnApply) where TEntity : IEntity
         {
-            if (fnApply == null)
-                throw new ArgumentNullException(nameof(fnApply));
-            if (fnApply.Parameters.Count != 1)
-                throw new ArgumentException("Apply function has wrong number of arguments.");
+            Guard.ArgumentNull(fnApply, nameof(fnApply));
+            Guard.Argument(fnApply.Parameters.Count != 1, nameof(fnApply));
+
             AddOperation(fnApply.Parameters[0].Type.GetEnumerableElementType(), fnApply);
         }
 
         public void Apply(Type entityType, LambdaExpression fnApply)
         {
-            if (fnApply == null)
-                throw new ArgumentNullException(nameof(fnApply));
-            if (fnApply.Parameters.Count != 1)
-                throw new ArgumentException("Apply function has wrong number of arguments.");
+            Guard.ArgumentNull(fnApply, nameof(fnApply));
+            Guard.Argument(fnApply.Parameters.Count != 1, nameof(fnApply));
+
             AddOperation(entityType, fnApply);
         }
 
         private void AddOperation(MemberInfo member, LambdaExpression operation)
         {
-            List<LambdaExpression> memberOps;
-            if (!operations.TryGetValue(member, out memberOps))
+            if (!operations.TryGetValue(member, out List<LambdaExpression> memberOps))
             {
                 memberOps = new List<LambdaExpression>();
                 operations.Add(member, memberOps);
@@ -182,17 +161,19 @@ namespace Fireasy.Data.Entity.Linq
             memberOps.Add(operation);
         }
 
-        public void Dispose()
+        public override bool TryCreateRepositoryStorage(Type entityType)
         {
-            Database.Dispose();
+            if (InitializeContext.Options.AutoCreateTables)
+            {
+                return RespositoryCreator.TryCreate(this, entityType);
+            }
+
+            return false;
         }
 
-        private IRepository CreateDbSet(Type entityType)
+        public override void Dispose()
         {
-            var constructor = typeof(EntityRepository<>)
-                .MakeGenericType(new Type[] { entityType }).GetConstructors()[0];
-
-            return constructor.FastInvoke(this) as IRepository;
+            Database?.Dispose();
         }
 
         private class RootMemberFinder : Fireasy.Common.Linq.Expressions.ExpressionVisitor

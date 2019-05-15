@@ -267,7 +267,11 @@ namespace Fireasy.Data
         /// <param name="segment">数据分段对象。</param>
         /// <param name="parameters">查询参数集合。</param>
         /// <returns>一个动态对象的枚举器。</returns>
+#if !NET35
+        public virtual IEnumerable<dynamic> ExecuteEnumerable(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null)
+#else
         public virtual IEnumerable<object> ExecuteEnumerable(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null)
+#endif
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
 

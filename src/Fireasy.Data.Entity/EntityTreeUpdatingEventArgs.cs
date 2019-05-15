@@ -8,7 +8,6 @@
 using System;
 using System.Linq.Expressions;
 using Fireasy.Data.Entity.Linq;
-using Fireasy.Data.Entity.Metadata;
 
 namespace Fireasy.Data.Entity
 {
@@ -97,13 +96,18 @@ namespace Fireasy.Data.Entity
             {
                 return -1;
             }
-            var metadata = EntityMetadataUnity.GetEntityMetadata(typeof(T));
-            using (var database = EntityDatabaseFactory.CreateDatabase())
-            {
-                var queryProvider = new EntityQueryProvider(database);
-                var provider = new QueryProvider(queryProvider);
 
-                return new QuerySet<T>(provider, null).UpdateWhere(entity, predicate);
+            var instanceName = Current.GetInstanceName();
+            var environment = Current.GetEnvironment();
+            var initContext = ContextInstanceManager.Get(instanceName);
+            var provider = initContext.Provider.GetService<IContextProvider>();
+            using (var service = provider.CreateContextService(initContext))
+            {
+                service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
+
+                var queryProvider = new EntityQueryProvider(service);
+                return new QuerySet<T>(new QueryProvider(queryProvider), null)
+                    .UpdateWhere(entity, predicate);
             }
         }
 
@@ -120,13 +124,18 @@ namespace Fireasy.Data.Entity
             {
                 return -1;
             }
-            var metadata = EntityMetadataUnity.GetEntityMetadata(typeof(T));
-            using (var database = EntityDatabaseFactory.CreateDatabase())
-            {
-                var queryProvider = new EntityQueryProvider(database);
-                var provider = new QueryProvider(queryProvider);
 
-                return new QuerySet<T>(provider, null).RemoveWhere(predicate, fake);
+            var instanceName = Current.GetInstanceName();
+            var environment = Current.GetEnvironment();
+            var initContext = ContextInstanceManager.Get(instanceName);
+            var provider = initContext.Provider.GetService<IContextProvider>();
+            using (var service = provider.CreateContextService(initContext))
+            {
+                service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
+
+                var queryProvider = new EntityQueryProvider(service);
+                return new QuerySet<T>(new QueryProvider(queryProvider), null)
+                    .RemoveWhere(predicate, fake);
             }
         }
     }

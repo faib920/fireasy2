@@ -10,6 +10,7 @@ using Fireasy.Common.Configuration;
 using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Tests.Models;
+using Fireasy.Data.Provider;
 using Fireasy.Data.Syntax;
 #if NETCOREAPP2_0
 using Microsoft.Extensions.Configuration;
@@ -74,26 +75,25 @@ namespace Fireasy.Data.Entity.Tests
                         exp = ((UnaryExpression)exp).Operand;
                     }
 
-                    using (var database = DatabaseFactory.CreateDatabase())
+                    var svr = db.GetService<IContextService>();
+                    var pro = db.GetService<IProvider>();
+                    var enq = new EntityQueryProvider(svr);
+                    var result = enq.Translate(exp);
+                    var queryText = result.QueryText;
+                    if (result.DataSegment != null)
                     {
-                        var enq = new EntityQueryProvider(database);
-                        var result = enq.Translate(exp);
-                        var queryText = result.QueryText;
-                        if (result.DataSegment != null)
-                        {
-                            queryText = database.Provider.GetService<ISyntaxProvider>().Segment(queryText, result.DataSegment);
-                        }
-
-                        foreach (Parameter par in result.Parameters)
-                        {
-                            queryText += "\r\n-- " + par;
-                        }
-                        Console.WriteLine(queryText);
-
-    #if Q
-                        Console.WriteLine(enq.Execute(exp));
-    #endif
+                        queryText = pro.GetService<ISyntaxProvider>().Segment(queryText, result.DataSegment);
                     }
+
+                    foreach (Parameter par in result.Parameters)
+                    {
+                        queryText += "\r\n-- " + par;
+                    }
+                    Console.WriteLine(queryText);
+
+#if Q
+                        Console.WriteLine(enq.Execute(exp));
+#endif
                 }));
         }
 

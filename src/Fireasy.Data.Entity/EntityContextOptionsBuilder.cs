@@ -11,6 +11,8 @@ namespace Fireasy.Data.Entity
 {
     public class EntityContextOptionsBuilder
     {
+        private EntityContext entityContext;
+
         public EntityContextOptionsBuilder(EntityContextOptions options)
         {
             Options = options;
@@ -24,7 +26,7 @@ namespace Fireasy.Data.Entity
         /// <param name="connectionString"></param>
         public void UseSqlServer(string connectionString)
         {
-            Options.ContextFactory = () => new Linq.InternalContext(new Database(connectionString, MsSqlProvider.Instance));
+            Options.ContextFactory = () => new EntityContextInitializeContext(MsSqlProvider.Instance, connectionString);
         }
 
         /// <summary>
@@ -33,7 +35,7 @@ namespace Fireasy.Data.Entity
         /// <param name="connectionString"></param>
         public void UseMySql(string connectionString)
         {
-            Options.ContextFactory = () => new Linq.InternalContext(new Database(connectionString, MySqlProvider.Instance));
+            Options.ContextFactory = () => new EntityContextInitializeContext(MySqlProvider.Instance, connectionString);
         }
 
         /// <summary>
@@ -42,7 +44,7 @@ namespace Fireasy.Data.Entity
         /// <param name="connectionString"></param>
         public void UseSQLite(string connectionString)
         {
-            Options.ContextFactory = () => new Linq.InternalContext(new Database(connectionString, SQLiteProvider.Instance));
+            Options.ContextFactory = () => new EntityContextInitializeContext(SQLiteProvider.Instance, connectionString);
         }
 
         /// <summary>
@@ -51,7 +53,7 @@ namespace Fireasy.Data.Entity
         /// <param name="connectionString"></param>
         public void UseOracle(string connectionString)
         {
-            Options.ContextFactory = () => new Linq.InternalContext(new Database(connectionString, OracleProvider.Instance));
+            Options.ContextFactory = () => new EntityContextInitializeContext(OracleProvider.Instance, connectionString);
         }
 
         /// <summary>
@@ -60,7 +62,7 @@ namespace Fireasy.Data.Entity
         /// <param name="connectionString"></param>
         public void UseFirebird(string connectionString)
         {
-            Options.ContextFactory = () => new Linq.InternalContext(new Database(connectionString, FirebirdProvider.Instance));
+            Options.ContextFactory = () => new EntityContextInitializeContext(FirebirdProvider.Instance, connectionString);
         }
 
         /// <summary>
@@ -69,7 +71,7 @@ namespace Fireasy.Data.Entity
         /// <param name="connectionString"></param>
         public void UsePostgreSql(string connectionString)
         {
-            Options.ContextFactory = () => new Linq.InternalContext(new Database(connectionString, PostgreSqlProvider.Instance));
+            Options.ContextFactory = () => new EntityContextInitializeContext(PostgreSqlProvider.Instance, connectionString);
         }
     }
 }

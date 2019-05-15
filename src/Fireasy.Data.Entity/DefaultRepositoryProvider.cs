@@ -12,6 +12,7 @@ using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Entity.Properties;
 using Fireasy.Data.Syntax;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -22,21 +23,29 @@ namespace Fireasy.Data.Entity
     /// 缺省的仓储服务实现，使用 Linq to SQL。
     /// </summary>
     /// <typeparam name="TEntity"></typeparam>
-    public sealed class DefaultRepositoryProvider<TEntity> : IRepositoryProvider<TEntity> where TEntity : IEntity
+    public sealed class DefaultRepositoryProvider<TEntity> : IQueryPolicyExecutor<TEntity>,
+        IRepositoryProvider<TEntity> where TEntity : IEntity
     {
-        private InternalContext context;
+        private DefaultContextService context;
 
         /// <summary>
         /// 初始化 <see cref="DefaultRepositoryProvider"/> 类的新实例。
         /// </summary>
-        /// <param name="context"></param>
-        public DefaultRepositoryProvider(InternalContext context)
+        /// <param name="service"></param>
+        public DefaultRepositoryProvider(IContextService service)
         {
-            this.context = context;
-            var entityQueryProvider = new EntityQueryProvider(context);
-            context.As<IEntityPersistentInstanceContainer>(s => entityQueryProvider.InitializeInstanceName(s.InstanceName));
+            context = (DefaultContextService)service;
+
+            var entityQueryProvider = new EntityQueryProvider(this.context);
+            context.As((Action<IEntityPersistentInstanceContainer>)(s => entityQueryProvider.InitializeInstanceName(s.InstanceName)));
+
             QueryProvider = new QueryProvider(entityQueryProvider);
             Queryable = new QuerySet<TEntity>(QueryProvider);
+        }
+
+        IRepository IRepositoryProvider.CreateRepository(EntityContextOptions options)
+        {
+            return new EntityRepository<TEntity>(this, options);
         }
 
         /// <summary>
@@ -268,6 +277,16 @@ namespace Fireasy.Data.Entity
         public int Batch(IEnumerable<TEntity> instances, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation)
         {
             return Queryable.BatchOperate(instances.Cast<IEntity>(), fnOperation);
+        }
+
+        void IQueryPolicyExecutor<TEntity>.IncludeWith(Expression<Func<TEntity, object>> fnMember)
+        {
+            context.IncludeWith(fnMember);
+        }
+
+        void IQueryPolicyExecutor<TEntity>.AssociateWith(Expression<Func<TEntity, IEnumerable>> memberQuery)
+        {
+            context.AssociateWith(memberQuery);
         }
 
         /// <summary>

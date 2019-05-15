@@ -6,12 +6,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.ComponentModel;
-using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Entity.Providers;
-using Fireasy.Data.Schema;
 using System;
-using System.Linq;
 
 namespace Fireasy.Data.Entity
 {
@@ -26,12 +23,12 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 尝试创建对应的表。
         /// </summary>
+        /// <param name="service"></param>
         /// <param name="entityType">实体类型。</param>
-        /// <param name="context"></param>
         /// <returns></returns>
-        public static bool TryCreate(Type entityType, InternalContext context, Action<Type> succeed, Action<Type, Exception> failed)
+        public static bool TryCreate(IContextService service, Type entityType)
         {
-            var service = context.Database.Provider.GetTableGenerateProvider();
+            var tbGen = service.Provider.GetTableGenerateProvider();
             if (service == null)
             {
                 return false;
@@ -39,31 +36,31 @@ namespace Fireasy.Data.Entity
 
             var metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
 
-            var cacheKey = string.Format("{0}:{1}", context.InstanceName, entityType.FullName);
+            var cacheKey = string.Concat(service.Provider.ProviderName, ":", service.InitializeContext.ConnectionString);
             return cache.GetOrAdd(cacheKey, () =>
                 {
                     try
                     {
                         //判断数据表是否已存在
-                        if (service.IsExists(context.Database, metadata))
+                        if (tbGen.IsExists(service.Database, metadata))
                         {
                             //尝试添加新的字段
-                            service.TryAddFields(context.Database, metadata);
+                            tbGen.TryAddFields(service.Database, metadata);
                         }
                         else
                         {
                             //尝试创建数据表
-                            service.TryCreate(context.Database, metadata);
-                        }
+                            tbGen.TryCreate(service.Database, metadata);
 
-                        //通知 context 仓储已经创建
-                        succeed?.Invoke(entityType);
+                            //通知 context 仓储已经创建
+                            service.OnRespositoryCreated?.Invoke(new RespositoryCreatedEventArgs { EntityType = entityType, Succeed = true });
+                        }
 
                         return true;
                     }
                     catch (Exception exp)
                     {
-                        failed?.Invoke(entityType, exp);
+                        service.OnRespositoryCreated?.Invoke(new RespositoryCreatedEventArgs { EntityType = entityType, Exception = exp });
                         return false;
                     }
                 });

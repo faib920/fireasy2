@@ -7,8 +7,6 @@
 // -----------------------------------------------------------------------
 using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Syntax;
-using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Text;
 
@@ -19,7 +17,7 @@ namespace Fireasy.Data.Entity.Generation
         protected override SqlCommand[] BuildCreateTableCommands(ISyntaxProvider syntax, EntityMetadata metadata, IProperty[] properties)
         {
             var sb = new StringBuilder();
-            sb.AppendFormat("create table {0}\n(\n", metadata.TableName);
+            sb.AppendFormat("create table main.{0}\n(\n", Quote(syntax, metadata.TableName));
 
             var count = properties.Length;
             for (var i = 0; i < count; i++)
@@ -34,26 +32,6 @@ namespace Fireasy.Data.Entity.Generation
                 sb.AppendLine();
             }
 
-            //主键
-            var primaryPeoperties = properties.Where(s => s.Info.IsPrimaryKey).ToArray();
-            if (primaryPeoperties.Length > 0)
-            {
-                sb.Append(",");
-                sb.AppendFormat("primary key (", metadata.TableName);
-
-                for (var i = 0; i < primaryPeoperties.Length; i++)
-                {
-                    if (i != 0)
-                    {
-                        sb.Append(",");
-                    }
-
-                    sb.Append(primaryPeoperties[i].Info.FieldName);
-                }
-
-                sb.Append(")");
-            }
-
             sb.Append(");\n");
 
             return new SqlCommand[] { sb.ToString() };
@@ -65,7 +43,7 @@ namespace Fireasy.Data.Entity.Generation
             var count = properties.Length;
             for (var i = 0; i < count; i++)
             {
-                sb.AppendFormat("alter table {0} add ", metadata.TableName);
+                sb.AppendFormat("alter table {0} add ", Quote(syntax, metadata.TableName));
 
                 AppendFieldToBuilder(sb, syntax, properties[i]);
 
@@ -73,6 +51,11 @@ namespace Fireasy.Data.Entity.Generation
             }
 
             return new SqlCommand[] { sb.ToString() };
+        }
+
+        protected override void ProcessPrimaryKeyField(StringBuilder builder, ISyntaxProvider syntax, IProperty property)
+        {
+            builder.Append(" primary key");
         }
     }
 }

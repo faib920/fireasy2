@@ -32,10 +32,15 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var context = new DbContext())
             {
-                var product = context.Products.Get(12);
-                int? a = null;
-                var product1 = context.Products.Get(a);
+                var customers = context.Customers.ToList();
+
+                Assert.AreEqual(2, customers.Count);
             }
+        }
+
+        public class AA : LightEntity<AA>
+        {
+
         }
 
         [TestMethod]
@@ -82,10 +87,25 @@ namespace Fireasy.Data.Entity.Tests
             OrderDetails detail;
             using (var db = new DbContext())
             {
+                db.BeginTransaction();
+
                 detail = db.OrderDetails.FirstOrDefault();
+                Assert.AreEqual("VINET", detail.Orders.CustomerID);
+
+                using (var db1 = new DbContext())
+                {
+                    var detail1 = db1.OrderDetails.FirstOrDefault();
+                    Assert.AreEqual("VINET", detail1.Orders.CustomerID);
+                }
+
+                db.RollbackTransaction();
             }
 
-            Assert.AreEqual("VINET", detail.Orders.CustomerID);
+            using (var db = new DbContext())
+            {
+                detail = db.OrderDetails.FirstOrDefault();
+                Assert.AreEqual("VINET", detail.Orders.CustomerID);
+            }
         }
 
         [TestMethod]
@@ -470,7 +490,7 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var customer = new Customers
                 {
-                    CustomerID = "DD",
+                    CustomerID = "DD1",
                     CompanyName = "kunming",
                     City = "kunming"
                 };
@@ -658,7 +678,7 @@ namespace Fireasy.Data.Entity.Tests
                 {
                     var product = Products.New(); ;
 
-                    product.Photo = new int[] { 45, 55, 34, 67, 133, 54, 213 };
+                    //product.Photo = new byte[] { 45, 55, 34, 67, 133, 54, 213 };
                     sss.Add(product);
                 }
 
@@ -1149,11 +1169,12 @@ namespace Fireasy.Data.Entity.Tests
         [TestMethod]
         public void TestTransaction()
         {
-            using (var scope = new EntityTransactionScope())
+            //using (var scope = new EntityTransactionScope())
             using (var context = new DbContext())
             {
-                TestAnyMethod(context.Database);
-                scope.Complete();
+                context.Products.FirstOrDefault();
+                //TestAnyMethod(context.Database);
+                //scope.Complete();
             }
         }
 

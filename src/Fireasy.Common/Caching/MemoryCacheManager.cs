@@ -42,7 +42,7 @@ namespace Fireasy.Common.Caching
         /// <param name="removeCallback">当对象从缓存中移除时，使用该回调方法通知应用程序。</param>
         public T Add<T>(string cacheKey, T value, TimeSpan? expire = null, CacheItemRemovedCallback removeCallback = null)
         {
-            cacheDictionary.AddOrUpdate(cacheKey, () => CreateCacheItem(cacheKey, () => value, () => expire == null ? NeverExpired.Instance : new RelativeTime(expire.Value), removeCallback));
+            cacheDictionary.AddOrUpdate(cacheKey, () => CreateCacheItem(cacheKey, () => value, () => expire == null ? RelativeTime.Default : new RelativeTime(expire.Value), removeCallback));
 
             return value;
         }
@@ -57,7 +57,7 @@ namespace Fireasy.Common.Caching
         /// <param name="removeCallback">当对象从缓存中移除时，使用该回调方法通知应用程序。</param>
         public T Add<T>(string cacheKey, T value, ICacheItemExpiration expiration, CacheItemRemovedCallback removeCallback = null)
         {
-            cacheDictionary.AddOrUpdate(cacheKey, () => CreateCacheItem(cacheKey, () => value, () => expiration, removeCallback));
+            cacheDictionary.AddOrUpdate(cacheKey, () => CreateCacheItem(cacheKey, () => value, () => expiration ?? RelativeTime.Default, removeCallback));
 
             return value;
         }
@@ -261,7 +261,7 @@ namespace Fireasy.Common.Caching
 
         private CacheItem CreateCacheItem<T>(string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration, CacheItemRemovedCallback removeCallback)
         {
-            cacheDictionary.CheckCapacity(cacheKey, Capacity, NotifyCacheRemoved);
+            cacheDictionary.CheckCapacity(cacheKey, Capacity, optimizer.CurrentMaxGen, NotifyCacheRemoved);
 
             return new CacheItem(
                 cacheKey,

@@ -5,11 +5,13 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Data.Entity.Linq;
 using System;
 
 namespace Fireasy.Data.Entity
 {
+    /// <summary>
+    /// <see cref="EntityContext"/> 的参数。
+    /// </summary>
     public sealed class EntityContextOptions
     {
         /// <summary>
@@ -49,8 +51,32 @@ namespace Fireasy.Data.Entity
         public string ConfigName { get; private set; }
 
         /// <summary>
-        /// 获取或设置 <see cref="InternalContext"/> 实例创建工厂。
+        /// 获取或设置 <see cref="EntityContextInitializeContext"/> 实例创建工厂。
         /// </summary>
-        public Func<InternalContext> ContextFactory { get; set; }
+        public Func<EntityContextInitializeContext> ContextFactory { get; set; }
+
+        /// <summary>
+        /// 获取或设置仓储创建成功时的通知。
+        /// </summary>
+        public Action<Type> OnRespositoryCreated { get; set; }
+
+        /// <summary>
+        /// 获取或设置仓储创建失败时的通知。
+        /// </summary>
+        public Action<Type, Exception> OnRespositoryCreateFailed { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+            {
+                return false;
+            }
+
+            var op = (EntityContextOptions)obj;
+            return AutoCreateTables == op.AutoCreateTables &&
+                NotifyEvents == op.NotifyEvents &&
+                ValidateEntity == op.ValidateEntity &&
+                ConfigName == op.ConfigName;
+        }
     }
 }

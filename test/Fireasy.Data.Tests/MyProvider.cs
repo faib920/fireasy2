@@ -7,8 +7,6 @@ namespace Fireasy.Data.Tests
 {
     public class MyProvider : ProviderBase
     {
-        public override string DbName => "mydb";
-
         public override ConnectionParameter GetConnectionParameter(ConnectionString connectionString)
         {
             throw new NotImplementedException();

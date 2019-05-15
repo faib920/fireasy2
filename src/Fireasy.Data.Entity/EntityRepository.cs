@@ -28,17 +28,18 @@ namespace Fireasy.Data.Entity
     /// <typeparam name="TEntity"></typeparam>
     public sealed class EntityRepository<TEntity> : IOrderedQueryable<TEntity>, IQueryProviderAware, IRepository<TEntity> where TEntity : IEntity
     {
-        private InternalContext context;
         private IRepositoryProvider<TEntity> repositoryProxy;
+        private EntityContextOptions options;
 
         /// <summary>
         /// 初始化 <see cref="EntityRepository{TEntity}"/> 类的新实例。
         /// </summary>
         /// <param name="context"></param>
-        public EntityRepository(InternalContext context)
+        /// <param name="options"></param>
+        public EntityRepository(IRepositoryProvider<TEntity> repositoryProxy, EntityContextOptions options)
         {
-            this.context = context;
-            repositoryProxy = context.CreateRepositoryProvider<TEntity>();
+            this.repositoryProxy = repositoryProxy;
+            this.options = options;
             EntityType = typeof(TEntity);
         }
 
@@ -74,14 +75,14 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            if (context.Options.ValidateEntity)
+            if (options.ValidateEntity)
             {
                 ValidationUnity.Validate(entity);
             }
 
             int func() => repositoryProxy.Insert(entity);
 
-            return context.Options.NotifyEvents ?
+            return options.NotifyEvents ?
                 EntityPersistentSubscribeManager.OnCreate(entity, func) : func();
         }
 
@@ -120,7 +121,7 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            if (context.Options.NotifyEvents)
+            if (options.NotifyEvents)
             {
                 if (entity.EntityState == EntityState.Attached)
                 {
@@ -147,7 +148,7 @@ namespace Fireasy.Data.Entity
 
             int func() => repositoryProxy.Delete(entity, logicalDelete);
 
-            return context.Options.NotifyEvents ?
+            return options.NotifyEvents ?
                 EntityPersistentSubscribeManager.OnRemove(entity, func) : func();
         }
 
@@ -159,7 +160,7 @@ namespace Fireasy.Data.Entity
         public int Delete(params PropertyValue[] primaryValues)
         {
             var ret = repositoryProxy.Delete(primaryValues, true);
-            if (ret > 0 && context.Options.NotifyEvents)
+            if (ret > 0 && options.NotifyEvents)
             {
                 EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
             }
@@ -176,7 +177,7 @@ namespace Fireasy.Data.Entity
         public int Delete(PropertyValue[] primaryValues, bool logicalDelete = true)
         {
             var ret = repositoryProxy.Delete(primaryValues, logicalDelete);
-            if (ret > 0 && context.Options.NotifyEvents)
+            if (ret > 0 && options.NotifyEvents)
             {
                 EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
             }
@@ -193,7 +194,7 @@ namespace Fireasy.Data.Entity
         public int Delete(object[] primaryValues, bool logicalDelete = true)
         {
             var ret = repositoryProxy.Delete(primaryValues, logicalDelete);
-            if (ret > 0 && context.Options.NotifyEvents)
+            if (ret > 0 && options.NotifyEvents)
             {
                 EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
             }
@@ -210,7 +211,7 @@ namespace Fireasy.Data.Entity
         public int Delete(Expression<Func<TEntity, bool>> predicate, bool logicalDelete = true)
         {
             var ret = repositoryProxy.Delete(predicate, logicalDelete);
-            if (ret > 0 && context.Options.NotifyEvents)
+            if (ret > 0 && options.NotifyEvents)
             {
                 EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
             }
@@ -227,14 +228,14 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            if (context.Options.ValidateEntity)
+            if (options.ValidateEntity)
             {
                 ValidationUnity.Validate(entity);
             }
 
             int func() => repositoryProxy.Update(entity);
 
-            return context.Options.NotifyEvents ?
+            return options.NotifyEvents ?
                 EntityPersistentSubscribeManager.OnUpdate(entity, func) : func();
         }
 
@@ -247,7 +248,7 @@ namespace Fireasy.Data.Entity
         public int Update(TEntity entity, Expression<Func<TEntity, bool>> predicate)
         {
             var ret = repositoryProxy.Update(entity, predicate);
-            if (ret > 0 && context.Options.NotifyEvents)
+            if (ret > 0 && options.NotifyEvents)
             {
                 EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterUpdate);
             }
@@ -278,7 +279,7 @@ namespace Fireasy.Data.Entity
         public int Update(Expression<Func<TEntity, TEntity>> calculator, Expression<Func<TEntity, bool>> predicate)
         {
             var ret = repositoryProxy.Update(calculator, predicate);
-            if (ret > 0 && context.Options.NotifyEvents)
+            if (ret > 0 && options.NotifyEvents)
             {
                 EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterUpdate);
             }
@@ -304,7 +305,7 @@ namespace Fireasy.Data.Entity
 
             int func() => repositoryProxy.Batch(instances, fnOperation);
 
-            return context.Options.NotifyEvents ?
+            return options.NotifyEvents ?
                 EntityPersistentSubscribeManager.OnBatch(instances.Cast<IEntity>(), eventType, func) :
                 func();
         }
@@ -467,7 +468,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityRepository<TEntity> Include(Expression<Func<TEntity, object>> fnMember)
         {
-            context.IncludeWith(fnMember);
+            repositoryProxy.As<IQueryPolicyExecutor<TEntity>>(s => s.IncludeWith(fnMember));
             return this;
         }
 
@@ -478,7 +479,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityRepository<TEntity> Associate(Expression<Func<TEntity, IEnumerable>> memberQuery)
         {
-            context.AssociateWith(memberQuery);
+            repositoryProxy.As<IQueryPolicyExecutor<TEntity>>(s => s.AssociateWith(memberQuery));
             return this;
         }
 
@@ -489,7 +490,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityRepository<TEntity> ConfigOptions(Action<EntityContextOptions> configuration)
         {
-            configuration?.Invoke(context.Options);
+            configuration?.Invoke(options);
             return this;
         }
 

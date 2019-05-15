@@ -41,13 +41,7 @@ namespace Fireasy.Data.Provider
             RegisterService<IRecordWrapper, GeneralRecordWrapper>();
         }
 
-        /// <summary>
-        /// 获取描述数据库的名称。
-        /// </summary>
-        public override string DbName
-        {
-            get { return "sqlite"; }
-        }
+        public override string ProviderName => "SQLite";
 
         /// <summary>
         /// 获取当前连接的参数。

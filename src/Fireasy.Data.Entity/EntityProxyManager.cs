@@ -28,11 +28,15 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static Type GetType(Type type)
         {
-            var assembly = GetAssemblyFromCache(type.Assembly);
-            return assembly.GetType(type.Name);
+            if (cache.TryGetValue(type.Assembly.FullName, out Assembly assembly))
+            {
+                return assembly.GetType(type.Name);
+            }
+
+            return type;
         }
 
-        private static Assembly GetAssemblyFromCache(Assembly assembly)
+        public static Assembly CompileAll(Assembly assembly, IEntityInjection injection)
         {
             return cache.GetOrAdd(assembly.FullName, () =>
                 {
@@ -41,7 +45,7 @@ namespace Fireasy.Data.Entity
 
                     assembly.GetExportedTypes()
                         .Where(s => s.IsNotCompiled())
-                        .ForEach(s => EntityProxyBuilder.BuildType(s, null, assemblyBuilder));
+                        .ForEach(s => EntityProxyBuilder.BuildType(s, null, assemblyBuilder, injection));
 
                     return assemblyBuilder.AssemblyBuilder;
                 });

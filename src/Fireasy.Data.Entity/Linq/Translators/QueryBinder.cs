@@ -1618,7 +1618,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     }
 
                     var relationType = (property as RelationProperty).RelationalType;
-                    var source = Expression.Constant(TranslateScope.Current.Context.GetDbSet(relationType));
+                    var source = Expression.Constant(TranslateScope.Current.ContextService.GetDbSet(relationType));
 
                     if (property is EntitySetProperty)
                     {

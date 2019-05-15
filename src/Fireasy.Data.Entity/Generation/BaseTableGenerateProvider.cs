@@ -87,7 +87,10 @@ namespace Fireasy.Data.Entity.Generation
                 SqlCommand sql = syntax.ExistsTable(metadata.TableName);
                 using (var reader = database.ExecuteReader(sql))
                 {
-                    return reader.Read();
+                    if (reader.Read())
+                    {
+                        return reader.GetInt32(0) > 0;
+                    }
                 }
             }
 
@@ -104,15 +107,42 @@ namespace Fireasy.Data.Entity.Generation
 
         protected abstract SqlCommand[] BuildAddFieldCommands(ISyntaxProvider syntax, EntityMetadata metadata, IProperty[] properties);
 
-        protected void AppendFieldToBuilder(StringBuilder builder, ISyntaxProvider syntax, IProperty property)
+        protected string Quote(ISyntaxProvider syntax, string name)
         {
-            builder.AppendFormat(" {0}", property.Info.FieldName);
+            return DbUtility.FormatByQuote(syntax, name);
+        }
+
+        /// <summary>
+        /// 处理主键。
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="syntax"></param>
+        /// <param name="property"></param>
+        protected virtual void ProcessPrimaryKeyField(StringBuilder builder, ISyntaxProvider syntax, IProperty property)
+        {
+        }
+
+        /// <summary>
+        /// 将字段生成添加到 builder 中。
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="syntax"></param>
+        /// <param name="property"></param>
+        protected virtual void AppendFieldToBuilder(StringBuilder builder, ISyntaxProvider syntax, IProperty property)
+        {
+            builder.AppendFormat(" {0}", Quote(syntax, property.Info.FieldName));
 
             //数据类型及长度精度等
             builder.AppendFormat(" {0}", syntax.Column((DbType)property.Info.DataType,
                 property.Info.Length,
                 property.Info.Precision,
                 property.Info.Scale));
+
+            //主键
+            if (property.Info.IsPrimaryKey)
+            {
+                ProcessPrimaryKeyField(builder, syntax, property);
+            }
 
             //自增
             if (property.Info.GenerateType == IdentityGenerateType.AutoIncrement &&

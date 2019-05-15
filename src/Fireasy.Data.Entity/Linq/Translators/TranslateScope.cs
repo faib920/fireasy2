@@ -11,14 +11,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
 {
     public class TranslateScope : Scope<TranslateScope>
     {
-        internal TranslateScope(InternalContext context, ITranslateProvider translator, TranslateOptions options)
+        internal TranslateScope(IContextService service, ITranslateProvider translator, TranslateOptions options)
         {
-            Context = context;
+            ContextService = service;
             Translator = translator;
             Options = options;
         }
 
-        internal InternalContext Context { get; private set; }
+        internal IContextService ContextService { get; private set; }
 
         public ITranslateProvider Translator { get; private set; }
 

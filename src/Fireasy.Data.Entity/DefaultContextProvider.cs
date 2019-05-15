@@ -6,31 +6,35 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
-using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Provider;
 using System;
-using System.Reflection;
 
 namespace Fireasy.Data.Entity
 {
     /// <summary>
-    /// 默认的数据上下文服务实现。
+    /// 默认的数据上下文服务提供者。
     /// </summary>
     public sealed class DefaultContextProvider : IContextProvider
     {
         IProvider IProviderService.Provider { get; set; }
 
-        IRepositoryProvider IContextProvider.Create(Type entityType, object context)
+        IRepositoryProvider IContextProvider.CreateRepositoryProvider(Type entityType, IContextService service)
         {
             var constructor = typeof(DefaultRepositoryProvider<>)
                 .MakeGenericType(entityType).GetConstructors()[0];
 
-            return (IRepositoryProvider)constructor.FastInvoke(context);
+            return (IRepositoryProvider)constructor.FastInvoke(service);
         }
 
-        IRepositoryProvider<TEntity> IContextProvider.Create<TEntity>(object context)
+        IRepositoryProvider<TEntity> IContextProvider.CreateRepositoryProvider<TEntity>(IContextService service)
         {
-            return new DefaultRepositoryProvider<TEntity>((InternalContext)context);
+            return new DefaultRepositoryProvider<TEntity>(service);
+        }
+
+        IContextService IContextProvider.CreateContextService(EntityContextInitializeContext context)
+        {
+            var factory = context.DatabaseFactory ?? new Func<IProvider, ConnectionString, IDatabase>((p, s) => new Database(s, p));
+            return new DefaultContextService(context, factory);
         }
     }
 }

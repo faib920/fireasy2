@@ -1332,7 +1332,7 @@ studio");
             var array = serializer.Deserialize<object[]>(json);
 
             Assert.IsNotNull(array);
-            Assert.AreEqual(4, array.Length);
+            Assert.AreEqual(1, array.Length);
         }
 
         /// <summary>
@@ -1362,6 +1362,22 @@ studio");
             var json = new JsonText(@"{'huangxd':{'Name':'huangxd','Birthday':'\/Date(401299200000+0800)\/','Age':12,'WorkRecords':null},'liping':{'Name':'liping','Birthday':'\/Date(401299200000+0800)\/','Age':22,'WorkRecords':null}}").ToString();
 
             var dictionary = serializer.Deserialize<Dictionary<string, JsonData>>(json);
+
+            Assert.IsNotNull(dictionary);
+            Assert.AreEqual(2, dictionary.Count);
+        }
+
+        /// <summary>
+        /// 测试Deserialize方法，返回字典。
+        /// </summary>
+        [TestMethod()]
+        public void TestDeserializeEnumDictionary()
+        {
+            var serializer = new JsonSerializer();
+
+            var json = new JsonText(@"{'M':3434,'F':55}").ToString();
+
+            var dictionary = serializer.Deserialize<Dictionary<Sex, int>>(json);
 
             Assert.IsNotNull(dictionary);
             Assert.AreEqual(2, dictionary.Count);

@@ -14,6 +14,7 @@ using System.Web.Mvc;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.DependencyInjection;
 #endif
 
 namespace Fireasy.Web.Mvc
@@ -76,7 +77,11 @@ namespace Fireasy.Web.Mvc
         protected virtual void LogException(ExceptionContext filterContext)
         {
             //记录日志
+#if !NETSTANDARD
             var logger = LoggerFactory.CreateLogger();
+#else
+            var logger = filterContext.HttpContext.RequestServices.GetService<ILogger>();
+#endif
             if (logger != null)
             {
                 var controllerName = (string)filterContext.RouteData.Values["controller"];

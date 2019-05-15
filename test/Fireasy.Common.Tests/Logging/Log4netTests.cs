@@ -1,4 +1,5 @@
-﻿using Fireasy.Common.Logging;
+﻿using Fireasy.Common.Caching;
+using Fireasy.Common.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Fireasy.Common.Tests.Logging
@@ -15,6 +16,13 @@ namespace Fireasy.Common.Tests.Logging
         public void TestInfo()
         {
             var log = LoggerFactory.CreateLogger("log4net");
+            log = LoggerFactory.CreateLogger("log4net");
+
+            for (var i = 0; i < 10000;i++)
+            {
+                MemoryCacheManager.Instance.Add<string>("a" + i, "dfdafad");
+            }
+            log = LoggerFactory.CreateLogger("log4net");
             log.Info("fireasy output.");
         }
 

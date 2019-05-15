@@ -50,7 +50,11 @@ namespace Fireasy.Common.Caching
         public CacheItem(string key, object value, ICacheItemExpiration expiration, CacheItemRemovedCallback notifyRemoved)
         {
             //默认为30分钟的有效期
-            Expiration = expiration ?? new RelativeTime(TimeSpan.FromMinutes(30));
+            Expiration = expiration ?? RelativeTime.Default;
+            if (expiration is NeverExpired)
+            {
+                Gen = -1;
+            }
 
             Key = key;
             Value = value;

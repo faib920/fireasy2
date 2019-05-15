@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
+using System.Linq;
 
 namespace Fireasy.Data.Provider
 {
@@ -20,7 +21,7 @@ namespace Fireasy.Data.Provider
     public abstract class ProviderBase : IProvider
     {
         private DbProviderFactory factory;
-        private IProviderFactoryResolver[] resolvers ;
+        private IProviderFactoryResolver[] resolvers;
         private Dictionary<string, IProviderService> services = new Dictionary<string, IProviderService>();
 
         /// <summary>
@@ -43,7 +44,7 @@ namespace Fireasy.Data.Provider
         /// <summary>
         /// 获取描述数据库的名称。
         /// </summary>
-        public abstract string DbName { get; }
+        public virtual string ProviderName { get; set; }
 
         /// <summary>
         /// 获取数据库提供者工厂。
@@ -74,10 +75,15 @@ namespace Fireasy.Data.Provider
         /// <returns></returns>
         public virtual TProvider GetService<TProvider>() where TProvider : class, IProviderService
         {
-            IProviderService service;
-            if (services.TryGetValue(typeof(TProvider).Name, out service))
+            if (services.TryGetValue(typeof(TProvider).Name, out IProviderService service))
             {
                 return (TProvider)service;
+            }
+
+            var attr = typeof(TProvider).GetCustomAttributes<DefaultProviderServiceAttribute>().FirstOrDefault();
+            if (attr != null && typeof(TProvider).IsAssignableFrom(attr.DefaultType))
+            {
+                return attr.DefaultType.New<TProvider>();
             }
 
             return null;

@@ -22,11 +22,12 @@ namespace Fireasy.Common.Caching
         /// </summary>
         /// <param name="cacheKey">缓存键。</param>
         /// <param name="capacity">设定的容量值。</param>
+        /// <param name="maxGen">当前最大的代。</param>
         /// <param name="onRemoved">移除的通知方法。</param>
-        public void CheckCapacity(string cacheKey, int capacity, Action<CacheItem> onRemoved)
+        public void CheckCapacity(string cacheKey, int capacity, int maxGen, Action<CacheItem> onRemoved)
         {
             short gen = 0;
-            while (Count > capacity && gen < CacheOptimizer.MAX_GEN_LIMIT)
+            while (Count > capacity && gen <= maxGen && gen < CacheOptimizer.MAX_GEN_LIMIT)
             {
                 //查找出未创建值的，以及最小代或过期的，将它移除
                 var needRemoveds = LazyValues.Where(s => s.Key != cacheKey &&

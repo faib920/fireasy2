@@ -10,6 +10,7 @@ using Fireasy.Common.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Internal;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -31,7 +32,7 @@ namespace Fireasy.Web.Mvc
 
         public JsonResultExecutor(IHttpResponseStreamWriterFactory writerFactory, 
             ILogger<JsonResultExecutor> logger, 
-            IOptions<MvcJsonOptions> jsonOptions, 
+            IOptions<MvcJsonOptions> jsonOptions,
             IOptions<MvcOptions> mvcOptions,
             ArrayPool<char> charPool)
             : base(writerFactory, logger, jsonOptions, charPool)
@@ -70,6 +71,12 @@ namespace Fireasy.Web.Mvc
                     if (result is JsonResultWrapper wrapper)
                     {
                         option = wrapper.Option;
+                    }
+
+                    var hosting = context.HttpContext.RequestServices.GetService<JsonSerializeOptionHosting>();
+                    if (hosting != null)
+                    {
+                        option = hosting.Option;
                     }
 
                     option = option ?? mvcOptions.JsonSerializeOption;

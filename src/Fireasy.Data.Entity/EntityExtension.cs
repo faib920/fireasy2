@@ -334,5 +334,28 @@ namespace Fireasy.Data.Entity
 
             return false;
         }
+
+        /// <summary>
+        /// 获取实例上的 <see cref="EntityPersistentEnvironment"/> 实例。
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        internal static EntityPersistentEnvironment GetEnvironment(this IEntity entity)
+        {
+            var env = entity.As<IEntityPersistentEnvironment>();
+            return env != null ? env.Environment : null;
+        }
+
+        /// <summary>
+        /// 从实体中取出 InstanceName，前提是实体实现了 <see cref="IEntityPersistentInstanceContainer"/> 接口。
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        internal static string GetInstanceName(this IEntity entity)
+        {
+            var con = entity.As<IEntityPersistentInstanceContainer>();
+            return con != null ? con.InstanceName : string.Empty;
+        }
+
     }
 }

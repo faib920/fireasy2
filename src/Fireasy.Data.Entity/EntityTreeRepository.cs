@@ -28,7 +28,7 @@ namespace Fireasy.Data.Entity
     /// <typeparam name="TEntity"></typeparam>
     public class EntityTreeRepository<TEntity> : ITreeRepository<TEntity>, IQueryProviderAware where TEntity : class, IEntity
     {
-        private EntityRepository<TEntity> repository;
+        private IRepository<TEntity> repository;
         private EntityMetadata metadata;
         private EntityTreeMetadata metaTree;
         private Type entityType;
@@ -39,14 +39,14 @@ namespace Fireasy.Data.Entity
         /// 初始化 <see cref="EntityTreeRepository{TEntity}"/> 类的新实例。
         /// </summary>
         /// <param name="repository"></param>
-        /// <param name="context"></param>
-        public EntityTreeRepository(EntityRepository<TEntity> repository, InternalContext context)
+        /// <param name="service"></param>
+        public EntityTreeRepository(IRepository<TEntity> repository, IContextService service)
         {
             this.repository = repository;
             entityType = typeof(TEntity);
             metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
             metaTree = metadata.EntityTree;
-            database = context.Database;
+            database = service.Database;
             syntax = database.Provider.GetService<ISyntaxProvider>();
         }
 

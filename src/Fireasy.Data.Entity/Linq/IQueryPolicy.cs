@@ -5,6 +5,9 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -29,5 +32,13 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="member"></param>
         /// <returns></returns>
         Expression ApplyPolicy(Expression expression, MemberInfo member);
+
+        void IncludeWith<TEntity>(Expression<Func<TEntity, object>> fnMember) where TEntity : IEntity;
+
+        void AssociateWith<TEntity>(Expression<Func<TEntity, IEnumerable>> memberQuery) where TEntity : IEntity;
+
+        void Apply<TEntity>(Expression<Func<IEnumerable<TEntity>, IEnumerable<TEntity>>> fnApply) where TEntity : IEntity;
+
+        void Apply(Type entityType, LambdaExpression fnApply);
     }
 }

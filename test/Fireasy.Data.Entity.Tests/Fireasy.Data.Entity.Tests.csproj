@@ -45,6 +45,7 @@
     <ProjectReference Include="..\..\src\Fireasy.Common\Fireasy.Common.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.Data\Fireasy.Data.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.Data.Entity\Fireasy.Data.Entity.csproj" />
+    <ProjectReference Include="..\..\src\Fireasy.MongoDB\Fireasy.MongoDB.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.Newtonsoft\Fireasy.Newtonsoft.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.Redis\Fireasy.Redis.csproj" />
   </ItemGroup>

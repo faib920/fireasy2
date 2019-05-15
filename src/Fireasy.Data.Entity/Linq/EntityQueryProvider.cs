@@ -26,26 +26,17 @@ namespace Fireasy.Data.Entity.Linq
     {
         private string instanceName;
         private EntityPersistentEnvironment environment;
-        private InternalContext context;
+        private IContextService service;
 
         /// <summary>
         /// 使用一个 <see cref="IDatabase"/> 对象初始化 <see cref="EntityQueryProvider"/> 类的新实例。
         /// </summary>
-        /// <param name="context">一个 <see cref="InternalContext"/> 对象。</param>
-        internal EntityQueryProvider(InternalContext context)
+        /// <param name="service">一个 <see cref="IContextService"/> 对象。</param>
+        public EntityQueryProvider(IContextService service)
         {
-            Guard.ArgumentNull(context, nameof(context));
+            Guard.ArgumentNull(service, nameof(service));
 
-            this.context = context;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="database"></param>
-        public EntityQueryProvider(IDatabase database)
-            : this(new InternalContext(database))
-        {
+            this.service = service;
         }
 
         /// <summary>
@@ -78,12 +69,12 @@ namespace Fireasy.Data.Entity.Linq
 
             if (efn.Method.GetParameters().Length == 2)
             {
-                return efn.DynamicInvoke(context.Database);
+                return efn.DynamicInvoke(service.Database);
             }
 
             var segment = SegmentFinder.Find(expression);
 
-            return efn.DynamicInvoke(context.Database, segment);
+            return efn.DynamicInvoke(service.Database, segment);
         }
 
         /// <summary>
@@ -101,13 +92,13 @@ namespace Fireasy.Data.Entity.Linq
                 }
 
                 var section = ConfigurationUnity.GetSection<TranslatorConfigurationSection>();
-                var service = context.Database.Provider.GetTranslateProvider();
+                var trans = service.InitializeContext.Provider.GetTranslateProvider();
                 var options = GetTranslateOptions();
 
-                using (var scope = new TranslateScope(context, service, options))
+                using (var scope = new TranslateScope(service, trans, options))
                 {
-                    var translation = service.Translate(expression);
-                    var translator = service.CreateTranslator();
+                    var translation = trans.Translate(expression);
+                    var translator = trans.CreateTranslator();
 
                     return ExecutionBuilder.Build(translation, e => translator.Translate(e));
                 }
@@ -134,13 +125,13 @@ namespace Fireasy.Data.Entity.Linq
                     expression = lambda.Body;
                 }
 
-                var service = context.Database.Provider.GetTranslateProvider();
+                var trans = service.InitializeContext.Provider.GetTranslateProvider();
                 options = options ?? GetTranslateOptions();
 
-                using (var scope = new TranslateScope(context, service, options))
+                using (var scope = new TranslateScope(service, trans, options))
                 {
-                    var translation = service.Translate(expression);
-                    var translator = service.CreateTranslator();
+                    var translation = trans.Translate(expression);
+                    var translator = trans.CreateTranslator();
 
                     TranslateResult result;
                     var selects = SelectGatherer.Gather(translation).ToList();

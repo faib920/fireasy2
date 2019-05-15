@@ -20,6 +20,8 @@ namespace Fireasy.Common.Caching
         /// </summary>
         private DateTime lastAccessTime;
 
+        public static RelativeTime Default = new RelativeTime(TimeSpan.FromMinutes(30));
+
         /// <summary>
         /// 初始化 <see cref="RelativeTime"/> 类的新实例。
         /// </summary>

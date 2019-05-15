@@ -87,7 +87,7 @@ namespace Fireasy.Common.Configuration
                     var section = new T();
                     section.Bind(configuration.GetSection(attribute.Name.Replace("/", ":")));
                     return section;
-                });
+                }, () => NeverExpired.Instance);
         }
 #endif
 
@@ -100,7 +100,7 @@ namespace Fireasy.Common.Configuration
             var configFileName = ConfigurationManager.AppSettings[CUSTOM_CONFIG_NAME];
             if (string.IsNullOrEmpty(configFileName))
             {
-                return cacheMgr.TryGet(sectionName, () => ConfigurationManager.GetSection(sectionName) as IConfigurationSection);
+                return cacheMgr.TryGet(sectionName, () => ConfigurationManager.GetSection(sectionName) as IConfigurationSection, () => NeverExpired.Instance);
             }
 
             configFileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, configFileName);

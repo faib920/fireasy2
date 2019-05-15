@@ -7,7 +7,6 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity;
-using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Provider;
 using System;
 
@@ -17,14 +16,19 @@ namespace Fireasy.MongoDB
     {
         IProvider IProviderService.Provider { get; set; }
 
-        IRepositoryProvider IContextProvider.Create(Type entityType, object context)
+        IRepositoryProvider IContextProvider.CreateRepositoryProvider(Type entityType, IContextService service)
         {
-            return typeof(MongoDBRepositoryProvider<>).MakeGenericType(entityType).New<IRepositoryProvider>(context);
+            return typeof(MongoDBRepositoryProvider<>).MakeGenericType(entityType).New<IRepositoryProvider>(service);
         }
 
-        IRepositoryProvider<TEntity> IContextProvider.Create<TEntity>(object context)
+        IRepositoryProvider<TEntity> IContextProvider.CreateRepositoryProvider<TEntity>(IContextService service)
         {
-            return new MongoDBRepositoryProvider<TEntity>((InternalContext)context);
+            return new MongoDBRepositoryProvider<TEntity>(service);
+        }
+
+        IContextService IContextProvider.CreateContextService(EntityContextInitializeContext context)
+        {
+            return new MongoDBContextService(context);
         }
     }
 }

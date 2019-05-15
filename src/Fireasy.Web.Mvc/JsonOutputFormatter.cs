@@ -8,6 +8,7 @@
 #if NETSTANDARD
 using Fireasy.Common.Serialization;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
@@ -54,6 +55,12 @@ namespace Fireasy.Web.Mvc
                 if (context.Object is JsonResultWrapper wrapper)
                 {
                     option = wrapper.Option;
+                }
+
+                var hosting = context.HttpContext.RequestServices.GetService<JsonSerializeOptionHosting>();
+                if (hosting != null)
+                {
+                    option = hosting.Option;
                 }
 
                 option = option ?? mvcOptions.JsonSerializeOption;

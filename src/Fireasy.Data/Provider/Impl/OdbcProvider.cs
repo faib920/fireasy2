@@ -28,13 +28,7 @@ namespace Fireasy.Data.Provider
         {
         }
 
-        /// <summary>
-        /// 获取描述数据库的名称。
-        /// </summary>
-        public override string DbName
-        {
-            get { return string.Empty; }
-        }
+        public override string ProviderName => "Odbc";
 
         /// <summary>
         /// 获取当前连接的参数。

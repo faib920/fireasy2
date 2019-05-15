@@ -9,6 +9,7 @@
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
+using Fireasy.Data.Configuration;
 using Fireasy.Data.Extensions;
 using Fireasy.Data.Provider.Configuration;
 using System;
@@ -26,6 +27,21 @@ namespace Fireasy.Data.Provider
         static ProviderHelper()
         {
             InitializeProviders();
+        }
+
+        /// <summary>
+        /// 根据 <paramref name="setting"/> 获取对应的 <see cref="IProvider"/> 对象。
+        /// </summary>
+        /// <param name="setting">配置节信息。</param>
+        /// <returns></returns>
+        public static IProvider GetDefinedProviderInstance(IInstanceConfigurationSetting setting)
+        {
+            if (!string.IsNullOrEmpty(setting.ProviderName))
+            {
+                return GetDefinedProviderInstance(setting.ProviderName);
+            }
+
+            return GetDefinedProviderInstance(setting.ProviderType);
         }
 
         /// <summary>
@@ -52,7 +68,7 @@ namespace Fireasy.Data.Provider
         /// <returns></returns>
         public static bool RegisterProvider(string providerName, IProvider provider)
         {
-            return dicProviders.TryAdd(providerName, provider);
+            return AddProvider(providerName, provider);
         }
 
         /// <summary>
@@ -64,6 +80,12 @@ namespace Fireasy.Data.Provider
             return dicProviders.Select(s => s.Key).ToArray();
         }
 
+        private static bool AddProvider(string providerName, IProvider provider)
+        {
+            provider.ProviderName = providerName;
+            return dicProviders.TryAdd(providerName, provider);
+        }
+
         /// <summary>
         /// 初始化提供者。
         /// </summary>
@@ -71,16 +93,16 @@ namespace Fireasy.Data.Provider
         {
             //内置的提供者
 #if !NETSTANDARD
-            dicProviders.TryAdd("OleDb", OleDbProvider.Instance);
-            dicProviders.TryAdd("Odbc", OdbcProvider.Instance);
+            AddProvider("OleDb", OleDbProvider.Instance);
+            AddProvider("Odbc", OdbcProvider.Instance);
 #endif
-            dicProviders.TryAdd("MsSql", MsSqlProvider.Instance);
-            dicProviders.TryAdd("Oracle", OracleProvider.Instance);
-            dicProviders.TryAdd("SQLite", SQLiteProvider.Instance);
-            dicProviders.TryAdd("MySql", MySqlProvider.Instance);
-            dicProviders.TryAdd("PostgreSql", PostgreSqlProvider.Instance);
-            dicProviders.TryAdd("Firebird", FirebirdProvider.Instance);
-            dicProviders.TryAdd("DB2", DB2Provider.Instance);
+            AddProvider("MsSql", MsSqlProvider.Instance);
+            AddProvider("Oracle", OracleProvider.Instance);
+            AddProvider("SQLite", SQLiteProvider.Instance);
+            AddProvider("MySql", MySqlProvider.Instance);
+            AddProvider("PostgreSql", PostgreSqlProvider.Instance);
+            AddProvider("Firebird", FirebirdProvider.Instance);
+            AddProvider("DB2", DB2Provider.Instance);
 
             //取配置，注册自定义提供者
             var section = ConfigurationUnity.GetSection<ProviderConfigurationSection>();
