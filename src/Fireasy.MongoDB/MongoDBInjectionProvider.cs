@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Emit;
 using Fireasy.Data.Entity;
+using Fireasy.Data.Provider;
 using MongoDB.Bson;
 using System;
 
@@ -15,8 +16,10 @@ namespace Fireasy.MongoDB
     /// <summary>
     /// 实体类型的注入器。向实体类型中增加 _id 主键属性。
     /// </summary>
-    public class MongoDBEntityInjection : IEntityInjection
+    public class MongoDBInjectionProvider : IInjectionProvider
     {
+        IProvider IProviderService.Provider { get; set; }
+
         public void Inject(Type entityType, DynamicAssemblyBuilder assemblyBuilder, DynamicTypeBuilder typeBuilder)
         {
             var propertyBuilder = typeBuilder.DefineProperty("_id", typeof(ObjectId));

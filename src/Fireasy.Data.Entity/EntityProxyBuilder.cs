@@ -34,7 +34,7 @@ namespace Fireasy.Data.Entity
         /// <param name="assemblyBuilder"></param>
         /// <param name="injection"></param>
         /// <returns></returns>
-        public static Type BuildType(Type entityType, string entityName, DynamicAssemblyBuilder assemblyBuilder = null, IEntityInjection injection = null)
+        public static Type BuildType(Type entityType, string entityName, DynamicAssemblyBuilder assemblyBuilder = null, IInjectionProvider injection = null)
         {
             var typeBuilder = assemblyBuilder.DefineType(entityName ?? entityType.Name, baseType: entityType);
             typeBuilder.ImplementInterface(typeof(ICompiledEntity));

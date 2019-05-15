@@ -37,11 +37,6 @@ namespace Fireasy.Data.Entity
         IDatabase Database { get; }
 
         /// <summary>
-        /// 返回实体类型构造的注入器。
-        /// </summary>
-        IEntityInjection EntityInjection { get; }
-
-        /// <summary>
         /// 返回指定实体类型的 <see cref="IRepository"/> 对象。
         /// </summary>
         /// <param name="entityType"></param>

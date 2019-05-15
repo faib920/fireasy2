@@ -67,6 +67,8 @@ namespace Fireasy.Data.Entity
 
                 var typeMap = new Dictionary<Type, List<string>>();
 
+                var injection = _service.Provider.GetService<IInjectionProvider>();
+
                 // Properties declared directly on DbContext such as Database are skipped
                 foreach (var propertyInfo in contextType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
                     .Where(p => p.GetIndexParameters().Length == 0
@@ -75,7 +77,7 @@ namespace Fireasy.Data.Entity
                     var entityType = GetSetType(propertyInfo.PropertyType);
                     if (entityType != null)
                     {
-                        EntityProxyManager.CompileAll(entityType.Assembly, _service.EntityInjection);
+                        EntityProxyManager.CompileAll(entityType.Assembly, injection);
 
                         // We validate immediately because a DbSet/IDbSet must be of
                         // a valid entity type since otherwise you could never use an instance.

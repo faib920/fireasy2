@@ -19,8 +19,6 @@ namespace Fireasy.MongoDB
             Provider = context.Provider;
         }
 
-        public override IEntityInjection EntityInjection => new MongoDBEntityInjection();
-
         public override void BeginTransaction(IsolationLevel level = IsolationLevel.ReadCommitted)
         {
             throw new NotImplementedException();

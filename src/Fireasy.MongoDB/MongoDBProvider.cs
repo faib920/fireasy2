@@ -19,6 +19,7 @@ namespace Fireasy.MongoDB
         public MongoDBProvider()
         {
             RegisterService<IContextProvider, MongoDBContextProvider>();
+            RegisterService<IInjectionProvider, MongoDBInjectionProvider>();
         }
 
         public override string ProviderName => "MongoDB";

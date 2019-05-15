@@ -43,8 +43,6 @@ namespace Fireasy.Data.Entity
 
         public Action<RespositoryCreatedEventArgs> OnRespositoryCreated { get; set; }
 
-        public virtual IEntityInjection EntityInjection { get; }
-
         public abstract void BeginTransaction(IsolationLevel level);
 
         public abstract void CommitTransaction();

@@ -36,7 +36,7 @@ namespace Fireasy.Data.Entity
             return type;
         }
 
-        public static Assembly CompileAll(Assembly assembly, IEntityInjection injection)
+        public static Assembly CompileAll(Assembly assembly, IInjectionProvider injection)
         {
             return cache.GetOrAdd(assembly.FullName, () =>
                 {
