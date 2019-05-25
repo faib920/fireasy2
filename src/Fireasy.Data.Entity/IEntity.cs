@@ -101,7 +101,8 @@ namespace Fireasy.Data.Entity
         /// 通知属性已被修改。
         /// </summary>
         /// <param name="propertyName">属性名称。</param>
-        void NotifyModified(string propertyName);
+        /// <param name="modified">是否被修改。默认为 true。</param>
+        void NotifyModified(string propertyName, bool modified = true);
 
         /// <summary>
         /// 判断是否已经修改。

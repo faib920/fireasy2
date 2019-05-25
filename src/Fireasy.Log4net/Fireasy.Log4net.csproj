@@ -5,14 +5,14 @@
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
-    <FileVersion>2.0.0.46108</FileVersion>
+    <FileVersion>2.0.0.46122</FileVersion>
     <Copyright>Copyright © Fireasy 2013-2019</Copyright>
-    <AssemblyVersion>2.0.0.46108</AssemblyVersion>
+    <AssemblyVersion>2.0.0.46122</AssemblyVersion>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Log4net Provider</Product>
-    <Version>2.0.18</Version>
+    <Version>2.0.26</Version>
     <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
     <Description>log4net 日志组件的实现。

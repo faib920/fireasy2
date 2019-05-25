@@ -51,6 +51,13 @@ namespace Fireasy.Windows.Forms
             return column;
         }
 
+        public TreeListColumn Add(string text, int width, string dataKey)
+        {
+            var column = new TreeListColumn { Text = text, Width = width, DataKey = dataKey };
+            Add(column);
+            return column;
+        }
+
         public TreeListColumn Add(string text, int width)
         {
             var column = new TreeListColumn { Text = text, Width = width };

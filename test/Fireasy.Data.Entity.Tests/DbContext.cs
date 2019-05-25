@@ -1,5 +1,4 @@
-﻿using System;
-using Fireasy.Data.Entity.Tests.Models;
+﻿using Fireasy.Data.Entity.Tests.Models;
 using Fireasy.Data.Provider;
 
 namespace Fireasy.Data.Entity.Tests
@@ -7,7 +6,14 @@ namespace Fireasy.Data.Entity.Tests
     public class DbContext : EntityContext
     {
         public DbContext()
+            : base (new EntityContextOptions {  AutoCreateTables = true })
         {
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            System.Console.WriteLine("Dispose");
+            base.Dispose(disposing);
         }
 
         public EntityRepository<Products> Products { get; set; }
@@ -22,9 +28,9 @@ namespace Fireasy.Data.Entity.Tests
 
         public EntityRepository<Depts> Depts { get; set; }
 
-        protected override void OnRespositoryCreated(RespositoryCreatedEventArgs args)
+        protected override void  OnRespositoryChanged(RespositoryChangedEventArgs args)
         {
-            if (args.Succeed && args.EntityType == typeof(Products))
+            if (args.Succeed && args.EntityType == typeof(Products) && args.EventType == RespositoryChangeEventType.CreateTable)
             {
                 Products.Insert(new Models.Products { ProductName = "aa" });
             }

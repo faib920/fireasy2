@@ -28,14 +28,16 @@ namespace Fireasy.Data.Entity
         public static readonly MethodInfo MthTryCreateRep = typeof(IContextService).GetMethods().FirstOrDefault(s => s.Name == nameof(IContextService.TryCreateRepositoryStorage));
 
         private readonly EntityContext _context;
+        private readonly EntityContextOptions _options;
         private readonly IContextService _service;
 
         // <summary>
         // Creates a set discovery service for the given derived context.
         // </summary>
-        public EntityRepositoryDiscoveryService(EntityContext context)
+        public EntityRepositoryDiscoveryService(EntityContext context, EntityContextOptions options)
         {
             _context = context;
+            _options = options;
             _service = context.GetService<IContextService>();
         }
 
@@ -77,7 +79,10 @@ namespace Fireasy.Data.Entity
                     var entityType = GetSetType(propertyInfo.PropertyType);
                     if (entityType != null)
                     {
-                        EntityProxyManager.CompileAll(entityType.Assembly, injection);
+                        if (_options.RecompileAssembly)
+                        {
+                            EntityProxyManager.CompileAll(entityType.Assembly, injection);
+                        }
 
                         // We validate immediately because a DbSet/IDbSet must be of
                         // a valid entity type since otherwise you could never use an instance.

@@ -72,14 +72,24 @@ namespace Fireasy.Web.Mvc
                     {
                         option = wrapper.Option;
                     }
-
-                    var hosting = context.HttpContext.RequestServices.GetService<JsonSerializeOptionHosting>();
-                    if (hosting != null)
+                    else
                     {
-                        option = hosting.Option;
+                        var hosting = context.HttpContext.RequestServices.GetService<JsonSerializeOptionHosting>();
+                        if (hosting != null)
+                        {
+                            option = hosting.Option;
+                        }
                     }
 
-                    option = option ?? mvcOptions.JsonSerializeOption;
+                    if (option == null)
+                    {
+                        option = mvcOptions.JsonSerializeOption;
+                    }
+                    else
+                    {
+                        option.Reference(mvcOptions.JsonSerializeOption);
+                    }
+
                     var serializer = new JsonSerializer(option);
 
                     using (var jsonWriter = new JsonWriter(writer))

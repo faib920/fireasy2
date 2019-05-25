@@ -5,10 +5,11 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using Fireasy.Common.Configuration;
-using Fireasy.Common.Extensions;
 using Fireasy.Common.Logging.Configuration;
+#if NETSTANDARD
+using Microsoft.Extensions.DependencyInjection;
+#endif
 
 namespace Fireasy.Common.Logging
 {
@@ -17,6 +18,35 @@ namespace Fireasy.Common.Logging
     /// </summary>
     public static class LoggerFactory
     {
+#if NETSTANDARD
+        internal static IServiceCollection AddLogger(this IServiceCollection services)
+        {
+            var section = ConfigurationUnity.GetSection<LoggingConfigurationSection>();
+            if (section == null)
+            {
+                return services;
+            }
+
+            var setting = section.GetDefault();
+
+            if (setting == null)
+            {
+                services.AddSingleton(typeof(ILogger), DefaultLogger.Instance);
+            }
+            else
+            {
+                if (setting is ExtendConfigurationSetting extend)
+                {
+                    setting = extend.Base;
+                }
+
+                services.AddSingleton(typeof(ILogger), ((LoggingConfigurationSetting)setting).LogType);
+            }
+
+            return services;
+        }
+#endif
+
         /// <summary>
         /// 根据应用程序配置，创建日志管理器。
         /// </summary>

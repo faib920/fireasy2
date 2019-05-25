@@ -88,6 +88,9 @@ namespace Fireasy.Data.Entity.Tests.Models
         [PropertyMapping(ColumnName = "Fax", Description = "", Length = 24, IsNullable = true)]
         public virtual string Fax { get; set; }
 
+        [PropertyMapping(ColumnName = "Test1", Description = "", Length = 24, IsNullable = true)]
+        public virtual string Test1 { get; set; }
+
         /// <summary>
         /// 获取或设置 <see cref="orders"/> 的子实体集。
         /// </summary>

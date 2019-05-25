@@ -137,7 +137,7 @@ namespace Fireasy.Data.Entity
         public void Apply<TEntity>(Expression<Func<IEnumerable<TEntity>, IEnumerable<TEntity>>> fnApply) where TEntity : IEntity
         {
             Guard.ArgumentNull(fnApply, nameof(fnApply));
-            Guard.Argument(fnApply.Parameters.Count != 1, nameof(fnApply));
+            Guard.Argument(fnApply.Parameters.Count == 1, nameof(fnApply));
 
             AddOperation(fnApply.Parameters[0].Type.GetEnumerableElementType(), fnApply);
         }
@@ -145,7 +145,7 @@ namespace Fireasy.Data.Entity
         public void Apply(Type entityType, LambdaExpression fnApply)
         {
             Guard.ArgumentNull(fnApply, nameof(fnApply));
-            Guard.Argument(fnApply.Parameters.Count != 1, nameof(fnApply));
+            Guard.Argument(fnApply.Parameters.Count == 1, nameof(fnApply));
 
             AddOperation(entityType, fnApply);
         }

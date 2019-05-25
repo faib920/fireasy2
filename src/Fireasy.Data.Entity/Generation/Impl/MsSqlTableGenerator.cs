@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Syntax;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -14,12 +15,12 @@ namespace Fireasy.Data.Entity.Generation
 {
     public class MsSqlTableGenerator : BaseTableGenerateProvider
     {
-        protected override SqlCommand[] BuildCreateTableCommands(ISyntaxProvider syntax, EntityMetadata metadata, IProperty[] properties)
+        protected override SqlCommand[] BuildCreateTableCommands(ISyntaxProvider syntax, EntityMetadata metadata, IList<IProperty> properties)
         {
             var sb = new StringBuilder();
             sb.AppendFormat("create table {0}\n(\n", Quote(syntax, metadata.TableName));
 
-            var count = properties.Length;
+            var count = properties.Count;
             for (var i = 0; i < count; i++)
             {
                 AppendFieldToBuilder(sb, syntax, properties[i]);
@@ -36,8 +37,8 @@ namespace Fireasy.Data.Entity.Generation
             var primaryPeoperties = properties.Where(s => s.Info.IsPrimaryKey).ToArray();
             if (primaryPeoperties.Length > 0)
             {
-                sb.Append(",");
-                sb.AppendFormat("constraint PK_{0} primary key (", Quote(syntax, metadata.TableName));
+                sb.AppendLine(",");
+                sb.AppendFormat("\nconstraint {0} primary key (", Quote(syntax, "PK_" + metadata.TableName));
 
                 for (var i = 0; i < primaryPeoperties.Length; i++)
                 {
@@ -46,7 +47,7 @@ namespace Fireasy.Data.Entity.Generation
                         sb.Append(",");
                     }
 
-                    sb.Append(Quote(syntax, primaryPeoperties[i].Info.FieldName));
+                    sb.Append(Quote(syntax, Quote(syntax, primaryPeoperties[i].Info.FieldName)));
                 }
 
                 sb.Append(")");
@@ -57,12 +58,12 @@ namespace Fireasy.Data.Entity.Generation
             return new SqlCommand[] { sb.ToString() };
         }
 
-        protected override SqlCommand[] BuildAddFieldCommands(ISyntaxProvider syntax, EntityMetadata metadata, IProperty[] properties)
+        protected override SqlCommand[] BuildAddFieldCommands(ISyntaxProvider syntax, EntityMetadata metadata, IList<IProperty> properties)
         {
             var sb = new StringBuilder();
             sb.AppendFormat("alter table {0} add ", Quote(syntax, metadata.TableName));
 
-            var count = properties.Length;
+            var count = properties.Count;
             for (var i = 0; i < count; i++)
             {
                 AppendFieldToBuilder(sb, syntax, properties[i]);

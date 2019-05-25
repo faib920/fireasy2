@@ -41,6 +41,17 @@ namespace Fireasy.Common.Serialization
         /// 获取或设置输出的风格。
         /// </summary>
         public OutputStyle OutputStyle { get; set; }
+
+        public override void Reference(SerializeOption other)
+        {
+            base.Reference(other);
+
+            CData = ((XmlSerializeOption)other).CData;
+            Declaration = ((XmlSerializeOption)other).Declaration;
+            StartElement = ((XmlSerializeOption)other).StartElement;
+            IgnoreNull = ((XmlSerializeOption)other).IgnoreNull;
+            OutputStyle = ((XmlSerializeOption)other).OutputStyle;
+        }
     }
 
     public enum OutputStyle

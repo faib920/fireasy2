@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Fireasy.Common.Caching;
 using Fireasy.Data.Entity;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -82,5 +83,72 @@ namespace Fireasy.MvcCore.Tests
     public class TestModel : IModel
     {
         public string Name { get; set; }
+    }
+
+    public class CacheManager : ICacheManager
+    {
+        public CacheManager(IModel model)
+        {
+        }
+
+        public T Add<T>(string cacheKey, T value, TimeSpan? expire = null, CacheItemRemovedCallback removeCallback = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public T Add<T>(string cacheKey, T value, ICacheItemExpiration expiration, CacheItemRemovedCallback removeCallback = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Clear()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Contains(string cacheKey)
+        {
+            throw new NotImplementedException();
+        }
+
+        public object Get(string cacheKey)
+        {
+            throw new NotImplementedException();
+        }
+
+        public T Get<T>(string cacheKey)
+        {
+            throw new NotImplementedException();
+        }
+
+        public TimeSpan? GetExpirationTime(string cacheKey)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<string> GetKeys()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Remove(string cacheKey)
+        {
+            throw new NotImplementedException();
+        }
+
+        public T TryGet<T>(string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public object TryGet(Type dataType, string cacheKey, Func<object> factory, Func<ICacheItemExpiration> expiration = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool TryGet<T>(string cacheKey, out T value)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

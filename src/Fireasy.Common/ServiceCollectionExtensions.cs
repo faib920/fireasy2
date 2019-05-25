@@ -99,10 +99,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             if (services != null)
             {
-                services.AddSingleton(typeof(ILogger), s => LoggerFactory.CreateLogger());
-                services.AddSingleton(typeof(ICacheManager), s => CacheManagerFactory.CreateManager());
-                services.AddSingleton(typeof(ISubscribeManager), s => SubscribeManagerFactory.CreateManager());
-                services.AddSingleton(typeof(ITextSerializer), s => SerializerFactory.CreateSerializer());
+                services.AddLogger().AddCaching().AddSubscriber();
             }
         }
     }

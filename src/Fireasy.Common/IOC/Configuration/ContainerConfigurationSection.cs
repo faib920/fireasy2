@@ -78,6 +78,11 @@ namespace Fireasy.Common.Ioc.Configuration
                     componentType = child.GetSection("implementationType").Value;
                 }
 
+                if (string.IsNullOrEmpty(componentType))
+                {
+                    componentType = serviceType;
+                }
+
                 var singleton = child.GetSection("singleton").Value.To<bool>();
 
                 var assembly = child.GetSection("assembly").Value;
@@ -118,6 +123,11 @@ namespace Fireasy.Common.Ioc.Configuration
                 if (string.IsNullOrEmpty(componentType))
                 {
                     componentType = child.GetAttributeValue("implementationType");
+                }
+
+                if (string.IsNullOrEmpty(componentType))
+                {
+                    componentType = serviceType;
                 }
 
                 var singleton = child.GetAttributeValue<bool>("singleton");

@@ -24,7 +24,7 @@ namespace Fireasy.Data.Entity
         private static MethodInfo MthSetValue = typeof(ProtectedEntity).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(s => s.Name == "ProtectSetValue");
         private static MethodInfo MthInitValue = typeof(ProtectedEntity).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(s => s.Name == "ProtectInitializeValue");
         private static MethodInfo MthPVNewValue = typeof(PropertyValue).GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(s => s.Name == "NewValue");
-        private static MethodInfo MthPVGetValue = typeof(PropertyValue).GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(s => s.Name == "GetValue");
+        private static MethodInfo MthPVGetValue = typeof(PropertyValue).GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(s => s.Name == "GetValue" && s.IsGenericMethod);
 
         /// <summary>
         /// 构造实体类 <paramref name="entityType"/> 的代理类。
@@ -59,6 +59,7 @@ namespace Fireasy.Data.Entity
                     var op_Explicit = typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == "op_Explicit" && s.ReturnType == opType);
                     propertyBuilder.DefineGetMethod(ilCoding: code =>
                         {
+                            code.Emitter.DeclareLocal(typeof(PropertyValue));
                             code.Emitter.DeclareLocal(get.ReturnType);
                             code.Emitter
                             .nop
@@ -68,10 +69,11 @@ namespace Fireasy.Data.Entity
                             .ldstr(property.Name)
                             .call(MthGetProperty)
                             .call(MthGetValue)
-                            .Assert(op_Explicit != null, e1 => e1.call(op_Explicit), e1 => e1.call(MthPVGetValue).castclass(opType))
+                            .Assert(op_Explicit != null, e1 => e1.call(op_Explicit), 
+                                e1 => e1.call(MthPVGetValue.MakeGenericMethod(property.PropertyType)))
                             .Assert(isEnum, e1 => e1.unbox_any(property.PropertyType))
-                            .stloc_0
-                            .ldloc_0
+                            .stloc_1
+                            .ldloc_1
                             .ret();
                         });
                 }
@@ -90,7 +92,8 @@ namespace Fireasy.Data.Entity
                             .call(MthGetProperty)
                             .ldarg_1
                             .Assert(isEnum, e1 => e1.box(property.PropertyType))
-                            .Assert(op_Implicit != null, e1 => e1.call(op_Implicit), e1 => e1.ldnull.call(MthPVNewValue))
+                            .Assert(op_Implicit != null, e1 => e1.call(op_Implicit), 
+                                e1 => e1.ldtoken(property.PropertyType).call(MthTypeGetTypeFromHandle).call(MthPVNewValue))
                             .call(MthSetValue)
                             .nop
                             .ret();

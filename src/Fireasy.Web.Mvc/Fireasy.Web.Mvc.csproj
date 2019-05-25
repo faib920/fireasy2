@@ -5,14 +5,14 @@
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
-    <FileVersion>2.0.0.46120</FileVersion>
+    <FileVersion>2.0.0.46122</FileVersion>
     <Copyright>Copyright © Fireasy 2013-2019</Copyright>
-    <AssemblyVersion>2.0.0.46120</AssemblyVersion>
+    <AssemblyVersion>2.0.0.46122</AssemblyVersion>
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>True</SignAssembly>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Asp.Net Mvc</Product>
-    <Version>2.0.24-beta2</Version>
+    <Version>2.0.26</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>

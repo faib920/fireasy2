@@ -68,6 +68,8 @@ namespace Fireasy.Data.Entity
         internal const string ZipCodeValideError = "ZipCodeValideError";
         internal const string EmailValideError = "EmailValideError";
         internal const string InvalidOperationAsNoTracking = "InvalidOperationAsNoTracking";
+        internal const string MustAssignEntityContextInitializeContext = "MustAssignEntityContextInitializeContext";
+        internal const string TreeCodeOutOfRange = "TreeCodeOutOfRange";
     }
 
     internal sealed class SR

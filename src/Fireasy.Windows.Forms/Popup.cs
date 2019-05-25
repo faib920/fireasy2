@@ -87,7 +87,7 @@ namespace Fireasy.Windows.Forms
         /// <param name="content">下拉控件。</param>
         public Popup(Control content)
         {
-            Guard.ArgumentNull(content, nameof(content));
+            Guard.ArgumentNull(content, "content");
 
             Content = content;
             FocusOnOpen = true;
@@ -106,10 +106,10 @@ namespace Fireasy.Windows.Forms
             TabStop = content.TabStop = true;
             Items.Add(host);
             content.Disposed += (sender, e) =>
-                {
-                    content = null;
-                    Dispose(true);
-                };
+            {
+                content = null;
+                Dispose(true);
+            };
             content.RegionChanged += (sender, e) => UpdateRegion();
             content.Paint += (sender, e) => PaintSizeGrip(e);
             UpdateRegion();
@@ -170,7 +170,7 @@ namespace Fireasy.Windows.Forms
         /// <param name="control"></param>
         public void Show(Control control)
         {
-            Guard.ArgumentNull(control, nameof(control));
+            Guard.ArgumentNull(control, "control");
 
             Show(control, control.ClientRectangle);
         }
@@ -201,7 +201,7 @@ namespace Fireasy.Windows.Forms
 
         public void Show(Control control, Rectangle area)
         {
-            Guard.ArgumentNull(control, nameof(control));
+            Guard.ArgumentNull(control, "control");
 
             SetOwnerItem(control);
 

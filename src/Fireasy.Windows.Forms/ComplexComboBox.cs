@@ -68,11 +68,7 @@ namespace Fireasy.Windows.Forms
                     {
                         var texts = new List<string>();
                         CheckItem(TreeList.Items, value as object[], texts);
-#if NET35
-                        SetText(string.Join(",", texts.ToArray()));
-#else
                         SetText(string.Join(",", texts));
-#endif
                     }
                     else
                     {
@@ -114,6 +110,7 @@ namespace Fireasy.Windows.Forms
                     item.Selected = true;
                     base.SelectedValue = value;
                     SetText(GetDisplayText(item));
+                    ExpendAllParent(item);
                     return true;
                 }
 
@@ -124,6 +121,16 @@ namespace Fireasy.Windows.Forms
             }
 
             return false;
+        }
+
+        private void ExpendAllParent(TreeListItem item)
+        {
+            var parent = item.Parent;
+            while (parent != null)
+            {
+                parent.Expended = true;
+                parent = parent.Parent;
+            }
         }
 
         private void CheckItem(TreeListItemCollection items, object[] values, List<string> texts)

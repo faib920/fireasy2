@@ -156,8 +156,13 @@ namespace Fireasy.Data.Entity.Tests
         public void TestDynamic()
         {
             var builder = new EntityTypeBuilder("test");
-            builder.Properties.Add(new GeneralProperty() { Name = "aa", Type = typeof(string) });
+            builder.Properties.Add(new GeneralProperty() { Name = "aa", Type = typeof(string), Info = new PropertyMapInfo { FieldName = "aa", IsPrimaryKey = true, DefaultValue = PropertyValue.NewValue(33, typeof(int)), GenerateType = IdentityGenerateType.AutoIncrement } });
+            builder.Properties.Add(new GeneralProperty() { Name = "bb", Type = typeof(string), Info = new PropertyMapInfo { FieldName = "bb", IsNullable = true } });
+            builder.Properties.Add(new GeneralProperty() { Name = "cc", Type = typeof(int), Info = new PropertyMapInfo { FieldName = "cc", Scale = 2 } });
+            builder.Properties.Add(new EntityProperty() { Name = "dd", Type = typeof(Products) });
             var a = builder.Create();
+
+            var pp = PropertyUnity.GetProperties(a);
         }
     }
 

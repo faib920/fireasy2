@@ -24,10 +24,10 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 初始化 <see cref="EntityContextOptions"/> 类的新实例。
         /// </summary>
-        /// <param name="instanceName">实例名称。</param>
-        public EntityContextOptions(string instanceName)
+        /// <param name="configName">实例名称。</param>
+        public EntityContextOptions(string configName)
         {
-            ConfigName = instanceName;
+            ConfigName = configName;
         }
 
         /// <summary>
@@ -46,6 +46,11 @@ namespace Fireasy.Data.Entity
         public bool ValidateEntity { get; set; } = true;
 
         /// <summary>
+        /// 获取或设置是否重新编译实体程序集。默认为 true。
+        /// </summary>
+        public bool RecompileAssembly { get; set; } = true;
+
+        /// <summary>
         /// 获取实例名称。
         /// </summary>
         public string ConfigName { get; private set; }
@@ -54,16 +59,6 @@ namespace Fireasy.Data.Entity
         /// 获取或设置 <see cref="EntityContextInitializeContext"/> 实例创建工厂。
         /// </summary>
         public Func<EntityContextInitializeContext> ContextFactory { get; set; }
-
-        /// <summary>
-        /// 获取或设置仓储创建成功时的通知。
-        /// </summary>
-        public Action<Type> OnRespositoryCreated { get; set; }
-
-        /// <summary>
-        /// 获取或设置仓储创建失败时的通知。
-        /// </summary>
-        public Action<Type, Exception> OnRespositoryCreateFailed { get; set; }
 
         public override bool Equals(object obj)
         {

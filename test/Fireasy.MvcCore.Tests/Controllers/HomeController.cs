@@ -1,4 +1,5 @@
-﻿using Fireasy.Common.Serialization;
+﻿using Fireasy.Common.Caching;
+using Fireasy.Common.Serialization;
 using Fireasy.Data.Entity;
 using Fireasy.MvcCore.Tests.Models;
 using Fireasy.Web.Mvc;
@@ -11,7 +12,7 @@ namespace Fireasy.MvcCore.Tests.Controllers
 {
     public class HomeController : Controller
     {
-        public HomeController(TestContext context)
+        public HomeController(TestContext context, ICacheManager cacheMgr)
         {
 
         }
@@ -51,15 +52,15 @@ namespace Fireasy.MvcCore.Tests.Controllers
             return Json(45);
         }
 
-        public JsonResult TestOption([FromServices]JsonSerializeOptionHosting hosting)
+        public JsonResult TestOption()
         {
-            hosting.Option.Converters.Add(new DateTimeJsonConverter("hh:mm"));
-            return Json(new Entity { Date = DateTime.Now });
+            return this.Json(new Entity { Date = DateTime.Now }, new DateTimeJsonConverter("hh:mm"));
         }
 
-        public JsonResult TestOption1([FromServices]JsonSerializeOptionHosting hosting)
+        public object TestOption1([FromServices]JsonSerializeOptionHosting hosting)
         {
-            return Json(new Entity { Date = DateTime.Now });
+            hosting.Option.Converters.Add(new DateTimeJsonConverter("hh:mm"));
+            return new Entity { Date = DateTime.Now };
         }
     }
 

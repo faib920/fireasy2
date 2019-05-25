@@ -129,9 +129,6 @@ namespace Fireasy.Windows.Forms
         /// <param name="enumerable"></param>
         private void BindEnumerable(IEnumerable enumerable)
         {
-            ObjectBindingDefinition definition = null;
-
-            var defined = false;
             var index = 0;
             foreach (var item in enumerable)
             {
@@ -140,11 +137,7 @@ namespace Fireasy.Windows.Forms
                     continue;
                 }
 
-                if (!defined)
-                {
-                    definition = GetBindingDefinition(item);
-                    defined = true;
-                }
+                var definition = GetBindingDefinition(item);
 
                 var listitem = new TreeListItem();
                 Items.Add(listitem);

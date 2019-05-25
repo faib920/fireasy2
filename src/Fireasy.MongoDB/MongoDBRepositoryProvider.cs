@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace Fireasy.MongoDB
 {
@@ -200,6 +201,11 @@ namespace Fireasy.MongoDB
         IRepository IRepositoryProvider.CreateRepository(EntityContextOptions options)
         {
             return new EntityRepository<TEntity>(this, options);
+        }
+
+        public Task<int> UpdateAsync(TEntity entity, Expression<Func<TEntity, bool>> predicate)
+        {
+            throw new NotImplementedException();
         }
 
         private class CustomBsonSerializer : BsonClassMapSerializer<TEntity>

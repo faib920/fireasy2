@@ -561,7 +561,7 @@ namespace Fireasy.Data.Entity
             var sOrder = order.ToString();
             if (metaTree.SignLength - sOrder.Length < 0)
             {
-                throw new EntityTreeCodeOutOfRangeException("末级编码超出预设的" + metaTree.SignLength + "位编码。");
+                throw new EntityTreeCodeOutOfRangeException(SR.GetString(SRKind.TreeCodeOutOfRange, metaTree.SignLength));
             }
 
             return position == EntityTreePosition.Children || keyId.Length < metaTree.SignLength ?
@@ -898,6 +898,10 @@ namespace Fireasy.Data.Entity
             //它的孩子要移到根节点下
             UpdateChildren(current, children, arg);
 
+            SetNameNotModified(new[] { current });
+            SetNameNotModified(brothers);
+            SetNameNotModified(children);
+
             repository.Update(current);
 
             repository.Batch(brothers, (u, s) => u.Update(s));
@@ -923,6 +927,9 @@ namespace Fireasy.Data.Entity
             //兄弟及其孩子要下移一个单位
             UpdateBrothersAndChildren(current, brothers, arg1.OldValue.InnerId, -1);
 
+            //获得新节点的Order值
+            arg1.NewValue.Order = GetNewOrderNumber(arg2.OldValue, EntityTreePosition.Children, isolation: isolation);
+
             var modify = IsInList(referEntity, brothers);
             if (modify != null)
             {
@@ -930,8 +937,6 @@ namespace Fireasy.Data.Entity
             }
 
             var keyId = arg2.OldValue.InnerId;
-            //获得新节点的Order值
-            arg1.NewValue.Order = GetNewOrderNumber(arg2.OldValue, EntityTreePosition.Children, isolation: isolation);
 
             //获得参照节点的级别
             arg1.NewValue.Level = arg2.OldValue.Level + 1;
@@ -943,6 +948,10 @@ namespace Fireasy.Data.Entity
             //更新要移动的节点的孩子
             UpdateChildren(current, children, arg1);
             UpdateEntityByArgument(current, arg1);
+
+            SetNameNotModified(new[] { current });
+            SetNameNotModified(brothers);
+            SetNameNotModified(children);
 
             repository.Update(current);
 
@@ -968,13 +977,17 @@ namespace Fireasy.Data.Entity
 
                 arg.NewValue.FullName = fullName;
 
-                var chindren = GetChildren(arg, isolation);
+                var children = GetChildren(arg, isolation);
 
-                UpdateChildren(current, chindren, arg);
+                UpdateChildren(current, children, arg);
                 UpdateEntityByArgument(current, arg);
 
-                repository.Batch(chindren, (u, s) => u.Update(s));
+                SetNameNotModified(children);
+
+                repository.Batch(children, (u, s) => u.Update(s));
             }
+
+            SetNameNotModified(new[] { current });
 
             repository.Update(current);
         }
@@ -988,6 +1001,18 @@ namespace Fireasy.Data.Entity
         private TEntity IsInList(TEntity entity, IEnumerable<TEntity> entities)
         {
             return entities.FirstOrDefault(item => item.Equals(entity));
+        }
+
+        /// <summary>
+        /// 设置不要更新 Name。
+        /// </summary>
+        /// <param name="eitities"></param>
+        private void SetNameNotModified(IEnumerable<TEntity> eitities)
+        {
+            if (metaTree.Name != null)
+            {
+                eitities.ForEach(s => s.NotifyModified(metaTree.Name.Name, false));
+            }
         }
 
         /// <summary>
@@ -1024,7 +1049,7 @@ namespace Fireasy.Data.Entity
             }
 
             yield return metaTree.InnerSign;
-            if (metaTree.Name != null)
+            if (metaTree.Name != null && metaTree.FullName != null)
             {
                 yield return metaTree.Name;
             }

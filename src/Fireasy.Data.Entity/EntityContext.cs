@@ -55,7 +55,7 @@ namespace Fireasy.Data.Entity
             OnConfiguring(new EntityContextOptionsBuilder(options));
             Initialize(options);
 
-            new EntityRepositoryDiscoveryService(this).InitializeSets();
+            new EntityRepositoryDiscoveryService(this, options).InitializeSets();
         }
 
         /// <summary>
@@ -243,7 +243,6 @@ namespace Fireasy.Data.Entity
             if (options.ContextFactory != null)
             {
                 initContext = options.ContextFactory();
-                initContext.Options = options;
             }
             else
             {
@@ -267,15 +266,17 @@ namespace Fireasy.Data.Entity
 
             if (initContext == null || initContext.Provider == null)
             {
-                throw new Exception("");
+                throw new InvalidOperationException(SR.GetString(SRKind.MustAssignEntityContextInitializeContext));
             }
+
+            initContext.Options = options;
 
             var provider = initContext.Provider.GetService<IContextProvider>();
             service = provider.CreateContextService(initContext);
 
             if (service != null)
             {
-                service.OnRespositoryCreated = OnRespositoryCreated;
+                service.OnRespositoryChanged = OnRespositoryChanged;
             }
         }
 
@@ -288,10 +289,10 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 仓储创建时收到的通知。
+        /// 仓储物理存储变动时收到的通知。
         /// </summary>
         /// <param name="args">通知参数。</param>
-        protected virtual void OnRespositoryCreated(RespositoryCreatedEventArgs args)
+        protected virtual void OnRespositoryChanged(RespositoryChangedEventArgs args)
         {
         }
 

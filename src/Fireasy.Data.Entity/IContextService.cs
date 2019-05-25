@@ -22,9 +22,9 @@ namespace Fireasy.Data.Entity
         EntityContextInitializeContext InitializeContext { get; }
 
         /// <summary>
-        /// 获取或设置仓储创建时收到的通知。
+        /// 仓储物理存储变动时收到的通知。
         /// </summary>
-        Action<RespositoryCreatedEventArgs> OnRespositoryCreated { get; set; }
+        Action<RespositoryChangedEventArgs> OnRespositoryChanged { get; set; }
 
         /// <summary>
         /// 返回 <see cref="IProvider"/> 对象。

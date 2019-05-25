@@ -1139,6 +1139,27 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
+        /// 获取指定 <see cref="PropertyValue"/> 真实的值。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static TValue GetValue<TValue>(PropertyValue value)
+        {
+            if (IsEmpty(value))
+            {
+                return default;
+            }
+
+            var val = value.GetValue();
+            if (val != null && val is TValue)
+            {
+                return (TValue)val;
+            }
+
+            return default;
+        }
+
+        /// <summary>
         /// 判断指定的类型是否受 <see cref="PropertyValue"/> 类型支持。这些类型主要是值类型。
         /// </summary>
         /// <param name="type">要判断的类型。</param>

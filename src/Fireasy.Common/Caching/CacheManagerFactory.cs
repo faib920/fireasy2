@@ -8,6 +8,9 @@
 using System;
 using Fireasy.Common.Caching.Configuration;
 using Fireasy.Common.Configuration;
+#if NETSTANDARD
+using Microsoft.Extensions.DependencyInjection;
+#endif
 
 namespace Fireasy.Common.Caching
 {
@@ -16,6 +19,35 @@ namespace Fireasy.Common.Caching
     /// </summary>
     public static class CacheManagerFactory
     {
+#if NETSTANDARD
+        internal static IServiceCollection AddCaching(this IServiceCollection services)
+        {
+            var section = ConfigurationUnity.GetSection<CachingConfigurationSection>();
+            if (section == null)
+            {
+                return services;
+            }
+
+            var setting = section.GetDefault();
+
+            if (setting == null)
+            {
+                services.AddSingleton(typeof(ICacheManager), MemoryCacheManager.Instance);
+            }
+            else
+            {
+                if (setting is ExtendConfigurationSetting extend)
+                {
+                    setting = extend.Base;
+                }
+
+                services.AddSingleton(typeof(ICacheManager), ((CachingConfigurationSetting)setting).CacheType);
+            }
+
+            return services;
+        }
+#endif
+
         /// <summary>
         /// 根据应用程序配置，创建缓存管理器。
         /// </summary>

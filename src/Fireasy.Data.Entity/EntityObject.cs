@@ -299,9 +299,15 @@ namespace Fireasy.Data.Entity
             set { isModifing = value; }
         }
 
-        void IEntity.NotifyModified(string propertyName)
+        void IEntity.NotifyModified(string propertyName, bool modified)
         {
-            InnerEntry.Modify(propertyName);
+            if (!modified)
+            {
+                InnerEntry.Modify(propertyName, false);
+                return;
+            }
+
+            InnerEntry.Modify(propertyName, modified);
 
             if (state == EntityState.Unchanged)
             {

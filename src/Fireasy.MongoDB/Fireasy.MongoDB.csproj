@@ -1,20 +1,22 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
-    <Version>2.0.24-beta2</Version>
+    <Version>2.0.26</Version>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
     <Product>Fireasy MongoDB Provider</Product>
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
+    <SignAssembly>True</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <Copyright>Copyright © Fireasy 2013-2019</Copyright>
     <Description>用于适配 mongodb 数据库的驱动。
 
 示例源码：https://github.com/faib920/zero</Description>
-    <AssemblyVersion>2.0.0.46120</AssemblyVersion>
-    <FileVersion>2.0.0.46120</FileVersion>
+    <AssemblyVersion>2.0.0.46122</AssemblyVersion>
+    <FileVersion>2.0.0.46122</FileVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="mongocsharpdriver" Version="2.7.3" />

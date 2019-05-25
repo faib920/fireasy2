@@ -8,6 +8,7 @@
 using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -67,6 +68,54 @@ namespace Fireasy.Common.Serialization
         /// 获取或设置日期如何序列化。
         /// </summary>
         public DateFormatHandling DateFormatHandling { get; set; }
+
+        /// <summary>
+        /// 引用另一个对象的设置属性。
+        /// </summary>
+        /// <param name="other"></param>
+        public virtual void Reference(SerializeOption other)
+        {
+            CamelNaming = other.CamelNaming;
+            Converters.AddRange(other.Converters);
+            IgnoreType = other.IgnoreType;
+            Indent = other.Indent;
+            ReferenceLoopHandling = other.ReferenceLoopHandling;
+            DateFormatHandling = other.DateFormatHandling;
+
+            if (other.InclusiveNames != null)
+            {
+                InclusiveNames = InclusiveNames == null ? other.InclusiveNames : InclusiveNames.Union(other.InclusiveNames).Distinct().ToArray();
+            }
+
+            if (other.ExclusiveNames != null)
+            {
+                ExclusiveNames = ExclusiveNames == null ? other.ExclusiveNames : ExclusiveNames.Union(other.ExclusiveNames).Distinct().ToArray();
+            }
+
+            if (other.InclusiveMembers != null)
+            {
+                if (InclusiveMembers != null)
+                {
+                    InclusiveMembers.AddRange(other.InclusiveMembers);
+                }
+                else
+                {
+                    InclusiveMembers = other.InclusiveMembers;
+                }
+            }
+
+            if (other.ExclusiveMembers != null)
+            {
+                if (ExclusiveMembers != null)
+                {
+                    ExclusiveMembers.AddRange(other.ExclusiveMembers);
+                }
+                else
+                {
+                    ExclusiveMembers = other.ExclusiveMembers;
+                }
+            }
+        }
 
         /// <summary>
         /// 使用表达式指定在序列化 <typeparamref name="T"/> 时仅被序列化的成员列表。

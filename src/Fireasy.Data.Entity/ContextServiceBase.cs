@@ -41,7 +41,7 @@ namespace Fireasy.Data.Entity
 
         public IDatabase Database { get; protected set; }
 
-        public Action<RespositoryCreatedEventArgs> OnRespositoryCreated { get; set; }
+        public Action<RespositoryChangedEventArgs> OnRespositoryChanged { get; set; }
 
         public abstract void BeginTransaction(IsolationLevel level);
 

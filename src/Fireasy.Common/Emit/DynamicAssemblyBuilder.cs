@@ -78,13 +78,13 @@ namespace Fireasy.Common.Emit
                 }
                 else
                 {
-                    var dir = OutputAssembly.Substring(0, OutputAssembly.LastIndexOf("\\"));
+#if !NETSTANDARD
+                    var dir = Path.GetDirectoryName(OutputAssembly);
                     if (!Directory.Exists(dir))
                     {
                         Directory.CreateDirectory(dir);
                     }
 
-#if !NETSTANDARD
                     assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(an, AssemblyBuilderAccess.RunAndSave, dir);
 #else
                     assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(an, AssemblyBuilderAccess.Run);

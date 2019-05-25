@@ -12,9 +12,17 @@ using System;
 
 namespace Fireasy.Data.Entity.Providers
 {
-    internal static class ProviderHelper
+    /// <summary>
+    /// <see cref="IProvider"/> 辅助类。
+    /// </summary>
+    public static class ProviderHelper
     {
-        internal static ITranslateProvider GetTranslateProvider(this IProvider provider)
+        /// <summary>
+        /// 获取 <see cref="ITranslateProvider"/> 对象。
+        /// </summary>
+        /// <param name="provider"></param>
+        /// <returns></returns>
+        public static ITranslateProvider GetTranslateProvider(this IProvider provider)
         {
             var service = provider.GetService<ITranslateProvider>();
             if (service != null)
@@ -50,7 +58,12 @@ namespace Fireasy.Data.Entity.Providers
             return provider.GetService<ITranslateProvider>();
         }
 
-        internal static ITableGenerateProvider GetTableGenerateProvider(this IProvider provider)
+        /// <summary>
+        /// 获取 <see cref="ITableGenerateProvider"/> 对象。
+        /// </summary>
+        /// <param name="provider"></param>
+        /// <returns></returns>
+        public static ITableGenerateProvider GetTableGenerateProvider(this IProvider provider)
         {
             var generator = provider.GetService<ITableGenerateProvider>();
             if (generator != null)
@@ -89,6 +102,5 @@ namespace Fireasy.Data.Entity.Providers
 
             return provider.GetService<ITableGenerateProvider>();
         }
-
     }
 }

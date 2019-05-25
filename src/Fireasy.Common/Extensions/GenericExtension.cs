@@ -395,6 +395,50 @@ namespace Fireasy.Common.Extensions
         }
 
         /// <summary>
+        /// 将 <paramref name="other"/> 的属性复制到 <paramref name="source"/> 中。
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public static TSource CloneFrom<TSource>(this TSource source, object other)
+        {
+            if (other == null)
+            {
+                return source;
+            }
+
+#if !NET35
+            TypeDescriptorUtility.AddDefaultDynamicProvider();
+#endif
+
+            var sourceProperties = TypeDescriptor.GetProperties(source);
+            var otherProperties = TypeDescriptor.GetProperties(other);
+
+            var sourceLazy = source as ILazyManager;
+            var otherLazy = other as ILazyManager;
+            foreach (PropertyDescriptor p in otherProperties)
+            {
+                if (otherLazy != null && !otherLazy.IsValueCreated(p.Name))
+                {
+                    continue;
+                }
+
+                var sp = sourceProperties.Find(p.Name, true);
+                if (sp != null)
+                {
+                    var value = p.GetValue(other);
+                    if (value != null)
+                    {
+                        sp.SetValue(source, value.ToType(sp.PropertyType));
+                    }
+                }
+            }
+
+            return source;
+        }
+
+        /// <summary>
         /// 使用另一个对象对源对象进行扩展，生成类型 <typeparamref name="TTarget"/> 的对象。
         /// </summary>
         /// <typeparam name="TTarget"></typeparam>

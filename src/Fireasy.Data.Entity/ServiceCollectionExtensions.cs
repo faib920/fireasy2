@@ -11,11 +11,46 @@ using Fireasy.Data.Entity;
 using Fireasy.Data.Entity.Linq.Translators.Configuration;
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Linq;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
+        /// <summary>
+        /// 从现有的 <see cref="IServiceCollection"/> 里添加 <see cref="EntityContext"/> 对象。
+        /// </summary>
+        /// <param name="setupAction"></param>
+        /// <returns></returns>
+        public static EntityContextOptionsBuilder AddEntityContext(this IServiceCollection services, Action<EntityContextOptions> setupAction = null)
+        {
+            var options = new EntityContextOptions();
+            setupAction?.Invoke(options);
+
+            var builder = new EntityContextOptionsBuilder(options);
+
+            if (services is ServiceCollection coll)
+            {
+                var desc = coll.FirstOrDefault(s => typeof(EntityContext).IsAssignableFrom(s.ServiceType));
+                if (desc != null)
+                {
+                    services.Remove(desc);
+
+                    if (setupAction != null)
+                    {
+                        services.Configure(setupAction);
+                    }
+
+                    services.AddScoped(desc.ServiceType);
+                    services.AddScoped(s => options);
+
+                    return builder;
+                }
+            }
+
+            return builder;
+        }
+
         /// <summary>
         /// 使 <see cref="IServiceCollection"/> 能够使用 Fireasy 中的 <see cref="EntityContext"/> 对象。
         /// </summary>

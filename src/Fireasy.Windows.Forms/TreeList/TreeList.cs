@@ -1138,6 +1138,17 @@ namespace Fireasy.Windows.Forms
                 }
             }
         }
+
+        /// <summary>
+        /// 对集合进行排序。
+        /// </summary>
+        /// <param name="column"></param>
+        /// <param name="order"></param>
+        public void Sort(TreeListColumn column, SortOrder order)
+        {
+            Items.Sort(++sortVersion, column, order);
+            UpdateItems();
+        }
         #endregion
 
         #region 内部方法

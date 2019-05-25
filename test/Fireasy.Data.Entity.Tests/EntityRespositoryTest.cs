@@ -16,6 +16,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading.Tasks;
 
 namespace Fireasy.Data.Entity.Tests
 {
@@ -30,6 +31,7 @@ namespace Fireasy.Data.Entity.Tests
         [TestMethod]
         public void TestGet()
         {
+            var dd = PropertyUnity.GetProperties(typeof(OrderDetails));
             using (var context = new DbContext())
             {
                 var customers = context.Customers.ToList();
@@ -347,6 +349,15 @@ namespace Fireasy.Data.Entity.Tests
                 var modifiedPropeties = (result[0] as IEntity).GetModifiedProperties();
                 Assert.AreEqual(2, modifiedPropeties.Length);
                 Assert.AreEqual("33", (result[0] as IEntity).GetOldValue("ProductName"));
+            }
+        }
+
+        [TestMethod]
+        public async Task TestAsync()
+        {
+            using (var db = new DbContext())
+            {
+                db.Customers.UpdateAsync(() => new Customers { Address = "1" }, s => s.Address == "");
             }
         }
 
@@ -764,7 +775,7 @@ namespace Fireasy.Data.Entity.Tests
             using (var db = new DbContext())
             {
                 var order = new Orders { Freight = 1 };
-                db.Orders.Update(order, s => s.OrderDate >= DateTime.Now);
+                db.Orders.UpdateAsync(order, s => s.OrderDate >= DateTime.Now);
             }
         }
 

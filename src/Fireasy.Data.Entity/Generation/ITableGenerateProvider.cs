@@ -30,13 +30,13 @@ namespace Fireasy.Data.Entity.Generation
         /// </summary>
         /// <param name="database">提供给当前插件的 <see cref="IDatabase"/> 对象。</param>
         /// <param name="metadata">实体元数据。</param>
-        void TryCreate(IDatabase database, EntityMetadata metadata);
+        bool TryCreate(IDatabase database, EntityMetadata metadata);
 
         /// <summary>
         /// 尝试添加新的字段。
         /// </summary>
         /// <param name="database">提供给当前插件的 <see cref="IDatabase"/> 对象。</param>
         /// <param name="metadata">实体元数据。</param>
-        void TryAddFields(IDatabase database, EntityMetadata metadata);
+        IList<IProperty> TryAddFields(IDatabase database, EntityMetadata metadata);
     }
 }

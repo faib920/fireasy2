@@ -18,6 +18,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Emit;
 
 namespace Fireasy.Data.Entity.Dynamic
 {
@@ -28,18 +29,15 @@ namespace Fireasy.Data.Entity.Dynamic
     {
         private static readonly MethodInfo GetValueMethod = typeof(EntityObject).GetMethods().FirstOrDefault(s => s.Name == nameof(IEntity.GetValue));
         private static readonly MethodInfo SetValueMethod = typeof(EntityObject).GetMethods().FirstOrDefault(s => s.Name == nameof(IEntity.SetValue));
+        private static readonly MethodInfo SGetValueMethod = typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == nameof(PropertyValue.GetValue) && s.IsGenericMethod);
+        private static readonly MethodInfo SNewValueMethod = typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == nameof(PropertyValue.NewValue));
         private static readonly MethodInfo RegisterMethod = typeof(PropertyUnity).GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(s => s.Name == nameof(PropertyUnity.RegisterProperty) && !s.IsGenericMethod && s.GetParameters().Length == 2);
         private static readonly MethodInfo TypeGetTypeFromHandle = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Public | BindingFlags.Static);
-        private static readonly MethodInfo SetReferenceMethod = typeof(IPropertyReference).GetMethod($"set_{nameof(IPropertyReference.Reference)}");
-        private static readonly MethodInfo GetPropertyMethod = typeof(EntityTypeBuilder).GetMethod(nameof(EntityTypeBuilder.GetCachedProperty), BindingFlags.Public | BindingFlags.Static);
-        private static readonly MethodInfo DelegateInvokeMethod = typeof(Delegate).GetMethod(nameof(Delegate.DynamicInvoke));
 
         private readonly DynamicAssemblyBuilder assemblyBuilder;
         private List<DynamicFieldBuilder> fields;
         private Dictionary<IProperty, List<Expression<Func<Attribute>>>> validations;
         private List<Expression<Func<Attribute>>> eValidations;
-
-        private static SafetyDictionary<string, Dictionary<string, Delegate>> cache = new SafetyDictionary<string, Dictionary<string, Delegate>>();
 
         /// <summary>
         /// 初始化 <see cref="EntityTypeBuilder"/> 类的新实例。
@@ -153,20 +151,7 @@ namespace Fireasy.Data.Entity.Dynamic
             DefineProperties(fields);
             DefineConstructors(fields);
 
-            InnerBuilder.SetCustomAttribute(() => new DescriptionAttribute("dfadf"));
-
             return InnerBuilder.CreateType();
-        }
-
-        public static IProperty GetCachedProperty(string key)
-        {
-            var k = key.Split(':');
-            if (cache.TryGetValue(k[0], out Dictionary<string, Delegate> list))
-            {
-                return list[k[1]].DynamicInvoke() as IProperty;
-            }
-
-            return null;
         }
 
         private string GetFieldName(IProperty property)
@@ -181,15 +166,8 @@ namespace Fireasy.Data.Entity.Dynamic
                 return;
             }
 
-            var dict = cache.GetOrAdd($"{assemblyBuilder.AssemblyName}-{TypeName}", () => new Dictionary<string, Delegate>());
-
             foreach (var property in Properties)
             {
-                if (dict.ContainsKey(property.Name))
-                {
-                    continue;
-                }
-
                 var _property = property;
                 var pext = property as PropertyExtension;
                 if (pext != null)
@@ -207,8 +185,6 @@ namespace Fireasy.Data.Entity.Dynamic
                     pext.GetCustomAttributes().ForEach(s => propertyBuider.SetCustomAttribute(s));
                 }
 
-                dict.Add(_property.Name, MakeLambdaExpression(_property).Compile());
-
                 var op_Explicit = typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == "op_Explicit" && s.ReturnType == _property.Type);
                 var op_Implicit = typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == "op_Implicit" && s.GetParameters()[0].ParameterType == _property.Type);
 
@@ -219,7 +195,8 @@ namespace Fireasy.Data.Entity.Dynamic
                             .ldarg_0
                             .ldsfld(fieldBuilder.FieldBuilder)
                             .callvirt(GetValueMethod)
-                            .Assert(op_Explicit != null, e1 => e1.call(op_Explicit))
+                            .Assert(op_Explicit != null, e1 => e1.call(op_Explicit),
+                                e1 => e1.call(SGetValueMethod.MakeGenericMethod(_property.Type)))
                             .Assert(isEnum, e1 => e1.unbox_any(opType))
                             .stloc_0
                             .ldloc_0
@@ -233,7 +210,8 @@ namespace Fireasy.Data.Entity.Dynamic
                             .ldsfld(fieldBuilder.FieldBuilder)
                             .ldarg_1
                             .Assert(isEnum, e1 => e1.box(_property.Type))
-                            .Assert(op_Implicit != null, e1 => e1.call(op_Implicit))
+                            .Assert(op_Implicit != null, e1 => e1.call(op_Implicit),
+                                e1 => e1.ldtoken(_property.Type).call(TypeGetTypeFromHandle).call(SNewValueMethod))
                             .callvirt(SetValueMethod)
                             .ret();
                     });
@@ -265,31 +243,125 @@ namespace Fireasy.Data.Entity.Dynamic
         private EmitHelper RegisterProperty(DynamicFieldBuilder fieldBuilder, EmitHelper emiter, IProperty property)
         {
             var local = emiter.DeclareLocal(property.GetType());
-            return emiter
-                .ldtoken(InnerBuilder.UnderlyingSystemType)
-                .call(TypeGetTypeFromHandle)
-                .ldstr($"{assemblyBuilder.AssemblyName}-{TypeName}:{property.Name}")
-                .call(GetPropertyMethod)
+
+            if (property is GeneralProperty)
+            {
+                emiter = InitGeneralPropertyInfo(emiter, local, property);
+            }
+            else if (property is RelationProperty)
+            {
+                emiter = InitRelationProperty(emiter, local, property);
+            }
+            else if (property is PropertyExtension ext)
+            {
+                return RegisterProperty(fieldBuilder, emiter, ext.Property);
+            }
+            else
+            {
+                emiter = emiter.ldnull;
+            }
+
+            return emiter.stsfld(fieldBuilder.FieldBuilder);
+        }
+
+        private EmitHelper InitGeneralPropertyInfo(EmitHelper emiter, LocalBuilder local, IProperty property)
+        {
+            var propertyType = property.GetType();
+            var mapType = typeof(PropertyMapInfo);
+
+            emiter = emiter
+                .ldtoken(EntityType).call(TypeGetTypeFromHandle)
+                .newobj(propertyType)
                 .stloc(local)
-                .Assert(
-                    property is IPropertyReference,
-                    e =>
-                    {
-                        var p = property.As<IPropertyReference>().Reference;
-                        var dynamicFieldBuilder = fields.FirstOrDefault(s => s.FieldName == GetFieldName(p));
-                        if (dynamicFieldBuilder != null)
-                        {
-                            var field = Properties.Contains(p) ? dynamicFieldBuilder.FieldBuilder :
-                                p.EntityType.GetFields(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == GetFieldName(p));
-                            if (field != null)
-                            {
-                                e.ldloc(local).ldsfld(field).call(SetReferenceMethod);
-                            }
-                        }
-                    })
                 .ldloc(local)
-                .call(RegisterMethod)
-                .stsfld(fieldBuilder.FieldBuilder);
+                .ldstr(property.Name)
+                .call(propertyType.GetProperty(nameof(GeneralProperty.Name)).GetSetMethod())
+                .nop
+                .ldloc(local)
+                .ldtoken(property.Type)
+                .call(TypeGetTypeFromHandle)
+                .call(propertyType.GetProperty(nameof(GeneralProperty.Type)).GetSetMethod())
+                .nop
+                .ldloc(local)
+                .newobj(typeof(PropertyMapInfo))
+                .dup
+                .ldstr(property.Info.FieldName)
+                .call(mapType.GetProperty(nameof(PropertyMapInfo.FieldName)).GetSetMethod())
+                .nop;
+
+            if (property.Info.IsPrimaryKey)
+            {
+                emiter = emiter.dup.ldc_i4_1.call(mapType.GetProperty(nameof(PropertyMapInfo.IsPrimaryKey)).GetSetMethod()).nop;
+            }
+
+            if (property.Info.GenerateType != IdentityGenerateType.None)
+            {
+                emiter = emiter.dup.ldc_i4_((int)property.Info.GenerateType).call(mapType.GetProperty(nameof(PropertyMapInfo.GenerateType)).GetSetMethod()).nop;
+            }
+
+            if (!string.IsNullOrEmpty(property.Info.Description))
+            {
+                emiter = emiter.dup.ldstr(property.Info.Description).call(mapType.GetProperty(nameof(PropertyMapInfo.Description)).GetSetMethod()).nop;
+            }
+
+            if (property.Info.IsDeletedKey)
+            {
+                emiter = emiter.dup.ldc_i4_1.call(mapType.GetProperty(nameof(PropertyMapInfo.IsDeletedKey)).GetSetMethod()).nop;
+            }
+
+            if (property.Info.IsNullable)
+            {
+                emiter = emiter.dup.ldc_i4_1.call(mapType.GetProperty(nameof(PropertyMapInfo.IsNullable)).GetSetMethod()).nop;
+            }
+
+            if (property.Info.Precision != null)
+            {
+                emiter = emiter.dup.ldc_i4_((int)property.Info.Precision).newobj(typeof(int?), typeof(int)).call(mapType.GetProperty(nameof(PropertyMapInfo.Precision)).GetSetMethod()).nop;
+            }
+
+            if (property.Info.Scale != null)
+            {
+                emiter = emiter.dup.ldc_i4_((int)property.Info.Scale).newobj(typeof(int?), typeof(int)).call(mapType.GetProperty(nameof(PropertyMapInfo.Scale)).GetSetMethod()).nop;
+            }
+
+            if (property.Info.Length != null)
+            {
+                emiter = emiter.dup.ldc_i4_((int)property.Info.Length).newobj(typeof(int?), typeof(int)).call(mapType.GetProperty(nameof(PropertyMapInfo.Length)).GetSetMethod()).nop;
+            }
+
+            if (!PropertyValue.IsEmpty(property.Info.DefaultValue))
+            {
+                //emiter = emiter.dup.ldc_i4_((int)property.Info.Length).newobj(typeof(int?), typeof(int)).call(mapType.GetProperty(nameof(PropertyMapInfo.Length)).GetSetMethod()).nop;
+            }
+
+            return emiter.call(propertyType.GetProperty(nameof(GeneralProperty.Info)).GetSetMethod())
+                .ldloc(local)
+                .call(RegisterMethod);
+        }
+
+        private EmitHelper InitRelationProperty(EmitHelper emiter, LocalBuilder local, IProperty property)
+        {
+            var propertyType = property.GetType();
+
+            return emiter
+                .ldtoken(EntityType).call(TypeGetTypeFromHandle)
+                .newobj(propertyType)
+                .stloc(local)
+                .ldloc(local)
+                .ldstr(property.Name)
+                .call(propertyType.GetProperty(nameof(GeneralProperty.Name)).GetSetMethod())
+                .nop
+                .ldloc(local)
+                .ldtoken(property.Type)
+                .call(TypeGetTypeFromHandle)
+                .call(propertyType.GetProperty(nameof(GeneralProperty.Type)).GetSetMethod())
+                .nop
+                .ldloc(local)
+                .ldtoken(property.Type)
+                .call(TypeGetTypeFromHandle)
+                .call(propertyType.GetProperty(nameof(RelationProperty.RelationalType)).GetSetMethod())
+                .nop
+                .ldloc(local).call(RegisterMethod);
         }
 
         /// <summary>

@@ -9,6 +9,8 @@ using Fireasy.Common.ComponentModel;
 using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Entity.Providers;
 using System;
+using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace Fireasy.Data.Entity
 {
@@ -36,33 +38,70 @@ namespace Fireasy.Data.Entity
 
             var metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
 
-            var cacheKey = string.Concat(service.Provider.ProviderName, ":", service.InitializeContext.ConnectionString);
+            var instanceName = ContextInstanceManager.TryAdd(service.InitializeContext);
+
+            var cacheKey = string.Concat(instanceName, ":", entityType.FullName);
             return cache.GetOrAdd(cacheKey, () =>
                 {
-                    try
+                    //判断数据表是否已存在
+                    if (tbGen.IsExists(service.Database, metadata))
                     {
-                        //判断数据表是否已存在
-                        if (tbGen.IsExists(service.Database, metadata))
+                        try
                         {
                             //尝试添加新的字段
-                            tbGen.TryAddFields(service.Database, metadata);
+                            var properties = tbGen.TryAddFields(service.Database, metadata);
+                            if (properties.Any())
+                            {
+                                //通知 context 仓储已经以身改变
+                                service.OnRespositoryChanged?.Invoke(new RespositoryChangedEventArgs
+                                {
+                                    Succeed = true,
+                                    EntityType = entityType,
+                                    EventType = RespositoryChangeEventType.AddFields,
+                                    AddedProperties = new ReadOnlyCollection<IProperty>(properties)
+                                });
+                            }
                         }
-                        else
+                        catch (Exception exp)
+                        {
+                            service.OnRespositoryChanged?.Invoke(new RespositoryChangedEventArgs
+                            {
+                                EntityType = entityType,
+                                EventType = RespositoryChangeEventType.AddFields,
+                                Exception = exp
+                            });
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        try
                         {
                             //尝试创建数据表
-                            tbGen.TryCreate(service.Database, metadata);
-
-                            //通知 context 仓储已经创建
-                            service.OnRespositoryCreated?.Invoke(new RespositoryCreatedEventArgs { EntityType = entityType, Succeed = true });
+                            if (tbGen.TryCreate(service.Database, metadata))
+                            {
+                                //通知 context 仓储已经创建
+                                service.OnRespositoryChanged?.Invoke(new RespositoryChangedEventArgs
+                                {
+                                    Succeed = true,
+                                    EntityType = entityType,
+                                    EventType = RespositoryChangeEventType.CreateTable
+                                });
+                            }
                         }
+                        catch (Exception exp)
+                        {
+                            service.OnRespositoryChanged?.Invoke(new RespositoryChangedEventArgs
+                            {
+                                EntityType = entityType,
+                                EventType = RespositoryChangeEventType.CreateTable,
+                                Exception = exp
+                            });
+                            return false;
+                        }
+                    }
 
-                        return true;
-                    }
-                    catch (Exception exp)
-                    {
-                        service.OnRespositoryCreated?.Invoke(new RespositoryCreatedEventArgs { EntityType = entityType, Exception = exp });
-                        return false;
-                    }
+                    return true;
                 });
         }
     }
