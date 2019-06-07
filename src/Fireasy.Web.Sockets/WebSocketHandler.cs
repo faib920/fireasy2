@@ -33,11 +33,6 @@ namespace Fireasy.Web.Sockets
         /// </summary>
         public ClientManager Clients { get; private set; }
 
-        /// <summary>
-        /// 获取组集合。
-        /// </summary>
-        public GroupManager Groups { get; private set; }
-
         public WebSocketHandler()
         {
             this.ConnectionId = Guid.NewGuid().ToString();
@@ -61,8 +56,7 @@ namespace Fireasy.Web.Sockets
         public static async Task Accept(WebSocketHandler handler, WebSocketAcceptContext acceptContext)
         {
             handler.acceptContext = acceptContext;
-            handler.Clients = ClientManager.GetManager(handler.GetType());
-            handler.Groups = GroupManager.GetManager(handler.Clients);
+            handler.Clients = ClientManager.GetManager(handler.GetType(), acceptContext.Option);
 
             await handler.Invoke();
         }

@@ -21,6 +21,10 @@ namespace Fireasy.Web.Sockets
 #if !NETSTANDARD
         public static readonly WebSocketBuildOption Default = new WebSocketBuildOption();
 #endif
+        /// <summary>
+        /// 获取或设置服务标识。
+        /// </summary>
+        public string AliveKey { get; set; } = Guid.NewGuid().ToString();
 
         /// <summary>
         /// 获取或设置保持活动状态的时间间隔。
@@ -41,6 +45,11 @@ namespace Fireasy.Web.Sockets
         /// 获取或设置心跳容错的次数。默认为 3 次。
         /// </summary>
         public int HeartbeatTryTimes { get; set; } = 3;
+
+        /// <summary>
+        /// 获取或设置是否分布式部署。
+        /// </summary>
+        public bool Distributed { get; set; }
 
         /// <summary>
         /// 获取或设置字符编码。

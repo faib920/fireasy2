@@ -24,28 +24,23 @@ namespace Fireasy.Web.Sockets
         private ConcurrentDictionary<string, IClientProxy> clients = new ConcurrentDictionary<string, IClientProxy>();
         private ConcurrentDictionary<string, List<string>> groups = new ConcurrentDictionary<string, List<string>>();
 
-        internal static ClientManager GetManager<T>()
+        internal static ClientManager GetManager(Type handlerType, WebSocketBuildOption option)
         {
-            return GetManager(typeof(T));
+            return managers.GetOrAdd(handlerType, k => option.Distributed ? new DistributedClientManager(option.AliveKey) : new ClientManager());
         }
 
-        internal static ClientManager GetManager(Type handlerType)
-        {
-            return managers.GetOrAdd(handlerType, k => new ClientManager());
-        }
-
-        internal void Add(string connectionId, IClientProxy handler)
+        public virtual void Add(string connectionId, IClientProxy handler)
         {
             clients.TryAdd(connectionId, handler);
         }
 
-        internal void AddToGroup(string connectionId, string groupName)
+        public virtual void AddToGroup(string connectionId, string groupName)
         {
             var group = groups.GetOrAdd(groupName, k => new List<string>());
             group.Add(connectionId);
         }
 
-        internal void Remove(string connectionId)
+        public virtual void Remove(string connectionId)
         {
             if (clients.TryRemove(connectionId, out IClientProxy client))
             {
@@ -53,7 +48,7 @@ namespace Fireasy.Web.Sockets
             }
         }
 
-        internal void RemoveFromGroup(string connectionId, string groupName)
+        public virtual void RemoveFromGroup(string connectionId, string groupName)
         {
             if (groups.ContainsKey(groupName))
             {
@@ -66,10 +61,14 @@ namespace Fireasy.Web.Sockets
         /// </summary>
         /// <param name="connectionId"></param>
         /// <returns></returns>
-        public IClientProxy Client(string connectionId)
+        public virtual IClientProxy Client(string connectionId)
         {
-            clients.TryGetValue(connectionId, out IClientProxy client);
-            return client;
+            if (clients.TryGetValue(connectionId, out IClientProxy client))
+            {
+                return client;
+            }
+
+            return NullClientProxy.Instance;
         }
 
         /// <summary>
@@ -77,7 +76,7 @@ namespace Fireasy.Web.Sockets
         /// </summary>
         /// <param name="connectionIds"></param>
         /// <returns></returns>
-        public IClientProxy Clients(params string[] connectionIds)
+        public virtual IClientProxy Clients(params string[] connectionIds)
         {
             Guard.ArgumentNull(connectionIds, nameof(connectionIds));
 
@@ -87,7 +86,7 @@ namespace Fireasy.Web.Sockets
         /// <summary>
         /// 获取所有客户端代理。
         /// </summary>
-        public IClientProxy All
+        public virtual IClientProxy All
         {
             get
             {
@@ -100,7 +99,7 @@ namespace Fireasy.Web.Sockets
         /// </summary>
         /// <param name="groupName">组的名称。</param>
         /// <returns></returns>
-        public IClientProxy Group(string groupName)
+        public virtual IClientProxy Group(string groupName)
         {
             if (groups.ContainsKey(groupName))
             {
@@ -109,43 +108,43 @@ namespace Fireasy.Web.Sockets
 
             return NullClientProxy.Instance;
         }
+    }
 
-        private class EnumerableClientProxy : IClientProxy
+    internal class EnumerableClientProxy : IClientProxy
+    {
+        private Func<IEnumerable<IClientProxy>> proxyFactory;
+
+        public EnumerableClientProxy(Func<IEnumerable<IClientProxy>> proxyFactory)
         {
-            private Func<IEnumerable<IClientProxy>> proxyFactory;
-
-            public EnumerableClientProxy(Func<IEnumerable<IClientProxy>> proxyFactory)
-            {
-                this.proxyFactory = proxyFactory;
-            }
-
-            public Task SendAsync(string method, params object[] arguments)
-            {
-                foreach (var proxy in proxyFactory())
-                {
-                    proxy.SendAsync(method, arguments);
-                }
-
-#if NETSTANDARD
-                return Task.CompletedTask;
-#else
-                return new Task(null);
-#endif
-            }
+            this.proxyFactory = proxyFactory;
         }
 
-        private class NullClientProxy : IClientProxy
+        public Task SendAsync(string method, params object[] arguments)
         {
-            public static NullClientProxy Instance = new NullClientProxy();
-
-            public Task SendAsync(string method, params object[] arguments)
+            foreach (var proxy in proxyFactory())
             {
+                proxy.SendAsync(method, arguments);
+            }
+
 #if NETSTANDARD
                 return Task.CompletedTask;
 #else
-                return new Task(null);
+            return new Task(null);
 #endif
-            }
+        }
+    }
+
+    internal class NullClientProxy : IClientProxy
+    {
+        public static NullClientProxy Instance = new NullClientProxy();
+
+        public Task SendAsync(string method, params object[] arguments)
+        {
+#if NETSTANDARD
+                return Task.CompletedTask;
+#else
+            return new Task(null);
+#endif
         }
     }
 }
