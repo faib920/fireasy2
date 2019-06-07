@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using Fireasy.Data.Entity.Linq;
+using Fireasy.Data.Entity.Properties;
 
 namespace Fireasy.Data.Entity.Tests
 {
@@ -62,6 +63,9 @@ namespace Fireasy.Data.Entity.Tests
         {
             protected override void OnConfiguring(EntityContextOptionsBuilder builder)
             {
+                var map = new PropertyMapInfo { IsPrimaryKey = true, DataType = System.Data.DbType.Boolean, Description = "dd" };
+                var p = new GeneralProperty { Info = map };
+                PropertyUnity.RegisterProperty(typeof(SysUser), p);
                 builder.UseSqlServer(connstr);
             }
 

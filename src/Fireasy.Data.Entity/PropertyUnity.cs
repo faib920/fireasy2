@@ -125,8 +125,14 @@ namespace Fireasy.Data.Entity
         /// <returns>一个 <see cref="IProperty"/> 对象。</returns>
         public static IProperty GetProperty(Type entityType, string propertyName)
         {
-            var properties = EntityMetadataUnity.InternalGetEntityMetadata(entityType)?.Properties;
-            if (properties != null)
+            var metadata = EntityMetadataUnity.InternalGetEntityMetadata(entityType);
+            if (metadata == null)
+            {
+                return null;
+            }
+
+            var properties = metadata.Filter(entityType);
+            if (properties != null && properties.ContainsKey(propertyName))
             {
                 return properties[propertyName];
             }
@@ -141,7 +147,13 @@ namespace Fireasy.Data.Entity
         /// <returns>一个 <see cref="IProperty"/> 对象枚举器。</returns>
         public static IEnumerable<IProperty> GetProperties(Type entityType)
         {
-            return EntityMetadataUnity.InternalGetEntityMetadata(entityType)?.Properties.Values;
+            var metadata = EntityMetadataUnity.InternalGetEntityMetadata(entityType);
+            if (metadata == null)
+            {
+                return Enumerable.Empty<IProperty>();
+            }
+
+            return metadata.Filter(entityType).Values;
         }
 
         /// <summary>

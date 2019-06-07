@@ -66,17 +66,8 @@ namespace Fireasy.Data.Entity
         /// </summary>
         protected EntityObject()
         {
-            entityType = GetEntityType();
+            entityType = GetType();
             state = EntityState.Attached;
-        }
-
-        /// <summary>
-        /// 获取实体类型。
-        /// </summary>
-        /// <returns></returns>
-        protected virtual Type GetEntityType()
-        {
-            return GetType().GetDefinitionEntityType();
         }
 
         private EntityLzayManager InnerLazyMgr

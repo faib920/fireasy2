@@ -102,8 +102,9 @@ namespace Fireasy.Common.Caching
         /// <summary>
         /// 获取所有的 key。
         /// </summary>
+        /// <param name="pattern">匹配字符串。</param>
         /// <returns></returns>
-        IEnumerable<string> GetKeys();
+        IEnumerable<string> GetKeys(string pattern);
 
         /// <summary>
         /// 清除所有缓存。

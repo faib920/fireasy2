@@ -8,6 +8,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Fireasy.Common.Caching
 {
@@ -240,10 +242,16 @@ namespace Fireasy.Common.Caching
         /// <summary>
         /// 获取所有的 key。
         /// </summary>
+        /// <param name="pattern"></param>
         /// <returns></returns>
-        public IEnumerable<string> GetKeys()
+        public IEnumerable<string> GetKeys(string pattern)
         {
-            return cacheDictionary.Keys;
+            if (string.IsNullOrEmpty(pattern))
+            {
+                return cacheDictionary.Keys;
+            }
+
+            return cacheDictionary.Keys.Where(s => Regex.IsMatch(s, pattern));
         }
 
         /// <summary>

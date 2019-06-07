@@ -155,7 +155,7 @@ namespace Fireasy.Data.Entity
             }
 
             var syntax = context.Database.Provider.GetService<ISyntaxProvider>();
-            var rootType = typeof(TEntity).GetRootType();
+            var rootType = typeof(TEntity).GetRootEntityType();
             var tableName = string.Empty;
 
             if (context.Environment != null)

@@ -13,7 +13,7 @@ namespace Fireasy.Data.Entity
     /// <summary>
     /// <see cref=" EntityContext"/> 初始化的上下文对象。
     /// </summary>
-    public class EntityContextInitializeContext
+    public sealed class EntityContextInitializeContext
     {
         internal EntityContextInitializeContext(EntityContextOptions options, IProvider provider, ConnectionString connectionStr)
             : this(provider, connectionStr)

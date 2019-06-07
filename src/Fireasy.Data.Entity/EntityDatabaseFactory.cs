@@ -27,8 +27,7 @@ namespace Fireasy.Data.Entity
         {
             if (EntityTransactionScope.Current == null)
             {
-                return DatabaseScope.Current != null && DatabaseScope.Current.InstanceName == instanceName ? 
-                    DatabaseScope.Current.Database : databaseFactory();
+                return DatabaseScope.Current != null ? DatabaseScope.Current.Database : (databaseFactory != null ? databaseFactory() : DatabaseFactory.CreateDatabase());
             }
 
             //首次请求不启动数据库事务

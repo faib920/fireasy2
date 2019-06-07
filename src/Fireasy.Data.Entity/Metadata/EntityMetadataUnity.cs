@@ -8,8 +8,6 @@
 using Fireasy.Common;
 using Fireasy.Common.ComponentModel;
 using System;
-using System.Linq;
-using System.Reflection;
 
 namespace Fireasy.Data.Entity.Metadata
 {
@@ -29,33 +27,23 @@ namespace Fireasy.Data.Entity.Metadata
         {
             Guard.ArgumentNull(entityType, nameof(entityType));
 
-            entityType = entityType.GetDefinitionEntityType();
+            var mapType = entityType.GetMapEntityType();
 
-            return cache.GetOrAdd(entityType, () =>
+            var result = cache.GetOrAdd(mapType, () =>
             {
-                var metadata = new EntityMetadata(entityType);
+                var metadata = new EntityMetadata(mapType);
 
                 //由于此代码段是缓存项创建工厂函数，此时的 metadata 并未添加到缓存中，接下来 PropertyUnity 
                 //会再一次获取 EntityMetadata，因此需要在此线程中共享出 EntityMetadata
                 using (var scope = new MetadataScope { Metadata = metadata })
                 {
-                    if (typeof(ICompilableEntity).IsAssignableFrom(entityType))
-                    {
-                        PropertyUnity.Initialize(entityType);
-                    }
-                    else
-                    {
-                        //需要找出其中的一个字段，然后以引发 RegisterProperty 调用
-                        var field = entityType.GetFields(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public).FirstOrDefault();
-                        if (field != null)
-                        {
-                            field.GetValue(null);
-                        }
-                    }
+                    metadata.Attach(entityType);
                 }
 
                 return metadata;
             });
+
+            return result.Attach(entityType);
         }
 
         /// <summary>

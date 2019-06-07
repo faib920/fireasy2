@@ -44,11 +44,19 @@ namespace Fireasy.Data.Entity
             var options = context.Options;
 
             Func<IDatabase> factory = null;
-            if (databaseFactory != null)
+            if (DatabaseScope.Current != null)
+            {
+                factory = () => DatabaseScope.Current.Database;
+            }
+            else if (databaseFactory != null)
             {
                 factory = () => databaseFactory(context.Provider, context.ConnectionString);
             }
-            else if (options != null && !string.IsNullOrEmpty(options.ConfigName))
+            else if (context.Provider != null && context.ConnectionString != null)
+            {
+                factory = () => new Database(context.ConnectionString, context.Provider);
+            }
+            else if (options != null)
             {
                 factory = () => DatabaseFactory.CreateDatabase(options.ConfigName);
             }

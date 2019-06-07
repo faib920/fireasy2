@@ -7,6 +7,7 @@ using Fireasy.Data.Entity.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Subscribes;
 using Fireasy.Data.Entity.Tests.Models;
+using Fireasy.Data.Entity.Validation;
 using Fireasy.Data.Extensions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
@@ -31,14 +32,42 @@ namespace Fireasy.Data.Entity.Tests
         [TestMethod]
         public void TestGet()
         {
-            var dd = PropertyUnity.GetProperties(typeof(OrderDetails));
             using (var context = new DbContext())
             {
                 var customers = context.Customers.ToList();
+                var c = customers[0];
+
+                c.Address = "33";
+
+                var c1 = new OrderDetails { Quantity = 1 };
+
+                context.Customers.InsertOrUpdate(c);
 
                 Assert.AreEqual(2, customers.Count);
             }
         }
+
+        [TestMethod]
+        public void TestTrans()
+        {
+            using (var context = new DbContext())
+            {
+                context.BeginTransaction();
+                TestTrans1();
+                context.CommitTransaction();
+            }
+        }
+
+        private void TestTrans1()
+        {
+            using (var context = new DbContext())
+            {
+                context.BeginTransaction();
+
+                context.CommitTransaction();
+            }
+        }
+
 
         public class AA : LightEntity<AA>
         {

@@ -15,6 +15,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -296,7 +297,12 @@ namespace Fireasy.Data.Entity.Dynamic
 
             if (property.Info.GenerateType != IdentityGenerateType.None)
             {
-                emiter = emiter.dup.ldc_i4_((int)property.Info.GenerateType).call(mapType.GetProperty(nameof(PropertyMapInfo.GenerateType)).GetSetMethod()).nop;
+                emiter = emiter.dup.ldc_i4_((int)property.Info.GenerateType).box(typeof(IdentityGenerateType)).call(mapType.GetProperty(nameof(PropertyMapInfo.GenerateType)).GetSetMethod()).nop;
+            }
+
+            if (property.Info.DataType != null)
+            {
+                emiter = emiter.dup.ldc_i4_((int)property.Info.DataType).newobj(typeof(DbType?), typeof(DbType)).call(mapType.GetProperty(nameof(PropertyMapInfo.DataType)).GetSetMethod()).nop;
             }
 
             if (!string.IsNullOrEmpty(property.Info.Description))

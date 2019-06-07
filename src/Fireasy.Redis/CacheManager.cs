@@ -16,6 +16,7 @@ using System.Linq;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace Fireasy.Redis
 {
@@ -165,15 +166,22 @@ namespace Fireasy.Redis
         /// <summary>
         /// 获取所有的 key。
         /// </summary>
+        /// <param name="pattern"></param>
         /// <returns></returns>
-        public IEnumerable<string> GetKeys()
+        public IEnumerable<string> GetKeys(string pattern)
         {
             var client = GetConnection();
 #if NETSTANDARD
-            return client.Keys("*");
+            return client.Keys(pattern);
 #else
             var server = client.GetServer(client.GetEndPoints()[0]);
-            return server.Keys(Options.DefaultDatabase ?? 0).Select(s => s.ToString()).ToArray();
+            var keys = server.Keys(Options.DefaultDatabase ?? 0).Select(s => s.ToString());
+            if (!string.IsNullOrEmpty(pattern) && pattern != "*")
+            {
+                return keys.Where(s => Regex.IsMatch(s, pattern)).ToArray();
+            }
+
+            return keys.ToArray();
 #endif
         }
 

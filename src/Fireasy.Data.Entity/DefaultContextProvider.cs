@@ -33,8 +33,7 @@ namespace Fireasy.Data.Entity
 
         IContextService IContextProvider.CreateContextService(EntityContextInitializeContext context)
         {
-            var factory = context.DatabaseFactory ?? new Func<IProvider, ConnectionString, IDatabase>((p, s) => new Database(s, p));
-            return new DefaultContextService(context, factory);
+            return new DefaultContextService(context, context.DatabaseFactory);
         }
     }
 }

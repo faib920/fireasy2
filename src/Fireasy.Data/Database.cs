@@ -976,11 +976,9 @@ namespace Fireasy.Data
         /// <param name="period"></param>
         private void HandleLog(IDbCommand command, TimeSpan period)
         {
-            if (Log != null)
-            {
-                Log(command, period);
-            }
-            else if (ConnectionString.IsTracking && Track != null)
+            Log?.Invoke(command, period);
+
+            if (ConnectionString.IsTracking && Track != null)
             {
                 Track.Write(command, period);
             }

@@ -176,27 +176,6 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 获取实体的根实体类型。
-        /// </summary>
-        /// <param name="entityType"></param>
-        /// <returns></returns>
-        public static Type GetRootType(this Type entityType)
-        {
-            while (true)
-            {
-                if (!entityType.BaseType.IsDefined<EntityMappingAttribute>() ||
-                    !entityType.BaseType.IsDirectImplementInterface(typeof(IEntity)))
-                {
-                    break;
-                }
-
-                entityType = entityType.BaseType;
-            }
-
-            return entityType;
-        }
-
-        /// <summary>
         /// 获取定义的实体类型。
         /// </summary>
         /// <param name="entityType"></param>
@@ -204,6 +183,38 @@ namespace Fireasy.Data.Entity
         public static Type GetDefinitionEntityType(this Type entityType)
         {
             if (typeof(ICompiledEntity).IsAssignableFrom(entityType))
+            {
+                entityType = entityType.BaseType;
+            }
+
+            return entityType;
+        }
+
+        /// <summary>
+        /// 获取实体的根实体类型。
+        /// </summary>
+        /// <param name="entityType"></param>
+        /// <returns></returns>
+        public static Type GetRootEntityType(this Type entityType)
+        {
+            while (entityType.BaseType != null && !entityType.BaseType.IsAbstract &&
+                !entityType.GetCustomAttributes<EntityMappingAttribute>().Any())
+            {
+                entityType = entityType.BaseType;
+            }
+
+            return entityType;
+        }
+
+        /// <summary>
+        /// 获取实体的映射的实体类型。
+        /// </summary>
+        /// <param name="entityType"></param>
+        /// <returns></returns>
+        public static Type GetMapEntityType(this Type entityType)
+        {
+            while (entityType.BaseType != null && !entityType.BaseType.IsAbstract &&
+                !entityType.GetCustomAttributes<EntityMappingAttribute>().Any())
             {
                 entityType = entityType.BaseType;
             }

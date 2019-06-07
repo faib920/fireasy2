@@ -1,6 +1,7 @@
 ﻿using Fireasy.Common.Caching;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -27,8 +28,13 @@ namespace Fireasy.Common.Tests.Caching
         {
             var cacheMgr = CacheManagerFactory.CreateManager("redis");
             var value = cacheMgr.TryGet("test1", () => 100);
+            var value1 = cacheMgr.TryGet("test3", () => 100);
+            var value2 = cacheMgr.TryGet("test4", () => 100);
             Assert.AreEqual(true, cacheMgr.Contains("test1"));
             Assert.AreEqual(false, cacheMgr.Contains("test2"));
+
+            var keys = cacheMgr.GetKeys("test*");
+            Console.WriteLine(keys.Count());
         }
 
         [TestMethod]

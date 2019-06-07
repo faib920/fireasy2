@@ -5,11 +5,12 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using Fireasy.Common.Extensions;
+using System.Reflection;
 
 namespace Fireasy.Data.Entity.Metadata
 {
@@ -20,6 +21,7 @@ namespace Fireasy.Data.Entity.Metadata
     {
         private readonly MetadataPropertyDictionary properties = new MetadataPropertyDictionary();
         private readonly List<IProperty> concurrencyProperties = new List<IProperty>();
+        private List<Type> inheritedTypes = new List<Type>();
 
         /// <summary>
         /// 初始化 <see cref="EntityMetadata"/> 类的新实例。
@@ -81,7 +83,7 @@ namespace Fireasy.Data.Entity.Metadata
         /// </summary>
         public ReadOnlyCollection<IProperty> ConcurrencyProperties
         {
-            get 
+            get
             {
                 return new ReadOnlyCollection<IProperty>(concurrencyProperties);
             }
@@ -102,6 +104,44 @@ namespace Fireasy.Data.Entity.Metadata
         /// 获取实体树结构的元数据。
         /// </summary>
         public EntityTreeMetadata EntityTree { get; private set; }
+
+        /// <summary>
+        /// 使用指定的实体类型进行过滤。
+        /// </summary>
+        /// <param name="entityType"></param>
+        /// <returns></returns>
+        public IDictionary<string, IProperty> Filter(Type entityType)
+        {
+            return properties.GetDictionary()
+                .Where(s => s.Value.Info != null && s.Value.Info.ReflectionInfo != null && s.Value.Info.ReflectionInfo.DeclaringType.IsAssignableFrom(entityType))
+                .ToDictionary(s => s.Key, s => s.Value);
+        }
+
+        internal EntityMetadata Attach(Type entityType)
+        {
+            if (inheritedTypes.Contains(entityType))
+            {
+                return this;
+            }
+
+            inheritedTypes.Add(entityType);
+
+            if (typeof(ICompilableEntity).IsAssignableFrom(entityType))
+            {
+                PropertyUnity.Initialize(entityType);
+            }
+            else
+            {
+                //需要找出其中的一个字段，然后以引发 RegisterProperty 调用
+                var field = entityType.GetFields(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public).FirstOrDefault();
+                if (field != null)
+                {
+                    field.GetValue(null);
+                }
+            }
+
+            return this;
+        }
 
         /// <summary>
         /// 往集合中添加一个属性。
@@ -140,6 +180,11 @@ namespace Fireasy.Data.Entity.Metadata
         internal void Add(string name, IProperty property)
         {
             dic.Add(name, property);
+        }
+
+        internal IDictionary<string, IProperty> GetDictionary()
+        {
+            return dic;
         }
 
         public IEnumerable<string> Keys

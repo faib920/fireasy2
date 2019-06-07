@@ -57,7 +57,7 @@ public void TestSubscribe()
           "type": "Fireasy.RabbitMQ.SubscribeManager, Fireasy.RabbitMQ",
           "config": {
              "userName": "guest",
-             "passwprd": "123",
+             "password": "123",
              "server": "amqp://127.0.0.1:5672"
           }
         }

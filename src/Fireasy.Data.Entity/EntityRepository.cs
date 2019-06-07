@@ -121,9 +121,20 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
+            var properties = PropertyUnity.GetPrimaryProperties(typeof(TEntity));
+            var isNew = entity.EntityState == EntityState.Attached;
+
+            if (isNew && properties.Any(s => !PropertyValue.IsEmptyOrDefault(entity.GetValue(s))))
+            {
+                var parExp = Expression.Parameter(typeof(TEntity), "s");
+                var equalExp = properties.Select(s => Expression.Equal(Expression.MakeMemberAccess(parExp, s.Info.ReflectionInfo), Expression.Constant(entity.GetValue(s)))).Aggregate(Expression.And);
+                var lambdaExp = Expression.Lambda<Func<TEntity, bool>>(equalExp, parExp);
+                isNew = !this.Any(lambdaExp);
+            }
+
             if (options.NotifyEvents)
             {
-                if (entity.EntityState == EntityState.Attached)
+                if (isNew)
                 {
                     return EntityPersistentSubscribeManager.OnCreate(entity, () => repositoryProxy.Insert(entity));
                 }
@@ -133,7 +144,7 @@ namespace Fireasy.Data.Entity
                 }
             }
 
-            return entity.EntityState == EntityState.Attached ? repositoryProxy.Insert(entity) : repositoryProxy.Update(entity);
+            return isNew ? repositoryProxy.Insert(entity) : repositoryProxy.Update(entity);
         }
 
         /// <summary>

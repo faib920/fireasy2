@@ -126,7 +126,7 @@ namespace Fireasy.MvcCore.Tests
             throw new NotImplementedException();
         }
 
-        public IEnumerable<string> GetKeys()
+        public IEnumerable<string> GetKeys(string pattern)
         {
             throw new NotImplementedException();
         }
