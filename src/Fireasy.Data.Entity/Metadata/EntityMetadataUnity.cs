@@ -37,13 +37,13 @@ namespace Fireasy.Data.Entity.Metadata
                 //会再一次获取 EntityMetadata，因此需要在此线程中共享出 EntityMetadata
                 using (var scope = new MetadataScope { Metadata = metadata })
                 {
-                    metadata.Attach(entityType);
+                    metadata.Attach(mapType);
                 }
 
                 return metadata;
             });
 
-            return result.Attach(entityType);
+            return result.Attach(mapType);
         }
 
         /// <summary>

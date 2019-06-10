@@ -39,7 +39,7 @@ namespace Fireasy.Data.Entity.Tests
 
                 c.Address = "33";
 
-                var c1 = new OrderDetails { Quantity = 1 };
+                var c1 = OrderDetails.Wrap(() => new OrderDetails { Quantity = 1 });
 
                 context.Customers.InsertOrUpdate(c);
 

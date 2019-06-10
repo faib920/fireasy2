@@ -92,6 +92,7 @@ namespace Fireasy.Data.Entity.Tests
             }
         }
 
+        [EntityMapping("dd")]
         public class Customers1 : Customers
         {
             /// <summary>
