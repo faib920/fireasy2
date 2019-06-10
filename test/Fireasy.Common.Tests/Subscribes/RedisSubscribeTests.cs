@@ -1,4 +1,5 @@
-﻿using Fireasy.Common.Subscribes;
+﻿using Fireasy.Common.Caching;
+using Fireasy.Common.Subscribes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Text;
@@ -18,6 +19,7 @@ namespace Fireasy.Common.Tests.Subscribes
         public void Test()
         {
             var subMgr = SubscribeManagerFactory.CreateManager("redis");
+            var cacheMgr = CacheManagerFactory.CreateManager("redis");
 
             subMgr.AddSubscriber<TestSubject>(s =>
             {

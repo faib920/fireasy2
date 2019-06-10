@@ -24,7 +24,7 @@ namespace Fireasy.Web.Sockets
         /// <summary>
         /// 获取或设置服务标识。
         /// </summary>
-        public string AliveKey { get; set; } = Guid.NewGuid().ToString();
+        public string AliveKey { get; set; } = string.Concat("fws_", Guid.NewGuid().ToString("N"));
 
         /// <summary>
         /// 获取或设置保持活动状态的时间间隔。

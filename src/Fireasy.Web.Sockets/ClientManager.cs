@@ -11,6 +11,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Fireasy.Web.Sockets
@@ -23,10 +24,31 @@ namespace Fireasy.Web.Sockets
         private static ConcurrentDictionary<Type, ClientManager> managers = new ConcurrentDictionary<Type, ClientManager>();
         private ConcurrentDictionary<string, IClientProxy> clients = new ConcurrentDictionary<string, IClientProxy>();
         private ConcurrentDictionary<string, List<string>> groups = new ConcurrentDictionary<string, List<string>>();
+        private Timer timer = null;
+        private WebSocketBuildOption option;
+
+        public ClientManager(WebSocketBuildOption option)
+        {
+            this.option = option;
+            timer = new Timer(CheckAlive, null, TimeSpan.FromSeconds(10), option.HeartbeatInterval);
+        }
 
         internal static ClientManager GetManager(Type handlerType, WebSocketBuildOption option)
         {
-            return managers.GetOrAdd(handlerType, k => option.Distributed ? new DistributedClientManager(option.AliveKey) : new ClientManager());
+            return managers.GetOrAdd(handlerType, k => option.Distributed ? new DistributedClientManager(option) : new ClientManager(option));
+        }
+
+        private void CheckAlive(object state)
+        {
+            foreach (var kvp in clients)
+            {
+                var client = clients[kvp.Key];
+                if ((DateTime.Now - client.AliveTime).TotalMilliseconds >= option.HeartbeatInterval.TotalMilliseconds * (option.HeartbeatTryTimes + 2) &&
+                    clients.TryRemove(kvp.Key, out client))
+                {
+                    client.TryDispose();
+                }
+            }
         }
 
         public virtual void Add(string connectionId, IClientProxy handler)
@@ -110,7 +132,7 @@ namespace Fireasy.Web.Sockets
         }
     }
 
-    internal class EnumerableClientProxy : IClientProxy
+    internal class EnumerableClientProxy : InternalClientProxy
     {
         private Func<IEnumerable<IClientProxy>> proxyFactory;
 
@@ -119,7 +141,7 @@ namespace Fireasy.Web.Sockets
             this.proxyFactory = proxyFactory;
         }
 
-        public Task SendAsync(string method, params object[] arguments)
+        public override Task SendAsync(string method, params object[] arguments)
         {
             foreach (var proxy in proxyFactory())
             {
@@ -134,11 +156,11 @@ namespace Fireasy.Web.Sockets
         }
     }
 
-    internal class NullClientProxy : IClientProxy
+    internal class NullClientProxy : InternalClientProxy
     {
         public static NullClientProxy Instance = new NullClientProxy();
 
-        public Task SendAsync(string method, params object[] arguments)
+        public override Task SendAsync(string method, params object[] arguments)
         {
 #if NETSTANDARD
                 return Task.CompletedTask;

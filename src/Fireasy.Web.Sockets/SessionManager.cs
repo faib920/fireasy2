@@ -28,7 +28,7 @@ namespace Fireasy.Web.Sockets
             get
             {
                 var cacheMgr = CacheManagerFactory.CreateManager();
-                return cacheMgr.GetKeys(prefix1 + "*").Count();
+                return cacheMgr.GetKeys(prefix2 + "*").Count();
             }
         }
 
@@ -40,8 +40,8 @@ namespace Fireasy.Web.Sockets
         public void Add(string connectionId, T identity)
         {
             var cacheMgr = CacheManagerFactory.CreateManager();
-            cacheMgr.Add(prefix1 + connectionId, identity);
-            cacheMgr.Add(prefix2 + identity, connectionId);
+            cacheMgr.Add(prefix1 + connectionId, identity, new RelativeTime(TimeSpan.FromDays(5)));
+            cacheMgr.Add(prefix2 + identity, connectionId, new RelativeTime(TimeSpan.FromDays(5)));
         }
 
         /// <summary>

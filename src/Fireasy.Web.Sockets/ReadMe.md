@@ -1,4 +1,4 @@
-﻿Fireasy.Web.Sockets 在 .Net Core 下实现了类似于 SignalR 的集线器功能。
+﻿Fireasy.Web.Sockets 在 .Net Core 下实现了类似于 SignalR 的集线器功能。最新版本使用 redis 缓存及消息队列实现了群集部署。
 
 <b>Startup 配置</b>
 
@@ -10,6 +10,7 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         options.HeartbeatInterval = TimeSpan.FromSeconds(10);  //心跳检测时间间隔
         options.ReceiveBufferSize = 4 * 1024;
         options.KeepAliveInterval = TimeSpan.FromSeconds(10);
+		options.Distributed = true; //集群支持
         options.MapHandler<NotifyHandler>("/wsNotify");
     });
 }

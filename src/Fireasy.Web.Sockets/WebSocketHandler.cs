@@ -61,6 +61,11 @@ namespace Fireasy.Web.Sockets
             await handler.Invoke();
         }
 
+        DateTime IClientProxy.AliveTime
+        {
+            get { return lastReceivedTime; }
+        }
+
         async Task IClientProxy.SendAsync(string method, params object[] arguments)
         {
             var message = new InvokeMessage(method, 0, arguments);
@@ -219,9 +224,16 @@ namespace Fireasy.Web.Sockets
                 return;
             }
 
-            if (acceptContext != null && acceptContext.WebSocket != null)
+            if (!isClosing)
             {
-                acceptContext.WebSocket.Dispose();
+                isClosing = true;
+                Clients.Remove(ConnectionId);
+                OnDisconnected();
+            }
+
+            if (acceptContext != null && acceptContext.WebSocket != null && acceptContext.WebSocket.CloseStatus == null)
+            {
+                acceptContext.WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
             }
 
             if (timer != null)
@@ -373,9 +385,6 @@ namespace Fireasy.Web.Sockets
                 return;
             }
 
-            isClosing = true;
-            Clients.Remove(ConnectionId);
-            OnDisconnected();
             Dispose(true);
         }
 

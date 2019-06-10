@@ -6,8 +6,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Caching;
+using Fireasy.Common.Serialization;
 using Fireasy.Common.Subscribes;
+using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Fireasy.Web.Sockets
@@ -20,23 +23,26 @@ namespace Fireasy.Web.Sockets
         private const string prefix = "ws_client_";
         private string aliveKey;
 
-        public DistributedClientManager(string aliveKey)
+        /// <summary>
+        /// 初始化 <see cref="DistributedClientManager"/> 类的新实例。
+        /// </summary>
+        /// <param name="option"></param>
+        public DistributedClientManager(WebSocketBuildOption option)
+            : base (option)
         {
-            this.aliveKey = aliveKey;
+            aliveKey = option.AliveKey;
             var subMgr = SubscribeManagerFactory.CreateManager();
-            subMgr.AddSubscriber<DistributedInvokeMessage>(m =>
+            subMgr.AddSubscriber(aliveKey, bytes =>
             {
-                if (m.AliveKey == aliveKey)
-                {
-                    Clients(m.Connections.ToArray()).SendAsync(m.Message.Method, m.Message.Arguments);
-                }
+                var msg = new JsonSerializer().Deserialize<DistributedInvokeMessage>(Encoding.UTF8.GetString(bytes));
+                Clients(msg.Connections.ToArray()).SendAsync(msg.Message.Method, msg.Message.Arguments);
             });
         }
 
         public override void Add(string connectionId, IClientProxy handler)
         {
             var cacheMgr = CacheManagerFactory.CreateManager();
-            cacheMgr.Add(prefix + connectionId, aliveKey);
+            cacheMgr.Add(prefix + connectionId, aliveKey, new RelativeTime(TimeSpan.FromDays(5)));
 
             base.Add(connectionId, handler);
         }
@@ -108,7 +114,7 @@ namespace Fireasy.Web.Sockets
         }
     }
 
-    internal class DistributedUserClientProxy : IClientProxy
+    internal class DistributedUserClientProxy : InternalClientProxy
     {
         private string aliveKey;
         private List<string> connections;
@@ -125,7 +131,7 @@ namespace Fireasy.Web.Sockets
             this.connections = new List<string>(connectionIds);
         }
 
-        public Task SendAsync(string method, params object[] arguments)
+        public override Task SendAsync(string method, params object[] arguments)
         {
             var subMgr = SubscribeManagerFactory.CreateManager();
             var msg = new DistributedInvokeMessage
@@ -135,7 +141,8 @@ namespace Fireasy.Web.Sockets
                 Message = new InvokeMessage(method, 0, arguments)
             };
 
-            subMgr.Publish(msg);
+            var bytes = Encoding.UTF8.GetBytes(new JsonSerializer().Serialize(msg));
+            subMgr.Publish(aliveKey, bytes);
 
 #if NETSTANDARD
             return Task.CompletedTask;

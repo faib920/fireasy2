@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Threading.Tasks;
 
 namespace Fireasy.Web.Sockets
@@ -21,5 +22,17 @@ namespace Fireasy.Web.Sockets
         /// <param name="arguments">方法的参数。</param>
         /// <returns></returns>
         Task SendAsync(string method, params object[] arguments);
+
+        /// <summary>
+        /// 获取存活检测的时间。
+        /// </summary>
+        DateTime AliveTime { get; }
+    }
+
+    internal abstract class InternalClientProxy : IClientProxy
+    {
+        public DateTime AliveTime { get; set; }
+
+        public abstract Task SendAsync(string method, params object[] arguments);
     }
 }
