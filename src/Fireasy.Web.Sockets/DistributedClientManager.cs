@@ -31,17 +31,23 @@ namespace Fireasy.Web.Sockets
             : base (option)
         {
             aliveKey = option.AliveKey;
+
+            //开启消息订阅，使用aliveKey作为通道
             var subMgr = SubscribeManagerFactory.CreateManager();
+
             subMgr.AddSubscriber(aliveKey, bytes =>
-            {
-                var msg = new JsonSerializer().Deserialize<DistributedInvokeMessage>(Encoding.UTF8.GetString(bytes));
-                Clients(msg.Connections.ToArray()).SendAsync(msg.Message.Method, msg.Message.Arguments);
-            });
+                {
+                    //收到消息后，在本地查找连接，并发送消息
+                    var msg = new JsonSerializer().Deserialize<DistributedInvokeMessage>(Encoding.UTF8.GetString(bytes));
+                    Clients(msg.Connections.ToArray()).SendAsync(msg.Message.Method, msg.Message.Arguments);
+                });
         }
 
         public override void Add(string connectionId, IClientProxy handler)
         {
             var cacheMgr = CacheManagerFactory.CreateManager();
+
+            //在redis缓存里存放连接标识对应的aliveKey，即服务标识，以方便后面查找
             cacheMgr.Add(prefix + connectionId, aliveKey, new RelativeTime(TimeSpan.FromDays(5)));
 
             base.Add(connectionId, handler);
@@ -57,11 +63,13 @@ namespace Fireasy.Web.Sockets
 
         public override void AddToGroup(string connectionId, string groupName)
         {
+            //暂未实现
             base.AddToGroup(connectionId, groupName);
         }
 
         public override void RemoveFromGroup(string connectionId, string groupName)
         {
+            //暂未实现
             base.RemoveFromGroup(connectionId, groupName);
         }
 
@@ -72,12 +80,14 @@ namespace Fireasy.Web.Sockets
         /// <returns></returns>
         public override IClientProxy Client(string connectionId)
         {
+            //先在本地会话池里查找
             var client = base.Client(connectionId);
             if (client != NullClientProxy.Instance)
             {
                 return client;
             }
 
+            //如果没有，则去redis缓存里查找出aliveKey，并使用分布式代理进行传递
             var cacheMgr = CacheManagerFactory.CreateManager();
             if (cacheMgr.TryGet(prefix + connectionId, out string aliveKey))
             {
@@ -114,6 +124,9 @@ namespace Fireasy.Web.Sockets
         }
     }
 
+    /// <summary>
+    /// 分布式代理。
+    /// </summary>
     internal class DistributedUserClientProxy : InternalClientProxy
     {
         private string aliveKey;
@@ -131,8 +144,15 @@ namespace Fireasy.Web.Sockets
             this.connections = new List<string>(connectionIds);
         }
 
+        /// <summary>
+        /// 发送消息。
+        /// </summary>
+        /// <param name="method"></param>
+        /// <param name="arguments"></param>
+        /// <returns></returns>
         public override Task SendAsync(string method, params object[] arguments)
         {
+            //使用消息队列将消息发指定的服务器，即aliveKey对应的服务器
             var subMgr = SubscribeManagerFactory.CreateManager();
             var msg = new DistributedInvokeMessage
             {
@@ -152,12 +172,24 @@ namespace Fireasy.Web.Sockets
         }
     }
 
+    /// <summary>
+    /// 分布式消息结构。
+    /// </summary>
     internal class DistributedInvokeMessage
     {
+        /// <summary>
+        /// 对方的服务标识。
+        /// </summary>
         public string AliveKey { get; set; }
 
+        /// <summary>
+        /// 要通知的客户端连接标识。
+        /// </summary>
         public List<string> Connections { get; set; }
 
+        /// <summary>
+        /// 消息体。
+        /// </summary>
         public InvokeMessage Message { get; set; }
     }
 }

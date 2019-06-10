@@ -30,6 +30,8 @@ namespace Fireasy.Web.Sockets
         public ClientManager(WebSocketBuildOption option)
         {
             this.option = option;
+
+            //开启一个定时器，一定时间去检查一下有没有死亡而没有释放的连接实例
             timer = new Timer(CheckAlive, null, TimeSpan.FromSeconds(10), option.HeartbeatInterval);
         }
 
@@ -38,11 +40,17 @@ namespace Fireasy.Web.Sockets
             return managers.GetOrAdd(handlerType, k => option.Distributed ? new DistributedClientManager(option) : new ClientManager(option));
         }
 
+        /// <summary>
+        /// 检查没有死亡的连接实例，进行释放。
+        /// </summary>
+        /// <param name="state"></param>
         private void CheckAlive(object state)
         {
             foreach (var kvp in clients)
             {
                 var client = clients[kvp.Key];
+
+                //心跳时间后延
                 if ((DateTime.Now - client.AliveTime).TotalMilliseconds >= option.HeartbeatInterval.TotalMilliseconds * (option.HeartbeatTryTimes + 2) &&
                     clients.TryRemove(kvp.Key, out client))
                 {
@@ -132,6 +140,9 @@ namespace Fireasy.Web.Sockets
         }
     }
 
+    /// <summary>
+    /// 枚举器，表示多个连接代理。
+    /// </summary>
     internal class EnumerableClientProxy : InternalClientProxy
     {
         private Func<IEnumerable<IClientProxy>> proxyFactory;
@@ -141,6 +152,12 @@ namespace Fireasy.Web.Sockets
             this.proxyFactory = proxyFactory;
         }
 
+        /// <summary>
+        ///  发送消息。
+        /// </summary>
+        /// <param name="method"></param>
+        /// <param name="arguments"></param>
+        /// <returns></returns>
         public override Task SendAsync(string method, params object[] arguments)
         {
             foreach (var proxy in proxyFactory())
@@ -156,10 +173,19 @@ namespace Fireasy.Web.Sockets
         }
     }
 
+    /// <summary>
+    /// 表示不做任何处理的连接代理。
+    /// </summary>
     internal class NullClientProxy : InternalClientProxy
     {
         public static NullClientProxy Instance = new NullClientProxy();
 
+        /// <summary>
+        ///  发送消息。
+        /// </summary>
+        /// <param name="method"></param>
+        /// <param name="arguments"></param>
+        /// <returns></returns>
         public override Task SendAsync(string method, params object[] arguments)
         {
 #if NETSTANDARD
