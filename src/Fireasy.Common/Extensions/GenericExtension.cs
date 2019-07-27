@@ -22,6 +22,7 @@ using System.Linq.Expressions;
 using Fireasy.Common.Linq.Expressions;
 using Fireasy.Common.Mapper;
 using Fireasy.Common.Serialization;
+using System.Drawing.Imaging;
 
 namespace Fireasy.Common.Extensions
 {
@@ -31,7 +32,7 @@ namespace Fireasy.Common.Extensions
     public static class GenericExtension
     {
         private static ReadWriteLocker locker = new ReadWriteLocker();
-        private static MethodInfo MthToType = typeof(GenericExtension).GetMethod("ToType");
+        private static MethodInfo MthToType = typeof(GenericExtension).GetMethod(nameof(GenericExtension.ToType));
 
         /// <summary>
         /// 判断对象是否为空。
@@ -670,7 +671,7 @@ namespace Fireasy.Common.Extensions
 #if !NET35
         private static void GetDynamicMemberBindings(IDynamicMetaObjectProvider @dynamic, Type conversionType, ParameterExpression parExp, List<MemberBinding> bindings, ConvertMapper mapper)
         {
-            var method = typeof(DynamicManager).GetMethod("GetMember", BindingFlags.Instance | BindingFlags.Public);
+            var method = typeof(DynamicManager).GetMethod(nameof(DynamicManager.GetMember), BindingFlags.Instance | BindingFlags.Public);
             var metaObject = @dynamic.GetMetaObject(Expression.Constant(@dynamic));
             var metaObjExp = Expression.TypeAs(parExp, typeof(IDynamicMetaObjectProvider));
             foreach (var name in metaObject.GetDynamicMemberNames())
@@ -685,7 +686,7 @@ namespace Fireasy.Common.Extensions
 
                     var mgrExp = Expression.New(typeof(DynamicManager));
                     var exp = (Expression)Expression.Call(mgrExp, method, metaObjExp, Expression.Constant(name));
-                    exp = Expression.Call(null, MthToType, exp, Expression.Constant(descProperty.PropertyType), Expression.Constant(null));
+                    exp = Expression.Call(null, MthToType, exp, Expression.Constant(descProperty.PropertyType), Expression.Constant(null), Expression.Constant(null, typeof(ConvertMapper)));
                     exp = (Expression)Expression.Convert(exp, descProperty.PropertyType);
                     bindings.Add(Expression.Bind(descProperty, exp));
                 }

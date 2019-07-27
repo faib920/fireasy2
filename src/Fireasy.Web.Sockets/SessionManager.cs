@@ -23,7 +23,7 @@ namespace Fireasy.Web.Sockets
         /// <summary>
         /// 获取当前会话个数。
         /// </summary>
-        public int Count
+        public virtual int Count
         {
             get
             {
@@ -37,7 +37,7 @@ namespace Fireasy.Web.Sockets
         /// </summary>
         /// <param name="connectionId">客户端连接标识。></param>
         /// <param name="identity">用户标识。</param>
-        public void Add(string connectionId, T identity)
+        public virtual void Add(string connectionId, T identity)
         {
             var cacheMgr = CacheManagerFactory.CreateManager();
             cacheMgr.Add(prefix1 + connectionId, identity, new RelativeTime(TimeSpan.FromDays(5)));
@@ -48,7 +48,7 @@ namespace Fireasy.Web.Sockets
         /// 移除指定的客户端连接标识。
         /// </summary>
         /// <param name="connectionId">客户端连接标识。></param>
-        public void Remove(string connectionId)
+        public virtual void Remove(string connectionId)
         {
             var cacheMgr = CacheManagerFactory.CreateManager();
             var identity = cacheMgr.Get<T>(prefix1 + connectionId);
@@ -64,7 +64,7 @@ namespace Fireasy.Web.Sockets
         /// </summary>
         /// <param name="identity">用户标识。</param>
         /// <returns></returns>
-        public string FindConnection(T identity)
+        public virtual string FindConnection(T identity)
         {
             if (identity == null)
             {
@@ -85,7 +85,7 @@ namespace Fireasy.Web.Sockets
         /// </summary>
         /// <param name="connectionId">客户端连接标识。></param>
         /// <returns></returns>
-        public T FindIdentity(string connectionId)
+        public virtual T FindIdentity(string connectionId)
         {
             var cacheMgr = CacheManagerFactory.CreateManager();
             if (cacheMgr.TryGet(prefix1 + connectionId, out T value))

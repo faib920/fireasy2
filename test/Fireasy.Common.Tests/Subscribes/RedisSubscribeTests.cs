@@ -27,6 +27,7 @@ namespace Fireasy.Common.Tests.Subscribes
             });
             subMgr.AddSubscriber<TestSubject>(s =>
             {
+                throw new Exception();
                 Console.WriteLine("2:--" + s.Key);
             });
 
@@ -38,7 +39,10 @@ namespace Fireasy.Common.Tests.Subscribes
             subMgr.Publish(new TestSubject { Key = "new fireasy1" });
             subMgr.Publish(new TestSubject { Key = "new fireasy2" });
 
-            Thread.Sleep(2000);
+            while (true)
+            {
+                Thread.Sleep(2000);
+            }
         }
 
         [TestMethod]

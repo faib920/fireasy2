@@ -91,6 +91,19 @@ namespace Fireasy.Common.Caching
         }
 
         /// <summary>
+        /// 设置缓存的有效时间。
+        /// </summary>
+        /// <param name="cacheKey">用于引用对象的缓存键。</param>
+        /// <param name="expiration">判断对象过期的对象。</param>
+        public void SetExpirationTime(string cacheKey, Func<ICacheItemExpiration> expiration)
+        {
+            if (cacheDictionary.TryGetValue(cacheKey, out CacheItem entry))
+            {
+                entry.Expiration = expiration == null ? NeverExpired.Instance : expiration();
+            }
+        }
+
+        /// <summary>
         /// 获取缓存中指定缓存键的对象。
         /// </summary>
         /// <param name="cacheKey">用于引用对象的缓存键。</param>

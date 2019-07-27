@@ -1,4 +1,5 @@
 ﻿using Fireasy.Common.Caching;
+using Fireasy.Common.Subscribes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
@@ -18,7 +19,10 @@ namespace Fireasy.Common.Tests.Caching
         [TestMethod]
         public void TestTryGet()
         {
+            var subMgr = SubscribeManagerFactory.CreateManager("redis");
+
             var cacheMgr = CacheManagerFactory.CreateManager("redis");
+            cacheMgr = CacheManagerFactory.CreateManager("redis");
             var value = cacheMgr.TryGet("test1", () => 100);
             Assert.AreEqual(100, value);
         }

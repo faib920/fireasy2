@@ -9,7 +9,6 @@ using System.Collections;
 using System.Dynamic;
 using Fireasy.Common.Dynamic;
 #endif
-using System.Drawing;
 using System.Data;
 using Fireasy.Common.Reflection;
 using System.Collections.ObjectModel;

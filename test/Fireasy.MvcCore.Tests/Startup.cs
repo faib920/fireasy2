@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Fireasy.Common.Caching;
+using Fireasy.Common.Ioc;
 using Fireasy.Data.Entity;
+using Fireasy.Data.Entity.Tests.Models;
+using Fireasy.MvcCore.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -36,8 +39,8 @@ namespace Fireasy.MvcCore.Tests
 
             services
                 .AddFireasy(Configuration)
-                .AddEntityContext<TestContext>(o => o.AutoCreateTables = true)
-                .UseSQLite("Data source=|appdir|../../../../../documents/db/northwind.db3");
+                .AddIoc(ContainerUnity.GetContainer())
+                .AddEntityContext<TestContext>();
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
                 .ConfigureFireasyMvc(s => { s.JsonSerializeOption.Converters.Add(new Fireasy.Data.Entity.LightEntityJsonConverter());  });
@@ -64,14 +67,6 @@ namespace Fireasy.MvcCore.Tests
                     name: "default",
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
-        }
-    }
-
-    public class TestContext : EntityContext
-    {
-        public TestContext(EntityContextOptions options)
-            : base(options)
-        {
         }
     }
 
@@ -132,6 +127,11 @@ namespace Fireasy.MvcCore.Tests
         }
 
         public void Remove(string cacheKey)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SetExpirationTime(string cacheKey, Func<ICacheItemExpiration> expiration)
         {
             throw new NotImplementedException();
         }

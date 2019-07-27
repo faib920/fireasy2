@@ -1,9 +1,6 @@
 ﻿using Fireasy.Common.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Fireasy.Common.Tests.Logging
 {
@@ -42,7 +39,12 @@ namespace Fireasy.Common.Tests.Logging
         public void TestParallel()
         {
             var a = LoggerFactory.CreateLogger();
-            a.Info("dddd");
+            Parallel.For(1, 5, t =>
+            {
+                a.Info(t + "----------");
+            });
+
+            Console.WriteLine("end");
         }
     }
 }

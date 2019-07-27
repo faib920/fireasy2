@@ -517,8 +517,7 @@ namespace Fireasy.Data.Entity.Linq
 
             var primary = PropertyUnity.GetPrimaryProperties(entity.EntityType).FirstOrDefault(s => s.Info.GenerateType == IdentityGenerateType.AutoIncrement);
             var result = queryable.Provider.Execute(expression);
-            if (primary != null && !entity.IsModified(primary.Name) &&
-                !result.IsNullOrEmpty())
+            if (primary != null && !result.IsNullOrEmpty())
             {
                 entity.SetValue(primary, PropertyValue.NewValue(result, primary.Type));
             }

@@ -42,15 +42,22 @@ namespace Fireasy.Common.Serialization
         /// </summary>
         public OutputStyle OutputStyle { get; set; }
 
+        /// <summary>
+        /// 引用另一个对象的设置属性。
+        /// </summary>
+        /// <param name="other"></param>
         public override void Reference(SerializeOption other)
         {
             base.Reference(other);
 
-            CData = ((XmlSerializeOption)other).CData;
-            Declaration = ((XmlSerializeOption)other).Declaration;
-            StartElement = ((XmlSerializeOption)other).StartElement;
-            IgnoreNull = ((XmlSerializeOption)other).IgnoreNull;
-            OutputStyle = ((XmlSerializeOption)other).OutputStyle;
+            if (other is XmlSerializeOption xoption)
+            {
+                CData = xoption.CData;
+                Declaration = xoption.Declaration;
+                StartElement = xoption.StartElement;
+                IgnoreNull = xoption.IgnoreNull;
+                OutputStyle = xoption.OutputStyle;
+            }
         }
     }
 

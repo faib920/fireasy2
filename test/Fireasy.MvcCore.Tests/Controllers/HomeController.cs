@@ -1,24 +1,37 @@
 ﻿using Fireasy.Common.Caching;
 using Fireasy.Common.Serialization;
 using Fireasy.Data.Entity;
+using Fireasy.Data.Entity.Tests.Models;
+using Fireasy.MvcCore.Services;
 using Fireasy.MvcCore.Tests.Models;
 using Fireasy.Web.Mvc;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Fireasy.MvcCore.Tests.Controllers
 {
     public class HomeController : Controller
     {
-        public HomeController(TestContext context, ICacheManager cacheMgr)
-        {
+        private IService service;
 
+        public HomeController(IService context, ICacheManager cacheMgr)
+        {
+            this.service = context;
         }
 
         public IActionResult Index()
         {
+            try
+            {
+                service.Update();
+            }
+            catch (Exception exp)
+            {
+                Console.WriteLine(exp.Message);
+            }
             return View();
         }
 
@@ -34,10 +47,10 @@ namespace Fireasy.MvcCore.Tests.Controllers
         }
 
         [HttpGet]
-        public JsonResult TestJsonSerializeOption([FromServices]IOptions<Fireasy.Web.Mvc.MvcOptions> options)
+        public JsonResult TestJsonSerializeOption([FromServices]JsonSerializeOptionHosting hosting)
         {
-            options.Value.JsonSerializeOption.Converters.Add(new FullDateTimeJsonConverter());
-            return Json(45);
+            hosting.Option.Converters.Add(new FullDateTimeJsonConverter());
+            return Json(DateTime.Now);
         }
 
         [HttpGet]
@@ -49,7 +62,7 @@ namespace Fireasy.MvcCore.Tests.Controllers
         [HttpGet]
         public JsonResult TestEntity(Entity model)
         {
-            return Json(45);
+            return Json(model);
         }
 
         public JsonResult TestOption()

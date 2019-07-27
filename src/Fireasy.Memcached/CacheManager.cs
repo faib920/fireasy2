@@ -115,5 +115,15 @@ namespace Fireasy.Memcached
         {
             throw new NotImplementedException();
         }
+
+        public void SetExpirationTime(string cacheKey, Func<ICacheItemExpiration> expiration)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<string> GetKeys(string pattern)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

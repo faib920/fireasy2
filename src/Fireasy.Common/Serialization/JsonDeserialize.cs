@@ -329,7 +329,7 @@ namespace Fireasy.Common.Serialization
                 if (jsonReader.Peek() == JsonTokens.EndArrayCharacter)
                 {
                     jsonReader.Read();
-                    return container;
+                    break;
                 }
 
                 jsonReader.SkipWhiteSpaces();

@@ -1,13 +1,15 @@
 ﻿using Fireasy.Data.Entity.Tests.Models;
 using Fireasy.Data.Provider;
+using System;
 
 namespace Fireasy.Data.Entity.Tests
 {
     public class DbContext : EntityContext
     {
         public DbContext()
-            : base (new EntityContextOptions {  AutoCreateTables = true })
+            : base(new EntityContextOptions { AutoCreateTables = true, NotifyEvents = true })
         {
+            System.Console.WriteLine(Guid.NewGuid());
         }
 
         protected override void Dispose(bool disposing)
@@ -28,7 +30,7 @@ namespace Fireasy.Data.Entity.Tests
 
         public EntityRepository<Depts> Depts { get; set; }
 
-        protected override void  OnRespositoryChanged(RespositoryChangedEventArgs args)
+        protected override void OnRespositoryChanged(RespositoryChangedEventArgs args)
         {
             if (args.Succeed && args.EntityType == typeof(Products) && args.EventType == RespositoryChangeEventType.CreateTable)
             {
@@ -40,7 +42,7 @@ namespace Fireasy.Data.Entity.Tests
     public class MyDatabase : Database
     {
         public MyDatabase(ConnectionString c, IProvider p)
-            : base (c, p)
+            : base(c, p)
         {
         }
     }

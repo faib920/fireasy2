@@ -41,8 +41,8 @@ namespace Microsoft.Extensions.DependencyInjection
                         services.Configure(setupAction);
                     }
 
-                    services.AddScoped(desc.ServiceType);
                     services.AddScoped(s => options);
+                    services.AddScoped(desc.ServiceType);
 
                     return builder;
                 }

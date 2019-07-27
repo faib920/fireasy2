@@ -119,66 +119,76 @@ namespace Fireasy.Common.Logging
         /// <param name="exception">应用程序异常。</param>
         private void Write(string logType, object message, Exception exception)
         {
+            var content = GetLogContent(message, exception);
+            var fileName = CreateLogFileName(logType);
+
             locker.LockWrite(() =>
             {
-                var fileName = CreateLogFileName(logType);
-                using (var writer = new StreamWriter(fileName, true, Encoding.GetEncoding(0)))
+                using (var writer = new StreamWriter(fileName, true, Encoding.Default))
                 {
-                    writer.WriteLine("Time: " + DateTime.Now);
-                    writer.WriteLine();
-                    if (message != null)
-                    {
-                        writer.WriteLine(message);
-                    }
-
-                    writer.WriteLine();
-
-                    if (exception != null)
-                    {
-                        writer.WriteLine("--Exceptions--");
-
-#if !NET35
-                        var aggExp = exception as AggregateException;
-                        if (aggExp != null && aggExp.InnerExceptions.Count > 0)
-                        {
-                            foreach (var e in aggExp.InnerExceptions)
-                            {
-                                WriteException(writer, e);
-                            }
-                        }
-                        else
-                        {
-                            WriteException(writer, exception);
-                        }
-#else
-                    WriteException(writer, exception);
-#endif
-                    }
-
-                    writer.WriteLine("*****************************************************************");
+                    writer.WriteLine(content);
                     writer.Flush();
                 }
             });
         }
 
-        private static void WriteException(StreamWriter writer, Exception exception)
+        private string GetLogContent(object message, Exception exception)
         {
-            var e = exception;
+            var sb = new StringBuilder();
+            sb.AppendLine("Time: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss fff"));
+            sb.AppendLine();
+            if (message != null)
+            {
+                sb.AppendLine(message.ToString());
+            }
+
+            sb.AppendLine();
+
+            if (exception != null)
+            {
+                sb.AppendLine("--Exceptions--");
+
+#if !NET35
+                var aggExp = exception as AggregateException;
+                if (aggExp != null && aggExp.InnerExceptions.Count > 0)
+                {
+                    foreach (var e in aggExp.InnerExceptions)
+                    {
+                        RecursiveWriteException(sb, e);
+                    }
+                }
+                else
+                {
+                    RecursiveWriteException(sb, exception);
+                }
+#else
+                RecursiveWriteException(sb, exception);
+#endif
+            }
+
+            sb.AppendLine("*****************************************************************");
+
+            return sb.ToString();
+        }
+
+        private static void RecursiveWriteException(StringBuilder builder, Exception exception)
+        {
+            var curExp = exception;
             var ident = 0;
-            while (e != null)
+            while (curExp != null)
             {
                 var prefix = new string(' ', (ident++) * 2);
-                writer.WriteLine(prefix + e.GetType().Name + " => " + e.Message);
+                builder.AppendLine(string.Concat(prefix, curExp.GetType().Name, " => ", curExp.Message));
 
-                if (e.StackTrace != null)
+                if (curExp.StackTrace != null)
                 {
-                    writer.WriteLine();
-                    writer.WriteLine("----Begin StackTrack----");
-                    writer.WriteLine(e.StackTrace);
-                    writer.WriteLine("----End StackTrack----");
+                    builder.AppendLine();
+                    builder.AppendLine(string.Concat(prefix, "----Begin StackTrack----"));
+                    builder.AppendLine(string.Concat(prefix, curExp.StackTrace));
+                    builder.AppendLine(string.Concat(prefix, "----End StackTrack----"));
                 }
 
-                e = e.InnerException;
+                curExp = curExp.InnerException;
             }
         }
     }

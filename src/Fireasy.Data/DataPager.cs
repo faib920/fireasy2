@@ -52,7 +52,7 @@ namespace Fireasy.Data
         }
 
         /// <summary>
-        /// 获取或设置分页评估器。
+        /// 获取或设置分页评估器。默认使用 <see cref="TotalRecordEvaluator"/>，你也可以使用 <see cref="TryNextEvaluator"/>。
         /// </summary>
         public IDataPageEvaluator Evaluator { get; set; }
 

@@ -180,7 +180,7 @@ namespace Fireasy.Data.Entity.Tests
             builder.Properties.Add(new EntityProperty() { Name = "dd", Type = typeof(Products) });
             var a = builder.Create();
 
-            var pp = PropertyUnity.GetProperties(a);
+            var pp = PropertyUnity.GetPrimaryProperties(a).FirstOrDefault(s => s.Info.GenerateType == IdentityGenerateType.AutoIncrement);
         }
     }
 

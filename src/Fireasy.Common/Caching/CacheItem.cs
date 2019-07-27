@@ -38,7 +38,7 @@ namespace Fireasy.Common.Caching
         /// <summary>
         /// 获取对象过期检测对象。
         /// </summary>
-        public ICacheItemExpiration Expiration { get; private set; }
+        public ICacheItemExpiration Expiration { get; internal set; }
 
         /// <summary>
         /// 初始化 <see cref="CacheItem"/> 类的新实例。

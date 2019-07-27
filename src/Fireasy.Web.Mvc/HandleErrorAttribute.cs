@@ -5,8 +5,10 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common;
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Logging;
+using System;
 using System.Linq;
 #if !NETSTANDARD
 using System.Web.Mvc;
@@ -56,7 +58,7 @@ namespace Fireasy.Web.Mvc
         protected virtual void HandleExceptionForJson(ExceptionContext filterContext)
         {
             //如果是通知类的异常，直接输出提示
-            var notifyExp = filterContext.Exception as Fireasy.Common.ClientNotificationException;
+            var notifyExp = GetNotificationException(filterContext.Exception);
             if (notifyExp != null)
             {
                 filterContext.Result = new JsonResultWrapper(Result.Fail(notifyExp.Message));
@@ -132,6 +134,26 @@ namespace Fireasy.Web.Mvc
             }
 
             return new JsonResultWrapper(Result.Fail("发生错误，请查阅相关日志或联系管理员。"));
+        }
+
+        /// <summary>
+        /// 查找 <see cref="ClientNotificationException"/> 异常。
+        /// </summary>
+        /// <param name="exp"></param>
+        /// <returns></returns>
+        private ClientNotificationException GetNotificationException(Exception exp)
+        {
+            while (exp != null)
+            {
+                if (exp is ClientNotificationException notifyExp)
+                {
+                    return notifyExp;
+                }
+
+                exp = exp.InnerException;
+            }
+
+            return null;
         }
     }
 }

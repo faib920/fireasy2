@@ -62,7 +62,7 @@ namespace Fireasy.Data.Entity
         /// 将一个新的实体对象插入到库。
         /// </summary>
         /// <param name="entity">要创建的实体对象。</param>
-        /// <returns>影响的实体数。</returns>
+        /// <returns>如果实体中有自增属性的主键，则返回主键值；否则返回影响的实体数。</returns>
         public int Insert(TEntity entity)
         {
             var trans = CheckRelationHasModified(entity);

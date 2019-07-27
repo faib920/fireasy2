@@ -46,14 +46,21 @@ namespace Fireasy.Data
                                 result = command.ExecuteScalar().To<int>();
 
                                 dataPager.RecordCount = dataPager.PageSize * dataPager.CurrentPageIndex + result;
+                                HasNextPage = false;
                             }
                             else
                             {
                                 dataPager.RecordCount = dataPager.PageSize * (dataPager.CurrentPageIndex + 1) + 1;
+                                HasNextPage = true;
                             }
                         }
                     });
             }
         }
+
+        /// <summary>
+        /// 获取是否还有下一页。
+        /// </summary>
+        public bool HasNextPage { get; private set; }
     }
 }

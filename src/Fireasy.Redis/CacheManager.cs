@@ -121,6 +121,21 @@ namespace Fireasy.Redis
         }
 
         /// <summary>
+        /// 设置缓存的有效时间。
+        /// </summary>
+        /// <param name="cacheKey">用于引用对象的缓存键。</param>
+        /// <param name="expiration">判断对象过期的对象。</param>
+        public void SetExpirationTime(string cacheKey, Func<ICacheItemExpiration> expiration)
+        {
+            var client = GetConnection();
+#if NETSTANDARD
+            SetKeyExpiration(client, cacheKey, expiration);
+#else
+            SetKeyExpiration(GetDb(client), cacheKey, expiration);
+#endif
+        }
+
+        /// <summary>
         /// 获取缓存中指定缓存键的对象。
         /// </summary>
         /// <param name="cacheKey">用于引用对象的缓存键。</param>
@@ -529,6 +544,10 @@ namespace Fireasy.Redis
             {
                 db.KeyExpire(cacheKey, expiry);
             }
+            else
+            {
+                db.KeyExpire(cacheKey, (TimeSpan?)null);
+            }
         }
 #else
         /// <summary>
@@ -610,6 +629,10 @@ namespace Fireasy.Redis
             if (expiry != null)
             {
                 client.Expire(cacheKey, (int)expiry.Value.TotalSeconds);
+            }
+            else
+            {
+                client.Expire(cacheKey, TimeSpan.MaxValue);
             }
         }
 #endif

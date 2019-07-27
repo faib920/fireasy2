@@ -21,9 +21,9 @@ namespace Fireasy.Redis
     public class RedisComponent : IConfigurationSettingHostService
     {
 #if NETSTANDARD
-        private static Lazy<CSRedisClient> connectionLazy;
+        private Lazy<CSRedisClient> connectionLazy;
 #else
-        private static Lazy<ConnectionMultiplexer> connectionLazy;
+        private Lazy<ConnectionMultiplexer> connectionLazy;
 
         protected ConfigurationOptions Options { get; private set; }
 #endif
@@ -38,6 +38,11 @@ namespace Fireasy.Redis
         /// <returns></returns>
         protected virtual T Deserialize<T>(string value)
         {
+            if (typeof(T) == typeof(string))
+            {
+                return (T)(object)value;
+            }
+
             var serializer = CreateSerializer();
             return serializer.Deserialize<T>(value);
         }
@@ -50,6 +55,11 @@ namespace Fireasy.Redis
         /// <returns></returns>
         protected virtual object Deserialize(Type type, string value)
         {
+            if (type == typeof(string))
+            {
+                return value;
+            }
+
             var serializer = CreateSerializer();
             return serializer.Deserialize(type, value);
         }
@@ -62,6 +72,11 @@ namespace Fireasy.Redis
         /// <returns></returns>
         protected virtual string Serialize<T>(T value)
         {
+            if (typeof(T) == typeof(string))
+            {
+                return value.ToString();
+            }
+
             var serializer = CreateSerializer();
             return serializer.Serialize(value);
         }
@@ -110,7 +125,7 @@ namespace Fireasy.Redis
                 {
                     var connStr = new StringBuilder($"{host.Server}");
 
-                    #region connection build
+            #region connection build
                     if (host.Port != 0)
                     {
                         connStr.Append($":{host.Port}");
@@ -142,7 +157,7 @@ namespace Fireasy.Redis
                     }
 
                     connStr.Append(",allowAdmin=true");
-                    #endregion
+            #endregion
 
                     connectionStrs.Add(connStr.ToString());
                 }

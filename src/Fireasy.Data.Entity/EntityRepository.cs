@@ -263,7 +263,6 @@ namespace Fireasy.Data.Entity
             {
                 EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterUpdate);
             }
-            System.Console.WriteLine("I[date");
 
             return ret;
         }

@@ -43,7 +43,7 @@ namespace Fireasy.Data.Provider
             RegisterService<IRecordWrapper, GeneralRecordWrapper>();
         }
 
-        public override string ProviderName => "MsSql";
+        public override string ProviderName => "SqlServer";
 
         /// <summary>
         /// 获取当前连接的参数。

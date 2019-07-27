@@ -6,10 +6,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Caching;
+using Fireasy.Common.Extensions;
 using Fireasy.Common.Serialization;
 using Fireasy.Common.Subscribes;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -28,7 +30,7 @@ namespace Fireasy.Web.Sockets
         /// </summary>
         /// <param name="option"></param>
         public DistributedClientManager(WebSocketBuildOption option)
-            : base (option)
+            : base(option)
         {
             aliveKey = option.AliveKey;
 
@@ -37,9 +39,14 @@ namespace Fireasy.Web.Sockets
 
             subMgr.AddSubscriber(aliveKey, bytes =>
                 {
-                    //收到消息后，在本地查找连接，并发送消息
-                    var msg = new JsonSerializer().Deserialize<DistributedInvokeMessage>(Encoding.UTF8.GetString(bytes));
-                    Clients(msg.Connections.ToArray()).SendAsync(msg.Message.Method, msg.Message.Arguments);
+                    try
+                    {
+                        //收到消息后，在本地查找连接，并发送消息
+                        var content = Encoding.UTF8.GetString(bytes);
+                        var msg = new JsonSerializer().Deserialize<DistributedInvokeMessage>(content);
+                        Clients(msg.Connections.ToArray()).SendAsync(msg.Message.Method, msg.Message.Arguments);
+                    }
+                    catch { }
                 });
         }
 
@@ -104,10 +111,15 @@ namespace Fireasy.Web.Sockets
         /// <returns></returns>
         public override IClientProxy Clients(params string[] connectionIds)
         {
+            if (connectionIds == null || connectionIds.Length == 0)
+            {
+                return NullClientProxy.Instance;
+            }
+
             var cacheMgr = CacheManagerFactory.CreateManager();
             var clients = new List<IClientProxy>();
 
-            foreach (var connectionId in connectionIds)
+            foreach (var connectionId in connectionIds.Distinct())
             {
                 var client = base.Client(connectionId);
                 if (client != NullClientProxy.Instance)
@@ -141,7 +153,7 @@ namespace Fireasy.Web.Sockets
         public DistributedUserClientProxy(string aliveKey, IEnumerable<string> connectionIds)
         {
             this.aliveKey = aliveKey;
-            this.connections = new List<string>(connectionIds);
+            this.connections = new List<string>(connectionIds.Distinct());
         }
 
         /// <summary>

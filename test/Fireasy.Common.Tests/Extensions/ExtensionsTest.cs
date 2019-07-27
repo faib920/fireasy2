@@ -1,4 +1,5 @@
-﻿using Fireasy.Common.Extensions;
+﻿using Fireasy.Common.Dynamic;
+using Fireasy.Common.Extensions;
 using Fireasy.Common.Mapper;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
@@ -157,6 +158,16 @@ namespace Fireasy.Common.Tests.Extensions
             var dic = obj as IDictionary<string, object>;
             Assert.AreEqual("fireasy", obj.Name);
             Assert.AreEqual("fireasy", dic["Name"]);
+        }
+
+        [TestMethod]
+        public void TestFromDynamic()
+        {
+            dynamic d = new DynamicExpandoObject();
+            d.Name = "fireasy";
+
+            var obj = (Data1)GenericExtension.To<Data1>(d);
+            Assert.AreEqual("fireasy", obj.Name);
         }
         #endregion
 

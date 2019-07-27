@@ -2,12 +2,12 @@
 <TestSettings name="本地" id="d64de88b-6730-4020-a98e-f0d1eb488709" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
   <Description>这些设置为本地测试运行的默认测试设置。</Description>
   <Deployment enabled="false" />
-  <Execution>
+  <Execution hostProcessPlatform="MSIL">
     <TestTypeSpecific />
     <AgentRule name="Execution Agents">
     </AgentRule>
   </Execution>
   <Properties>
-    <Property name="TestSettingsUIType" value="LoadTest" />
+    <Property name="TestSettingsUIType" value="UnitTest" />
   </Properties>
 </TestSettings>

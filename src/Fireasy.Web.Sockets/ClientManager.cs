@@ -6,9 +6,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common;
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -21,10 +21,10 @@ namespace Fireasy.Web.Sockets
     /// </summary>
     public class ClientManager
     {
-        private static ConcurrentDictionary<Type, ClientManager> managers = new ConcurrentDictionary<Type, ClientManager>();
-        private ConcurrentDictionary<string, IClientProxy> clients = new ConcurrentDictionary<string, IClientProxy>();
-        private ConcurrentDictionary<string, List<string>> groups = new ConcurrentDictionary<string, List<string>>();
-        private Timer timer = null;
+        private static SafetyDictionary<Type, ClientManager> managers = new SafetyDictionary<Type, ClientManager>();
+        private SafetyDictionary<string, IClientProxy> clients = new SafetyDictionary<string, IClientProxy>();
+        private SafetyDictionary<string, List<string>> groups = new SafetyDictionary<string, List<string>>();
+        private readonly Timer timer = null;
         private WebSocketBuildOption option;
 
         public ClientManager(WebSocketBuildOption option)
@@ -37,7 +37,7 @@ namespace Fireasy.Web.Sockets
 
         internal static ClientManager GetManager(Type handlerType, WebSocketBuildOption option)
         {
-            return managers.GetOrAdd(handlerType, k => option.Distributed ? new DistributedClientManager(option) : new ClientManager(option));
+            return managers.GetOrAdd(handlerType, () => option.Distributed ? new DistributedClientManager(option) : new ClientManager(option));
         }
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace Fireasy.Web.Sockets
                 var client = clients[kvp.Key];
 
                 //心跳时间后延
-                if ((DateTime.Now - client.AliveTime).TotalMilliseconds >= option.HeartbeatInterval.TotalMilliseconds * (option.HeartbeatTryTimes + 2) &&
+                if (client != null && (DateTime.Now - client.AliveTime).TotalMilliseconds >= option.HeartbeatInterval.TotalMilliseconds * (option.HeartbeatTryTimes + 2) &&
                     clients.TryRemove(kvp.Key, out client))
                 {
                     client.TryDispose();
@@ -66,7 +66,7 @@ namespace Fireasy.Web.Sockets
 
         public virtual void AddToGroup(string connectionId, string groupName)
         {
-            var group = groups.GetOrAdd(groupName, k => new List<string>());
+            var group = groups.GetOrAdd(groupName, () => new List<string>());
             group.Add(connectionId);
         }
 

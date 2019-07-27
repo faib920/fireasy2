@@ -18,14 +18,14 @@ namespace Fireasy.Common.Serialization
         /// <summary>
         /// 初始化 <see cref="TextFormatterAttribute"/> 类的新实例。
         /// </summary>
-        /// <param name="formatter">格式。</param>
+        /// <param name="formatter">文本格式。</param>
         public TextFormatterAttribute(string formatter)
         {
             Formatter = formatter;
         }
 
         /// <summary>
-        /// 获取或设置格式。
+        /// 获取或设置文本格式。
         /// </summary>
         public string Formatter { get; set; }
     }

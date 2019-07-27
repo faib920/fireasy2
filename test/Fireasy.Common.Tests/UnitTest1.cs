@@ -1,24 +1,14 @@
-﻿using System;
+﻿using Fireasy.Common.Extensions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Fireasy.Common;
-using System.Collections.Generic;
-using Fireasy.Common.Extensions;
-using System.Linq.Expressions;
-using System.Dynamic;
-using System.Text;
+using System;
 using System.Security.Cryptography;
-using System.Text.RegularExpressions;
+using System.Text;
 
 namespace Fireasy.Common.Tests
 {
     [TestClass]
     public class UnitTest1
     {
-        [TestMethod]
-        public void TestMethod1()
-        {
-        }
-
         [TestMethod]
         public void Test()
         {
@@ -30,7 +20,6 @@ namespace Fireasy.Common.Tests
             Assert.AreEqual("people", "people".ToSingular());
             Assert.AreEqual("girl", "girls".ToSingular());
         }
-
 
         String CreateKey(int numBytes)
         {

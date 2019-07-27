@@ -66,7 +66,7 @@ namespace Fireasy.Web.Sockets
         /// <returns></returns>
         public async Task SendAsync(byte[] bytes)
         {
-            await client.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Text, true, CancellationToken.None);
+            await client.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Binary, true, CancellationToken.None);
         }
 
         /// <summary>

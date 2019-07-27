@@ -22,6 +22,7 @@ namespace Fireasy.Web.Sockets
         private Timer timer;
         private bool isDisposed = false;
         private bool isClosing = false;
+        private CancellationTokenSource cancelToken;
 
         /// <summary>
         /// 获取连接唯一标识符。
@@ -50,15 +51,26 @@ namespace Fireasy.Web.Sockets
 
         public static async Task Accept(Type handlerType, WebSocketAcceptContext acceptContext)
         {
-            await Accept(handlerType.New<WebSocketHandler>(), acceptContext);
+            using (var handler = handlerType.New<WebSocketHandler>())
+            {
+                await Accept(handler, acceptContext);
+            }
         }
 
         public static async Task Accept(WebSocketHandler handler, WebSocketAcceptContext acceptContext)
         {
+            handler.cancelToken = new CancellationTokenSource();
             handler.acceptContext = acceptContext;
             handler.Clients = ClientManager.GetManager(handler.GetType(), acceptContext.Option);
 
-            await handler.Invoke();
+            try
+            {
+                await handler.Invoke();
+            }
+            catch (Exception exp)
+            {
+                handler.OnFatalError(exp);
+            }
         }
 
         DateTime IClientProxy.AliveTime
@@ -76,7 +88,7 @@ namespace Fireasy.Web.Sockets
             {
                 if (IsValidState(WebSocketState.Open, WebSocketState.CloseReceived))
                 {
-                    await acceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Text, true, CancellationToken.None);
+                    await acceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Text, true, cancelToken.Token);
                 }
             }
             catch (Exception exp)
@@ -95,12 +107,13 @@ namespace Fireasy.Web.Sockets
             var buffer = new byte[acceptContext.Option.ReceiveBufferSize];
             var data = new DataBuffer();
 
-            var result = await acceptContext.WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-
-            while (!result.CloseStatus.HasValue)
+            while (acceptContext.WebSocket.State == WebSocketState.Open)
             {
+                var result = await acceptContext.WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cancelToken.Token);
+
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
+                    await acceptContext.WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Close response received", cancelToken.Token);
                     break;
                 }
 
@@ -116,34 +129,11 @@ namespace Fireasy.Web.Sockets
 
                     if (bytes != null)
                     {
-                        try
-                        {
-                            await acceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), result.MessageType, result.EndOfMessage, CancellationToken.None);
-                        }
-                        catch
-                        {
-                            break;
-                        }
+                        await acceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), result.MessageType, result.EndOfMessage, cancelToken.Token);
                     }
                 }
 
-                try
-                {
-                    result = await acceptContext.WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-                }
-                catch
-                {
-                    break;
-                }
-            }
-
-            if (result.CloseStatus.HasValue)
-            {
-                try
-                {
-                    await acceptContext.WebSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
-                }
-                catch { }
+                Thread.Sleep(100);
             }
 
             ManualClose();
@@ -205,6 +195,15 @@ namespace Fireasy.Web.Sockets
         }
 
         /// <summary>
+        /// 发生致命异常时的通知。
+        /// </summary>
+        /// <param name="exception">异常。</param>
+        protected virtual void OnFatalError(Exception exception)
+        {
+
+        }
+
+        /// <summary>
         /// 释放对象所占用的所有资源。
         /// </summary>
         public void Dispose()
@@ -224,24 +223,30 @@ namespace Fireasy.Web.Sockets
                 return;
             }
 
-            if (!isClosing)
-            {
-                isClosing = true;
-                Clients.Remove(ConnectionId);
-                OnDisconnected();
-            }
-
-            if (acceptContext != null && acceptContext.WebSocket != null && acceptContext.WebSocket.CloseStatus == null)
-            {
-                acceptContext.WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
-            }
+            isDisposed = true;
 
             if (timer != null)
             {
                 timer.Dispose();
             }
 
-            isDisposed = true;
+            if (cancelToken != null)
+            {
+                cancelToken.Dispose();
+            }
+
+            if (!isClosing)
+            {
+                isClosing = true;
+                Clients.Remove(ConnectionId);
+                OnDisconnected();
+
+                if (acceptContext != null && acceptContext.WebSocket != null && acceptContext.WebSocket.CloseStatus == null)
+                {
+                    acceptContext.WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None)
+                        .ContinueWith(t => acceptContext.WebSocket.Dispose());
+                }
+            }
         }
 
         /// <summary>
@@ -399,27 +404,15 @@ namespace Fireasy.Web.Sockets
                     if ((DateTime.Now - lastReceivedTime).TotalMilliseconds >=
                         acceptContext.Option.HeartbeatInterval.TotalMilliseconds * acceptContext.Option.HeartbeatTryTimes)
                     {
-                        if (acceptContext.WebSocket.State == WebSocketState.Open)
-                        {
-                            try
-                            {
-                                acceptContext.WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "heartbeat timeout", CancellationToken.None);
-                            }
-                            catch
-                            {
-                            }
-                        }
-                        else
-                        {
-                            ManualClose();
-                        }
+                        cancelToken.Cancel(false);
+                        ManualClose();
                     }
                 }, null, acceptContext.Option.HeartbeatInterval, acceptContext.Option.HeartbeatInterval);
         }
 
         private class DataBuffer : List<byte>
         {
-            public static implicit operator byte[] (DataBuffer buffer)
+            public static implicit operator byte[](DataBuffer buffer)
             {
                 return buffer.ToArray();
             }

@@ -104,7 +104,6 @@ namespace Fireasy.Windows.Forms
                 if (@checked != value)
                 {
                     @checked = value;
-                    InvalidateItem();
                 }
             }
         }

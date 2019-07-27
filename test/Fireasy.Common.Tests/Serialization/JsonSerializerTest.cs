@@ -1307,6 +1307,22 @@ studio");
         /// 测试Deserialize方法，返回数组。
         /// </summary>
         [TestMethod()]
+        public void TestDeserializeArray1()
+        {
+            var serializer = new JsonSerializer();
+
+            var json = new JsonText(@"[]").ToString();
+
+            var array = serializer.Deserialize<JsonData[]>(json);
+
+            Assert.IsNotNull(array);
+            Assert.AreEqual(2, array.Length);
+        }
+
+        /// <summary>
+        /// 测试Deserialize方法，返回数组。
+        /// </summary>
+        [TestMethod()]
         public void TestDeserializeDynamicArray()
         {
             var serializer = new JsonSerializer();

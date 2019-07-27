@@ -1,5 +1,6 @@
 ﻿using Fireasy.Common.Configuration;
 using Fireasy.Data.Extensions;
+using Fireasy.Data.Provider;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
@@ -18,6 +19,16 @@ namespace Fireasy.Data.Tests
         public DatabaseTest()
         {
             InitConfig.Init();
+
+            var sss= ProviderHelper.GetSupportedProviders();
+
+            foreach (var s in sss)
+            {
+                Console.WriteLine(s);
+            }
+
+            var t = ProviderHelper.GetDefinedProviderInstance("mssql");
+            Console.WriteLine(t.ProviderName);
         }
 
         [TestMethod]
@@ -262,7 +273,7 @@ order by o.Code";
                 var sql = (SqlCommand)"select * from customers";
 
                 //每页5条
-                var pager = new DataPager(5, 0);
+                var pager = new DataPager(10, 0);
                 pager.Evaluator = new TryNextEvaluator();
 
                 //记录当前查询出的记录数
