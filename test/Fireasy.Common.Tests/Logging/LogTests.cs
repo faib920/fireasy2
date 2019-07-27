@@ -1,6 +1,7 @@
 ﻿using Fireasy.Common.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Threading.Tasks;
 
 namespace Fireasy.Common.Tests.Logging
 {
