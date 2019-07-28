@@ -22,12 +22,12 @@ namespace Fireasy.Common.Tests.Subscribes
             subMgr.AddSubscriber<TestSubject>(s =>
             {
                 //throw new Exception();
-                Thread.Sleep(r.Next(0, 1000));
+                Thread.Sleep(r.Next(0, 500));
                 Console.WriteLine("1:" + s.Key);
             });
             subMgr.AddSubscriber<TestSubject>(s =>
             {
-                Thread.Sleep(r.Next(0, 1000));
+                Thread.Sleep(r.Next(0, 500));
                 Console.WriteLine("2:" + s.Key);
             });
 

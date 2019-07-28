@@ -28,6 +28,8 @@ public void TestSubscribe()
 }
 ```
 
+新增 exchangeType 配置，如果未指定此值，消息平均分配给不同的消费者，如果指定为 topic，则所有消费者均同时接收到消息。
+
 ==== .net framework 配置 ====
 ```XML
 <?xml version="1.0" encoding="utf-8" ?>
@@ -58,7 +60,8 @@ public void TestSubscribe()
           "config": {
              "userName": "guest",
              "password": "123",
-             "server": "amqp://127.0.0.1:5672"
+             "server": "amqp://127.0.0.1:5672",
+             "exchangeType": "topic"
           }
         }
       }

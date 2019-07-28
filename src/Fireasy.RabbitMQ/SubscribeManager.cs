@@ -14,7 +14,6 @@ using RabbitMQ.Client.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Fireasy.RabbitMQ
 {
@@ -42,19 +41,28 @@ namespace Fireasy.RabbitMQ
         /// <summary>
         /// 向指定的 Rabbit 通道发送数据。
         /// </summary>
-        /// <param name="channel">通道名称。</param>
+        /// <param name="channelName">通道名称。</param>
         /// <param name="data">发送的数据。</param>
-        public void Publish(string channel, byte[] data)
+        public void Publish(string channelName, byte[] data)
         {
-            using (var model = GetConnection().CreateModel())
+            using (var channel = GetConnection().CreateModel())
             {
-                model.QueueDeclare(channel, true, false, true, null);
+                if (string.IsNullOrEmpty(setting.ExchangeType))
+                {
+                    channel.QueueDeclare(channelName, true, false, false, null);
 
-                var properties = model.CreateBasicProperties();
-                properties.Persistent = true;
-                properties.DeliveryMode = 2;
+                    var properties = channel.CreateBasicProperties();
+                    properties.Persistent = true;
+                    properties.DeliveryMode = 2;
 
-                model.BasicPublish(string.Empty, channel, properties, data);
+                    channel.BasicPublish(string.Empty, channelName, properties, data);
+                }
+                else
+                {
+                    var exchangeName = GetExchangeName(channelName);
+                    channel.ExchangeDeclare(exchangeName, setting.ExchangeType);
+                    channel.BasicPublish(exchangeName, channelName, null, data);
+                }
             }
         }
 
@@ -83,12 +91,12 @@ namespace Fireasy.RabbitMQ
         /// <summary>
         /// 在 Rabbit 服务器中添加一个订阅方法。
         /// </summary>
-        /// <param name="channel">通道名称。</param>
+        /// <param name="channelName">通道名称。</param>
         /// <param name="subscriber">读取数据的方法。</param>
-        public void AddSubscriber(string channel, Action<byte[]> subscriber)
+        public void AddSubscriber(string channelName, Action<byte[]> subscriber)
         {
-            var list = subscribers.GetOrAdd(channel, () => new RabbitChannelCollection());
-            list.Add(new RabbitChannel(subscriber, StartQueue(channel)));
+            var list = subscribers.GetOrAdd(channelName, () => new RabbitChannelCollection());
+            list.Add(new RabbitChannel(subscriber, StartQueue(channelName)));
         }
 
         /// <summary>
@@ -189,18 +197,35 @@ namespace Fireasy.RabbitMQ
             return connectionLazy.Value;
         }
 
-        private IModel StartQueue(string channel)
+        /// <summary>
+        /// 开启一个队列。
+        /// </summary>
+        /// <param name="channelName"></param>
+        /// <returns></returns>
+        private IModel StartQueue(string channelName)
         {
-            var model = GetConnection().CreateModel();
-            model.BasicQos(0, 1, false);
-            var queue = model.QueueDeclare(channel, true, false, true, null);
+            var channel = GetConnection().CreateModel();
+            var queueName = channelName;
 
-            var consumer = new EventingBasicConsumer(model);
+            if (string.IsNullOrEmpty(setting.ExchangeType))
+            {
+                channel.BasicQos(0, 1, false);
+                channel.QueueDeclare(channelName, true, false, false, null);
+            }
+            else
+            {
+                var exchangeName = GetExchangeName(channelName);
+                channel.ExchangeDeclare(exchangeName, setting.ExchangeType);
+                queueName = channel.QueueDeclare().QueueName;
+                channel.QueueBind(queueName, exchangeName, channelName);
+            }
+
+            var consumer = new EventingBasicConsumer(channel);
             consumer.Received += (sender, args) =>
                 {
-                    if (subscribers.TryGetValue(channel, out RabbitChannelCollection channels))
+                    if (subscribers.TryGetValue(channelName, out RabbitChannelCollection channels))
                     {
-                        var found = channels.Find(model);
+                        var found = channels.Find(channel);
                         if (found == null)
                         {
                             return;
@@ -222,13 +247,25 @@ namespace Fireasy.RabbitMQ
                             var body = Deserialize(subType, args.Body);
                             found.Handler.DynamicInvoke(body);
                         }
+
+                        channel.BasicAck(args.DeliveryTag, false);
                     }
                 };
 
             //消费消息
-            model.BasicConsume(channel, true, consumer);
+            channel.BasicConsume(queueName, false, consumer);
 
-            return model;
+            return channel;
+        }
+
+        /// <summary>
+        /// 获取交换机的名称。
+        /// </summary>
+        /// <param name="channelName"></param>
+        /// <returns></returns>
+        private string GetExchangeName(string channelName)
+        {
+            return string.Concat(setting.ExchangeType, channelName);
         }
 
         void IConfigurationSettingHostService.Attach(IConfigurationSettingItem setting)

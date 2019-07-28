@@ -20,5 +20,7 @@ namespace Fireasy.RabbitMQ
         public string Server { get; set; }
 
         public Type SerializerType { get; set; }
+
+        public string ExchangeType { get; set; }
     }
 }
