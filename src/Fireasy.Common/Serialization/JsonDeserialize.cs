@@ -72,6 +72,12 @@ namespace Fireasy.Common.Serialization
                 return DeserializeIntelligently(type);
             }
 #endif
+            if (type == typeof(byte[]))
+            {
+                return DeserializeBytes();
+            }
+
+
             if (typeof(ArrayList).IsAssignableFrom(type))
             {
                 return DeserializeSingleArray();
@@ -533,6 +539,12 @@ namespace Fireasy.Common.Serialization
             }
 
             return Enum.Parse(enumType, evalue);
+        }
+
+        private byte[] DeserializeBytes()
+        {
+            var str = jsonReader.ReadAsString();
+            return Convert.FromBase64String(str);
         }
 
         private object DeserializeSingleArray()

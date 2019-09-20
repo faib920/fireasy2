@@ -351,7 +351,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var table = new TableExpression(new TableAlias(), metadata.TableName, entityType);
             insertExp = new InsertCommandExpression(table, func(table))
                 {
-                    WithAutoIncrement = !string.IsNullOrEmpty(syntax.IdentitySelect) && HasAutoIncrement(instance.Type)
+                    WithAutoIncrement = !string.IsNullOrEmpty(syntax.IdentitySelect) && HasAutoIncrement(instance.Type),
+                    WithGenerateValue = HasGenerateValue(instance.Type)
                 };
 
             return insertExp;
@@ -406,6 +407,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
         private static bool HasAutoIncrement(Type entityType)
         {
             return PropertyUnity.GetPrimaryProperties(entityType).Any(s => s.Info.GenerateType == IdentityGenerateType.AutoIncrement);
+        }
+
+        private static bool HasGenerateValue(Type entityType)
+        {
+            return PropertyUnity.GetPrimaryProperties(entityType).Any(s => s.Info.GenerateType == IdentityGenerateType.Generator);
         }
 
         private static IEnumerable<ColumnAssignment> GetUpdateArguments(TableExpression table, IEntity entity)

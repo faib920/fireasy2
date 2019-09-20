@@ -23,64 +23,136 @@ namespace Fireasy.Data.Entity.Subscribes
         /// <param name="subscriber"></param>
         public static void AddSubscriber(Action<EntityPersistentSubject> subscriber)
         {
-            DefaultSubscribeManager.Instance.AddSubscriber(typeof(EntityPersistentSubject), subscriber);
+            SynchronizedSubscribeManager.Instance.AddSubscriber(typeof(EntityPersistentSubject), subscriber);
+        }
+
+        /// <summary>
+        /// 添加一个读取实体持久化消息的方法。
+        /// </summary>
+        /// <param name="subscriber"></param>
+        /// <param name="entityTypes">一个数组，指定需要接收订阅消息的实体类型。</param>
+        public static void AddSubscriber(Action<EntityPersistentSubject> subscriber, params Type[] entityTypes)
+        {
+            if (entityTypes == null || entityTypes.Length == 0)
+            {
+                SynchronizedSubscribeManager.Instance.AddSubscriber(typeof(EntityPersistentSubject), subscriber);
+                return;
+            }
+
+            var action = new Action<EntityPersistentSubject>(t =>
+            {
+                foreach (var type in entityTypes)
+                {
+                    if (t.EntityType == type || type.IsAssignableFrom(t.EntityType))
+                    {
+                        subscriber(t);
+                    }
+                }
+            });
+
+            SynchronizedSubscribeManager.Instance.AddSubscriber(typeof(EntityPersistentSubject), action);
+        }
+
+        /// <summary>
+        /// 添加一个读取实体持久化消息的方法。
+        /// </summary>
+        /// <param name="subscriber"></param>
+        /// <param name="filter">一个函数，对接收的订阅消息进行过滤。</param>
+        public static void AddSubscriber(Action<EntityPersistentSubject> subscriber, Func<EntityPersistentSubject, bool> filter)
+        {
+            if (filter == null)
+            {
+                SynchronizedSubscribeManager.Instance.AddSubscriber(typeof(EntityPersistentSubject), subscriber);
+                return;
+            }
+
+            var action = new Action<EntityPersistentSubject>(t =>
+            {
+                if (filter(t))
+                {
+                    subscriber(t);
+                }
+            });
+
+            SynchronizedSubscribeManager.Instance.AddSubscriber(typeof(EntityPersistentSubject), action);
         }
 
         public static T OnCreate<T>(IEntity entity, Func<T> func)
         {
             var ret = default(T);
-            Publish(entity, EntityPersistentEventType.BeforeCreate);
-            ret = func();
-            Publish(entity, EntityPersistentEventType.AfterCreate);
+            if (Publish(entity, EntityPersistentEventType.BeforeCreate))
+            {
+                ret = func();
+                Publish(entity, EntityPersistentEventType.AfterCreate);
+            }
+
             return ret;
         }
 
         public static T OnUpdate<T>(IEntity entity, Func<T> func)
         {
             var ret = default(T);
-            Publish(entity, EntityPersistentEventType.BeforeUpdate);
-            ret = func();
-            Publish(entity, EntityPersistentEventType.AfterUpdate);
+            if (Publish(entity, EntityPersistentEventType.BeforeUpdate))
+            {
+                ret = func();
+                Publish(entity, EntityPersistentEventType.AfterUpdate);
+            }
+
             return ret;
         }
 
         public static T OnRemove<T>(IEntity entity, Func<T> func)
         {
             var ret = default(T);
-            Publish(entity, EntityPersistentEventType.BeforeRemove);
-            ret = func();
-            Publish(entity, EntityPersistentEventType.AfterRemove);
+            if (Publish(entity, EntityPersistentEventType.BeforeRemove))
+            {
+                ret = func();
+                Publish(entity, EntityPersistentEventType.AfterRemove);
+            }
+
             return ret;
         }
 
         public static T OnBatch<T>(IEnumerable<IEntity> entities, EntityPersistentOperater operater, Func<T> func)
         {
             var ret = default(T);
-            Publish<T>(entities, operater, EntityPersistentEventType.BeforeBatch);
-            ret = func();
-            Publish<T>(entities, operater, EntityPersistentEventType.AfterBatch);
+            if (Publish<T>(entities, operater, EntityPersistentEventType.BeforeBatch))
+            {
+                ret = func();
+                Publish<T>(entities, operater, EntityPersistentEventType.AfterBatch);
+            }
+
             return ret;
         }
 
-        public static void Publish<TEntity>(IEnumerable<IEntity> entities, EntityPersistentOperater operType, EntityPersistentEventType eventType)
+        public static bool Publish<TEntity>(IEnumerable<IEntity> entities, EntityPersistentOperater operType, EntityPersistentEventType eventType)
         {
-            var subject = new EntityPersistentSubject(typeof(TEntity), eventType, new EntitiesArgs(entities, operType, eventType));
+            var _event = new EntitiesArgs(entities, operType, eventType);
+            var subject = new EntityPersistentSubject(typeof(TEntity), eventType, _event);
 
-            DefaultSubscribeManager.Instance.Publish(subject);
+            SynchronizedSubscribeManager.Instance.Publish(subject);
+
+            return !_event.Cancel;
         }
 
-        public static void Publish<TEntity>(EntityPersistentEventType eventType)
+        public static bool Publish<TEntity>(EntityPersistentEventType eventType)
         {
-            var subject = new EntityPersistentSubject(typeof(TEntity), eventType, new EntityEventTypeArgs(eventType));
+            var _event = new EntityEventTypeArgs(eventType);
+            var subject = new EntityPersistentSubject(typeof(TEntity), eventType, _event);
 
-            DefaultSubscribeManager.Instance.Publish(subject);
+            SynchronizedSubscribeManager.Instance.Publish(subject);
+
+            return !_event.Cancel;
         }
 
-        public static void Publish(IEntity entity, EntityPersistentEventType eventType)
+        public static bool Publish(IEntity entity, EntityPersistentEventType eventType)
         {
-            var subject = new EntityPersistentSubject(entity.EntityType, eventType, new EntityEventArgs(entity, eventType));
+            var _event = new EntityEventArgs(entity, eventType);
+            var subject = new EntityPersistentSubject(entity.EntityType, eventType, _event);
 
-            DefaultSubscribeManager.Instance.Publish(subject);
+            SynchronizedSubscribeManager.Instance.Publish(subject);
+
+            return !_event.Cancel;
         }
     }
 
@@ -92,6 +164,8 @@ namespace Fireasy.Data.Entity.Subscribes
         }
 
         public EntityPersistentEventType EventType { get; set; }
+
+        public bool Cancel { get; set; }
     }
 
     internal class EntityEventArgs : EntityEventTypeArgs

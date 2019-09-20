@@ -34,7 +34,7 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 初始化 <see cref="EntityRepository{TEntity}"/> 类的新实例。
         /// </summary>
-        /// <param name="context"></param>
+        /// <param name="repositoryProxy"></param>
         /// <param name="options"></param>
         public EntityRepository(IRepositoryProvider<TEntity> repositoryProxy, EntityContextOptions options)
         {
@@ -75,12 +75,11 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            if (options.ValidateEntity)
-            {
-                ValidationUnity.Validate(entity);
-            }
-
-            int func() => repositoryProxy.Insert(entity);
+            var func = new Func<int>(() =>
+                {
+                    HandleValidate(entity);
+                    return repositoryProxy.Insert(entity);
+                });
 
             return options.NotifyEvents ?
                 EntityPersistentSubscribeManager.OnCreate(entity, func) : func();
@@ -136,13 +135,23 @@ namespace Fireasy.Data.Entity
             {
                 if (isNew)
                 {
-                    return EntityPersistentSubscribeManager.OnCreate(entity, () => repositoryProxy.Insert(entity));
+                    return EntityPersistentSubscribeManager.OnCreate(entity, () =>
+                        {
+                            HandleValidate(entity);
+                            return repositoryProxy.Insert(entity);
+                        });
                 }
                 else
                 {
-                    return EntityPersistentSubscribeManager.OnUpdate(entity, () => repositoryProxy.Update(entity));
+                    return EntityPersistentSubscribeManager.OnUpdate(entity, () =>
+                        {
+                            HandleValidate(entity);
+                            return repositoryProxy.Update(entity);
+                        });
                 }
             }
+
+            HandleValidate(entity);
 
             return isNew ? repositoryProxy.Insert(entity) : repositoryProxy.Update(entity);
         }
@@ -239,12 +248,11 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            if (options.ValidateEntity)
-            {
-                ValidationUnity.Validate(entity);
-            }
-
-            int func() => repositoryProxy.Update(entity);
+            var func = new Func<int>(() =>
+                {
+                    HandleValidate(entity);
+                    return repositoryProxy.Update(entity);
+                });
 
             return options.NotifyEvents ?
                 EntityPersistentSubscribeManager.OnUpdate(entity, func) : func();
@@ -630,6 +638,14 @@ namespace Fireasy.Data.Entity
             }
 
             return entity;
+        }
+
+        private void HandleValidate(IEntity entity)
+        {
+            if (options.ValidateEntity)
+            {
+                ValidationUnity.Validate(entity);
+            }
         }
 
         /// <summary>

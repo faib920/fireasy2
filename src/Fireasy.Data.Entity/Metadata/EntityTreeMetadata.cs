@@ -18,8 +18,9 @@ namespace Fireasy.Data.Entity.Metadata
         private EntityTreeMappingAttribute attribute;
         private int[] lengthBits;
 
-        internal EntityTreeMetadata(EntityTreeMappingAttribute attribute)
+        internal EntityTreeMetadata(EntityMetadata parent, EntityTreeMappingAttribute attribute)
         {
+            Parent = parent;
             this.attribute = attribute;
 
             if (attribute.SignStyle == SignStyle.Variable && attribute.SignBits != null)
@@ -35,6 +36,11 @@ namespace Fireasy.Data.Entity.Metadata
                 }
             }
         }
+
+        /// <summary>
+        /// 获取所属的 <see cref="EntityMetadata"/>。
+        /// </summary>
+        public EntityMetadata Parent { get; private set; }
 
         /// <summary>
         /// 获取标识内部标记。
@@ -85,49 +91,6 @@ namespace Fireasy.Data.Entity.Metadata
         /// 获取或设置标记的编码方式。
         /// </summary>
         public SignStyle SignStyle { get { return attribute.SignStyle; } }
-
-        /// <summary>
-        /// 使用实体类型和 <see cref="EntityTreeMappingAttribute"/> 对象创建一个 <see cref="EntityTreeMetadata"/> 对象。
-        /// </summary>
-        /// <param name="attribute"></param>
-        /// <param name="entityType"></param>
-        /// <returns></returns>
-        public static EntityTreeMetadata CreateMetadata(Type entityType, EntityTreeMappingAttribute attribute)
-        {
-            var metadata = new EntityTreeMetadata(attribute);
-            IProperty property;
-            if (!string.IsNullOrEmpty(attribute.InnerSign) &&
-                (property = PropertyUnity.GetProperty(entityType, attribute.InnerSign)) != null)
-            {
-                metadata.InnerSign = property;
-            }
-
-            if (!string.IsNullOrEmpty(attribute.Level) &&
-                (property = PropertyUnity.GetProperty(entityType, attribute.Level)) != null)
-            {
-                metadata.Level = property;
-            }
-
-            if (!string.IsNullOrEmpty(attribute.Order) &&
-                (property = PropertyUnity.GetProperty(entityType, attribute.Order)) != null)
-            {
-                metadata.Order = property;
-            }
-
-            if (!string.IsNullOrEmpty(attribute.Name) &&
-                (property = PropertyUnity.GetProperty(entityType, attribute.Name)) != null)
-            {
-                metadata.Name = property;
-            }
-
-            if (!string.IsNullOrEmpty(attribute.FullName) &&
-                (property = PropertyUnity.GetProperty(entityType, attribute.FullName)) != null)
-            {
-                metadata.FullName = property;
-            }
-
-            return metadata;
-        }
 
         /// <summary>
         /// 通过属性初始元数据结构。

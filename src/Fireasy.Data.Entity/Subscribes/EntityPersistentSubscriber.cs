@@ -27,7 +27,7 @@ namespace Fireasy.Data.Entity.Subscribes
                     {
                         if (subject.Argument is EntityEventArgs arg)
                         {
-                            OnBeforeCreate(arg.Entity);
+                            arg.Cancel = !OnBeforeCreate(arg.Entity);
                         }
                     }
                     break;
@@ -45,7 +45,7 @@ namespace Fireasy.Data.Entity.Subscribes
                     {
                         if (subject.Argument is EntityEventArgs arg)
                         {
-                            OnBeforeUpdate(arg.Entity);
+                            arg.Cancel = !OnBeforeUpdate(arg.Entity);
                         }
                     }
                     break;
@@ -63,7 +63,7 @@ namespace Fireasy.Data.Entity.Subscribes
                     {
                         if (subject.Argument is EntityEventArgs arg)
                         {
-                            OnBeforeRemove(arg.Entity);
+                            arg.Cancel = !OnBeforeRemove(arg.Entity);
                         }
                     }
                     break;
@@ -80,7 +80,7 @@ namespace Fireasy.Data.Entity.Subscribes
                 case EntityPersistentEventType.BeforeBatch:
                     {
                         var arg = subject.Argument as EntitiesArgs;
-                        OnBeforeBatch(arg.Entities, arg.OperType);
+                        arg.Cancel = !OnBeforeBatch(arg.Entities, arg.OperType);
                     }
                     break;
                 case EntityPersistentEventType.AfterBatch:
@@ -110,8 +110,10 @@ namespace Fireasy.Data.Entity.Subscribes
         /// 用于实体创建之前的通知。
         /// </summary>
         /// <param name="entity">创建的实体对象。</param>
-        protected virtual void OnBeforeCreate(IEntity entity)
+        /// <returns>取消则返回 false。</returns>
+        protected virtual bool OnBeforeCreate(IEntity entity)
         {
+            return true;
         }
 
         /// <summary>
@@ -134,8 +136,10 @@ namespace Fireasy.Data.Entity.Subscribes
         /// 用于实体更新之前的通知。
         /// </summary>
         /// <param name="entity">更新的实体对象。</param>
-        protected virtual void OnBeforeUpdate(IEntity entity)
+        /// <returns>取消则返回 false。</returns>
+        protected virtual bool OnBeforeUpdate(IEntity entity)
         {
+            return true;
         }
 
         /// <summary>
@@ -158,8 +162,10 @@ namespace Fireasy.Data.Entity.Subscribes
         /// 用于实体移除之前的通知。
         /// </summary>
         /// <param name="entity">移除的实体对象。</param>
-        protected virtual void OnBeforeRemove(IEntity entity)
+        /// <returns>取消则返回 false。</returns>
+        protected virtual bool OnBeforeRemove(IEntity entity)
         {
+            return true;
         }
 
         /// <summary>
@@ -183,8 +189,10 @@ namespace Fireasy.Data.Entity.Subscribes
         /// </summary>
         /// <param name="entities">批量处理的实体对象。</param>
         /// <param name="operater"></param>
-        protected virtual void OnBeforeBatch(IEnumerable<IEntity> entities, EntityPersistentOperater operater)
+        /// <returns>取消则返回 false。</returns>
+        protected virtual bool OnBeforeBatch(IEnumerable<IEntity> entities, EntityPersistentOperater operater)
         {
+            return true;
         }
 
         /// <summary>

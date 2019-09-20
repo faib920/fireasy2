@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common;
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
@@ -14,6 +15,7 @@ using RabbitMQ.Client.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Fireasy.RabbitMQ
 {
@@ -73,6 +75,8 @@ namespace Fireasy.RabbitMQ
         /// <param name="subscriber">读取主题的方法。</param>
         public void AddSubscriber<TSubject>(Action<TSubject> subscriber) where TSubject : class
         {
+            Guard.ArgumentNull(subscriber, nameof(subscriber));
+
             AddSubscriber(typeof(TSubject), subscriber);
         }
 
@@ -83,6 +87,9 @@ namespace Fireasy.RabbitMQ
         /// <param name="subscriber">读取主题的方法。</param>
         public void AddSubscriber(Type subjectType, Delegate subscriber)
         {
+            Guard.ArgumentNull(subjectType, nameof(subjectType));
+            Guard.ArgumentNull(subscriber, nameof(subscriber));
+
             var channelName = ChannelHelper.GetChannelName(subjectType);
             var list = subscribers.GetOrAdd(channelName, () => new RabbitChannelCollection());
             list.Add(new RabbitChannel(subscriber, StartQueue(channelName)));
@@ -95,6 +102,9 @@ namespace Fireasy.RabbitMQ
         /// <param name="subscriber">读取数据的方法。</param>
         public void AddSubscriber(string channelName, Action<byte[]> subscriber)
         {
+            Guard.ArgumentNull(channelName, nameof(channelName));
+            Guard.ArgumentNull(subscriber, nameof(subscriber));
+
             var list = subscribers.GetOrAdd(channelName, () => new RabbitChannelCollection());
             list.Add(new RabbitChannel(subscriber, StartQueue(channelName)));
         }
@@ -114,6 +124,8 @@ namespace Fireasy.RabbitMQ
         /// <param name="subjectType">主题的类型。</param>
         public void RemoveSubscriber(Type subjectType)
         {
+            Guard.ArgumentNull(subjectType, nameof(subjectType));
+
             var channelName = ChannelHelper.GetChannelName(subjectType);
             RemoveSubscriber(channelName);
         }
@@ -121,12 +133,14 @@ namespace Fireasy.RabbitMQ
         /// <summary>
         /// 移除指定通道的订阅方法。
         /// </summary>
-        /// <param name="channel">通道名称。</param>
-        public void RemoveSubscriber(string channel)
+        /// <param name="channelName">通道名称。</param>
+        public void RemoveSubscriber(string channelName)
         {
-            if (subscribers.TryGetValue(channel, out RabbitChannelCollection channels))
+            Guard.ArgumentNull(channelName, nameof(channelName));
+
+            if (subscribers.TryGetValue(channelName, out RabbitChannelCollection channels))
             {
-                channels.ForEach(s => s.Model.QueueDelete(channel));
+                channels.ForEach(s => s.Model.QueueDelete(channelName));
             }
         }
 
@@ -238,17 +252,27 @@ namespace Fireasy.RabbitMQ
                         }
 
                         var subType = actType.GetGenericArguments()[0];
-                        if (subType == typeof(byte[]))
-                        {
-                            found.Handler.DynamicInvoke(args.Body);
-                        }
-                        else
-                        {
-                            var body = Deserialize(subType, args.Body);
-                            found.Handler.DynamicInvoke(body);
-                        }
+                        object body = null;
 
-                        channel.BasicAck(args.DeliveryTag, false);
+                        try
+                        {
+                            if (subType == typeof(byte[]))
+                            {
+                                body = args.Body;
+                            }
+                            else
+                            {
+                                body = Deserialize(subType, args.Body);
+                            }
+
+                            found.Handler.DynamicInvoke(body);
+                            channel.BasicAck(args.DeliveryTag, false);
+                        }
+                        catch
+                        {
+                            Thread.Sleep(setting.RequeueDelayTime ?? 1000);
+                            channel.BasicNack(args.DeliveryTag, false, true);
+                        }
                     }
                 };
 

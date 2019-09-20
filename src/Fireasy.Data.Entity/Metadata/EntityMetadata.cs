@@ -47,7 +47,7 @@ namespace Fireasy.Data.Entity.Metadata
             var treeMapper = entityType.GetCustomAttributes<EntityTreeMappingAttribute>().FirstOrDefault();
             if (treeMapper != null)
             {
-                EntityTree = new EntityTreeMetadata(treeMapper);
+                EntityTree = new EntityTreeMetadata(this, treeMapper);
             }
 
             //获取表名称变量映射的 EntityVariableAttribute
@@ -185,6 +185,11 @@ namespace Fireasy.Data.Entity.Metadata
         internal IDictionary<string, IProperty> GetDictionary()
         {
             return dic;
+        }
+
+        internal bool FirstOrDefault()
+        {
+            throw new NotImplementedException();
         }
 
         public IEnumerable<string> Keys

@@ -6,6 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Caching;
+using Fireasy.Common.Caching.Configuration;
+using Fireasy.Common.Configuration;
 using System;
 using System.Linq;
 
@@ -39,6 +41,8 @@ namespace Fireasy.Web.Sockets
         /// <param name="identity">用户标识。</param>
         public virtual void Add(string connectionId, T identity)
         {
+            var section = ConfigurationUnity.GetSection<CachingConfigurationSection>();
+
             var cacheMgr = CacheManagerFactory.CreateManager();
             cacheMgr.Add(prefix1 + connectionId, identity, new RelativeTime(TimeSpan.FromDays(5)));
             cacheMgr.Add(prefix2 + identity, connectionId, new RelativeTime(TimeSpan.FromDays(5)));

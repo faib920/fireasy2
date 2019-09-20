@@ -63,8 +63,25 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static TEntity New()
         {
+            return New(false);
+        }
+
+        /// <summary>
+        /// 构造一个代理对象。
+        /// </summary>
+        /// <param name="applyDefaultValue">是否应用默认值。</param>
+        /// <returns></returns>
+        public static TEntity New(bool applyDefaultValue)
+        {
             var proxyType = EntityProxyManager.GetType(typeof(TEntity));
-            return proxyType.New<TEntity>();
+            var entity = proxyType.New<TEntity>();
+
+            if (applyDefaultValue)
+            {
+                return (TEntity)entity.ApplyDefaultValue();
+            }
+
+            return entity;
         }
 
         /// <summary>
@@ -74,7 +91,18 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static TEntity Wrap(Expression<Func<TEntity>> initExp)
         {
-            var entity = New();
+            return Wrap(initExp, false);
+        }
+
+        /// <summary>
+        /// 通过 <see cref="MemberInitExpression"/> 表达式来构造一个代理对象。
+        /// </summary>
+        /// <param name="initExp">一个成员绑定的表达式。</param>
+        /// <param name="applyDefaultValue">是否应用默认值。</param>
+        /// <returns></returns>
+        public static TEntity Wrap(Expression<Func<TEntity>> initExp, bool applyDefaultValue)
+        {
+            var entity = New(applyDefaultValue);
             entity.InitByExpression(initExp);
             return entity;
         }

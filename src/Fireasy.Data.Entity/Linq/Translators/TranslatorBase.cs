@@ -1697,6 +1697,17 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 case "Parse":
                     Write(Syntax.Convert(TranslateString(m.Arguments[0]), m.Method.DeclaringType.GetDbType()));
                     break;
+                case "Contains":
+                    Write(Syntax.String.Concat("','", TranslateString(m.Arguments[0]), "','"));
+                    Write(" LIKE ");
+                    var exp = m.Arguments[1];
+                    if (exp is ConstantExpression constExp && constExp.Type != typeof(string) && constExp.Value != null)
+                    {
+                        exp = Expression.Constant(constExp.Value.ToString(), typeof(string));
+                    }
+
+                    Write(Syntax.String.Concat("'%,'", TranslateString(exp),  "',%'"));
+                    break;
             }
 
             return m;

@@ -95,17 +95,13 @@ namespace Fireasy.Data
                     var convertMT = convertMethod.MakeGenericMethod(dbType, s.Info.PropertyType);
 
                     var expression = (Expression)Expression.Call(rowMapExp, getValueMethod, new Expression[] { parExp, Expression.Constant(s.Index) });
-                    var convertExp = Expression.Convert(
-                        Expression.Call(convertMT, new Expression[] { 
-                            expression
-                        }), 
-                        s.Info.PropertyType);
+                    var convertExp = Expression.Call(convertMT, new Expression[] { expression });
 
                     if (s.Info.PropertyType.IsNullableType())
                     {
                         expression = Expression.Condition(
-                        Expression.Call(parExp, isNullMethod, Expression.Constant(s.Index)),
-                        Expression.Convert(Expression.Constant(null), s.Info.PropertyType),
+                            Expression.Call(parExp, isNullMethod, Expression.Constant(s.Index, typeof(int))),
+                            Expression.Convert(Expression.Constant(null), s.Info.PropertyType),
                         convertExp);
                     }
                     else if (dbType != s.Info.PropertyType)

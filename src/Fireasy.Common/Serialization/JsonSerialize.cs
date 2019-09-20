@@ -104,15 +104,15 @@ namespace Fireasy.Common.Serialization
                 return;
             }
 
-            if (((value is IEnumerable) || typeof(IEnumerable).IsAssignableFrom(type)) && type != typeof(string))
-            {
-                SerializeEnumerable(value as IEnumerable);
-                return;
-            }
-
             if (type == typeof(byte[]))
             {
                 SerializeBytes((byte[])value);
+                return;
+            }
+
+            if (((value is IEnumerable) || typeof(IEnumerable).IsAssignableFrom(type)) && type != typeof(string))
+            {
+                SerializeEnumerable(value as IEnumerable);
                 return;
             }
 
@@ -341,7 +341,7 @@ namespace Fireasy.Common.Serialization
 
         private void SerializeBytes(byte[] bytes)
         {
-            jsonWriter.WriteValue(Convert.ToBase64String(bytes, 0, bytes.Length));
+            jsonWriter.WriteString(Convert.ToBase64String(bytes, 0, bytes.Length));
         }
 
         private void SerializeValue(object value)

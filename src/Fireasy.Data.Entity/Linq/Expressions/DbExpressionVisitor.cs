@@ -75,6 +75,8 @@ namespace Fireasy.Data.Entity.Linq.Expressions
                     return VisitGenerator((GeneratorExpression)exp);
                 case DbExpressionType.SqlText:
                     return VisitSqlText((SqlExpression)exp);
+                case DbExpressionType.CaseWhen:
+                    return VisitCaseWhen((CaseWhenExpression)exp);
                 default:
                     return base.Visit(exp);
             }
@@ -410,6 +412,11 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         protected virtual Expression VisitSqlText(SqlExpression sql)
         {
             return sql;
+        }
+
+        protected virtual Expression VisitCaseWhen(CaseWhenExpression caseWhen)
+        {
+            return caseWhen;
         }
 
         protected virtual ReadOnlyCollection<ColumnAssignment> VisitColumnAssignments(ReadOnlyCollection<ColumnAssignment> assignments)

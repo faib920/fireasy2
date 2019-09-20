@@ -7,26 +7,16 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
-#if NETSTANDARD
 using CSRedis;
 using System.Text;
 using System.Collections.Generic;
-#else
-using StackExchange.Redis;
-#endif
 using System;
 
 namespace Fireasy.Redis
 {
     public class RedisComponent : IConfigurationSettingHostService
     {
-#if NETSTANDARD
         private Lazy<CSRedisClient> connectionLazy;
-#else
-        private Lazy<ConnectionMultiplexer> connectionLazy;
-
-        protected ConfigurationOptions Options { get; private set; }
-#endif
 
         protected RedisConfigurationSetting Setting { get; private set; }
 
@@ -38,11 +28,6 @@ namespace Fireasy.Redis
         /// <returns></returns>
         protected virtual T Deserialize<T>(string value)
         {
-            if (typeof(T) == typeof(string))
-            {
-                return (T)(object)value;
-            }
-
             var serializer = CreateSerializer();
             return serializer.Deserialize<T>(value);
         }
@@ -55,11 +40,6 @@ namespace Fireasy.Redis
         /// <returns></returns>
         protected virtual object Deserialize(Type type, string value)
         {
-            if (type == typeof(string))
-            {
-                return value;
-            }
-
             var serializer = CreateSerializer();
             return serializer.Deserialize(type, value);
         }
@@ -72,11 +52,6 @@ namespace Fireasy.Redis
         /// <returns></returns>
         protected virtual string Serialize<T>(T value)
         {
-            if (typeof(T) == typeof(string))
-            {
-                return value.ToString();
-            }
-
             var serializer = CreateSerializer();
             return serializer.Serialize(value);
         }
@@ -95,24 +70,15 @@ namespace Fireasy.Redis
             return new RedisSerializer();
         }
 
-#if NETSTANDARD
         protected CSRedisClient GetConnection()
         {
             return connectionLazy.Value;
         }
 
-#else
-        protected ConnectionMultiplexer GetConnection()
-        {
-            return connectionLazy.Value;
-        }
-#endif
-
         void IConfigurationSettingHostService.Attach(IConfigurationSettingItem setting)
         {
             this.Setting = (RedisConfigurationSetting)setting;
 
-#if NETSTANDARD
             var connectionStrs = new List<string>();
             if (!string.IsNullOrEmpty(this.Setting.ConnectionString))
             {
@@ -167,46 +133,6 @@ namespace Fireasy.Redis
             {
                 connectionLazy = new Lazy<CSRedisClient>(() => new CSRedisClient(null, connectionStrs.ToArray()));
             }
-#else
-            if (!string.IsNullOrEmpty(this.Setting.ConnectionString))
-            {
-                Options = ConfigurationOptions.Parse(this.Setting.ConnectionString);
-            }
-            else
-            {
-                Options = new ConfigurationOptions
-                {
-                    DefaultDatabase = this.Setting.DefaultDb,
-                    Password = this.Setting.Password,
-                    AllowAdmin = true,
-                    Ssl = this.Setting.Ssl,
-                    Proxy = this.Setting.Twemproxy ? Proxy.Twemproxy : Proxy.None,
-                    AbortOnConnectFail = false
-                };
-
-                if (this.Setting.WriteBuffer != null)
-                {
-                    Options.WriteBuffer = (int)this.Setting.WriteBuffer;
-                }
-
-                foreach (var host in this.Setting.Hosts)
-                {
-                    if (host.Port == 0)
-                    {
-                        Options.EndPoints.Add(host.Server);
-                    }
-                    else
-                    {
-                        Options.EndPoints.Add(host.Server, host.Port);
-                    }
-                }
-            }
-
-            if (connectionLazy == null)
-            {
-                connectionLazy = new Lazy<ConnectionMultiplexer>(() => ConnectionMultiplexer.Connect(Options));
-            }
-#endif
         }
 
         IConfigurationSettingItem IConfigurationSettingHostService.GetSetting()

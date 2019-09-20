@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if NETSTANDARD
+#if NETCOREAPP
 using System.IO;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -19,7 +19,7 @@ using System.Web.Mvc;
 namespace Fireasy.Web.Mvc
 {
     public class ExtendHtmlString :
-#if NETSTANDARD
+#if NETCOREAPP
         IHtmlContent
 #else
         IHtmlString
@@ -34,7 +34,7 @@ namespace Fireasy.Web.Mvc
 
         public virtual string ToHtmlString()
         {
-#if NETSTANDARD
+#if NETCOREAPP
             using (var writer = new StringWriter())
             {
                 Builder.WriteTo(writer, HtmlEncoder.Default);
@@ -50,7 +50,7 @@ namespace Fireasy.Web.Mvc
             return ToHtmlString();
         }
 
-#if NETSTANDARD
+#if NETCOREAPP
         public void WriteTo(TextWriter writer, HtmlEncoder encoder)
         {
             Builder.WriteTo(writer, encoder);

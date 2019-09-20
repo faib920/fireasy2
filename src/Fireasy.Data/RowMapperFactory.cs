@@ -9,7 +9,7 @@ namespace Fireasy.Data
         {
             var elementType = typeof(T);
             Type generalType;
-            if (elementType.IsValueType || elementType == typeof(string))
+            if (elementType.IsPrimitive || elementType == typeof(string))
             {
                 generalType = typeof(SingleValueRowMapper<>);
             }

@@ -129,6 +129,11 @@ namespace Fireasy.Common.Emit
         }
 
         /// <summary>
+        /// 获取或设置代理创建者。
+        /// </summary>
+        public Func<Type> Creator { get; set; }
+
+        /// <summary>
         /// 添加此类型实现的接口。
         /// </summary>
         /// <param name="type">接口的类型。</param>

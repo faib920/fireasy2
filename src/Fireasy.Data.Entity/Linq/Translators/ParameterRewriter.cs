@@ -48,7 +48,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         protected override Expression VisitParameter(ParameterExpression p)
         {
-            if (obj != null && p.Type == obj.GetType())
+            if (obj != null && p.Type.IsAssignableFrom(obj.GetType()))
             {
                 return Expression.Constant(obj);
             }

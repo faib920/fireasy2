@@ -1,4 +1,4 @@
-﻿#if NETSTANDARD
+﻿#if NETCOREAPP
 using Fireasy.Common.Logging;
 using Fireasy.Common.Serialization;
 using Microsoft.AspNetCore.Mvc.ModelBinding;

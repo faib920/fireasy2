@@ -169,16 +169,6 @@ namespace Fireasy.Data.Entity
             memberOps.Add(operation);
         }
 
-        public override bool TryCreateRepositoryStorage(Type entityType)
-        {
-            if (InitializeContext.Options.AutoCreateTables)
-            {
-                return RespositoryCreator.TryCreate(this, entityType);
-            }
-
-            return false;
-        }
-
         public override void Dispose()
         {
             Database?.Dispose();

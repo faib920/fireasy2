@@ -120,6 +120,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         Generator,
         Declaration,
         Variable,
-        SqlText
+        SqlText,
+        CaseWhen
     }
 }

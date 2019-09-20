@@ -10,7 +10,6 @@ using Fireasy.Common.Configuration;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Linq.Translators.Configuration;
 using System;
-using System.Linq;
 using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq
@@ -38,6 +37,8 @@ namespace Fireasy.Data.Entity.Linq
             }
 
             var cacheKey = ExpressionKeyGenerator.GetKey(expression, "Trans");
+            cacheKey = NativeCacheKeyContext.GetKey(cacheKey);
+
             return MemoryCacheManager.Instance.TryGet(cacheKey, () =>
                 {
                     //将表达式内的 Segment 替换成参数

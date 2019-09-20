@@ -7,7 +7,7 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Serialization;
 using System.Linq;
-#if !NETSTANDARD
+#if !NETCOREAPP
 using System.Web.Mvc;
 #else
 using Microsoft.AspNetCore.Mvc;

@@ -32,6 +32,7 @@ namespace Fireasy.Common.Ioc
             }
 
             var cacheMgr = MemoryCacheManager.Instance;
+
             return cacheMgr.TryGet<Container>(name, () =>
                 {
                     var container = new Container();

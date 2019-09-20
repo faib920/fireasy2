@@ -68,6 +68,7 @@ namespace Fireasy.Data.Entity.Linq
             }
 
             var cacheKey = ExpressionKeyGenerator.GetKey(expression, "Exec");
+            cacheKey = NativeCacheKeyContext.GetKey(cacheKey);
 
             Reference(cacheKey, expression);
 

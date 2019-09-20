@@ -8,9 +8,6 @@
 #if !NET35
 using System;
 using System.ComponentModel.Composition.Hosting;
-#if NETSTANDARD
-using System.Runtime.InteropServices;
-#endif
 
 namespace Fireasy.Common.Composition
 {
@@ -42,13 +39,6 @@ namespace Fireasy.Common.Composition
         /// <returns>工作目录。</returns>
         private static string GetWorkDirectory()
         {
-#if NETSTANDARD
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
-                RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                return "/";
-            }
-#endif
             var directory = AppDomain.CurrentDomain.BaseDirectory;
             if (!string.IsNullOrEmpty(directory) &&
                 (directory.StartsWith("file:\\")))

@@ -10,6 +10,7 @@ using Fireasy.Common.Extensions;
 using Fireasy.Common.Linq.Expressions;
 using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Metadata;
+using Fireasy.Data.Entity.Subscribes;
 using Fireasy.Data.Entity.Validation;
 using Fireasy.Data.Syntax;
 using System;
@@ -34,6 +35,7 @@ namespace Fireasy.Data.Entity
         private Type entityType;
         private ISyntaxProvider syntax;
         private IDatabase database;
+        private EntityContextOptions options;
 
         /// <summary>
         /// 初始化 <see cref="EntityTreeRepository{TEntity}"/> 类的新实例。
@@ -48,6 +50,7 @@ namespace Fireasy.Data.Entity
             metaTree = metadata.EntityTree;
             database = service.Database;
             syntax = database.Provider.GetService<ISyntaxProvider>();
+            options = service.InitializeContext.Options;
         }
 
         IQueryProvider IQueryProviderAware.Provider
@@ -66,6 +69,12 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
+            var func = new Func<int>(() =>
+                {
+                    HandleValidate(entity);
+                    return repository.Insert(entity);
+                });
+
             if (referEntity == null)
             {
                 var arg = CreateUpdatingArgument(entity);
@@ -78,7 +87,9 @@ namespace Fireasy.Data.Entity
                 arg.NewValue.FullName = arg.OldValue.Name;
                 arg.NewValue.InnerId = GenerateInnerId(string.Empty, arg.NewValue.Order, EntityTreePosition.Children);
                 UpdateEntityByArgument(entity, arg);
-                repository.Insert(entity);
+
+                var ret = options.NotifyEvents ?
+                    EntityPersistentSubscribeManager.OnCreate(entity, func) : func();
 
                 return;
             }
@@ -106,12 +117,10 @@ namespace Fireasy.Data.Entity
 
             UpdateEntityByArgument(entity, arg1);
 
-            ValidationUnity.Validate(entity);
-
             try
             {
-                repository.Insert(entity);
-                //repository.Batch(brothers, (u, s) => u.Update(s));
+                var ret = options.NotifyEvents ?
+                    EntityPersistentSubscribeManager.OnCreate(entity, func) : func();
             }
             catch (Exception ex)
             {
@@ -893,7 +902,7 @@ namespace Fireasy.Data.Entity
             UpdateEntityByArgument(current, arg);
 
             //兄弟及其孩子要上移一个单位
-            UpdateBrothersAndChildren(current, brothers, currentInnerId, -1);
+            UpdateBrothersAndChildren(current, brothers, string.Empty, -1);
 
             //它的孩子要移到根节点下
             UpdateChildren(current, children, arg);
@@ -902,7 +911,14 @@ namespace Fireasy.Data.Entity
             SetNameNotModified(brothers);
             SetNameNotModified(children);
 
-            repository.Update(current);
+            var func = new Func<int>(() =>
+                {
+                    HandleValidate(current);
+                    return repository.Update(current);
+                });
+
+            var ret = options.NotifyEvents ?
+                EntityPersistentSubscribeManager.OnUpdate(current, func) : func();
 
             repository.Batch(brothers, (u, s) => u.Update(s));
             repository.Batch(children, (u, s) => u.Update(s));
@@ -989,7 +1005,15 @@ namespace Fireasy.Data.Entity
 
             SetNameNotModified(new[] { current });
 
-            repository.Update(current);
+
+            var func = new Func<int>(() =>
+                {
+                    HandleValidate(current);
+                    return repository.Update(current);
+                });
+
+            var ret = options.NotifyEvents ?
+                EntityPersistentSubscribeManager.OnUpdate(current, func) : func();
         }
 
         /// <summary>
@@ -1203,6 +1227,14 @@ namespace Fireasy.Data.Entity
             return RecurrenceParent((TEntity)entity, (Expression<Func<TEntity, bool>>)predicate);
         }
         #endregion
+
+        private void HandleValidate(IEntity entity)
+        {
+            if (options.ValidateEntity)
+            {
+                ValidationUnity.Validate(entity);
+            }
+        }
 
         /// <summary>
         /// 数据隔离条件生成器。

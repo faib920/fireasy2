@@ -8,7 +8,7 @@
 using System;
 using System.Collections.ObjectModel;
 
-namespace Fireasy.Data.Entity
+namespace Fireasy.Data.Entity.Initializers
 {
     public class RespositoryChangedEventArgs
     {
@@ -43,10 +43,10 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 创建数据表。
         /// </summary>
-        CreateTable,
+        Create,
         /// <summary>
         /// 添加新字段。
         /// </summary>
-        AddFields
+        Modify
     }
 }

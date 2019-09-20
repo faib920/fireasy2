@@ -16,6 +16,7 @@ using System.Text.RegularExpressions;
 using Fireasy.Common;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Extensions;
+using Fireasy.Data.Identity;
 using Fireasy.Data.Provider;
 using Fireasy.Data.RecordWrapper;
 using Fireasy.Data.Syntax;
@@ -550,6 +551,8 @@ namespace Fireasy.Data
                         adapter.InsertCommand = CreateDbCommand(connection, insertCommand, parameters);
                         adapter.InsertCommand.UpdatedRowSource = UpdateRowSource.Both;
                     }
+
+                    ProcessGenerateDataTable(dataTable);
 
                     result = adapter.Update(dataTable);
 
@@ -1144,5 +1147,39 @@ namespace Fireasy.Data
                 });
         }
 #endif
+
+        /// <summary>
+        /// 处理使用了 <see cref="IGeneratorProvider"/> 生成数据的数据表。
+        /// </summary>
+        /// <param name="dataTable"></param>
+        private void ProcessGenerateDataTable(DataTable dataTable)
+        {
+            DataColumn genColumn = null;
+            DataColumn newColumn = null;
+            for (var i = dataTable.Columns.Count - 1; i >= 0; i--)
+            {
+                var column = dataTable.Columns[i];
+
+                Type parType;
+                if ((parType = DataExpressionColumn.GetParameterType(column.DataType)) != null)
+                {
+                    newColumn = dataTable.Columns.Add(column.ColumnName + "_NEW", parType);
+                    genColumn = column;
+                }
+            }
+
+            if (genColumn != null && newColumn != null)
+            {
+                foreach (DataRow row in dataTable.Rows)
+                {
+                    var id = (row[genColumn] as DataExpressionColumn).Setter.DynamicInvoke(this);
+                    row[genColumn.ColumnName + "_NEW"] = id;
+                }
+
+                //移除原来的，新的改名
+                dataTable.Columns.Remove(genColumn);
+                newColumn.ColumnName = genColumn.ColumnName;
+            }
+        }
     }
 }

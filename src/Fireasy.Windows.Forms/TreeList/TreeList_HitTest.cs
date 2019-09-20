@@ -578,6 +578,8 @@ namespace Fireasy.Windows.Forms
                     break;
             }
 
+            cell.Item.InvalidateItem();
+
             if (cell.Item.Enabled && !RaiseBeforeCellEditingEvent(cell))
             {
                 var rect = GetCellTextRectangle(cell, info.Bounds);

@@ -273,11 +273,6 @@ namespace Fireasy.Data.Entity
 
             var provider = initContext.Provider.GetService<IContextProvider>();
             service = provider.CreateContextService(initContext);
-
-            if (service != null)
-            {
-                service.OnRespositoryChanged = OnRespositoryChanged;
-            }
         }
 
         /// <summary>
@@ -285,14 +280,6 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="builder">构造器。</param>
         protected virtual void OnConfiguring(EntityContextOptionsBuilder builder)
-        {
-        }
-
-        /// <summary>
-        /// 仓储物理存储变动时收到的通知。
-        /// </summary>
-        /// <param name="args">通知参数。</param>
-        protected virtual void OnRespositoryChanged(RespositoryChangedEventArgs args)
         {
         }
 

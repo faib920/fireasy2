@@ -119,7 +119,6 @@ namespace Fireasy.Windows.Forms
                     DropDownControl.LostFocus += (o, e) =>
                     {
                         isOpened = false;
-                        OnLostFocus(EventArgs.Empty);
                     };
                     isFirstDrop = false;
                 }
@@ -195,10 +194,6 @@ namespace Fireasy.Windows.Forms
 
         protected override void OnLostFocus(EventArgs e)
         {
-            if (!isOpened)
-            {
-                base.OnLostFocus(e);
-            }
         }
 
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]

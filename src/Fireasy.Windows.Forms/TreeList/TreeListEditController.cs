@@ -128,13 +128,12 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         private void RemoveEditor()
         {
-            var control = (Control)editor;
             IsEditing = false;
-            treelist.Focus();
-            treelist.Controls.Remove(control);
             if (editor != null)
             {
                 editor.Hide();
+                treelist.Focus();
+                treelist.Controls.Remove((Control)editor);
             }
             editor = null;
         }

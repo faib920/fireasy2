@@ -1079,6 +1079,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     condition = condition.And(exp);
                 }
 
+                var deleKey = metadata.Parent.DeleteProperty;
+                if (deleKey != null)
+                {
+                    condition = Expression.And(condition, Expression.Equal(Expression.MakeMemberAccess(parExp, deleKey.Info.ReflectionInfo), Expression.Constant(0.ToType(deleKey.Type))));
+                }
+
                 lambda = Expression.Lambda(condition, parExp);
                 var query = CreateQuery(eleType, m.Object);
                 condition = Expression.Call(typeof(Enumerable), nameof(Enumerable.Count), new[] { eleType }, query.Expression, lambda);
@@ -1431,8 +1437,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 return this.Visit(exp);
             }
 
-            var mcallExp = source as MethodCallExpression;
-            if (mcallExp != null && mcallExp.Arguments[0].NodeType == ExpressionType.Constant)
+            if (source is MethodCallExpression mcallExp && mcallExp.Arguments[0].NodeType == ExpressionType.Constant)
             {
                 constSource = mcallExp.Arguments[0] as ConstantExpression;
                 if (!IsQueryable(constSource))
@@ -1441,21 +1446,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
 
             //属性是一个集合的情况
-            var mbrExp = source as MemberExpression;
-            if (mbrExp != null)
+            if (source is MemberExpression mbrExp && source.Type.IsArray || 
+                (source.Type.IsGenericParameter &&
+                    (source.Type.GetGenericTypeDefinition() == typeof(IEnumerable<>) || source.Type.GetGenericTypeDefinition() == typeof(List<>))))
             {
-                //属性的前后添加逗号
-                var concatExp = Expression.Call(typeof(string), nameof(string.Concat), null,
-                    new Expression[] { Expression.Constant(","), Visit(mbrExp), Expression.Constant(",") });
-
-                var toExp = Expression.Call(typeof(Convert), nameof(Convert.ToString), null, new[] { match });
-
-                //值的前后添加逗号
-                var matchExp = Expression.Call(typeof(string), nameof(string.Concat), null,
-                    new Expression[] { Expression.Constant(","), Expression.Convert(toExp, typeof(object)), Expression.Constant(",") });
-
-                //属性包含值
-                return Expression.Call(concatExp, typeof(string).GetMethod(nameof(string.Contains)), new[] { matchExp });
+                return Expression.Call(typeof(Enumerable), nameof(Enumerable.Contains), new[] { source.Type.GetEnumerableElementType() }, Visit(source), Visit(match));
             }
 
             var projection = VisitSequence(source);

@@ -51,6 +51,7 @@ namespace Fireasy.Data.Entity.Dynamic
             TypeName = typeName;
             this.assemblyBuilder = assemblyBuilder ?? new DynamicAssemblyBuilder("<DynamicType>_" + typeName);
             InnerBuilder = this.assemblyBuilder.DefineType(TypeName, baseType: baseType ?? typeof(EntityObject));
+            InnerBuilder.Creator = () => Create();
             EntityType = InnerBuilder.UnderlyingSystemType;
             Properties = new List<IProperty>();
         }
@@ -366,6 +367,10 @@ namespace Fireasy.Data.Entity.Dynamic
                 .ldtoken(property.Type)
                 .call(TypeGetTypeFromHandle)
                 .call(propertyType.GetProperty(nameof(RelationProperty.RelationalType)).GetSetMethod())
+                .nop
+                .ldloc(local)
+                .ldsfld(typeof(RelationOptions).GetField(nameof(RelationOptions.Default), BindingFlags.Public | BindingFlags.Static))
+                .call(propertyType.GetProperty(nameof(RelationProperty.Options)).GetSetMethod())
                 .nop
                 .ldloc(local).call(RegisterMethod);
         }

@@ -45,6 +45,11 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         public bool WithAutoIncrement { get; set; }
 
         /// <summary>
+        /// 获取或设置是否使用生成的值。
+        /// </summary>
+        public bool WithGenerateValue { get; set; }
+
+        /// <summary>
         /// 更新 <see cref="InsertCommandExpression"/> 对象。
         /// </summary>
         /// <param name="table">表的表达式。</param>
@@ -54,7 +59,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         {
             return table != Table ||
                 arguments != Assignments
-                ? new InsertCommandExpression(table, arguments) { WithAutoIncrement = WithAutoIncrement } : this;
+                ? new InsertCommandExpression(table, arguments) { WithAutoIncrement = WithAutoIncrement, WithGenerateValue = WithGenerateValue } : this;
         }
     }
 }

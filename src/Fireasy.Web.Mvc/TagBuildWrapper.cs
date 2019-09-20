@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NETSTANDARD
+#if !NETCOREAPP
 using System.Web.Mvc;
 #else
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -34,14 +34,14 @@ namespace Fireasy.Web.Mvc
         /// <param name="html"></param>
         public void SetInnerHtmlContent(string html)
         {
-#if !NETSTANDARD
+#if !NETCOREAPP
             InnerHtml = html;
 #else
             InnerHtml.AppendHtml(html);
 #endif
         }
 
-#if NETSTANDARD
+#if NETCOREAPP
         /// <summary>
         /// 生成ID。
         /// </summary>

@@ -363,9 +363,37 @@ namespace Fireasy.Common.Linq.Expressions
         /// <returns></returns>
         protected virtual Expression VisitLambda(LambdaExpression lambdaExp)
         {
+            var eleType = lambdaExp.Type;
+            var defType = lambdaExp.Type.GetGenericTypeDefinition();
+            var genTypes = lambdaExp.Type.GetGenericArguments();
             var parameters = lambdaExp.Parameters.Select(s => (ParameterExpression)Visit(s)).ToArray();
+
+            var typeChanged = false;
+
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                if (parameters[i] == lambdaExp.Parameters[i])
+                {
+                    continue;
+                }
+
+                for (var j = 0; j < genTypes.Length; j++)
+                {
+                    if (genTypes[j] == lambdaExp.Parameters[i].Type)
+                    {
+                        genTypes[j] = parameters[i].Type;
+                        typeChanged = true;
+                    }
+                }
+            }
+
+            if (typeChanged)
+            {
+                eleType = defType.MakeGenericType(genTypes);
+            }
+
             var body = Visit(lambdaExp.Body);
-            return lambdaExp.Update(lambdaExp.Type, body, parameters);
+            return lambdaExp.Update(eleType, body, parameters);
         }
 
         /// <summary>

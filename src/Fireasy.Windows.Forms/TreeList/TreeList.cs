@@ -965,6 +965,7 @@ namespace Fireasy.Windows.Forms
 
             if (!editor.IsEditing)
             {
+                EndEdit();
                 RedrawSelectedItems();
             }
         }

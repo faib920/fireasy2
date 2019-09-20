@@ -19,5 +19,10 @@ namespace Fireasy.Common.Emit
         /// </summary>
         /// <returns></returns>
         Type CreateType();
+
+        /// <summary>
+        /// 获取或设置代理创建者。
+        /// </summary>
+        Func<Type> Creator { get; set; }
     }
 }

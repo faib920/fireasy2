@@ -194,9 +194,11 @@ namespace Fireasy.Data.Entity
         /// <returns>一个 <see cref="IProperty"/> 对象枚举器。</returns>
         public static IEnumerable<IProperty> GetRelatedProperties(Type entityType, LoadBehavior? behavior = null)
         {
-            return GetProperties(entityType)
-                .Where(property => property is RelationProperty)
-                .Where(property => behavior == null || property.As<RelationProperty>().Options.LoadBehavior == behavior);
+            return from s in GetProperties(entityType)
+                   let p = s as RelationProperty
+                   where p != null
+                   where behavior == null || (p.Options != null && p.Options.LoadBehavior == behavior)
+                   select s;
         }
 
         /// <summary>

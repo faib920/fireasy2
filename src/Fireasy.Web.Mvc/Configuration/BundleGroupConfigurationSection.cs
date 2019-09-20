@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NETSTANDARD
+#if !NETCOREAPP
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using System.Xml;

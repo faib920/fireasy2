@@ -10,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Fireasy.Common.Caching;
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 #if NETSTANDARD
@@ -30,7 +29,8 @@ namespace Fireasy.Common.Configuration
     public static class ConfigurationUnity
     {
         private const string CUSTOM_CONFIG_NAME = "my-config-file";
-        private static readonly SafetyDictionary<string, object> cache = new SafetyDictionary<string, object>();
+        private static readonly SafetyDictionary<string, IConfigurationSection> cfgCache = new SafetyDictionary<string, IConfigurationSection>();
+        private static readonly SafetyDictionary<string, object> objCache = new SafetyDictionary<string, object>();
 
         /// <summary>
         /// 获取配置节实例。
@@ -46,8 +46,12 @@ namespace Fireasy.Common.Configuration
             }
 
 #if NETSTANDARD
-            var cacheMgr = MemoryCacheManager.Instance;
-            return (T)cacheMgr.Get(attribute.Name);
+            if (cfgCache.TryGetValue(attribute.Name, out IConfigurationSection value))
+            {
+                return (T)value;
+            }
+
+            return default;
 #else
             return (T)GetSection(attribute.Name);
 #endif
@@ -78,33 +82,30 @@ namespace Fireasy.Common.Configuration
             var attribute = typeof(T).GetCustomAttributes<ConfigurationSectionStorageAttribute>().FirstOrDefault();
             if (attribute == null)
             {
-                return default(T);
+                return default;
             }
 
-            var cacheMgr = MemoryCacheManager.Instance;
-            return cacheMgr.TryGet(attribute.Name, () =>
+            return (T)cfgCache.GetOrAdd(attribute.Name, () =>
                 {
                     var section = new T();
                     section.Bind(configuration.GetSection(attribute.Name.Replace("/", ":")));
                     return section;
-                }, () => NeverExpired.Instance);
+                });
         }
 #endif
 
 #if !NETSTANDARD
         private static IConfigurationSection GetSection(string sectionName)
         {
-            var cacheMgr = MemoryCacheManager.Instance;
-
             //使用appSetting名称为FireasyConfigFileName放置自定义配置文件
             var configFileName = ConfigurationManager.AppSettings[CUSTOM_CONFIG_NAME];
             if (string.IsNullOrEmpty(configFileName))
             {
-                return cacheMgr.TryGet(sectionName, () => ConfigurationManager.GetSection(sectionName) as IConfigurationSection, () => NeverExpired.Instance);
+                return cfgCache.GetOrAdd(sectionName, () => ConfigurationManager.GetSection(sectionName) as IConfigurationSection);
             }
 
             configFileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, configFileName);
-            return cacheMgr.TryGet(sectionName, () => GetCustomConfiguration(sectionName, configFileName), () => new FileDependency(configFileName));
+            return cfgCache.GetOrAdd(sectionName, () => GetCustomConfiguration(sectionName, configFileName));
         }
 
         /// <summary>
@@ -261,13 +262,13 @@ namespace Fireasy.Common.Configuration
         /// <returns></returns>
         public static TInstance Cached<TInstance>(string cacheKey, Func<object> factory)
         {
-            var obj = cache.GetOrAdd(cacheKey, factory);
+            var obj = objCache.GetOrAdd(cacheKey, factory);
             if (obj != null)
             {
                 return (TInstance)obj;
             }
 
-            return default(TInstance);
+            return default;
         }
     }
 }

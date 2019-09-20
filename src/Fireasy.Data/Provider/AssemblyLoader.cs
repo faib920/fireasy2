@@ -26,24 +26,28 @@ namespace Fireasy.Data.Provider
         /// <returns></returns>
         public static bool TryLoad(string typeName, out DbProviderFactory factory)
         {
-            var type = Type.GetType(typeName, false, true);
-            if (type != null)
+            factory = null;
+            try
             {
-                var field = type.GetFields(BindingFlags.Public | BindingFlags.Static)
-                    .FirstOrDefault(s => typeof(DbProviderFactory).IsAssignableFrom(s.FieldType));
+                var type = Type.GetType(typeName, false, true);
+                if (type != null && typeof(DbProviderFactory).IsAssignableFrom(type))
+                {
+                    var field = type.GetFields(BindingFlags.Public | BindingFlags.Static)
+                        .FirstOrDefault(s => typeof(DbProviderFactory).IsAssignableFrom(s.FieldType));
 
-                if (field != null)
-                {
-                    factory = field.GetValue(null) as DbProviderFactory;
+                    if (field != null)
+                    {
+                        factory = field.GetValue(null) as DbProviderFactory;
+                    }
+                    else
+                    {
+                        factory = type.New<DbProviderFactory>();
+                    }
                 }
-                else
-                {
-                    factory = type.New<DbProviderFactory>();
-                }
+
             }
-            else
+            catch
             {
-                factory = null;
             }
 
             return factory != null;

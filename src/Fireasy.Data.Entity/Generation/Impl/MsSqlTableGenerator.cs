@@ -15,10 +15,10 @@ namespace Fireasy.Data.Entity.Generation
 {
     public class MsSqlTableGenerator : BaseTableGenerateProvider
     {
-        protected override SqlCommand[] BuildCreateTableCommands(ISyntaxProvider syntax, EntityMetadata metadata, IList<IProperty> properties)
+        protected override SqlCommand[] BuildCreateTableCommands(ISyntaxProvider syntax, string tableName, IList<IProperty> properties)
         {
             var sb = new StringBuilder();
-            sb.AppendFormat("create table {0}\n(\n", Quote(syntax, metadata.TableName));
+            sb.AppendFormat("create table {0}\n(\n", Quote(syntax, tableName));
 
             var count = properties.Count;
             for (var i = 0; i < count; i++)
@@ -38,7 +38,7 @@ namespace Fireasy.Data.Entity.Generation
             if (primaryPeoperties.Length > 0)
             {
                 sb.AppendLine(",");
-                sb.AppendFormat("\nconstraint {0} primary key (", Quote(syntax, "PK_" + metadata.TableName));
+                sb.AppendFormat("\nconstraint {0} primary key (", Quote(syntax, "PK_" + tableName));
 
                 for (var i = 0; i < primaryPeoperties.Length; i++)
                 {
@@ -58,10 +58,10 @@ namespace Fireasy.Data.Entity.Generation
             return new SqlCommand[] { sb.ToString() };
         }
 
-        protected override SqlCommand[] BuildAddFieldCommands(ISyntaxProvider syntax, EntityMetadata metadata, IList<IProperty> properties)
+        protected override SqlCommand[] BuildAddFieldCommands(ISyntaxProvider syntax, string tableName, IList<IProperty> properties)
         {
             var sb = new StringBuilder();
-            sb.AppendFormat("alter table {0} add ", Quote(syntax, metadata.TableName));
+            sb.AppendFormat("alter table {0} add ", Quote(syntax, tableName));
 
             var count = properties.Count;
             for (var i = 0; i < count; i++)

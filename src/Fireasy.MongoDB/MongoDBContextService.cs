@@ -34,11 +34,6 @@ namespace Fireasy.MongoDB
             throw new NotImplementedException();
         }
 
-        public override bool TryCreateRepositoryStorage(Type entityType)
-        {
-            return false;
-        }
-
         public override void Dispose()
         {
         }

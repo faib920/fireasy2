@@ -10,7 +10,7 @@ using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Logging;
 using System;
 using System.Linq;
-#if !NETSTANDARD
+#if !NETCOREAPP
 using System.Web.Mvc;
 #else
 using Microsoft.AspNetCore.Mvc;
@@ -25,7 +25,7 @@ namespace Fireasy.Web.Mvc
     /// 控制器方法执行发生异常时，记录日志并返回友好的提示信息。
     /// </summary>
     public class HandleErrorAttribute :
-#if !NETSTANDARD
+#if !NETCOREAPP
         System.Web.Mvc.HandleErrorAttribute
 #else
         ExceptionFilterAttribute
@@ -37,7 +37,7 @@ namespace Fireasy.Web.Mvc
         /// <param name="filterContext"></param>
         public override void OnException(ExceptionContext filterContext)
         {
-#if !NETSTANDARD
+#if !NETCOREAPP
             var descriptor = ActionContext.Current != null ? ActionContext.Current.ActionDescriptor as ReflectedActionDescriptor : null;
             if (descriptor != null && typeof(JsonResult).IsAssignableFrom(descriptor.MethodInfo.ReturnType))
 #else
@@ -79,7 +79,7 @@ namespace Fireasy.Web.Mvc
         protected virtual void LogException(ExceptionContext filterContext)
         {
             //记录日志
-#if !NETSTANDARD
+#if !NETCOREAPP
             var logger = LoggerFactory.CreateLogger();
 #else
             var logger = filterContext.HttpContext.RequestServices.GetService<ILogger>();
@@ -102,7 +102,7 @@ namespace Fireasy.Web.Mvc
         protected virtual ActionResult GetHandledResult(ExceptionContext filterContext)
         {
             EmptyArrayResultAttribute attr = null;
-#if !NETSTANDARD
+#if !NETCOREAPP
             if (ActionContext.Current != null)
             {
                 attr = ActionContext.Current.ActionDescriptor

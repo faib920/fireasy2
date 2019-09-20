@@ -10,6 +10,7 @@ using Fireasy.Common;
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Linq.Expressions;
+using Fireasy.Data.Entity.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Translators;
 using System;
 using System.Collections.Generic;
@@ -255,7 +256,7 @@ namespace Fireasy.Data.Entity.Linq
             Expression joinExp = null;
             foreach (var item in collection)
             {
-                var exp = ParameterRewriter.Rewrite(predicate, parExp, item);
+                var exp = ParameterRewriter.Rewrite(predicate.Body, parExp, item);
                 joinExp = joinExp == null ? exp : Expression.Or(joinExp, exp);
             }
 
@@ -290,7 +291,7 @@ namespace Fireasy.Data.Entity.Linq
             Expression joinExp = null;
             foreach (var item in collection)
             {
-                var exp = ParameterRewriter.Rewrite(predicate, parExp, item);
+                var exp = ParameterRewriter.Rewrite(predicate.Body, parExp, item);
                 joinExp = joinExp == null ? exp : Expression.And(joinExp, exp);
             }
 

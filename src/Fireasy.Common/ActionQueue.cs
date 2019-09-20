@@ -38,7 +38,7 @@ namespace Fireasy.Common
             var entry = new ActionEntry(action, tryTimes);
             queue.Enqueue(entry);
 
-            if (thread.ThreadState != ThreadState.Running)
+            if (thread.ThreadState != ThreadState.Background)
             {
                 thread.Start();
             }

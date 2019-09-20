@@ -6,7 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Serialization;
-#if !NETSTANDARD
+#if !NETCOREAPP
 using System;
 using System.Linq;
 using System.Web.Mvc;
@@ -26,11 +26,11 @@ namespace Fireasy.Web.Mvc
         /// <param name="value"></param>
         /// <param name="option"></param>
         public JsonResultWrapper(object value, JsonSerializeOption option = null)
-#if NETSTANDARD
+#if NETCOREAPP
             : base(value)
 #endif
         {
-#if !NETSTANDARD
+#if !NETCOREAPP
             this.result = new JsonResult { Data = value, JsonRequestBehavior = JsonRequestBehavior.AllowGet };
 #endif
             Option = option;
@@ -38,7 +38,7 @@ namespace Fireasy.Web.Mvc
 
         public JsonSerializeOption Option { get; set; }
 
-#if !NETSTANDARD
+#if !NETCOREAPP
         private JsonResult result;
 
         /// <summary>

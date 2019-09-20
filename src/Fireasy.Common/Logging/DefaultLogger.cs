@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.IO;
+using System.Reflection;
 using System.Text;
 #if NET35
 using Fireasy.Common.Extensions;
@@ -149,10 +150,16 @@ namespace Fireasy.Common.Logging
                 sb.AppendLine("--Exceptions--");
 
 #if !NET35
-                var aggExp = exception as AggregateException;
-                if (aggExp != null && aggExp.InnerExceptions.Count > 0)
+                if (exception is AggregateException aggExp)
                 {
                     foreach (var e in aggExp.InnerExceptions)
+                    {
+                        RecursiveWriteException(sb, e);
+                    }
+                }
+                else if (exception is ReflectionTypeLoadException loadExp)
+                {
+                    foreach (var e in loadExp.LoaderExceptions)
                     {
                         RecursiveWriteException(sb, e);
                     }

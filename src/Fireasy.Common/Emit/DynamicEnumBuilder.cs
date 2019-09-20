@@ -50,6 +50,8 @@ namespace Fireasy.Common.Emit
             get { return enumBuilder; }
         }
 
+        Func<Type> ITypeCreator.Creator { get; set; }
+
         /// <summary>
         /// 定义一个枚举值。
         /// </summary>

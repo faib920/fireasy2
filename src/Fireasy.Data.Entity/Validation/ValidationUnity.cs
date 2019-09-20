@@ -192,7 +192,7 @@ namespace Fireasy.Data.Entity.Validation
                     continue;
                 }
 
-                var value = entity.GetValue(property);
+                var value = entity.EntityType.IsNotCompiled() ? entity.GetValue(property) : entity.GetDirectValue(property);
 
                 isValid &= Validate(entity, property, value, (p, messages) => propertyErrors.TryAdd(property, messages));
             }
@@ -279,7 +279,7 @@ namespace Fireasy.Data.Entity.Validation
         /// <returns></returns>
         private static Dictionary<string, List<ValidationAttribute>> GetPropertyValidations(Type entityType)
         {
-               var dictionary = new Dictionary<string, List<ValidationAttribute>>();
+            var dictionary = new Dictionary<string, List<ValidationAttribute>>();
             var metadataType = entityType.GetCustomAttributes<MetadataTypeAttribute>(true).FirstOrDefault();
             if (metadataType != null &&
                 typeof(IMetadataContainer).IsAssignableFrom(metadataType.MetadataClassType))

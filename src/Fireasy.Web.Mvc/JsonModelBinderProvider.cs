@@ -1,4 +1,4 @@
-﻿#if NETSTANDARD
+﻿#if NETCOREAPP
 using Fireasy.Common.Extensions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 

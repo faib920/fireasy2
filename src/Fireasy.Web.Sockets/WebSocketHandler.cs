@@ -99,7 +99,7 @@ namespace Fireasy.Web.Sockets
 
         private async Task Invoke()
         {
-            ListenHeartBeat();
+            //ListenHeartBeat();
 
             OnConnected();
             Clients.Add(ConnectionId, this);

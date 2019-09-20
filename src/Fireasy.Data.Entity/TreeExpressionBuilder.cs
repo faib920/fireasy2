@@ -38,7 +38,7 @@ namespace Fireasy.Data.Entity
             var memberExp = Expression.MakeMemberAccess(parExp, metadata.InnerSign.Info.ReflectionInfo);
             var no = parent == null ? string.Empty : (string)parent.GetValue(metadata.InnerSign);
 
-            Expression condition = null;
+            Expression condition;
             if (recurrence)
             {
                 condition = Expression.Call(null, MthLike, memberExp, Expression.Constant(string.Concat(no, "%")));

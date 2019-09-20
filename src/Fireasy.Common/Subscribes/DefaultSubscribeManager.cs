@@ -7,7 +7,11 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.ComponentModel;
 using System;
+#if !NET35
+using System.Collections.Concurrent;
+#endif
 using System.Collections.Generic;
+using System.Threading;
 
 namespace Fireasy.Common.Subscribes
 {
@@ -17,11 +21,46 @@ namespace Fireasy.Common.Subscribes
     public class DefaultSubscribeManager : ISubscribeManager
     {
         private static SafetyDictionary<Type, List<Delegate>> subscribers = new SafetyDictionary<Type, List<Delegate>>();
+#if NET35
+        private Queue<object> queue = new Queue<object>();
+#else
+        private ConcurrentQueue<object> queue = new ConcurrentQueue<object>();
+#endif
+        private Thread thread = null;
 
         /// <summary>
         /// 缺省实例。
         /// </summary>
         public static ISubscribeManager Instance = new DefaultSubscribeManager();
+
+        protected DefaultSubscribeManager()
+        {
+            thread = new Thread(new ThreadStart(ProcessQueue)) { IsBackground = true };
+        }
+
+        private void ProcessQueue()
+        {
+            while (true)
+            {
+                if (queue.Count == 0)
+                {
+                    Thread.Sleep(1000);
+                }
+
+#if !NET35
+                if (queue.TryDequeue(out object obj))
+#else
+                object obj = null;
+                if (queue.Count > 0 && (obj = queue.Dequeue()) != null)
+#endif
+                {
+                    if (obj != null && subscribers.TryGetValue(obj.GetType(), out List<Delegate> list) && list != null)
+                    {
+                        list.ForEach(s => s.DynamicInvoke(obj));
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// 向管理器发送主题。
@@ -30,12 +69,11 @@ namespace Fireasy.Common.Subscribes
         /// <param name="subject">主题内容。</param>
         public void Publish<TSubject>(TSubject subject) where TSubject : class
         {
-            if (subscribers.TryGetValue(typeof(TSubject), out List<Delegate> list))
+            queue.Enqueue(subject);
+
+            if (thread.ThreadState != ThreadState.Background)
             {
-                if (list != null)
-                {
-                    list.ForEach(s => s.DynamicInvoke(subject));
-                }
+                thread.Start();
             }
         }
 

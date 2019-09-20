@@ -290,6 +290,24 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
+        /// 为实体对象应用默认值。
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        public static IEntity ApplyDefaultValue(this IEntity entity)
+        {
+            foreach (var property in PropertyUnity.GetPersistentProperties(entity.EntityType))
+            {
+                if (!PropertyValue.IsEmpty(property.Info.DefaultValue))
+                {
+                    entity.InitializeValue(property, property.Info.DefaultValue);
+                }
+            }
+
+            return entity;
+        }
+
+        /// <summary>
         /// 如果对象实现了 <see cref="IEntityPersistentInstanceContainer"/> 接口，则会将 <paramref name="instanceName"/> 附加到该对象。
         /// </summary>
         /// <param name="item"></param>

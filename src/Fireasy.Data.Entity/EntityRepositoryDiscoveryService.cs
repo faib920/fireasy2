@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
+using Fireasy.Data.Entity.Initializers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,7 +26,6 @@ namespace Fireasy.Data.Entity
 
         // Used by the code below to create DbSet instances
         public static readonly MethodInfo MthSetRep = typeof(EntityContext).GetMethods().FirstOrDefault(s => s.Name == nameof(EntityContext.Set) && s.IsGenericMethod);
-        public static readonly MethodInfo MthTryCreateRep = typeof(IContextService).GetMethods().FirstOrDefault(s => s.Name == nameof(IContextService.TryCreateRepositoryStorage));
 
         private readonly EntityContext _context;
         private readonly EntityContextOptions _options;
@@ -69,62 +69,56 @@ namespace Fireasy.Data.Entity
 
                 var typeMap = new Dictionary<Type, List<string>>();
 
-                var injection = _service.Provider.GetService<IInjectionProvider>();
+                var reposMaps = (from s in
+                    contextType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(p => p.GetIndexParameters().Length == 0
+                        && p.DeclaringType != typeof(EntityContext))
+                    let entityType = GetSetType(s.PropertyType)
+                    where entityType != null
+                    select new EntityRepositoryMapper { Property = s, EntityType = entityType }).ToList();
+
+                _options.Initializers?.PreInitialize(new EntityContextPreInitializeContext(_context, _service, reposMaps));
 
                 // Properties declared directly on DbContext such as Database are skipped
-                foreach (var propertyInfo in contextType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                    .Where(p => p.GetIndexParameters().Length == 0
-                        && p.DeclaringType != typeof(EntityContext)))
+                foreach (var m in reposMaps)
                 {
-                    var entityType = GetSetType(propertyInfo.PropertyType);
-                    if (entityType != null)
+                    // We validate immediately because a DbSet/IDbSet must be of
+                    // a valid entity type since otherwise you could never use an instance.
+                    if (!m.EntityType.IsValidStructuralType())
                     {
-                        if (_options.RecompileAssembly)
+                        //throw Error.InvalidEntityType(entityType);
+                    }
+
+                    if (!typeMap.TryGetValue(m.EntityType, out List<string> properties))
+                    {
+                        properties = new List<string>();
+                        typeMap[m.EntityType] = properties;
+                    }
+
+                    properties.Add(m.Property.Name);
+
+                    var setter = m.Property.GetSetMethod();
+                    if (setter != null && setter.IsPublic)
+                    {
+                        var setMethod = MthSetRep.MakeGenericMethod(m.EntityType);
+
+                        Expression expression = Expression.Call(dbContextParam, setMethod);
+                        var pType = setter.GetParameters()[0].ParameterType;
+                        if (pType != expression.Type)
                         {
-                            EntityProxyManager.CompileAll(entityType.Assembly, injection);
+                            expression = Expression.Convert(expression, pType);
                         }
 
-                        // We validate immediately because a DbSet/IDbSet must be of
-                        // a valid entity type since otherwise you could never use an instance.
-                        if (!entityType.IsValidStructuralType())
-                        {
-                            //throw Error.InvalidEntityType(entityType);
-                        }
-
-                        if (!typeMap.TryGetValue(entityType, out List<string> properties))
-                        {
-                            properties = new List<string>();
-                            typeMap[entityType] = properties;
-                        }
-
-                        properties.Add(propertyInfo.Name);
-
-                        var setter = propertyInfo.GetSetMethod();
-                        if (setter != null && setter.IsPublic)
-                        {
-                            var setMethod = MthSetRep.MakeGenericMethod(entityType);
-
-                            Expression expression = Expression.Call(dbContextParam, setMethod);
-                            var pType = setter.GetParameters()[0].ParameterType;
-                            if (pType != expression.Type)
-                            {
-                                expression = Expression.Convert(expression, pType);
-                            }
-
-                            var setExp = Expression.Call(
-                                Expression.Convert(dbContextParam, contextType), setter, expression);
+                        var setExp = Expression.Call(
+                            Expression.Convert(dbContextParam, contextType), setter, expression);
 
 #if !NET35
-                            var createExp = Expression.Call(Expression.Constant(_service), MthTryCreateRep, Expression.Constant(entityType));
-                            var blockExp = Expression.Block(setExp, createExp);
-
-                            initDelegates.Add(
-                                Expression.Lambda<Action<EntityContext>>(blockExp, dbContextParam).Compile());
+                        initDelegates.Add(
+                            Expression.Lambda<Action<EntityContext>>(setExp, dbContextParam).Compile());
 #else
                             initDelegates.Add(
                                 Expression.Lambda<Action<EntityContext>>(setExp, dbContextParam).Compile());
 #endif
-                        }
                     }
                 }
 
@@ -185,5 +179,12 @@ namespace Fireasy.Data.Entity
             return null;
         }
         #endregion
+    }
+
+    public class EntityRepositoryMapper
+    {
+        public PropertyInfo Property { get; set; }
+
+        public Type EntityType { get; set; }
     }
 }

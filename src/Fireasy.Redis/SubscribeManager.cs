@@ -5,11 +5,9 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if NETSTANDARD
 using Fireasy.Common.ComponentModel;
 using System.Collections.Generic;
 using CSRedis;
-#endif
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Subscribes;
 using System;
@@ -23,9 +21,8 @@ namespace Fireasy.Redis
     [ConfigurationSetting(typeof(RedisConfigurationSetting))]
     public class SubscribeManager : RedisComponent, ISubscribeManager
     {
-#if NETSTANDARD
         private SafetyDictionary<string, List<CSRedisClient.SubscribeObject>> channels = new SafetyDictionary<string, List<CSRedisClient.SubscribeObject>>();
-#endif
+
         /// <summary>
         /// 向 Redis 服务器发送消息主题。
         /// </summary>
@@ -33,15 +30,9 @@ namespace Fireasy.Redis
         /// <param name="subject">主题内容。</param>
         public void Publish<TSubject>(TSubject subject) where TSubject : class
         {
-#if NETSTANDARD
             var client = GetConnection();
             var channelName = ChannelHelper.GetChannelName(typeof(TSubject));
             client.Publish(channelName, Serialize(subject));
-#else
-            var data = Encoding.UTF8.GetBytes(Serialize(subject));
-            var channelName = ChannelHelper.GetChannelName(typeof(TSubject));
-            Publish(channelName, data);
-#endif
         }
 
         /// <summary>
@@ -52,11 +43,7 @@ namespace Fireasy.Redis
         public void Publish(string channel, byte[] data)
         {
             var client = GetConnection();
-#if NETSTANDARD
             client.Publish(channel, Encoding.UTF8.GetString(data));
-#else
-            client.GetSubscriber().Publish(channel, data);
-#endif
         }
 
         /// <summary>
@@ -68,7 +55,6 @@ namespace Fireasy.Redis
         {
             var client = GetConnection();
             var channelName = ChannelHelper.GetChannelName(typeof(TSubject));
-#if NETSTANDARD
             channels.GetOrAdd(channelName, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((channelName, msg =>
                 {
@@ -76,13 +62,6 @@ namespace Fireasy.Redis
                     subscriber(subject);
                 }
             )));
-#else
-            client.GetSubscriber().Subscribe(channelName, (channel, value) =>
-                {
-                    var subject = Deserialize<TSubject>(Encoding.UTF8.GetString(value));
-                    subscriber(subject);
-                });
-#endif
         }
 
         /// <summary>
@@ -94,7 +73,6 @@ namespace Fireasy.Redis
         {
             var client = GetConnection();
             var channelName = ChannelHelper.GetChannelName(subjectType);
-#if NETSTANDARD
             channels.GetOrAdd(channelName, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((channelName, msg =>
                 {
@@ -105,17 +83,6 @@ namespace Fireasy.Redis
                     }
                 }
             )));
-#else
-            client.GetSubscriber().Subscribe(channelName, (channel, value) =>
-                {
-                    var subject = Deserialize(subjectType, Encoding.UTF8.GetString(value));
-                    if (subject != null)
-                    {
-                        subscriber.DynamicInvoke(subject);
-                    }
-                });
-#endif
-
         }
 
         /// <summary>
@@ -126,19 +93,12 @@ namespace Fireasy.Redis
         public void AddSubscriber(string channel, Action<byte[]> subscriber)
         {
             var client = GetConnection();
-#if NETSTANDARD
             channels.GetOrAdd(channel, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((channel, msg =>
                 {
                     subscriber.DynamicInvoke(Encoding.UTF8.GetBytes(msg.Body));
                 }
             )));
-#else
-            client.GetSubscriber().Subscribe(channel, (c, value) =>
-                {
-                    subscriber.DynamicInvoke((byte[])value);
-                });
-#endif
         }
 
         /// <summary>
@@ -168,14 +128,10 @@ namespace Fireasy.Redis
         public void RemoveSubscriber(string channel)
         {
             var client = GetConnection();
-#if NETSTANDARD
             if (channels.TryRemove(channel, out List<CSRedisClient.SubscribeObject> subs) && subs != null)
             {
                 subs.ForEach(s => s.Dispose());
             }
-#else
-            client.GetSubscriber().Unsubscribe(channel);
-#endif
         }
     }
 }

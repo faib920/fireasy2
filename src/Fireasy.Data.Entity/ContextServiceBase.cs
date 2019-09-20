@@ -41,15 +41,11 @@ namespace Fireasy.Data.Entity
 
         public IDatabase Database { get; protected set; }
 
-        public Action<RespositoryChangedEventArgs> OnRespositoryChanged { get; set; }
-
         public abstract void BeginTransaction(IsolationLevel level);
 
         public abstract void CommitTransaction();
 
         public abstract void RollbackTransaction();
-
-        public abstract bool TryCreateRepositoryStorage(Type entityType);
 
         public abstract void Dispose();
 

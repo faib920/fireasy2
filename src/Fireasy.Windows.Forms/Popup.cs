@@ -196,7 +196,7 @@ namespace Fireasy.Windows.Forms
                 location.Y -= Size.Height + area.Height;
             }
 
-            Show(location, ToolStripDropDownDirection.BelowRight);
+            Show(location, ToolStripDropDownDirection.AboveLeft);
         }
 
         public void Show(Control control, Rectangle area)
@@ -206,7 +206,7 @@ namespace Fireasy.Windows.Forms
             SetOwnerItem(control);
 
             resizableTop = resizableLeft = false;
-            Point location = control.PointToScreen(new Point(area.Left, area.Top + area.Height));
+            Point location = control.PointToScreen(new Point(area.Left, area.Top + area.Height - 3));
             Rectangle screen = Screen.FromControl(control).WorkingArea;
             if (location.X + Size.Width > (screen.Left + screen.Width))
             {

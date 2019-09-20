@@ -6,7 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using Fireasy.Common.Extensions;
+using Fireasy.Common.ComponentModel;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,8 +22,9 @@ namespace Fireasy.Common.Emit
     {
         private AssemblyBuilder assemblyBuilder;
         private ModuleBuilder moduleBuilder;
-        private static readonly Dictionary<string, Assembly> assemblies = new Dictionary<string, Assembly>();
+        private static readonly SafetyDictionary<string, Assembly> assemblies = new SafetyDictionary<string, Assembly>();
         private readonly List<ITypeCreator> typeBuilders = new List<ITypeCreator>();
+        private bool isCreated = false;
 
         /// <summary>
         /// 初始化 <see cref="DynamicAssemblyBuilder"/> 类的新实例。
@@ -97,7 +98,12 @@ namespace Fireasy.Common.Emit
                 AppDomain.CurrentDomain.AssemblyResolve += (o, e) =>
                     {
                         var names = e.Name.Split(',');
-                        return assemblies.TryGetValue(names[0].Trim(), () => null);
+                        if (assemblies.TryGetValue(names[0].Trim(), out Assembly assembly))
+                        {
+                            return assembly;
+                        }
+
+                        return null;
                     };
             }
 
@@ -182,16 +188,39 @@ namespace Fireasy.Common.Emit
             return enumBuilder;
         }
 
+        /// <summary>
+        /// 创建程序集。
+        /// </summary>
+        /// <returns></returns>
+        public Assembly Create()
+        {
+            if (!isCreated)
+            {
+                foreach (var typeBuilder in typeBuilders)
+                {
+                    if (typeBuilder.Creator != null)
+                    {
+                        typeBuilder.Creator();
+                    }
+                    else
+                    {
+                        typeBuilder.CreateType();
+                    }
+                }
+
+                isCreated = true;
+            }
+
+            return AssemblyBuilder;
+        }
+
 #if !NETSTANDARD
         /// <summary>
         /// 将所有的动态类型保存到程序集。
         /// </summary>
         public Assembly Save()
         {
-            foreach (var typeBuilder in typeBuilders)
-            {
-                typeBuilder.CreateType();
-            }
+            Create();
 
             if (!string.IsNullOrEmpty(OutputAssembly))
             {

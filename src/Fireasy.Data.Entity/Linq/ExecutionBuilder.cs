@@ -29,7 +29,7 @@ namespace Fireasy.Data.Entity.Linq
         private MemberInfo receivingMember;
         private int nReaders = 0;
         private int nLookup = 0;
-        private Expression executor;
+        private ParameterExpression executor;
         private List<ParameterExpression> variables = new List<ParameterExpression>();
         private List<Expression> initializers = new List<Expression>();
         private Dictionary<string, Expression> variableMap = new Dictionary<string, Expression>();
@@ -563,21 +563,32 @@ namespace Fireasy.Data.Entity.Linq
             foreach (var nv in namedValues)
             {
                 var info = GetPropertyInfoFromExpression(nv.Value);
-                table.Columns.Add(nv.Name, info.DataType.Value.FromDbType());
+                if (info != null)
+                {
+                    table.Columns.Add(nv.Name, info.DataType.Value.FromDbType());
+                }
+                else
+                {
+                    table.Columns.Add(nv.Name, DataExpressionColumn.CreateType(nv.Value.Type));
+                }
             }
 
             var parameters = namedValues.ToDictionary(s => s.Name, s =>
                 {
                     var expression = s.Value;
+                    var info = GetPropertyInfoFromExpression(expression);
+                    if (info == null)
+                    {
+                        return expression;
+                    }
+
                     if (ConvertManager.GetConverter(expression.Type) != null)
                     {
-                        var info = GetPropertyInfoFromExpression(expression);
                         var convExp = Expression.Call(null, MthGetConverter, Expression.Constant(expression.Type));
                         expression = Expression.Call(convExp, MthConvertTo, expression, Expression.Constant((DbType)info.DataType));
                     }
 
-                    var lambda = Expression.Lambda(expression, batch.Operation.Parameters[1]).Compile();
-                    return lambda;
+                    return (object)Expression.Lambda(expression, batch.Operation.Parameters[1]).Compile();
                 });
 
             var entities = (IEnumerable)((ConstantExpression)batch.Input).Value;
@@ -586,7 +597,16 @@ namespace Fireasy.Data.Entity.Linq
                 var row = table.NewRow();
                 foreach (var nv in parameters)
                 {
-                    row[nv.Key] = nv.Value.DynamicInvoke(entity) ?? DBNull.Value;
+                    if (nv.Value is Delegate del)
+                    {
+                        row[nv.Key] = del.DynamicInvoke(entity) ?? DBNull.Value;
+                    }
+                    else if (nv.Value is Expression exp)
+                    {
+                        exp = ParameterRewriter.Rewrite(exp, batch.Operation.Parameters[1], entity);
+                        var setter = Expression.Lambda(exp, executor).Compile();
+                        row[nv.Key] = DataExpressionColumn.Create(exp.Type, setter);
+                    }
                 }
 
                 table.Rows.Add(row);

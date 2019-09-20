@@ -114,8 +114,7 @@ namespace Fireasy.Data.Entity
                 context.Database.BeginTransaction();
             }
 
-            int result = 0;
-
+            int result;
             try
             {
                 result = Queryable.UpdateEntity(entity);
