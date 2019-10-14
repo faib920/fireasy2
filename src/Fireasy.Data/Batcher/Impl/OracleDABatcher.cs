@@ -16,9 +16,8 @@ using Fireasy.Data.Extensions;
 using Fireasy.Data.Provider;
 using Fireasy.Data.Syntax;
 using Fireasy.Data.Converter;
-#if !NET40 && !NET35
 using System.Threading.Tasks;
-#endif
+using System.Threading;
 
 namespace Fireasy.Data.Batcher
 {
@@ -38,21 +37,7 @@ namespace Fireasy.Data.Batcher
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
         public void Insert(IDatabase database, DataTable dataTable, int batchSize = 1000, Action<int> completePercentage = null)
         {
-            if (!BatcherChecker.CheckDataTable(dataTable))
-            {
-                return;
-            }
-
-            var bulkType = CheckBulkCopy(database.Provider);
-            if (bulkType != null)
-            {
-                BulkCopy(database, bulkType, dataTable, batchSize);
-            }
-            else
-            {
-                var mapping = GetNameTypeMapping(dataTable);
-                BatchInsert(database, dataTable.Rows, dataTable.TableName, mapping, batchSize, completePercentage);
-            }
+            InsertAsync(database, dataTable, batchSize, completePercentage);
         }
 
         /// <summary>
@@ -66,20 +51,7 @@ namespace Fireasy.Data.Batcher
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
         public void Insert<T>(IDatabase database, IEnumerable<T> list, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
         {
-            if (!BatcherChecker.CheckList(list, tableName))
-            {
-                return;
-            }
-
-            var bulkType = CheckBulkCopy(database.Provider);
-            if (bulkType != null)
-            {
-                BulkCopy(database, bulkType, list.ToDataTable(tableName), batchSize);
-            }
-            else
-            {
-                BatchInsert(database, ToCollection(list), tableName, null, batchSize, completePercentage);
-            }
+            InsertAsync(database, list, tableName, batchSize, completePercentage);
         }
 
         /// <summary>
@@ -95,7 +67,6 @@ namespace Fireasy.Data.Batcher
             throw new NotImplementedException();
         }
 
-#if !NET40 && !NET35
         /// <summary>
         /// 将 <see cref="DataTable"/> 的数据批量插入到数据库中。
         /// </summary>
@@ -103,9 +74,23 @@ namespace Fireasy.Data.Batcher
         /// <param name="dataTable">要批量插入的 <see cref="DataTable"/>。</param>
         /// <param name="batchSize">每批次写入的数据量。</param>
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
-        public async Task InsertAsync(IDatabase database, DataTable dataTable, int batchSize = 1000, Action<int> completePercentage = null)
+        public async Task InsertAsync(IDatabase database, DataTable dataTable, int batchSize = 1000, Action<int> completePercentage = null, CancellationToken cancellationToken = default)
         {
-            await AsyncTaskManager.Adapter(Task.Run(() => Insert(database, dataTable, batchSize, completePercentage)));
+            if (!BatcherChecker.CheckDataTable(dataTable))
+            {
+                return;
+            }
+
+            var bulkType = CheckBulkCopy(database.Provider);
+            if (bulkType != null)
+            {
+                BulkCopy(database, bulkType, dataTable, batchSize);
+            }
+            else
+            {
+                var mapping = GetNameTypeMapping(dataTable);
+                await BatchInsertAsync(database, dataTable.Rows, dataTable.TableName, mapping, batchSize, completePercentage, cancellationToken);
+            }
         }
 
         /// <summary>
@@ -117,9 +102,22 @@ namespace Fireasy.Data.Batcher
         /// <param name="tableName">要写入的数据表的名称。</param>
         /// <param name="batchSize">每批次写入的数据量。</param>
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
-        public async Task InsertAsync<T>(IDatabase database, IEnumerable<T> list, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
+        public async Task InsertAsync<T>(IDatabase database, IEnumerable<T> list, string tableName, int batchSize = 1000, Action<int> completePercentage = null, CancellationToken cancellationToken = default)
         {
-            await AsyncTaskManager.Adapter(Task.Run(() => Insert(database, list, tableName, batchSize, completePercentage)));
+            if (!BatcherChecker.CheckList(list, tableName))
+            {
+                return;
+            }
+
+            var bulkType = CheckBulkCopy(database.Provider);
+            if (bulkType != null)
+            {
+                BulkCopy(database, bulkType, list.ToDataTable(tableName), batchSize);
+            }
+            else
+            {
+                await BatchInsertAsync(database, ToCollection(list), tableName, null, batchSize, completePercentage, cancellationToken);
+            }
         }
 
         /// <summary>
@@ -130,11 +128,10 @@ namespace Fireasy.Data.Batcher
         /// <param name="tableName">要写入的数据表的名称。</param>
         /// <param name="batchSize">每批次写入的数据量。</param>
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
-        public async Task InsertAsync(IDatabase database, IDataReader reader, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
+        public async Task InsertAsync(IDatabase database, IDataReader reader, string tableName, int batchSize = 1000, Action<int> completePercentage = null, CancellationToken cancellationToken = default)
         {
-            await AsyncTaskManager.Adapter(Task.Run(() => Insert(database, reader, tableName, batchSize, completePercentage)));
+            throw new NotImplementedException();
         }
-#endif
 
         /// <summary>
         /// 批量插入集合中的数据。
@@ -145,23 +142,19 @@ namespace Fireasy.Data.Batcher
         /// <param name="mapping">名称和类型的映射字典。</param>
         /// <param name="batchSize">每批次写入的数据量。</param>
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
-        private void BatchInsert(IDatabase database, ICollection collection, string tableName, IList<PropertyFieldMapping> mapping, int batchSize, Action<int> completePercentage)
+        private async Task BatchInsertAsync(IDatabase database, ICollection collection, string tableName, IList<PropertyFieldMapping> mapping, int batchSize, Action<int> completePercentage, CancellationToken cancellationToken = default)
         {
             //Oracle.DataAccess将每一列的数据构造成一个数组，然后使用参数进行插入
             try
             {
-                database.Connection.TryOpen();
+                await database.Connection.TryOpenAsync();
                 using (var command = database.Provider.CreateCommand(database.Connection, database.Transaction, null))
                 {
                     var syntax = database.Provider.GetService<ISyntaxProvider>();
 
                     var sql = string.Format("INSERT INTO {0}({1}) VALUES({2})",
                         DbUtility.FormatByQuote(syntax, tableName),
-#if NET35
-                        string.Join(",", mapping.Select(s => DbUtility.FormatByQuote(syntax, s.FieldName)).ToArray()), string.Join(",", mapping.Select(s => syntax.ParameterPrefix + s).ToArray()));
-#else
                         string.Join(",", mapping.Select(s => DbUtility.FormatByQuote(syntax, s.FieldName))), string.Join(",", mapping.Select(s => syntax.ParameterPrefix + s.FieldName)));
-#endif
 
                     command.CommandText = sql;
 
@@ -185,11 +178,8 @@ namespace Fireasy.Data.Batcher
                                 AddOrReplayParameters(syntax, mapping, command.Parameters, data,
                                     () => database.Provider.DbProviderFactory.CreateParameter());
 
-                                command.ExecuteNonQuery();
-                                if (completePercentage != null)
-                                {
-                                    completePercentage((int)(((index + 1.0) / count) * 100));
-                                }
+                                command.ExecuteNonQueryAsync(cancellationToken);
+                                completePercentage?.Invoke((int)(((index + 1.0) / count) * 100));
 
                                 if (!lastBatch)
                                 {

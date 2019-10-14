@@ -12,11 +12,7 @@ namespace Fireasy.Common.Security
 
         public static string Create()
         {
-#if !NET35
             using (var randgen = new RNGCryptoServiceProvider())
-#else
-            var randgen = new RNGCryptoServiceProvider();
-#endif
             {
                 var bytes = new byte[15];
                 randgen.GetBytes(bytes);

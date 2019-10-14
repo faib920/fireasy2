@@ -5,24 +5,19 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.ComponentModel;
+using Fireasy.Common.Dynamic;
 using Fireasy.Common.Extensions;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
-using System.Linq;
-#if !NET35
 using System.Dynamic;
-using Fireasy.Common.Dynamic;
-#endif
-using System.Runtime.InteropServices;
-using System.Xml;
 using System.Globalization;
-using Fireasy.Common.ComponentModel;
-using System.Text.RegularExpressions;
-using System.Collections.Generic;
-using Fireasy.Common.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Xml;
 
 namespace Fireasy.Common.Serialization
 {
@@ -33,6 +28,7 @@ namespace Fireasy.Common.Serialization
         private XmlTextWriter xmlWriter;
         private readonly SerializeContext context;
         private bool isDisposed;
+        private TypeConverterCache<XmlConverter> cacheConverter = new TypeConverterCache<XmlConverter>();
 
         internal XmlSerialize(XmlSerializer serializer, XmlTextWriter writer, XmlSerializeOption option)
         {
@@ -85,13 +81,11 @@ namespace Fireasy.Common.Serialization
                 return;
             }
 
-#if !NET35
             if (typeof(IDynamicMetaObjectProvider).IsAssignableFrom(type))
             {
                 SerializeDynamicObject((IDynamicMetaObjectProvider)value, startEle);
                 return;
             }
-#endif
 
             if (typeof(IDictionary).IsAssignableFrom(type))
             {
@@ -135,17 +129,7 @@ namespace Fireasy.Common.Serialization
 
         private bool WithConverter(Type type, object value, bool startEle)
         {
-            XmlConverter converter;
-            TextConverterAttribute attr;
-            if ((attr = type.GetCustomAttributes<TextConverterAttribute>().FirstOrDefault()) != null &&
-                typeof(XmlConverter).IsAssignableFrom(attr.ConverterType))
-            {
-                converter = attr.ConverterType.New<XmlConverter>();
-            }
-            else
-            {
-                converter = option.Converters.GetWritableConverter(type, new[] { typeof(XmlConverter) }) as XmlConverter;
-            }
+            var converter = cacheConverter.GetWritableConverter(type, option);
 
             if (converter == null || !converter.CanWrite)
             {
@@ -184,7 +168,6 @@ namespace Fireasy.Common.Serialization
             return sb.ToString();
         }
 
-#if !NET35
         private void SerializeDynamicObject(IDynamicMetaObjectProvider dynamicObject, bool startEle)
         {
             var flag = new AssertFlag();
@@ -196,6 +179,8 @@ namespace Fireasy.Common.Serialization
                 xmlWriter.WriteStartElement("Dynamic");
             }
 
+            var queue = new PriorityActionQueue();
+
             foreach (var name in dynamicObject.GetDynamicMemberNames())
             {
                 object value;
@@ -205,21 +190,33 @@ namespace Fireasy.Common.Serialization
                     continue;
                 }
 
-                context.SerializeInfo = new PropertySerialzeInfo(ObjectType.DynamicObject, typeof(object), name);
-
-                xmlWriter.WriteStartElement(name);
-                Serialize(value);
-                xmlWriter.WriteEndElement();
-
-                context.SerializeInfo = null;
+                if (option.NodeStyle == XmlNodeStyle.Attribute && value.GetType().IsStringable())
+                {
+                    queue.Add(0, () =>
+                        {
+                            context.SerializeInfo = new PropertySerialzeInfo(ObjectType.DynamicObject, typeof(object), name);
+                            xmlWriter.WriteAttributeString(name, value.ToString());
+                            context.SerializeInfo = null;
+                        });
+                }
+                else
+                {
+                    queue.Add(1, () =>
+                        {
+                            context.SerializeInfo = new PropertySerialzeInfo(ObjectType.DynamicObject, typeof(object), name);
+                            WriteXmlElement(name, true, () => Serialize(value, type: value.GetType()));
+                            context.SerializeInfo = null;
+                        });
+                }
             }
+
+            queue.Invoke();
 
             if (startEle)
             {
                 xmlWriter.WriteEndElement();
             }
         }
-#endif
 
         /// <summary>
         /// 释放对象所占用的非托管和托管资源。
@@ -392,6 +389,7 @@ namespace Fireasy.Common.Serialization
             }
 
             var cache = context.GetAccessorCache(type);
+            var queue = new PriorityActionQueue();
 
             foreach (var acc in cache)
             {
@@ -406,34 +404,44 @@ namespace Fireasy.Common.Serialization
                     continue;
                 }
 
-                context.SerializeInfo = new PropertySerialzeInfo(acc);
-
                 var objType = acc.PropertyInfo.PropertyType == typeof(object) ? value.GetType() : acc.PropertyInfo.PropertyType;
-                if (option.OutputStyle == OutputStyle.Attribute && objType.IsStringable())
+                if (option.NodeStyle == XmlNodeStyle.Attribute && objType.IsStringable())
                 {
-                    if (acc.Converter != null)
-                    {
-                        xmlWriter.WriteAttributeString(acc.PropertyName, acc.Converter.WriteObject(serializer, value));
-                    }
-                    else
-                    {
-                        xmlWriter.WriteAttributeString(acc.PropertyName, value.ToString());
-                    }
+                    queue.Add(0, () =>
+                        {
+                            context.SerializeInfo = new PropertySerialzeInfo(acc);
+                            if (acc.Converter != null)
+                            {
+                                xmlWriter.WriteAttributeString(acc.PropertyName, acc.Converter.WriteObject(serializer, value));
+                            }
+                            else
+                            {
+                                xmlWriter.WriteAttributeString(acc.PropertyName, value.ToString());
+                            }
+
+                            context.SerializeInfo = null;
+                        });
                 }
                 else
                 {
-                    if (acc.Converter != null && acc.Converter is XmlConverter converter)
-                    {
-                        WriteXmlElement(acc.PropertyName, true, () => converter.WriteXml(serializer, xmlWriter, value));
-                    }
-                    else
-                    {
-                        WriteXmlElement(acc.PropertyName, true, () => Serialize(value, type: objType));
-                    }
-                }
+                    queue.Add(1, () =>
+                        {
+                            context.SerializeInfo = new PropertySerialzeInfo(acc);
+                            if (acc.Converter != null && acc.Converter is XmlConverter converter)
+                            {
+                                WriteXmlElement(acc.PropertyName, true, () => converter.WriteXml(serializer, xmlWriter, value));
+                            }
+                            else
+                            {
+                                WriteXmlElement(acc.PropertyName, true, () => Serialize(value, type: objType));
+                            }
 
-                context.SerializeInfo = null;
+                            context.SerializeInfo = null;
+                        });
+                }
             }
+
+            queue.Invoke();
 
             if (startEle)
             {

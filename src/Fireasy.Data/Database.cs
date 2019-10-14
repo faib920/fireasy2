@@ -6,29 +6,23 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Data;
-using System.Data.Common;
-using System.Diagnostics;
-using System.Text.RegularExpressions;
 using Fireasy.Common;
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Extensions;
 using Fireasy.Data.Identity;
 using Fireasy.Data.Provider;
 using Fireasy.Data.RecordWrapper;
 using Fireasy.Data.Syntax;
-#if !NET35
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Data;
+using System.Data.Common;
 using System.Dynamic;
-using Fireasy.Common.ComponentModel;
-using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
-#endif
-#if !NET35 && !NET40
 using System.Threading.Tasks;
-#endif
 
 namespace Fireasy.Data
 {
@@ -40,9 +34,6 @@ namespace Fireasy.Data
         private readonly TransactionStack tranStack;
         private bool isDisposed;
         private readonly DatabaseScope dbScope;
-#if !NET35 && !NET40
-        private readonly AsyncTaskManager taskMgr;
-#endif
         private DbConnection connMaster;
         private DbConnection connSlave;
 
@@ -53,9 +44,7 @@ namespace Fireasy.Data
         {
             tranStack = new TransactionStack();
             dbScope = new DatabaseScope(this);
-#if !NET35 && !NET40
-            taskMgr = new AsyncTaskManager(this);
-#endif
+            Track = DefaultCommandTracker.Instance;
         }
 
         /// <summary>
@@ -69,7 +58,6 @@ namespace Fireasy.Data
             Guard.ArgumentNull(provider, nameof(provider));
             Provider = provider;
             ConnectionString = connectionString;
-            Track = DefaultCommandTracker.Instance;
         }
 
         /// <summary>
@@ -84,7 +72,6 @@ namespace Fireasy.Data
             Provider = provider;
             DistributedConnectionStrings = connectionStrings.ToReadOnly();
             ConnectionString = connectionStrings.Find(s => s.Mode == DistributedMode.Master);
-            Track = DefaultCommandTracker.Instance;
         }
 
         /// <summary>
@@ -183,13 +170,6 @@ namespace Fireasy.Data
                 return false;
             }
 
-#if !NET35 && !NET40
-            if (taskMgr.HasTasks)
-            {
-                return false;
-            }
-#endif
-
             Transaction.Commit();
             Transaction.Dispose();
             Transaction = null;
@@ -207,13 +187,6 @@ namespace Fireasy.Data
             {
                 return false;
             }
-
-#if !NET35 && !NET40
-            if (taskMgr.HasTasks)
-            {
-                return false;
-            }
-#endif
 
             Transaction.Rollback();
             Transaction.Dispose();
@@ -268,18 +241,13 @@ namespace Fireasy.Data
         /// <param name="segment">数据分段对象。</param>
         /// <param name="parameters">查询参数集合。</param>
         /// <returns>一个动态对象的枚举器。</returns>
-#if !NET35
         public virtual IEnumerable<dynamic> ExecuteEnumerable(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null)
-#else
-        public virtual IEnumerable<object> ExecuteEnumerable(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null)
-#endif
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
 
             using (var reader = ExecuteReader(queryCommand, segment, parameters))
             {
                 var wrapper = Provider.GetService<IRecordWrapper>();
-#if !NET35
                 TypeDescriptorUtility.AddDefaultDynamicProvider();
 
                 while (reader.Read())
@@ -289,7 +257,7 @@ namespace Fireasy.Data
 
                     for (var i = 0; i < reader.FieldCount; i++)
                     {
-                        var name = wrapper.GetFieldName(reader, i); //34343424
+                        var name = wrapper.GetFieldName(reader, i);
                         if (name.Equals("ROW_NUM"))
                         {
                             continue;
@@ -300,16 +268,142 @@ namespace Fireasy.Data
 
                     yield return expando;
                 }
-#else
-                var builder = new DataReaderTypeBuilder(reader);
-                var elementType = builder.CreateType();
-                while (reader.Read())
-                {
-                    yield return elementType.New(reader, wrapper);
-                }
-#endif
             }
         }
+
+#if NETSTANDARD && !NETSTANDARD2_0
+        /// <summary>
+        /// 异步的，执行查询文本并将结果以一个 <see cref="IEnumerable{T}"/> 的序列返回。
+        /// </summary>
+        /// <typeparam name="T">查询对象类型。</typeparam>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="segment">数据分段对象。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="rowMapper">数据行映射器。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>一个 <typeparamref name="T"/> 类型的对象的枚举器。</returns>
+        public async virtual IAsyncEnumerable<T> ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, IDataRowMapper<T> rowMapper = null, CancellationToken cancellationToken = default)
+        {
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
+
+            rowMapper = rowMapper ?? RowMapperFactory.CreateRowMapper<T>();
+            rowMapper.RecordWrapper = Provider.GetService<IRecordWrapper>();
+            using (var reader = (DbDataReader)(await ExecuteReaderAsync(queryCommand, segment, parameters, cancellationToken)))
+            {
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    yield return rowMapper.Map(this, reader);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 异步的，执行查询文本并将结果并返回动态序列。
+        /// </summary>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="segment">数据分段对象。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>一个动态对象的枚举器。</returns>
+        public virtual async IAsyncEnumerable<dynamic> ExecuteEnumerableAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
+        {
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
+
+            using (var reader = (DbDataReader)(await ExecuteReaderAsync(queryCommand, segment, parameters, cancellationToken)))
+            {
+                var wrapper = Provider.GetService<IRecordWrapper>();
+                TypeDescriptorUtility.AddDefaultDynamicProvider();
+
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    var expando = new ExpandoObject();
+                    var dictionary = (IDictionary<string, object>)expando;
+
+                    for (var i = 0; i < reader.FieldCount; i++)
+                    {
+                        var name = wrapper.GetFieldName(reader, i);
+                        if (name.Equals("ROW_NUM"))
+                        {
+                            continue;
+                        }
+
+                        dictionary.Add(wrapper.GetFieldName(reader, i), RecordWrapHelper.GetValue(wrapper, reader, i));
+                    }
+
+                    yield return expando;
+                }
+            }
+        }
+#else
+        /// <summary>
+        /// 异步的，执行查询文本并将结果以一个 <see cref="IEnumerable{T}"/> 的序列返回。
+        /// </summary>
+        /// <typeparam name="T">查询对象类型。</typeparam>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="segment">数据分段对象。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="rowMapper">数据行映射器。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>一个 <typeparamref name="T"/> 类型的对象的枚举器。</returns>
+        public async virtual Task<IEnumerable<T>> ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, IDataRowMapper<T> rowMapper = null, CancellationToken cancellationToken = default)
+        {
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
+
+            var result = new List<T>();
+            rowMapper = rowMapper ?? RowMapperFactory.CreateRowMapper<T>();
+            rowMapper.RecordWrapper = Provider.GetService<IRecordWrapper>();
+            using (var reader = (DbDataReader)(await ExecuteReaderAsync(queryCommand, segment, parameters, cancellationToken)))
+            {
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    result.Add(rowMapper.Map(this, reader));
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 异步的，执行查询文本并将结果并返回动态序列。
+        /// </summary>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="segment">数据分段对象。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>一个动态对象的枚举器。</returns>
+        public virtual async Task<IEnumerable<dynamic>> ExecuteEnumerableAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
+        {
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
+
+            var result = new List<dynamic>();
+            using (var reader = await ExecuteReaderAsync(queryCommand, segment, parameters))
+            {
+                var wrapper = Provider.GetService<IRecordWrapper>();
+                TypeDescriptorUtility.AddDefaultDynamicProvider();
+
+                while (await ((DbDataReader)reader).ReadAsync(cancellationToken))
+                {
+                    var expando = new ExpandoObject();
+                    var dictionary = (IDictionary<string, object>)expando;
+
+                    for (var i = 0; i < reader.FieldCount; i++)
+                    {
+                        var name = wrapper.GetFieldName(reader, i);
+                        if (name.Equals("ROW_NUM"))
+                        {
+                            continue;
+                        }
+
+                        dictionary.Add(wrapper.GetFieldName(reader, i), RecordWrapHelper.GetValue(wrapper, reader, i));
+                    }
+
+                    result.Add(expando);
+                }
+            }
+
+            return result;
+        }
+#endif
 
         /// <summary>
         /// 执行查询文本，返回受影响的记录数。
@@ -326,21 +420,42 @@ namespace Fireasy.Data
                     {
                         try
                         {
-                            var result = HandleCommandExecute(command, () => command.ExecuteNonQuery());
-
-                            command.SyncParameters(parameters);
-                            command.ClearParameters();
-
-                            return result;
+                            return AfterCommandExecuted(command, parameters, () => command.ExecuteNonQuery());
                         }
                         catch (DbException exp)
                         {
-                            HandleFailedLog(command, exp);
-
+                            HandleFailedLogAsync(command, exp);
                             throw new CommandException(command, exp);
                         }
                     }
                 }, mode: DistributedMode.Master);
+        }
+
+        /// <summary>
+        /// 异步的，执行查询文本，返回受影响的记录数。
+        /// </summary>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>所影响的记录数。</returns>
+        public async virtual Task<int> ExecuteNonQueryAsync(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
+        {
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
+            return await UsingConnectionAsync(async connection =>
+                {
+                    using (var command = CreateDbCommand(connection, queryCommand, parameters))
+                    {
+                        try
+                        {
+                            return await AfterCommandExecutedAsync(command, parameters, () => command.ExecuteNonQueryAsync(cancellationToken));
+                        }
+                        catch (DbException exp)
+                        {
+                            await HandleFailedLogAsync(command, exp);
+                            throw new CommandException(command, exp);
+                        }
+                    }
+                }, mode: DistributedMode.Master, cancellationToken: cancellationToken);
         }
 
         /// <summary>
@@ -361,21 +476,44 @@ namespace Fireasy.Data
                         var cmdBehavior = CommandBehavior.Default;
                         var context = new CommandContext(this, command, segment, parameters);
                         HandleSegmentCommand(context);
-
-                        IDataReader result = HandleCommandExecute(command, () => command.ExecuteReader(cmdBehavior));
-
-                        command.SyncParameters(parameters);
-                        command.ClearParameters();
-
-                        return result;
+                        return AfterCommandExecuted(command, parameters, () => command.ExecuteReader(cmdBehavior));
                     }
                     catch (DbException exp)
                     {
-                        HandleFailedLog(command, exp);
-
+                        HandleFailedLogAsync(command, exp);
                         throw new CommandException(command, exp);
                     }
                 }, mode: DistributedMode.Slave);
+        }
+
+        /// <summary>
+        /// 异步的，执行查询文本并返回一个 <see cref="IDataReader"/>。
+        /// </summary>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="segment">数据分段对象。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>一个 <see cref="IDataReader"/> 对象。</returns>
+        public async virtual Task<IDataReader> ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
+        {
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
+            return await UsingConnectionAsync(async connection =>
+                {
+                    var command = CreateDbCommand(connection, queryCommand, parameters);
+                    try
+                    {
+                        var cmdBehavior = CommandBehavior.Default;
+                        var context = new CommandContext(this, command, segment, parameters);
+                        HandleSegmentCommand(context);
+
+                        return await AfterCommandExecutedAsync(command, parameters, () => command.ExecuteReaderAsync(cmdBehavior, cancellationToken));
+                    }
+                    catch (DbException exp)
+                    {
+                        await HandleFailedLogAsync(command, exp);
+                        throw new CommandException(command, exp);
+                    }
+                }, mode: DistributedMode.Slave, cancellationToken: cancellationToken);
         }
 
         /// <summary>
@@ -393,16 +531,11 @@ namespace Fireasy.Data
                     {
                         try
                         {
-                            var result = HandleCommandExecute(command, () => command.ExecuteScalar());
-
-                            command.SyncParameters(parameters);
-                            command.ClearParameters();
-                            return result;
+                            return AfterCommandExecuted(command, parameters, () => command.ExecuteScalar());
                         }
                         catch (DbException exp)
                         {
-                            HandleFailedLog(command, exp);
-
+                            HandleFailedLogAsync(command, exp);
                             throw new CommandException(command, exp);
                         }
                     }
@@ -424,6 +557,47 @@ namespace Fireasy.Data
             }
 
             return default(T);
+        }
+
+        /// <summary>
+        /// 异步的，执行查询文本，并返回第一行的第一列。
+        /// </summary>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>第一行的第一列数据。</returns>
+        public async virtual Task<object> ExecuteScalarAsync(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
+        {
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
+            return await UsingConnectionAsync(async connection =>
+                {
+                    using (var command = CreateDbCommand(connection, queryCommand, parameters))
+                    {
+                        try
+                        {
+                            return await AfterCommandExecutedAsync(command, parameters, () => command.ExecuteScalarAsync(cancellationToken));
+                        }
+                        catch (DbException exp)
+                        {
+                            await HandleFailedLogAsync(command, exp);
+                            throw new CommandException(command, exp);
+                        }
+                    }
+                }, mode: DistributedMode.Slave, cancellationToken: cancellationToken);
+        }
+
+        /// <summary>
+        /// 异步的，执行查询文本，并返回第一行的第一列。
+        /// </summary>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>第一行的第一列数据。</returns>
+        public async virtual Task<T> ExecuteScalarAsync<T>(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
+        {
+            var result = await ExecuteScalarAsync(queryCommand, parameters, cancellationToken);
+
+            return result == DBNull.Value ? default(T) : result.To<T>();
         }
 
         /// <summary>
@@ -465,11 +639,11 @@ namespace Fireasy.Data
                                 new Func<int>(() => adapter.Fill(dataSet, segment.Start.Value, segment.Length, "Table")) :
                                 new Func<int>(() => adapter.Fill(dataSet));
 
-                            HandleCommandExecute(command, handler);
+                            return AfterCommandExecuted(command, parameters, handler);
                         }
                         catch (DbException exp)
                         {
-                            HandleFailedLog(command, exp);
+                            HandleFailedLogAsync(command, exp);
 
                             throw new CommandException(command, exp);
                         }
@@ -502,6 +676,31 @@ namespace Fireasy.Data
         }
 
         /// <summary>
+        /// 异步的，尝试连接数据库。
+        /// </summary>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>如果连接成功，则为 null，否则为异常对象。</returns>
+        public virtual async Task<Exception> TryConnectAsync(CancellationToken cancellationToken = default)
+        {
+            using (var connection = this.CreateConnection())
+            {
+                try
+                {
+                    await connection.TryOpenAsync(cancellationToken: cancellationToken);
+                    return null;
+                }
+                catch (DbException exp)
+                {
+                    return exp;
+                }
+                finally
+                {
+                    connection.TryClose();
+                }
+            }
+        }
+
+        /// <summary>
         /// 将 <see cref="DataTable"/> 的更改保存到数据库中，这类更改包括新增、修改和删除的数据。
         /// </summary>
         /// <param name="dataTable">要更新的数据表对象。</param>
@@ -519,8 +718,18 @@ namespace Fireasy.Data
                     }
 
                     builder.FillAdapter(adapter);
-                    adapter.Update(dataTable);
+                    return adapter.Update(dataTable);
                 }, false, DistributedMode.Master);
+        }
+
+        /// <summary>
+        /// 将 <see cref="DataTable"/> 的更改保存到数据库中，这类更改包括新增、修改和删除的数据。
+        /// </summary>
+        /// <param name="dataTable">要更新的数据表对象。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        public async Task UpdateAsync(DataTable dataTable, CancellationToken cancellationToken = default)
+        {
+            await Task.Run(() => Update(dataTable), cancellationToken);
         }
 
         /// <summary>
@@ -534,16 +743,14 @@ namespace Fireasy.Data
         public int Update(DataTable dataTable, SqlCommand insertCommand, SqlCommand updateCommand, SqlCommand deleteCommand)
         {
             Guard.ArgumentNull(dataTable, nameof(dataTable));
-            var result = -1;
 
-            UsingConnection(connection =>
+            return UsingConnection(connection =>
                 {
                     var parameters = GetTableParameters(dataTable);
                     var adapter = Provider.DbProviderFactory.CreateDataAdapter();
                     if (adapter == null)
                     {
-                        result = UpdateManually(dataTable, parameters, insertCommand, updateCommand, deleteCommand);
-                        return;
+                        return UpdateManually(dataTable, parameters, insertCommand, updateCommand, deleteCommand);
                     }
 
                     if (insertCommand != null)
@@ -554,134 +761,24 @@ namespace Fireasy.Data
 
                     ProcessGenerateDataTable(dataTable);
 
-                    result = adapter.Update(dataTable);
+                    return adapter.Update(dataTable);
 
                 }, false, DistributedMode.Master);
-
-            return result;
-        }
-
-#if !NET40 && !NET35
-        /// <summary>
-        /// 异步执行查询文本，返回受影响的记录数。
-        /// </summary>
-        /// <param name="queryCommand">查询命令。</param>
-        /// <param name="parameters">查询参数集合。</param>
-        /// <param name="cancellationToken">取消操作的通知。</param>
-        /// <returns>所影响的记录数。</returns>
-        public async virtual Task<int> ExecuteNonQueryAsync(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
-        {
-            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
-            return await UsingConnection(connection =>
-                {
-                    var command = CreateDbCommand(connection, queryCommand, parameters);
-                    try
-                    {
-                        return HandleExecuteTask(HandleCommandExecute(command, () => command.ExecuteNonQueryAsync(cancellationToken)), command, parameters);
-                    }
-                    catch (DbException exp)
-                    {
-                        HandleFailedLog(command, exp);
-                        command.Dispose();
-
-                        throw new CommandException(command, exp);
-                    }
-                }, mode: DistributedMode.Master);
         }
 
         /// <summary>
-        /// 异步执行查询文本并返回一个 <see cref="IDataReader"/>。
+        /// 将 <see cref="DataTable"/> 的更改保存到数据库中。
         /// </summary>
-        /// <param name="queryCommand">查询命令。</param>
-        /// <param name="segment">数据分段对象。</param>
-        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="dataTable">要更新的数据表对象。</param>
+        /// <param name="insertCommand"></param>
+        /// <param name="updateCommand"></param>
+        /// <param name="deleteCommand"></param>
         /// <param name="cancellationToken">取消操作的通知。</param>
-        /// <returns>一个 <see cref="IDataReader"/> 对象。</returns>
-        public async virtual Task<IDataReader> ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
+        /// <returns></returns>
+        public async Task<int> UpdateAsync(DataTable dataTable, SqlCommand insertCommand, SqlCommand updateCommand, SqlCommand deleteCommand, CancellationToken cancellationToken = default)
         {
-            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
-            return await UsingConnection(connection =>
-                {
-                    var command = CreateDbCommand(connection, queryCommand, parameters);
-                    try
-                    {
-                        var context = new CommandContext(this, command, segment, parameters);
-                        HandleSegmentCommand(context);
-
-                        return HandleExecuteTask(HandleCommandExecute(command, () => command.ExecuteReaderAsync(cancellationToken)), command, parameters);
-                    }
-                    catch (DbException exp)
-                    {
-                        HandleFailedLog(command, exp);
-                        command.Dispose();
-
-                        throw new CommandException(command, exp);
-                    }
-                }, mode: DistributedMode.Slave);
+            return await Task.Run(() => Update(dataTable, insertCommand, updateCommand, deleteCommand), cancellationToken);
         }
-
-        /// <summary>
-        /// 异步执行查询文本，并返回第一行的第一列。
-        /// </summary>
-        /// <param name="queryCommand">查询命令。</param>
-        /// <param name="parameters">查询参数集合。</param>
-        /// <param name="cancellationToken">取消操作的通知。</param>
-        /// <returns>第一行的第一列数据。</returns>
-        public async virtual Task<object> ExecuteScalarAsync(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
-        {
-            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
-            return await UsingConnection(connection =>
-                {
-                    var command = CreateDbCommand(connection, queryCommand, parameters);
-                    try
-                    {
-                        return (HandleExecuteTask(HandleCommandExecute(command, () => command.ExecuteScalarAsync(cancellationToken)), command, parameters));
-                    }
-                    catch (DbException exp)
-                    {
-                        HandleFailedLog(command, exp);
-                        command.Dispose();
-
-                        throw new CommandException(command, exp);
-                    }
-                }, mode: DistributedMode.Slave);
-        }
-
-        /// <summary>
-        /// 异步执行查询文本，并返回第一行的第一列。
-        /// </summary>
-        /// <param name="queryCommand">查询命令。</param>
-        /// <param name="parameters">查询参数集合。</param>
-        /// <param name="cancellationToken">取消操作的通知。</param>
-        /// <returns>第一行的第一列数据。</returns>
-        public async virtual Task<T> ExecuteScalarAsync<T>(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
-        {
-            var result = await ExecuteScalarAsync(queryCommand, parameters, cancellationToken);
-
-            return result == DBNull.Value ? default(T) : result.To<T>();
-        }
-
-        /// <summary>
-        /// 异步执行查询文本并将结果以一个 <see cref="IEnumerable{T}"/> 的序列返回。
-        /// </summary>
-        /// <typeparam name="T">查询对象类型。</typeparam>
-        /// <param name="queryCommand">查询命令。</param>
-        /// <param name="segment">数据分段对象。</param>
-        /// <param name="parameters">查询参数集合。</param>
-        /// <param name="rowMapper">数据行映射器。</param>
-        /// <param name="cancellationToken">取消操作的通知。</param>
-        /// <returns>一个 <typeparamref name="T"/> 类型的对象的枚举器。</returns>
-        public async virtual Task<IEnumerable<T>> ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, IDataRowMapper<T> rowMapper = null, CancellationToken cancellationToken = default)
-        {
-            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
-
-            rowMapper = rowMapper ?? RowMapperFactory.CreateRowMapper<T>();
-            rowMapper.RecordWrapper = Provider.GetService<IRecordWrapper>();
-
-            var reader = await ExecuteReaderAsync(queryCommand, segment, parameters, cancellationToken);
-            return new AsyncEnumerable<T>(this, reader, rowMapper);
-        }
-#endif
 
         /// <summary>
         /// 释放对象所占用的所有资源。
@@ -698,12 +795,6 @@ namespace Fireasy.Data
         /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
         protected virtual void Dispose(bool disposing)
         {
-#if !NET35 && !NET40
-            if (taskMgr.HasTasks)
-            {
-                return;
-            }
-#endif
             if (isDisposed)
             {
                 return;
@@ -728,26 +819,7 @@ namespace Fireasy.Data
             }
 
             dbScope.Dispose();
-#if !NET35 && !NET40
-            taskMgr.Dispose();
-#endif
             isDisposed = true;
-        }
-
-        /// <summary>
-        /// 通知应用程序，一个 <see cref="DbCommand"/> 已经执行。
-        /// </summary>
-        /// <param name="command">所执行的 <see cref="IDbCommand"/> 对象。</param>
-        /// <param name="func">执行的方法。</param>
-        protected virtual T HandleCommandExecute<T>(IDbCommand command, Func<T> func)
-        {
-            var result = default(T);
-            var period = TimeWatcher.Watch(() => result = func());
-            Debug.WriteLine("Execute: " + command.Output() + "\nDissipation times: " + period);
-
-            HandleLog(command, period);
-
-            return result;
         }
 
         /// <summary>
@@ -801,14 +873,16 @@ namespace Fireasy.Data
             return result;
         }
 
-        private void UsingConnection(Action<DbConnection> callback, bool isAutoOpen = true, DistributedMode mode = DistributedMode.Master)
+        private async Task<T> UsingConnectionAsync<T>(Func<DbConnection, Task<T>> callback, bool isAutoOpen = true, DistributedMode mode = DistributedMode.Master, CancellationToken cancellationToken = default)
         {
             if (callback != null)
             {
                 var connection = GetConnection(mode);
-                connection.TryOpen(isAutoOpen);
-                callback(connection);
+                await connection.TryOpenAsync(isAutoOpen, cancellationToken);
+                return await callback(connection);
             }
+
+            return default(T);
         }
 
         private DbConnection GetConnection(DistributedMode mode = DistributedMode.Master)
@@ -964,11 +1038,11 @@ namespace Fireasy.Data
         /// </summary>
         /// <param name="command"></param>
         /// <param name="exp"></param>
-        private void HandleFailedLog(DbCommand command, Exception exp)
+        private async Task HandleFailedLogAsync(DbCommand command, Exception exp, CancellationToken cancellationToken = default)
         {
             if (ConnectionString.IsTracking && Track != null)
             {
-                Track.Fail(command, exp);
+                await Track.FailAsync(command, exp, cancellationToken);
             }
         }
 
@@ -977,13 +1051,13 @@ namespace Fireasy.Data
         /// </summary>
         /// <param name="command"></param>
         /// <param name="period"></param>
-        private void HandleLog(IDbCommand command, TimeSpan period)
+        private async Task HandleLogAsync(IDbCommand command, TimeSpan period, CancellationToken cancellationToken = default)
         {
             Log?.Invoke(command, period);
 
             if (ConnectionString.IsTracking && Track != null)
             {
-                Track.Write(command, period);
+                await Track.WriteAsync(command, period, cancellationToken);
             }
         }
 
@@ -1020,9 +1094,7 @@ namespace Fireasy.Data
                 dataTable.Columns.Add(COLUMN_RESULT, typeof(int));
             }
 
-            var result = 0;
-
-            UsingConnection(connection =>
+            return UsingConnection(connection =>
                 {
                     BeginTransaction();
 
@@ -1030,21 +1102,24 @@ namespace Fireasy.Data
                     {
                         try
                         {
+                            var result = 0;
                             foreach (DataRow row in dataTable.Rows)
                             {
                                 UpdateParameters(command.Parameters, row);
 
                                 var time = TimeWatcher.Watch(() => row[COLUMN_RESULT] = command.ExecuteScalar() ?? 0);
-                                HandleLog(command, time);
+                                HandleLogAsync(command, time);
 
                                 result++;
                             }
 
                             CommitTransaction();
+
+                            return result;
                         }
                         catch (DbException exp)
                         {
-                            HandleFailedLog(command, exp);
+                            HandleFailedLogAsync(command, exp);
 
                             RollbackTransaction();
 
@@ -1052,8 +1127,6 @@ namespace Fireasy.Data
                         }
                     }
                 }, mode: DistributedMode.Master);
-
-            return result;
         }
 
         private void UpdateParameters(DbParameterCollection parameters, DataRow row)
@@ -1067,86 +1140,42 @@ namespace Fireasy.Data
             }
         }
 
-#if !NET40 && !NET35
-        private class AsyncEnumerable<T> : IEnumerable<T>
+        /// <summary>
+        /// 通知应用程序，一个 <see cref="DbCommand"/> 已经执行。
+        /// </summary>
+        /// <param name="command">所执行的 <see cref="DbCommand"/> 对象。</param>
+        /// <param name="func">执行的方法。</param>
+        private T AfterCommandExecuted<T>(DbCommand command, ParameterCollection parameters, Func<T> func)
         {
-            private IEnumerator<T> enumerator;
+            var result = default(T);
+            var period = TimeWatcher.Watch(() => result = func());
 
-            public AsyncEnumerable(IDatabase database, IDataReader reader, IDataRowMapper<T> rowMapper)
-            {
-                this.enumerator = new AsyncEnumerator<T>(database, reader, rowMapper);
-            }
+            HandleLogAsync(command, period);
 
+            command.SyncParameters(parameters);
+            command.ClearParameters();
 
-            public IEnumerator<T> GetEnumerator()
-            {
-                return enumerator;
-            }
-
-            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-            {
-                return enumerator;
-            }
-        }
-
-        private class AsyncEnumerator<T> : IEnumerator<T>
-        {
-            private IDatabase database;
-            private IDataReader reader;
-            private IDataRowMapper<T> rowMapper;
-
-            public AsyncEnumerator(IDatabase database, IDataReader reader, IDataRowMapper<T> rowMapper)
-            {
-                this.database = database;
-                this.reader = reader;
-                this.rowMapper = rowMapper;
-            }
-
-            public T Current
-            {
-                get { return rowMapper.Map(database, reader); }
-            }
-
-            public void Dispose()
-            {
-                reader.Dispose();
-            }
-
-            object System.Collections.IEnumerator.Current
-            {
-                get { return Current; }
-            }
-
-            public bool MoveNext()
-            {
-                return reader.Read();
-            }
-
-            public void Reset()
-            {
-            }
+            return result;
         }
 
         /// <summary>
-        /// 执行完后对 <see cref="DbCommand"/> 进行参数同步、清理和销毁处理。
+        /// 异步的，通知应用程序，一个 <see cref="DbCommand"/> 已经执行。
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="task"></param>
-        /// <param name="command"></param>
+        /// <param name="command">所执行的 <see cref="DbCommand"/> 对象。</param>
         /// <param name="parameters"></param>
-        /// <returns></returns>
-        private Task<T> HandleExecuteTask<T>(Task<T> task, DbCommand command, ParameterCollection parameters)
+        /// <param name="func">执行的方法。</param>
+        private async Task<T> AfterCommandExecutedAsync<T>(DbCommand command, ParameterCollection parameters, Func<Task<T>> func)
         {
-            return task.ContinueWith(t =>
-                {
-                    command.SyncParameters(parameters);
-                    command.ClearParameters();
-                    command.Dispose();
+            var result = default(T);
+            var period = await TimeWatcher.WatchAsync(async () => result = await func());
 
-                    return t.Result;
-                });
+            await HandleLogAsync(command, period);
+
+            command.SyncParameters(parameters);
+            command.ClearParameters();
+
+            return result;
         }
-#endif
 
         /// <summary>
         /// 处理使用了 <see cref="IGeneratorProvider"/> 生成数据的数据表。

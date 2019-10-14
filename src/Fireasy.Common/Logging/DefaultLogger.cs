@@ -5,13 +5,13 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Threading;
 using System;
 using System.IO;
 using System.Reflection;
 using System.Text;
-#if NET35
-using Fireasy.Common.Extensions;
-#endif
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fireasy.Common.Logging
 {
@@ -22,6 +22,7 @@ namespace Fireasy.Common.Logging
     {
         private static readonly string logFilePath;
         private readonly ReadWriteLocker locker = new ReadWriteLocker();
+        private readonly AsyncLocker asyncLocker = new AsyncLocker();
 
         /// <summary>
         /// 获取 <see cref="DefaultLogger"/> 的静态实例。
@@ -50,6 +51,19 @@ namespace Fireasy.Common.Logging
         }
 
         /// <summary>
+        /// 异步的，记录错误信息到日志。
+        /// </summary>
+        /// <param name="message">要记录的信息。</param>
+        /// <param name="exception">异常对象。</param>
+        public async Task ErrorAsync(object message, Exception exception = null, CancellationToken cancellationToken = default)
+        {
+            if (LogEnvironment.IsConfigured(LogLevel.Error))
+            {
+                await WriteAsync("error", message, exception, cancellationToken);
+            }
+        }
+
+        /// <summary>
         /// 记录一般的信息到日志。
         /// </summary>
         /// <param name="message">要记录的信息。</param>
@@ -59,6 +73,19 @@ namespace Fireasy.Common.Logging
             if (LogEnvironment.IsConfigured(LogLevel.Info))
             {
                 Write("info", message, exception);
+            }
+        }
+
+        /// <summary>
+        /// 异步的，记录一般的信息到日志。
+        /// </summary>
+        /// <param name="message">要记录的信息。</param>
+        /// <param name="exception">异常对象。</param>
+        public async Task InfoAsync(object message, Exception exception = null, CancellationToken cancellationToken = default)
+        {
+            if (LogEnvironment.IsConfigured(LogLevel.Info))
+            {
+                await WriteAsync("info", message, exception, cancellationToken);
             }
         }
 
@@ -76,6 +103,19 @@ namespace Fireasy.Common.Logging
         }
 
         /// <summary>
+        /// 异步的，记录警告信息到日志。
+        /// </summary>
+        /// <param name="message">要记录的信息。</param>
+        /// <param name="exception">异常对象。</param>
+        public async Task WarnAsync(object message, Exception exception = null, CancellationToken cancellationToken = default)
+        {
+            if (LogEnvironment.IsConfigured(LogLevel.Warn))
+            {
+                await WriteAsync("warn", message, exception, cancellationToken);
+            }
+        }
+
+        /// <summary>
         /// 记录调试信息到日志。
         /// </summary>
         /// <param name="message">要记录的信息。</param>
@@ -89,6 +129,19 @@ namespace Fireasy.Common.Logging
         }
 
         /// <summary>
+        /// 异步的，记录调试信息到日志。
+        /// </summary>
+        /// <param name="message">要记录的信息。</param>
+        /// <param name="exception">异常对象。</param>
+        public async Task DebugAsync(object message, Exception exception = null, CancellationToken cancellationToken = default)
+        {
+            if (LogEnvironment.IsConfigured(LogLevel.Debug))
+            {
+                await WriteAsync("debug", message, exception, cancellationToken);
+            }
+        }
+
+        /// <summary>
         /// 记录致命信息到日志。
         /// </summary>
         /// <param name="message">要记录的信息。</param>
@@ -98,6 +151,19 @@ namespace Fireasy.Common.Logging
             if (LogEnvironment.IsConfigured(LogLevel.Fatal))
             {
                 Write("fatal", message, exception);
+            }
+        }
+
+        /// <summary>
+        /// 异步的，记录致命信息到日志。
+        /// </summary>
+        /// <param name="message">要记录的信息。</param>
+        /// <param name="exception">异常对象。</param>
+        public async Task FatalAsync(object message, Exception exception = null, CancellationToken cancellationToken = default)
+        {
+            if (LogEnvironment.IsConfigured(LogLevel.Fatal))
+            {
+                await WriteAsync("fatal", message, exception, cancellationToken);
             }
         }
 
@@ -124,13 +190,36 @@ namespace Fireasy.Common.Logging
             var fileName = CreateLogFileName(logType);
 
             locker.LockWrite(() =>
-            {
-                using (var writer = new StreamWriter(fileName, true, Encoding.Default))
                 {
-                    writer.WriteLine(content);
-                    writer.Flush();
-                }
-            });
+                    using (var writer = new StreamWriter(fileName, true, Encoding.Default))
+                    {
+                        writer.WriteLine(content);
+                        writer.Flush();
+                    }
+                });
+        }
+
+        /// <summary>
+        /// 异步的，将抛出的异常写入到日志记录器。
+        /// </summary>
+        /// <param name="logType">信息类别。</param>
+        /// <param name="message">异常的说明信息。</param>
+        /// <param name="exception">应用程序异常。</param>
+        private async Task WriteAsync(string logType, object message, Exception exception, CancellationToken cancellationToken = default)
+        {
+            var content = GetLogContent(message, exception);
+            var fileName = CreateLogFileName(logType);
+
+            using (var locker = await asyncLocker.LockAsync())
+            using (var writer = new StreamWriter(fileName, true, Encoding.Default))
+            {
+#if NETSTANDARD && !NETSTANDARD2_0
+                    await writer.WriteLineAsync(content.AsMemory(), cancellationToken);
+#else
+                await writer.WriteLineAsync(content);
+#endif
+                await writer.FlushAsync();
+            }
         }
 
         private string GetLogContent(object message, Exception exception)
@@ -149,7 +238,6 @@ namespace Fireasy.Common.Logging
             {
                 sb.AppendLine("--Exceptions--");
 
-#if !NET35
                 if (exception is AggregateException aggExp)
                 {
                     foreach (var e in aggExp.InnerExceptions)
@@ -168,9 +256,6 @@ namespace Fireasy.Common.Logging
                 {
                     RecursiveWriteException(sb, exception);
                 }
-#else
-                RecursiveWriteException(sb, exception);
-#endif
             }
 
             sb.AppendLine("*****************************************************************");

@@ -73,7 +73,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
                 testCol = new ColumnExpression(test.Type, select.Alias, colName, null);
             }
             var newProjector = new OuterJoinedExpression(testCol, proj.Projector);
-            return new ProjectionExpression(select, newProjector, proj.Aggregator);
+            return new ProjectionExpression(select, newProjector, proj.Aggregator, proj.IsAsync);
         }
 
         internal static SelectExpression SetDistinct(this SelectExpression select, bool isDistinct)

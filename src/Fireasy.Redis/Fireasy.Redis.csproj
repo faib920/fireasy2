@@ -5,21 +5,22 @@
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
-    <FileVersion>2.0.0.46130</FileVersion>
+    <FileVersion>2.1.0.02</FileVersion>
     <Copyright>Copyright © Fireasy 2013-2019</Copyright>
-    <AssemblyVersion>2.0.0.46130</AssemblyVersion>
+    <AssemblyVersion>2.1.0.02</AssemblyVersion>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <DelaySign>False</DelaySign>
-    <Product>Fireasy Redis Cache Provider</Product>
-    <Version>2.0.34</Version>
-    <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
+    <Product>Fireasy Redis Provider</Product>
+    <Version>2.1.0-beta4</Version>
+    <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
     <Description>
       Redis 缓存及消息订阅/发布的实现。
 
       示例源码：https://github.com/faib920/zero
     </Description>
+    <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
@@ -35,12 +36,22 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CSRedisCore" Version="3.1.6" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Fireasy.Common\Fireasy.Common.csproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
     <Reference Include="System.Configuration" />
+    <PackageReference Include="StackExchange.Redis.StrongName">
+      <Version>1.2.6</Version>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
+
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="CSRedisCore">
+      <Version>3.1.6</Version>
+    </PackageReference>
   </ItemGroup>
 </Project>

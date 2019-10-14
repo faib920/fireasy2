@@ -6,13 +6,15 @@ namespace Fireasy.Data.Entity.Tests.Models
 {
     [Serializable]
     [EntityMapping("products", Description = "产品类")]
-    [MetadataType(typeof(ProductsMetadata))]
+    //[MetadataType(typeof(ProductsMetadata))]
     public partial class Products : LightEntity<Products>
     {
         [PropertyMapping(ColumnName = "ProductID", Description = "", IsPrimaryKey = true, GenerateType = IdentityGenerateType.AutoIncrement, IsNullable = false)]
         public virtual long ProductID { get; set; }
 
         [PropertyMapping(ColumnName = "ProductName", Description = "", Length = 40, IsNullable = false)]
+        [Required]
+        [StringLength(40)]
         public virtual string ProductName { get; set; }
 
         [PropertyMapping(ColumnName = "SupplierID", Description = "", IsNullable = true)]
@@ -27,7 +29,7 @@ namespace Fireasy.Data.Entity.Tests.Models
         [PropertyMapping(ColumnName = "UnitPrice", Description = "", IsNullable = true)]
         public virtual decimal? UnitPrice { get; set; }
 
-        [PropertyMapping(ColumnName = "UnitsInStock", Description = "", IsNullable = true)]
+        [PropertyMapping(ColumnName = "UnitsInStock", Description = "", IsNullable = true, DefaultValue = 34)]
         public virtual long? UnitsInStock { get; set; }
 
         [PropertyMapping(ColumnName = "UnitsOnOrder", Description = "", IsNullable = true)]
@@ -37,10 +39,10 @@ namespace Fireasy.Data.Entity.Tests.Models
         public virtual RecorderLevel ReorderLevel { get; set; }
 
         [PropertyMapping(ColumnName = "Discontinued", Description = "", IsNullable = false)]
-        public virtual bool Discontinued { get; set; }
+        public virtual long Discontinued { get; set; }
 
         [PropertyMapping(ColumnName = "Photo", Description = "", IsNullable = true, DataType = System.Data.DbType.Binary)]
-        public virtual int[] Photo { get; set; }
+        public virtual byte[] Photo { get; set; }
 
         public virtual Categories categories { get; set; }
 
@@ -60,8 +62,6 @@ namespace Fireasy.Data.Entity.Tests.Models
         /// <summary>
         /// 属性 ProductName 的验证特性。
         /// </summary>
-        [Required]
-        [StringLength(40)]
         public object ProductName { get; set; }
 
         /// <summary>

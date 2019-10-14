@@ -7,7 +7,6 @@ namespace Fireasy.Kafka
 {
     public class SubscribeManager : ISubscribeManager
     {
-
         public void AddSubscriber<TSubject>(Action<TSubject> subscriber) where TSubject : class
         {
             var config = new ConsumerConfig

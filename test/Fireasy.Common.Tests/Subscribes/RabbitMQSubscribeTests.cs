@@ -24,8 +24,12 @@ namespace Fireasy.Common.Tests.Subscribes
                 //throw new Exception();
                 Thread.Sleep(r.Next(0, 500));
                 Console.WriteLine("1:" + s.Key);
+                if (r.Next(10) < 5)
+                {
+                    throw new Exception();
+                }
             });
-            subMgr.AddSubscriber<TestSubject>(s =>
+            subMgr.AddSubscriber<TestSubject>("a", s =>
             {
                 Thread.Sleep(r.Next(0, 500));
                 Console.WriteLine("2:" + s.Key);
@@ -37,10 +41,10 @@ namespace Fireasy.Common.Tests.Subscribes
             subMgr.Publish(new TestSubject { Key = "fireasy4" });
             subMgr.Publish(new TestSubject { Key = "fireasy5" });
             subMgr.Publish(new TestSubject { Key = "fireasy6" });
-            subMgr.Publish(new TestSubject { Key = "fireasy7" });
-            subMgr.Publish(new TestSubject { Key = "fireasy8" });
+            subMgr.Publish("a", new TestSubject { Key = "fireasy7" });
+            subMgr.Publish("a", new TestSubject { Key = "fireasy8" });
 
-            Thread.Sleep(5000);
+            Thread.Sleep(10000);
         }
 
         public class TestSubject

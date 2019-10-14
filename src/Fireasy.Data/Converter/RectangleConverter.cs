@@ -62,11 +62,7 @@ namespace Fireasy.Data.Converter
             }
 
             var rect = (Rectangle)value;
-#if NET35
-            return string.Join(",", new[] { rect.X.ToString(), rect.Y.ToString(), rect.Width.ToString(), rect.Height.ToString() });
-#else
             return string.Join(",", new[] { rect.X, rect.Y, rect.Width, rect.Height });
-#endif
         }
     }
 }

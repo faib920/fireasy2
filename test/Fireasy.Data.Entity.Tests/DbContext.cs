@@ -1,4 +1,5 @@
-﻿using Fireasy.Data.Entity.Tests.Models;
+﻿using Fireasy.Data.Entity.Initializers;
+using Fireasy.Data.Entity.Tests.Models;
 using Fireasy.Data.Provider;
 using System;
 
@@ -6,15 +7,17 @@ namespace Fireasy.Data.Entity.Tests
 {
     public class DbContext : EntityContext
     {
-        public DbContext()
-            : base(new EntityContextOptions { AutoCreateTables = true, NotifyEvents = true })
+        protected override void OnConfiguring(EntityContextOptionsBuilder builder)
         {
-            System.Console.WriteLine(Guid.NewGuid());
+            builder.Options.NotifyEvents = true;
+            //builder.UseOracleTrigger<Orders>().UseOracleTrigger<Products>().UseCodeFirst();
+            //builder.UseEnvironment(s => s.AddVariable("Year", "2009")).UseCodeFirst();
+            //builder.UseCodeFirst();
+            base.OnConfiguring(builder);
         }
 
         protected override void Dispose(bool disposing)
         {
-            System.Console.WriteLine("Dispose");
             base.Dispose(disposing);
         }
 
@@ -29,14 +32,6 @@ namespace Fireasy.Data.Entity.Tests
         public EntityRepository<OrderDetails> OrderDetails { get; set; }
 
         public EntityRepository<Depts> Depts { get; set; }
-
-        protected override void OnRespositoryChanged(RespositoryChangedEventArgs args)
-        {
-            if (args.Succeed && args.EntityType == typeof(Products) && args.EventType == RespositoryChangeEventType.CreateTable)
-            {
-                Products.Insert(new Models.Products { ProductName = "aa" });
-            }
-        }
     }
 
     public class MyDatabase : Database

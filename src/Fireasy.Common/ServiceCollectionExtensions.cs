@@ -16,9 +16,10 @@ using Fireasy.Common.Ioc.Configuration;
 using Fireasy.Common.Ioc.Registrations;
 using Fireasy.Common.Logging;
 using Fireasy.Common.Logging.Configuration;
-using Fireasy.Common.Serialization;
 using Fireasy.Common.Subscribes;
 using Fireasy.Common.Subscribes.Configuration;
+using Fireasy.Common.Threading;
+using Fireasy.Common.Threading.Configuration;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Reflection;
@@ -94,12 +95,13 @@ namespace Microsoft.Extensions.DependencyInjection
             ConfigurationUnity.Bind<LoggingConfigurationSection>(configuration);
             ConfigurationUnity.Bind<CachingConfigurationSection>(configuration);
             ConfigurationUnity.Bind<ContainerConfigurationSection>(configuration);
+            ConfigurationUnity.Bind<LockerConfigurationSection>(configuration);
             ConfigurationUnity.Bind<SubscribeConfigurationSection>(configuration);
             ConfigurationUnity.Bind<ImportConfigurationSection>(configuration);
 
             if (services != null)
             {
-                services.AddLogger().AddCaching().AddSubscriber();
+                services.AddLogger().AddCaching().AddSubscriber().AddLocker();
             }
         }
     }

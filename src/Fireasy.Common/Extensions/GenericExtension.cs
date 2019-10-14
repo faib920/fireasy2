@@ -1,28 +1,26 @@
-﻿using Fireasy.Common.Caching;
-#if !NET35
-using Fireasy.Common.Dynamic;
-using System.Dynamic;
-#endif
-using Fireasy.Common.ComponentModel;
-using Fireasy.Common.Emit;
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright company="Fireasy"
 //      email="faib920@126.com"
 //      qq="55570729">
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Caching;
+using Fireasy.Common.ComponentModel;
+using Fireasy.Common.Dynamic;
+using Fireasy.Common.Emit;
+using Fireasy.Common.Linq.Expressions;
+using Fireasy.Common.Mapper;
+using Fireasy.Common.Serialization;
+using Fireasy.Common.Threading;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Dynamic;
 using System.Linq;
-using System.Reflection;
 using System.Linq.Expressions;
-using Fireasy.Common.Linq.Expressions;
-using Fireasy.Common.Mapper;
-using Fireasy.Common.Serialization;
-using System.Drawing.Imaging;
+using System.Reflection;
 
 namespace Fireasy.Common.Extensions
 {
@@ -340,7 +338,6 @@ namespace Fireasy.Common.Extensions
                 return source;
             }
 
-#if !NET35
             TypeDescriptorUtility.AddDefaultDynamicProvider();
             var sourceProperties = TypeDescriptor.GetProperties(source);
             var otherProperties = TypeDescriptor.GetProperties(other);
@@ -373,26 +370,6 @@ namespace Fireasy.Common.Extensions
             }
 
             return expando;
-#else
-            var sourceType = source.GetType();
-            var otherType = other.GetType();
-            var sr = GetObjectReader(sourceType);
-            var or = GetObjectReader(otherType);
-            var sourcePropertyNames = sr.GetCanReadProperties();
-
-            var sourceProperties = FilterProperties(sourcePropertyNames, source).Select(s => sourceType.GetProperty(s));
-            var otherProperties = FilterProperties(or.GetCanReadProperties(), other).Except(sourcePropertyNames).Select(s => otherType.GetProperty(s));
-
-            //使用缓存管理，key为两类型名称的组合
-            var key = sourceType.Name + "$" + otherType.Name;
-            var cacheMgr = MemoryCacheManager.Instance;
-            var instanceType = cacheMgr.TryGet(key, () => BuildNewObjectType(sourceType.Name + "_Ex", sourceProperties.Union(otherProperties)));
-
-            var values = ReadObjectValues(source, other, sourceProperties, otherProperties);
-
-            //返回一个新实例对象
-            return instanceType.New(values);
-#endif
         }
 
         /// <summary>
@@ -409,9 +386,7 @@ namespace Fireasy.Common.Extensions
                 return source;
             }
 
-#if !NET35
             TypeDescriptorUtility.AddDefaultDynamicProvider();
-#endif
 
             var sourceProperties = TypeDescriptor.GetProperties(source);
             var otherProperties = TypeDescriptor.GetProperties(other);
@@ -449,9 +424,7 @@ namespace Fireasy.Common.Extensions
         public static TTarget ExtendAs<TTarget>(this object source, object other)
         {
             var target = source.To<TTarget>();
-#if !NET35
             TypeDescriptorUtility.AddDefaultDynamicProvider();
-#endif
             var sourceProperties = TypeDescriptor.GetProperties(target);
             var otherProperties = TypeDescriptor.GetProperties(other);
             foreach (PropertyDescriptor p in otherProperties)
@@ -468,7 +441,6 @@ namespace Fireasy.Common.Extensions
             return target;
         }
 
-#if !NET35
         /// <summary>
         /// 将一个匿名类型的对象转换为类型为 <see cref="ExpandoObject"/> 的动态对象。使用 <see cref="DynamicObjectTypeDescriptionProvider"/> 类型进行元数据补充。
         /// </summary>
@@ -498,7 +470,6 @@ namespace Fireasy.Common.Extensions
 
             return expando;
         }
-#endif
 
         /// <summary>
         /// 比较对象与它默认实例具有差异的属性。
@@ -646,7 +617,6 @@ namespace Fireasy.Common.Extensions
             var bindings = new List<MemberBinding>();
             var parExp = Expression.Parameter(sourceType, "s");
 
-#if !NET35
             TypeDescriptorUtility.AddDefaultDynamicProvider();
             var @dynamic = obj as IDynamicMetaObjectProvider;
             if (@dynamic != null)
@@ -657,9 +627,6 @@ namespace Fireasy.Common.Extensions
             {
                 GetGeneralMemberBindings(obj, sourceType, conversionType, parExp, bindings, mapper);
             }
-#else
-            GetGeneralMemberBindings(obj, sourceType, conversionType, parExp, bindings, mapper);
-#endif
 
             var expExp = Expression.New(conversionType);
             var mbrInitExp = Expression.MemberInit(expExp, bindings);
@@ -668,7 +635,6 @@ namespace Fireasy.Common.Extensions
             return lambda.Compile();
         }
 
-#if !NET35
         private static void GetDynamicMemberBindings(IDynamicMetaObjectProvider @dynamic, Type conversionType, ParameterExpression parExp, List<MemberBinding> bindings, ConvertMapper mapper)
         {
             var method = typeof(DynamicManager).GetMethod(nameof(DynamicManager.GetMember), BindingFlags.Instance | BindingFlags.Public);
@@ -696,15 +662,7 @@ namespace Fireasy.Common.Extensions
                 }
             }
         }
-#endif
 
-#if NET35
-        private static IObjectReader GetObjectReader(Type type)
-        {
-            return typeof(ObjectReader<>).MakeGenericType(type).New<IObjectReader>();
-        }
-
-#endif
         private static void GetGeneralMemberBindings(object obj, Type sourceType, Type conversionType, ParameterExpression parExp, List<MemberBinding> bindings, ConvertMapper mapper)
         {
             var lazyMgr = obj as ILazyManager;

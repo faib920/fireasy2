@@ -7,18 +7,207 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
+#if NETSTANDARD
 using CSRedis;
-using System.Text;
 using System.Collections.Generic;
+using System.Text;
+#else
+using StackExchange.Redis;
+#endif
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fireasy.Redis
 {
     public class RedisComponent : IConfigurationSettingHostService
     {
+#if NETSTANDARD
         private Lazy<CSRedisClient> connectionLazy;
+#else
+        private Lazy<ConnectionMultiplexer> connectionLazy;
+
+        protected ConfigurationOptions Options { get; private set; }
+#endif
 
         protected RedisConfigurationSetting Setting { get; private set; }
+
+#if NETSTANDARD
+        protected void Lock(CSRedisClient client, string token, TimeSpan timeout, Action action)
+        {
+            CSRedisClientLock locker;
+            while ((locker = client.Lock(token, (int)timeout.TotalSeconds)) == null)
+            {
+                Thread.Sleep(10);
+            }
+
+            try
+            {
+                action();
+            }
+            catch
+            {
+                throw;
+            }
+            finally
+            {
+                locker.Dispose();
+            }
+        }
+
+        protected T Lock<T>(CSRedisClient client, string token, TimeSpan timeout, Func<T> func)
+        {
+            CSRedisClientLock locker;
+            while ((locker = client.Lock(token, (int)timeout.TotalSeconds)) == null)
+            {
+                Thread.Sleep(10);
+            }
+
+            T result;
+            try
+            {
+                result = func();
+            }
+            catch
+            {
+                throw;
+            }
+            finally
+            {
+                locker.Dispose();
+            }
+
+            return result;
+        }
+
+        protected async Task LockAsync(CSRedisClient client, string token, TimeSpan timeout, Task task)
+        {
+            CSRedisClientLock locker;
+            while ((locker = client.Lock(token, (int)timeout.TotalSeconds)) == null)
+            {
+                Thread.Sleep(10);
+            }
+
+            try
+            {
+                await task;
+            }
+            catch
+            {
+                throw;
+            }
+            finally
+            {
+                locker.Dispose();
+            }
+        }
+
+        protected async Task<T> LockAsync<T>(CSRedisClient client, string token, TimeSpan timeout, Func<Task<T>> func)
+        {
+            CSRedisClientLock locker;
+            while ((locker = client.Lock(token, (int)timeout.TotalSeconds)) == null)
+            {
+                Thread.Sleep(10);
+            }
+
+            T result;
+            try
+            {
+                result = await func();
+            }
+            catch
+            {
+                throw;
+            }
+            finally
+            {
+                locker.Dispose();
+            }
+
+            return result;
+        }
+#else
+        protected void Lock(IDatabase db, string token, TimeSpan timeout, Action action)
+        {
+            var lockValue = $"{token}:LOCK_TOKEN";
+
+            while (true)
+            {
+                if (db.LockTake(lockValue, token, timeout))
+                {
+                    try
+                    {
+                        action();
+                    }
+                    finally
+                    {
+                        db.LockRelease(lockValue, token);
+                    }
+                }
+            }
+        }
+
+        protected T Lock<T>(IDatabase db, string token, TimeSpan timeout, Func<T> func)
+        {
+            var lockValue = $"{token}:LOCK_TOKEN";
+
+            while (true)
+            {
+                if (db.LockTake(lockValue, token, timeout))
+                {
+                    try
+                    {
+                        return func();
+                    }
+                    finally
+                    {
+                        db.LockRelease(lockValue, token);
+                    }
+                }
+            }
+        }
+
+        protected async Task LockAsync(IDatabase db, string token, TimeSpan timeout, Task task)
+        {
+            var lockValue = $"{token}:LOCK_TOKEN";
+
+            while (true)
+            {
+                if (await db.LockTakeAsync(lockValue, token, timeout))
+                {
+                    try
+                    {
+                        await task;
+                    }
+                    finally
+                    {
+                        await db.LockReleaseAsync(lockValue, token);
+                    }
+                }
+            }
+        }
+
+        protected async Task<T> LockAsync<T>(IDatabase db, string token, TimeSpan timeout, Func<Task<T>> func)
+        {
+            var lockValue = $"{token}:LOCK_TOKEN";
+
+            while (true)
+            {
+                if (await db.LockTakeAsync(lockValue, token, timeout))
+                {
+                    try
+                    {
+                        return await func();
+                    }
+                    finally
+                    {
+                        await db.LockReleaseAsync(lockValue, token);
+                    }
+                }
+            }
+        }
+
+#endif
 
         /// <summary>
         /// 序列化对象。
@@ -70,15 +259,29 @@ namespace Fireasy.Redis
             return new RedisSerializer();
         }
 
+#if NETSTANDARD
         protected CSRedisClient GetConnection()
         {
             return connectionLazy.Value;
         }
 
+#else
+        protected ConnectionMultiplexer GetConnection()
+        {
+            return connectionLazy.Value;
+        }
+
+        protected IDatabase GetDb(IConnectionMultiplexer conn)
+        {
+            return conn.GetDatabase(Options.DefaultDatabase ?? 0);
+        }
+#endif
+
         void IConfigurationSettingHostService.Attach(IConfigurationSettingItem setting)
         {
             this.Setting = (RedisConfigurationSetting)setting;
 
+#if NETSTANDARD
             var connectionStrs = new List<string>();
             if (!string.IsNullOrEmpty(this.Setting.ConnectionString))
             {
@@ -91,7 +294,7 @@ namespace Fireasy.Redis
                 {
                     var connStr = new StringBuilder($"{host.Server}");
 
-            #region connection build
+#region connection build
                     if (host.Port != 0)
                     {
                         connStr.Append($":{host.Port}");
@@ -123,7 +326,7 @@ namespace Fireasy.Redis
                     }
 
                     connStr.Append(",allowAdmin=true");
-            #endregion
+#endregion
 
                     connectionStrs.Add(connStr.ToString());
                 }
@@ -133,6 +336,46 @@ namespace Fireasy.Redis
             {
                 connectionLazy = new Lazy<CSRedisClient>(() => new CSRedisClient(null, connectionStrs.ToArray()));
             }
+#else
+            if (!string.IsNullOrEmpty(this.Setting.ConnectionString))
+            {
+                Options = ConfigurationOptions.Parse(this.Setting.ConnectionString);
+            }
+            else
+            {
+                Options = new ConfigurationOptions
+                {
+                    DefaultDatabase = this.Setting.DefaultDb,
+                    Password = this.Setting.Password,
+                    AllowAdmin = true,
+                    Ssl = this.Setting.Ssl,
+                    Proxy = this.Setting.Twemproxy ? Proxy.Twemproxy : Proxy.None,
+                    AbortOnConnectFail = false
+                };
+
+                if (this.Setting.WriteBuffer != null)
+                {
+                    Options.WriteBuffer = (int)this.Setting.WriteBuffer;
+                }
+
+                foreach (var host in this.Setting.Hosts)
+                {
+                    if (host.Port == 0)
+                    {
+                        Options.EndPoints.Add(host.Server);
+                    }
+                    else
+                    {
+                        Options.EndPoints.Add(host.Server, host.Port);
+                    }
+                }
+            }
+
+            if (connectionLazy == null)
+            {
+                connectionLazy = new Lazy<ConnectionMultiplexer>(() => ConnectionMultiplexer.Connect(Options));
+            }
+#endif
         }
 
         IConfigurationSettingItem IConfigurationSettingHostService.GetSetting()

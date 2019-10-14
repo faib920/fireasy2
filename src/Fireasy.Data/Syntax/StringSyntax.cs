@@ -124,16 +124,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string Concat(params object[] strExps)
         {
-#if NET35
-            var str = new string[strExps.Length];
-            for (var i = 0; i < strExps.Length; i++)
-            {
-                str[i] = strExps[i].ToString();
-            }
-            return string.Join(" + ", str);
-#else
             return string.Join(" + ", strExps);
-#endif
         }
 
         /// <summary>

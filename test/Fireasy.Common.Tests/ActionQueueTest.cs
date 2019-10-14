@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -16,15 +17,18 @@ namespace Fireasy.Common.Tests
         [TestMethod]
         public void TestException()
         {
-            var ss = "dfasdfaf";
-            var dd = 1;
-            ActionQueue.Push(() =>
-            {
-                Console.WriteLine(str + ss + dd);
-                throw new Exception("error");
-            }, 2);
+            TT();
+            Console.WriteLine(22222);
+        }
 
-            Thread.Sleep(5000);
+        private async Task<int> TT()
+        {
+            Thread.Sleep(1000);
+            Console.WriteLine(111111);
+            return await Task.Run(() =>
+            {
+                return 1;
+            });
         }
     }
 }

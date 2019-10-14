@@ -7,6 +7,8 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Data;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fireasy.Data
 {
@@ -20,13 +22,13 @@ namespace Fireasy.Data
         /// </summary>
         /// <param name="command">当前执行的命令。</param>
         /// <param name="period">所耗用的时间。</param>
-        void Write(IDbCommand command, TimeSpan period);
+        Task WriteAsync(IDbCommand command, TimeSpan period, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 记录下执行失败的命令。
         /// </summary>
         /// <param name="command">当前执行的命令。</param>
         /// <param name="exception"></param>
-        void Fail(IDbCommand command, Exception exception);
+        Task FailAsync(IDbCommand command, Exception exception, CancellationToken cancellationToken = default);
     }
 }

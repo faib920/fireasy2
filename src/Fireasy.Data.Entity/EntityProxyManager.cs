@@ -28,20 +28,23 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static Type GetType(Type type)
         {
-            if (cache.TryGetValue(type.Assembly.FullName, out Assembly assembly))
+            if (!type.IsEntityType())
             {
-                return assembly.GetType(type.Name);
+                throw new ArgumentException();
             }
 
-            assembly = cache.GetOrAdd(type.FullName, () =>
-                {
-                    var assemblyName = string.Concat(type.FullName, "_Dynamic");
-                    var assemblyBuilder = new DynamicAssemblyBuilder(assemblyName);
-                    EntityProxyBuilder.BuildType(type, null, assemblyBuilder, null);
-                    return assemblyBuilder.AssemblyBuilder;
-                });
+            if (!type.IsNotCompiled())
+            {
+                return type;
+            }
 
-            return assembly.GetType(type.Name);
+            var assembly = CompileAll(type.Assembly, null);
+            if (assembly == null)
+            {
+                return type;
+            }
+
+            return assembly.GetType(type.Name, false);
         }
 
         public static Assembly CompileAll(Assembly assembly, IInjectionProvider injection)
@@ -51,8 +54,6 @@ namespace Fireasy.Data.Entity
                     var assemblyName = string.Concat(assembly.GetName().Name, "_Dynamic");
                     var assemblyBuilder = new DynamicAssemblyBuilder(assemblyName);
 
-                    var ss = assembly.GetExportedTypes()
-                        .Where(s => s.IsNotCompiled()).ToList();
                     assembly.GetExportedTypes()
                         .Where(s => s.IsNotCompiled())
                         .ForEach(s => EntityProxyBuilder.BuildType(s, null, assemblyBuilder, injection));

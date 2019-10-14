@@ -1,51 +1,44 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net45;net40;netcoreapp2.1;</TargetFrameworks>
-    <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
+    <TargetFrameworks>net45;netcoreapp2.1;netcoreapp3.0</TargetFrameworks>
+
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
-    <FileVersion>2.0.0.46128</FileVersion>
+    <FileVersion>2.1.0.02</FileVersion>
     <Copyright>Copyright © Fireasy 2013-2019</Copyright>
-    <AssemblyVersion>2.0.0.46128</AssemblyVersion>
+    <AssemblyVersion>2.1.0.02</AssemblyVersion>
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>True</SignAssembly>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Asp.Net Mvc</Product>
-    <Version>2.0.32</Version>
+    <Version>2.1.0-beta3</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
+    <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
-    <Description>Asp.Net MVC 辅助类，使 Action 可接受复杂的 Json 绑定，Json 按 Fireasy 序列化输出。支持 .Net Core 2.1 版本。
+    <Description>Asp.Net MVC 辅助类，使 Action 可接受复杂的 Json 绑定，Json 按 Fireasy 序列化输出。支持 .Net Core 3.0 版本。
 
 示例源码：https://github.com/faib920/zero</Description>
     <PackageReleaseNotes></PackageReleaseNotes>
+    <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
     <DocumentationFile>..\..\Release\net45\Fireasy.Web.Mvc.xml</DocumentationFile>
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net40|AnyCPU'">
-    <DocumentationFile>..\..\Release\net40\Fireasy.Web.Mvc.xml</DocumentationFile>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netcoreapp2.1|AnyCPU'">
+    <DocumentationFile>..\..\Release\netcoreapp2.1\Fireasy.Web.Mvc.xml</DocumentationFile>
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
-  
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
-    <DocumentationFile>..\..\Release\netstandard2.0\Fireasy.Web.Mvc.xml</DocumentationFile>
+    
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netcoreapp3.0|AnyCPU'">
+    <DocumentationFile>..\..\Release\netcoreapp3.0\Fireasy.Web.Mvc.xml</DocumentationFile>
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
-  
   <ItemGroup>
     <ProjectReference Include="..\Fireasy.Common\Fireasy.Common.csproj" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net40'">
-    <Reference Include="System.Configuration" />
-    <Reference Include="System.Web" />
-    <PackageReference Include="Microsoft.AspNet.Mvc" Version="4.0.20505" />
-    <PackageReference Include="Microsoft.AspNet.Web.Optimization" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
@@ -62,5 +55,8 @@
     <PackageReference Include="Microsoft.Net.Http.Headers">
       <Version>2.1.0</Version>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.0'">
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 </Project>

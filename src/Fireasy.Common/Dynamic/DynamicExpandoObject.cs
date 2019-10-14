@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NET35
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -216,5 +215,4 @@ namespace Fireasy.Common.Dynamic
         #endregion
     }
 }
-#endif
 

@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NET35
 using Fireasy.Common.Dynamic;
 using System.ComponentModel;
 using System.Dynamic;
@@ -34,4 +33,3 @@ namespace Fireasy.Common.ComponentModel
         }
     }
 }
-#endif

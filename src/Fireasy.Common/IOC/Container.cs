@@ -109,12 +109,7 @@ namespace Fireasy.Common.Ioc
         /// <returns>当前的 IOC 容器。</returns>
         public Container Register<TService>(Func<TService> instanceCreator) where TService : class
         {
-#if NET35
-            var creator = new Func<object>(() => instanceCreator());
-            AddRegistration(new FuncRegistration<TService>(creator));
-#else
             AddRegistration(new FuncRegistration<TService>(instanceCreator));
-#endif
             return this;
         }
 

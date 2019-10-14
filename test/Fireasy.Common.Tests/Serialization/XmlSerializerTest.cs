@@ -733,6 +733,7 @@ studio");
         public void TestSerializeExpandoObject()
         {
             dynamic obj = new ExpandoObject();
+            obj.AA = new LazyClass { Address = "kunming" };
             obj.Name = "aaaa";
             obj.IsOld = true;
             obj.Age = 12.5;
@@ -740,7 +741,7 @@ studio");
 
             var dd = new { A = 43434 };
 
-            var serializer = new XmlSerializer();
+            var serializer = new XmlSerializer(new XmlSerializeOption { NodeStyle = XmlNodeStyle.Attribute });
 
             var newo = GenericExtension.Extend(obj, dd);
             var xml = serializer.Serialize(newo);
@@ -750,8 +751,8 @@ studio");
         [TestMethod]
         public void TestSerializeLazyObject()
         {
-            var obj = new LazyClass { Name = "fireasy", Address = "kunming", Age = 30 };
-            var serializer = new XmlSerializer();
+            var obj = new LazyClass { Name = "fireasy", AA = new CycleClass { B = "Dfaf" }, Address = "kunming", Age = 30 };
+            var serializer = new XmlSerializer(new XmlSerializeOption { NodeStyle = XmlNodeStyle.Attribute });
             Console.WriteLine(serializer.Serialize(obj));
         }
 
@@ -827,6 +828,8 @@ studio");
 
         public class LazyClass : ILazyManager
         {
+            public CycleClass AA { get; set; }
+
             public string Name { get; set; }
 
             public string Address { get; set; }
@@ -839,8 +842,10 @@ studio");
                 {
                     case "Name":
                     case "Address":
+                    case "AA":
                         return true;
                     case "Age":
+                        return true;
                     default:
                         return false;
                 }
@@ -849,6 +854,7 @@ studio");
 
         public class CycleClass
         {
+            public string B { get; set; }
             public CycleClass Parent { get; set; }
         }
 

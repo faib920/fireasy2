@@ -20,8 +20,9 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// </summary>
         /// <param name="table">操作的表的表达式。</param>
         /// <param name="where">条件表达式。</param>
-        public DeleteCommandExpression(Expression table, Expression where)
-            : base(DbExpressionType.Delete, typeof(int))
+        /// <param name="isAsync">是否异步执行。</param>
+        public DeleteCommandExpression(Expression table, Expression where, bool isAsync)
+            : base(DbExpressionType.Delete, isAsync, typeof(int))
         {
             Table = table;
             Where = where;
@@ -45,7 +46,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <returns></returns>
         public DeleteCommandExpression Update(Expression table, Expression where)
         {
-            return table != Table || where != Where ? new DeleteCommandExpression(table, where) : this;
+            return table != Table || where != Where ? new DeleteCommandExpression(table, where, IsAsync) : this;
         }
 
     }

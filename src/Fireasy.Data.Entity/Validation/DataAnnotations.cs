@@ -1,4 +1,4 @@
-﻿#if NETSTANDARD
+﻿#if NETSTANDARD && !NETSTANDARD2_1
 namespace System.ComponentModel.DataAnnotations
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]

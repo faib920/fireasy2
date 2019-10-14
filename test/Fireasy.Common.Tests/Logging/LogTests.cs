@@ -1,33 +1,11 @@
 ﻿using Fireasy.Common.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Fireasy.Common.Tests.Logging
 {
-    public class TestLog : ILogger
-    {
-        public void Debug(object message, Exception exception = null)
-        {
-        }
-
-        public void Error(object message, Exception exception = null)
-        {
-        }
-
-        public void Fatal(object message, Exception exception = null)
-        {
-        }
-
-        public void Info(object message, Exception exception = null)
-        {
-        }
-
-        public void Warn(object message, Exception exception = null)
-        {
-        }
-    }
-
     [TestClass]
     public class LogTests
     {
@@ -37,15 +15,12 @@ namespace Fireasy.Common.Tests.Logging
         }
 
         [TestMethod]
-        public void TestParallel()
+        public async Task TestParallel()
         {
-            var a = LoggerFactory.CreateLogger();
-            Parallel.For(1, 5, t =>
+            Parallel.For(0, 5, async s =>
             {
-                a.Info(t + "----------");
+                await DefaultLogger.Instance.InfoAsync("111----------");
             });
-
-            Console.WriteLine("end");
         }
     }
 }

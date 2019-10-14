@@ -7,9 +7,8 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Linq.Expressions;
-using Fireasy.Web.EasyUI;
 using Fireasy.Web.Mvc;
-#if !NETSTANDARD
+#if !NETCOREAPP
 using System.Web.Mvc;
 #else
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -28,7 +27,7 @@ namespace Fireasy.Web.EasyUI
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
         public static ExtendHtmlString TimeSpinner(this
-#if !NETSTANDARD
+#if !NETCOREAPP
             HtmlHelper htmlHelper
 #else
             IHtmlHelper htmlHelper
@@ -53,7 +52,7 @@ namespace Fireasy.Web.EasyUI
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
         public static ExtendHtmlString TimeSpinner<TModel, TProperty>(this
-#if !NETSTANDARD
+#if !NETCOREAPP
             HtmlHelper<TModel> htmlHelper
 #else
             IHtmlHelper<TModel> htmlHelper

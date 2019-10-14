@@ -1,40 +1,30 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net45;net40;net35;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net45;netstandard2.0;netstandard2.1</TargetFrameworks>
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
-    <FileVersion>2.0.0.46130</FileVersion>
+    <FileVersion>2.1.0.02</FileVersion>
     <Copyright>Copyright © Fireasy 2013-2019</Copyright>
-    <AssemblyVersion>2.0.0.46130</AssemblyVersion>
+    <AssemblyVersion>2.1.0.02</AssemblyVersion>
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>True</SignAssembly>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Data Library</Product>
-    <Version>2.0.34</Version>
+    <Version>2.1.0-beta4</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Description>数据库访问库，提供 SqlServer, MySql, Oracle, SQLite, PostgreSql 等数据库的驱动适配，以及插件服务，如SQL语法、数据库架构、批量插入、记录包装等。
 
 示例源码：https://github.com/faib920/zero</Description>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
-    <RepositoryUrl></RepositoryUrl>
-    <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>
+    <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
     <PackageReleaseNotes></PackageReleaseNotes>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net35|AnyCPU'">
-    <DocumentationFile>..\..\Release\net35\Fireasy.Data.xml</DocumentationFile>
-    <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
     <DocumentationFile>..\..\Release\net45\Fireasy.Data.xml</DocumentationFile>
-    <OutputPath>..\..\Release\</OutputPath>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net40|AnyCPU'">
-    <DocumentationFile>..\..\Release\net40\Fireasy.Data.xml</DocumentationFile>
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
   
@@ -43,7 +33,9 @@
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
   
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.1|AnyCPU'">
+    <DocumentationFile>..\..\Release\netstandard2.1\Fireasy.Data.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
     
   <PropertyGroup>
@@ -62,17 +54,6 @@
     <ProjectReference Include="..\Fireasy.Common\Fireasy.Common.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)'=='net35'">
-    <Reference Include="System.Configuration" />
-    <Reference Include="System.Transactions" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)'=='net40'">
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Configuration" />
-    <Reference Include="System.Transactions" />
-  </ItemGroup>
-
   <ItemGroup Condition="'$(TargetFramework)'=='net45'">
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Configuration" />
@@ -89,5 +70,15 @@
     <PackageReference Include="System.Data.Common">
       <Version>4.3.0</Version>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='netstandard2.1'">
+    <PackageReference Include="System.Data.SqlClient" Version="4.6.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Win32.Registry">
+      <Version>4.6.0</Version>
+    </PackageReference>
+
   </ItemGroup>
 </Project>

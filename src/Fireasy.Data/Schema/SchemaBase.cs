@@ -320,20 +320,9 @@ namespace Fireasy.Data.Schema
 
         private SchemaCategory GetCategory<T>()
         {
-#if NET35
-            try
-            {
-                return (SchemaCategory)Enum.Parse(typeof(SchemaCategory), typeof(T).Name);
-            }
-            catch
-            {
-                return SchemaCategory.Unknow;
-            }
-#else
             SchemaCategory category = SchemaCategory.Unknow;
             Enum.TryParse(typeof(T).Name, out category);
             return category;
-#endif
         }
     }
 }

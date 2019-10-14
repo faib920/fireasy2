@@ -375,7 +375,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             var kvpConstructor = typeof(KeyValuePair<,>).MakeGenericType(innerKey.Type, join.Projection.Projector.Type).GetConstructor(new Type[] { innerKey.Type, join.Projection.Projector.Type });
             var constructKVPair = Expression.New(kvpConstructor, innerKey, join.Projection.Projector);
-            Expression newProjection = new ProjectionExpression(join.Projection.Select, constructKVPair);
+            Expression newProjection = new ProjectionExpression(join.Projection.Select, constructKVPair, false);
 
             var kvp = Expression.Parameter(constructKVPair.Type, "kvp");
 

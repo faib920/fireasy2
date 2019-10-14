@@ -5,8 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NET35
-
 using System;
 using Fireasy.Common.Configuration;
 
@@ -38,4 +36,3 @@ namespace Fireasy.Common.Composition.Configuration
         public string Assembly { get; set; }
     }
 }
-#endif

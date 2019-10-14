@@ -219,11 +219,11 @@ namespace Fireasy.Common.Tests
         }
 
         [TestMethod]
-        public void TestAsyncMethod()
+        public async Task TestAsyncMethod()
         {
             var proxy = AspectFactory.BuildProxy<AspectTester>();
 
-            var str = proxy.TestAsync("fireasy").Result;
+            var str = await proxy.TestAsync("fireasy");
             Assert.AreEqual("hello fireasy", str);
         }
 
@@ -334,6 +334,7 @@ namespace Fireasy.Common.Tests
             [Intercept(typeof(AsyncInterceptor))]
             public virtual async Task<string> TestAsync(string str)
             {
+                Console.WriteLine("tt");
                 return str;
             }
         }

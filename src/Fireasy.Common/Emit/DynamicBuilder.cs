@@ -13,9 +13,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
-#if NET35
 using ExpressionVisitor = Fireasy.Common.Linq.Expressions.ExpressionVisitor;
-#endif
 
 namespace Fireasy.Common.Emit
 {

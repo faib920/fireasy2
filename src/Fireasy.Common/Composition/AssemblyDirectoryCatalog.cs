@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NET35
 using System;
 using System.ComponentModel.Composition.Hosting;
 
@@ -50,4 +49,3 @@ namespace Fireasy.Common.Composition
         }
     }
 }
-#endif

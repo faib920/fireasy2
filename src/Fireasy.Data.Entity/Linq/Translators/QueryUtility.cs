@@ -107,7 +107,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return expression;
         }
 
-        internal static ProjectionExpression GetTableQuery(EntityMetadata entity, bool isNoTracking)
+        internal static ProjectionExpression GetTableQuery(EntityMetadata entity, bool isNoTracking, bool isAsync)
         {
             var tableAlias = new TableAlias();
             var selectAlias = new TableAlias();
@@ -119,7 +119,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             var proj = new ProjectionExpression(
                 new SelectExpression(selectAlias, pc.Columns, table, null),
-                pc.Projector
+                pc.Projector, isAsync
                 );
 
             return (ProjectionExpression)ApplyPolicy(proj, entityType);
@@ -150,7 +150,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 //所关联的实体类型
                 var relMetadata = EntityMetadataUnity.GetEntityMetadata(relationProprety.RelationalType);
-                var projection = GetTableQuery(relMetadata, false);
+                var projection = GetTableQuery(relMetadata, false, false);
 
                 Expression parentExp = null, childExp = null;
                 var ship = RelationshipUnity.GetRelationship(relationProprety);
@@ -180,7 +180,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 var aggregator = GetAggregator(property.Type, typeof(IEnumerable<>).MakeGenericType(pc.Projector.Type));
                 var result = new ProjectionExpression(
                     new SelectExpression(newAlias, pc.Columns, projection.Select, where),
-                    pc.Projector, aggregator
+                    pc.Projector, aggregator, projection.IsAsync
                     );
 
                 return ApplyPolicy(result, property.Info.ReflectionInfo);
@@ -201,7 +201,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return QueryBinder.BindMember(root, property.Info.ReflectionInfo);
         }
 
-        internal static Expression GetDeleteExpression(EntityMetadata metadata, LambdaExpression predicate, bool replace)
+        internal static Expression GetDeleteExpression(EntityMetadata metadata, LambdaExpression predicate, bool replace, bool isAsync)
         {
             var table = new TableExpression(new TableAlias(), metadata.TableName, metadata.EntityType);
             Expression where = null;
@@ -219,10 +219,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 }
             }
 
-            return new DeleteCommandExpression(table, where);
+            return new DeleteCommandExpression(table, where, isAsync);
         }
 
-        internal static Expression GetLogicalDeleteExpression(EntityMetadata metadata, LambdaExpression predicate)
+        internal static Expression GetLogicalDeleteExpression(EntityMetadata metadata, LambdaExpression predicate, bool isAsync)
         {
             var table = new TableExpression(new TableAlias(), metadata.TableName, metadata.EntityType);
             Expression where = null;
@@ -239,18 +239,18 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 where = DbExpressionReplacer.Replace(predicate.Body, predicate.Parameters[0], row);
             }
 
-            return new UpdateCommandExpression(table, where, assignments);
+            return new UpdateCommandExpression(table, where, assignments, isAsync);
         }
 
-        internal static Expression GetUpdateExpression(Expression instance, LambdaExpression predicate)
+        internal static Expression GetUpdateExpression(Expression instance, LambdaExpression predicate, bool isAsync)
         {
             if (instance is ParameterExpression)
             {
-                return GetUpdateExpressionByParameter((ParameterExpression)instance, predicate);
+                return GetUpdateExpressionByParameter((ParameterExpression)instance, predicate, isAsync);
             }
             else if (instance is ConstantExpression)
             {
-                return GetUpdateExpressionByEntity((ConstantExpression)instance, predicate);
+                return GetUpdateExpressionByEntity((ConstantExpression)instance, predicate, isAsync);
             }
 
             var lambda = instance as LambdaExpression;
@@ -261,7 +261,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             if (lambda != null)
             {
-                return GetUpdateExpressionByCalculator(lambda, predicate);
+                return GetUpdateExpressionByCalculator(lambda, predicate, isAsync);
             }
 
             return null;
@@ -283,7 +283,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return Expression.Lambda(where, parExp);
         }
 
-        private static Expression GetUpdateExpressionByEntity(ConstantExpression constant, LambdaExpression predicate)
+        private static Expression GetUpdateExpressionByEntity(ConstantExpression constant, LambdaExpression predicate, bool isAsync)
         {
             var entity = constant.Value as IEntity;
             var metadata = EntityMetadataUnity.GetEntityMetadata(entity.EntityType);
@@ -296,18 +296,18 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 where = DbExpressionReplacer.Replace(predicate.Body, predicate.Parameters[0], row);
             }
 
-            return new UpdateCommandExpression(table, where, GetUpdateArguments(table, entity));
+            return new UpdateCommandExpression(table, where, GetUpdateArguments(table, entity), isAsync);
         }
 
-        private static Expression GetUpdateExpressionByParameter(ParameterExpression parExp, LambdaExpression predicate)
+        private static Expression GetUpdateExpressionByParameter(ParameterExpression parExp, LambdaExpression predicate, bool isAsync)
         {
             var metadata = EntityMetadataUnity.GetEntityMetadata(parExp.Type);
             var table = new TableExpression(new TableAlias(), metadata.TableName, parExp.Type);
 
-            return new UpdateCommandExpression(table, predicate.Body, GetUpdateArguments(table, parExp));
+            return new UpdateCommandExpression(table, predicate.Body, GetUpdateArguments(table, parExp), isAsync);
         }
 
-        private static Expression GetUpdateExpressionByCalculator(LambdaExpression lambda, LambdaExpression predicate)
+        private static Expression GetUpdateExpressionByCalculator(LambdaExpression lambda, LambdaExpression predicate, bool isAsync)
         {
             var initExp = lambda.Body as MemberInitExpression;
             var newExp = initExp.NewExpression;
@@ -328,10 +328,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 list.Add(Expression.Bind(ass.Member, DbExpressionReplacer.Replace(ass.Expression, lambda.Parameters[0], row)));
             }
 
-            return new UpdateCommandExpression(table, where, GetUpdateArguments(table, list));
+            return new UpdateCommandExpression(table, where, GetUpdateArguments(table, list), isAsync);
         }
 
-        internal static Expression GetInsertExpression(ISyntaxProvider syntax, Expression instance)
+        internal static Expression GetInsertExpression(ISyntaxProvider syntax, Expression instance, bool isAsync)
         {
             InsertCommandExpression insertExp;
             var entityType = instance.Type;
@@ -349,7 +349,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             var metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
             var table = new TableExpression(new TableAlias(), metadata.TableName, entityType);
-            insertExp = new InsertCommandExpression(table, func(table))
+            insertExp = new InsertCommandExpression(table, func(table), isAsync)
                 {
                     WithAutoIncrement = !string.IsNullOrEmpty(syntax.IdentitySelect) && HasAutoIncrement(instance.Type),
                     WithGenerateValue = HasGenerateValue(instance.Type)

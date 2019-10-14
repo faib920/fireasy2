@@ -33,7 +33,7 @@ namespace Fireasy.Common.Caching.Configuration
                 section, 
                 "caching", 
                 func: node => new CachingConfigurationSetting
-                    {
+                {
                         Name = node.GetAttributeValue("name"),
                         CacheType = Type.GetType(node.GetAttributeValue("type"), false, true)
                     });

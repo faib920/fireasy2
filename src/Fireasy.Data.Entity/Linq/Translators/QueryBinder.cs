@@ -1,9 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
-#if !NET35
 using Fireasy.Common.Dynamic;
-#endif
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Linq.Expressions;
 using Fireasy.Data.Entity.Metadata;
@@ -15,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
@@ -30,6 +29,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         private List<OrderExpression> thenBys;
         private Expression batchSource;
         private bool isNoTracking = false;
+        private bool isQueryAsync = false;
 
         private QueryBinder(Expression root)
         {
@@ -59,15 +59,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var funcName = TranslateUtils.GetCustomFunction(node.Method);
             if (!string.IsNullOrEmpty(funcName))
             {
-#if !NET35
                 var arguments = Visit(node.Arguments);
-#else
-                var arguments = new List<Expression>();
-                foreach (var argument in node.Arguments)
-                {
-                    arguments.Add(Visit(argument));
-                }
-#endif
                 return new FunctionExpression(node.Method.ReturnType, funcName, arguments);
             }
 
@@ -103,23 +95,28 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
             else if (node.Method.DeclaringType == typeof(Extensions))
             {
+                var isAsync = node.Method.Name.EndsWith("Async");
                 switch (node.Method.Name)
                 {
                     case nameof(Extensions.Segment):
                         return BindSegment(node.Arguments[0], node.Arguments[1]);
                     case nameof(Extensions.RemoveWhere):
-                        return BindDelete(node.Arguments[0], GetLambda(node.Arguments[1]), node.Arguments[2]);
+                    case nameof(Extensions.RemoveWhereAsync):
+                        return BindDelete(node.Arguments[0], GetLambda(node.Arguments[1]), node.Arguments[2], isAsync);
                     case nameof(Extensions.UpdateWhere):
-                        return BindUpdate(node.Arguments[0], node.Arguments[1], GetLambda(node.Arguments[2]));
+                    case nameof(Extensions.UpdateWhereAsync):
+                    case nameof(Extensions.UpdateWhereByCalculator):
+                    case nameof(Extensions.UpdateWhereByCalculatorAsync):
+                        return BindUpdate(node.Arguments[0], node.Arguments[1], GetLambda(node.Arguments[2]), isAsync);
                     case nameof(Extensions.CreateEntity):
-                        return BindInsert(node.Arguments[0], node.Arguments[1]);
+                    case nameof(Extensions.CreateEntityAsync):
+                        return BindInsert(node.Arguments[0], node.Arguments[1], isAsync);
                     case nameof(Extensions.BatchOperate):
+                    case nameof(Extensions.BatchOperateAsync):
                         batchSource = node.Arguments[0];
-                        return BindBatch(node.Arguments[0], node.Arguments[1], GetLambda(node.Arguments[2]));
-#if !NET35
+                        return BindBatch(node.Arguments[0], node.Arguments[1], GetLambda(node.Arguments[2]), isAsync);
                     case nameof(Extensions.Extend):
                         return BindExtend(node.Arguments[0], GetLambda(node.Arguments[1]));
-#endif
                     case nameof(Extensions.ExtendAs):
                         return BindExtendAs(node.Type, node.Arguments[0], GetLambda(node.Arguments[1]));
                     case nameof(Extensions.AsNoTracking):
@@ -128,27 +125,49 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     case nameof(Extensions.CacheParsing):
                     case nameof(Extensions.CacheExecution):
                         return Visit(node.Arguments[0]);
+                    case nameof(Extensions.FirstOrDefaultAsync):
+                    case nameof(Extensions.LastOrDefaultAsync):
+                        if (node.Arguments.Count == 2)
+                        {
+                            return BindFirst(node.Arguments[0], null, node.Method.Name.Replace("Async", string.Empty), node == this.root, true);
+                        }
+                        else if (node.Arguments.Count == 3)
+                        {
+                            return BindFirst(node.Arguments[0], GetLambda(node.Arguments[1]), node.Method.Name.Replace("Async", string.Empty), node == this.root, true);
+                        }
+                        break;
+                    case nameof(Extensions.AnyAsync):
+                    case nameof(Extensions.AllAsync):
+                        isQueryAsync = true;
+                        return BindAnyAll(node.Arguments[0], node.Method, node.Arguments.Count == 3 ? GetLambda(node.Arguments[1]) : null, node == root);
+                    case nameof(Extensions.ToListAsync):
+                        isQueryAsync = true;
+                        return Visit(node.Arguments[0]);
                 }
             }
             else if (typeof(IRepository).IsAssignableFrom(node.Method.DeclaringType))
             {
+                var isAsync = node.Method.Name.EndsWith("Async");
                 switch (node.Method.Name)
                 {
                     case nameof(IRepository.Delete):
+                    case nameof(IRepository.DeleteAsync):
                         var predicate1 = GetLambda(node.Arguments[0]);
                         if (predicate1 != null)
                         {
-                            return BindDelete(batchSource, predicate1, node.Arguments[1]);
+                            return BindDelete(batchSource, predicate1, node.Arguments[1], isAsync);
                         }
                         else
                         {
-                            return BindDelete(batchSource, (ParameterExpression)node.Arguments[0], node.Arguments[1]);
+                            return BindDelete(batchSource, (ParameterExpression)node.Arguments[0], node.Arguments[1], isAsync);
                         }
                     case nameof(IRepository.Update):
+                    case nameof(IRepository.UpdateAsync):
                         var predicate2 = node.Arguments.Count > 1 ? GetLambda(node.Arguments[1]) : null;
-                        return BindUpdate(batchSource, node.Arguments[0], predicate2);
+                        return BindUpdate(batchSource, node.Arguments[0], predicate2, isAsync);
                     case nameof(IRepository.Insert):
-                        return BindInsert(batchSource, node.Arguments[0]);
+                    case nameof(IRepository.InsertAsync):
+                        return BindInsert(batchSource, node.Arguments[0], isAsync);
                 }
             }
 
@@ -169,12 +188,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 if (typeof(IEntity).IsAssignableFrom(rowType) &&
                     q.Expression.NodeType == ExpressionType.Constant)
                 {
-                    return VisitSequence(QueryUtility.GetTableQuery(EntityMetadataUnity.GetEntityMetadata(rowType), isNoTracking));
+                    return VisitSequence(QueryUtility.GetTableQuery(EntityMetadataUnity.GetEntityMetadata(rowType), isNoTracking, isQueryAsync));
                 }
                 else if (q.Expression.NodeType == ExpressionType.Constant)
                 {
                     // assume this is also a table via some other implementation of IQueryable
-                    return VisitSequence(QueryUtility.GetTableQuery(EntityMetadataUnity.GetEntityMetadata(q.ElementType), isNoTracking));
+                    return VisitSequence(QueryUtility.GetTableQuery(EntityMetadataUnity.GetEntityMetadata(q.ElementType), isNoTracking, isQueryAsync));
                 }
                 else
                 {
@@ -229,7 +248,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 && !expMaps.ContainsKey((ParameterExpression)m.Expression)
                 && IsQueryable(m))
             {
-                return VisitSequence(QueryUtility.GetTableQuery(EntityMetadataUnity.GetEntityMetadata(m.Type.GetEnumerableElementType()), isNoTracking));
+                return VisitSequence(QueryUtility.GetTableQuery(EntityMetadataUnity.GetEntityMetadata(m.Type.GetEnumerableElementType()), isNoTracking, isQueryAsync));
             }
 
             if (m.Member.DeclaringType.IsNullableType() && m.Member.Name == nameof(Nullable<int>.HasValue))
@@ -393,7 +412,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     var aggregator = QueryUtility.GetAggregator(expectedType, projection.Type);
                     if (aggregator != null)
                     {
-                        return new ProjectionExpression(projection.Select, projection.Projector, aggregator);
+                        return new ProjectionExpression(projection.Select, projection.Projector, aggregator, isQueryAsync);
                     }
                 }
             }
@@ -422,7 +441,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var pc = ProjectColumns(projection.Projector, alias, projection.Select.Alias);
             return new ProjectionExpression(
                 new SelectExpression(alias, pc.Columns, projection.Select, where),
-                pc.Projector
+                pc.Projector, isQueryAsync
                 );
         }
 
@@ -438,7 +457,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             ProjectedColumns pc = this.ProjectColumns(projection.Projector, alias, projection.Select.Alias);
             return new ProjectionExpression(
                 new SelectExpression(alias, pc.Columns, projection.Select, null).Reverse(true),
-                pc.Projector
+                pc.Projector, isQueryAsync
                 );
         }
 
@@ -467,7 +486,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var pc = ProjectColumns(expression, alias, projection.Select.Alias);
             return new ProjectionExpression(
                 new SelectExpression(alias, pc.Columns, projection.Select, null),
-                pc.Projector
+                pc.Projector, isQueryAsync
                 );
         }
 
@@ -520,7 +539,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
             return new ProjectionExpression(
                 new SelectExpression(alias, pc.Columns, join, null),
-                pc.Projector
+                pc.Projector, isQueryAsync
                 );
         }
 
@@ -544,7 +563,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var pc = ProjectColumns(resultExpr, alias, outerProjection.Select.Alias, innerProjection.Select.Alias);
             return new ProjectionExpression(
                 new SelectExpression(alias, pc.Columns, join, null),
-                pc.Projector
+                pc.Projector, isQueryAsync
                 );
         }
 
@@ -568,7 +587,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             ProjectedColumns pc = this.ProjectColumns(outerProjection.Projector, alias, outerProjection.Select.Alias);
             return new ProjectionExpression(
                 new SelectExpression(alias, pc.Columns, outerProjection.Select, exists),
-                pc.Projector, outerProjection.Aggregator
+                pc.Projector, outerProjection.Aggregator, isQueryAsync
                 );
         }
 
@@ -623,7 +642,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var pc = ProjectColumns(projection.Projector, alias, projection.Select.Alias);
             return new ProjectionExpression(
                 new SelectExpression(alias, pc.Columns, projection.Select, null, orderings.AsReadOnly(), null, null),
-                pc.Projector
+                pc.Projector, isQueryAsync
                 );
         }
 
@@ -716,7 +735,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var elementSubquery =
                 new ProjectionExpression(
                     new SelectExpression(elementAlias, elementPC.Columns, subqueryBasis.Select, subqueryCorrelation),
-                    elementPC.Projector
+                    elementPC.Projector, isQueryAsync
                     );
 
             var alias = GetNextAlias();
@@ -760,7 +779,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             return new ProjectionExpression(
                 new SelectExpression(alias, pc.Columns, projection.Select, null, null, groupExprs, null),
-                pc.Projector
+                pc.Projector, isQueryAsync
                 );
         }
 
@@ -788,7 +807,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var pc = this.ProjectColumns(resultExpr, alias, outerProjection.Select.Alias);
             return new ProjectionExpression(
                 new SelectExpression(alias, pc.Columns, outerProjection.Select, null),
-                pc.Projector
+                pc.Projector, isQueryAsync
                 );
         }
 
@@ -1157,7 +1176,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 var p = Expression.Parameter(typeof(IEnumerable<>).MakeGenericType(aggExpr.Type), "p");
                 var gator = Expression.Lambda(Expression.Call(typeof(Enumerable), nameof(Enumerable.Single), new[] { returnType }, p), p);
-                return new ProjectionExpression(select, new ColumnExpression(returnType, alias, string.Empty, null), gator);
+                return new ProjectionExpression(select, new ColumnExpression(returnType, alias, string.Empty, null), gator, isQueryAsync);
             }
 
             var subquery = new ScalarExpression(returnType, select);
@@ -1204,7 +1223,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var pc = ProjectColumns(projection.Projector, alias, projection.Select.Alias);
             return new ProjectionExpression(
                 new SelectExpression(alias, pc.Columns, projection.Select, null, null, null, true, null, null, null, null, false),
-                pc.Projector
+                pc.Projector, isQueryAsync
                 );
         }
 
@@ -1289,7 +1308,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return projection;
         }
 
-        private Expression BindFirst(Expression source, LambdaExpression predicate, string kind, bool isRoot)
+        private Expression BindFirst(Expression source, LambdaExpression predicate, string kind, bool isRoot, bool isAsync = false)
         {
             var projection = VisitSequence(source);
             if (projection == null)
@@ -1313,22 +1332,36 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 ProjectedColumns pc = this.ProjectColumns(projection.Projector, alias, projection.Select.Alias);
                 projection = new ProjectionExpression(
                     new SelectExpression(alias, pc.Columns, projection.Select, where, null, null, false, null, logicalDeleteExp, null, null, isLast),
-                    pc.Projector
+                    pc.Projector, isAsync
                     );
             }
             if (isRoot)
             {
                 Type elementType = projection.Projector.Type;
-                ParameterExpression p = Expression.Parameter(typeof(IEnumerable<>).MakeGenericType(elementType), "p");
-                LambdaExpression gator = Expression.Lambda(Expression.Call(typeof(Enumerable), kind, new Type[] { elementType }, p), p);
-                return new ProjectionExpression(projection.Select, projection.Projector, gator);
+                LambdaExpression gator;
+                if (isAsync)
+                {
+#if NETSTANDARD && !NETSTANDARD2_0
+                    var p = Expression.Parameter(typeof(IAsyncEnumerable<>).MakeGenericType(elementType), "p");
+#else
+                    var p = Expression.Parameter(typeof(Task<>).MakeGenericType(typeof(IEnumerable<>).MakeGenericType(elementType)), "p");
+#endif
+                    gator = Expression.Lambda(Expression.Call(typeof(Extensions), nameof(Extensions.FirstOrDefaultCoreAsnyc), new Type[] { elementType }, p), p);
+                }
+                else
+                {
+                    var p = Expression.Parameter(typeof(IEnumerable<>).MakeGenericType(elementType), "p");
+                    gator = Expression.Lambda(Expression.Call(typeof(Enumerable), kind, new Type[] { elementType }, p), p);
+                }
+
+                return new ProjectionExpression(projection.Select, projection.Projector, gator, isAsync);
             }
             return projection;
         }
 
         private Expression BindAnyAll(Expression source, MethodInfo method, LambdaExpression predicate, bool isRoot)
         {
-            var isAll = method.Name == nameof(Queryable.All);
+            var isAll = method.Name.StartsWith(nameof(Queryable.All));
             if (source is ConstantExpression constSource && !IsQueryable(constSource))
             {
                 System.Diagnostics.Debug.Assert(!isRoot);
@@ -1352,7 +1385,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 }
                 return Visit(where);
             }
-            if (isAll)
+            if (isAll && predicate != null)
             {
                 predicate = Expression.Lambda(Expression.Not(predicate.Body), predicate.Parameters.ToArray());
             }
@@ -1389,7 +1422,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         ? colx.Equal(Expression.Constant(0))
                         : colx.GreaterThan(Expression.Constant(0));
                     return new ProjectionExpression(
-                        newSelect, exp, QueryUtility.GetAggregator(typeof(bool), typeof(IEnumerable<bool>))
+                        newSelect, exp, QueryUtility.GetAggregator(typeof(bool), typeof(IEnumerable<bool>)), projection.IsAsync
                         );
                 }
             }
@@ -1398,15 +1431,20 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private Expression GetSingletonSequence(Expression expr, string aggregator)
         {
-            var p = Expression.Parameter(typeof(IEnumerable<>).MakeGenericType(expr.Type), "p");
             LambdaExpression gator = null;
             if (aggregator != null)
             {
+#if NETSTANDARD && !NETSTANDARD2_0
+                var p = Expression.Parameter(typeof(IAsyncEnumerable<>).MakeGenericType(expr.Type), "p");
+                gator = Expression.Lambda(Expression.Call(typeof(Extensions), nameof(Extensions.SingleOrDefaultCoreAsnyc), new[] { expr.Type }, p), p);
+#else
+                var p = Expression.Parameter(typeof(IEnumerable<>).MakeGenericType(expr.Type), "p");
                 gator = Expression.Lambda(Expression.Call(typeof(Enumerable), aggregator, new[] { expr.Type }, p), p);
+#endif
             }
             var alias = GetNextAlias();
             var select = new SelectExpression(alias, new[] { new ColumnDeclaration("v", expr) }, null, null);
-            return new ProjectionExpression(select, new ColumnExpression(expr.Type, alias, "v", null), gator);
+            return new ProjectionExpression(select, new ColumnExpression(expr.Type, alias, "v", null), gator, isQueryAsync);
         }
 
         private Expression BindContains(Expression source, Expression match, bool isRoot)
@@ -1502,7 +1540,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <param name="predicate"></param>
         /// <param name="logicalDeleteExp"></param>
         /// <returns></returns>
-        private Expression BindDelete(Expression source, LambdaExpression predicate, Expression logicalDeleteExp)
+        private Expression BindDelete(Expression source, LambdaExpression predicate, Expression logicalDeleteExp, bool isAsync)
         {
             var projection = VisitSequence(source);
 
@@ -1512,12 +1550,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
             predicate = (LambdaExpression)Visit(predicate);
             if (metadata.DeleteProperty != null && logicalDelete)
             {
-                return Visit(QueryUtility.GetLogicalDeleteExpression(metadata, predicate));
+                return Visit(QueryUtility.GetLogicalDeleteExpression(metadata, predicate, isAsync));
             }
-            return Visit(QueryUtility.GetDeleteExpression(metadata, predicate, true));
+            return Visit(QueryUtility.GetDeleteExpression(metadata, predicate, true, isAsync));
         }
 
-        private Expression BindDelete(Expression source, ParameterExpression parExp, Expression logicalDeleteExp)
+        private Expression BindDelete(Expression source, ParameterExpression parExp, Expression logicalDeleteExp, bool isAsync)
         {
             var projection = VisitSequence(source);
 
@@ -1526,9 +1564,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var predicate = QueryUtility.GetPrimaryKeyExpression(parExp);
             if (metadata.DeleteProperty != null && logicalDelete)
             {
-                return Visit(QueryUtility.GetLogicalDeleteExpression(metadata, predicate));
+                return Visit(QueryUtility.GetLogicalDeleteExpression(metadata, predicate, isAsync));
             }
-            return Visit(QueryUtility.GetDeleteExpression(metadata, predicate, false));
+            return Visit(QueryUtility.GetDeleteExpression(metadata, predicate, false, isAsync));
         }
 
         /// <summary>
@@ -1538,7 +1576,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <param name="instance"></param>
         /// <param name="predicate"></param>
         /// <returns></returns>
-        private Expression BindUpdate(Expression source, Expression instance, LambdaExpression predicate)
+        private Expression BindUpdate(Expression source, Expression instance, LambdaExpression predicate, bool isAsync)
         {
             var projection = VisitSequence(source);
             if (instance is ParameterExpression)
@@ -1559,7 +1597,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             predicate = (LambdaExpression)Visit(predicate);
 
-            return Visit(QueryUtility.GetUpdateExpression(instance, predicate));
+            return Visit(QueryUtility.GetUpdateExpression(instance, predicate, isAsync));
         }
 
         /// <summary>
@@ -1586,10 +1624,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return Expression.Lambda(body, parExp);
         }
 
-        private Expression BindInsert(Expression source, Expression instance)
+        private Expression BindInsert(Expression source, Expression instance, bool isAsync)
         {
             var projection = VisitSequence(source);
-            return Visit(QueryUtility.GetInsertExpression(syntax, instance));
+            return Visit(QueryUtility.GetInsertExpression(syntax, instance, isAsync));
         }
 
         private Expression CheckAssociatedProperties(CommandExpression command, Expression instance)
@@ -1652,16 +1690,16 @@ namespace Fireasy.Data.Entity.Linq.Translators
             switch (entity.EntityState)
             {
                 case EntityState.Attached:
-                    return (CommandExpression)BindInsert(source, Expression.Constant(entity));
+                    return (CommandExpression)BindInsert(source, Expression.Constant(entity), false);
                 case EntityState.Modified:
-                    return (CommandExpression)BindUpdate(source, Expression.Constant(entity), null);
+                    return (CommandExpression)BindUpdate(source, Expression.Constant(entity), null, false);
                 case EntityState.Detached:
                 default:
                     return null;
             }
         }
 
-        private Expression BindBatch(Expression source, Expression instances, LambdaExpression operation)
+        private Expression BindBatch(Expression source, Expression instances, LambdaExpression operation, bool isAsync)
         {
             var projection = VisitSequence(source);
 
@@ -1672,10 +1710,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
             QueryUtility.ReleaseModifiedProperties();
 
             var items = this.Visit(instances);
-            return new BatchCommandExpression(items, op, arguments);
+            return new BatchCommandExpression(items, op, isAsync, arguments);
         }
 
-#if !NET35
         public Expression BindExtend(Expression source, LambdaExpression selector)
         {
             List<Expression> arguments = new List<Expression>();
@@ -1738,7 +1775,6 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             return Expression.Convert(arrayExp, typeof(DynamicExpandoObject));
         }
-#endif
 
         public Expression BindExtendAs(Type returnType, Expression source, LambdaExpression selector)
         {
@@ -1904,7 +1940,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     var proj = (ProjectionExpression)source;
                     var newProjector = BindMember(proj.Projector, member);
                     var mt = member.GetMemberType();
-                    return new ProjectionExpression(proj.Select, newProjector, QueryUtility.GetAggregator(mt, typeof(IEnumerable<>).MakeGenericType(mt)));
+                    return new ProjectionExpression(proj.Select, newProjector, QueryUtility.GetAggregator(mt, typeof(IEnumerable<>).MakeGenericType(mt)), proj.IsAsync);
 
                 case (ExpressionType)DbExpressionType.OuterJoined:
                     var oj = (OuterJoinedExpression)source;

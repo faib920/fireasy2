@@ -5,9 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NET35
 using System.ComponentModel.DataAnnotations;
-#endif
 
 namespace Fireasy.Data.Entity.Validation
 {

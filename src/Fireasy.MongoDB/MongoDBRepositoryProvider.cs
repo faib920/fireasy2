@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Fireasy.MongoDB
@@ -56,24 +57,24 @@ namespace Fireasy.MongoDB
 
         IQueryProvider IRepositoryProvider.QueryProvider => QueryProvider;
 
-        public int Insert(TEntity entity)
+        public async Task<int> InsertAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             var result = collection.Insert(entity);
             return (int)result.DocumentsAffected;
         }
 
-        public int Update(TEntity entity)
+        public async Task<int> UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             var result = collection.Save(entity);
             return (int)result.DocumentsAffected;
         }
 
-        public void BatchInsert(IEnumerable<TEntity> entities, int batchSize = 1000, Action<int> completePercentage = null)
+        public async Task BatchInsertAsync(IEnumerable<TEntity> entities, int batchSize = 1000, Action<int> completePercentage = null, CancellationToken cancellationToken = default)
         {
             collection.InsertBatch(entities);
         }
 
-        public int Delete(TEntity entity, bool logicalDelete = true)
+        public async Task<int> DeleteAsync(TEntity entity, bool logicalDelete = true, CancellationToken cancellationToken = default)
         {
             var predicate = BuildPrimaryExpression((p, i) => entity.GetValue(p).GetValue());
             var query = Query<TEntity>.Where(predicate);
@@ -81,29 +82,14 @@ namespace Fireasy.MongoDB
             return (int)result.DocumentsAffected;
         }
 
-        public int Delete(object[] primaryValues, bool logicalDelete = true)
-        {
-            var predicate = BuildPrimaryExpression((p, i) => primaryValues[i]);
-            var query = Query<TEntity>.Where(predicate);
-            var result = collection.Remove(query);
-            return (int)result.DocumentsAffected;
-        }
-
-        public TEntity Get(params object[] primaryValues)
-        {
-            var predicate = BuildPrimaryExpression((p, i) => primaryValues[i]);
-            var query = Query<TEntity>.Where(predicate);
-            return collection.FindOne(query);
-        }
-
-        public int Delete(Expression<Func<TEntity, bool>> predicate, bool logicalDelete = true)
+        public async Task<int> DeleteAsync(Expression<Func<TEntity, bool>> predicate, bool logicalDelete = true, CancellationToken cancellationToken = default)
         {
             var query = Query<TEntity>.Where(predicate);
             var result = collection.Remove(query);
             return (int)result.DocumentsAffected;
         }
 
-        public int Update(TEntity entity, Expression<Func<TEntity, bool>> predicate)
+        public async Task<int> UpdateAsync(TEntity entity, Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         {
             var query = Query<TEntity>.Where(predicate);
             var update = GetUpdateBuilder(entity);
@@ -111,22 +97,17 @@ namespace Fireasy.MongoDB
             return (int)result.DocumentsAffected;
         }
 
-        public int Update(Expression<Func<TEntity, TEntity>> calculator, System.Linq.Expressions.Expression<System.Func<TEntity, bool>> predicate)
+        public async Task<int> UpdateAsync(Expression<Func<TEntity, TEntity>> calculator, System.Linq.Expressions.Expression<System.Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public int Batch(IEnumerable<TEntity> instances, Expression<System.Func<IRepository<TEntity>, TEntity, int>> fnOperation)
+        public async Task<int> BatchAsync(IEnumerable<TEntity> instances, Expression<System.Func<IRepository<TEntity>, TEntity, int>> fnOperation, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public int Delete(params PropertyValue[] primaryValues)
-        {
-            return Delete(primaryValues, true);
-        }
-
-        public int Delete(PropertyValue[] primaryValues, bool logicalDelete = true)
+        public async Task<int> DeleteAsync(PropertyValue[] primaryValues, bool logicalDelete = true, CancellationToken cancellationToken = default)
         {
             var predicate = BuildPrimaryExpression((p, i) => PropertyValue.IsEmpty(primaryValues[i]) ? null : primaryValues[i].GetValue());
             var query = Query<TEntity>.Where(predicate);
@@ -134,7 +115,7 @@ namespace Fireasy.MongoDB
             return (int)result.DocumentsAffected;
         }
 
-        public TEntity Get(params PropertyValue[] primaryValues)
+        public async Task<TEntity> GetAsync(PropertyValue[] primaryValues, CancellationToken cancellationToken = default)
         {
             var predicate = BuildPrimaryExpression((p, i) => PropertyValue.IsEmpty(primaryValues[i]) ? null : primaryValues[i].GetValue());
             var query = Query<TEntity>.Where(predicate);
@@ -201,11 +182,6 @@ namespace Fireasy.MongoDB
         IRepository IRepositoryProvider.CreateRepository(EntityContextOptions options)
         {
             return new EntityRepository<TEntity>(this, options);
-        }
-
-        public Task<int> UpdateAsync(TEntity entity, Expression<Func<TEntity, bool>> predicate)
-        {
-            throw new NotImplementedException();
         }
 
         private class CustomBsonSerializer : BsonClassMapSerializer<TEntity>

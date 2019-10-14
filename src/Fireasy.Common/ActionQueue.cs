@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NET35
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
@@ -112,4 +111,3 @@ namespace Fireasy.Common
         }
     }
 }
-#endif

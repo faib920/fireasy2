@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if NETSTANDARD
+#if NETCOREAPP
 using Fireasy.Web.EasyUI;
 using Fireasy.Web.EasyUI.Binders;
 using System;

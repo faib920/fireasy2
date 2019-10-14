@@ -113,20 +113,12 @@ namespace Fireasy.Data
             Guard.NullReference(conInfo);
             var parExp = Expression.Parameter(typeof(DataRow), "s");
             var convertMethod = typeof(GenericExtension).GetMethod("ToType");
-#if NET35
-            var itemGetMethod = typeof(DataRow).GetMethod("get_Item", new[] { typeof(string) });
-#else
             var itemProperty = typeof(DataRow).GetProperty("Item", new[] { typeof(string) });
-#endif
             var parameters =
                 GetParameters(conInfo).Select(s => (Expression)Expression.Convert(
                             Expression.Call(convertMethod, new Expression[] 
                                     { 
-#if NET35
-                                        Expression.Call(parExp, itemGetMethod, Expression.Constant(s.Name)),
-#else
                                         Expression.MakeIndex(parExp, itemProperty, new List<Expression> { Expression.Constant(s.Name) }),
-#endif
                                         Expression.Constant(s.ParameterType),
                                         Expression.Constant(null)
                                     }

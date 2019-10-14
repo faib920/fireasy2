@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NET35 && !NETSTANDARD
+#if !NETSTANDARD
 using Fireasy.Common.Configuration;
 
 namespace Fireasy.Common.Composition.Configuration

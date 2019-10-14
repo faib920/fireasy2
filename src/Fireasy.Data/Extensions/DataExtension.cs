@@ -18,7 +18,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fireasy.Data.Extensions
 {
@@ -755,6 +758,21 @@ namespace Fireasy.Data.Extensions
             }
         }
 
+        internal static async Task TryOpenAsync(this DbConnection connection, bool autoOpen = true, CancellationToken cancellationToken = default)
+        {
+            if (autoOpen && connection.State != ConnectionState.Open)
+            {
+                try
+                {
+                    await connection.OpenAsync(cancellationToken);
+                }
+                catch (DbException exp)
+                {
+                    throw ConnectionException.Throw(ConnectionState.Open, exp);
+                }
+            }
+        }
+
         internal static void TryClose(this DbConnection connection, bool autoOpen = true)
         {
             if (autoOpen && connection.State != ConnectionState.Closed)
@@ -874,9 +892,7 @@ namespace Fireasy.Data.Extensions
 
         private static DataTable ParseFromEnumerable(IEnumerable enumerable)
         {
-#if !NET35
             TypeDescriptorUtility.AddDefaultDynamicProvider();
-#endif
 
             var enumerator = enumerable.GetEnumerator();
             var table = new DataTable();

@@ -20,7 +20,7 @@ namespace Fireasy.Data.Tests
             tb.Columns.Add("a1", typeof(string));
             tb.Columns.Add("a2", typeof(string));
 
-            for (var i = 0; i < 100000; i++)
+            for (var i = 0; i < 600; i++)
             {
                 var row = tb.NewRow();
                 row["id"] = i + 1;
@@ -30,7 +30,7 @@ namespace Fireasy.Data.Tests
                 tb.Rows.Add(row);
             }
 
-            using (var db = new Database("data source=127.0.0.1;user id=sa;password=11;initial catalog=a;tracking=true", MsSqlProvider.Instance))
+            using (var db = DatabaseFactory.CreateDatabase())
             {
                 var batcher = db.Provider.GetService<IBatcherProvider>();
                 batcher.Insert(db, tb);
@@ -42,7 +42,7 @@ namespace Fireasy.Data.Tests
         {
             var list = new List<object>();
 
-            for (var i = 0; i < 100000; i++)
+            for (var i = 0; i < 800; i++)
             {
                 list.Add(new
                 {
@@ -52,15 +52,43 @@ namespace Fireasy.Data.Tests
                 });
             }
 
-            using (var db = new Database("data source=127.0.0.1;user id=sa;password=11;initial catalog=a;tracking=true", MsSqlProvider.Instance))
+            using (var db = DatabaseFactory.CreateDatabase())
             {
                 var batcher = db.Provider.GetService<IBatcherProvider>();
                 Console.WriteLine(DateTime.Now);
-                batcher.InsertAsync(db, list, "batch");
+                batcher.Insert(db, list, "batch");
                 Console.WriteLine(DateTime.Now);
 
                 Console.WriteLine("后续代码");
             }
         }
+
+
+        [TestMethod]
+        public async Task TestListAsync()
+        {
+            var list = new List<object>();
+
+            for (var i = 0; i < 800; i++)
+            {
+                list.Add(new
+                {
+                    id = i + 1,
+                    a1 = "aaaaa" + i,
+                    a2 = "bbbbb" + i
+                });
+            }
+
+            using (var db = DatabaseFactory.CreateDatabase())
+            {
+                var batcher = db.Provider.GetService<IBatcherProvider>();
+                Console.WriteLine(DateTime.Now);
+                await batcher.InsertAsync(db, list, "batch");
+                Console.WriteLine(DateTime.Now);
+
+                Console.WriteLine("后续代码");
+            }
+        }
+
     }
 }

@@ -104,9 +104,7 @@ namespace Fireasy.Common.Serialization
                     WriteListInitExpression((ListInitExpression)expression);
                     break;
                 case ExpressionType.TypeIs:
-#if !NET35
                 case ExpressionType.TypeEqual:
-#endif
                     WriteTypeBinaryExpression((TypeBinaryExpression)expression);
                     break;
                 case ExpressionType.Invoke:

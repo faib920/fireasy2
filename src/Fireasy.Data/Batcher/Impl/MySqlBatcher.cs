@@ -15,9 +15,8 @@ using Fireasy.Common.Extensions;
 using Fireasy.Data.Extensions;
 using Fireasy.Data.Syntax;
 using Fireasy.Data.Provider;
-#if !NET40 && !NET35
 using System.Threading.Tasks;
-#endif
+using System.Threading;
 
 namespace Fireasy.Data.Batcher
 {
@@ -37,18 +36,7 @@ namespace Fireasy.Data.Batcher
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
         public void Insert(IDatabase database, DataTable dataTable, int batchSize = 1000, Action<int> completePercentage = null)
         {
-            if (!BatcherChecker.CheckDataTable(dataTable))
-            {
-                return;
-            }
-
-            if (dataTable.IsNullOrEmpty())
-            {
-                return;
-            }
-
-            var mapping = GetNameTypeMapping(dataTable);
-            BatchInsert(database, dataTable.Rows, dataTable.TableName, mapping, (map, command, r, item) => MapDataRow(database.Provider, map, (DataRow)item, r, command.Parameters), batchSize, completePercentage);
+            InsertAsync(database, dataTable, batchSize, completePercentage);
         }
 
         /// <summary>
@@ -62,17 +50,7 @@ namespace Fireasy.Data.Batcher
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
         public void Insert<T>(IDatabase database, IEnumerable<T> list, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
         {
-            if (!BatcherChecker.CheckList(list, tableName))
-            {
-                return;
-            }
-
-            if (list.IsNullOrEmpty())
-            {
-                return;
-            }
-
-            BatchInsert(database, ToCollection(list), tableName, null, (map, command, r, item) => MapListItem<T>(database.Provider, map, (T)item, r, command.Parameters), batchSize, completePercentage);
+            InsertAsync(database, list, tableName, batchSize, completePercentage);
         }
 
         /// <summary>
@@ -88,7 +66,6 @@ namespace Fireasy.Data.Batcher
             throw new NotImplementedException();
         }
 
-#if !NET40 && !NET35
         /// <summary>
         /// 将 <see cref="DataTable"/> 的数据批量插入到数据库中。
         /// </summary>
@@ -96,9 +73,20 @@ namespace Fireasy.Data.Batcher
         /// <param name="dataTable">要批量插入的 <see cref="DataTable"/>。</param>
         /// <param name="batchSize">每批次写入的数据量。</param>
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
-        public async Task InsertAsync(IDatabase database, DataTable dataTable, int batchSize = 1000, Action<int> completePercentage = null)
+        public async Task InsertAsync(IDatabase database, DataTable dataTable, int batchSize = 1000, Action<int> completePercentage = null, CancellationToken cancellationToken = default)
         {
-            await AsyncTaskManager.Adapter(Task.Run(() => Insert(database, dataTable, batchSize, completePercentage)));
+            if (!BatcherChecker.CheckDataTable(dataTable))
+            {
+                return;
+            }
+
+            if (dataTable.IsNullOrEmpty())
+            {
+                return;
+            }
+
+            var mapping = GetNameTypeMapping(dataTable);
+            await BatchInsertAsync(database, dataTable.Rows, dataTable.TableName, mapping, (map, command, r, item) => MapDataRow(database.Provider, map, (DataRow)item, r, command.Parameters), batchSize, completePercentage, cancellationToken);
         }
 
         /// <summary>
@@ -110,9 +98,19 @@ namespace Fireasy.Data.Batcher
         /// <param name="tableName">要写入的数据表的名称。</param>
         /// <param name="batchSize">每批次写入的数据量。</param>
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
-        public async Task InsertAsync<T>(IDatabase database, IEnumerable<T> list, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
+        public async Task InsertAsync<T>(IDatabase database, IEnumerable<T> list, string tableName, int batchSize = 1000, Action<int> completePercentage = null, CancellationToken cancellationToken = default)
         {
-            await AsyncTaskManager.Adapter(Task.Run(() => Insert(database, list, tableName, batchSize, completePercentage)));
+            if (!BatcherChecker.CheckList(list, tableName))
+            {
+                return;
+            }
+
+            if (list.IsNullOrEmpty())
+            {
+                return;
+            }
+
+            await BatchInsertAsync(database, ToCollection(list), tableName, null, (map, command, r, item) => MapListItem<T>(database.Provider, map, (T)item, r, command.Parameters), batchSize, completePercentage, cancellationToken);
         }
 
         /// <summary>
@@ -123,11 +121,10 @@ namespace Fireasy.Data.Batcher
         /// <param name="tableName">要写入的数据表的名称。</param>
         /// <param name="batchSize">每批次写入的数据量。</param>
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
-        public async Task InsertAsync(IDatabase database, IDataReader reader, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
+        public async Task InsertAsync(IDatabase database, IDataReader reader, string tableName, int batchSize = 1000, Action<int> completePercentage = null, CancellationToken cancellationToken = default)
         {
-            await AsyncTaskManager.Adapter(Task.Run(() => Insert(database, reader, tableName, batchSize, completePercentage)));
+            throw new NotImplementedException();
         }
-#endif
 
         /// <summary>
         /// 批量插入集合中的数据。
@@ -139,12 +136,12 @@ namespace Fireasy.Data.Batcher
         /// <param name="valueFunc">取值函数。</param>
         /// <param name="batchSize">每批次写入的数据量。</param>
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
-        private void BatchInsert(IDatabase database, ICollection collection, string tableName, IList<PropertyFieldMapping> mapping, Func<IList<PropertyFieldMapping>, DbCommand, int, object, string> valueFunc, int batchSize, Action<int> completePercentage)
+        private async Task BatchInsertAsync(IDatabase database, ICollection collection, string tableName, IList<PropertyFieldMapping> mapping, Func<IList<PropertyFieldMapping>, DbCommand, int, object, string> valueFunc, int batchSize, Action<int> completePercentage, CancellationToken cancellationToken = default)
         {
             //MySql使用如 insert into table(f1, f2) values ('a1', 'b1'),('a2', 'b2'),('a3', 'b3') 方式批量插入
             try
             {
-                database.Connection.TryOpen();
+                await database.Connection.TryOpenAsync();
                 using (var command = database.Provider.CreateCommand(database.Connection, database.Transaction, null))
                 {
                     var syntax = database.Provider.GetService<ISyntaxProvider>();
@@ -165,20 +162,13 @@ namespace Fireasy.Data.Batcher
                             {
                                 var sql = string.Format("INSERT INTO {0}({1}) VALUES {2}",
                                     DbUtility.FormatByQuote(syntax, tableName),
-#if NET35
-                                    string.Join(",", mapping.Select(s => DbUtility.FormatByQuote(syntax, s.FieldName)).ToArray()), string.Join(",", valueSeg.ToArray()));
-#else
                                     string.Join(",", mapping.Select(s => DbUtility.FormatByQuote(syntax, s.FieldName))), string.Join(",", valueSeg));
-#endif
 
                                 command.CommandText = sql;
-                                command.ExecuteNonQuery();
+                                command.ExecuteNonQueryAsync(cancellationToken);
                                 valueSeg.Clear();
                                 command.Parameters.Clear();
-                                if (completePercentage != null)
-                                {
-                                    completePercentage((int)(((index + 1.0) / count) * 100));
-                                }
+                                completePercentage?.Invoke((int)(((index + 1.0) / count) * 100));
                             });
                 }
             }

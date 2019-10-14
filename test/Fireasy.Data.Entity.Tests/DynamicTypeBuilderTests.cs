@@ -7,49 +7,78 @@ using System.Text;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Emit;
 using Fireasy.Data.Entity.Validation;
+using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
+using System.Linq.Expressions;
+using System.Collections;
 
 namespace Fireasy.Data.Entity.Tests
 {
     [TestClass]
     public class DynamicTypeBuilderTests
     {
+        public DynamicTypeBuilderTests()
+        {
+            InitConfig.Init();
+        }
         [TestMethod]
         public void TestBuild()
         {
-#if !NETCOREAPP2_0
-            var assBuilder = new DynamicAssemblyBuilder("test_dll", "e:\\test.dll");
-            var typeBuilder = new EntityTypeBuilder("TestEntity", assBuilder);
-#else
-            var typeBuilder = new EntityTypeBuilder("testclass");
-#endif
-            var pName = new GeneralProperty() { Name = "Name", Info = new PropertyMapInfo { FieldName = "name" }, Type = typeof(string) };
-            typeBuilder.Properties.Add(pName);
-            typeBuilder.Properties.Add(new GeneralProperty() { Name = "Age", Info = new PropertyMapInfo { FieldName = "age" }, Type = typeof(int?) });
-            typeBuilder.Properties.Add(new GeneralProperty() { Name = "Sex", Info = new PropertyMapInfo { FieldName = "sex" }, Type = typeof(Sex) });
+            var assemblyBuilder = new DynamicAssemblyBuilder("TestAssembly");
 
-            typeBuilder.DefineValidateRule(pName, () => new System.ComponentModel.DataAnnotations.MaxLengthAttribute(15));
+            var empBuilder = new EntityTypeBuilder("Employee", assemblyBuilder) { Mapping = new EntityMappingAttribute("employee") };
+            empBuilder.SetCustomAttribute(() => new EntityMappingAttribute("employee"));
+            var empId = new GeneralProperty() { Name = "EmployeeId", Info = new PropertyMapInfo { FieldName = "emp_id", IsPrimaryKey = true, GenerateType = IdentityGenerateType.AutoIncrement }, Type = typeof(int) };
+            var empName = new GeneralProperty() { Name = "Name", Info = new PropertyMapInfo { FieldName = "name" }, Type = typeof(string) };
+            var empAge = new GeneralProperty() { Name = "Age", Info = new PropertyMapInfo { FieldName = "age" }, Type = typeof(int?) };
+            var empSex = new GeneralProperty() { Name = "Sex", Info = new PropertyMapInfo { FieldName = "sex" }, Type = typeof(Sex) };
 
-            var type = typeBuilder.Create();
 
-#if !NETCOREAPP2_0
-            assBuilder.Save();
-#endif
+            empBuilder.Properties.Add(empName);
+            empBuilder.Properties.Add(empAge);
+            empBuilder.Properties.Add(empSex);
 
-            var e = type.New<IEntity>();
-            e.SetValue("Name", "fireasy");
-            e.SetValue("Age", 12);
-            e.SetValue("Sex", Sex.M);
+            empBuilder.DefineValidateRule(empName, () => new RequiredAttribute());
+            empBuilder.DefineValidateRule(empName, () => new MaxLengthAttribute(15));
 
-            Assert.AreEqual(e.GetValue("Name"), "fireasy");
-            Assert.AreEqual(e.GetValue("Age"), 12);
-            Assert.AreEqual(e.GetValue("Sex"), Sex.M);
+            var ordBuilder = new EntityTypeBuilder("Orders", assemblyBuilder);
+            var ordId = new GeneralProperty() { Name = "Id", Info = new PropertyMapInfo { FieldName = "id", IsPrimaryKey = true, GenerateType = IdentityGenerateType.AutoIncrement }, Type = typeof(int) };
+            var ordOrderDate = new GeneralProperty() { Name = "OrderDate", Info = new PropertyMapInfo { FieldName = "order_date" }, Type = typeof(DateTime) };
+            var ordEmpId = new GeneralProperty() { Name = "EmployeeId", Info = new PropertyMapInfo { FieldName = "emp_id" }, Type = typeof(int?) };
 
-            ValidationUnity.Validate(e);
+            //Employee的主键是Id，而Orders中外键为EmployeeId，两者不一致，不能自动映射关系
+            var pext = new PropertyExtension(ordEmpId);
+            pext.SetCustomAttribute(() => new RelationshipAssignAttribute("Id", "EmployeeId"));
 
-            var property = PropertyUnity.GetProperty(type, "Name");
-            Assert.IsNotNull(property);
+            var ordEmp = new EntityProperty() { Name = "Employee", Type = empBuilder.EntityType, RelationalType = empBuilder.EntityType };
 
-            Assert.AreEqual(type.GetProperty("Name").GetValue(e), "fireasy");
+            ordBuilder.Properties.Add(ordId);
+            ordBuilder.Properties.Add(ordOrderDate);
+            ordBuilder.Properties.Add(ordEmpId);
+            ordBuilder.Properties.Add(ordEmp);
+
+            assemblyBuilder.Create();
+
+            var assembly = assemblyBuilder.AssemblyBuilder;
+
+            Assert.AreEqual("Employee", assembly.GetType("Employee").Name);
+            Assert.AreEqual("Orders", assembly.GetType("Orders").Name);
+
+            using (var db = new DbContext())
+            {
+                var entityType = assembly.GetType("Employee");
+                var parExp = Expression.Parameter(entityType, "s");
+                var memExp = Expression.MakeMemberAccess(parExp, entityType.GetProperty("Sex"));
+                var valExp = Expression.Constant(Sex.M);
+                var binExp = Expression.Equal(memExp, valExp);
+                var lambdaExp = Expression.Lambda(binExp, parExp);
+
+                var enumerable = (IEnumerable)db.Set(entityType).Where(lambdaExp).Select("Sex", "Name");
+                foreach (dynamic item in enumerable)
+                {
+                    Console.WriteLine(item.Name);
+                }
+            }
         }
     }
 

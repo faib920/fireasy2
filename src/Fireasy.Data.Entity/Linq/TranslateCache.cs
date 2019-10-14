@@ -10,6 +10,7 @@ using Fireasy.Common.Configuration;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Linq.Translators.Configuration;
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq
@@ -41,11 +42,17 @@ namespace Fireasy.Data.Entity.Linq
 
             return MemoryCacheManager.Instance.TryGet(cacheKey, () =>
                 {
-                    //将表达式内的 Segment 替换成参数
-                    var segParExp = Expression.Parameter(typeof(IDataSegment), "g");
                     var lambdaExp = func() as LambdaExpression;
-                    var newExp = SegmentReplacer.Repalce(lambdaExp.Body, segParExp);
-                    lambdaExp = Expression.Lambda(newExp, lambdaExp.Parameters[0], segParExp);
+                    var segment = SegmentFinder.Find(expression);
+                    if (segment != null)
+                    {
+                        //将表达式内的 Segment 替换成参数
+                        var segParExp = Expression.Parameter(typeof(IDataSegment), "g");
+                        var newExp = SegmentReplacer.Repalce(lambdaExp.Body, segParExp);
+                        var parameters = new List<ParameterExpression>(lambdaExp.Parameters);
+                        parameters.Insert(1, segParExp);
+                        lambdaExp = Expression.Lambda(newExp, parameters.ToArray());
+                    }
 
                     return lambdaExp.Compile();
                 }, 

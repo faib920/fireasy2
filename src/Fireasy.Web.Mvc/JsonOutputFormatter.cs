@@ -49,38 +49,33 @@ namespace Fireasy.Web.Mvc
         {
             var response = context.HttpContext.Response;
 
-            using (var writer = context.WriterFactory(response.Body, selectedEncoding))
+            JsonSerializeOption option = null;
+            if (context.Object is JsonResultWrapper wrapper)
             {
-                JsonSerializeOption option = null;
-                if (context.Object is JsonResultWrapper wrapper)
+                option = wrapper.Option;
+            }
+            else
+            {
+                var hosting = context.HttpContext.RequestServices.GetService<JsonSerializeOptionHosting>();
+                if (hosting != null)
                 {
-                    option = wrapper.Option;
-                }
-                else
-                {
-                    var hosting = context.HttpContext.RequestServices.GetService<JsonSerializeOptionHosting>();
-                    if (hosting != null)
-                    {
-                        option = hosting.Option;
-                    }
-                }
-
-                if (option == null)
-                {
-                    option = mvcOptions.JsonSerializeOption;
-                }
-                else
-                {
-                    option.Reference(mvcOptions.JsonSerializeOption);
-                }
-
-                var serializer = new JsonSerializer(option);
-
-                using (var jsonWriter = new JsonWriter(writer))
-                {
-                    serializer.Serialize(context.Object, jsonWriter);
+                    option = hosting.Option;
                 }
             }
+
+            if (option == null)
+            {
+                option = mvcOptions.JsonSerializeOption;
+            }
+            else
+            {
+                option.Reference(mvcOptions.JsonSerializeOption);
+            }
+
+            var serializer = new JsonSerializer(option);
+
+            var content = serializer.Serialize(context.Object);
+            response.Body.WriteAsync(selectedEncoding.GetBytes(content));
 
             return Task.CompletedTask;
         }

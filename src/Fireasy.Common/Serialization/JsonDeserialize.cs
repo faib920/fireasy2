@@ -17,9 +17,7 @@ using System.Globalization;
 using System.Reflection;
 using Fireasy.Common.Extensions;
 using System.Collections.ObjectModel;
-#if !NET35
 using System.Dynamic;
-#endif
 using Fireasy.Common.Reflection;
 
 namespace Fireasy.Common.Serialization
@@ -31,6 +29,7 @@ namespace Fireasy.Common.Serialization
         private JsonReader jsonReader;
         private bool isDisposed;
         private static MethodInfo mthToArray = typeof(Enumerable).GetMethod(nameof(Enumerable.ToArray), BindingFlags.Public | BindingFlags.Static);
+        private TypeConverterCache<JsonConverter> cacheConverter = new TypeConverterCache<JsonConverter>();
 
         internal JsonDeserialize(JsonSerializer serializer, JsonReader reader, JsonSerializeOption option)
             : base (option)
@@ -65,13 +64,11 @@ namespace Fireasy.Common.Serialization
                 return DeserializeType();
             }
 
-#if !NET35
             if (typeof(IDynamicMetaObjectProvider).IsAssignableFrom(type) ||
                 type == typeof(object))
             {
                 return DeserializeIntelligently(type);
             }
-#endif
             if (type == typeof(byte[]))
             {
                 return DeserializeBytes();
@@ -136,17 +133,7 @@ namespace Fireasy.Common.Serialization
 
         private bool WithConverter(Type type, ref object value)
         {
-            JsonConverter converter;
-            TextConverterAttribute attr;
-            if ((attr = type.GetCustomAttributes<TextConverterAttribute>().FirstOrDefault()) != null &&
-                typeof(JsonConverter).IsAssignableFrom(attr.ConverterType))
-            {
-                converter = attr.ConverterType.New<JsonConverter>();
-            }
-            else
-            {
-                converter = option.Converters.GetReadableConverter(type, new[] { typeof(JsonConverter) }) as JsonConverter;
-            }
+            var converter = cacheConverter.GetReadableConverter(type, option);
 
             if (converter == null || !converter.CanRead)
             {
@@ -315,11 +302,7 @@ namespace Fireasy.Common.Serialization
         {
             IList container = null;
             Type elementType = null;
-#if !NET40 && !NET35
             var isReadonly = listType.IsGenericType && listType.GetGenericTypeDefinition() == typeof(IReadOnlyCollection<>);
-#else
-            var isReadonly = listType.IsGenericType && listType.GetGenericTypeDefinition() == typeof(ReadOnlyCollection<>);
-#endif
 
             CreateListContainer(listType, out elementType, out container);
 
@@ -414,20 +397,16 @@ namespace Fireasy.Common.Serialization
             }
             else if (jsonReader.IsNextCharacter(JsonTokens.StartObjectLiteralCharacter))
             {
-#if !NET35
                 if (typeof(object) == type)
                 {
                     return DeserializeDynamicObject(type);
                 }
-#endif
 
                 return Deserialize(type);
             }
 
             return jsonReader.ReadValue();
         }
-
-#if !NET35
 
         private object DeserializeDynamicObject(Type type)
         {
@@ -468,7 +447,6 @@ namespace Fireasy.Common.Serialization
 
             return dynamicObject;
         }
-#endif
 
         private object DeserializeTuple(Type type)
         {

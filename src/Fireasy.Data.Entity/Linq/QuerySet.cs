@@ -13,6 +13,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
 
 namespace Fireasy.Data.Entity.Linq
 {
@@ -21,6 +22,9 @@ namespace Fireasy.Data.Entity.Linq
     /// </summary>
     /// <typeparam name="T">数据类型。</typeparam>
     public class QuerySet<T> : IOrderedQueryable<T>, IListSource, IQueryExportation
+#if !NETFRAMEWORK && !NETSTANDARD2_0
+        , IAsyncEnumerable<T>
+#endif
     {
         private IList<T> list;
 
@@ -114,6 +118,13 @@ namespace Fireasy.Data.Entity.Linq
             }
             return list;
         }
+
+#if !NETFRAMEWORK && !NETSTANDARD2_0
+        IAsyncEnumerator<T> IAsyncEnumerable<T>.GetAsyncEnumerator(CancellationToken cancellationToken)
+        {
+            return ((IAsyncQueryProvider)Provider).ExecuteEnumerableAsync<T>(Expression, cancellationToken).GetAsyncEnumerator();
+        }
+#endif
     }
 
     internal static class QueryHelper

@@ -111,15 +111,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 return GetNamedValue(methodCallExp);
             }
 
-#if !NET35
             var arguments = Visit(methodCallExp.Arguments);
-#else
-            var arguments = new List<Expression>();
-            foreach (var argument in methodCallExp.Arguments)
-            {
-                arguments.Add(Visit(argument));
-            }
-#endif
             var obj = Visit(methodCallExp.Object);
             return methodCallExp.Update(obj, arguments);
         }

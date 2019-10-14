@@ -9,7 +9,9 @@
 using System;
 using System.Data;
 using System.IO;
-using Fireasy.Common;
+using System.Threading;
+using System.Threading.Tasks;
+using Fireasy.Common.Threading;
 using Fireasy.Data.Extensions;
 
 namespace Fireasy.Data
@@ -17,49 +19,49 @@ namespace Fireasy.Data
     /// <summary>
     /// 默认的命令执行跟踪器。使用 __dbtrack 目录中的文本文件来记录日志。
     /// </summary>
-    internal class DefaultCommandTracker : ICommandTracker, IDisposable
+    internal class DefaultCommandTracker : ICommandTracker
     {
-        private readonly ReadWriteLocker locker = new ReadWriteLocker();
+        private readonly AsyncLocker asyncLocker = new AsyncLocker();
         private string logPath;
 
         internal static ICommandTracker Instance = new DefaultCommandTracker();
 
-        void ICommandTracker.Write(IDbCommand command, TimeSpan period)
+        async Task ICommandTracker.WriteAsync(IDbCommand command, TimeSpan period, CancellationToken cancellationToken)
         {
             CreateDirectory();
 
-            locker.LockWrite(() =>
+            using (var locker = await asyncLocker.LockAsync())
+            {
+                var fileName = Path.Combine(logPath, DateTime.Today.ToString("yyyy-MM-dd") + ".log");
+                using (var stream = new StreamWriter(fileName, true))
                 {
-                    var fileName = Path.Combine(logPath, DateTime.Today.ToString("yyyy-MM-dd") + ".log");
-                    using (var stream = new StreamWriter(fileName, true))
-                    {
-                        stream.WriteLine("time: " + DateTime.Now);
-                        stream.WriteLine("sql: " + command.Output());
-                        stream.WriteLine("timer(s): " + period);
-                        stream.WriteLine("===========================================================");
-                        stream.WriteLine();
-                        stream.Flush();
-                    }
-                });
+                    await stream.WriteLineAsync("time: " + DateTime.Now);
+                    await stream.WriteLineAsync("sql: " + command.Output());
+                    await stream.WriteLineAsync("timer(s): " + period);
+                    await stream.WriteLineAsync("===========================================================");
+                    await stream.WriteLineAsync();
+                    await stream.FlushAsync();
+                }
+            }
         }
 
-        void ICommandTracker.Fail(IDbCommand command, Exception exception)
+        async Task ICommandTracker.FailAsync(IDbCommand command, Exception exception, CancellationToken cancellationToken)
         {
             CreateDirectory();
 
-            locker.LockWrite(() =>
+            using (var locker = await asyncLocker.LockAsync())
+            {
+                var fileName = Path.Combine(logPath, DateTime.Today.ToString("yyyy-MM-dd") + ".error.log");
+                using (var stream = new StreamWriter(fileName, true))
                 {
-                    var fileName = Path.Combine(logPath, DateTime.Today.ToString("yyyy-MM-dd") + ".error.log");
-                    using (var stream = new StreamWriter(fileName, true))
-                    {
-                        stream.WriteLine("time: " + DateTime.Now);
-                        stream.WriteLine("sql: " + command.Output());
-                        stream.WriteLine("error: " + exception.Message);
-                        stream.WriteLine("===========================================================");
-                        stream.WriteLine();
-                        stream.Flush();
-                    }
-                });
+                    await stream.WriteLineAsync("time: " + DateTime.Now);
+                    await stream.WriteLineAsync("sql: " + command.Output());
+                    await stream.WriteLineAsync("error: " + exception.Message);
+                    await stream.WriteLineAsync("===========================================================");
+                    await stream.WriteLineAsync();
+                    await stream.FlushAsync();
+                }
+            }
         }
 
         private void CreateDirectory()
@@ -68,14 +70,6 @@ namespace Fireasy.Data
             if (!Directory.Exists(logPath))
             {
                 Directory.CreateDirectory(logPath);
-            }
-        }
-
-        public void Dispose()
-        {
-            if (locker != null)
-            {
-                locker.Dispose();
             }
         }
     }

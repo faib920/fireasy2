@@ -162,7 +162,7 @@ namespace Fireasy.Web.Sockets
         /// <param name="method"></param>
         /// <param name="arguments"></param>
         /// <returns></returns>
-        public override Task SendAsync(string method, params object[] arguments)
+        public override async Task SendAsync(string method, params object[] arguments)
         {
             //使用消息队列将消息发指定的服务器，即aliveKey对应的服务器
             var subMgr = SubscribeManagerFactory.CreateManager();
@@ -174,13 +174,7 @@ namespace Fireasy.Web.Sockets
             };
 
             var bytes = Encoding.UTF8.GetBytes(new JsonSerializer().Serialize(msg));
-            subMgr.Publish(aliveKey, bytes);
-
-#if NETSTANDARD
-            return Task.CompletedTask;
-#else
-            return new Task(null);
-#endif
+            await subMgr.PublishAsync(aliveKey, bytes);
         }
     }
 

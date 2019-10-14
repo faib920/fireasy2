@@ -46,7 +46,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
                 if (projector != proj.Projector || currentSelect != proj.Select)
                 {
-                    return new ProjectionExpression(currentSelect, projector, proj.Aggregator);
+                    return new ProjectionExpression(currentSelect, projector, proj.Aggregator, proj.IsAsync);
                 }
 
                 return proj;
@@ -57,7 +57,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 var newAlias = new TableAlias();
                 currentSelect = currentSelect.AddRedundantSelect(newAlias);
                 var source = (SelectExpression)ColumnMapper.Map(proj.Select, newAlias, currentSelect.Alias);
-                var pex = new ProjectionExpression(source, proj.Projector).AddOuterJoinTest();
+                var pex = new ProjectionExpression(source, proj.Projector, proj.IsAsync).AddOuterJoinTest();
                 var pc = ColumnProjector.ProjectColumns(QueryUtility.CanBeColumnExpression, pex.Projector, currentSelect.Columns, currentSelect.Alias, newAlias, proj.Select.Alias);
 
                 // **fix** 解决返回关联对象后使用Distinct的问题

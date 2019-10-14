@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fireasy.RabbitMQ
 {
@@ -34,38 +35,86 @@ namespace Fireasy.RabbitMQ
         /// <param name="subject">主题内容。</param>
         public void Publish<TSubject>(TSubject subject) where TSubject : class
         {
-            var channelName = ChannelHelper.GetChannelName(typeof(TSubject));
+            var name = TopicHelper.GetTopicName(typeof(TSubject));
             var data = Serialize(subject);
 
-            Publish(channelName, data);
+            Publish(name, data);
+        }
+
+        /// <summary>
+        /// 向 Rabbit 服务器发送消息主题。
+        /// </summary>
+        /// <typeparam name="TSubject"></typeparam>
+        /// <param name="name">主题名称。</param>
+        /// <param name="subject">主题内容。</param>
+        public void Publish<TSubject>(string name, TSubject subject) where TSubject : class
+        {
+            var data = Serialize(subject);
+
+            Publish(name, data);
+        }
+
+        /// <summary>
+        /// 异步的，向 Rabbit 服务器发送消息主题。
+        /// </summary>
+        /// <typeparam name="TSubject"></typeparam>
+        /// <param name="subject">主题内容。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        public async Task PublishAsync<TSubject>(TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
+        {
+            await Task.Run(() => Publish(subject), cancellationToken);
+        }
+
+        /// <summary>
+        /// 异步的，向 Rabbit 服务器发送消息主题。
+        /// </summary>
+        /// <typeparam name="TSubject"></typeparam>
+        /// <param name="name">主题名称。</param>
+        /// <param name="subject">主题内容。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        public async Task PublishAsync<TSubject>(string name, TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
+        {
+            await Task.Run(() => Publish(name, subject), cancellationToken);
         }
 
         /// <summary>
         /// 向指定的 Rabbit 通道发送数据。
         /// </summary>
-        /// <param name="channelName">通道名称。</param>
+        /// <param name="name">主题名称。</param>
         /// <param name="data">发送的数据。</param>
-        public void Publish(string channelName, byte[] data)
+        public void Publish(string name, byte[] data)
         {
             using (var channel = GetConnection().CreateModel())
             {
                 if (string.IsNullOrEmpty(setting.ExchangeType))
                 {
-                    channel.QueueDeclare(channelName, true, false, false, null);
+                    channel.QueueDeclare(name, true, false, false, null);
 
                     var properties = channel.CreateBasicProperties();
                     properties.Persistent = true;
                     properties.DeliveryMode = 2;
 
-                    channel.BasicPublish(string.Empty, channelName, properties, data);
+                    channel.BasicPublish(string.Empty, name, properties, data);
                 }
                 else
                 {
-                    var exchangeName = GetExchangeName(channelName);
+                    var exchangeName = GetExchangeName(name);
                     channel.ExchangeDeclare(exchangeName, setting.ExchangeType);
-                    channel.BasicPublish(exchangeName, channelName, null, data);
+                    channel.BasicPublish(exchangeName, name, null, data);
                 }
             }
+        }
+
+        /// <summary>
+        /// 异步的，向 Rabbit 服务器发送消息主题。
+        /// </summary>
+        /// <param name="name">主题名称。</param>
+        /// <param name="data">发送的数据。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns></returns>
+        public async Task PublishAsync(string name, byte[] data, CancellationToken cancellationToken = default)
+        {
+            await Task.Run(() => Publish(name, data), cancellationToken);
         }
 
         /// <summary>
@@ -83,6 +132,20 @@ namespace Fireasy.RabbitMQ
         /// <summary>
         /// 在 Rabbit 服务器中添加一个订阅方法。
         /// </summary>
+        /// <typeparam name="TSubject"></typeparam>
+        /// <param name="name">主题名称。</param>
+        /// <param name="subscriber">读取主题的方法。</param>
+        public void AddSubscriber<TSubject>(string name, Action<TSubject> subscriber) where TSubject : class
+        {
+            Guard.ArgumentNull(subscriber, nameof(subscriber));
+
+            var list = subscribers.GetOrAdd(name, () => new RabbitChannelCollection());
+            list.Add(new RabbitChannel(subscriber, StartQueue(name)));
+        }
+
+        /// <summary>
+        /// 在 Rabbit 服务器中添加一个订阅方法。
+        /// </summary>
         /// <param name="subjectType">主题的类型。</param>
         /// <param name="subscriber">读取主题的方法。</param>
         public void AddSubscriber(Type subjectType, Delegate subscriber)
@@ -90,23 +153,23 @@ namespace Fireasy.RabbitMQ
             Guard.ArgumentNull(subjectType, nameof(subjectType));
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            var channelName = ChannelHelper.GetChannelName(subjectType);
-            var list = subscribers.GetOrAdd(channelName, () => new RabbitChannelCollection());
-            list.Add(new RabbitChannel(subscriber, StartQueue(channelName)));
+            var name = TopicHelper.GetTopicName(subjectType);
+            var list = subscribers.GetOrAdd(name, () => new RabbitChannelCollection());
+            list.Add(new RabbitChannel(subscriber, StartQueue(name)));
         }
 
         /// <summary>
         /// 在 Rabbit 服务器中添加一个订阅方法。
         /// </summary>
-        /// <param name="channelName">通道名称。</param>
+        /// <param name="name">主题名称。</param>
         /// <param name="subscriber">读取数据的方法。</param>
-        public void AddSubscriber(string channelName, Action<byte[]> subscriber)
+        public void AddSubscriber(string name, Action<byte[]> subscriber)
         {
-            Guard.ArgumentNull(channelName, nameof(channelName));
+            Guard.ArgumentNull(name, nameof(name));
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            var list = subscribers.GetOrAdd(channelName, () => new RabbitChannelCollection());
-            list.Add(new RabbitChannel(subscriber, StartQueue(channelName)));
+            var list = subscribers.GetOrAdd(name, () => new RabbitChannelCollection());
+            list.Add(new RabbitChannel(subscriber, StartQueue(name)));
         }
 
         /// <summary>
@@ -126,21 +189,21 @@ namespace Fireasy.RabbitMQ
         {
             Guard.ArgumentNull(subjectType, nameof(subjectType));
 
-            var channelName = ChannelHelper.GetChannelName(subjectType);
+            var channelName = TopicHelper.GetTopicName(subjectType);
             RemoveSubscriber(channelName);
         }
 
         /// <summary>
         /// 移除指定通道的订阅方法。
         /// </summary>
-        /// <param name="channelName">通道名称。</param>
-        public void RemoveSubscriber(string channelName)
+        /// <param name="name">主题名称。</param>
+        public void RemoveSubscriber(string name)
         {
-            Guard.ArgumentNull(channelName, nameof(channelName));
+            Guard.ArgumentNull(name, nameof(name));
 
-            if (subscribers.TryGetValue(channelName, out RabbitChannelCollection channels))
+            if (subscribers.TryGetValue(name, out RabbitChannelCollection channels))
             {
-                channels.ForEach(s => s.Model.QueueDelete(channelName));
+                channels.ForEach(s => s.Model.QueueDelete(name));
             }
         }
 

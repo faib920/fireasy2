@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if NETSTANDARD
+#if NETCOREAPP
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Linq;

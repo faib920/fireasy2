@@ -10,8 +10,7 @@ using Fireasy.Web.Mvc;
 using System;
 using System.Linq.Expressions;
 using System.Text;
-using Fireasy.Web.EasyUI;
-#if !NETSTANDARD
+#if !NETCOREAPP
 using System.Web.Mvc;
 #else
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -30,7 +29,7 @@ namespace Fireasy.Web.EasyUI
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
         public static ExtendHtmlString ComboBox(this
-#if !NETSTANDARD
+#if !NETCOREAPP
             HtmlHelper htmlHelper
 #else
             IHtmlHelper htmlHelper
@@ -53,7 +52,7 @@ namespace Fireasy.Web.EasyUI
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
         public static ExtendHtmlString ComboBox(this
-#if !NETSTANDARD
+#if !NETCOREAPP
             HtmlHelper htmlHelper
 #else
             IHtmlHelper htmlHelper
@@ -81,7 +80,7 @@ namespace Fireasy.Web.EasyUI
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
         public static ExtendHtmlString ComboBox<TModel, TProperty>(this
-#if !NETSTANDARD
+#if !NETCOREAPP
             HtmlHelper<TModel> htmlHelper
 #else
             IHtmlHelper<TModel> htmlHelper
@@ -112,7 +111,7 @@ namespace Fireasy.Web.EasyUI
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
         public static ExtendHtmlString ComboBox<TModel, TProperty>(this
-#if !NETSTANDARD
+#if !NETCOREAPP
             HtmlHelper<TModel> htmlHelper
 #else
             IHtmlHelper<TModel> htmlHelper

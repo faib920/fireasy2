@@ -79,11 +79,7 @@ namespace Fireasy.Common.Extensions
         public static MemoryStream CopyToMemory(this Stream stream)
         {
             var memoryStream = new MemoryStream();
-#if !NET35
             stream.CopyTo(memoryStream);
-#else
-            stream.WriteTo(memoryStream);
-#endif
             return memoryStream;
         }
     }

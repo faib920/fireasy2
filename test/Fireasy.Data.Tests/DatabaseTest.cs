@@ -7,8 +7,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Data;
+using System.Data.Common;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Fireasy.Data.Tests
@@ -19,16 +23,6 @@ namespace Fireasy.Data.Tests
         public DatabaseTest()
         {
             InitConfig.Init();
-
-            var sss= ProviderHelper.GetSupportedProviders();
-
-            foreach (var s in sss)
-            {
-                Console.WriteLine(s);
-            }
-
-            var t = ProviderHelper.GetDefinedProviderInstance("mssql");
-            Console.WriteLine(t.ProviderName);
         }
 
         [TestMethod]
@@ -38,25 +32,23 @@ namespace Fireasy.Data.Tests
             {
                 var parameters = new ParameterCollection();
                 parameters.Add("city", "__");
-                var result = db.ExecuteNonQuery((SqlCommand)"delete from customers where city = @city", parameters);
+                var result = db.ExecuteNonQuery((SqlCommand)"delete from batch", parameters);
                 Console.WriteLine($"执行完毕 结果为{result}");
             }
         }
 
         [TestMethod]
-        public void TestExecuteNonQueryAsync()
+        public async Task TestExecuteNonQueryAsync()
         {
             using (var db = DatabaseFactory.CreateDatabase())
             {
+                Console.WriteLine("前面代码" + Thread.CurrentThread.ManagedThreadId);
+
                 var parameters = new ParameterCollection();
                 parameters.Add("city", "London111");
-                var task = db.ExecuteNonQueryAsync((SqlCommand)"delete from customers where city = @city", parameters);
-                task.ContinueWith(t =>
-                    {
-                        Console.WriteLine($"执行完毕 结果为{t.Result}");
-                    });
+                await db.ExecuteNonQueryAsync((SqlCommand)"delete from batch");
 
-                Console.WriteLine("后续代码");
+                Console.WriteLine("后续代码" + Thread.CurrentThread.ManagedThreadId);
                 DoSomthings();
             }
         }
@@ -99,19 +91,15 @@ namespace Fireasy.Data.Tests
         }
 
         [TestMethod]
-        public void TestExecuteScalrAsync()
+        public async Task TestExecuteScalrAsync()
         {
             using (var db = DatabaseFactory.CreateDatabase())
             {
                 var parameters = new ParameterCollection();
                 parameters.Add("city", "Berlin");
-                var task = db.ExecuteScalarAsync<string>((SqlCommand)"select city from customers where city = @city", parameters);
-                task.ContinueWith(t =>
-                    {
-                        Console.WriteLine($"执行完毕 结果为{t.Result}");
-                    });
+                var task = await db.ExecuteScalarAsync<string>((SqlCommand)"select * from batch", parameters);
 
-                Console.WriteLine("后续代码");
+                Console.WriteLine("后续代码" + Thread.CurrentThread.ManagedThreadId);
                 DoSomthings();
             }
         }
@@ -147,18 +135,21 @@ namespace Fireasy.Data.Tests
         {
             using (var db = DatabaseFactory.CreateDatabase())
             {
-                var paper = new DataPager(2, 0);
+                var paper = new DataPager(10, 0);
                 var parameters = new ParameterCollection();
                 parameters.Add("city", "London");
-                using (var reader = await db.ExecuteReaderAsync((SqlCommand)"select city from customers where city <> @city", paper, parameters))
+                using (var reader = await db.ExecuteReaderAsync((SqlCommand)"select * from Bag", paper, parameters, CancellationToken.None))
                 {
-                    while (reader.Read())
+                    Console.WriteLine("ex" + Thread.CurrentThread.ManagedThreadId);
+
+                    while (await ((DbDataReader)reader).ReadAsync(CancellationToken.None))
                     {
+                        Console.WriteLine("read" + Thread.CurrentThread.ManagedThreadId);
                         Console.WriteLine(reader.GetValue(0));
                     }
                 }
 
-                Console.WriteLine("后续代码");
+                Console.WriteLine("后续代码" + Thread.CurrentThread.ManagedThreadId);
             }
         }
 
@@ -179,7 +170,11 @@ namespace Fireasy.Data.Tests
         {
             using (var db = DatabaseFactory.CreateDatabase())
             {
-                var result = db.ExecuteEnumerable<Customer>((SqlCommand)"select * from customers");
+                Console.WriteLine(DateTime.Now.ToString("HH:mm:ss fff"));
+                var result = db.ExecuteEnumerable<Customer>((SqlCommand)"select * from customers").ToList();
+                Console.WriteLine(DateTime.Now.ToString("HH:mm:ss fff"));
+                result = db.ExecuteEnumerable<Customer>((SqlCommand)"select * from customers").ToList();
+                Console.WriteLine(DateTime.Now.ToString("HH:mm:ss fff"));
                 Console.WriteLine($"执行完毕 结果为{result.Count()}");
             }
         }
@@ -189,7 +184,9 @@ namespace Fireasy.Data.Tests
         {
             using (var db = DatabaseFactory.CreateDatabase())
             {
+                Console.WriteLine(DateTime.Now.ToString("HH:mm:ss fff"));
                 var result = db.ExecuteEnumerable<int>((SqlCommand)"select customerid from customers");
+                Console.WriteLine(DateTime.Now.ToString("HH:mm:ss fff"));
                 Console.WriteLine($"执行完毕 结果为{result.Count()}");
             }
         }
@@ -298,18 +295,17 @@ order by o.Code";
         }
 
         [TestMethod]
-        public void TestExecuteEnumerableAsync()
+        public async Task TestExecuteEnumerableAsync()
         {
             using (var db = DatabaseFactory.CreateDatabase())
             {
-                var paper = new DataPager(2, 0);
-                var task = db.ExecuteEnumerableAsync<Customer>((SqlCommand)"select * from customers", paper);
-                task.ContinueWith(t =>
+                var paper = new DataPager(10, 0);
+                var rr = await db.ExecuteEnumerableAsync((SqlCommand)"select * from bag", paper);
+                foreach (var r in rr)
                 {
-                    Console.WriteLine($"执行完毕 结果为{t.Result.Count()}");
-                });
-
-                Console.WriteLine("后续代码");
+                    Console.WriteLine(r.BagID);
+                }
+                Console.WriteLine("后续代码" + Thread.CurrentThread.ManagedThreadId);
             }
         }
 
@@ -318,6 +314,14 @@ order by o.Code";
             public string CustomerId { get; set; }
 
             public string City { get; set; }
+
+            public TestEnum Test1 { get; set; }
+        }
+
+        public enum TestEnum
+        {
+            A,
+            B
         }
     }
 }

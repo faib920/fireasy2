@@ -11,9 +11,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-#if NET35
-using Fireasy.Common.Extensions;
-#endif
 
 namespace Fireasy.Common.Emit
 {

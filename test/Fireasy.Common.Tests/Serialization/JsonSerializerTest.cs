@@ -13,6 +13,7 @@ using System.Linq;
 using Fireasy.Common.Extensions;
 using System.Drawing;
 using System.IO;
+using Swifter.Json;
 
 namespace Fireasy.Common.Tests.Serialization
 {
@@ -255,6 +256,7 @@ studio");
         public void TestSerializeDateTimeWithConverter()
         {
             var option = new JsonSerializeOption();
+            option.Converters.Add(new FullDateTimeJsonConverter());
             var serializer = new JsonSerializer(option);
             var obj = new JsonData
             {
@@ -513,7 +515,7 @@ studio");
         public void TestSerializeList()
         {
             var list = new List<JsonData>();
-            for (var i = 0; i < 10; i++)
+            for (var i = 0; i < 5000; i++)
             {
                 list.Add(new JsonData
                 {
@@ -527,7 +529,7 @@ studio");
 
             var time1 = TimeWatcher.Watch(() =>
             {
-                Console.WriteLine("Json长度: " + new JsonSerializer().Serialize(list));
+                new JsonSerializer().Serialize(list);
             });
 
             Console.WriteLine("耗时: {0} 毫秒", time1.Milliseconds);
@@ -535,23 +537,41 @@ studio");
 
             var time2 = TimeWatcher.Watch(() =>
             {
-                Console.WriteLine("Json长度: " + Newtonsoft.Json.JsonConvert.SerializeObject(list));
+                Newtonsoft.Json.JsonConvert.SerializeObject(list);
             });
 
             Console.WriteLine("耗时: {0} 毫秒", time2.Milliseconds);
+
+            Console.WriteLine("使用Swifter.Json序列化 50000 个对象");
+
+            var time3 = TimeWatcher.Watch(() =>
+            {
+                var json = new JsonFormatter().Serialize(list);
+                //Console.WriteLine("长度: " + json);
+            });
+            Console.WriteLine("耗时: {0} 毫秒", time3.Milliseconds);
+
+            Console.WriteLine("使用fastJson序列化 50000 个对象");
+
+            var time4 = TimeWatcher.Watch(() =>
+            {
+                var json = fastJSON.JSON.ToJSON(list);
+                //Console.WriteLine("长度: " + json);
+            });
+            Console.WriteLine("耗时: {0} 毫秒", time4.Milliseconds);
         }
 
         /// <summary>
         /// 使用字典测试Serialize方法。
         /// </summary>
         [TestMethod()]
-        public void TestSerializeDictonary()
+        public async Task TestSerializeDictonary()
         {
             var serializer = new JsonSerializer();
 
             var dictionary = new Dictionary<string, JsonData>();
 
-            for (var i = 0; i < 10; i++)
+            for (var i = 0; i < 50000; i++)
             {
                 dictionary.Add("h" + i, new JsonData
                 {
@@ -561,23 +581,41 @@ studio");
                 });
             }
 
-            Console.WriteLine("使用Fireasy序列化100000行的字典");
-            var time1 = TimeWatcher.Watch(() =>
+            Console.WriteLine("使用Fireasy序列化 50000 行的字典");
+            var time1 = await TimeWatcher.WatchAsync(async () =>
             {
-                var json = serializer.Serialize(dictionary);
-                Console.WriteLine("长度: " + json);
+                var json = await serializer.SerializeAsync(dictionary);
+                //Console.WriteLine("长度: " + json);
             });
 
             Console.WriteLine("耗时: {0} 毫秒", time1.Milliseconds);
 
-            Console.WriteLine("使用Json.Net序列化100000行的字典");
+            Console.WriteLine("使用Json.Net序列化 50000 行的字典");
 
             var time2 = TimeWatcher.Watch(() =>
             {
                 var json = Newtonsoft.Json.JsonConvert.SerializeObject(dictionary);
-                Console.WriteLine("长度: " + json);
+                //Console.WriteLine("长度: " + json);
             });
             Console.WriteLine("耗时: {0} 毫秒", time2.Milliseconds);
+
+            Console.WriteLine("使用Swifter.Json序列化 50000 行的字典");
+
+            var time3 = TimeWatcher.Watch(() =>
+            {
+                var json = new JsonFormatter().Serialize(dictionary);
+                //Console.WriteLine("长度: " + json);
+            });
+            Console.WriteLine("耗时: {0} 毫秒", time3.Milliseconds);
+
+            Console.WriteLine("使用fastJson序列化 50000 行的字典");
+
+            var time4 = TimeWatcher.Watch(() =>
+            {
+                var json = fastJSON.JSON.ToJSON(dictionary);
+                //Console.WriteLine("长度: " + json);
+            });
+            Console.WriteLine("耗时: {0} 毫秒", time4.Milliseconds);
         }
 
         /// <summary>

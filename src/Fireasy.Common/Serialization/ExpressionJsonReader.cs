@@ -694,11 +694,7 @@ namespace Fireasy.Common.Serialization
         /// <returns></returns>
         protected virtual ConditionalExpression MakeConditionalExpression(Expression test, Expression ifTrue, Expression ifFalse, Type type)
         {
-#if !NET35
             return Expression.Condition(test, ifTrue, ifFalse, type);
-#else
-            return Expression.Condition(test, ifTrue, ifFalse);
-#endif
         }
 
         /// <summary>
@@ -755,16 +751,12 @@ namespace Fireasy.Common.Serialization
         /// <returns></returns>
         protected virtual TypeBinaryExpression MakeTypeBinaryExpression(ExpressionType nodeType, Expression expression, Type type)
         {
-#if !NET35
             if (nodeType == ExpressionType.TypeIs)
             {
                 return Expression.TypeIs(expression, type);
             }
 
             return Expression.TypeEqual(expression, type);
-#else
-            return Expression.TypeIs(expression, type);
-#endif
         }
 
         /// <summary>

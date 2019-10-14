@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NET35
 using Fireasy.Common.Reflection;
 using Microsoft.CSharp.RuntimeBinder;
 using System;
@@ -72,5 +71,3 @@ namespace Fireasy.Common.Dynamic
         }
     }
 }
-
-#endif

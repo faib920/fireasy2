@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NETSTANDARD
+#if !NETSTANDARD && !NETCOREAPP
 using Fireasy.Common.Configuration;
 
 namespace Fireasy.Data.Entity.Linq.Translators.Configuration

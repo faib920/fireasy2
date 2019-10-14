@@ -12,9 +12,7 @@ using System.Data;
 using System.Linq;
 using System.Globalization;
 using Fireasy.Common.Extensions;
-#if !NET35
 using System.Dynamic;
-#endif
 using Fireasy.Common.ComponentModel;
 using System.Collections.Generic;
 using System.Text;
@@ -28,6 +26,7 @@ namespace Fireasy.Common.Serialization
         private JsonWriter jsonWriter;
         private readonly SerializeContext context;
         private bool isDisposed;
+        private TypeConverterCache<JsonConverter> cacheConverter = new TypeConverterCache<JsonConverter>();
 
         internal JsonSerialize(JsonSerializer serializer, JsonWriter writer, JsonSerializeOption option)
         {
@@ -90,13 +89,11 @@ namespace Fireasy.Common.Serialization
                 return;
             }
 
-#if !NET35
             if (typeof(IDynamicMetaObjectProvider).IsAssignableFrom(type))
             {
                 SerializeDynamicObject((IDictionary<string, object>)value);
                 return;
             }
-#endif
 
             if (typeof(IDictionary).IsAssignableFrom(type))
             {
@@ -134,17 +131,7 @@ namespace Fireasy.Common.Serialization
 
         private bool WithConverter(Type type, object value)
         {
-            JsonConverter converter;
-            TextConverterAttribute attr;
-            if ((attr = type.GetCustomAttributes<TextConverterAttribute>().FirstOrDefault()) != null &&
-                typeof(JsonConverter).IsAssignableFrom(attr.ConverterType))
-            {
-                converter = attr.ConverterType.New<JsonConverter>();
-            }
-            else
-            {
-                converter = option.Converters.GetWritableConverter(type, new[] { typeof(JsonConverter) }) as JsonConverter;
-            }
+            var converter = cacheConverter.GetWritableConverter(type, option);
 
             if (converter == null || !converter.CanWrite)
             {
@@ -255,7 +242,6 @@ namespace Fireasy.Common.Serialization
             jsonWriter.WriteEndObject();
         }
 
-#if !NET35
         private void SerializeDynamicObject(IDictionary<string, object> dynamicObject)
         {
             var flag = new AssertFlag();
@@ -284,7 +270,6 @@ namespace Fireasy.Common.Serialization
 
             jsonWriter.WriteEndObject();
         }
-#endif
 
         private void SerializeObject(object obj)
         {

@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NET35
 using Fireasy.Common.Composition.Configuration;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
@@ -94,4 +93,3 @@ namespace Fireasy.Common.Composition
         }
     }
 }
-#endif

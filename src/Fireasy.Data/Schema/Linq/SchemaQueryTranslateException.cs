@@ -38,11 +38,7 @@ namespace Fireasy.Data.Schema.Linq
 
         static string GetMemberNames(IEnumerable<MemberInfo> mbrRestrs)
         {
-#if NET35
-            return string.Join(",", mbrRestrs.Select(s => s.Name).ToArray());
-#else
             return string.Join(",", mbrRestrs.Select(s => s.Name));
-#endif
         }
     }
 }

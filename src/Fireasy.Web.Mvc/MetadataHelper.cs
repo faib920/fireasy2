@@ -8,8 +8,10 @@ namespace Fireasy.Web.Mvc
         {
 #if !NETCOREAPP
             return System.Web.Mvc.ExpressionHelper.GetExpressionText(expression);
-#else
+#elif !NETCOREAPP3_0
             return Microsoft.AspNetCore.Mvc.ViewFeatures.Internal.ExpressionHelper.GetExpressionText(expression);
+#else
+            return string.Empty;
 #endif
         }
     }

@@ -65,7 +65,7 @@ namespace Fireasy.Web.Sockets
 
             try
             {
-                await handler.Invoke();
+                await handler.InvokeAsync();
             }
             catch (Exception exp)
             {
@@ -97,9 +97,9 @@ namespace Fireasy.Web.Sockets
             }
         }
 
-        private async Task Invoke()
+        private async Task InvokeAsync()
         {
-            //ListenHeartBeat();
+            ListenHeartBeat();
 
             OnConnected();
             Clients.Add(ConnectionId, this);

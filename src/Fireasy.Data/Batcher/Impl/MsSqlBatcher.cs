@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using Fireasy.Data.Extensions;
 using Fireasy.Data.Provider;
 using Fireasy.Data.Syntax;
@@ -15,9 +16,8 @@ using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
 using System.Linq;
-#if !NET40 && !NET35
+using System.Threading;
 using System.Threading.Tasks;
-#endif
 
 namespace Fireasy.Data.Batcher
 {
@@ -27,6 +27,18 @@ namespace Fireasy.Data.Batcher
     public sealed class MsSqlBatcher : IBatcherProvider
     {
         IProvider IProviderService.Provider { get; set; }
+
+        /// <summary>
+        /// 将 <see cref="DataTable"/> 的数据批量插入到数据库中。
+        /// </summary>
+        /// <param name="database">提供给当前插件的 <see cref="IDatabase"/> 对象。</param>
+        /// <param name="dataTable">要批量插入的 <see cref="DataTable"/>。</param>
+        /// <param name="batchSize">每批次写入的数据量。</param>
+        /// <param name="completePercentage">已完成百分比的通知方法。</param>
+        public void Insert(IDatabase database, DataTable dataTable, int batchSize = 1000, Action<int> completePercentage = null)
+        {
+            InsertAsync(database, dataTable, batchSize, completePercentage);
+        }
 
         /// <summary>
         /// 将一个 <see cref="IList"/> 批量插入到数据库中。 
@@ -39,61 +51,7 @@ namespace Fireasy.Data.Batcher
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
         public void Insert<T>(IDatabase database, IEnumerable<T> list, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
         {
-            try
-            {
-                database.Connection.TryOpen();
-
-                //给表名加上前后导符
-                using (var bulk = new SqlBulkCopy((SqlConnection)database.Connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
-                {
-                    DestinationTableName = tableName,
-                    BatchSize = batchSize
-                })
-                using (var reader = new EnumerableBatchReader<T>(bulk, list))
-                {
-                    bulk.WriteToServer(reader);
-                }
-            }
-            catch (Exception exp)
-            {
-                throw new BatcherException(list.ToList(), exp);
-            }
-        }
-
-        /// <summary>
-        /// 将 <see cref="DataTable"/> 的数据批量插入到数据库中。
-        /// </summary>
-        /// <param name="database">提供给当前插件的 <see cref="IDatabase"/> 对象。</param>
-        /// <param name="dataTable">要批量插入的 <see cref="DataTable"/>。</param>
-        /// <param name="batchSize">每批次写入的数据量。</param>
-        /// <param name="completePercentage">已完成百分比的通知方法。</param>
-        public void Insert(IDatabase database, DataTable dataTable, int batchSize = 1000, Action<int> completePercentage = null)
-        {
-            if (!BatcherChecker.CheckDataTable(dataTable))
-            {
-                return;
-            }
-
-            try
-            {
-                database.Connection.TryOpen();
-
-                //给表名加上前后导符
-                var tableName = DbUtility.FormatByQuote(database.Provider.GetService<ISyntaxProvider>(), dataTable.TableName);
-                using (var bulk = new SqlBulkCopy((SqlConnection)database.Connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
-                {
-                    DestinationTableName = tableName,
-                    BatchSize = batchSize
-                })
-                using (var reader = new DataTableBatchReader(bulk, dataTable))
-                {
-                    bulk.WriteToServer(reader);
-                }
-            }
-            catch (Exception exp)
-            {
-                throw new BatcherException(dataTable.Rows, exp);
-            }
+            InsertAsync(database, list, tableName, batchSize, completePercentage);
         }
 
         /// <summary>
@@ -106,25 +64,9 @@ namespace Fireasy.Data.Batcher
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
         public void Insert(IDatabase database, IDataReader reader, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
         {
-            try
-            {
-                database.Connection.TryOpen();
-
-                //给表名加上前后导符
-                using (var bulk = new SqlBulkCopy((SqlConnection)database.Connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
-                {
-                    DestinationTableName = tableName,
-                    BatchSize = batchSize
-                })
-                    bulk.WriteToServer((DbDataReader)reader);
-            }
-            catch (Exception exp)
-            {
-                throw new BatcherException(null, exp);
-            }
+            InsertAsync(database, reader, tableName, batchSize, completePercentage);
         }
 
-#if !NET40 && !NET35
         /// <summary>
         /// 将 <see cref="DataTable"/> 的数据批量插入到数据库中。
         /// </summary>
@@ -132,7 +74,7 @@ namespace Fireasy.Data.Batcher
         /// <param name="dataTable">要批量插入的 <see cref="DataTable"/>。</param>
         /// <param name="batchSize">每批次写入的数据量。</param>
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
-        public async Task InsertAsync(IDatabase database, DataTable dataTable, int batchSize = 1000, Action<int> completePercentage = null)
+        public async Task InsertAsync(IDatabase database, DataTable dataTable, int batchSize = 1000, Action<int> completePercentage = null, CancellationToken cancellationToken = default)
         {
             if (!BatcherChecker.CheckDataTable(dataTable))
             {
@@ -152,7 +94,7 @@ namespace Fireasy.Data.Batcher
                 })
                 using (var reader = new DataTableBatchReader(bulk, dataTable))
                 {
-                    await AsyncTaskManager.Adapter(bulk.WriteToServerAsync(reader));
+                    await bulk.WriteToServerAsync(reader, cancellationToken);
                 }
             }
             catch (Exception exp)
@@ -170,11 +112,11 @@ namespace Fireasy.Data.Batcher
         /// <param name="tableName">要写入的数据表的名称。</param>
         /// <param name="batchSize">每批次写入的数据量。</param>
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
-        public async Task InsertAsync<T>(IDatabase database, IEnumerable<T> list, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
+        public async Task InsertAsync<T>(IDatabase database, IEnumerable<T> list, string tableName, int batchSize = 1000, Action<int> completePercentage = null, CancellationToken cancellationToken = default)
         {
             try
             {
-                database.Connection.TryOpen();
+                await database.Connection.TryOpenAsync(cancellationToken: cancellationToken);
 
                 //给表名加上前后导符
                 using (var bulk = new SqlBulkCopy((SqlConnection)database.Connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
@@ -184,7 +126,7 @@ namespace Fireasy.Data.Batcher
                 })
                 using (var reader = new EnumerableBatchReader<T>(bulk, list))
                 {
-                    await AsyncTaskManager.Adapter(bulk.WriteToServerAsync(reader));
+                    await bulk.WriteToServerAsync(reader, cancellationToken);
                 }
             }
             catch (Exception exp)
@@ -201,11 +143,11 @@ namespace Fireasy.Data.Batcher
         /// <param name="tableName">要写入的数据表的名称。</param>
         /// <param name="batchSize">每批次写入的数据量。</param>
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
-        public async Task InsertAsync(IDatabase database, IDataReader reader, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
+        public async Task InsertAsync(IDatabase database, IDataReader reader, string tableName, int batchSize = 1000, Action<int> completePercentage = null, CancellationToken cancellationToken = default)
         {
             try
             {
-                database.Connection.TryOpen();
+                await database.Connection.TryOpenAsync(cancellationToken: cancellationToken);
 
                 //给表名加上前后导符
                 using (var bulk = new SqlBulkCopy((SqlConnection)database.Connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
@@ -213,14 +155,12 @@ namespace Fireasy.Data.Batcher
                     DestinationTableName = tableName,
                     BatchSize = batchSize
                 })
-                await AsyncTaskManager.Adapter(bulk.WriteToServerAsync((DbDataReader)reader));
+                await bulk.WriteToServerAsync((DbDataReader)reader, cancellationToken);
             }
             catch (Exception exp)
             {
                 throw new BatcherException(null, exp);
             }
         }
-#endif
-
     }
 }

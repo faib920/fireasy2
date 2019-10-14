@@ -9,7 +9,6 @@
 using Microsoft.VisualBasic;
 using System;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Fireasy.Common.Extensions
@@ -223,7 +222,11 @@ namespace Fireasy.Common.Extensions
             for (m = r.Match(source); m.Success; m = m.NextMatch())
             {
                 var strValue = m.Result("${code}");   //代码
+#if NETSTANDARD && !NETSTANDARD2_0
+                var charNum = Int32.Parse(strValue.AsSpan(2, 4), System.Globalization.NumberStyles.HexNumber);
+#else
                 var charNum = Int32.Parse(strValue.Substring(2, 4), System.Globalization.NumberStyles.HexNumber);
+#endif
                 var ch = string.Format("{0}", (char)charNum);
                 source = source.Replace(strValue, ch);
             }

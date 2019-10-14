@@ -38,9 +38,9 @@ namespace Fireasy.Common.Serialization
         public bool IgnoreNull { get; set; } = true;
 
         /// <summary>
-        /// 获取或设置输出的风格。
+        /// 获取或设置输出节点的风格。
         /// </summary>
-        public OutputStyle OutputStyle { get; set; }
+        public XmlNodeStyle NodeStyle { get; set; }
 
         /// <summary>
         /// 引用另一个对象的设置属性。
@@ -56,12 +56,12 @@ namespace Fireasy.Common.Serialization
                 Declaration = xoption.Declaration;
                 StartElement = xoption.StartElement;
                 IgnoreNull = xoption.IgnoreNull;
-                OutputStyle = xoption.OutputStyle;
+                NodeStyle = xoption.NodeStyle;
             }
         }
     }
 
-    public enum OutputStyle
+    public enum XmlNodeStyle
     {
         Element,
         Attribute

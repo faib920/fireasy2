@@ -18,7 +18,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
     public sealed class BlockCommandExpression : CommandExpression
     {
         public BlockCommandExpression(IList<Expression> commands)
-            : base(DbExpressionType.Block, commands[commands.Count - 1].Type)
+            : base(DbExpressionType.Block, false, commands[commands.Count - 1].Type)
         {
             Commands = commands.ToReadOnly();
         }

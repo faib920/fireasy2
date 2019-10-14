@@ -9,7 +9,7 @@ using Fireasy.Common.Extensions;
 using Fireasy.Data;
 using System;
 using System.Collections;
-#if !NETSTANDARD
+#if !NETCOREAPP
 using System.Web;
 #else
 using Microsoft.AspNetCore.Http;
@@ -22,7 +22,7 @@ namespace Fireasy.Web.EasyUI
     /// </summary>
     public static class EasyUIHelper
     {
-#if !NETSTANDARD
+#if !NETCOREAPP
         /// <summary>
         /// 构造分页数据。
         /// </summary>
@@ -69,7 +69,7 @@ namespace Fireasy.Web.EasyUI
         public static DataPager GetDataPager(this HttpContext context)
         {
             var request = context.Request;
-#if NETSTANDARD
+#if NETCOREAPP
             if (!request.HasFormContentType)
             {
                 return null;
@@ -94,7 +94,7 @@ namespace Fireasy.Web.EasyUI
         {
             var def = new SortDefinition();
             var request = context.Request;
-#if NETSTANDARD
+#if NETCOREAPP
             if (!request.HasFormContentType)
             {
                 return def;

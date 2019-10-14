@@ -58,7 +58,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         // remap any references to the outer select to the new alias;
                         var newInnerSelect = (SelectExpression)ColumnMapper.Map(proj.Select, newOuterSelect.Alias, saved.Alias);
                         // add outer-join test
-                        var newInnerProjection = new ProjectionExpression(newInnerSelect, proj.Projector).AddOuterJoinTest();
+                        var newInnerProjection = new ProjectionExpression(newInnerSelect, proj.Projector, proj.IsAsync).AddOuterJoinTest();
                         newInnerSelect = newInnerProjection.Select;
                         var newProjector = newInnerProjection.Projector;
 
@@ -81,7 +81,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                             var outerKey = outerKeys.Select(k => ColumnMapper.Map(k, saved.Alias, newOuterSelect.Alias));
                             // innerKey needs to refer to the new alias for the select with the new join
                             var innerKey = innerKeys.Select(k => ColumnMapper.Map(k, joinedSelect.Alias, ((ColumnExpression)k).Alias));
-                            var newProjection = new ProjectionExpression(joinedSelect, newProjector, proj.Aggregator);
+                            var newProjection = new ProjectionExpression(joinedSelect, newProjector, proj.Aggregator, proj.IsAsync);
                             return new ClientJoinExpression(newProjection, outerKey, innerKey);
                         }
                     }

@@ -1,5 +1,5 @@
 ﻿using Fireasy.Common.Configuration;
-#if NETCOREAPP2_0
+#if NETCOREAPP
 using Microsoft.Extensions.Configuration;
 #endif
 using System;
@@ -13,7 +13,7 @@ namespace Fireasy.Data.Entity.Tests
     {
         public static void Init()
         {
-#if NETCOREAPP2_0
+#if NETCOREAPP
             var config = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)

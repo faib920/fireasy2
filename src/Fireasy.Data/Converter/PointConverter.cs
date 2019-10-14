@@ -62,11 +62,7 @@ namespace Fireasy.Data.Converter
             }
 
             var point = (Point)value;
-#if NET35
-            return string.Join(",", new[] { point.X.ToString(), point.Y.ToString() });
-#else
             return string.Join(",", new[] {point.X, point.Y});
-#endif
         }
     }
 }

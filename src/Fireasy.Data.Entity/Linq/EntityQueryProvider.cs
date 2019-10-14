@@ -14,6 +14,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fireasy.Data.Entity.Linq
 {
@@ -67,7 +70,9 @@ namespace Fireasy.Data.Entity.Linq
         {
             var efn = TranslateCache.TryGetDelegate(expression, () => (LambdaExpression)GetExecutionPlan(expression));
 
-            if (efn.Method.GetParameters().Length == 2)
+            var attrs = GetMethodAttributes(efn.Method);
+
+            if (!attrs.Item2)
             {
                 return efn.DynamicInvoke(service.Database);
             }
@@ -78,11 +83,98 @@ namespace Fireasy.Data.Entity.Linq
         }
 
         /// <summary>
+        /// 执行 <see cref="Expression"/> 的查询，返回查询结果。
+        /// </summary>
+        /// <param name="expression">表示 LINQ 查询的表达式树。</param>
+        /// <returns>单值对象。</returns>
+        /// <exception cref="TranslateException">对 LINQ 表达式解析失败时抛出此异常。</exception>
+        public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
+        {
+            var efn = TranslateCache.TryGetDelegate(expression, () => (LambdaExpression)GetExecutionPlan(expression));
+
+            var attrs = GetMethodAttributes(efn.Method);
+
+            object result;
+            if (attrs.Item1)
+            {
+                if (attrs.Item2)
+                {
+                    var segment = SegmentFinder.Find(expression);
+                    result = efn.DynamicInvoke(service.Database, segment, cancellationToken);
+                }
+                else
+                {
+                    result = efn.DynamicInvoke(service.Database, cancellationToken);
+                }
+            }
+            else
+            {
+                if (attrs.Item2)
+                {
+                    var segment = SegmentFinder.Find(expression);
+                    result = efn.DynamicInvoke(service.Database, segment);
+                }
+                else
+                {
+                    result = efn.DynamicInvoke(service.Database);
+                }
+            }
+
+            if (result is TResult)
+            {
+                return (TResult)result;
+            }
+            else if (result is Task<TResult> task)
+            {
+                return task.Result;
+            }
+
+            return default;
+        }
+
+#if !NETFRAMEWORK && !NETSTANDARD2_0
+        public IAsyncEnumerable<TResult> ExecuteEnumerableAsync<TResult>(Expression expression, CancellationToken cancellationToken)
+        {
+            var efn = TranslateCache.TryGetDelegate(expression, () => (LambdaExpression)GetExecutionPlan(expression, true));
+
+            var attrs = GetMethodAttributes(efn.Method);
+
+            object result;
+            if (attrs.Item1)
+            {
+                if (attrs.Item2)
+                {
+                    var segment = SegmentFinder.Find(expression);
+                    result = efn.DynamicInvoke(service.Database, segment, cancellationToken);
+                }
+                else
+                {
+                    result = efn.DynamicInvoke(service.Database, cancellationToken);
+                }
+            }
+            else
+            {
+                if (attrs.Item2)
+                {
+                    var segment = SegmentFinder.Find(expression);
+                    result = efn.DynamicInvoke(service.Database, segment);
+                }
+                else
+                {
+                    result = efn.DynamicInvoke(service.Database);
+                }
+            }
+
+            return (IAsyncEnumerable<TResult>)result;
+        }
+#endif
+
+        /// <summary>
         /// 获取表达式的执行计划。
         /// </summary>
         /// <param name="expression"></param>
         /// <returns></returns>
-        public Expression GetExecutionPlan(Expression expression)
+        public Expression GetExecutionPlan(Expression expression, bool? isAsync = null)
         {
             try
             {
@@ -100,7 +192,7 @@ namespace Fireasy.Data.Entity.Linq
                     var translation = trans.Translate(expression);
                     var translator = trans.CreateTranslator();
 
-                    return ExecutionBuilder.Build(translation, e => translator.Translate(e));
+                    return ExecutionBuilder.Build(translation, e => translator.Translate(e), isAsync);
                 }
             }
             catch (Exception ex)
@@ -167,6 +259,35 @@ namespace Fireasy.Data.Entity.Linq
         {
             var section = ConfigurationUnity.GetSection<TranslatorConfigurationSection>();
             return (section != null ? section.Options : Translators.TranslateOptions.Default).Clone();
+        }
+
+        /// <summary>
+        /// 返回一个元组，Item1 表示是否为异步方法，Item2 表示是否有分页参数。
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        private Tuple<bool, bool> GetMethodAttributes(MethodInfo method)
+        {
+            var isAsync = false;
+            var isSegment = false;
+            foreach (var par in method.GetParameters())
+            {
+                if (isAsync && isSegment)
+                {
+                    break;
+                }
+
+                if (par.ParameterType == typeof(CancellationToken))
+                {
+                    isAsync = true;
+                }
+                else if (typeof(IDataSegment).IsAssignableFrom(par.ParameterType))
+                {
+                    isSegment = true;
+                }
+            }
+
+            return Tuple.Create(isAsync, isSegment);
         }
     }
 }

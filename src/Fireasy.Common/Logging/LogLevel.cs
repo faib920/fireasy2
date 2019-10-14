@@ -6,9 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Configuration;
-#if NET35
-using Fireasy.Common.Extensions;
-#endif
 using Fireasy.Common.Logging.Configuration;
 using System;
 

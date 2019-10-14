@@ -16,7 +16,6 @@ namespace Fireasy.Common.Extensions
             Guard.ArgumentNull(exception, nameof(exception));
             Guard.ArgumentNull(action, nameof(action));
 
-#if !NET35
             if (exception is AggregateException aggExp && aggExp.InnerExceptions.Count > 0)
             {
                 foreach (var e in aggExp.InnerExceptions)
@@ -33,14 +32,6 @@ namespace Fireasy.Common.Extensions
                     e = e.InnerException;
                 }
             }
-#else
-            var e = exception;
-            while (e != null)
-            {
-                action(e);
-                e = e.InnerException;
-            }
-#endif
 
         }
     }

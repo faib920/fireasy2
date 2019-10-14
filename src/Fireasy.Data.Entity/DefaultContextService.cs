@@ -89,7 +89,7 @@ namespace Fireasy.Data.Entity
                 if (projection.Type != expression.Type)
                 {
                     var fnAgg = QueryUtility.GetAggregator(expression.Type, projection.Type);
-                    projection = new ProjectionExpression(projection.Select, projection.Projector, fnAgg);
+                    projection = new ProjectionExpression(projection.Select, projection.Projector, fnAgg, projection.IsAsync);
                 }
 
                 return projection;

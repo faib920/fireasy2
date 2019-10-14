@@ -38,17 +38,8 @@ namespace Fireasy.Data
                 else
                 {
                     var folderName = urlExpression.Substring(1, dirIndex - 1);
-#if NET35
-                    var folder = Environment.SpecialFolder.System;
-                    try
-                    {
-                        folder = (Environment.SpecialFolder)Enum.Parse(typeof(Environment.SpecialFolder), folderName);
-                    }
-                    catch { }
-#else
                     Environment.SpecialFolder folder;
                     Enum.TryParse(folderName, out folder);
-#endif
                     directory = Environment.GetFolderPath(folder);
                 }
 

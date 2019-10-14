@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NET35
 namespace Fireasy.Common.Dynamic
 {
     /// <summary>
@@ -44,4 +43,3 @@ namespace Fireasy.Common.Dynamic
     /// <returns></returns>
     public delegate object DynamicInvokeDelegate(dynamic sender, params object[] args);
 }
-#endif

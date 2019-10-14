@@ -5,9 +5,9 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using System.Linq;
 using System.Reflection;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Common.Subscribes
 {

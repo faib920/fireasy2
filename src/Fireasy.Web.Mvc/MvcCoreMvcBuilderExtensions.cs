@@ -6,15 +6,17 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if NETCOREAPP
-using Fireasy.Common.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Formatters.Json.Internal;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
-using Microsoft.AspNetCore.Mvc.Razor.Compilation;
-using Microsoft.AspNetCore.Razor.Language;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using System.Linq;
+#if !NETCOREAPP3_0
+using Microsoft.AspNetCore.Mvc.Formatters.Json.Internal;
+using Microsoft.AspNetCore.Razor.Language;
+#endif
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -36,7 +38,15 @@ namespace Microsoft.Extensions.DependencyInjection
             if (options.UseTypicalJsonSerializer)
             {
                 builder.Services.Configure<MvcOptions>(s => s.OutputFormatters.Insert(0, new Fireasy.Web.Mvc.JsonOutputFormatter(options)));
-                builder.Services.AddSingleton<JsonResultExecutor, Fireasy.Web.Mvc.JsonResultExecutor>();
+#if NETCOREAPP3_0
+                builder.Services
+                    .AddHttpContextAccessor()
+                    .AddSingleton<IJsonHelper, Fireasy.Web.Mvc.JsonHelper>()
+                    .AddSingleton<IActionResultExecutor<JsonResult>, Fireasy.Web.Mvc.JsonResultExecutor>();
+#else
+                builder.Services
+                    .AddSingleton<JsonResultExecutor, Fireasy.Web.Mvc.JsonResultExecutor>();
+#endif
             }
 
             if (options.DisableModelValidator)
@@ -44,16 +54,12 @@ namespace Microsoft.Extensions.DependencyInjection
                 builder.Services.AddSingleton<IObjectModelValidator, Fireasy.Web.Mvc.NoneObjectModelValidator>();
             }
 
-            if (options.UseReferenceAssembly)
-            {
-                builder.PartManager.FeatureProviders.Remove(builder.PartManager.FeatureProviders.First(f => f is MetadataReferenceFeatureProvider));
-                builder.PartManager.FeatureProviders.Add(new Fireasy.Web.Mvc.ReferencesMetadataReferenceFeatureProvider());
-            }
-
+#if !NETCOREAPP3_0
             if (options.UseRootRazorProject)
             {
                 builder.Services.AddSingleton<RazorProjectFileSystem, Fireasy.Web.Mvc.BasedRazorProject>();
             }
+#endif
 
             if (options.UseErrorHandleFilter)
             {

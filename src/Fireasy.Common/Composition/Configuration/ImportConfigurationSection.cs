@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NET35
 
 using System;
 using System.Xml;
@@ -63,4 +62,3 @@ namespace Fireasy.Common.Composition.Configuration
 #endif
     }
 }
-#endif

@@ -71,6 +71,11 @@ namespace Fireasy.Redis
         /// 获取或设置提前延期的时间比例。
         /// </summary>
         public double? AdvanceDelay { get; set; }
+
+        /// <summary>
+        /// 获取或设置上锁时间（秒）。默认为 10 秒钟。
+        /// </summary>
+        public int LockTimeout { get; set; }
     }
 
     /// <summary>

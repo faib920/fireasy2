@@ -16,12 +16,15 @@ namespace Fireasy.Data.Entity.Linq.Expressions
     /// </summary>
     public abstract class CommandExpression : DbExpression
     {
-        public CommandExpression(DbExpressionType eType, Type type)
+        public CommandExpression(DbExpressionType eType, bool isAsync, Type type)
             : base(eType, type)
         {
             AssociatedCommands = new List<CommandExpression>();
+            IsAsync = isAsync;
         }
 
         public List<CommandExpression> AssociatedCommands { get; private set; }
+
+        public bool IsAsync { get; private set; }
     }
 }

@@ -2,6 +2,7 @@
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Expressions
@@ -11,17 +12,22 @@ namespace Fireasy.Data.Entity.Linq.Expressions
     /// </summary>
     public sealed class ProjectionExpression : DbExpression
     {
-        public ProjectionExpression(SelectExpression source, Expression projector)
-            : this(source, projector, null)
+        public ProjectionExpression(SelectExpression source, Expression projector, bool isAsync)
+            : this(source, projector, null, isAsync)
         {
         }
 
-        public ProjectionExpression(SelectExpression source, Expression projector, LambdaExpression aggregator)
-            : base(DbExpressionType.Projection, aggregator != null ? aggregator.Body.Type : typeof(IEnumerable<>).MakeGenericType(projector.Type))
+        public ProjectionExpression(SelectExpression source, Expression projector, LambdaExpression aggregator, bool isAsync)
+            : base(DbExpressionType.Projection, 
+                  aggregator != null ? 
+                    (isAsync && aggregator.Body.Type.IsGenericType ? 
+                        aggregator.Body.Type.GetGenericArguments()[0] : aggregator.Body.Type) :
+                        typeof(IEnumerable<>).MakeGenericType(projector.Type))
         {
             Select = source;
             Projector = projector;
             Aggregator = aggregator;
+            IsAsync = isAsync;
         }
 
         /// <summary>
@@ -44,14 +50,22 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// </summary>
         public bool IsSingleton
         {
-            get { return Aggregator != null && Aggregator.Body.Type == Projector.Type; }
+            get
+            {
+                return Aggregator != null && 
+                    (IsAsync && Aggregator.Body.Type.IsGenericType ?
+                        Aggregator.Body.Type.GetGenericArguments()[0] == Projector.Type : 
+                        Aggregator.Body.Type == Projector.Type);
+            }
         }
+
+        public bool IsAsync { get; private set; }
 
         public ProjectionExpression Update(SelectExpression select, Expression projector, LambdaExpression aggregator)
         {
             if (select != Select || projector != Projector || aggregator != Aggregator)
             {
-                return new ProjectionExpression(select, projector, aggregator);
+                return new ProjectionExpression(select, projector, aggregator, IsAsync);
             }
             return this;
         }

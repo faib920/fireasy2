@@ -12,9 +12,7 @@ using System.Data;
 using System.Data.Common;
 using Fireasy.Data.Provider;
 using System.Threading;
-#if !NET35 && !NET40
 using System.Threading.Tasks;
-#endif
 
 namespace Fireasy.Data
 {
@@ -100,11 +98,54 @@ namespace Fireasy.Data
         /// <param name="segment">数据分段对象。</param>
         /// <param name="parameters">查询参数集合。</param>
         /// <returns>一个动态对象的枚举器。</returns>
-#if !NET35
         IEnumerable<dynamic> ExecuteEnumerable(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null);
+
+#if NETSTANDARD && !NETSTANDARD2_0
+        /// <summary>
+        /// 异步的，执行查询文本并将结果以一个 <see cref="IEnumerable{T}"/> 的序列返回。
+        /// </summary>
+        /// <typeparam name="T">查询对象类型。</typeparam>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="segment">数据分段对象。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="rowMapper">数据行映射器。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>一个 <typeparamref name="T"/> 类型的对象的枚举器。</returns>
+        IAsyncEnumerable<T> ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, IDataRowMapper<T> rowMapper = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 异步的，执行查询文本并将结果并返回动态序列。
+        /// </summary>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="segment">数据分段对象。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>一个动态对象的枚举器。</returns>
+        IAsyncEnumerable<dynamic> ExecuteEnumerableAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CancellationToken cancellationToken = default);
 #else
-        IEnumerable<object> ExecuteEnumerable(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null);
+        /// <summary>
+        /// 异步的，执行查询文本并将结果以一个 <see cref="IEnumerable{T}"/> 的序列返回。
+        /// </summary>
+        /// <typeparam name="T">查询对象类型。</typeparam>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="segment">数据分段对象。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="rowMapper">数据行映射器。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>一个 <typeparamref name="T"/> 类型的对象的枚举器。</returns>
+        Task<IEnumerable<T>> ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, IDataRowMapper<T> rowMapper = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 异步的，执行查询文本并将结果并返回动态序列。
+        /// </summary>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="segment">数据分段对象。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>一个动态对象的枚举器。</returns>
+        Task<IEnumerable<dynamic>> ExecuteEnumerableAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CancellationToken cancellationToken = default);
 #endif
+
         /// <summary>
         /// 执行查询文本，返回受影响的记录数。
         /// </summary>
@@ -114,6 +155,15 @@ namespace Fireasy.Data
         int ExecuteNonQuery(IQueryCommand queryCommand, ParameterCollection parameters = null);
 
         /// <summary>
+        /// 异步的，执行查询文本，返回受影响的记录数。
+        /// </summary>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>所影响的记录数。</returns>
+        Task<int> ExecuteNonQueryAsync(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// 执行查询文本并返回一个 <see cref="IDataReader"/>。
         /// </summary>
         /// <param name="queryCommand">查询命令。</param>
@@ -121,6 +171,16 @@ namespace Fireasy.Data
         /// <param name="parameters">查询参数集合。</param>
         /// <returns>一个 <see cref="IDataReader"/> 对象。</returns>
         IDataReader ExecuteReader(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null);
+
+        /// <summary>
+        /// 异步的，执行查询文本并返回一个 <see cref="IDataReader"/>。
+        /// </summary>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="segment">数据分段对象。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>一个 <see cref="IDataReader"/> 对象。</returns>
+        Task<IDataReader> ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 执行查询文本，并返回第一行的第一列。
@@ -139,6 +199,24 @@ namespace Fireasy.Data
         T ExecuteScalar<T>(IQueryCommand queryCommand, ParameterCollection parameters = null);
 
         /// <summary>
+        /// 异步的，执行查询文本，并返回第一行的第一列。
+        /// </summary>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>第一行的第一列数据。</returns>
+        Task<object> ExecuteScalarAsync(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 异步的，执行查询文本，并返回第一行的第一列。
+        /// </summary>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>第一行的第一列数据。</returns>
+        Task<T> ExecuteScalarAsync<T>(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// 执行查询文本并将结果填充到指定的 <see cref="DataSet"/> 对象中。
         /// </summary>
         /// <param name="dataSet">要填充的 <see cref="DataSet"/>。</param>
@@ -153,7 +231,14 @@ namespace Fireasy.Data
         /// </summary>
         /// <param name="dataTable">要更新的数据表对象。</param>
         void Update(DataTable dataTable);
-        
+
+        /// <summary>
+        /// 异步的，将 <see cref="DataTable"/> 的更改保存到数据库中，这类更改包括新增、修改和删除的数据。
+        /// </summary>
+        /// <param name="dataTable">要更新的数据表对象。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        Task UpdateAsync(DataTable dataTable, CancellationToken cancellationToken = default);
+
         /// <summary>
         /// 将 <see cref="DataTable"/> 的更改保存到数据库中。
         /// </summary>
@@ -164,7 +249,16 @@ namespace Fireasy.Data
         /// <returns></returns>
         int Update(DataTable dataTable, SqlCommand insertCommand, SqlCommand updateCommand, SqlCommand deleteCommand);
 
-        //IAsyncResult BeginExecuteNonQuery(IQueryCommand queryCommand, ParameterCollection parameters = null, AsyncCallback callback = null, object state = null);
+        /// <summary>
+        /// 异步的，将 <see cref="DataTable"/> 的更改保存到数据库中。
+        /// </summary>
+        /// <param name="dataTable">要更新的数据表对象。</param>
+        /// <param name="insertCommand"></param>
+        /// <param name="updateCommand"></param>
+        /// <param name="deleteCommand"></param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns></returns>
+        Task<int> UpdateAsync(DataTable dataTable, SqlCommand insertCommand, SqlCommand updateCommand, SqlCommand deleteCommand, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 尝试连接数据库。
@@ -172,55 +266,12 @@ namespace Fireasy.Data
         /// <returns>如果连接成功，则为 null，否则为异常对象。</returns>
         Exception TryConnect();
 
-#if !NET35 && !NET40
         /// <summary>
-        /// 异步执行查询文本，返回受影响的记录数。
+        /// 异步的，尝试连接数据库。
         /// </summary>
-        /// <param name="queryCommand">查询命令。</param>
-        /// <param name="parameters">查询参数集合。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
-        /// <returns>所影响的记录数。</returns>
-        Task<int> ExecuteNonQueryAsync(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default);
+        /// <returns>如果连接成功，则为 null，否则为异常对象。</returns>
+        Task<Exception> TryConnectAsync(CancellationToken cancellationToken);
 
-        /// <summary>
-        /// 异步执行查询文本并返回一个 <see cref="IDataReader"/>。
-        /// </summary>
-        /// <param name="queryCommand">查询命令。</param>
-        /// <param name="segment">数据分段对象。</param>
-        /// <param name="parameters">查询参数集合。</param>
-        /// <param name="cancellationToken">取消操作的通知。</param>
-        /// <returns>一个 <see cref="IDataReader"/> 对象。</returns>
-        Task<IDataReader> ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// 执行查询文本，并返回第一行的第一列。
-        /// </summary>
-        /// <param name="queryCommand">查询命令。</param>
-        /// <param name="parameters">查询参数集合。</param>
-        /// <param name="cancellationToken">取消操作的通知。</param>
-        /// <returns>第一行的第一列数据。</returns>
-        Task<object> ExecuteScalarAsync(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// 执行查询文本，并返回第一行的第一列。
-        /// </summary>
-        /// <param name="queryCommand">查询命令。</param>
-        /// <param name="parameters">查询参数集合。</param>
-        /// <param name="cancellationToken">取消操作的通知。</param>
-        /// <returns>第一行的第一列数据。</returns>
-        Task<T> ExecuteScalarAsync<T>(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// 异步执行查询文本并将结果以一个 <see cref="IEnumerable{T}"/> 的序列返回。
-        /// </summary>
-        /// <typeparam name="T">查询对象类型。</typeparam>
-        /// <param name="queryCommand">查询命令。</param>
-        /// <param name="segment">数据分段对象。</param>
-        /// <param name="parameters">查询参数集合。</param>
-        /// <param name="rowMapper">数据行映射器。</param>
-        /// <param name="cancellationToken">取消操作的通知。</param>
-        /// <returns>一个 <typeparamref name="T"/> 类型的对象的枚举器。</returns>
-        Task<IEnumerable<T>> ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, IDataRowMapper<T> rowMapper = null, CancellationToken cancellationToken = default);
-#endif
     }
 }

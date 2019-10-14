@@ -12,9 +12,7 @@ using System.Data.Common;
 using Fireasy.Common;
 using Fireasy.Data.Provider;
 using System.Threading;
-#if !NET35 && !NET40
 using System.Threading.Tasks;
-#endif
 namespace Fireasy.Data
 {
     /// <summary>
@@ -132,12 +130,6 @@ namespace Fireasy.Data
             return innerDatabase.Update(dataTable, insertCommand, updateCommand, deleteCommand);
         }
 
-#if !NET35 && !NET40
-        Task<IEnumerable<T>> IDatabase.ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper, CancellationToken cancellationToken)
-        {
-            return innerDatabase.ExecuteEnumerableAsync<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);
-        }
-
         Task<int> IDatabase.ExecuteNonQueryAsync(IQueryCommand queryCommand, ParameterCollection parameters, CancellationToken cancellationToken)
         {
             return innerDatabase.ExecuteNonQueryAsync(queryCommand, parameters, cancellationToken);
@@ -157,7 +149,43 @@ namespace Fireasy.Data
         {
             return innerDatabase.ExecuteScalarAsync<T>(queryCommand, parameters, cancellationToken);
         }
+
+#if NETSTANDARD && !NETSTANDARD2_0
+        IAsyncEnumerable<T> IDatabase.ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper, CancellationToken cancellationToken)
+        {
+            return innerDatabase.ExecuteEnumerableAsync<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);
+        }
+
+        IAsyncEnumerable<dynamic> IDatabase.ExecuteEnumerableAsync(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CancellationToken cancellationToken)
+        {
+            return innerDatabase.ExecuteEnumerableAsync(queryCommand, segment, parameters, cancellationToken);
+        }
+#else
+        Task<IEnumerable<T>> IDatabase.ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper, CancellationToken cancellationToken)
+        {
+            return innerDatabase.ExecuteEnumerableAsync<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);
+        }
+
+        Task<IEnumerable<dynamic>> IDatabase.ExecuteEnumerableAsync(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CancellationToken cancellationToken)
+        {
+            return innerDatabase.ExecuteEnumerableAsync(queryCommand, segment, parameters, cancellationToken);
+        }
 #endif
+
+        Task IDatabase.UpdateAsync(DataTable dataTable, CancellationToken cancellationToken)
+        {
+            return innerDatabase.UpdateAsync(dataTable, cancellationToken);
+        }
+
+        Task<int> IDatabase.UpdateAsync(DataTable dataTable, SqlCommand insertCommand, SqlCommand updateCommand, SqlCommand deleteCommand, CancellationToken cancellationToken)
+        {
+            return innerDatabase.UpdateAsync(dataTable, insertCommand, updateCommand, deleteCommand, cancellationToken);
+        }
+
+        Task<Exception> IDatabase.TryConnectAsync(CancellationToken cancellationToken)
+        {
+            return innerDatabase.TryConnectAsync( cancellationToken);
+        }
 
         Exception IDatabase.TryConnect()
         {

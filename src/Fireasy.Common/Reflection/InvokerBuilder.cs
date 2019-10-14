@@ -52,7 +52,6 @@ namespace Fireasy.Common.Reflection
                     argExpression = EnsureCastExpression(paramAccessorExpression, parameterType);
                 }
 
-#if !NET35
                 if (isByRef)
                 {
                     var variable = Expression.Variable(parameterType);
@@ -65,7 +64,6 @@ namespace Fireasy.Common.Reflection
 
                     argExpression = variable;
                 }
-#endif
 
                 argsExpression[i] = argExpression;
             }
@@ -95,11 +93,7 @@ namespace Fireasy.Common.Reflection
                 }
                 else
                 {
-#if !NET35
                     callExpression = Expression.Block(callExpression, Expression.Constant(null));
-#else
-                    callExpression = EnsureCastExpression(callExpression, typeof(void));
-#endif
                 }
             }
             else
@@ -107,7 +101,6 @@ namespace Fireasy.Common.Reflection
                 callExpression = EnsureCastExpression(callExpression, type);
             }
 
-#if !NET35
             if (refParameterMap.Count > 0)
             {
                 var variableExpressions = new List<ParameterExpression>();
@@ -126,7 +119,6 @@ namespace Fireasy.Common.Reflection
 
                 callExpression = Expression.Block(variableExpressions, bodyExpressions);
             }
-#endif
 
             return callExpression;
         }

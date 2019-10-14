@@ -62,11 +62,7 @@ namespace Fireasy.Data.Converter
             }
 
             var size = (Size)value;
-#if NET35
-            return string.Join(",", new[] { size.Width.ToString(), size.Height.ToString() });
-#else
             return string.Join(",", new[] { size.Width, size.Height });
-#endif
         }
     }
 }

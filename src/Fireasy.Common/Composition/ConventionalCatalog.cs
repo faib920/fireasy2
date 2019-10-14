@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NET35
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
@@ -217,4 +216,3 @@ namespace Fireasy.Common.Composition
 
     }
 }
-#endif

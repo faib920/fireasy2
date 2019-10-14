@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Xml;
 using Fireasy.Common.Extensions;
 using System.Collections;
-#if !NET35
 using System.Dynamic;
-using Fireasy.Common.Dynamic;
-#endif
 using System.Data;
 using Fireasy.Common.Reflection;
 using System.Collections.ObjectModel;
@@ -23,6 +19,7 @@ namespace Fireasy.Common.Serialization
         private XmlReader xmlReader;
         private bool isDisposed;
         private static MethodInfo mthToArray = typeof(Enumerable).GetMethod(nameof(Enumerable.ToArray), BindingFlags.Public | BindingFlags.Static);
+        private TypeConverterCache<XmlConverter> cacheConverter = new TypeConverterCache<XmlConverter>();
 
         internal XmlDeserialize(XmlSerializer serializer, XmlReader reader, XmlSerializeOption option)
             : base(option)
@@ -52,13 +49,11 @@ namespace Fireasy.Common.Serialization
                 return value;
             }
 
-#if !NET35
             if (typeof(IDynamicMetaObjectProvider).IsAssignableFrom(type) ||
                 type == typeof(object))
             {
                 return DeserializeDynamicObject(type);
             }
-#endif
 
             if (typeof(IDictionary).IsAssignableFrom(type) && type != typeof(string))
             {
@@ -101,17 +96,7 @@ namespace Fireasy.Common.Serialization
 
         private bool WithConverter(Type type, ref object value)
         {
-            XmlConverter converter;
-            TextConverterAttribute attr;
-            if ((attr = type.GetCustomAttributes<TextConverterAttribute>().FirstOrDefault()) != null &&
-                typeof(XmlConverter).IsAssignableFrom(attr.ConverterType))
-            {
-                converter = attr.ConverterType.New<XmlConverter>();
-            }
-            else
-            {
-                converter = option.Converters.GetReadableConverter(type, new[] { typeof(XmlConverter) }) as XmlConverter;
-            }
+            var converter = cacheConverter.GetReadableConverter(type, option);
 
             if (converter == null || !converter.CanRead)
             {
@@ -156,7 +141,6 @@ namespace Fireasy.Common.Serialization
 
             return value.ToType(type);
         }
-#if !NET35
 
         private object DeserializeDynamicObject(Type type)
         {
@@ -189,17 +173,12 @@ namespace Fireasy.Common.Serialization
 
             return dynamicObject;
         }
-#endif
 
         private object DeserializeList(Type listType)
         {
             IList container = null;
             Type elementType = null;
-#if !NET40 && !NET35
             var isReadonly = listType.IsGenericType && listType.GetGenericTypeDefinition() == typeof(IReadOnlyCollection<>);
-#else
-            var isReadonly = listType.IsGenericType && listType.GetGenericTypeDefinition() == typeof(ReadOnlyCollection<>);
-#endif
 
             CreateListContainer(listType, out elementType, out container);
 

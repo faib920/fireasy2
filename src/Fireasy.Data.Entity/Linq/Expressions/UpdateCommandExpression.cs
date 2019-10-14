@@ -23,8 +23,9 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <param name="table">表的表达式。</param>
         /// <param name="where">条件表达式。</param>
         /// <param name="arguments">更新的列表达式集合。</param>
-        public UpdateCommandExpression(Expression table, Expression where, IEnumerable<ColumnAssignment> arguments)
-            : base(DbExpressionType.Update, typeof(int))
+        /// <param name="isAsync">是否异步执行。</param>
+        public UpdateCommandExpression(Expression table, Expression where, IEnumerable<ColumnAssignment> arguments, bool isAsync)
+            : base(DbExpressionType.Update, isAsync, typeof(int))
         {
             Table = table;
             Where = where;
@@ -58,7 +59,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
             return table != Table ||
                 where != Where ||
                 arguments != Assignments
-                ? new UpdateCommandExpression(table, where, arguments) : this;
+                ? new UpdateCommandExpression(table, where, arguments, IsAsync) : this;
         }
 
     }

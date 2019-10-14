@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -99,7 +100,14 @@ namespace Fireasy.Common.Linq.Expressions
         {
             if (instance != methodCallExp.Object || method != methodCallExp.Method || arguments != methodCallExp.Arguments)
             {
-                return Expression.Call(instance, method, arguments);
+                try
+                {
+                    return Expression.Call(instance, method, arguments);
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
             }
             return methodCallExp;
         }

@@ -112,13 +112,8 @@ namespace Fireasy.Data.Entity
                         var setExp = Expression.Call(
                             Expression.Convert(dbContextParam, contextType), setter, expression);
 
-#if !NET35
                         initDelegates.Add(
                             Expression.Lambda<Action<EntityContext>>(setExp, dbContextParam).Compile());
-#else
-                            initDelegates.Add(
-                                Expression.Lambda<Action<EntityContext>>(setExp, dbContextParam).Compile());
-#endif
                     }
                 }
 

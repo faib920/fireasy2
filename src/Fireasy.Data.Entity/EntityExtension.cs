@@ -349,6 +349,16 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
+        /// 判断实体是否实现了 <see cref="IEntity"/>。
+        /// </summary>
+        /// <param name="entityType"></param>
+        /// <returns></returns>
+        internal static bool IsEntityType(this Type entityType)
+        {
+            return typeof(IEntity).IsAssignableFrom(entityType);
+        }
+
+        /// <summary>
         /// 判断实体类型有没有动态编译成代理类型。
         /// </summary>
         /// <param name="entityType"></param>

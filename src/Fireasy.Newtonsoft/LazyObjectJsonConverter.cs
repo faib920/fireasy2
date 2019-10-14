@@ -12,7 +12,7 @@ using Newton = Newtonsoft.Json;
 namespace Fireasy.Newtonsoft
 {
     /// <summary>
-    /// 为 JSON.NET 提供的受延迟加载管理(<see cref="ILazyManager"/>)对象的转换器。
+    /// 为 JSON.NET 提供 <see cref="ILazyManager"/> 类型的转换器。
     /// </summary>
     public class LazyObjectJsonConverter : Newton.JsonConverter
     {

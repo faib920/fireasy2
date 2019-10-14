@@ -6,9 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-#if !NET35
 using Fireasy.Common.Dynamic;
-#endif
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -53,7 +51,6 @@ namespace Fireasy.Data.Entity.Dynamic
             return queryable.Provider.Execute(expression);
         }
 
-#if !NET35
         public static IQueryable Select(this IQueryable queryable, params string[] selector)
         {
             if (queryable == null || selector == null)
@@ -92,7 +89,6 @@ namespace Fireasy.Data.Entity.Dynamic
 
             return queryable.Provider.CreateQuery(expression);
         }
-#endif
 
         public static bool Any(this IRepository repository, Expression predicate)
         {

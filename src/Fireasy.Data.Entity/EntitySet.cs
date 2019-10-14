@@ -313,29 +313,17 @@ namespace Fireasy.Data.Entity
 
         IEnumerable<IEntity> IEntitySet.GetDetachedList()
         {
-#if NET35
-            return detachedList.Cast<IEntity>();
-#else
             return detachedList;
-#endif
         }
 
         IEnumerable<IEntity> IEntitySet.GetAttachedList()
         {
-#if NET35
-            return innerList.Where(s => s.EntityState == EntityState.Attached).Cast<IEntity>().ToList();
-#else
             return innerList.Where(s => s.EntityState == EntityState.Attached).ToList();
-#endif
         }
 
         IEnumerable<IEntity> IEntitySet.GetModifiedList()
         {
-#if NET35
-            return innerList.Where(s => s.EntityState == EntityState.Modified).Cast<IEntity>().ToList();
-#else
             return innerList.Where(s => s.EntityState == EntityState.Modified).ToList();
-#endif
         }
 
         void IEntitySet.Reset()

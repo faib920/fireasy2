@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NET35
 using System.Linq.Expressions;
 
 namespace Fireasy.Common.Dynamic
@@ -26,4 +25,3 @@ namespace Fireasy.Common.Dynamic
         }
     }
 }
-#endif

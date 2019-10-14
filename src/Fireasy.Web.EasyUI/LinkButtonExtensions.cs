@@ -5,9 +5,8 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Web.EasyUI;
 using Fireasy.Web.Mvc;
-#if !NETSTANDARD
+#if !NETCOREAPP
 using System.Web.Mvc;
 #else
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -27,7 +26,7 @@ namespace Fireasy.Web.EasyUI
         /// <param name="settings">参数选项。</param>
         /// <returns></returns>
         public static ExtendHtmlString LinkButton(this
-#if !NETSTANDARD
+#if !NETCOREAPP
             HtmlHelper htmlHelper
 #else
             IHtmlHelper htmlHelper

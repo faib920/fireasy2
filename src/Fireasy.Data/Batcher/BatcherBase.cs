@@ -20,6 +20,7 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Fireasy.Data.Batcher
 {
@@ -56,9 +57,7 @@ namespace Fireasy.Data.Batcher
         protected IList<PropertyFieldMapping> GetNameTypeMapping(object item)
         {
             var result = new List<PropertyFieldMapping>();
-#if !NET35 && !NETSTANDARD
             TypeDescriptorUtility.AddDefaultDynamicProvider();
-#endif
             var resolver = item as IPropertyFieldMappingResolver;
             if (resolver != null)
             {

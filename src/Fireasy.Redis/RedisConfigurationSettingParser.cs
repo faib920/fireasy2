@@ -40,6 +40,7 @@ namespace Fireasy.Redis
                 setting.Ssl = configNode.GetAttributeValue<bool>("ssl");
                 setting.WriteBuffer = configNode.GetAttributeValue<int?>("writeBuffer");
                 setting.AdvanceDelay = configNode.GetAttributeValue<double?>("advanceDelay");
+                setting.LockTimeout = configNode.GetAttributeValue("lockTimeout", 10);
 
                 foreach (XmlNode nd in configNode.SelectNodes("host"))
                 {
@@ -76,6 +77,7 @@ namespace Fireasy.Redis
                 setting.Ssl = configNode["ssl"].To<bool>();
                 setting.WriteBuffer = configNode["writeBuffer"].To<int?>();
                 setting.AdvanceDelay = configNode["advanceDelay"].To<double?>();
+                setting.LockTimeout = configNode["lockTimeout"].To(10);
 
                 foreach (var nd in configNode.GetSection("host").GetChildren())
                 {

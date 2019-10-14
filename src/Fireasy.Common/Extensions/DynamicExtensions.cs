@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NET35
 using Fireasy.Common.Dynamic;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -67,4 +66,3 @@ namespace Fireasy.Common.Extensions
         }
     }
 }
-#endif

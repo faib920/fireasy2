@@ -59,7 +59,7 @@ namespace Fireasy.Data.Entity.Tests
         [TestMethod]
         public void TestModified_New()
         {
-            var product = Products.New();
+            var product = Products.New(true);
             product.ProductName = "fireasy";
 
             Assert.IsTrue(product.IsModified("ProductName"));

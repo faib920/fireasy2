@@ -1,4 +1,4 @@
-﻿#if NETSTANDARD
+﻿#if NETCOREAPP
 using Fireasy.Web.EasyUI.Binders;
 using System.Collections.Generic;
 

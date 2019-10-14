@@ -4,6 +4,7 @@ using Fireasy.Data.Entity.Tests.Models;
 using System.Linq;
 using System.Collections.Generic;
 using Fireasy.Data.Entity.Linq;
+using System.Threading.Tasks;
 
 namespace Fireasy.Data.Entity.Tests
 {
@@ -33,6 +34,22 @@ namespace Fireasy.Data.Entity.Tests
         }
 
         [TestMethod]
+        public async Task TestHasChildrenAsync()
+        {
+            using (var db = new DbContext())
+            {
+                var rep = db.CreateTreeRepository<Depts>();
+                var yn = db.Depts.FirstOrDefault(s => s.DeptName == "云南");
+                var has = await rep.HasChildrenAsync(yn);
+                Assert.IsTrue(has);
+
+                var gz = db.Depts.FirstOrDefault(s => s.DeptName == "贵州");
+                has = await rep.HasChildrenAsync(gz);
+                Assert.IsFalse(has);
+            }
+        }
+
+        [TestMethod]
         public void TestQueryChildren()
         {
             using (var db = new DbContext())
@@ -51,7 +68,7 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var rep = db.CreateTreeRepository<Depts>();
                 var yn = db.Depts.FirstOrDefault(s => s.DeptName == "云南");
-                var list = rep.QueryChildren(yn).Select(s => s.ExtendAs<Depts>(() => new Depts { HasChildren = rep.HasChildren(s, null) } )).ToList();
+                var list = rep.QueryChildren(yn).Select(s => s.ExtendAs<Depts>(() => new Depts { HasChildren = rep.HasChildren(s, t => true) })).ToList();
                 Assert.AreEqual(list[0].DeptName, "昆明");
             }
         }
@@ -82,6 +99,22 @@ namespace Fireasy.Data.Entity.Tests
                 var dept = new Depts { DeptName = "成都" };
 
                 tree.Insert(dept, refer);
+            }
+        }
+
+        [TestMethod]
+        public async Task TestInsertAsync()
+        {
+            using (var db = new DbContext())
+            {
+                var tree = db.CreateTreeRepository<Depts>();
+
+                //参照对象
+                var refer = db.Depts.FirstOrDefault(s => s.DeptName == "四川");
+
+                var dept = new Depts { DeptName = "成都11" };
+
+                await tree.InsertAsync(dept, refer);
             }
         }
 
@@ -117,7 +150,7 @@ namespace Fireasy.Data.Entity.Tests
                 //rep.Insert(dept, sc, EntityTreePosition.Children);
 
                 var dept1 = new Depts { DeptName = "贵州" };
-                rep.Insert(dept1, null, isolation: () => new Depts { DeptType = DeptType.Org });
+                //rep.Insert(dept1, null, isolation: () => new Depts { DeptType = DeptType.Org });
             }
         }
 

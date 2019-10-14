@@ -7,11 +7,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
-#if NET35
-using System.Globalization;
-#endif
 using System.Linq;
-using System.ComponentModel;
 
 namespace Fireasy.Common.Extensions
 {
@@ -75,12 +71,5 @@ namespace Fireasy.Common.Extensions
 
             return dictionary;
         }
-
-#if NET35
-        public static bool HasFlag<T>(this T e, T v) where T : IConvertible
-        {
-            return (e.ToInt32(CultureInfo.CurrentCulture) & v.ToInt32(CultureInfo.CurrentCulture)) != 0;
-        }
-#endif
     }
 }

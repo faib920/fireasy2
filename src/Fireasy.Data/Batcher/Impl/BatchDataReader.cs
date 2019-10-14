@@ -401,9 +401,7 @@ namespace Fireasy.Data.Batcher
             }
             else
             {
-#if !NET35
                 TypeDescriptorUtility.AddDefaultDynamicProvider();
-#endif
                 foreach (PropertyDescriptor property in TypeDescriptor.GetProperties(e.Current))
                 {
                     if (property.PropertyType.IsDbTypeSupported())
