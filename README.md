@@ -2,7 +2,7 @@
 
 Fireasy是一套基于.Net Framework应用开发组件，其主旨思想为“让开发变为更简单”，其义为，使用尽可能少的组件，实现你所需的功能。Fireasy几乎覆盖了开发中可能使用到的技术，比如Log、Cache、AOP、IOC、ORM、MVC等等，并提供了Redis、RabbitMQ、NLog、Log4net等这些组件的适配。
 
-Fireasy 支持 net3.5/net4.0/net4.5/net4.6/net4.7/netstandard2.0，只需一个dll即可，已发布到 nuget ，搜索添加即可。
+Fireasy 支持 net3.5(已废弃)/net4.0(已废弃)/net4.5/net4.6/net4.7/netstandard2.0/netstandard2.1，只需一个dll即可，已发布到 nuget ，搜索添加即可。
 
 *	[Fireasy.Common](https://www.nuget.org/packages/Fireasy.Common)
 *	[Fireasy.Data](https://www.nuget.org/packages/Fireasy.Data)
