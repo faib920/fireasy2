@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Fireasy.Common\Fireasy.Common.csproj" />
+    <ProjectReference Include="..\..\src\Fireasy.Data.Entity\Fireasy.Data.Entity.csproj" />
+    <ProjectReference Include="..\..\src\Fireasy.Web.Mvc\Fireasy.Web.Mvc.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# CS8425: 异步迭代器成员具有一个或多个类型为 "CancellationToken" 的参数，但它们都未用 "EnumeratorCancellation" 属性修饰，因此将不使用所生成的 "IAsyncEnumerable<>.GetAsyncEnumerator" 中的取消令牌参数
+dotnet_diagnostic.CS8425.severity = none
