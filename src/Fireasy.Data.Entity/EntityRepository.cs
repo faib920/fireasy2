@@ -17,6 +17,7 @@ using Fireasy.Data.Entity.Validation;
 using System.Threading.Tasks;
 using Fireasy.Common.Extensions;
 using System.Threading;
+using System.ComponentModel;
 
 namespace Fireasy.Data.Entity
 {
@@ -24,7 +25,7 @@ namespace Fireasy.Data.Entity
     /// 表示在 <see cref="EntityContext"/> 实例中对实体 <typeparamref name="TEntity"/> 的仓储。它可以用于直接对实体进行创建、查询、修改和删除。
     /// </summary>
     /// <typeparam name="TEntity"></typeparam>
-    public sealed class EntityRepository<TEntity> : IOrderedQueryable<TEntity>, IQueryProviderAware, IRepository<TEntity> where TEntity : IEntity
+    public sealed class EntityRepository<TEntity> : IOrderedQueryable<TEntity>, IQueryProviderAware, IRepository<TEntity>, IListSource where TEntity : IEntity
     {
         private IRepositoryProvider<TEntity> repositoryProxy;
         private EntityContextOptions options;
@@ -62,7 +63,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public TEntity Get(params PropertyValue[] primaryValues)
         {
-            return GetAsync(primaryValues).Result;
+            return repositoryProxy.Get(primaryValues);
         }
 
         /// <summary>
@@ -84,7 +85,12 @@ namespace Fireasy.Data.Entity
         /// <returns>如果主键是自增类型，则为主键值，否则为影响的实体数。</returns>
         public int Insert(TEntity entity)
         {
-            return InsertAsync(entity).Result;
+            Guard.ArgumentNull(entity, nameof(entity));
+
+            SetDefaultValue(entity);
+
+            return EntityPersistentSubscribeManager.OnCreate<TEntity, int>(options.NotifyEvents, entity,
+                () => repositoryProxy.Insert(HandleValidate(entity)));
         }
 
         /// <summary>
@@ -97,7 +103,9 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return await EntityPersistentSubscribeManager.OnCreateAsync(options.NotifyEvents, entity,
+            SetDefaultValue(entity);
+
+            return await EntityPersistentSubscribeManager.OnCreateAsync<TEntity, int>(options.NotifyEvents, entity,
                 () => repositoryProxy.InsertAsync(HandleValidate(entity), cancellationToken));
         }
 
@@ -108,7 +116,10 @@ namespace Fireasy.Data.Entity
         /// <returns>如果主键是自增类型，则为主键值，否则为影响的实体数。</returns>
         public int Insert(Expression<Func<TEntity>> factory)
         {
-            return InsertAsync(factory).Result;
+            var entity = EntityProxyManager.GetType(typeof(TEntity)).New<TEntity>();
+            entity.InitByExpression(factory);
+
+            return Insert(entity);
         }
 
         /// <summary>
@@ -135,7 +146,9 @@ namespace Fireasy.Data.Entity
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
         public void BatchInsert(IEnumerable<TEntity> entities, int batchSize = 1000, Action<int> completePercentage = null)
         {
-            BatchInsertAsync(entities, batchSize, completePercentage);
+            Guard.ArgumentNull(entities, nameof(entities));
+
+            repositoryProxy.BatchInsert(entities, batchSize, completePercentage);
         }
 
         /// <summary>
@@ -162,7 +175,20 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int InsertOrUpdate(TEntity entity)
         {
-            return InsertOrUpdateAsync(entity).Result;
+            Guard.ArgumentNull(entity, nameof(entity));
+
+            var properties = PropertyUnity.GetPrimaryProperties(typeof(TEntity));
+            var isNew = entity.EntityState == EntityState.Attached;
+
+            if (isNew && properties.Any(s => !PropertyValue.IsEmptyOrDefault(entity.GetValue(s))))
+            {
+                var parExp = Expression.Parameter(typeof(TEntity), "s");
+                var equalExp = properties.Select(s => Expression.Equal(Expression.MakeMemberAccess(parExp, s.Info.ReflectionInfo), Expression.Constant(entity.GetValue(s)))).Aggregate(Expression.And);
+                var lambdaExp = Expression.Lambda<Func<TEntity, bool>>(equalExp, parExp);
+                isNew = !this.Any(lambdaExp);
+            }
+
+            return isNew ? Insert(entity) : Update(entity);
         }
 
         /// <summary>
@@ -186,7 +212,7 @@ namespace Fireasy.Data.Entity
                 isNew = !this.Any(lambdaExp);
             }
 
-            return await (isNew ? InsertAsync(entity, cancellationToken) : UpdateAsync(entity, cancellationToken));
+            return isNew ? await InsertAsync(entity, cancellationToken) : await UpdateAsync(entity, cancellationToken);
         }
         #endregion
 
@@ -201,8 +227,8 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return EntityPersistentSubscribeManager.OnRemove(options.NotifyEvents, entity,
-                () => repositoryProxy.DeleteAsync(entity, logicalDelete).Result);
+            return EntityPersistentSubscribeManager.OnRemove<TEntity, int>(options.NotifyEvents, entity,
+                () => repositoryProxy.Delete(entity, logicalDelete));
         }
 
         /// <summary>
@@ -216,7 +242,7 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return await EntityPersistentSubscribeManager.OnRemoveAsync(options.NotifyEvents, entity,
+            return await EntityPersistentSubscribeManager.OnRemoveAsync<TEntity, int>(options.NotifyEvents, entity,
                 () => repositoryProxy.DeleteAsync(entity, logicalDelete, cancellationToken));
         }
 
@@ -227,7 +253,13 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Delete(params PropertyValue[] primaryValues)
         {
-            return DeleteAsync(primaryValues).Result;
+            var ret = repositoryProxy.Delete(primaryValues);
+            if (ret > 0 && options.NotifyEvents)
+            {
+                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
+            }
+
+            return ret;
         }
 
         /// <summary>
@@ -254,7 +286,13 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Delete(PropertyValue[] primaryValues, bool logicalDelete = true)
         {
-            return DeleteAsync(primaryValues, logicalDelete).Result;
+            var ret = repositoryProxy.Delete(primaryValues, logicalDelete);
+            if (ret > 0 && options.NotifyEvents)
+            {
+                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
+            }
+
+            return ret;
         }
 
         /// <summary>
@@ -266,7 +304,7 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public async Task<int> DeleteAsync(PropertyValue[] primaryValues, bool logicalDelete = true, CancellationToken cancellationToken = default)
         {
-            var ret = await repositoryProxy.DeleteAsync(primaryValues, logicalDelete);
+            var ret = await repositoryProxy.DeleteAsync(primaryValues, logicalDelete, cancellationToken);
             if (ret > 0 && options.NotifyEvents)
             {
                 EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
@@ -283,7 +321,13 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Delete(Expression<Func<TEntity, bool>> predicate, bool logicalDelete = true)
         {
-            return DeleteAsync(predicate, logicalDelete).Result;
+            var ret = repositoryProxy.Delete(predicate, logicalDelete);
+            if (ret > 0 && options.NotifyEvents)
+            {
+                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
+            }
+
+            return ret;
         }
 
         /// <summary>
@@ -314,7 +358,10 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Update(TEntity entity)
         {
-            return UpdateAsync(entity).Result;
+            Guard.ArgumentNull(entity, nameof(entity));
+
+            return EntityPersistentSubscribeManager.OnUpdate<TEntity, int>(options.NotifyEvents, entity,
+                () => repositoryProxy.Update(HandleValidate(entity)));
         }
 
         /// <summary>
@@ -327,7 +374,7 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return await EntityPersistentSubscribeManager.OnUpdateAsync(options.NotifyEvents, entity,
+            return await EntityPersistentSubscribeManager.OnUpdateAsync<TEntity, int>(options.NotifyEvents, entity,
                 () => repositoryProxy.UpdateAsync(HandleValidate(entity), cancellationToken));
         }
 
@@ -339,7 +386,13 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Update(TEntity entity, Expression<Func<TEntity, bool>> predicate)
         {
-            return UpdateAsync(entity, predicate).Result;
+            var ret = repositoryProxy.Update(entity, predicate);
+            if (ret > 0 && options.NotifyEvents)
+            {
+                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterUpdate);
+            }
+
+            return ret;
         }
 
         /// <summary>
@@ -368,7 +421,10 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Update(Expression<Func<TEntity>> factory, Expression<Func<TEntity, bool>> predicate)
         {
-            return UpdateAsync(factory, predicate).Result;
+            var entity = EntityProxyManager.GetType(typeof(TEntity)).New<TEntity>();
+            entity.InitByExpression(factory);
+
+            return predicate == null ? Update(entity) : Update(entity, predicate);
         }
 
         /// <summary>
@@ -394,7 +450,13 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Update(Expression<Func<TEntity, TEntity>> calculator, Expression<Func<TEntity, bool>> predicate)
         {
-            return UpdateAsync(calculator, predicate).Result;
+            var ret = repositoryProxy.Update(calculator, predicate);
+            if (ret > 0 && options.NotifyEvents)
+            {
+                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterUpdate);
+            }
+
+            return ret;
         }
 
         /// <summary>
@@ -426,7 +488,17 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public int Batch(IEnumerable<TEntity> instances, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation)
         {
-            return BatchAsync(instances, fnOperation).Result;
+            if (instances.IsNullOrEmpty())
+            {
+                return -1;
+            }
+
+            var operateName = OperateFinder.Find(fnOperation);
+            var eventType = GetBeforeEventType(operateName);
+
+            return EntityPersistentSubscribeManager.OnBatch<TEntity, int>(options.NotifyEvents,
+                instances.Cast<IEntity>(), eventType,
+                () => repositoryProxy.Batch(instances, fnOperation));
         }
 
         /// <summary>
@@ -446,8 +518,9 @@ namespace Fireasy.Data.Entity
             var operateName = OperateFinder.Find(fnOperation);
             var eventType = GetBeforeEventType(operateName);
 
-            return await EntityPersistentSubscribeManager.OnBatchAsync(options.NotifyEvents, instances.Cast<IEntity>(), eventType, () => repositoryProxy.BatchAsync(instances, fnOperation, cancellationToken));
-
+            return await EntityPersistentSubscribeManager.OnBatchAsync<TEntity, int>(options.NotifyEvents, 
+                instances.Cast<IEntity>(), eventType,
+                () => repositoryProxy.BatchAsync(instances, fnOperation, cancellationToken));
         }
         #endregion
 
@@ -631,6 +704,11 @@ namespace Fireasy.Data.Entity
             return entity;
         }
 
+        /// <summary>
+        /// 处理实体验证。
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
         private TEntity HandleValidate(TEntity entity)
         {
             if (options.ValidateEntity)
@@ -639,6 +717,23 @@ namespace Fireasy.Data.Entity
             }
 
             return entity;
+        }
+
+        /// <summary>
+        /// 设置默认值。
+        /// </summary>
+        /// <param name="entity"></param>
+        private void SetDefaultValue(TEntity entity)
+        {
+            var isNotCompiled = entity.EntityType.IsNotCompiled();
+            foreach (var property in PropertyUnity.GetPersistentProperties(EntityType))
+            {
+                var isModify = isNotCompiled ? !PropertyValue.IsEmpty(entity.GetValue(property)) : entity.IsModified(property.Name);
+                if (!isModify && !PropertyValue.IsEmpty(property.Info.DefaultValue))
+                {
+                    entity.SetValue(property, property.Info.DefaultValue);
+                }
+            }
         }
 
         /// <summary>
@@ -728,5 +823,17 @@ namespace Fireasy.Data.Entity
         {
             get { return repositoryProxy.Queryable.Expression; }
         }
+
+        IList IListSource.GetList()
+        {
+            if (repositoryProxy.Queryable is IListSource source)
+            {
+                return source.GetList();
+            }
+
+            return null;
+        }
+
+        public bool ContainsListCollection => throw new NotImplementedException();
     }
 }

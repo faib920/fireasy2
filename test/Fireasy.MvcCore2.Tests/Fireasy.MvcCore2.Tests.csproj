@@ -18,4 +18,11 @@
     <ProjectReference Include="..\Fireasy.MvcCore.Services\Fireasy.MvcCore.Services.csproj" />
   </ItemGroup>
 
+
+  <ItemGroup>
+    <EmbeddedResource Update="Test.zh-CN.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>

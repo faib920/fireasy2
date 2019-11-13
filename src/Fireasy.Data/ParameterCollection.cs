@@ -324,33 +324,36 @@ namespace Fireasy.Data
         /// 添加参数对象，用于输入型参数。
         /// </summary>
         /// <param name="parameterName">参数名称。</param>
-        /// <param name="sourceColumn">源列名称。</param>
         /// <param name="value">参数的值。</param>
         /// <returns>返回参数对象。</returns>
-        public Parameter Add<T>(string parameterName, string sourceColumn, T value)
+        public ParameterCollection Add<T>(string parameterName, T value)
         {
-            if (ContainsKey(parameterName))
-            {
-                return null;
-            }
-
-            var parameter = new Parameter(parameterName);
-            parameter.DbType = typeof(T).GetDbType();
-            parameter.Value = GetDBNullValue(value);
-
-            arrayList.Add(parameter);
-            return parameter;
+            return Add(parameterName, string.Empty, value);
         }
 
         /// <summary>
         /// 添加参数对象，用于输入型参数。
         /// </summary>
         /// <param name="parameterName">参数名称。</param>
+        /// <param name="sourceColumn">源列名称。</param>
         /// <param name="value">参数的值。</param>
         /// <returns>返回参数对象。</returns>
-        public Parameter Add<T>(string parameterName, T value)
+        public ParameterCollection Add<T>(string parameterName, string sourceColumn, T value)
         {
-            return Add(parameterName, "", value);
+            Add(parameterName, sourceColumn, value, null, null, ParameterDirection.Input);
+            return this;
+        }
+
+        /// <summary>
+        /// 添加输入输出型参数对象。
+        /// </summary>
+        /// <param name="parameterName">参数名称。</param>
+        /// <param name="value">参数的值。</param>
+        /// <param name="size">数据长度，如果为固定长度数据类型，可使用默认值0。</param>
+        /// <returns>参数对象。</returns>
+        public ParameterCollection AddInOut<T>(string parameterName, T value, int? size = null)
+        {
+            return AddInOut<T>(parameterName, string.Empty, value, size);
         }
 
         /// <summary>
@@ -361,9 +364,10 @@ namespace Fireasy.Data
         /// <param name="value">参数的值。</param>
         /// <param name="size">数据长度，如果为固定长度数据类型，可使用默认值0。</param>
         /// <returns>参数对象。</returns>
-        public Parameter AddInOut<T>(string parameterName, string sourceColumn, T value, int size)
+        public ParameterCollection AddInOut<T>(string parameterName, string sourceColumn, T value, int? size = null)
         {
-            return Add(parameterName, sourceColumn, value, null, size, ParameterDirection.InputOutput);
+            Add(parameterName, sourceColumn, value, null, size, ParameterDirection.InputOutput);
+            return this;
         }
 
         /// <summary>
@@ -374,9 +378,34 @@ namespace Fireasy.Data
         /// <param name="dbType">参数的数据类型。</param>
         /// <param name="size">数据长度，如果为固定长度数据类型，可使用默认值0。</param>
         /// <returns>参数对象。</returns>
-        public Parameter AddReturn(string parameterName, string sourceColumn, DbType dbType, int size)
+        public ParameterCollection AddReturn<T>(string parameterName, int? size = null)
         {
-            return Add<object>(parameterName, sourceColumn, null, dbType, size, ParameterDirection.ReturnValue);
+            return AddReturn<T>(parameterName, string.Empty, size);
+        }
+
+        /// <summary>
+        /// 添加返回型参数对象。
+        /// </summary>
+        /// <param name="parameterName">参数名称。</param>
+        /// <param name="sourceColumn">源列名称。</param>
+        /// <param name="size">数据长度，如果为固定长度数据类型，可使用默认值0。</param>
+        /// <returns>参数对象。</returns>
+        public ParameterCollection AddReturn<T>(string parameterName, string sourceColumn, int? size = null)
+        {
+            var dbType = typeof(T).GetDbType();
+            Add<T>(parameterName, sourceColumn, default(T), dbType, size, ParameterDirection.ReturnValue);
+            return this;
+        }
+
+        /// <summary>
+        /// 添加输出型参数对象。
+        /// </summary>
+        /// <param name="parameterName">参数名称。</param>
+        /// <param name="size">数据长度。</param>
+        /// <returns>参数对象。</returns>
+        public ParameterCollection AddOut<T>(string parameterName, int? size = null)
+        {
+            return AddOut<T>(parameterName, string.Empty, size);
         }
 
         /// <summary>
@@ -384,12 +413,13 @@ namespace Fireasy.Data
         /// </summary>
         /// <param name="parameterName">参数名称。</param>
         /// <param name="sourceColumn">源列名称。</param>
-        /// <param name="dbType">参数的数据类型。</param>
         /// <param name="size">数据长度。</param>
         /// <returns>参数对象。</returns>
-        public Parameter AddOut(string parameterName, string sourceColumn, DbType dbType, int size)
+        public ParameterCollection AddOut<T>(string parameterName, string sourceColumn, int? size = null)
         {
-            return Add<object>(parameterName, sourceColumn, null, dbType, size, ParameterDirection.Output);
+            var dbType = typeof(T).GetDbType();
+            Add<T>(parameterName, sourceColumn, default(T), dbType, size, ParameterDirection.Output);
+            return this;
         }
 
         /// <summary>
@@ -409,10 +439,7 @@ namespace Fireasy.Data
                 return null;
             }
 
-            var parameter = new Parameter(parameterName)
-                {
-                    SourceColumn = string.IsNullOrEmpty(sourceColumn) ? parameterName : sourceColumn
-                };
+            var parameter = new Parameter(parameterName);
 
             #region 计算参数的数据类型
             if (dbType != null)
@@ -425,8 +452,17 @@ namespace Fireasy.Data
             }
             #endregion
 
-            parameter.Value = GetDBNullValue(value);
+            if (value != default)
+            {
+                parameter.Value = GetDBNullValue(value);
+            }
+
             parameter.Direction = direction;
+
+            if (!string.IsNullOrEmpty(sourceColumn))
+            {
+                parameter.SourceColumn = sourceColumn;
+            }
 
             #region 计算参数的长度
             if (direction != ParameterDirection.Input)
@@ -450,7 +486,7 @@ namespace Fireasy.Data
         /// 从一个参数集合中添加对象。
         /// </summary>
         /// <param name="parameters">另一个参数集合。</param>
-        public void Add(ParameterCollection parameters)
+        public ParameterCollection Add(ParameterCollection parameters)
         {
             foreach (Parameter parameter in parameters)
             {
@@ -459,13 +495,15 @@ namespace Fireasy.Data
                     Add(parameter.Clone());
                 }
             }
+
+            return this;
         }
 
         /// <summary>
         /// 将一个参数数组添加到集合中。
         /// </summary>
         /// <param name="parameters">提供的参数数组。</param>
-        public void AddRange(Parameter[] parameters)
+        public ParameterCollection AddRange(Parameter[] parameters)
         {
             foreach (Parameter parameter in parameters)
             {
@@ -474,6 +512,8 @@ namespace Fireasy.Data
                     Add(parameter);
                 }
             }
+
+            return this;
         }
 
         /// <summary>

@@ -210,9 +210,10 @@ namespace Fireasy.Data.Entity
         /// 开始事务。
         /// </summary>
         /// <param name="level"></param>
-        public void BeginTransaction(IsolationLevel level = IsolationLevel.ReadUncommitted)
+        public void BeginTransaction(IsolationLevel? level = null)
         {
-            service.BeginTransaction(level);
+            level ??= options.IsolationLevel;
+            service.BeginTransaction(level.Value);
         }
 
         /// <summary>

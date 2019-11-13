@@ -39,7 +39,7 @@ namespace Fireasy.Web.Mvc
                 context.Session.Keys.Count() == 0 &&
                 context.User.Identity.IsAuthenticated)
             {
-                notification.Invoke(context);
+                await notification.InvokeAsync(context);
             }
 
             await next(context);

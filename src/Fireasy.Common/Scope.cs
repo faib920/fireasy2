@@ -9,6 +9,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if !NET45
+using System.Threading;
+#endif
 using Fireasy.Common.Extensions;
 
 namespace Fireasy.Common
@@ -23,8 +26,12 @@ namespace Fireasy.Common
         private readonly bool isSingleton;
         private bool isDisposed;
 
+#if !NET45
+        private static AsyncLocal<Stack<T>> staticStack = new AsyncLocal<Stack<T>>();
+#else
         [ThreadStatic]
-        private static Stack<T> Bstack = new Stack<T>();
+        private static Stack<T> staticStack = new Stack<T>();
+#endif
 
         /// <summary>
         /// 获取当前线程范围内的当前实例。
@@ -158,7 +165,16 @@ namespace Fireasy.Common
 
         private static Stack<T> GetScopeStack()
         {
-            return Bstack ?? (Bstack = new Stack<T>());
+#if !NET45
+            if (staticStack.Value == null)
+            {
+                staticStack.Value = new Stack<T>();
+            }
+
+            return staticStack.Value;
+#else
+            return staticStack ?? (staticStack = new Stack<T>());
+#endif
         }
     }
 }

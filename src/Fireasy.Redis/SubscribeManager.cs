@@ -16,6 +16,7 @@ using System;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using Fireasy.Common.Extensions;
 
 namespace Fireasy.Redis
 {
@@ -141,21 +142,19 @@ namespace Fireasy.Redis
         {
             var client = GetConnection();
             var name = TopicHelper.GetTopicName(typeof(TSubject));
-#if NETSTANDARD
-            channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
-                .Add(client.Subscribe((name, msg =>
-                {
-                    var subject = Deserialize<TSubject>(msg.Body);
-                    subscriber(subject);
-                }
-            )));
-#else
-            client.GetSubscriber().Subscribe(name, (channel, value) =>
-                {
-                    var subject = Deserialize<TSubject>(Encoding.UTF8.GetString(value));
-                    subscriber(subject);
-                });
-#endif
+            AddSubscriber<TSubject>(name, subscriber);
+        }
+
+        /// <summary>
+        /// 在 Redis 服务器中添加一个订阅方法。
+        /// </summary>
+        /// <typeparam name="TSubject"></typeparam>
+        /// <param name="subscriber">读取主题的方法。</param>
+        public void AddAsyncSubscriber<TSubject>(Func<TSubject, Task> subscriber) where TSubject : class
+        {
+            var client = GetConnection();
+            var name = TopicHelper.GetTopicName(typeof(TSubject));
+            AddAsyncSubscriber<TSubject>(name, subscriber);
         }
 
         /// <summary>
@@ -170,16 +169,103 @@ namespace Fireasy.Redis
 #if NETSTANDARD
             channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((name, msg =>
-                {
-                    var subject = Deserialize<TSubject>(msg.Body);
-                    subscriber(subject);
-                }
-            )));
+                    {
+                        TSubject subject = null;
+                        try
+                        {
+                            subject = Deserialize<TSubject>(msg.Body);
+                            subscriber(subject);
+                        }
+                        catch
+                        {
+                            if (Setting.RequeueDelayTime != null && subject != null)
+                            {
+                                Task.Run(() =>
+                                    {
+                                        Thread.Sleep(Setting.RequeueDelayTime.Value);
+                                        Publish(name, subject);
+                                    });
+                            }
+                        }
+                    }
+                )));
 #else
             client.GetSubscriber().Subscribe(name, (channel, value) =>
                 {
-                    var subject = Deserialize<TSubject>(Encoding.UTF8.GetString(value));
-                    subscriber(subject);
+                    TSubject subject = null;
+                    try
+                    {
+                        subject = Deserialize<TSubject>(Encoding.UTF8.GetString(value));
+                        subscriber(subject);
+                    }
+                    catch
+                    {
+                        if (Setting.RequeueDelayTime != null && subject != null)
+                        {
+                            Task.Run(() =>
+                                {
+                                    Thread.Sleep(Setting.RequeueDelayTime.Value);
+                                    Publish(name, subject);
+                                });
+                        }
+                    }
+                });
+#endif
+        }
+
+
+        /// <summary>
+        /// 在 Redis 服务器中添加一个订阅方法。
+        /// </summary>
+        /// <typeparam name="TSubject"></typeparam>
+        /// <param name="name">主题名称。</param>
+        /// <param name="subscriber">读取主题的方法。</param>
+        public void AddAsyncSubscriber<TSubject>(string name, Func<TSubject, Task> subscriber) where TSubject : class
+        {
+            var client = GetConnection();
+#if NETSTANDARD
+            channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
+                .Add(client.Subscribe((name, msg =>
+                    {
+                        TSubject subject = null;
+                        try
+                        {
+                            subject = Deserialize<TSubject>(msg.Body);
+                            subscriber(subject).AsSync();
+                        }
+                        catch
+                        {
+                            if (Setting.RequeueDelayTime != null && subject != null)
+                            {
+                                Task.Run(() =>
+                                    {
+                                        Thread.Sleep(Setting.RequeueDelayTime.Value);
+                                        Publish(name, subject);
+                                    });
+                            }
+                        }
+                    }
+                )));
+#else
+            client.GetSubscriber().Subscribe(name, (channel, value) =>
+                {
+                    TSubject subject = null;
+                    try
+                    {
+                        subject = Deserialize<TSubject>(Encoding.UTF8.GetString(value));
+                        subscriber(subject).AsSync();
+                    }
+                    catch
+                    {
+                        if (Setting.RequeueDelayTime != null && subject != null)
+                        {
+                            Task.Run(() =>
+                                {
+                                    Thread.Sleep(Setting.RequeueDelayTime.Value);
+                                    Publish(name, subject);
+                                });
+                        }
+                    }
                 });
 #endif
         }
@@ -196,21 +282,50 @@ namespace Fireasy.Redis
 #if NETSTANDARD
             channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((name, msg =>
-                {
-                    var subject = Deserialize(subjectType, msg.Body);
-                    if (subject != null)
                     {
-                        subscriber.DynamicInvoke(subject);
+                        object subject = null;
+                        try
+                        {
+                            subject = Deserialize(subjectType, msg.Body);
+                            if (subject != null)
+                            {
+                                subscriber.DynamicInvoke(subject);
+                            }
+                        }
+                        catch
+                        {
+                            if (Setting.RequeueDelayTime != null)
+                            {
+                                Task.Run(() =>
+                                    {
+                                        Thread.Sleep(Setting.RequeueDelayTime.Value);
+                                        Publish(name, msg.Body);
+                                    });
+                            }
+                        }
                     }
-                }
-            )));
+                )));
 #else
             client.GetSubscriber().Subscribe(name, (channel, value) =>
                 {
                     var subject = Deserialize(subjectType, Encoding.UTF8.GetString(value));
                     if (subject != null)
                     {
-                        subscriber.DynamicInvoke(subject);
+                        try
+                        {
+                            subscriber.DynamicInvoke(subject);
+                        }
+                        catch
+                        {
+                            if (Setting.RequeueDelayTime != null)
+                            {
+                                Task.Run(() =>
+                                    {
+                                        Thread.Sleep(Setting.RequeueDelayTime.Value);
+                                        Publish(name, (byte[])value);
+                                    });
+                            }
+                        }
                     }
                 });
 #endif
@@ -227,14 +342,43 @@ namespace Fireasy.Redis
 #if NETSTANDARD
             channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((name, msg =>
-                {
-                    subscriber.DynamicInvoke(Encoding.UTF8.GetBytes(msg.Body));
-                }
+                    {
+                        var bytes = Encoding.UTF8.GetBytes(msg.Body);
+                        try
+                        {
+                            subscriber.DynamicInvoke(bytes);
+                        }
+                        catch
+                        {
+                            if (Setting.RequeueDelayTime != null)
+                            {
+                                Task.Run(() =>
+                                    {
+                                        Thread.Sleep(Setting.RequeueDelayTime.Value);
+                                        Publish(name, bytes);
+                                    });
+                            }
+                        }
+                    }
             )));
 #else
             client.GetSubscriber().Subscribe(name, (c, value) =>
                 {
-                    subscriber.DynamicInvoke((byte[])value);
+                    try
+                    {
+                        subscriber.DynamicInvoke((byte[])value);
+                    }
+                    catch
+                    {
+                        if (Setting.RequeueDelayTime != null)
+                        {
+                            Task.Run(() =>
+                                {
+                                    Thread.Sleep(Setting.RequeueDelayTime.Value);
+                                    Publish(name, (byte[])value);
+                                });
+                        }
+                    }
                 });
 #endif        
         }
@@ -254,7 +398,6 @@ namespace Fireasy.Redis
         /// <param name="subjectType">主题的类型。</param>
         public void RemoveSubscriber(Type subjectType)
         {
-            var client = GetConnection();
             var channelName = TopicHelper.GetTopicName(subjectType);
             RemoveSubscriber(channelName);
         }

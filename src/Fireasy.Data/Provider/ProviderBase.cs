@@ -6,9 +6,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
+using Fireasy.Common.Threading;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.IO;
 using System.Linq;
@@ -22,7 +25,7 @@ namespace Fireasy.Data.Provider
     {
         private DbProviderFactory factory;
         private IProviderFactoryResolver[] resolvers;
-        private Dictionary<string, IProviderService> services = new Dictionary<string, IProviderService>();
+        private SafetyDictionary<string, IProviderService> services = new SafetyDictionary<string, IProviderService>();
 
         /// <summary>
         /// 初始化 <see cref="ProviderBase"/> 类的新实例。
@@ -51,7 +54,7 @@ namespace Fireasy.Data.Provider
         /// </summary>
         public virtual DbProviderFactory DbProviderFactory
         {
-            get { return factory ?? (factory = InitDbProviderFactory()); }
+            get { return SingletonLocker.Lock(ref factory, () => InitDbProviderFactory()); }
         }
 
         /// <summary>
@@ -117,10 +120,7 @@ namespace Fireasy.Data.Provider
         /// <param name="provider"></param>
         public virtual void RegisterService<TService>(TService provider) where TService : class, IProviderService
         {
-            lock (services)
-            {
-                services.AddOrReplace(typeof(TService).Name, provider);
-            }
+            services.AddOrUpdate(typeof(TService).Name, () => provider);
         }
 
         /// <summary>
@@ -130,10 +130,7 @@ namespace Fireasy.Data.Provider
         /// <param name="service"></param>
         public virtual void RegisterService(Type definedType, IProviderService service)
         {
-            lock (services)
-            {
-                services.AddOrReplace(definedType.Name, service);
-            }
+            services.AddOrUpdate(definedType.Name, () => service);
         }
 
         /// <summary>
@@ -177,6 +174,16 @@ namespace Fireasy.Data.Provider
         public virtual DbParameter PrepareParameter(DbParameter parameter)
         {
             return parameter;
+        }
+
+        /// <summary>
+        /// 处理事务级别。
+        /// </summary>
+        /// <param name="level"></param>
+        /// <returns></returns>
+        public virtual IsolationLevel AmendIsolationLevel(IsolationLevel level)
+        {
+            return level;
         }
 
         /// <summary>

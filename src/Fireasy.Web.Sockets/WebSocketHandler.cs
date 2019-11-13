@@ -15,6 +15,9 @@ using System.Threading.Tasks;
 
 namespace Fireasy.Web.Sockets
 {
+    /// <summary>
+    /// WebSocket 处理的抽象类。
+    /// </summary>
     public abstract class WebSocketHandler : IClientProxy, IDisposable
     {
         private WebSocketAcceptContext acceptContext;
@@ -34,6 +37,9 @@ namespace Fireasy.Web.Sockets
         /// </summary>
         public ClientManager Clients { get; private set; }
 
+        /// <summary>
+        /// 初始化 <see cref="WebSocketHandler"/> 类的新实例。
+        /// </summary>
         public WebSocketHandler()
         {
             this.ConnectionId = Guid.NewGuid().ToString();
@@ -44,12 +50,12 @@ namespace Fireasy.Web.Sockets
             Dispose(false);
         }
 
-        public static async Task Accept<T>(WebSocketAcceptContext acceptContext) where T : WebSocketHandler, new()
+        internal static async Task Accept<T>(WebSocketAcceptContext acceptContext) where T : WebSocketHandler, new()
         {
             await Accept(typeof(T), acceptContext);
         }
 
-        public static async Task Accept(Type handlerType, WebSocketAcceptContext acceptContext)
+        internal static async Task Accept(Type handlerType, WebSocketAcceptContext acceptContext)
         {
             using (var handler = handlerType.New<WebSocketHandler>())
             {
@@ -57,7 +63,7 @@ namespace Fireasy.Web.Sockets
             }
         }
 
-        public static async Task Accept(WebSocketHandler handler, WebSocketAcceptContext acceptContext)
+        internal static async Task Accept(WebSocketHandler handler, WebSocketAcceptContext acceptContext)
         {
             handler.cancelToken = new CancellationTokenSource();
             handler.acceptContext = acceptContext;

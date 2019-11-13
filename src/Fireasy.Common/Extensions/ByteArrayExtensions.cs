@@ -14,8 +14,9 @@ namespace Fireasy.Common.Extensions
         /// 将一组字节转换为使用十六进制字符串表示。比如 {255,254} 转为 FFFE。
         /// </summary>
         /// <param name="bytes"></param>
+        /// <param name="lower">是否小写。</param>
         /// <returns></returns>
-        public static string ToHex(this byte[] bytes)
+        public static string ToHex(this byte[] bytes, bool lower = false)
         {
             if (bytes == null)
             {
@@ -26,8 +27,8 @@ namespace Fireasy.Common.Extensions
             for (var i = 0; i < bytes.Length; i++)
             {
                 byte num2 = bytes[i];
-                chArray[2 * i] = NibbleToHex((byte)(num2 >> 4));
-                chArray[(2 * i) + 1] = NibbleToHex((byte)(num2 & 15));
+                chArray[2 * i] = NibbleToHex((byte)(num2 >> 4), lower);
+                chArray[(2 * i) + 1] = NibbleToHex((byte)(num2 & 15), lower);
             }
 
             return new string(chArray);
@@ -60,9 +61,9 @@ namespace Fireasy.Common.Extensions
             return buffer;
         }
 
-        private static char NibbleToHex(byte nibble)
+        private static char NibbleToHex(byte nibble, bool lower)
         {
-            return ((nibble < 10) ? ((char)(nibble + 0x30)) : ((char)((nibble - 10) + 0x41)));
+            return ((nibble < 10) ? ((char)(nibble + 0x30)) : ((char)((nibble - 10) + 0x41 + (lower ? 0x20 : 0))));
         }
 
         private static int HexToInt(char h)

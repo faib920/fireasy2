@@ -81,7 +81,12 @@ namespace Fireasy.Common.Linq.Expressions
         {
             if (constExp.Value is IQueryable queryable)
             {
-                Visit(queryable.Expression);
+                var exp = Visit(queryable.Expression);
+                if (exp != queryable.Expression)
+                {
+                    var querySet = queryable.Provider.CreateQuery(exp);
+                    return Expression.Constant(querySet);
+                }
             }
 
             return constExp;

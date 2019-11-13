@@ -100,14 +100,7 @@ namespace Fireasy.Common.Linq.Expressions
         {
             if (instance != methodCallExp.Object || method != methodCallExp.Method || arguments != methodCallExp.Arguments)
             {
-                try
-                {
-                    return Expression.Call(instance, method, arguments);
-                }
-                catch (Exception ex)
-                {
-                    throw ex;
-                }
+                return Expression.Call(instance, method, arguments);
             }
             return methodCallExp;
         }

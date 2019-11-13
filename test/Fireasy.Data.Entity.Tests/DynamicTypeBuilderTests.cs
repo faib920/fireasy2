@@ -11,6 +11,7 @@ using System.ComponentModel.DataAnnotations;
 using Newtonsoft.Json;
 using System.Linq.Expressions;
 using System.Collections;
+using System.Linq;
 
 namespace Fireasy.Data.Entity.Tests
 {
@@ -73,7 +74,7 @@ namespace Fireasy.Data.Entity.Tests
                 var binExp = Expression.Equal(memExp, valExp);
                 var lambdaExp = Expression.Lambda(binExp, parExp);
 
-                var enumerable = (IEnumerable)db.Set(entityType).Where(lambdaExp).Select("Sex", "Name");
+                var enumerable = (IEnumerable)((IQueryable)db.Set(entityType)).Where(lambdaExp).Select("Sex", "Name");
                 foreach (dynamic item in enumerable)
                 {
                     Console.WriteLine(item.Name);

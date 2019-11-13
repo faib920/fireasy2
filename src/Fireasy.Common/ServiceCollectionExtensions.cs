@@ -14,6 +14,8 @@ using Fireasy.Common.Configuration;
 using Fireasy.Common.Ioc;
 using Fireasy.Common.Ioc.Configuration;
 using Fireasy.Common.Ioc.Registrations;
+using Fireasy.Common.Localization;
+using Fireasy.Common.Localization.Configuration;
 using Fireasy.Common.Logging;
 using Fireasy.Common.Logging.Configuration;
 using Fireasy.Common.Subscribes;
@@ -98,10 +100,11 @@ namespace Microsoft.Extensions.DependencyInjection
             ConfigurationUnity.Bind<LockerConfigurationSection>(configuration);
             ConfigurationUnity.Bind<SubscribeConfigurationSection>(configuration);
             ConfigurationUnity.Bind<ImportConfigurationSection>(configuration);
+            ConfigurationUnity.Bind<StringLocalizerConfigurationSection>(configuration);
 
             if (services != null)
             {
-                services.AddLogger().AddCaching().AddSubscriber().AddLocker();
+                services.AddLogger().AddCaching().AddSubscriber().AddLocker().AddStringLocalizer();
             }
         }
     }

@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Threading;
+using Fireasy.Common.Extensions;
 
 namespace Fireasy.Redis
 {
@@ -231,9 +232,9 @@ namespace Fireasy.Redis
         {
             var client = GetConnection();
 #if NETSTANDARD
-            SetKeyExpirationAsync(client, cacheKey, expiration);
+            SetKeyExpiration(client, cacheKey, expiration);
 #else
-            SetKeyExpirationAsync(GetDb(client), cacheKey, expiration);
+            SetKeyExpiration(GetDb(client), cacheKey, expiration);
 #endif
         }
 
@@ -418,8 +419,52 @@ namespace Fireasy.Redis
         /// <returns></returns>
         public T TryGet<T>(string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration = null)
         {
-            var result = TryGet(typeof(T), cacheKey, () => factory(), expiration);
-            return result == null ? default : (T)result;
+            var client = GetConnection();
+#if NETSTANDARD
+            return Lock(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), () =>
+                {
+                    if (client.Exists(cacheKey))
+                    {
+                        var redisValue = client.Get(cacheKey);
+                        if (!string.IsNullOrEmpty(redisValue))
+                        {
+                            CheckPredictToDelay(client, cacheKey, factory, expiration);
+
+                            return Deserialize<T>(redisValue);
+                        }
+                    }
+
+                    var expiry = GetExpirationTime(expiration);
+                    var value = factory();
+
+                    client.Set(cacheKey, Serialize(value), expiry == null ? -1 : (int)expiry.Value.TotalSeconds);
+
+                    return value;
+                });
+#else
+            var db = GetDb(client);
+
+            return Lock(db, cacheKey, TimeSpan.FromSeconds(Setting.LockTimeout), () =>
+                {
+                    if (db.KeyExists(cacheKey))
+                    {
+                        var redisValue = db.StringGet(cacheKey);
+                        if (!string.IsNullOrEmpty(redisValue))
+                        {
+                            CheckPredictToDelay(db, cacheKey, factory, expiration);
+
+                            return Deserialize<T>(redisValue);
+                        }
+                    }
+
+                    var expiry = GetExpirationTime(expiration);
+                    var value = factory();
+
+                    db.StringSet(cacheKey, Serialize(value), expiry);
+
+                    return value;
+                });
+#endif
         }
 
         /// <summary>
@@ -431,10 +476,54 @@ namespace Fireasy.Redis
         /// <param name="expiration">判断对象过期的对象。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns></returns>
-        public async Task<T> TryGetAsync<T>(string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default)
+        public async Task<T> TryGetAsync<T>(string cacheKey, Func<Task<T>> factory, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default)
         {
-            var result = await TryGetAsync(typeof(T), cacheKey, () => factory(), expiration);
-            return result == null ? default : (T)result;
+            var client = GetConnection();
+#if NETSTANDARD
+            return await LockAsync(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
+                {
+                    if (await client.ExistsAsync(cacheKey))
+                    {
+                        var redisValue = await client.GetAsync(cacheKey);
+                        if (!string.IsNullOrEmpty(redisValue))
+                        {
+                            await CheckPredictToDelayAsync(client, cacheKey, factory, expiration);
+
+                            return Deserialize<T>(redisValue);
+                        }
+                    }
+
+                    var expiry = GetExpirationTime(expiration);
+                    var value = await factory();
+
+                    await client.SetAsync(cacheKey, Serialize(value), expiry == null ? -1 : (int)expiry.Value.TotalSeconds);
+
+                    return value;
+                });
+#else
+            var db = GetDb(client);
+
+            return await LockAsync(db, cacheKey, TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
+                {
+                    if (await db.KeyExistsAsync(cacheKey))
+                    {
+                        var redisValue = await db.StringGetAsync(cacheKey);
+                        if (!string.IsNullOrEmpty(redisValue))
+                        {
+                            await CheckPredictToDelayAsync(db, cacheKey, factory, expiration);
+
+                            return Deserialize<T>(redisValue);
+                        }
+                    }
+
+                    var expiry = GetExpirationTime(expiration);
+                    var value = await factory();
+
+                    await db.StringSetAsync(cacheKey, Serialize(value), expiry);
+
+                    return value;
+                });
+#endif
         }
 
         /// <summary>
@@ -456,7 +545,7 @@ namespace Fireasy.Redis
                         var redisValue = client.Get(cacheKey);
                         if (!string.IsNullOrEmpty(redisValue))
                         {
-                            CheckPredictToDelayAsync(client, cacheKey, factory, expiration);
+                            CheckPredictToDelay(client, cacheKey, factory, expiration);
 
                             return Deserialize(dataType, redisValue);
                         }
@@ -479,7 +568,7 @@ namespace Fireasy.Redis
                         var redisValue = db.StringGet(cacheKey);
                         if (!string.IsNullOrEmpty(redisValue))
                         {
-                            CheckPredictToDelayAsync(db, cacheKey, factory, expiration);
+                            CheckPredictToDelay(db, cacheKey, factory, expiration);
 
                             return Deserialize(dataType, redisValue);
                         }
@@ -504,7 +593,7 @@ namespace Fireasy.Redis
         /// <param name="expiration">判断对象过期的对象。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns></returns>
-        public async Task<object> TryGetAsync(Type dataType, string cacheKey, Func<object> factory, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default)
+        public async Task<object> TryGetAsync(Type dataType, string cacheKey, Func<Task<object>> factory, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default)
         {
             var client = GetConnection();
 #if NETSTANDARD
@@ -522,7 +611,7 @@ namespace Fireasy.Redis
                     }
 
                     var expiry = GetExpirationTime(expiration);
-                    var value = factory();
+                    var value = await factory();
 
                     await client.SetAsync(cacheKey, Serialize(value), expiry == null ? -1 : (int)expiry.Value.TotalSeconds);
 
@@ -545,7 +634,7 @@ namespace Fireasy.Redis
                     }
 
                     var expiry = GetExpirationTime(expiration);
-                    var value = factory();
+                    var value = await factory();
 
                     await db.StringSetAsync(cacheKey, Serialize(value), expiry);
 
@@ -615,7 +704,7 @@ namespace Fireasy.Redis
                     {
                         ret = client.IncrBy(cacheKey, factory() + step);
 
-                        SetKeyExpirationAsync(client, cacheKey, expiration);
+                        SetKeyExpiration(client, cacheKey, expiration);
                     }
 
                     return ret;
@@ -634,7 +723,7 @@ namespace Fireasy.Redis
                     {
                         ret = db.StringIncrement(cacheKey, factory() + step);
 
-                        SetKeyExpirationAsync(db, cacheKey, expiration);
+                        SetKeyExpiration(db, cacheKey, expiration);
                     }
 
                     return ret;
@@ -717,7 +806,7 @@ namespace Fireasy.Redis
                         client.IncrBy(cacheKey, factory());
                         ret = client.IncrBy(cacheKey, -step);
 
-                        SetKeyExpirationAsync(client, cacheKey, expiration);
+                        SetKeyExpiration(client, cacheKey, expiration);
                     }
 
                     return ret;
@@ -737,7 +826,7 @@ namespace Fireasy.Redis
                         db.StringIncrement(cacheKey, factory());
                         ret = db.StringDecrement(cacheKey, step);
 
-                        SetKeyExpirationAsync(db, cacheKey, expiration);
+                        SetKeyExpiration(db, cacheKey, expiration);
                     }
 
                     return ret;
@@ -807,7 +896,37 @@ namespace Fireasy.Redis
         /// <param name="cacheKey"></param>
         /// <param name="factory"></param>
         /// <param name="expiration"></param>
-        private async Task CheckPredictToDelayAsync<T>(CSRedisClient client, string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration = null)
+        private void CheckPredictToDelay<T>(CSRedisClient client, string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration = null)
+        {
+            if (Setting.AdvanceDelay == null)
+            {
+                return;
+            }
+
+            var expiry = GetExpirationTime(expiration);
+
+            if (expiry != null)
+            {
+                //判断过期时间，如果小于指定的时间比例，则提前进行预存
+                var liveTime = client.ObjectIdleTime(cacheKey);
+                if (liveTime != null &&
+                    (liveTime * 1000 / expiry.Value.TotalMilliseconds) <= Setting.AdvanceDelay.Value)
+                {
+                    var value = factory();
+                    client.Set(cacheKey, Serialize(value), (int)expiry.Value.TotalSeconds);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 检查是否需要自动提前延期。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="client"></param>
+        /// <param name="cacheKey"></param>
+        /// <param name="factory"></param>
+        /// <param name="expiration"></param>
+        private async Task CheckPredictToDelayAsync<T>(CSRedisClient client, string cacheKey, Func<Task<T>> factory, Func<ICacheItemExpiration> expiration = null)
         {
             if (Setting.AdvanceDelay == null)
             {
@@ -823,12 +942,22 @@ namespace Fireasy.Redis
                 if (liveTime != null &&
                     (liveTime * 1000 / expiry.Value.TotalMilliseconds) <= Setting.AdvanceDelay.Value)
                 {
-                    await Task.Run(() =>
-                        {
-                            var value = factory();
-                            client.SetAsync(cacheKey, Serialize(value), (int)expiry.Value.TotalSeconds);
-                        });
+                    var value = await factory();
+                    await client.SetAsync(cacheKey, Serialize(value), (int)expiry.Value.TotalSeconds);
                 }
+            }
+        }
+        
+        private void SetKeyExpiration(CSRedisClient client, string cacheKey, Func<ICacheItemExpiration> expiration)
+        {
+            var expiry = GetExpirationTime(expiration);
+            if (expiry != null)
+            {
+                client.Expire(cacheKey, (int)expiry.Value.TotalSeconds);
+            }
+            else
+            {
+                client.Expire(cacheKey, TimeSpan.MaxValue);
             }
         }
 
@@ -853,7 +982,37 @@ namespace Fireasy.Redis
         /// <param name="cacheKey"></param>
         /// <param name="factory"></param>
         /// <param name="expiration"></param>
-        private async Task CheckPredictToDelayAsync<T>(IDatabase db, string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration = null)
+        private void CheckPredictToDelay<T>(IDatabase db, string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration = null)
+        {
+            if (Setting.AdvanceDelay == null)
+            {
+                return;
+            }
+
+            var expiry = GetExpirationTime(expiration);
+
+            if (expiry != null)
+            {
+                //判断过期时间，如果小于指定的时间比例，则提前进行预存
+                var liveTime = db.KeyTimeToLive(cacheKey);
+                if (liveTime != null &&
+                    (liveTime.Value.TotalMilliseconds / expiry.Value.TotalMilliseconds) <= Setting.AdvanceDelay.Value)
+                {
+                    var value = factory();
+                    db.StringSet(cacheKey, Serialize(value), expiry);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 检查是否需要自动提前延期。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="client"></param>
+        /// <param name="cacheKey"></param>
+        /// <param name="factory"></param>
+        /// <param name="expiration"></param>
+        private async Task CheckPredictToDelayAsync<T>(IDatabase db, string cacheKey, Func<Task<T>> factory, Func<ICacheItemExpiration> expiration = null)
         {
             if (Setting.AdvanceDelay == null)
             {
@@ -869,12 +1028,22 @@ namespace Fireasy.Redis
                 if (liveTime != null &&
                     (liveTime.Value.TotalMilliseconds / expiry.Value.TotalMilliseconds) <= Setting.AdvanceDelay.Value)
                 {
-                    await Task.Run(() =>
-                        {
-                            var value = factory();
-                            db.StringSet(cacheKey, Serialize(value), expiry);
-                        });
+                    var value = await factory();
+                    await db.StringSetAsync(cacheKey, Serialize(value), expiry);
                 }
+            }
+        }
+
+        private void SetKeyExpiration(IDatabase db, string cacheKey, Func<ICacheItemExpiration> expiration)
+        {
+            var expiry = GetExpirationTime(expiration);
+            if (expiry != null)
+            {
+                db.KeyExpire(cacheKey, expiry);
+            }
+            else
+            {
+                db.KeyExpire(cacheKey, (TimeSpan?)null);
             }
         }
 

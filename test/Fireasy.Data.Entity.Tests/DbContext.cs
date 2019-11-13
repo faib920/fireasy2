@@ -32,6 +32,8 @@ namespace Fireasy.Data.Entity.Tests
         public EntityRepository<OrderDetails> OrderDetails { get; set; }
 
         public EntityRepository<Depts> Depts { get; set; }
+
+        public EntityRepository<OperateLog> OperateLog { get; set; }
     }
 
     public class MyDatabase : Database

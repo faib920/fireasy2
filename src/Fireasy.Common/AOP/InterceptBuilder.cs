@@ -16,6 +16,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Fireasy.Common.Aop
 {
@@ -112,7 +113,7 @@ namespace Fireasy.Common.Aop
 
             try
             {
-#if OUT
+#if OUT && !NETSTANDARD
                 var proxyType = builder.CreateType();
                 assemblyBuilder.Save();
                 return proxyType;
@@ -220,9 +221,9 @@ namespace Fireasy.Common.Aop
             */
             #endregion
             var callMethod = builder.DefineMethod(
-                string.Concat(AOP_PREFIX, "Intercept"), 
-                null, 
-                new[] { typeof(List<IInterceptor>), typeof(InterceptCallInfo), typeof(InterceptType) }, 
+                string.Concat(AOP_PREFIX, "Intercept"),
+                null,
+                new[] { typeof(List<IInterceptor>), typeof(InterceptCallInfo), typeof(InterceptType) },
                 VisualDecoration.Private, ilCoding: ctx =>
                     {
                         var l1 = ctx.Emitter.DefineLabel();
@@ -256,7 +257,7 @@ namespace Fireasy.Common.Aop
             callMethod.DefineParameter("interceptors");
             callMethod.DefineParameter("callInfo");
             callMethod.DefineParameter("interceptType");
-            
+
             return callMethod;
         }
 
@@ -297,15 +298,15 @@ namespace Fireasy.Common.Aop
              */
             #endregion
             var fieldBuilder = builder.TypeBuilder.DefineField(
-                string.Concat(AOP_PREFIX, methodName, "_Initialized"), 
-                typeof(bool), 
+                string.Concat(AOP_PREFIX, methodName, "_Initialized"),
+                typeof(bool),
                 FieldAttributes.Private);
 
             var callMethod = builder.DefineMethod(
-                string.Concat(AOP_PREFIX, methodName, "_Initialize"), 
-                null, 
-                new[] { typeof(List<IInterceptor>), typeof(InterceptCallInfo) }, 
-                VisualDecoration.Private, 
+                string.Concat(AOP_PREFIX, methodName, "_Initialize"),
+                null,
+                new[] { typeof(List<IInterceptor>), typeof(InterceptCallInfo) },
+                VisualDecoration.Private,
                 ilCoding: ctx =>
                     {
                         var l1 = ctx.Emitter.DefineLabel();
@@ -464,8 +465,8 @@ namespace Fireasy.Common.Aop
             #endregion
             var parameters = method.GetParameters();
             var methodBuilder = builder.DefineMethod(
-                method.Name, 
-                method.ReturnType, 
+                method.Name,
+                method.ReturnType,
                 (from s in parameters select s.ParameterType).ToArray(),
                 ilCoding: ctx =>
                     {
@@ -477,23 +478,24 @@ namespace Fireasy.Common.Aop
                         ctx.Emitter.InitInterceptors(attributes);
                         ctx.Emitter.InitLocal(method, method);
                         ctx.Emitter.BeginExceptionBlock();
-                            ctx.Emitter.CallInitialize(initMethod)
-                            .CallInterceptors(interceptMethod, InterceptType.BeforeMethodCall)
-                            .ldloc(STACK_CALLINFO_INDEX)
-                            .callvirt(InterceptCache.CallInfoGetCancel).brtrue_s(lblCancel)
-                            .Assert(!isInterface, c => c.CallBaseMethod(method)
-                                .Assert(isReturn, e => e.SetReturnValue(method.ReturnType)))
-                            .MarkLabel(lblCancel)
-                            .SetArguments(method)
-                            .CallInterceptors(interceptMethod, InterceptType.AfterMethodCall)
-                        .BeginCatchBlock(typeof(Exception))
-                            .SetException()
-                            .CallInterceptors(interceptMethod, InterceptType.Catching)
-                            .Assert(AllowThrowException(attributes), e => e.ThrowException())
-                        .BeginFinallyBlock()
-                            .CallInterceptors(interceptMethod, InterceptType.Finally)
-                        .EndExceptionBlock()
-                        .Assert(isReturn, e1 => e1.GetReturnValue(method.ReturnType, lblRet), e1 => e1.ret());
+                        ctx.Emitter.CallInitialize(initMethod)
+                        .SetReturnType(method)
+                        .CallInterceptors(interceptMethod, InterceptType.BeforeMethodCall)
+                        .ldloc(STACK_CALLINFO_INDEX)
+                        .callvirt(InterceptCache.CallInfoGetCancel).brtrue_s(lblCancel)
+                        .Assert(!isInterface, c => c.CallBaseMethod(method)
+                            .Assert(isReturn, e => e.SetReturnValue(method.ReturnType)))
+                        .MarkLabel(lblCancel)
+                        .SetArguments(method)
+                        .CallInterceptors(interceptMethod, InterceptType.AfterMethodCall)
+                    .BeginCatchBlock(typeof(Exception))
+                        .SetException()
+                        .CallInterceptors(interceptMethod, InterceptType.Catching)
+                        .Assert(AllowThrowException(attributes), e => e.ThrowException())
+                    .BeginFinallyBlock()
+                        .CallInterceptors(interceptMethod, InterceptType.Finally)
+                    .EndExceptionBlock()
+                    .Assert(isReturn, e1 => e1.GetReturnValue(method.ReturnType, lblRet), e1 => e1.ret());
                     });
 
             foreach (var par in parameters)
@@ -523,8 +525,8 @@ namespace Fireasy.Common.Aop
 
             var parameters = method.GetParameters();
             var methodBuilder = builder.DefineMethod(
-                method.Name, 
-                method.ReturnType, 
+                method.Name,
+                method.ReturnType,
                 (from s in parameters select s.ParameterType).ToArray(),
                 ilCoding: ctx =>
                     {
@@ -535,22 +537,22 @@ namespace Fireasy.Common.Aop
                         ctx.Emitter.InitInterceptors(attributes);
                         ctx.Emitter.InitLocal(property);
                         ctx.Emitter.BeginExceptionBlock();
-                            ctx.Emitter.CallInitialize(initMethod)
-                            .CallInterceptors(interceptMethod, InterceptType.BeforeGetValue)
-                            .ldloc(STACK_CALLINFO_INDEX)
-                            .callvirt(InterceptCache.CallInfoGetCancel).brtrue_s(lblCancel)
-                            .Assert(isInterface, c => c.ldarg_0.ldfld(field.FieldBuilder), c => c.ldarg_0.call(method))
-                            .SetReturnValue(method.ReturnType)
-                            .MarkLabel(lblCancel)
-                            .CallInterceptors(interceptMethod, InterceptType.AfterGetValue)
-                        .BeginCatchBlock(typeof(Exception))
-                            .SetException()
-                            .CallInterceptors(interceptMethod, InterceptType.Catching)
-                            .Assert(AllowThrowException(attributes), e => e.ThrowException())
-                        .BeginFinallyBlock()
-                            .CallInterceptors(interceptMethod, InterceptType.Finally)
-                        .EndExceptionBlock()
-                        .GetReturnValue(property.PropertyType, lblRet);
+                        ctx.Emitter.CallInitialize(initMethod)
+                        .CallInterceptors(interceptMethod, InterceptType.BeforeGetValue)
+                        .ldloc(STACK_CALLINFO_INDEX)
+                        .callvirt(InterceptCache.CallInfoGetCancel).brtrue_s(lblCancel)
+                        .Assert(isInterface, c => c.ldarg_0.ldfld(field.FieldBuilder), c => c.ldarg_0.call(method))
+                        .SetReturnValue(method.ReturnType)
+                        .MarkLabel(lblCancel)
+                        .CallInterceptors(interceptMethod, InterceptType.AfterGetValue)
+                    .BeginCatchBlock(typeof(Exception))
+                        .SetException()
+                        .CallInterceptors(interceptMethod, InterceptType.Catching)
+                        .Assert(AllowThrowException(attributes), e => e.ThrowException())
+                    .BeginFinallyBlock()
+                        .CallInterceptors(interceptMethod, InterceptType.Finally)
+                    .EndExceptionBlock()
+                    .GetReturnValue(property.PropertyType, lblRet);
                     });
 
             foreach (var par in parameters)
@@ -577,11 +579,11 @@ namespace Fireasy.Common.Aop
             var isInterface = builder.BaseType == typeof(object);
 
             var initMethod = DefineInitializeMethod(builder, method.Name);
-            
+
             var parameters = method.GetParameters();
             var methodBuilder = builder.DefineMethod(
-                method.Name, 
-                method.ReturnType, 
+                method.Name,
+                method.ReturnType,
                 (from s in parameters select s.ParameterType).ToArray(),
                 ilCoding: ctx =>
                     {
@@ -590,21 +592,21 @@ namespace Fireasy.Common.Aop
                         ctx.Emitter.InitInterceptors(attributes);
                         ctx.Emitter.InitLocal(property, method);
                         ctx.Emitter.BeginExceptionBlock();
-                            ctx.Emitter.CallInitialize(initMethod)
-                            .CallInterceptors(interceptMethod, InterceptType.BeforeSetValue)
-                            .ldloc(STACK_CALLINFO_INDEX)
-                            .callvirt(InterceptCache.CallInfoGetCancel).brtrue_s(lblCancel)
-                            .Assert(isInterface, c => c.ldarg_0.ldarg_1.stfld(field.FieldBuilder), c => c.ldarg_0.GetArguments(property.PropertyType, 0).call(method))
-                            .MarkLabel(lblCancel)
-                            .CallInterceptors(interceptMethod, InterceptType.AfterSetValue)
-                        .BeginCatchBlock(typeof(Exception))
-                            .SetException()
-                            .CallInterceptors(interceptMethod, InterceptType.Catching)
-                            .Assert(AllowThrowException(attributes), e => e.ThrowException())
-                        .BeginFinallyBlock()
-                            .CallInterceptors(interceptMethod, InterceptType.Finally)
-                        .EndExceptionBlock()
-                        .ret();
+                        ctx.Emitter.CallInitialize(initMethod)
+                        .CallInterceptors(interceptMethod, InterceptType.BeforeSetValue)
+                        .ldloc(STACK_CALLINFO_INDEX)
+                        .callvirt(InterceptCache.CallInfoGetCancel).brtrue_s(lblCancel)
+                        .Assert(isInterface, c => c.ldarg_0.ldarg_1.stfld(field.FieldBuilder), c => c.ldarg_0.GetArguments(property.PropertyType, 0).call(method))
+                        .MarkLabel(lblCancel)
+                        .CallInterceptors(interceptMethod, InterceptType.AfterSetValue)
+                    .BeginCatchBlock(typeof(Exception))
+                        .SetException()
+                        .CallInterceptors(interceptMethod, InterceptType.Catching)
+                        .Assert(AllowThrowException(attributes), e => e.ThrowException())
+                    .BeginFinallyBlock()
+                        .CallInterceptors(interceptMethod, InterceptType.Finally)
+                    .EndExceptionBlock()
+                    .ret();
                     });
 
             foreach (var par in parameters)
@@ -763,11 +765,13 @@ namespace Fireasy.Common.Aop
         /// <returns></returns>
         private static EmitHelper SetReturnValue(this EmitHelper emitter, Type returnType)
         {
+            var taskRetType = returnType.GetTaskReturnType();
+
             return emitter
                 .stloc(STACK_RETURNVALUE_INDEX)
                 .ldloc(STACK_CALLINFO_INDEX)
                 .ldloc(STACK_RETURNVALUE_INDEX)
-                .box(returnType)
+                .Assert(taskRetType != null, e => e.callvirt(returnType.GetProperty("Result").GetMethod).box(taskRetType), e => e.box(returnType))
                 .call(InterceptCache.CallInfoSetReturnValue);
         }
 
@@ -780,6 +784,12 @@ namespace Fireasy.Common.Aop
         /// <returns></returns>
         private static EmitHelper GetReturnValue(this EmitHelper emitter, Type returnType, Label lbRetValNotNull)
         {
+            var taskRetType = returnType.GetTaskReturnType();
+            if (taskRetType != null)
+            {
+                returnType = taskRetType;
+            }
+
             return emitter
                 .ldloc(STACK_CALLINFO_INDEX)
                 .callvirt(InterceptCache.CallInfoGetReturnValue)
@@ -789,14 +799,18 @@ namespace Fireasy.Common.Aop
                         .call(InterceptCache.TypeGetTypeFromHandle)
                         .call(InterceptCache.MethodGetDefaultValue)
                         .Assert(returnType.IsValueType, e => e.unbox_any(returnType))
+                        .Assert(taskRetType != null, e => e.call(InterceptCache.MthTaskFromResult.MakeGenericMethod(taskRetType)))
                         .ret()
                         .MarkLabel(lbRetValNotNull)
                         .ldloc(STACK_CALLINFO_INDEX)
                         .callvirt(InterceptCache.CallInfoGetReturnValue)
                         .Assert(returnType.IsValueType, e => e.unbox_any(returnType))
+                        .Assert(taskRetType != null, e => e.call(InterceptCache.MthTaskFromResult.MakeGenericMethod(taskRetType)))
                         .ret(),
                     e1 =>
-                        e1.ret()
+                        e1
+                        .Assert(taskRetType != null, e => e.call(InterceptCache.MthTaskFromResult.MakeGenericMethod(taskRetType)))
+                        .ret()
                     );
         }
 
@@ -839,6 +853,16 @@ namespace Fireasy.Common.Aop
                     })
                 .ldloc(STACK_ARGUMENT_INDEX)
                 .callvirt(InterceptCache.CallInfoSetArguments);
+        }
+
+        public static EmitHelper SetReturnType(this EmitHelper emitter, MethodInfo method)
+        {
+            var returnType = method.ReturnType.GetTaskReturnType() ?? method.ReturnType;
+            return emitter
+                .ldloc(STACK_CALLINFO_INDEX)
+                .ldtoken(returnType)
+                .call(InterceptCache.TypeGetTypeFromHandle)
+                .callvirt(InterceptCache.CallInfoSetReturnType);
         }
 
         private static EmitHelper GetArguments(this EmitHelper emitter, Type argumentType, int index)

@@ -8,6 +8,7 @@
 #if NETCOREAPP
 
 using Microsoft.AspNetCore.Http;
+using System.Threading.Tasks;
 
 namespace Fireasy.Web.Mvc
 {
@@ -20,7 +21,7 @@ namespace Fireasy.Web.Mvc
         /// 调用事件通知。
         /// </summary>
         /// <param name="context"></param>
-        void Invoke(HttpContext context);
+        Task InvokeAsync(HttpContext context);
     }
 }
 #endif

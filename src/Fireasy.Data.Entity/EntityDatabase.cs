@@ -66,12 +66,6 @@ namespace Fireasy.Data.Entity
             get { return database.Connection; }
         }
 
-        Action<IDbCommand, TimeSpan> IDatabase.Log
-        {
-            get { return database.Log; }
-            set { database.Log = value; }
-        }
-
         bool IDatabase.BeginTransaction(IsolationLevel level)
         {
             return database.BeginTransaction(level);

@@ -76,6 +76,11 @@ namespace Fireasy.Redis
         /// 获取或设置上锁时间（秒）。默认为 10 秒钟。
         /// </summary>
         public int LockTimeout { get; set; }
+
+        /// <summary>
+        /// 获取或设置异常时重入队列的延迟时间（毫秒）。未指定表示不重入队列。
+        /// </summary>
+        public int? RequeueDelayTime { get; set; }
     }
 
     /// <summary>

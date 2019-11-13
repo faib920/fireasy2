@@ -20,7 +20,7 @@ namespace Fireasy.MongoDB
     {
         IProvider IProviderService.Provider { get; set; }
 
-        public void Inject(Type entityType, DynamicAssemblyBuilder assemblyBuilder, DynamicTypeBuilder typeBuilder)
+        void IInjectionProvider.Inject(Type entityType, DynamicAssemblyBuilder assemblyBuilder, DynamicTypeBuilder typeBuilder)
         {
             var propertyBuilder = typeBuilder.DefineProperty("_id", typeof(ObjectId));
             propertyBuilder.DefineGetSetMethods();

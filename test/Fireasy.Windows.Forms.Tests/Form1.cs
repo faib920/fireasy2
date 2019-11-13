@@ -15,6 +15,8 @@ namespace Fireasy.Windows.Forms.Tests
         public Form1()
         {
             InitializeComponent();
+
+            stringLocalizerHolder1.Apply();
         }
 
         private void Form1_Load(object sender, EventArgs e)

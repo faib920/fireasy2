@@ -27,6 +27,11 @@ namespace Fireasy.Common.Aop
         public MemberInfo Member { get; set; }
 
         /// <summary>
+        /// 获取或设置方法的返回类型。
+        /// </summary>
+        public Type ReturnType { get; set; }
+
+        /// <summary>
         /// 获取或设置当前被拦截的目标对象。
         /// </summary>
         public object Target { get; set; }

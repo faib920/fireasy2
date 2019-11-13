@@ -29,6 +29,11 @@ namespace Fireasy.RabbitMQ
         public string Server { get; set; }
 
         /// <summary>
+        /// 获取或设置服务器端口号。
+        /// </summary>
+        public int Port { get; set; }
+
+        /// <summary>
         /// 获取或设置自定义的序列化类。继承自 <see cref="RabbitSerializer"/> 类。
         /// </summary>
         public Type SerializerType { get; set; }
@@ -39,7 +44,12 @@ namespace Fireasy.RabbitMQ
         public string ExchangeType { get; set; }
 
         /// <summary>
-        /// 获取或设置异常时重入队列的延迟时间（毫秒）。默认为 1000 毫秒。
+        /// 获取或设置虚拟主机。
+        /// </summary>
+        public string VirtualHost { get; set; }
+
+        /// <summary>
+        /// 获取或设置异常时重入队列的延迟时间（毫秒）。未指定表示不重入队列。
         /// </summary>
         public int? RequeueDelayTime { get; set; }
     }

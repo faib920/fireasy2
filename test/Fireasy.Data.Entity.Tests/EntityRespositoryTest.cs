@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -32,27 +33,74 @@ namespace Fireasy.Data.Entity.Tests
             InitConfig.Init();
         }
 
+        private class TestScope : Scope<TestScope>
+        {
+            public string Guid { get; set; }
+        }
+
         [TestMethod]
         public void TestGet()
         {
             using (var context = new DbContext())
             {
+                var rr = context.Customers.Get("ALFKI");
                 var customers = context.Customers.Get("ALFKI");
-                customers.Address = "ba";
-                var r = context.Customers.InsertOrUpdate(customers);
-                Assert.AreEqual(1, r);
+                customers.Address = "11";
+                var r = context.Customers.UpdateAsync(customers);
+                //Assert.AreEqual(1, r);
             }
         }
 
         [TestMethod]
         public async Task TestGetAsync()
         {
+            ThreadPool.SetMaxThreads(10, 10);
             using (var context = new DbContext())
             {
                 var customers = await context.Customers.GetAsync("ALFKI");
-                customers.Address = "a11a";
+                customers.Address = "bb";
+                var r = await context.Customers.UpdateAsync(customers);
+                //Assert.AreEqual(1, r);
+            }
+        }
+
+        [TestMethod]
+        public void TestScope1()
+        {
+            Parallel.For(1, 3, i => TestGetScopeAsync(i).AsSync());
+        }
+
+        [TestMethod]
+        public async Task TestGetScopeAsync(int index)
+        {
+            var guid = Guid.NewGuid().ToString();
+
+            using (var scope = new TestScope() {  Guid = guid })
+            using (var context = new DbContext())
+            {
+                Console.WriteLine("ThreadId(" + index + "): " + Thread.CurrentThread.ManagedThreadId + " guid:" + TestScope.Current.Guid);
+
+                var customers = await context.Customers.GetAsync("ALFKI");
+
+                Console.WriteLine("ThreadId(" + index + "): " + Thread.CurrentThread.ManagedThreadId + " guid:" + TestScope.Current.Guid);
+
+                customers.Address = "a11";
+
                 var r = await context.Customers.InsertOrUpdateAsync(customers);
-                Assert.AreEqual(1, r);
+
+                Console.WriteLine("ThreadId(" + index + "): " + Thread.CurrentThread.ManagedThreadId + " guid:" + TestScope.Current.Guid);
+
+                //Assert.AreEqual(1, r);
+            }
+        }
+
+        [TestMethod]
+        public void TestAny()
+        {
+            using (var context = new DbContext())
+            {
+                var ret = context.Customers.Any(s => s.CustomerID == "ALFKI");
+                Assert.IsTrue(ret);
             }
         }
 
@@ -67,12 +115,133 @@ namespace Fireasy.Data.Entity.Tests
         }
 
         [TestMethod]
+        public void TestAll()
+        {
+            using (var context = new DbContext())
+            {
+                var tt = "a";
+                var ret = context.Customers.Where(s => tt == "a" ? s.CustomerID == "ALFKI" : s.CustomerID == "AA").ToList();
+                //Assert.IsFalse(ret);
+            }
+        }
+
+        [TestMethod]
         public async Task TestAllAsync()
         {
             using (var context = new DbContext())
             {
                 var ret = await context.Customers.AllAsync(s => s.CustomerID == "ALFKI");
                 Assert.IsFalse(ret);
+            }
+        }
+
+        [TestMethod]
+        public async Task TestAverageAsync()
+        {
+            using (var context = new DbContext())
+            {
+                var ret = await context.OrderDetails.AverageAsync(s => s.Quantity);
+                Console.WriteLine(ret);
+            }
+        }
+
+        [TestMethod]
+        public async Task TestAverageAsync1()
+        {
+            using (var context = new DbContext())
+            {
+                var ret = await context.OrderDetails.Select(s => s.Quantity).AverageAsync();
+                Console.WriteLine(ret);
+            }
+        }
+
+        [TestMethod]
+        public async Task TestCountAsync()
+        {
+            using (var context = new DbContext())
+            {
+                var ret = await context.OrderDetails.Where(s => s.Quantity > 30).CountAsync();
+                Console.WriteLine(ret);
+            }
+        }
+
+        [TestMethod]
+        public async Task TestCountAsync1()
+        {
+            using (var context = new DbContext())
+            {
+                var ret = await context.OrderDetails.CountAsync(s => s.Quantity > 30);
+                Console.WriteLine(ret);
+            }
+        }
+
+        [TestMethod]
+        public async Task TestSumAsync()
+        {
+            using (var context = new DbContext())
+            {
+                var ret = await context.OrderDetails.SumAsync(s => s.Quantity);
+                Console.WriteLine(ret);
+            }
+        }
+
+        [TestMethod]
+        public async Task TestSumAsync1()
+        {
+            using (var context = new DbContext())
+            {
+                var ret = await context.OrderDetails.Select(s => s.Quantity).SumAsync();
+                Console.WriteLine(ret);
+            }
+        }
+
+        [TestMethod]
+        public async Task TestSumAsync2()
+        {
+            using (var context = new DbContext())
+            {
+                var ret = await context.Orders.Select(s => new { s.OrderID, Qu = s.OrderDetailses.Sum(t => t.Quantity) }).ToListAsync();
+                Console.WriteLine(ret);
+            }
+        }
+
+        [TestMethod]
+        public async Task TestMinAsync()
+        {
+            using (var context = new DbContext())
+            {
+                var ret = await context.OrderDetails.MinAsync(s => s.Quantity);
+                Console.WriteLine(ret);
+            }
+        }
+
+        [TestMethod]
+        public async Task TestMinAsync1()
+        {
+            using (var context = new DbContext())
+            {
+                var ret = await context.OrderDetails.Select(s => s.Quantity).MinAsync();
+                Console.WriteLine(ret);
+            }
+        }
+
+        [TestMethod]
+        public async Task TestMaxAsync()
+        {
+            using (var context = new DbContext())
+            {
+                var ret = await context.OrderDetails.MaxAsync(s => s.Quantity);
+                Console.WriteLine(ret);
+            }
+        }
+
+        [TestMethod]
+        public async Task TestMaxAsync1()
+        {
+            using (var context = new DbContext())
+            {
+                var ret = await context.OrderDetails.Select(s => s.Quantity).MaxAsync();
+                Console.WriteLine(ret);
             }
         }
 
@@ -104,6 +273,16 @@ namespace Fireasy.Data.Entity.Tests
                 context.BeginTransaction();
 
                 context.CommitTransaction();
+            }
+        }
+
+        [TestMethod]
+        public async Task TestTransScope()
+        {
+            using (var scope = new EntityTransactionScope())
+            using (var context = new DbContext())
+            {
+                await context.Products.DeleteAsync(s => false);
             }
         }
 
@@ -304,6 +483,37 @@ namespace Fireasy.Data.Entity.Tests
             }
         }
 
+        [TestMethod]
+        public async Task TestCacheAsync2()
+        {
+            using (var db = new DbContext())
+            {
+                var a1 = new DataPager(10, 2);
+                var a2 = new DataPager(10, 2);
+
+                Console.WriteLine(await TimeWatcher.WatchAsync(async () =>
+                {
+                    var list1 = await db.Orders
+                        .Segment(a1)
+                        .CacheParsing(true, TimeSpan.FromDays(1))
+                        .CacheExecution(true, TimeSpan.FromDays(1))
+                        .AsNoTracking()
+                        .ToListAsync();
+                }));
+
+                Console.WriteLine(await TimeWatcher.WatchAsync(async () =>
+                {
+                    var list2 = await db.Orders
+                        .Segment(a2)
+                        .CacheParsing(true, TimeSpan.FromDays(1))
+                        .CacheExecution(true, TimeSpan.FromDays(1))
+                        .AsNoTracking()
+                        .ToListAsync();
+                }));
+
+                //await db.Orders.DeleteAsync(s => false);
+            }
+        }
 
         private Products GetProduct(Func<Products> factory)
         {
@@ -427,9 +637,19 @@ namespace Fireasy.Data.Entity.Tests
             using (var db = new DbContext())
             {
                 var pager = new DataPager(50, 2);
-                var products = await db.Products.Segment(pager).ToListAsync();
-                Assert.AreEqual(77, pager.RecordCount);
-                Assert.AreEqual(2, pager.PageCount); // 77 / 50 余数加1
+                var products = await db.OperateLog.Segment(pager).ToListAsync();
+                var p = await db.OperateLog.GetAsync(1);
+                p.UserName = "a";
+                await db.OperateLog.UpdateAsync(p);
+                p.UserName = "a1";
+                await db.OperateLog.UpdateAsync(p);
+                p.UserName = "a2";
+                await db.OperateLog.UpdateAsync(p);
+                p.UserName = "a3";
+                await db.OperateLog.UpdateAsync(p);
+                Console.WriteLine("------------------");
+                //Assert.AreEqual(77, pager.RecordCount);
+                //Assert.AreEqual(2, pager.PageCount); // 77 / 50 余数加1
             }
         }
 
@@ -457,6 +677,40 @@ namespace Fireasy.Data.Entity.Tests
         }
 
         [TestMethod]
+        public void TestTowQuery()
+        {
+            using (var db = new DbContext())
+            {
+                var query = db.Orders;
+                var list1 = query.ToList();
+                var list2 = query.ToList();
+            }
+        }
+
+        [TestMethod]
+        public void TestTowDiffQuery()
+        {
+            using (var db = new DbContext())
+            {
+                var query1 = db.Orders.Where(s => s.CustomerID == "AA");
+                var query2 = db.Orders.Where(s => s.CustomerID == "BB");
+                var list1 = query1.ToList();
+                var list2 = query2.ToList();
+            }
+        }
+
+        [TestMethod]
+        public void TestOneQuery()
+        {
+            using (var db = new DbContext())
+            {
+                var query = db.Orders;
+                var list1 = (query as IListSource).GetList();
+                var list2 = (query as IListSource).GetList();
+            }
+        }
+
+        [TestMethod]
         public void TestAsNoTracking()
         {
             using (var db = new DbContext())
@@ -475,7 +729,7 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var db = new DbContext())
             {
-                db.Customers.UpdateAsync(() => new Customers { Address = "1" }, s => s.Address == "");
+                await db.Customers.UpdateAsync(() => new Customers { Address = "1" }, s => s.Address == "");
             }
         }
 
@@ -619,9 +873,10 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var customer = new Orders
                 {
-                    CustomerID = "ALFKI",
+                    CustomerID = "A2",
                     EmployeeID = 1,
-                    OrderDate = DateTime.Now
+                    OrderDate = DateTime.Now,
+                    //ShipVia = 3
                 };
 
                 db.Orders.Insert(customer);
@@ -633,14 +888,14 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var db = new DbContext())
             {
-                var customer = new Orders
+                var customer = new Customers
                 {
-                    CustomerID = "ALFKI",
-                    EmployeeID = 1,
-                    OrderDate = DateTime.Now
+                    CustomerID = "Ad118",
+                    CompanyName = "a2"
+                    
                 };
 
-                var ret = await db.Orders.InsertAsync(customer);
+                var ret = await db.Customers.InsertAsync(customer);
                 Assert.AreEqual(1, ret);
             }
         }
@@ -984,8 +1239,6 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var db = new DbContext())
             {
-                db.Database.Log = (c, p) => Console.WriteLine(c.Output());
-
                 db.Orders.Delete(s => s.OrderDate > DateTime.Now);
             }
         }
@@ -995,9 +1248,7 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var db = new DbContext())
             {
-                db.Database.Log = (c, p) => Console.WriteLine(c.Output());
-
-                await db.Orders.DeleteAsync(s => s.OrderDate > DateTime.Now);
+                await db.Customers.DeleteAsync(s => false);
             }
         }
 
@@ -1428,7 +1679,17 @@ namespace Fireasy.Data.Entity.Tests
             using (var context = new DbContext())
             {
                 var d = new DataPager(10, 0);
-                var dt = context.Database.ExecuteDataTable((SqlCommand)"select * from products", null, d);
+                var dt = context.Database.ExecuteEnumerable<Customers>((SqlCommand)"select * from customers", d);
+            }
+        }
+
+        [TestMethod]
+        public async Task TestExecuteSqlAsync()
+        {
+            using (var context = new DbContext())
+            {
+                var d = new DataPager(10, 0);
+                var dt = await context.Database.ExecuteEnumerableAsync<dynamic>((SqlCommand)"select * from OperateLog", d);
             }
         }
 
@@ -1463,6 +1724,15 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var list = context.Customers.BatchAnd(countries, (s, t) => s.Country.Contains(t)).ToList();
                 Assert.AreEqual(0, list.Count);
+            }
+        }
+
+        [TestMethod]
+        public void TestEntitySet()
+        {
+            using (var context = new DbContext())
+            {
+                var ss = context.Orders.Take(5).Select(s => new Orders { OrderID = s.OrderID, OrderDetailses = s.OrderDetailses.Take(1).ToEntitySet() }).ToList();
             }
         }
 
@@ -1567,7 +1837,20 @@ namespace Fireasy.Data.Entity.Tests
             using (var db = new DbContext())
             {
                 var order = db.Orders.FirstOrDefault();
-                order.ShipName = "123";
+                order.ShipName = "12443";
+                db.Orders.Update(order);
+            }
+        }
+        
+        [TestMethod]
+        public void TestSubscriberForAsyncUpdate()
+        {
+            EntityPersistentSubscribeManager.AddAsyncSubscriber(subject => new MyAsyncEntityPersistentSubscriber().AcceptAsync(subject));
+
+            using (var db = new DbContext())
+            {
+                var order = db.Orders.FirstOrDefault();
+                order.ShipName = "1235";
                 db.Orders.Update(order);
             }
         }
@@ -1667,6 +1950,18 @@ namespace Fireasy.Data.Entity.Tests
                 }
 
                 //记录日志
+            }
+        }
+
+        private class MyAsyncEntityPersistentSubscriber : AsyncEntityPersistentSubscriber
+        {
+            protected override async Task<bool> OnBeforeUpdateAsync(IEntity entity)
+            {
+                return true;
+            }
+
+            protected override async Task OnAfterUpdateAsync(IEntity entity)
+            {
             }
         }
 

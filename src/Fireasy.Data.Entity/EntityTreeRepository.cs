@@ -65,9 +65,9 @@ namespace Fireasy.Data.Entity
         /// <param name="referEntity">参照的实体。</param>
         /// <param name="position">插入的位置。</param>
         /// <param name="isolation">数据隔离表达式。</param>
-        public virtual void Insert(TEntity entity, TEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null)
+        public virtual int Insert(TEntity entity, TEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null)
         {
-            InsertAsync(entity, referEntity, position, isolation);
+            return InternalInsert(entity, referEntity, position, isolation, e => repository.Insert(e));
         }
 
         /// <summary>
@@ -78,57 +78,9 @@ namespace Fireasy.Data.Entity
         /// <param name="position">插入的位置。</param>
         /// <param name="isolation">数据隔离表达式。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
-        public virtual async Task InsertAsync(TEntity entity, TEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null, CancellationToken cancellationToken = default)
+        public virtual async Task<int> InsertAsync(TEntity entity, TEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null, CancellationToken cancellationToken = default)
         {
-            Guard.ArgumentNull(entity, nameof(entity));
-
-            if (referEntity == null)
-            {
-                var arg = CreateUpdatingArgument(entity);
-
-                //获得新节点的Order值
-                arg.NewValue.Order = GetNewOrderNumber(null, EntityTreePosition.Children, 0, isolation);
-                arg.NewValue.Level = 1;
-
-                //生成新的InnerID
-                arg.NewValue.FullName = arg.OldValue.Name;
-                arg.NewValue.InnerId = GenerateInnerId(string.Empty, arg.NewValue.Order, EntityTreePosition.Children);
-                UpdateEntityByArgument(entity, arg);
-
-                await repository.InsertAsync(entity);
-            }
-
-            var arg1 = CreateUpdatingArgument(entity);
-            var arg2 = CreateUpdatingArgument(referEntity);
-
-            var keyId = arg2.OldValue.InnerId;
-
-            //获得新节点的Order值
-            arg1.NewValue.Order = GetNewOrderNumber(arg2.OldValue, position, 0, isolation);
-
-            //获得参照节点的级别
-            arg1.NewValue.Level = arg2.OldValue.Level;
-
-            //如果插入为孩子，级别则+1
-            if (position == EntityTreePosition.Children)
-            {
-                arg1.NewValue.Level += 1;
-            }
-
-            //生成新的InnerID
-            arg1.NewValue.InnerId = GenerateInnerId(keyId, arg1.NewValue.Order, position);
-            arg1.NewValue.FullName = GenerateFullName(arg1, arg2, position);
-
-            UpdateEntityByArgument(entity, arg1);
-
-            try
-            {
-                await repository.InsertAsync(entity);
-            }
-            catch (Exception ex)
-            {
-                throw new EntityPersistentException(SR.GetString(SRKind.FailInEntityInsert), ex);
-            }
+            return await InternalInsert(entity, referEntity, position, isolation, async e => await repository.InsertAsync(e, cancellationToken));
         }
 
         /// <summary>
@@ -140,7 +92,7 @@ namespace Fireasy.Data.Entity
         /// <param name="isolation">数据隔离表达式。</param>
         public virtual void BatchInsert(IEnumerable<TEntity> entities, TEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null)
         {
-            BatchInsertAsync(entities, referEntity, position, isolation);
+            InternalBatchInsert(entities, referEntity, position, isolation, es => repository.Batch(es, (u, s) => u.Insert(s)));
         }
 
         /// <summary>
@@ -153,64 +105,7 @@ namespace Fireasy.Data.Entity
         /// <param name="cancellationToken">取消操作的通知。</param>
         public virtual async Task BatchInsertAsync(IEnumerable<TEntity> entities, TEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null, CancellationToken cancellationToken = default)
         {
-            if (referEntity == null)
-            {
-                var orderNo1 = GetNewOrderNumber(null, EntityTreePosition.Children, 0, isolation);
-
-                foreach (var entity in entities)
-                {
-                    var arg = CreateUpdatingArgument(entity);
-                    //获得新节点的Order值
-                    arg.NewValue.Order = orderNo1++;
-                    arg.NewValue.Level = 1;
-
-                    //生成新的InnerID
-                    arg.NewValue.FullName = arg.OldValue.Name;
-                    arg.NewValue.InnerId = GenerateInnerId(string.Empty, arg.NewValue.Order, EntityTreePosition.Children);
-
-                    UpdateEntityByArgument(entity, arg);
-                }
-
-                await repository.BatchAsync(entities, (u, s) => u.Insert(s));
-                return;
-            }
-
-            var arg2 = CreateUpdatingArgument(referEntity);
-
-            var keyId = arg2.OldValue.InnerId;
-            var orderNo = GetNewOrderNumber(arg2.OldValue, position, 0, isolation);
-
-            foreach (var entity in entities)
-            {
-                var arg1 = CreateUpdatingArgument(entity);
-
-                //获得新节点的Order值
-                arg1.NewValue.Order = orderNo++;
-
-                //获得参照节点的级别
-                arg1.NewValue.Level = arg2.OldValue.Level;
-
-                //如果插入为孩子，级别则+1
-                if (position == EntityTreePosition.Children)
-                {
-                    arg1.NewValue.Level += 1;
-                }
-
-                //生成新的InnerID
-                arg1.NewValue.InnerId = GenerateInnerId(keyId, arg1.NewValue.Order, position);
-                arg1.NewValue.FullName = GenerateFullName(arg1, arg2, position);
-
-                UpdateEntityByArgument(entity, arg1);
-            }
-
-            try
-            {
-                repository.Batch(entities, (u, s) => u.Insert(s));
-            }
-            catch (Exception ex)
-            {
-                throw new EntityPersistentException(SR.GetString(SRKind.FailInEntityInsert), ex);
-            }
+            await InternalBatchInsert(entities, referEntity, position, isolation, async es => await repository.BatchAsync(es, (u, s) => u.Insert(s)));
         }
 
         /// <summary>
@@ -222,7 +117,7 @@ namespace Fireasy.Data.Entity
         /// <param name="isolation">数据隔离表达式。</param>
         public virtual void Move(TEntity entity, TEntity referEntity, EntityTreePosition? position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null)
         {
-            MoveAsync(entity, referEntity, position, isolation);
+            InternalMove(entity, referEntity, position, isolation, es => repository.Batch(es, (u, s) => u.Update(s)), e => repository.Update(e));
         }
 
         /// <summary>
@@ -235,61 +130,7 @@ namespace Fireasy.Data.Entity
         /// <param name="cancellationToken">取消操作的通知。</param>
         public virtual async Task MoveAsync(TEntity entity, TEntity referEntity, EntityTreePosition? position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null, CancellationToken cancellationToken = default)
         {
-            Guard.ArgumentNull(entity, nameof(entity));
-
-            if (referEntity != null && position == null)
-            {
-                await UpdateCurrentAsync(entity, isolation, cancellationToken);
-                return;
-            }
-
-            AttachRequiredProperties(entity);
-
-            if (!CheckMovable(entity, referEntity))
-            {
-                throw new EntityPersistentException(SR.GetString(SRKind.FailInEntityMoveWildly), null);
-            }
-
-            if (entity.Equals(referEntity) ||
-                (position != null && !CheckNeedMove(entity, referEntity, (EntityTreePosition)position)))
-            {
-                await UpdateCurrentAsync(entity, isolation, cancellationToken);
-                return;
-            }
-
-            try
-            {
-                database.BeginTransaction();
-
-                var arg1 = CreateUpdatingArgument(entity);
-
-                //移到根节点
-                if (referEntity == null)
-                {
-                    await UpdateMoveToRootAsync(entity, arg1, isolation, cancellationToken);
-                }
-                else
-                {
-                    var arg2 = CreateUpdatingArgument(referEntity);
-
-                    if (position == EntityTreePosition.Children)
-                    {
-                        await UpdateMoveAsChildrenAsync(entity, referEntity, arg1, arg2, isolation, cancellationToken);
-                    }
-                    else
-                    {
-                        throw new NotImplementedException();
-                    }
-                }
-
-                database.CommitTransaction();
-            }
-            catch (Exception ex)
-            {
-                database.RollbackTransaction();
-
-                throw new EntityPersistentException(SR.GetString(SRKind.FailInEntityMove), ex);
-            }
+            await InternalMove(entity, referEntity, position, isolation, async es => await repository.BatchAsync(es, (u, s) => u.Update(s), cancellationToken), async e => await repository.UpdateAsync(e, cancellationToken));
         }
 
         /// <summary>
@@ -300,7 +141,13 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public virtual bool HasChildren(TEntity entity, Expression<Func<TEntity, bool>> predicate = null)
         {
-            return HasChildrenAsync(entity, predicate).Result;
+            var query = (IQueryable)QueryHelper.CreateQuery<TEntity>(repository.Provider, predicate);
+            var mthCount = typeof(Enumerable).GetMethods().FirstOrDefault(s => s.Name == "Count" && s.GetParameters().Length == 2);
+            mthCount = mthCount.MakeGenericMethod(typeof(TEntity));
+
+            var expression = TreeExpressionBuilder.BuildHasChildrenExpression(metaTree, entity, predicate);
+            expression = Expression.Call(null, mthCount, query.Expression, expression);
+            return repository.Provider.Execute<int>(expression) > 0;
         }
 
         /// <summary>
@@ -908,8 +755,9 @@ namespace Fireasy.Data.Entity
         /// <param name="current"></param>
         /// <param name="arg"></param>
         /// <param name="isolation"></param>
-        /// <param name="cancellationToken">取消操作的通知。</param>
-        private async Task UpdateMoveToRootAsync(TEntity current, EntityTreeUpfydatingArgument arg, Expression<Func<TEntity>> isolation = null, CancellationToken cancellationToken = default)
+        /// <param name="handler1"></param>
+        /// <param name="handler2"></param>
+        private T UpdateMoveToRoot<T>(TEntity current, EntityTreeUpfydatingArgument arg, Expression<Func<TEntity>> isolation, Func<IEnumerable<TEntity>, T> handler1, Func<TEntity, T> handler2)
         {
             //获得新节点的Order值
             var newOrder = GetNewOrderNumber(null, EntityTreePosition.Children, isolation: isolation);
@@ -941,14 +789,12 @@ namespace Fireasy.Data.Entity
             //它的孩子要移到根节点下
             UpdateChildren(current, children, arg);
 
-            SetNameNotModified(new[] { current });
             SetNameNotModified(brothers);
             SetNameNotModified(children);
 
-            await repository.UpdateAsync(current);
-
-            await repository.BatchAsync(brothers, (u, s) => u.Update(s));
-            await repository.BatchAsync(children, (u, s) => u.Update(s));
+            handler2.Await(current);
+            handler1.Await(brothers);
+            return handler1.Await(children);
         }
 
         /// <summary>
@@ -959,7 +805,9 @@ namespace Fireasy.Data.Entity
         /// <param name="arg1"></param>
         /// <param name="arg2"></param>
         /// <param name="isolation"></param>
-        private async Task UpdateMoveAsChildrenAsync(TEntity current, TEntity referEntity, EntityTreeUpfydatingArgument arg1, EntityTreeUpfydatingArgument arg2, Expression<Func<TEntity>> isolation = null, CancellationToken cancellationToken = default)
+        /// <param name="handler1"></param>
+        /// <param name="handler2"></param>
+        private T UpdateMoveAsChildren<T>(TEntity current, TEntity referEntity, EntityTreeUpfydatingArgument arg1, EntityTreeUpfydatingArgument arg2, Expression<Func<TEntity>> isolation, Func<IEnumerable<TEntity>, T> handler1, Func<TEntity, T> handler2)
         {
             //获取要移动节点的兄弟及其孩子
             var brothers = GetBrothersAndChildren(arg1, false, null, isolation: isolation);
@@ -992,14 +840,12 @@ namespace Fireasy.Data.Entity
             UpdateChildren(current, children, arg1);
             UpdateEntityByArgument(current, arg1);
 
-            SetNameNotModified(new[] { current });
             SetNameNotModified(brothers);
             SetNameNotModified(children);
 
-            await repository.UpdateAsync(current, cancellationToken);
-
-            await repository.BatchAsync(brothers, (u, s) => u.Update(s), cancellationToken);
-            await repository.BatchAsync(children, (u, s) => u.Update(s), cancellationToken);
+            handler2.Await(current);
+            handler1.Await(brothers);
+            return handler1.Await(children);
         }
 
         /// <summary>
@@ -1007,8 +853,9 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="current"></param>
         /// <param name="isolation"></param>
-        /// <param name="cancellationToken">取消操作的通知。</param>
-        private async Task UpdateCurrentAsync(TEntity current, Expression<Func<TEntity>> isolation, CancellationToken cancellationToken = default)
+        /// <param name="handler1"></param>
+        /// <param name="handler2"></param>
+        private T UpdateCurrent<T>(TEntity current, Expression<Func<TEntity>> isolation, Func<IEnumerable<TEntity>, T> handler1, Func<TEntity, T> handler2)
         {
             if (metaTree.FullName != null && current.IsModified(metaTree.Name.Name))
             {
@@ -1028,12 +875,10 @@ namespace Fireasy.Data.Entity
 
                 SetNameNotModified(children);
 
-                await repository.BatchAsync(children, (u, s) => u.Update(s));
+                handler1.Await(children);
             }
 
-            SetNameNotModified(new[] { current });
-
-            await repository.UpdateAsync(current);
+            return handler2.Await(current);
         }
 
         /// <summary>
@@ -1217,14 +1062,14 @@ namespace Fireasy.Data.Entity
         }
 
         #region 实现 ITreeRepository 接口
-        void ITreeRepository.Insert(IEntity entity, IEntity referEntity, EntityTreePosition position, Expression isolation)
+        int ITreeRepository.Insert(IEntity entity, IEntity referEntity, EntityTreePosition position, Expression isolation)
         {
-            Insert((TEntity)entity, (TEntity)referEntity, position, (Expression<Func<TEntity>>)isolation);
+            return Insert((TEntity)entity, (TEntity)referEntity, position, (Expression<Func<TEntity>>)isolation);
         }
 
-        async Task ITreeRepository.InsertAsync(IEntity entity, IEntity referEntity, EntityTreePosition position, Expression isolation, CancellationToken cancellationToken)
+        async Task<int> ITreeRepository.InsertAsync(IEntity entity, IEntity referEntity, EntityTreePosition position, Expression isolation, CancellationToken cancellationToken)
         {
-            await InsertAsync((TEntity)entity, (TEntity)referEntity, position, (Expression<Func<TEntity>>)isolation, cancellationToken);
+            return await InsertAsync((TEntity)entity, (TEntity)referEntity, position, (Expression<Func<TEntity>>)isolation, cancellationToken);
         }
 
         void ITreeRepository.BatchInsert(IEnumerable entities, IEntity referEntity, EntityTreePosition position, Expression isolation)
@@ -1267,6 +1112,180 @@ namespace Fireasy.Data.Entity
             return RecurrenceParent((TEntity)entity, (Expression<Func<TEntity, bool>>)predicate);
         }
         #endregion
+
+        private T InternalInsert<T>(TEntity entity, TEntity referEntity, EntityTreePosition position, Expression<Func<TEntity>> isolation, Func<TEntity, T> handler)
+        {
+            Guard.ArgumentNull(entity, nameof(entity));
+
+            if (referEntity == null)
+            {
+                var arg = CreateUpdatingArgument(entity);
+
+                //获得新节点的Order值
+                arg.NewValue.Order = GetNewOrderNumber(null, EntityTreePosition.Children, 0, isolation);
+                arg.NewValue.Level = 1;
+
+                //生成新的InnerID
+                arg.NewValue.FullName = arg.OldValue.Name;
+                arg.NewValue.InnerId = GenerateInnerId(string.Empty, arg.NewValue.Order, EntityTreePosition.Children);
+                UpdateEntityByArgument(entity, arg);
+
+                return handler.Await(entity);
+            }
+
+            var arg1 = CreateUpdatingArgument(entity);
+            var arg2 = CreateUpdatingArgument(referEntity);
+
+            var keyId = arg2.OldValue.InnerId;
+
+            //获得新节点的Order值
+            arg1.NewValue.Order = GetNewOrderNumber(arg2.OldValue, position, 0, isolation);
+
+            //获得参照节点的级别
+            arg1.NewValue.Level = arg2.OldValue.Level;
+
+            //如果插入为孩子，级别则+1
+            if (position == EntityTreePosition.Children)
+            {
+                arg1.NewValue.Level += 1;
+            }
+
+            //生成新的InnerID
+            arg1.NewValue.InnerId = GenerateInnerId(keyId, arg1.NewValue.Order, position);
+            arg1.NewValue.FullName = GenerateFullName(arg1, arg2, position);
+
+            UpdateEntityByArgument(entity, arg1);
+
+            try
+            {
+                return handler.Await(entity);
+            }
+            catch (Exception ex)
+            {
+                throw new EntityPersistentException(SR.GetString(SRKind.FailInEntityInsert), ex);
+            }
+        }
+
+        private T InternalBatchInsert<T>(IEnumerable<TEntity> entities, TEntity referEntity, EntityTreePosition position, Expression<Func<TEntity>> isolation, Func<IEnumerable<TEntity>, T> handler)
+        {
+            if (referEntity == null)
+            {
+                var orderNo1 = GetNewOrderNumber(null, EntityTreePosition.Children, 0, isolation);
+
+                foreach (var entity in entities)
+                {
+                    var arg = CreateUpdatingArgument(entity);
+                    //获得新节点的Order值
+                    arg.NewValue.Order = orderNo1++;
+                    arg.NewValue.Level = 1;
+
+                    //生成新的InnerID
+                    arg.NewValue.FullName = arg.OldValue.Name;
+                    arg.NewValue.InnerId = GenerateInnerId(string.Empty, arg.NewValue.Order, EntityTreePosition.Children);
+
+                    UpdateEntityByArgument(entity, arg);
+                }
+
+                return handler.Await(entities);
+            }
+
+            var arg2 = CreateUpdatingArgument(referEntity);
+
+            var keyId = arg2.OldValue.InnerId;
+            var orderNo = GetNewOrderNumber(arg2.OldValue, position, 0, isolation);
+
+            foreach (var entity in entities)
+            {
+                var arg1 = CreateUpdatingArgument(entity);
+
+                //获得新节点的Order值
+                arg1.NewValue.Order = orderNo++;
+
+                //获得参照节点的级别
+                arg1.NewValue.Level = arg2.OldValue.Level;
+
+                //如果插入为孩子，级别则+1
+                if (position == EntityTreePosition.Children)
+                {
+                    arg1.NewValue.Level += 1;
+                }
+
+                //生成新的InnerID
+                arg1.NewValue.InnerId = GenerateInnerId(keyId, arg1.NewValue.Order, position);
+                arg1.NewValue.FullName = GenerateFullName(arg1, arg2, position);
+
+                UpdateEntityByArgument(entity, arg1);
+            }
+
+            try
+            {
+                return handler.Await(entities);
+            }
+            catch (Exception ex)
+            {
+                throw new EntityPersistentException(SR.GetString(SRKind.FailInEntityInsert), ex);
+            }
+        }
+
+        private T InternalMove<T>(TEntity entity, TEntity referEntity, EntityTreePosition? position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null, Func<IEnumerable<TEntity>, T> handler1 = null, Func<TEntity, T> handler2 = null)
+        {
+            Guard.ArgumentNull(entity, nameof(entity));
+
+            if (referEntity != null && position == null)
+            {
+                return UpdateCurrent(entity, isolation, handler1, handler2);
+            }
+
+            AttachRequiredProperties(entity);
+
+            if (!CheckMovable(entity, referEntity))
+            {
+                throw new EntityPersistentException(SR.GetString(SRKind.FailInEntityMoveWildly), null);
+            }
+
+            if (entity.Equals(referEntity) ||
+                (position != null && !CheckNeedMove(entity, referEntity, (EntityTreePosition)position)))
+            {
+                return UpdateCurrent(entity, isolation, handler1, handler2);
+            }
+
+            T result = default;
+            try
+            {
+                database.BeginTransaction();
+
+                var arg1 = CreateUpdatingArgument(entity);
+
+                //移到根节点
+                if (referEntity == null)
+                {
+                    result = UpdateMoveToRoot(entity, arg1, isolation, handler1, handler2);
+                }
+                else
+                {
+                    var arg2 = CreateUpdatingArgument(referEntity);
+
+                    if (position == EntityTreePosition.Children)
+                    {
+                        result = UpdateMoveAsChildren(entity, referEntity, arg1, arg2, isolation, handler1, handler2);
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
+                }
+
+                database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                database.RollbackTransaction();
+
+                throw new EntityPersistentException(SR.GetString(SRKind.FailInEntityMove), ex);
+            }
+
+            return result;
+        }
 
         /// <summary>
         /// 数据隔离条件生成器。

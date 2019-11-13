@@ -88,6 +88,18 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="expression">表示 LINQ 查询的表达式树。</param>
         /// <returns>单值对象。</returns>
         /// <exception cref="TranslateException">对 LINQ 表达式解析失败时抛出此异常。</exception>
+        public TResult Execute<TResult>(Expression expression)
+        {
+            return (TResult)Execute(expression);
+        }
+
+        /// <summary>
+        /// 执行 <see cref="Expression"/> 的查询，返回查询结果。
+        /// </summary>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="expression">表示 LINQ 查询的表达式树。</param>
+        /// <returns>单值对象。</returns>
+        /// <exception cref="TranslateException">对 LINQ 表达式解析失败时抛出此异常。</exception>
         public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
         {
             var efn = TranslateCache.TryGetDelegate(expression, () => (LambdaExpression)GetExecutionPlan(expression));
@@ -120,16 +132,7 @@ namespace Fireasy.Data.Entity.Linq
                 }
             }
 
-            if (result is TResult)
-            {
-                return (TResult)result;
-            }
-            else if (result is Task<TResult> task)
-            {
-                return task.Result;
-            }
-
-            return default;
+            return await (Task<TResult>)result;
         }
 
 #if !NETFRAMEWORK && !NETSTANDARD2_0

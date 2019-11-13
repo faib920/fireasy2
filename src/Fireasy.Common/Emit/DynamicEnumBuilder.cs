@@ -20,6 +20,7 @@ namespace Fireasy.Common.Emit
     {
         private readonly TypeAttributes attributes;
         private EnumBuilder enumBuilder;
+        private Type innerType;
 
         internal DynamicEnumBuilder(BuildContext context, string enumName, Type underlyingType, VisualDecoration visual = VisualDecoration.Public)
              : base(visual, CallingDecoration.Standard)
@@ -50,8 +51,6 @@ namespace Fireasy.Common.Emit
             get { return enumBuilder; }
         }
 
-        Func<Type> ITypeCreator.Creator { get; set; }
-
         /// <summary>
         /// 定义一个枚举值。
         /// </summary>
@@ -69,11 +68,16 @@ namespace Fireasy.Common.Emit
         /// <returns></returns>
         public Type CreateType()
         {
+            if (innerType != null)
+            {
+                return innerType;
+            }
 #if !NETSTANDARD
-            return enumBuilder.CreateType();
+            innerType = enumBuilder.CreateType();
 #else
-            return enumBuilder.CreateTypeInfo();
+            innerType = enumBuilder.CreateTypeInfo();
 #endif
+            return innerType;
         }
 
         /// <summary>

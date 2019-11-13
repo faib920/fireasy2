@@ -32,5 +32,12 @@ namespace Fireasy.Common.Tests.Logging
             var log = LoggerFactory.CreateLogger("log4net");
             log.Error("fireasy output.", new System.IO.FileNotFoundException("file not found.", "c:\\a.txt"));
         }
+
+        [TestMethod]
+        public void TestSubError()
+        {
+            var log = LoggerFactory.CreateLogger("log4net").GetLogger<Log4netTests>();
+            log.Error("fireasy output.", new System.IO.FileNotFoundException("file not found.", "c:\\a.txt"));
+        }
     }
 }

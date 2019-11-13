@@ -24,6 +24,7 @@ namespace Fireasy.Common.Emit
         private TypeBuilder typeBuilder;
         private readonly List<Type> interfaceTypes = new List<Type>();
         private readonly bool isNesetType;
+        private Type innserType;
         private readonly List<ITypeCreator> nestedTypeBuilders = new List<ITypeCreator>();
 
         private Type baseType;
@@ -116,22 +117,23 @@ namespace Fireasy.Common.Emit
         /// <returns></returns>
         public Type CreateType()
         {
+            if (innserType != null)
+            {
+                return innserType;
+            }
+
             foreach (var builder in nestedTypeBuilders)
             {
                 builder.CreateType();
             }
 
 #if !NETSTANDARD
-            return TypeBuilder.CreateType();
+            innserType = TypeBuilder.CreateType();
 #else
-            return TypeBuilder.CreateTypeInfo();
+            innserType = TypeBuilder.CreateTypeInfo();
 #endif
+            return innserType;
         }
-
-        /// <summary>
-        /// 获取或设置代理创建者。
-        /// </summary>
-        public Func<Type> Creator { get; set; }
 
         /// <summary>
         /// 添加此类型实现的接口。

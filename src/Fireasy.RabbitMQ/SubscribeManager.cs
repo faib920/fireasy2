@@ -62,7 +62,7 @@ namespace Fireasy.RabbitMQ
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task PublishAsync<TSubject>(TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
         {
-            await Task.Run(() => Publish(subject), cancellationToken);
+            Publish(subject);
         }
 
         /// <summary>
@@ -74,7 +74,7 @@ namespace Fireasy.RabbitMQ
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task PublishAsync<TSubject>(string name, TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
         {
-            await Task.Run(() => Publish(name, subject), cancellationToken);
+            await Task.Run(() => Publish(name, subject));
         }
 
         /// <summary>
@@ -114,7 +114,7 @@ namespace Fireasy.RabbitMQ
         /// <returns></returns>
         public async Task PublishAsync(string name, byte[] data, CancellationToken cancellationToken = default)
         {
-            await Task.Run(() => Publish(name, data), cancellationToken);
+            await Task.Run(() => Publish(name, data));
         }
 
         /// <summary>
@@ -130,6 +130,19 @@ namespace Fireasy.RabbitMQ
         }
 
         /// <summary>
+        /// 在 Rabbit 服务器中添加一个异步的订阅方法。
+        /// </summary>
+        /// <typeparam name="TSubject"></typeparam>
+        /// <param name="subscriber">读取主题的方法。</param>
+        public void AddAsyncSubscriber<TSubject>(Func<TSubject, Task> subscriber) where TSubject : class
+        {
+            Guard.ArgumentNull(subscriber, nameof(subscriber));
+
+            var name = TopicHelper.GetTopicName(typeof(TSubject));
+            AddAsyncSubscriber<TSubject>(name, subscriber);
+        }
+
+        /// <summary>
         /// 在 Rabbit 服务器中添加一个订阅方法。
         /// </summary>
         /// <typeparam name="TSubject"></typeparam>
@@ -140,7 +153,21 @@ namespace Fireasy.RabbitMQ
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
             var list = subscribers.GetOrAdd(name, () => new RabbitChannelCollection());
-            list.Add(new RabbitChannel(subscriber, StartQueue(name)));
+            list.Add(new RabbitChannel(new SyncSubscribeDelegate(subscriber), StartQueue(name)));
+        }
+
+        /// <summary>
+        /// 在 Rabbit 服务器中添加一个异步的订阅方法。
+        /// </summary>
+        /// <typeparam name="TSubject"></typeparam>
+        /// <param name="name">主题名称。</param>
+        /// <param name="subscriber">读取主题的方法。</param>
+        public void AddAsyncSubscriber<TSubject>(string name, Func<TSubject, Task> subscriber) where TSubject : class
+        {
+            Guard.ArgumentNull(subscriber, nameof(subscriber));
+
+            var list = subscribers.GetOrAdd(name, () => new RabbitChannelCollection());
+            list.Add(new RabbitChannel(new AsyncSubscribeDelegate(subscriber), StartQueue(name)));
         }
 
         /// <summary>
@@ -155,7 +182,7 @@ namespace Fireasy.RabbitMQ
 
             var name = TopicHelper.GetTopicName(subjectType);
             var list = subscribers.GetOrAdd(name, () => new RabbitChannelCollection());
-            list.Add(new RabbitChannel(subscriber, StartQueue(name)));
+            list.Add(new RabbitChannel(new SyncSubscribeDelegate(subscriber), StartQueue(name)));
         }
 
         /// <summary>
@@ -169,7 +196,7 @@ namespace Fireasy.RabbitMQ
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
             var list = subscribers.GetOrAdd(name, () => new RabbitChannelCollection());
-            list.Add(new RabbitChannel(subscriber, StartQueue(name)));
+            list.Add(new RabbitChannel(new SyncSubscribeDelegate(subscriber), StartQueue(name)));
         }
 
         /// <summary>
@@ -266,8 +293,10 @@ namespace Fireasy.RabbitMQ
                     UserName = setting.UserName,
                     Password = setting.Password,
                     Endpoint = new AmqpTcpEndpoint(new Uri(setting.Server)),
+                    Port = setting.Port,
                     RequestedHeartbeat = 12,
                     AutomaticRecoveryEnabled = true,
+                    VirtualHost = string.IsNullOrEmpty(setting.VirtualHost) ? "/" : setting.VirtualHost
                 }.CreateConnection());
             }
 
@@ -308,33 +337,34 @@ namespace Fireasy.RabbitMQ
                             return;
                         }
 
-                        var actType = found.Handler.GetType();
-                        if (!actType.IsGenericType || actType.GetGenericTypeDefinition() != typeof(Action<>))
-                        {
-                            return;
-                        }
-
-                        var subType = actType.GetGenericArguments()[0];
                         object body = null;
 
                         try
                         {
-                            if (subType == typeof(byte[]))
+                            if (found.Handler.DataType == typeof(byte[]))
                             {
                                 body = args.Body;
                             }
                             else
                             {
-                                body = Deserialize(subType, args.Body);
+                                body = Deserialize(found.Handler.DataType, args.Body);
                             }
 
-                            found.Handler.DynamicInvoke(body);
+                            found.Handler.Invoke(body);
                             channel.BasicAck(args.DeliveryTag, false);
                         }
                         catch
                         {
-                            Thread.Sleep(setting.RequeueDelayTime ?? 1000);
-                            channel.BasicNack(args.DeliveryTag, false, true);
+                            channel.BasicNack(args.DeliveryTag, false, false);
+
+                            if (setting.RequeueDelayTime != null)
+                            {
+                                Task.Run(() =>
+                                    {
+                                        Thread.Sleep(setting.RequeueDelayTime.Value);
+                                        Publish(channelName, args.Body);
+                                    });
+                            }
                         }
                     }
                 };
@@ -375,15 +405,22 @@ namespace Fireasy.RabbitMQ
 
         private class RabbitChannel
         {
-            public RabbitChannel(Delegate handler, IModel model)
+            public RabbitChannel(SubscribeDelegate handler, IModel model)
             {
                 Handler = handler;
                 Model = model;
             }
 
-            public Delegate Handler { get; set; }
+            public SubscribeDelegate Handler { get; set; }
 
             public IModel Model { get; set; }
+        }
+
+        private struct RequeueData
+        {
+            public string Name { get; set; }
+
+            public byte[] Data { get; set; }
         }
     }
 }

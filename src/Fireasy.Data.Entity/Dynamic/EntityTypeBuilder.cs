@@ -51,7 +51,6 @@ namespace Fireasy.Data.Entity.Dynamic
             TypeName = typeName;
             this.assemblyBuilder = assemblyBuilder ?? new DynamicAssemblyBuilder("<DynamicType>_" + typeName);
             InnerBuilder = this.assemblyBuilder.DefineType(TypeName, baseType: baseType ?? typeof(EntityObject));
-            InnerBuilder.Creator = () => Create();
             EntityType = InnerBuilder.UnderlyingSystemType;
             Properties = new List<IProperty>();
         }

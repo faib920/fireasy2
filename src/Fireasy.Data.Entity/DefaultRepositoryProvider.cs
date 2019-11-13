@@ -65,42 +65,47 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="entity">要创建的实体对象。</param>
         /// <returns>如果实体中有自增属性的主键，则返回主键值；否则返回影响的实体数。</returns>
+        public int Insert(TEntity entity)
+        {
+            var opContext = new OperationContext<int>(
+                (q, e) => q.CreateEntity(e), 
+                (q, e) => q.UpdateEntity(e), 
+                (q, e) => q.RemoveEntity(e, false), 
+                (q, es, lambda) => q.BatchOperate(es, lambda));
+
+            return InternalInsert(entity, opContext);
+        }
+
+        /// <summary>
+        /// 将一个新的实体对象插入到库。
+        /// </summary>
+        /// <param name="entity">要创建的实体对象。</param>
+        /// <returns>如果实体中有自增属性的主键，则返回主键值；否则返回影响的实体数。</returns>
         public async Task<int> InsertAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
-            var trans = CheckRelationHasModified(entity);
-            if (trans)
-            {
-                context.Database.BeginTransaction();
-            }
+            var opContext = new OperationContext<Task<int>>(
+                async (q, e) => await q.CreateEntityAsync(e),
+                async (q, e) => await q.UpdateEntityAsync(e),
+                async (q, e) => await q.RemoveEntityAsync(e, false),
+                async (q, es, lambda) => await q.BatchOperateAsync(es, lambda));
 
-            int result = 0;
+            return await InternalInsert(entity, opContext);
+        }
 
-            try
-            {
-                if ((result = await Queryable.CreateEntityAsync(entity, cancellationToken)) > 0)
-                {
-                    entity.As<IEntityPersistentEnvironment>(s => s.Environment = context.Environment);
-                    entity.As<IEntityPersistentInstanceContainer>(s => s.InstanceName = context.InstanceName);
+        /// <summary>
+        /// 更新一个实体对象。
+        /// </summary>
+        /// <param name="entity">要更新的实体对象。</param>
+        /// <returns>影响的实体数。</returns>
+        public int Update(TEntity entity)
+        {
+            var opContext = new OperationContext<int>(
+                (q, e) => q.CreateEntity(e),
+                (q, e) => q.UpdateEntity(e),
+                (q, e) => q.RemoveEntity(e, false),
+                (q, es, lambda) => q.BatchOperate(es, lambda));
 
-                    await HandleRelationPropertiesAsync(entity, cancellationToken);
-                }
-
-                if (trans)
-                {
-                    context.Database.CommitTransaction();
-                }
-            }
-            catch (Exception exp)
-            {
-                if (trans)
-                {
-                    context.Database.RollbackTransaction();
-                }
-
-                throw exp;
-            }
-
-            return result;
+            return InternalUpdate(entity, opContext);
         }
 
         /// <summary>
@@ -110,35 +115,44 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public async Task<int> UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
-            var trans = CheckRelationHasModified(entity);
-            if (trans)
+            var opContext = new OperationContext<Task<int>>(
+                async (q, e) => await q.CreateEntityAsync(e),
+                async (q, e) => await q.UpdateEntityAsync(e),
+                async (q, e) => await q.RemoveEntityAsync(e, false),
+                async (q, es, lambda) => await q.BatchOperateAsync(es, lambda));
+
+            return await InternalUpdate(entity, opContext);
+        }
+
+        /// <summary>
+        /// 批量将一组实体对象插入到库中。
+        /// </summary>
+        /// <param name="entities">一组要插入实体对象。</param>
+        /// <param name="batchSize">每一个批次插入的实体数量。默认为 1000。</param>
+        /// <param name="completePercentage">已完成百分比的通知方法。</param>
+        public void BatchInsert(IEnumerable<TEntity> entities, int batchSize = 1000, Action<int> completePercentage = null)
+        {
+            var batcher = context.Database.Provider.GetService<IBatcherProvider>();
+            if (batcher == null)
             {
-                context.Database.BeginTransaction();
+                throw new EntityPersistentException(SR.GetString(SRKind.NotSupportBatcher), null);
             }
 
-            int result;
-            try
+            var syntax = context.Database.Provider.GetService<ISyntaxProvider>();
+            var rootType = typeof(TEntity).GetRootEntityType();
+            string tableName;
+
+            if (context.Environment != null)
             {
-                result = await Queryable.UpdateEntityAsync(entity, cancellationToken);
-
-                await HandleRelationPropertiesAsync(entity, cancellationToken);
-
-                if (trans)
-                {
-                    context.Database.CommitTransaction();
-                }
+                tableName = DbUtility.FormatByQuote(syntax, context.Environment.GetVariableTableName(rootType));
             }
-            catch (Exception exp)
+            else
             {
-                if (trans)
-                {
-                    context.Database.RollbackTransaction();
-                }
-
-                throw exp;
+                var metadata = EntityMetadataUnity.GetEntityMetadata(rootType);
+                tableName = DbUtility.FormatByQuote(syntax, metadata.TableName);
             }
 
-            return result;
+            batcher.Insert(context.Database, entities, tableName, batchSize, completePercentage);
         }
 
         /// <summary>
@@ -178,9 +192,36 @@ namespace Fireasy.Data.Entity
         /// <param name="entity">要移除的实体对象。</param>
         /// <param name="logicalDelete">是否为逻辑删除。</param>
         /// <returns>影响的实体数。</returns>
+        public int Delete(TEntity entity, bool logicalDelete = true)
+        {
+            return Queryable.RemoveEntity(entity, logicalDelete);
+        }
+
+        /// <summary>
+        /// 将指定的实体对象从库中删除。
+        /// </summary>
+        /// <param name="entity">要移除的实体对象。</param>
+        /// <param name="logicalDelete">是否为逻辑删除。</param>
+        /// <returns>影响的实体数。</returns>
         public async Task<int> DeleteAsync(TEntity entity, bool logicalDelete = true, CancellationToken cancellationToken = default)
         {
             return await Queryable.RemoveEntityAsync(entity, logicalDelete, cancellationToken);
+        }
+
+        /// <summary>
+        /// 根据主键值将对象从库中删除。
+        /// </summary>
+        /// <param name="primaryValues">一组主键值。</param>
+        /// <param name="logicalDelete">是否为逻辑删除。</param>
+        /// <returns></returns>
+        public int Delete(PropertyValue[] primaryValues, bool logicalDelete = true)
+        {
+            if (primaryValues.Any(s => PropertyValue.IsEmpty(s)))
+            {
+                return 0;
+            }
+
+            return Queryable.RemoveByPrimary(primaryValues, logicalDelete);
         }
 
         /// <summary>
@@ -204,6 +245,21 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="primaryValues">一组主键值。</param>
         /// <returns>影响的实体数。</returns>
+        public TEntity Get(PropertyValue[] primaryValues)
+        {
+            if (primaryValues.Any(s => PropertyValue.IsEmpty(s)))
+            {
+                return default(TEntity);
+            }
+
+            return Queryable.GetByPrimary<TEntity>(primaryValues);
+        }
+
+        /// <summary>
+        /// 通过一组主键值返回一个实体对象。
+        /// </summary>
+        /// <param name="primaryValues">一组主键值。</param>
+        /// <returns>影响的实体数。</returns>
         public async Task<TEntity> GetAsync(PropertyValue[] primaryValues, CancellationToken cancellationToken = default)
         {
             if (primaryValues.Any(s => PropertyValue.IsEmpty(s)))
@@ -212,6 +268,17 @@ namespace Fireasy.Data.Entity
             }
 
             return await Queryable.GetByPrimaryAsync<TEntity>(primaryValues, cancellationToken);
+        }
+
+        /// <summary>
+        /// 将满足条件的一组对象从库中移除。
+        /// </summary>
+        /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <param name="logicalDelete">是否为逻辑删除</param>
+        /// <returns>影响的实体数。</returns>
+        public int Delete(Expression<Func<TEntity, bool>> predicate, bool logicalDelete = true)
+        {
+            return Queryable.RemoveWhere(predicate, logicalDelete);
         }
 
         /// <summary>
@@ -231,6 +298,17 @@ namespace Fireasy.Data.Entity
         /// <param name="entity">更新的参考对象。</param>
         /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
         /// <returns>影响的实体数。</returns>
+        public int Update(TEntity entity, Expression<Func<TEntity, bool>> predicate)
+        {
+            return Queryable.UpdateWhere(entity, predicate);
+        }
+
+        /// <summary>
+        /// 使用一个参照的实体对象更新满足条件的一序列对象。
+        /// </summary>
+        /// <param name="entity">更新的参考对象。</param>
+        /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <returns>影响的实体数。</returns>
         public async Task<int> UpdateAsync(TEntity entity, Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         {
             return await Queryable.UpdateWhereAsync(entity, predicate, cancellationToken);
@@ -242,9 +320,32 @@ namespace Fireasy.Data.Entity
         /// <param name="calculator">一个计算器表达式。</param>
         /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
         /// <returns>影响的实体数。</returns>
+        public int Update(Expression<Func<TEntity, TEntity>> calculator, Expression<Func<TEntity, bool>> predicate)
+        {
+            return Queryable.UpdateWhereByCalculator(calculator, predicate);
+        }
+
+        /// <summary>
+        /// 使用一个累加器更新满足条件的一序列对象。
+        /// </summary>
+        /// <param name="calculator">一个计算器表达式。</param>
+        /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <returns>影响的实体数。</returns>
         public async Task<int> UpdateAsync(Expression<Func<TEntity, TEntity>> calculator, Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         {
-            return await Queryable.UpdateWhereByCalculatorAsync(calculator, predicate);
+            return await Queryable.UpdateWhereByCalculatorAsync(calculator, predicate, cancellationToken);
+        }
+
+        /// <summary>
+        /// 对实体集合进行批量操作。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="instances"></param>
+        /// <param name="fnOperation"></param>
+        /// <returns>影响的实体数。</returns>
+        public int Batch(IEnumerable<TEntity> instances, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation)
+        {
+            return Queryable.BatchOperate(instances.Cast<IEntity>(), fnOperation);
         }
 
         /// <summary>
@@ -281,11 +382,83 @@ namespace Fireasy.Data.Entity
             return PropertyUnity.GetRelatedProperties(entity.EntityType).Any(s => isNotCompiled ? !PropertyValue.IsEmpty(entity.GetValue(s)) : entity.IsModified(s.Name));
         }
 
+        private T InternalInsert<T>(TEntity entity, OperationContext<T> opContext)
+        {
+            var trans = CheckRelationHasModified(entity);
+            if (trans)
+            {
+                context.Database.BeginTransaction();
+            }
+
+            T result = default;
+
+            try
+            {
+                result = opContext.CreateFunc.Await(Queryable, entity);
+                if (result != default)
+                {
+                    entity.As<IEntityPersistentEnvironment>(s => s.Environment = context.Environment);
+                    entity.As<IEntityPersistentInstanceContainer>(s => s.InstanceName = context.InstanceName);
+
+                    HandleRelationProperties(entity, opContext);
+                }
+
+                if (trans)
+                {
+                    context.Database.CommitTransaction();
+                }
+            }
+            catch (Exception exp)
+            {
+                if (trans)
+                {
+                    context.Database.RollbackTransaction();
+                }
+
+                throw exp;
+            }
+
+            return result;
+        }
+
+        private T InternalUpdate<T>(TEntity entity, OperationContext<T> opContext)
+        {
+            var trans = CheckRelationHasModified(entity);
+            if (trans)
+            {
+                context.Database.BeginTransaction();
+            }
+
+            T result;
+            try
+            {
+                result = opContext.UpdateFunc.Await(Queryable, entity);
+
+                HandleRelationProperties(entity, opContext);
+
+                if (trans)
+                {
+                    context.Database.CommitTransaction();
+                }
+            }
+            catch (Exception exp)
+            {
+                if (trans)
+                {
+                    context.Database.RollbackTransaction();
+                }
+
+                throw exp;
+            }
+
+            return result;
+        }
+
         /// <summary>
         /// 检查实体的关联属性。
         /// </summary>
         /// <param name="entity"></param>
-        private async Task HandleRelationPropertiesAsync(IEntity entity, CancellationToken cancellationToken = default)
+        private T HandleRelationProperties<T>(IEntity entity, OperationContext<T> opContext)
         {
             //判断实体类型有是不是编译的代理类型，如果不是，取非null的属性，否则使用IsModified判断
             var isNotCompiled = entity.GetType().IsNotCompiled();
@@ -293,7 +466,7 @@ namespace Fireasy.Data.Entity
                     !PropertyValue.IsEmpty(entity.GetValue(m)) :
                     entity.IsModified(m.Name));
 
-            await HandleRelationPropertiesAsync(entity, properties, cancellationToken);
+            return HandleRelationProperties(entity, properties, opContext);
         }
 
         /// <summary>
@@ -301,7 +474,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="entity"></param>
         /// <param name="properties"></param>
-        private async Task HandleRelationPropertiesAsync(IEntity entity, IEnumerable<IProperty> properties, CancellationToken cancellationToken = default)
+        private T HandleRelationProperties<T>(IEntity entity, IEnumerable<IProperty> properties, OperationContext<T> opContext)
         {
             foreach (RelationProperty property in properties)
             {
@@ -314,12 +487,12 @@ namespace Fireasy.Data.Entity
                         switch (refEntity.EntityState)
                         {
                             case EntityState.Modified:
-                                await queryable.UpdateEntityAsync(refEntity, cancellationToken);
+                                opContext.UpdateFunc.Await(queryable, refEntity);
                                 refEntity.SetState(EntityState.Unchanged);
                                 break;
                         }
 
-                        await HandleRelationPropertiesAsync(refEntity, cancellationToken);
+                        HandleRelationProperties(refEntity, opContext);
                         break;
                     case RelationPropertyType.EntitySet:
                         var value = entity.GetValue(property);
@@ -330,12 +503,14 @@ namespace Fireasy.Data.Entity
 
                         if (!PropertyValue.IsEmpty(value))
                         {
-                            await HandleEntitySetPropertyAsync(queryable, entity, value.GetValue() as IEntitySet, property, cancellationToken);
+                            HandleEntitySetProperty(queryable, entity, value.GetValue() as IEntitySet, property, opContext);
                         }
 
                         break;
                 }
             }
+
+            return default;
         }
 
         /// <summary>
@@ -345,7 +520,7 @@ namespace Fireasy.Data.Entity
         /// <param name="entity"></param>
         /// <param name="entitySet"></param>
         /// <param name="property"></param>
-        private async Task HandleEntitySetPropertyAsync(IQueryable queryable, IEntity entity, IEntitySet entitySet, IProperty property, CancellationToken cancellationToken = default)
+        private T HandleEntitySetProperty<T>(IQueryable queryable, IEntity entity, IEntitySet entitySet, IProperty property, OperationContext<T> opContext)
         {
             var added = entitySet.GetAttachedList();
             var modified = entitySet.GetModifiedList();
@@ -354,7 +529,7 @@ namespace Fireasy.Data.Entity
             //处理删除的
             if (deleted.Count() > 0)
             {
-                await queryable.BatchOperateAsync(deleted, queryable.CreateDeleteExpression(true), cancellationToken);
+                opContext.BatchFunc.Await(queryable, deleted, queryable.CreateDeleteExpression(true));
             }
 
             //处理修改的
@@ -362,15 +537,15 @@ namespace Fireasy.Data.Entity
             {
                 if (entitySet.AllowBatchUpdate)
                 {
-                    await queryable.BatchOperateAsync(modified, queryable.CreateUpdateExpression(), cancellationToken);
+                    opContext.BatchFunc.Await(queryable, modified, queryable.CreateUpdateExpression());
                 }
                 else
                 {
                     foreach (var e in modified)
                     {
-                        await queryable.UpdateEntityAsync(e, cancellationToken);
+                        opContext.UpdateFunc.Await(queryable, e);
                         e.SetState(EntityState.Unchanged);
-                        await HandleRelationPropertiesAsync(e, cancellationToken);
+                        HandleRelationProperties(e, opContext);
                     }
                 }
             }
@@ -390,20 +565,40 @@ namespace Fireasy.Data.Entity
 
                 if (entitySet.AllowBatchInsert)
                 {
-                    await queryable.BatchOperateAsync(added, queryable.CreateInsertExpression(), cancellationToken);
+                    opContext.BatchFunc.Await(queryable, added, queryable.CreateInsertExpression());
                 }
                 else
                 {
                     foreach (var e in added)
                     {
-                        await queryable.CreateEntityAsync(e, cancellationToken);
+                        opContext.CreateFunc.Await(queryable, e);
                         e.SetState(EntityState.Unchanged);
-                        await HandleRelationPropertiesAsync(e, cancellationToken);
+                        HandleRelationProperties(e, opContext);
                     }
                 }
             }
 
             entitySet.Reset();
+            return default;
+        }
+
+        private class OperationContext<T>
+        {
+            public OperationContext(Func<IQueryable, IEntity, T> createFunc, Func<IQueryable, IEntity, T> updateFunc, Func<IQueryable, IEntity, T> deleteFunc, Func<IQueryable, IEnumerable<IEntity>, LambdaExpression, T> batchFunc)
+            {
+                CreateFunc = createFunc;
+                UpdateFunc = updateFunc;
+                DeleteFunc = deleteFunc;
+                BatchFunc = batchFunc;
+            }
+
+            internal Func<IQueryable, IEntity, T> CreateFunc { get; set; }
+
+            internal Func<IQueryable, IEntity, T> UpdateFunc { get; set; }
+
+            internal Func<IQueryable, IEntity, T> DeleteFunc { get; set; }
+
+            internal Func<IQueryable, IEnumerable<IEntity>, LambdaExpression, T> BatchFunc { get; set; }
         }
     }
 }

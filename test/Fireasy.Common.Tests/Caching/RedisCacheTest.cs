@@ -34,7 +34,7 @@ namespace Fireasy.Common.Tests.Caching
 
             var cacheMgr = CacheManagerFactory.CreateManager("redis");
             cacheMgr = CacheManagerFactory.CreateManager("redis");
-            var value = await cacheMgr.TryGetAsync("test1", () => 100);
+            var value = await cacheMgr.TryGetAsync("test1", () => Task.FromResult(100));
             Assert.AreEqual(100, value);
         }
 
@@ -42,9 +42,9 @@ namespace Fireasy.Common.Tests.Caching
         public async Task TestContains()
         {
             var cacheMgr = CacheManagerFactory.CreateManager("redis");
-            var value = await cacheMgr.TryGetAsync("test1", () => 100);
-            var value1 = await cacheMgr.TryGetAsync("test3", () => 100);
-            var value2 = await cacheMgr.TryGetAsync("test4", () => 100);
+            var value = await cacheMgr.TryGetAsync("test1", () => Task.FromResult(100));
+            var value1 = await cacheMgr.TryGetAsync("test3", () => Task.FromResult(100));
+            var value2 = await cacheMgr.TryGetAsync("test4", () => Task.FromResult(100));
             Assert.AreEqual(true, await cacheMgr.ContainsAsync("test1"));
             Assert.AreEqual(false, await cacheMgr.ContainsAsync("test2"));
 

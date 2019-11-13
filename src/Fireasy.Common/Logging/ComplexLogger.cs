@@ -25,6 +25,11 @@ namespace Fireasy.Common.Logging
         private ComplexLoggingSetting setting;
         private List<ComplexLoggerPair> logPairs = new List<ComplexLoggerPair>();
 
+        public ILogger GetLogger<T>() where T : class
+        {
+            throw new NotImplementedException();
+        }
+
         void ILogger.Debug(object message, Exception exception)
         {
             logPairs.Where(s => IsConfigured(s.Level, LogLevel.Debug)).ForEach(s => s.Logger.Debug(message, exception));
@@ -90,7 +95,7 @@ namespace Fireasy.Common.Logging
             logPairs.Where(s => IsConfigured(s.Level, LogLevel.Warn)).ForEach(s => s.Logger.Info(message, exception));
         }
 
-        public Task WarnAsync(object message, Exception exception = null, CancellationToken cancellationToken = default)
+        Task ILogger.WarnAsync(object message, Exception exception, CancellationToken cancellationToken)
         {
             foreach (var log in logPairs.Where(s => IsConfigured(s.Level, LogLevel.Warn)))
             {

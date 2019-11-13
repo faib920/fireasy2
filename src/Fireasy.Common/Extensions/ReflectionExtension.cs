@@ -13,7 +13,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Fireasy.Common.Extensions
 {
@@ -826,6 +828,31 @@ namespace Fireasy.Common.Extensions
             var cacheMgr = MemoryCacheManager.Instance;
             var key = "ImplAssembly_" + definedType.FullName;
             return cacheMgr.TryGet(key, () => InternalBuildImplementType(definedType));
+        }
+
+        /// <summary>
+        /// 获取 Task<> 中泛型的参数。
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static Type GetTaskReturnType(this Type type)
+        {
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Task<>))
+            {
+                return type.GetGenericArguments()[0];
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 判断方法是否具有 async 标识。
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public static bool IsAsynchronous(this MethodInfo method)
+        {
+            return method.IsDefined(typeof(AsyncStateMachineAttribute));
         }
 
         /// <summary>

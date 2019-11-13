@@ -5,10 +5,8 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.ComponentModel;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -19,7 +17,7 @@ namespace Fireasy.Common.Subscribes
     /// </summary>
     public class DefaultSubscribeManager : ISubscribeManager
     {
-        private static SafetyDictionary<string, List<Delegate>> subscribers = new SafetyDictionary<string, List<Delegate>>();
+        private static SubscriberCollection subscribers = new SubscriberCollection();
         private ConcurrentQueue<SubjectData> queue = new ConcurrentQueue<SubjectData>();
         private Thread thread = null;
 
@@ -50,6 +48,7 @@ namespace Fireasy.Common.Subscribes
         protected DefaultSubscribeManager()
         {
             thread = new Thread(new ThreadStart(ProcessQueue)) { IsBackground = true };
+            thread.Start();
         }
 
         private void ProcessQueue()
@@ -58,15 +57,12 @@ namespace Fireasy.Common.Subscribes
             {
                 if (queue.Count == 0)
                 {
-                    Thread.Sleep(1000);
+                    Thread.Sleep(500);
                 }
 
-                if (queue.TryDequeue(out SubjectData obj))
+                while (queue.TryDequeue(out SubjectData obj) && obj != null)
                 {
-                    if (obj != null && subscribers.TryGetValue(obj.Name, out List<Delegate> list) && list != null)
-                    {
-                        list.ForEach(s => s.DynamicInvoke(obj.Data));
-                    }
+                    subscribers.Accept(obj.Name, obj.Data);
                 }
             }
         }
@@ -79,11 +75,6 @@ namespace Fireasy.Common.Subscribes
         public void Publish<TSubject>(TSubject subject) where TSubject : class
         {
             queue.Enqueue(new SubjectData(typeof(TSubject), subject));
-
-            if (thread.ThreadState != ThreadState.Background)
-            {
-                thread.Start();
-            }
         }
 
         /// <summary>
@@ -95,11 +86,6 @@ namespace Fireasy.Common.Subscribes
         public void Publish<TSubject>(string name, TSubject subject) where TSubject : class
         {
             queue.Enqueue(new SubjectData(name, subject));
-
-            if (thread.ThreadState != ThreadState.Background)
-            {
-                thread.Start();
-            }
         }
 
         /// <summary>
@@ -110,7 +96,7 @@ namespace Fireasy.Common.Subscribes
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task PublishAsync<TSubject>(TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
         {
-            await Task.Run(() => Publish(subject), cancellationToken);
+            await Task.Run(() => Publish(subject));
         }
 
         /// <summary>
@@ -122,7 +108,7 @@ namespace Fireasy.Common.Subscribes
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task PublishAsync<TSubject>(string name, TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
         {
-            await Task.Run(() => Publish(name, subject), cancellationToken);
+            await Task.Run(() => Publish(name, subject));
         }
 
         /// <summary>
@@ -134,11 +120,19 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            var list = subscribers.GetOrAdd(TopicHelper.GetTopicName(typeof(TSubject)), () => new List<Delegate>());
-            if (list != null)
-            {
-                list.Add(subscriber);
-            }
+            subscribers.AddSyncSubscriber(TopicHelper.GetTopicName(typeof(TSubject)), subscriber);
+        }
+
+        /// <summary>
+        /// 添加一个异步的订阅方法。
+        /// </summary>
+        /// <typeparam name="TSubject"></typeparam>
+        /// <param name="subscriber">读取主题的方法。</param>
+        public void AddAsyncSubscriber<TSubject>(Func<TSubject, Task> subscriber) where TSubject : class
+        {
+            Guard.ArgumentNull(subscriber, nameof(subscriber));
+
+            subscribers.AddAsyncSubscriber(TopicHelper.GetTopicName(typeof(TSubject)), subscriber);
         }
 
         /// <summary>
@@ -151,11 +145,20 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            var list = subscribers.GetOrAdd(name, () => new List<Delegate>());
-            if (list != null)
-            {
-                list.Add(subscriber);
-            }
+            subscribers.AddSyncSubscriber(name, subscriber);
+        }
+
+        /// <summary>
+        /// 添加一个异步的订阅方法。
+        /// </summary>
+        /// <typeparam name="TSubject"></typeparam>
+        /// <param name="name">主题名称。</param>
+        /// <param name="subscriber">读取主题的方法。</param>
+        public void AddAsyncSubscriber<TSubject>(string name, Func<TSubject, Task> subscriber) where TSubject : class
+        {
+            Guard.ArgumentNull(subscriber, nameof(subscriber));
+
+            subscribers.AddAsyncSubscriber(name, subscriber);
         }
 
         /// <summary>
@@ -167,11 +170,7 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            var list = subscribers.GetOrAdd(TopicHelper.GetTopicName(subjectType), () => new List<Delegate>());
-            if (list != null)
-            {
-                list.Add(subscriber);
-            }
+            subscribers.AddSyncSubscriber(TopicHelper.GetTopicName(subjectType), subscriber);
         }
 
         /// <summary>
@@ -189,7 +188,7 @@ namespace Fireasy.Common.Subscribes
         /// <param name="subjectType">主题的类型。</param>
         public void RemoveSubscriber(Type subjectType)
         {
-            subscribers.TryRemove(TopicHelper.GetTopicName(subjectType), out List<Delegate> delegates);
+            subscribers.Remove(TopicHelper.GetTopicName(subjectType));
         }
 
         void ISubscribeManager.Publish(string name, byte[] data)

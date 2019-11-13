@@ -47,3 +47,14 @@ Install-Package Fireasy.MongoDB
   }
 }
 ```
+
+在 asp.net core 中，可在 Startup.cs 中配置使用 MongoDB
+
+```C#
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddFireasy()
+		.AddEntityContext<DbContext>()
+		.UseMongoDB("server=mongodb://localhost;database=test");
+}
+```

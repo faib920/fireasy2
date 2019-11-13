@@ -6,16 +6,17 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Caching;
-using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
+using Fireasy.Common.Threading;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Linq.Translators.Configuration;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Fireasy.Data.Entity.Linq
 {
@@ -24,9 +25,8 @@ namespace Fireasy.Data.Entity.Linq
     /// </summary>
     internal class ExecuteCache
     {
-        //缓存着每个实体类型所产生的相关联的缓存键名
-        private static SafetyDictionary<Type, List<string>> referKeys = new SafetyDictionary<Type, List<string>>();
-        private static MethodInfo MthToList = typeof(Enumerable).GetMethod(nameof(Enumerable.ToList));
+        private const string CACHE_KEY = "fireasy.exec.";
+        private static ReadWriteLocker locker = new ReadWriteLocker();
 
         /// <summary>
         /// 判断是否被缓存。
@@ -35,11 +35,17 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         internal static bool CanCache(Expression expression)
         {
+            TryExpire(expression);
+
             var section = ConfigurationUnity.GetSection<TranslatorConfigurationSection>();
             var option = section == null ? TranslateOptions.Default : section.Options;
             var result = CacheableChecker.Check(expression);
 
-            return typeof(IQueryable).IsAssignableFrom(expression.Type) && (result.Enabled == true || (result.Enabled == null && option.CacheExecution));
+            var isQuerable = typeof(IQueryable).IsAssignableFrom(expression.Type) ||
+                typeof(Task<IQueryable>).IsAssignableFrom(expression.Type) ||
+                (expression.Type.IsGenericType && typeof(IEnumerable).IsAssignableFrom(expression.Type.GetGenericArguments()[0]));
+
+            return isQuerable && (result.Enabled == true || (result.Enabled == null && option.CacheExecution));
         }
 
         /// <summary>
@@ -55,48 +61,23 @@ namespace Fireasy.Data.Entity.Linq
             var option = section == null ? TranslateOptions.Default : section.Options;
             var result = CacheableChecker.Check(expression);
 
+            ICacheManager cacheMgr;
+
             //没有开启数据缓存
-            if ((result.Enabled == null && !option.CacheExecution) || result.Enabled == false)
+            if ((result.Enabled == null && !option.CacheExecution) || result.Enabled == false ||
+                (cacheMgr = CacheManagerFactory.CreateManager()) == null)
             {
                 return func();
             }
 
-            var cacheMgr = CacheManagerFactory.CreateManager();
-            if (cacheMgr == null)
-            {
-                return func();
-            }
-
-            var cacheKey = ExpressionKeyGenerator.GetKey(expression, "Exec");
-            cacheKey = NativeCacheKeyContext.GetKey(cacheKey);
-
-            Reference(cacheKey, expression);
+            var cacheKey = ExpressionKeyGenerator.GetKey(expression, CACHE_KEY);
 
             var segment = SegmentFinder.Find(expression);
             var pager = segment as DataPager;
 
-            var cacheFunc = new Func<CacheItem<T>>(() =>
-                {
-                    var data = EnumerateData(func());
-
-                    var isEnumerable = typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(IEnumerable<>);
-                    if (isEnumerable)
-                    {
-                        var elementType = typeof(T).GetEnumerableElementType();
-                        var method = typeof(Enumerable).GetMethod(nameof(Enumerable.ToList)).MakeGenericMethod(elementType);
-                        data = (T)method.Invoke(null, new object[] { data });
-                    }
-
-                    var total = 0;
-                    if (pager != null)
-                    {
-                        total = pager.RecordCount;
-                    }
-
-                    return new CacheItem<T> { Data = data, Total = total };
-                });
-
-            var cacheItem = cacheMgr.TryGet(cacheKey, cacheFunc, () => new RelativeTime(result.Expired ?? TimeSpan.FromSeconds(option.CacheExecutionTimes)));
+            var cacheItem = cacheMgr.TryGet(cacheKey,
+                () => HandleCacheItem(cacheKey, expression, func(), pager),
+                () => new RelativeTime(result.Expired ?? TimeSpan.FromSeconds(option.CacheExecutionTimes)));
 
             if (pager != null)
             {
@@ -107,39 +88,75 @@ namespace Fireasy.Data.Entity.Linq
         }
 
         /// <summary>
+        /// 异步的，尝试通过表达式获取执行后的结果缓存。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="expression"></param>
+        /// <param name="func"></param>
+        /// <returns></returns>
+        internal static async Task<T> TryGetAsync<T>(Expression expression, Func<Task<T>> func)
+        {
+            var section = ConfigurationUnity.GetSection<TranslatorConfigurationSection>();
+            var option = section == null ? TranslateOptions.Default : section.Options;
+            var result = CacheableChecker.Check(expression);
+
+            ICacheManager cacheMgr;
+
+            //没有开启数据缓存
+            if ((result.Enabled == null && !option.CacheExecution) || result.Enabled == false ||
+                (cacheMgr = CacheManagerFactory.CreateManager()) == null)
+            {
+                return await func();
+            }
+
+            var cacheKey = ExpressionKeyGenerator.GetKey(expression, CACHE_KEY);
+
+            var segment = SegmentFinder.Find(expression);
+            var pager = segment as DataPager;
+
+#if NET45
+            var cacheItem = cacheMgr.TryGet(cacheKey,
+                () => HandleCacheItem(cacheKey, expression, func().AsSync(), pager),
+                () => new RelativeTime(result.Expired ?? TimeSpan.FromSeconds(option.CacheExecutionTimes)));
+#else
+            var cacheItem = await cacheMgr.TryGetAsync(cacheKey,
+                async () => HandleCacheItem(cacheKey, expression, await func(), pager),
+                () => new RelativeTime(result.Expired ?? TimeSpan.FromSeconds(option.CacheExecutionTimes)));
+#endif
+
+            if (pager != null)
+            {
+                pager.RecordCount = cacheItem.Total;
+            }
+
+            return cacheItem.Data;
+        }
+
+        private static CacheItem<T> HandleCacheItem<T>(string cacheKey, Expression expression, T data, DataPager pager)
+        {
+            Task.Run(() => Reference(cacheKey, expression));
+
+            var total = 0;
+            if (pager != null)
+            {
+                total = pager.RecordCount;
+            }
+
+            return new CacheItem<T> { Data = data, Total = total };
+        }
+
+        /// <summary>
         /// 使相关的缓存过期。
         /// </summary>
         /// <param name="expression"></param>
-        /// <returns></returns>
-        internal static bool TryExpire(Expression expression)
+        internal static void TryExpire(Expression expression)
         {
             //查找是不是属于操作(新增，修改，删除)表达式，如果是，则需要清除关联缓存键
             var operateType = OperateFinder.Find(expression);
             if (operateType != null)
             {
-                ClearKeys(operateType);
-                return true;
+                Task.Run(() => ClearKeys(operateType));
             }
-
-            return false;
-        }
-
-        /// <summary>
-        /// 遍列数据。
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        private static T EnumerateData<T>(T data)
-        {
-            if (data != null && typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(IEnumerable<>))
-            {
-                var elementType = typeof(T).GetEnumerableElementType();
-                var method = MthToList.MakeGenericMethod(elementType);
-                return (T)method.Invoke(null, new object[] { data });
-            }
-
-            return data;
         }
 
         /// <summary>
@@ -166,22 +183,30 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="expression"></param>
         private static void Reference(string key, Expression expression)
         {
+            var cacheMgr = CacheManagerFactory.CreateManager();
             var types = RelationshipFinder.Find(expression);
 
-            foreach (var type in types)
-            {
-                if (referKeys.TryGetValue(type, out List<string> list))
+            locker.LockWrite(() =>
                 {
-                    if (!list.Contains(key))
+                    var rootKey = $"{CACHE_KEY}keys";
+                    var keyDict = cacheMgr.TryGet(rootKey, () => new Dictionary<string, List<string>>(), () => NeverExpired.Instance);
+
+                    foreach (var type in types)
                     {
-                        list.Add(key);
+                        if (!keyDict.TryGetValue(type.FullName, out List<string> keys))
+                        {
+                            keys = new List<string>();
+                            keyDict.Add(type.FullName, keys);
+                        }
+
+                        if (!keys.Contains(key))
+                        {
+                            keys.Add(key);
+                        }
                     }
-                }
-                else
-                {
-                    referKeys.GetOrAdd(type, () => new List<string> { key });
-                }
-            }
+
+                    cacheMgr.Add(rootKey, keyDict, NeverExpired.Instance);
+                });
         }
 
         /// <summary>
@@ -190,11 +215,37 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="type"></param>
         private static void ClearKeys(Type type)
         {
-            if (referKeys.TryRemove(type, out List<string> list))
-            {
-                var cacheMgr = CacheManagerFactory.CreateManager();
-                list.ForEach(s => cacheMgr.Remove(s));
-            }
+            locker.LockWrite(() =>
+                {
+                    var cacheMgr = CacheManagerFactory.CreateManager();
+                    var rootKey = $"{CACHE_KEY}keys";
+                    if (cacheMgr.TryGet(rootKey, out Dictionary<string, List<string>> keyDict))
+                    {
+                        //清除当前所有key
+                        if (keyDict.TryGetValue(type.FullName, out List<string> keys))
+                        {
+                            for (var i = keys.Count - 1; i >= 0; i--)
+                            {
+                                cacheMgr.Remove(keys[i]);
+                                keys.Remove(keys[i]);
+                            }
+                        }
+
+                        //清除无用的key
+                        foreach (var kvp in keyDict)
+                        {
+                            for (var i = kvp.Value.Count - 1; i >= 0; i--)
+                            {
+                                if (!cacheMgr.Contains(kvp.Value[i]))
+                                {
+                                    kvp.Value.RemoveAt(i);
+                                }
+                            }
+                        }
+
+                        cacheMgr.Add(rootKey, keyDict, NeverExpired.Instance);
+                    }
+                });
         }
 
         /// <summary>
@@ -274,14 +325,20 @@ namespace Fireasy.Data.Entity.Linq
                 switch (node.Method.Name)
                 {
                     case nameof(Extensions.RemoveWhere):
+                    case nameof(Extensions.RemoveWhereAsync):
                     case nameof(Extensions.UpdateWhere):
+                    case nameof(Extensions.UpdateWhereAsync):
                     case nameof(Extensions.CreateEntity):
+                    case nameof(Extensions.CreateEntityAsync):
                     case nameof(Extensions.BatchOperate):
+                    case nameof(Extensions.BatchOperateAsync):
                     case nameof(IRepository.Insert):
+                    case nameof(IRepository.InsertAsync):
                     case nameof(IRepository.Update):
+                    case nameof(IRepository.UpdateAsync):
                     case nameof(IRepository.Delete):
+                    case nameof(IRepository.DeleteAsync):
                         VisitExpressionList(node.Arguments);
-
                         break;
                 }
 

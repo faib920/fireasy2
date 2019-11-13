@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 
 namespace Fireasy.Data.Provider
@@ -88,5 +89,12 @@ namespace Fireasy.Data.Provider
         /// <param name="parameter"></param>
         /// <returns></returns>
         DbParameter PrepareParameter(DbParameter parameter);
+
+        /// <summary>
+        /// 修正事务隔离级别。
+        /// </summary>
+        /// <param name="level"></param>
+        /// <returns></returns>
+        IsolationLevel AmendIsolationLevel(IsolationLevel level);
     }
 }

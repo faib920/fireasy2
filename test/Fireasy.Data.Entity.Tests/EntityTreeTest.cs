@@ -24,7 +24,7 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var rep = db.CreateTreeRepository<Depts>();
                 var yn = db.Depts.FirstOrDefault(s => s.DeptName == "云南");
-                var has = rep.HasChildren(yn);
+                var has = rep.HasChildren(yn, s => true);
                 Assert.IsTrue(has);
 
                 var gz = db.Depts.FirstOrDefault(s => s.DeptName == "贵州");

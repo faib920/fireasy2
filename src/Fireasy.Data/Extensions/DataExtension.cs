@@ -515,11 +515,10 @@ namespace Fireasy.Data.Extensions
             var parameter = provider.DbProviderFactory.CreateParameter();
             Guard.NullReference(parameter);
 
-            var syntax = provider.GetService<ISyntaxProvider>();
-
             parameter.ParameterName = sourcePar.ParameterName;
             parameter.SourceColumn = sourcePar.SourceColumn;
             parameter.Direction = sourcePar.Direction;
+            parameter.DbType = sourcePar.DbType;
 
             //处理空值
             if (sourcePar.IsInput() &&

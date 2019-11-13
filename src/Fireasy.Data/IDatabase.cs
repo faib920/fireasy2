@@ -66,11 +66,6 @@ namespace Fireasy.Data
         bool RollbackTransaction();
 
         /// <summary>
-        /// 获取或设置日志函数。
-        /// </summary>
-        Action<IDbCommand, TimeSpan> Log { get; set; }
-
-        /// <summary>
         /// 执行查询文本并将结果填充到指定的 <see cref="DataTable"/> 对象中。
         /// </summary>
         /// <param name="queryCommand">查询命令。</param>

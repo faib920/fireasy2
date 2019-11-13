@@ -29,6 +29,6 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="expression">一个表示的表达式树 LINQ 查询。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns></returns>
-        Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken);
+        Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default);
     }
 }

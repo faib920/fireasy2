@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.Threading;
+using Fireasy.Common.Subscribes;
 using System;
 using System.IO;
 using System.Reflection;
@@ -20,9 +20,7 @@ namespace Fireasy.Common.Logging
     /// </summary>
     public class DefaultLogger : ILogger
     {
-        private static readonly string logFilePath;
-        private readonly ReadWriteLocker locker = new ReadWriteLocker();
-        private readonly AsyncLocker asyncLocker = new AsyncLocker();
+        protected static readonly string logFilePath;
 
         /// <summary>
         /// 获取 <see cref="DefaultLogger"/> 的静态实例。
@@ -35,6 +33,23 @@ namespace Fireasy.Common.Logging
         static DefaultLogger()
         {
             logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log");
+            DefaultSubscribeManager.Instance.AddSubscriber<DefaultLoggerSubject>(s =>
+               {
+                   using (var writer = new StreamWriter(s.FileName, true, Encoding.Default))
+                   {
+                       writer.WriteLine(s.Content);
+                   }
+               });
+        }
+
+        /// <summary>
+        /// 获取一个 <see cref="ILogger"/> 的子实例。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public ILogger GetLogger<T>() where T : class
+        {
+            return TypificationDefaultLogger<T>.Instance;
         }
 
         /// <summary>
@@ -189,14 +204,7 @@ namespace Fireasy.Common.Logging
             var content = GetLogContent(message, exception);
             var fileName = CreateLogFileName(logType);
 
-            locker.LockWrite(() =>
-                {
-                    using (var writer = new StreamWriter(fileName, true, Encoding.Default))
-                    {
-                        writer.WriteLine(content);
-                        writer.Flush();
-                    }
-                });
+            DefaultSubscribeManager.Instance.Publish(new DefaultLoggerSubject { FileName = fileName, Content = content });
         }
 
         /// <summary>
@@ -210,16 +218,7 @@ namespace Fireasy.Common.Logging
             var content = GetLogContent(message, exception);
             var fileName = CreateLogFileName(logType);
 
-            using (var locker = await asyncLocker.LockAsync())
-            using (var writer = new StreamWriter(fileName, true, Encoding.Default))
-            {
-#if NETSTANDARD && !NETSTANDARD2_0
-                    await writer.WriteLineAsync(content.AsMemory(), cancellationToken);
-#else
-                await writer.WriteLineAsync(content);
-#endif
-                await writer.FlushAsync();
-            }
+            await DefaultSubscribeManager.Instance.PublishAsync(new DefaultLoggerSubject { FileName = fileName, Content = content });
         }
 
         private string GetLogContent(object message, Exception exception)
@@ -282,6 +281,33 @@ namespace Fireasy.Common.Logging
 
                 curExp = curExp.InnerException;
             }
+        }
+
+        private class DefaultLoggerSubject
+        {
+            public string FileName { get; set; }
+
+            public string Content { get; set; }
+        }
+    }
+
+    /// <summary>
+    /// 类型化的默认日志记录器。
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class TypificationDefaultLogger<T> : DefaultLogger where T : class
+    {
+        public static TypificationDefaultLogger<T> Instance = new TypificationDefaultLogger<T>();
+
+        protected override string CreateLogFileName(string logType)
+        {
+            var path = Path.Combine(logFilePath, logType, DateTime.Today.ToString("yyyy-MM-dd"));
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
+            return Path.Combine(path, typeof(T).Name + ".log");
         }
     }
 }

@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using Fireasy.Data.Entity.Initializers;
 using System;
+using System.Data;
 
 namespace Fireasy.Data.Entity
 {
@@ -43,6 +44,11 @@ namespace Fireasy.Data.Entity
         /// 获取或设置是否验证实体属性。默认为 true。
         /// </summary>
         public bool ValidateEntity { get; set; } = true;
+
+        /// <summary>
+        /// 获取或设置默认的事务级别。默认为允许脏读。
+        /// </summary>
+        public IsolationLevel IsolationLevel { get; set; } = IsolationLevel.ReadUncommitted;
 
         /// <summary>
         /// 获取实例名称。

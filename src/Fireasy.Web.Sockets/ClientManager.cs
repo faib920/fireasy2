@@ -166,7 +166,7 @@ namespace Fireasy.Web.Sockets
             }
 
 #if NETSTANDARD
-                return Task.CompletedTask;
+            return Task.CompletedTask;
 #else
             return new Task(null);
 #endif
@@ -189,7 +189,7 @@ namespace Fireasy.Web.Sockets
         public override Task SendAsync(string method, params object[] arguments)
         {
 #if NETSTANDARD
-                return Task.CompletedTask;
+            return Task.CompletedTask;
 #else
             return new Task(null);
 #endif

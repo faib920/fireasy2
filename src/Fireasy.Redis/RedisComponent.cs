@@ -45,10 +45,6 @@ namespace Fireasy.Redis
             {
                 action();
             }
-            catch
-            {
-                throw;
-            }
             finally
             {
                 locker.Dispose();
@@ -67,10 +63,6 @@ namespace Fireasy.Redis
             try
             {
                 result = func();
-            }
-            catch
-            {
-                throw;
             }
             finally
             {
@@ -92,10 +84,6 @@ namespace Fireasy.Redis
             {
                 await task;
             }
-            catch
-            {
-                throw;
-            }
             finally
             {
                 locker.Dispose();
@@ -115,10 +103,6 @@ namespace Fireasy.Redis
             {
                 result = await func();
             }
-            catch
-            {
-                throw;
-            }
             finally
             {
                 locker.Dispose();
@@ -131,19 +115,18 @@ namespace Fireasy.Redis
         {
             var lockValue = $"{token}:LOCK_TOKEN";
 
-            while (true)
+            while (!db.LockTake(lockValue, token, timeout))
             {
-                if (db.LockTake(lockValue, token, timeout))
-                {
-                    try
-                    {
-                        action();
-                    }
-                    finally
-                    {
-                        db.LockRelease(lockValue, token);
-                    }
-                }
+                Thread.Sleep(100);
+            }
+
+            try
+            {
+                action();
+            }
+            finally
+            {
+                db.LockRelease(lockValue, token);
             }
         }
 
@@ -151,19 +134,18 @@ namespace Fireasy.Redis
         {
             var lockValue = $"{token}:LOCK_TOKEN";
 
-            while (true)
+            while (!db.LockTake(lockValue, token, timeout))
             {
-                if (db.LockTake(lockValue, token, timeout))
-                {
-                    try
-                    {
-                        return func();
-                    }
-                    finally
-                    {
-                        db.LockRelease(lockValue, token);
-                    }
-                }
+                Thread.Sleep(100);
+            }
+
+            try
+            {
+                return func();
+            }
+            finally
+            {
+                db.LockRelease(lockValue, token);
             }
         }
 
@@ -171,39 +153,37 @@ namespace Fireasy.Redis
         {
             var lockValue = $"{token}:LOCK_TOKEN";
 
-            while (true)
+            while (!await db.LockTakeAsync(lockValue, token, timeout))
             {
-                if (await db.LockTakeAsync(lockValue, token, timeout))
-                {
-                    try
-                    {
-                        await task;
-                    }
-                    finally
-                    {
-                        await db.LockReleaseAsync(lockValue, token);
-                    }
-                }
+                Thread.Sleep(100);
+            }
+
+            try
+            {
+                await task;
+            }
+            finally
+            {
+                await db.LockReleaseAsync(lockValue, token);
             }
         }
 
         protected async Task<T> LockAsync<T>(IDatabase db, string token, TimeSpan timeout, Func<Task<T>> func)
         {
-            var lockValue = $"{token}:LOCK_TOKEN";
+            var lockValue = $"token_{token}";
 
-            while (true)
+            while (!await db.LockTakeAsync(lockValue, token, timeout))
             {
-                if (await db.LockTakeAsync(lockValue, token, timeout))
-                {
-                    try
-                    {
-                        return await func();
-                    }
-                    finally
-                    {
-                        await db.LockReleaseAsync(lockValue, token);
-                    }
-                }
+                Thread.Sleep(100);
+            }
+
+            try
+            {
+                return await func();
+            }
+            finally
+            {
+                await db.LockReleaseAsync(lockValue, token);
             }
         }
 
@@ -294,7 +274,7 @@ namespace Fireasy.Redis
                 {
                     var connStr = new StringBuilder($"{host.Server}");
 
-#region connection build
+            #region connection build
                     if (host.Port != 0)
                     {
                         connStr.Append($":{host.Port}");
@@ -326,7 +306,7 @@ namespace Fireasy.Redis
                     }
 
                     connStr.Append(",allowAdmin=true");
-#endregion
+            #endregion
 
                     connectionStrs.Add(connStr.ToString());
                 }

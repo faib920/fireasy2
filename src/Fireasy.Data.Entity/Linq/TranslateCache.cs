@@ -38,7 +38,6 @@ namespace Fireasy.Data.Entity.Linq
             }
 
             var cacheKey = ExpressionKeyGenerator.GetKey(expression, "Trans");
-            cacheKey = NativeCacheKeyContext.GetKey(cacheKey);
 
             return MemoryCacheManager.Instance.TryGet(cacheKey, () =>
                 {
@@ -105,12 +104,19 @@ namespace Fireasy.Data.Entity.Linq
                 switch (node.Method.Name)
                 {
                     case nameof(Extensions.RemoveWhere):
+                    case nameof(Extensions.RemoveWhereAsync):
                     case nameof(Extensions.UpdateWhere):
+                    case nameof(Extensions.UpdateWhereAsync):
                     case nameof(Extensions.CreateEntity):
+                    case nameof(Extensions.CreateEntityAsync):
                     case nameof(Extensions.BatchOperate):
+                    case nameof(Extensions.BatchOperateAsync):
                     case nameof(IRepository.Insert):
+                    case nameof(IRepository.InsertAsync):
                     case nameof(IRepository.Update):
+                    case nameof(IRepository.UpdateAsync):
                     case nameof(IRepository.Delete):
+                    case nameof(IRepository.DeleteAsync):
                         result.Required = false;
                         break;
                     case nameof(Extensions.CacheParsing):

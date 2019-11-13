@@ -24,7 +24,16 @@ namespace Fireasy.Data.Entity.Subscribes
         /// <param name="subscriber"></param>
         public static void AddSubscriber(Action<EntityPersistentSubject> subscriber)
         {
-            SynchronizedSubscribeManager.Instance.AddSubscriber(typeof(EntityPersistentSubject), subscriber);
+            SynchronizedSubscribeManager.Instance.AddSubscriber<EntityPersistentSubject>(subscriber);
+        }
+
+        /// <summary>
+        /// 添加一个异步的读取实体持久化消息的方法。
+        /// </summary>
+        /// <param name="subscriber"></param>
+        public static void AddAsyncSubscriber(Func<EntityPersistentSubject, Task> subscriber)
+        {
+            SynchronizedSubscribeManager.Instance.AddAsyncSubscriber<EntityPersistentSubject>(subscriber);
         }
 
         /// <summary>
@@ -78,14 +87,14 @@ namespace Fireasy.Data.Entity.Subscribes
             SynchronizedSubscribeManager.Instance.AddSubscriber(typeof(EntityPersistentSubject), action);
         }
 
-        public static T OnCreate<T>(bool notification, IEntity entity, Func<T> func)
+        public static TResult OnCreate<TEntity, TResult>(bool notification, IEntity entity, Func<TResult> func)
         {
             if (!notification)
             {
                 return func();
             }
 
-            var ret = default(T);
+            var ret = default(TResult);
             if (Publish(entity, EntityPersistentEventType.BeforeCreate))
             {
                 ret = func();
@@ -95,14 +104,14 @@ namespace Fireasy.Data.Entity.Subscribes
             return ret;
         }
 
-        public static async  Task<T> OnCreateAsync<T>(bool notification, IEntity entity, Func<Task<T>> func)
+        public static async Task<TResult> OnCreateAsync<TEntity, TResult>(bool notification, IEntity entity, Func<Task<TResult>> func)
         {
             if (!notification)
             {
                 return await func();
             }
 
-            var ret = default(T);
+            var ret = default(TResult);
             if (Publish(entity, EntityPersistentEventType.BeforeCreate))
             {
                 ret = await func();
@@ -112,14 +121,14 @@ namespace Fireasy.Data.Entity.Subscribes
             return ret;
         }
 
-        public static T OnUpdate<T>(bool notification, IEntity entity, Func<T> func)
+        public static TResult OnUpdate<TEntity, TResult>(bool notification, IEntity entity, Func<TResult> func)
         {
             if (!notification)
             {
                 return func();
             }
 
-            var ret = default(T);
+            var ret = default(TResult);
             if (Publish(entity, EntityPersistentEventType.BeforeUpdate))
             {
                 ret = func();
@@ -129,14 +138,14 @@ namespace Fireasy.Data.Entity.Subscribes
             return ret;
         }
 
-        public static async Task<T> OnUpdateAsync<T>(bool notification, IEntity entity, Func<Task<T>> func)
+        public static async Task<TResult> OnUpdateAsync<TEntity, TResult>(bool notification, IEntity entity, Func<Task<TResult>> func)
         {
             if (!notification)
             {
                 return await func();
             }
 
-            var ret = default(T);
+            var ret = default(TResult);
             if (Publish(entity, EntityPersistentEventType.BeforeUpdate))
             {
                 ret = await func();
@@ -146,14 +155,14 @@ namespace Fireasy.Data.Entity.Subscribes
             return ret;
         }
 
-        public static T OnRemove<T>(bool notification, IEntity entity, Func<T> func)
+        public static TResult OnRemove<TEntity, TResult>(bool notification, IEntity entity, Func<TResult> func)
         {
             if (!notification)
             {
                 return func();
             }
 
-            var ret = default(T);
+            var ret = default(TResult);
             if (Publish(entity, EntityPersistentEventType.BeforeRemove))
             {
                 ret = func();
@@ -163,14 +172,14 @@ namespace Fireasy.Data.Entity.Subscribes
             return ret;
         }
 
-        public static async Task<T> OnRemoveAsync<T>(bool notification, IEntity entity, Func<Task<T>> func)
+        public static async Task<TResult> OnRemoveAsync<TEntity, TResult>(bool notification, IEntity entity, Func<Task<TResult>> func)
         {
             if (!notification)
             {
                 return await func();
             }
 
-            var ret = default(T);
+            var ret = default(TResult);
             if (Publish(entity, EntityPersistentEventType.BeforeRemove))
             {
                 ret = await func();
@@ -180,35 +189,35 @@ namespace Fireasy.Data.Entity.Subscribes
             return ret;
         }
 
-        public static T OnBatch<T>(bool notification, IEnumerable<IEntity> entities, EntityPersistentOperater operater, Func<T> func)
+        public static TResult OnBatch<TEntity, TResult>(bool notification, IEnumerable<IEntity> entities, EntityPersistentOperater operater, Func<TResult> func)
         {
             if (!notification)
             {
                 return func();
             }
 
-            var ret = default(T);
-            if (Publish<T>(entities, operater, EntityPersistentEventType.BeforeBatch))
+            var ret = default(TResult);
+            if (Publish<TEntity>(entities, operater, EntityPersistentEventType.BeforeBatch))
             {
                 ret = func();
-                Publish<T>(entities, operater, EntityPersistentEventType.AfterBatch);
+                Publish<TEntity>(entities, operater, EntityPersistentEventType.AfterBatch);
             }
 
             return ret;
         }
 
-        public static async Task<T> OnBatchAsync<T>(bool notification, IEnumerable<IEntity> entities, EntityPersistentOperater operater, Func<Task<T>> func)
+        public static async Task<TResult> OnBatchAsync<TEntity, TResult>(bool notification, IEnumerable<IEntity> entities, EntityPersistentOperater operater, Func<Task<TResult>> func)
         {
             if (!notification)
             {
                 return await func();
             }
 
-            var ret = default(T);
-            if (Publish<T>(entities, operater, EntityPersistentEventType.BeforeBatch))
+            var ret = default(TResult);
+            if (Publish<TEntity>(entities, operater, EntityPersistentEventType.BeforeBatch))
             {
                 ret = await func();
-                Publish<T>(entities, operater, EntityPersistentEventType.AfterBatch);
+                Publish<TEntity>(entities, operater, EntityPersistentEventType.AfterBatch);
             }
 
             return ret;

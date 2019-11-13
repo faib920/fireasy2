@@ -198,14 +198,7 @@ namespace Fireasy.Common.Emit
             {
                 foreach (var typeBuilder in typeBuilders)
                 {
-                    if (typeBuilder.Creator != null)
-                    {
-                        typeBuilder.Creator();
-                    }
-                    else
-                    {
-                        typeBuilder.CreateType();
-                    }
+                    typeBuilder.CreateType();
                 }
 
                 isCreated = true;

@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using Fireasy.Common.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Translators;
 using System;
@@ -33,7 +34,7 @@ namespace Fireasy.Data.Entity.Linq
             //使用md5进行hash编码
             var md5 = new MD5CryptoServiceProvider();
             byte[] data = md5.ComputeHash(Encoding.Unicode.GetBytes(cacheKey));
-            return string.Concat("$.", prefix, "_", Convert.ToBase64String(data, Base64FormattingOptions.None));
+            return string.Concat(prefix, data.ToHex(true));
         }
     }
 }

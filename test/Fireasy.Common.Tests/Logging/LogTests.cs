@@ -22,5 +22,16 @@ namespace Fireasy.Common.Tests.Logging
                 await DefaultLogger.Instance.InfoAsync("111----------");
             });
         }
+
+        [TestMethod]
+        public async Task TestSubLogger()
+        {
+            DefaultLogger.Instance.GetLogger<TestLogger>().Info("fireasy");
+        }
+
+        public class TestLogger
+        {
+
+        }
     }
 }

@@ -5,9 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.ComponentModel;
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,7 +16,7 @@ namespace Fireasy.Common.Subscribes
     /// </summary>
     public class SynchronizedSubscribeManager : ISubscribeManager
     {
-        private static SafetyDictionary<string, List<Delegate>> subscribers = new SafetyDictionary<string, List<Delegate>>();
+        private static SubscriberCollection subscribers = new SubscriberCollection();
 
         /// <summary>
         /// 缺省实例。
@@ -32,13 +30,7 @@ namespace Fireasy.Common.Subscribes
         /// <param name="subject">主题内容。</param>
         public void Publish<TSubject>(TSubject subject) where TSubject : class
         {
-            if (subscribers.TryGetValue(TopicHelper.GetTopicName(typeof(TSubject)), out List<Delegate> list))
-            {
-                if (list != null)
-                {
-                    list.ForEach(s => s.DynamicInvoke(subject));
-                }
-            }
+            subscribers.Accept(TopicHelper.GetTopicName(typeof(TSubject)), subject);
         }
 
         /// <summary>
@@ -49,13 +41,7 @@ namespace Fireasy.Common.Subscribes
         /// <param name="subject">主题内容。</param>
         public void Publish<TSubject>(string name, TSubject subject) where TSubject : class
         {
-            if (subscribers.TryGetValue(name, out List<Delegate> list))
-            {
-                if (list != null)
-                {
-                    list.ForEach(s => s.DynamicInvoke(subject));
-                }
-            }
+            subscribers.Accept(name, subject);
         }
 
         /// <summary>
@@ -66,7 +52,7 @@ namespace Fireasy.Common.Subscribes
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task PublishAsync<TSubject>(TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
         {
-            await Task.Run(() => Publish(subject), cancellationToken);
+            await Task.Run(() => Publish(subject));
         }
 
         /// <summary>
@@ -78,7 +64,7 @@ namespace Fireasy.Common.Subscribes
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task PublishAsync<TSubject>(string name, TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
         {
-            await Task.Run(() => Publish(name, subject), cancellationToken);
+            await Task.Run(() => Publish(name, subject));
         }
 
         /// <summary>
@@ -90,11 +76,19 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            var list = subscribers.GetOrAdd(TopicHelper.GetTopicName(typeof(TSubject)), () => new List<Delegate>());
-            if (list != null)
-            {
-                list.Add(subscriber);
-            }
+            subscribers.AddSyncSubscriber(TopicHelper.GetTopicName(typeof(TSubject)), subscriber);
+        }
+
+        /// <summary>
+        /// 添加一个异步的订阅方法。
+        /// </summary>
+        /// <typeparam name="TSubject"></typeparam>
+        /// <param name="subscriber">读取主题的方法。</param>
+        public void AddAsyncSubscriber<TSubject>(Func<TSubject, Task> subscriber) where TSubject : class
+        {
+            Guard.ArgumentNull(subscriber, nameof(subscriber));
+
+            subscribers.AddAsyncSubscriber(TopicHelper.GetTopicName(typeof(TSubject)), subscriber);
         }
 
         /// <summary>
@@ -107,11 +101,20 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            var list = subscribers.GetOrAdd(name, () => new List<Delegate>());
-            if (list != null)
-            {
-                list.Add(subscriber);
-            }
+            subscribers.AddSyncSubscriber(name, subscriber);
+        }
+
+        /// <summary>
+        /// 添加一个异步的订阅方法。
+        /// </summary>
+        /// <typeparam name="TSubject"></typeparam>
+        /// <param name="name">主题名称。</param>
+        /// <param name="subscriber">读取主题的方法。</param>
+        public void AddAsyncSubscriber<TSubject>(string name, Func<TSubject, Task> subscriber) where TSubject : class
+        {
+            Guard.ArgumentNull(subscriber, nameof(subscriber));
+
+            subscribers.AddAsyncSubscriber(name, subscriber);
         }
 
         /// <summary>
@@ -123,11 +126,7 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            var list = subscribers.GetOrAdd(TopicHelper.GetTopicName(subjectType), () => new List<Delegate>());
-            if (list != null)
-            {
-                list.Add(subscriber);
-            }
+            subscribers.AddSyncSubscriber(TopicHelper.GetTopicName(subjectType), subscriber);
         }
 
         /// <summary>
@@ -145,7 +144,7 @@ namespace Fireasy.Common.Subscribes
         /// <param name="subjectType">主题的类型。</param>
         public void RemoveSubscriber(Type subjectType)
         {
-            subscribers.TryRemove(TopicHelper.GetTopicName(subjectType), out List<Delegate> delegates);
+            subscribers.Remove(TopicHelper.GetTopicName(subjectType));
         }
 
         void ISubscribeManager.Publish(string name, byte[] data)

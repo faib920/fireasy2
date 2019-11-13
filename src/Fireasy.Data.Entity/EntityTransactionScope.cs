@@ -17,7 +17,7 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public class EntityTransactionScope : Scope<EntityTransactionScope>
     {
-        private SafetyDictionary<string, IDatabase> databases = new SafetyDictionary<string,IDatabase>();
+        private SafetyDictionary<string, IDatabase> databases = new SafetyDictionary<string, IDatabase>();
         private bool isDisposed;
 
         /// <summary>

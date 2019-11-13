@@ -27,9 +27,17 @@ namespace Fireasy.Data.Entity.Linq
         object Execute(Expression expression);
 
         /// <summary>
+        /// 执行 <see cref="Expression"/> 的查询，返回查询结果。
+        /// </summary>
+        /// <param name="expression">表示 LINQ 查询的表达式树。</param>
+        /// <returns></returns>
+        TResult Execute<TResult>(Expression expression);
+
+        /// <summary>
         /// 异步的，执行 <see cref="Expression"/> 的查询，返回查询结果。
         /// </summary>
         /// <param name="expression">表示 LINQ 查询的表达式树。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns></returns>
         Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default);
 

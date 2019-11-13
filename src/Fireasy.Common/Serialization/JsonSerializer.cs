@@ -65,7 +65,7 @@ namespace Fireasy.Common.Serialization
         [SuppressMessage("Microsoft.Usage", "CA2202")]
         public async Task<string> SerializeAsync<T>(T value)
         {
-            return await Task.Run(() => Serialize(value));
+            return Serialize(value);
         }
 
         /// <summary>
@@ -90,7 +90,7 @@ namespace Fireasy.Common.Serialization
         /// <param name="writer"></param>
         public async Task SerializeAsync<T>(T value, JsonWriter writer)
         {
-            await Task.Run(() => Serialize(value, writer));
+            Serialize(value, writer);
         }
 
         /// <summary>
@@ -124,7 +124,7 @@ namespace Fireasy.Common.Serialization
         [SuppressMessage("Microsoft.Usage", "CA2202")]
         public async Task<T> DeserializeAsync<T>(string json)
         {
-            return await Task.Run(() => Deserialize<T>(json));
+            return Deserialize<T>(json);
         }
 
         /// <summary>
@@ -149,7 +149,7 @@ namespace Fireasy.Common.Serialization
         /// <returns></returns>
         public async Task<T> DeserializeAsync<T>(JsonReader reader)
         {
-            return await Task.Run(() => Deserialize<T>(reader));
+            return Deserialize<T>(reader);
         }
 
         /// <summary>
@@ -183,7 +183,7 @@ namespace Fireasy.Common.Serialization
         [SuppressMessage("Microsoft.Usage", "CA2202")]
         public async Task<object> DeserializeAsync(string json, Type type)
         {
-            return await Task.Run(() => Deserialize(json, type));
+            return Deserialize(json, type);
         }
 
         /// <summary>
@@ -207,7 +207,7 @@ namespace Fireasy.Common.Serialization
         /// <returns>对象。</returns>
         public async Task<T> DeserializeAsync<T>(string json, T anyObj)
         {
-            return await Task.Run(() => Deserialize<T>(json));
+            return Deserialize<T>(json);
         }
     }
 }

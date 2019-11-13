@@ -34,7 +34,7 @@ namespace Fireasy.Common.Localization
             var res = manager.GetString(name, cultureInfo);
             if (res == null)
             {
-                throw new System.Exception($"The resource '{name}' not found.");
+                return name;
             }
 
             if (args != null && args.Length > 0)

@@ -6,7 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Xml;
-#if NETSTANDARD
+#if NETSTANDARD || NETCOREAPP
 using Microsoft.Extensions.Configuration;
 #endif
 
@@ -23,7 +23,7 @@ namespace Fireasy.Common.Configuration
         /// <param name="section">对应的配置节点。</param>
         void Initialize(XmlNode section);
 
-#if NETSTANDARD
+#if NETSTANDARD || NETCOREAPP
         void Bind(IConfiguration configuration);
 #endif
     }

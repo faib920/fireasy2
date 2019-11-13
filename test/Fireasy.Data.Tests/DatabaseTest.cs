@@ -205,30 +205,16 @@ namespace Fireasy.Data.Tests
         [TestMethod]
         public void TestExecuteEnumerableByPager()
         {
-            using (var db = DatabaseFactory.CreateDatabase("mssql"))
+            using (var db = DatabaseFactory.CreateDatabase())
             {
-                var sql = @"
-select r.StockedID, 
-			r.OrgID,
-			o.Code OrgCode,
-			o.Name OrgName,
-			o.FullName OrgFullName,
-			r.StoreID,
-			s.Name StoreName,
-			r.KindID,
-			k.Name KindName,
-			r.Amount,
-			(select top 1 BatchNo from GrainStockRecordRice where KindID=r.KindID and StoreID=r.StoreID and State=1 order by OperateTime desc) BatchNo 
-from  GrainStocked r 
-inner join SysOrg o on r.OrgID = o.OrgID 
-inner join Kind k on r.KindID = k.KindID 
-inner join Store s on r.StoreID = s.StoreID  
-where r.State=1 and o.Attribute=3 and o.SchemaID=15 and o.Code like '00%'
-order by o.Code";
+                var sql = (SqlCommand)"select * from customers";
 
                 var pager = new DataPager(5, 0);
-                var result = db.ExecuteEnumerable<Customer>((SqlCommand)sql, pager);
+
+                var result = db.ExecuteEnumerable<Customer>(sql, pager);
                 Console.WriteLine($"执行完毕 结果为{result.Count()}");
+
+                pager.CurrentPageIndex++;
             }
         }
 
@@ -306,6 +292,21 @@ order by o.Code";
                     Console.WriteLine(r.BagID);
                 }
                 Console.WriteLine("后续代码" + Thread.CurrentThread.ManagedThreadId);
+            }
+        }
+
+        [TestMethod]
+        public void TestStoreProcedure()
+        {
+            using (var db = DatabaseFactory.CreateDatabase())
+            {
+                var pager = new DataPager(3, 1);
+                var parameters = new ParameterCollection();
+                parameters.Add("in1", 10).AddOut<int>("out1");
+
+                var rr = db.ExecuteNonQuery((ProcedureCommand)"test", parameters);
+
+                Console.WriteLine(parameters[1].Value);
             }
         }
 

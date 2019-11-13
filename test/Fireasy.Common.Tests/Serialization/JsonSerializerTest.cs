@@ -247,6 +247,9 @@ studio");
             var json = serializer.Serialize(DEFAULT_DATE);
 
             Console.WriteLine(json);
+
+            json = Newtonsoft.Json.JsonConvert.SerializeObject(DEFAULT_DATE);
+            Console.WriteLine(json);
         }
 
         /// <summary>

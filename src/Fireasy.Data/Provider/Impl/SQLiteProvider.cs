@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Data;
 using Fireasy.Data.Batcher;
 using Fireasy.Data.Identity;
 using Fireasy.Data.RecordWrapper;
@@ -67,6 +68,16 @@ namespace Fireasy.Data.Provider
                 .TrySetValue(parameter.Database, "data source");
 
             return connectionString.Update();
+        }
+
+        public override IsolationLevel AmendIsolationLevel(IsolationLevel level)
+        {
+            if (level == IsolationLevel.ReadUncommitted)
+            {
+                return IsolationLevel.ReadCommitted;
+            }
+
+            return base.AmendIsolationLevel(level);
         }
     }
 }

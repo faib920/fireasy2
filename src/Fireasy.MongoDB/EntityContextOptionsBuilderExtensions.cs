@@ -12,7 +12,7 @@ namespace Fireasy.Data.Entity
     public static class EntityContextOptionsBuilderExtensions
     {
         /// <summary>
-        /// 配置 <see cref="EntityContext"/> 使用 SqlServer 数据库。
+        /// 配置 <see cref="EntityContext"/> 使用 MongoDB 数据库。
         /// </summary>
         /// <param name="connectionString"></param>
         public static void UseMongoDB(this EntityContextOptionsBuilder builder, string connectionString)

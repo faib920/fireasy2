@@ -27,7 +27,7 @@ namespace Fireasy.Data.Entity
         /// <param name="referEntity">参照的实体。</param>
         /// <param name="position">插入的位置。</param>
         /// <param name="isolation">数据隔离表达式。</param>
-        void Insert(IEntity entity, IEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression isolation = null);
+        int Insert(IEntity entity, IEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression isolation = null);
 
         /// <summary>
         /// 异步的，将一个实体插入到参照实体的相应位置。
@@ -37,7 +37,7 @@ namespace Fireasy.Data.Entity
         /// <param name="position">插入的位置。</param>
         /// <param name="isolation">数据隔离表达式。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
-        Task InsertAsync(IEntity entity, IEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression isolation = null, CancellationToken cancellationToken = default);
+        Task<int> InsertAsync(IEntity entity, IEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression isolation = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 将一组实体插入到参照实体的相应位置。
@@ -125,7 +125,7 @@ namespace Fireasy.Data.Entity
         /// <param name="referEntity">参照的实体。</param>
         /// <param name="position">插入的位置。</param>
         /// <param name="isolation">数据隔离表达式。</param>
-        void Insert(TEntity entity, TEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null);
+        int Insert(TEntity entity, TEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null);
 
         /// <summary>
         /// 异步的，将一个实体插入到参照实体的相应位置。
@@ -135,7 +135,7 @@ namespace Fireasy.Data.Entity
         /// <param name="position">插入的位置。</param>
         /// <param name="isolation">数据隔离表达式。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
-        Task InsertAsync(TEntity entity, TEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null, CancellationToken cancellationToken = default);
+        Task<int> InsertAsync(TEntity entity, TEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 将一组实体插入到参照实体的相应位置。

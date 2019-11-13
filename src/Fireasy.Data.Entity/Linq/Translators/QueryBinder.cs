@@ -127,6 +127,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         return Visit(node.Arguments[0]);
                     case nameof(Extensions.FirstOrDefaultAsync):
                     case nameof(Extensions.LastOrDefaultAsync):
+                    case nameof(Extensions.SingleOrDefaultAsync):
                         if (node.Arguments.Count == 2)
                         {
                             return BindFirst(node.Arguments[0], null, node.Method.Name.Replace("Async", string.Empty), node == this.root, true);
@@ -138,8 +139,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         break;
                     case nameof(Extensions.AnyAsync):
                     case nameof(Extensions.AllAsync):
-                        isQueryAsync = true;
-                        return BindAnyAll(node.Arguments[0], node.Method, node.Arguments.Count == 3 ? GetLambda(node.Arguments[1]) : null, node == root);
+                        return BindAnyAll(node.Arguments[0], node.Method, node.Arguments.Count == 3 ? GetLambda(node.Arguments[1]) : null, node == root, true);
+                    case nameof(Extensions.CountAsync):
+                    case nameof(Extensions.MinAsync):
+                    case nameof(Extensions.MaxAsync):
+                    case nameof(Extensions.SumAsync):
+                    case nameof(Extensions.AverageAsync):
+                        return BindAggregate(node.Arguments[0], node.Method, node.Arguments.Count == 3 ? GetLambda(node.Arguments[1]) : null, node == root, true);
                     case nameof(Extensions.ToListAsync):
                         isQueryAsync = true;
                         return Visit(node.Arguments[0]);
@@ -259,7 +265,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var source = Visit(m.Expression);
             if (IsAggregate(m.Member) && IsRemoteQuery(source))
             {
-                return BindAggregate(m.Expression, m.Member, null, m == this.root);
+                return BindAggregate(m.Expression, m.Member, null, m == this.root, false);
             }
 
             var result = BindMember(source, m.Member);
@@ -851,11 +857,20 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 case nameof(Enumerable.Count):
                 case nameof(Enumerable.LongCount):
+                case nameof(Extensions.CountAsync):
                     return AggregateType.Count;
-                case nameof(Enumerable.Min): return AggregateType.Min;
-                case nameof(Enumerable.Max): return AggregateType.Max;
-                case nameof(Enumerable.Sum): return AggregateType.Sum;
-                case nameof(Enumerable.Average): return AggregateType.Average;
+                case nameof(Enumerable.Min):
+                case nameof(Extensions.MinAsync):
+                    return AggregateType.Min;
+                case nameof(Enumerable.Max):
+                case nameof(Extensions.MaxAsync):
+                    return AggregateType.Max;
+                case nameof(Enumerable.Sum):
+                case nameof(Extensions.SumAsync):
+                    return AggregateType.Sum;
+                case nameof(Enumerable.Average):
+                case nameof(Extensions.AverageAsync):
+                    return AggregateType.Average;
                 default: throw new TranslateException(null, new Exception(SR.GetString(SRKind.UnknowAggregateType, name)));
             }
         }
@@ -986,7 +1001,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 case nameof(Queryable.Max):
                 case nameof(Queryable.Sum):
                 case nameof(Queryable.Average):
-                    newExp = BindAggregate(node.Arguments[0], node.Method, node.Arguments.Count == 2 ? GetLambda(node.Arguments[1]) : null, node == root);
+                    newExp = BindAggregate(node.Arguments[0], node.Method, node.Arguments.Count == 2 ? GetLambda(node.Arguments[1]) : null, node == root, false);
                     break;
                 case nameof(Queryable.Reverse):
                     newExp = BindReverse(node.Arguments[0]);
@@ -1038,12 +1053,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     }
                     break;
                 case nameof(Queryable.Any):
-                    newExp = BindAnyAll(node.Arguments[0], node.Method, node.Arguments.Count == 2 ? GetLambda(node.Arguments[1]) : null, node == root);
+                    newExp = BindAnyAll(node.Arguments[0], node.Method, node.Arguments.Count == 2 ? GetLambda(node.Arguments[1]) : null, node == root, false);
                     break;
                 case nameof(Queryable.All):
                     if (node.Arguments.Count == 2)
                     {
-                        newExp = BindAnyAll(node.Arguments[0], node.Method, GetLambda(node.Arguments[1]), node == root);
+                        newExp = BindAnyAll(node.Arguments[0], node.Method, GetLambda(node.Arguments[1]), node == root, false);
                     }
                     break;
                 case nameof(Queryable.Contains):
@@ -1121,9 +1136,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return (IQueryable)typeof(QuerySet<>).MakeGenericType(eleType).New(provider);
         }
 
-        private Expression BindAggregate(Expression source, MemberInfo member, LambdaExpression argument, bool isRoot)
+        private Expression BindAggregate(Expression source, MemberInfo member, LambdaExpression argument, bool isRoot, bool isAsync)
         {
             var returnType = member.GetMemberType();
+            var valueType = isAsync ? returnType.GetGenericArguments()[0] : returnType;
             var aggType = GetAggregateType(member.Name);
             var hasPredicateArg = HasPredicateArg(aggType);
             var isDistinct = false;
@@ -1169,17 +1185,33 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
 
             var alias = GetNextAlias();
-            var aggExpr = new AggregateExpression(returnType, aggType, argExpr, isDistinct);
+            var aggExpr = new AggregateExpression(valueType, aggType, argExpr, isDistinct);
             var select = new SelectExpression(alias, new[] { new ColumnDeclaration("", aggExpr) }, projection.Select, null);
 
             if (isRoot)
             {
-                var p = Expression.Parameter(typeof(IEnumerable<>).MakeGenericType(aggExpr.Type), "p");
-                var gator = Expression.Lambda(Expression.Call(typeof(Enumerable), nameof(Enumerable.Single), new[] { returnType }, p), p);
-                return new ProjectionExpression(select, new ColumnExpression(returnType, alias, string.Empty, null), gator, isQueryAsync);
+                ParameterExpression p;
+                LambdaExpression gator;
+
+                if (isAsync)
+                {
+#if NETSTANDARD && !NETSTANDARD2_0
+                    p = Expression.Parameter(typeof(IAsyncEnumerable<>).MakeGenericType(valueType), "p");
+#else
+                    p = Expression.Parameter(typeof(Task<>).MakeGenericType(typeof(IEnumerable<>).MakeGenericType(valueType)), "p");
+#endif
+                    gator = Expression.Lambda(Expression.Call(typeof(Extensions), nameof(Extensions.SingleOrDefaultCoreAsnyc), new Type[] { valueType }, p), p);
+                }
+                else
+                {
+                    p = Expression.Parameter(typeof(IEnumerable<>).MakeGenericType(valueType), "p");
+                    gator = Expression.Lambda(Expression.Call(typeof(Enumerable), nameof(Enumerable.SingleOrDefault), new[] { valueType }, p), p);
+                }
+
+                return new ProjectionExpression(select, new ColumnExpression(valueType, alias, string.Empty, null), gator, isAsync);
             }
 
-            var subquery = new ScalarExpression(returnType, select);
+            var subquery = new ScalarExpression(valueType, select);
 
             // if we can find the corresponding group-info we can build a special AggregateSubquery node that will enable us to
             // optimize the aggregate expression later using AggregateRewriter
@@ -1197,7 +1229,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 {
                     argExpr = info.Element;
                 }
-                aggExpr = new AggregateExpression(returnType, aggType, argExpr, isDistinct);
+                aggExpr = new AggregateExpression(valueType, aggType, argExpr, isDistinct);
 
                 // check for easy to optimize case.  If the projection that our aggregate is based on is really the 'group' argument from
                 // the query.GroupBy(xxx, (key, group) => yyy) method then whatever expression we return here will automatically
@@ -1339,6 +1371,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 Type elementType = projection.Projector.Type;
                 LambdaExpression gator;
+
                 if (isAsync)
                 {
 #if NETSTANDARD && !NETSTANDARD2_0
@@ -1359,7 +1392,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return projection;
         }
 
-        private Expression BindAnyAll(Expression source, MethodInfo method, LambdaExpression predicate, bool isRoot)
+        private Expression BindAnyAll(Expression source, MethodInfo method, LambdaExpression predicate, bool isRoot, bool isAsync)
         {
             var isAll = method.Name.StartsWith(nameof(Queryable.All));
             if (source is ConstantExpression constSource && !IsQueryable(constSource))
@@ -1409,7 +1442,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 if (syntax.SupportSubqueryInSelectWithoutFrom)
                 {
-                    return GetSingletonSequence(result, nameof(Queryable.SingleOrDefault));
+                    return GetSingletonSequence(result, isAsync);
                 }
                 else
                 {
@@ -1429,22 +1462,27 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return result;
         }
 
-        private Expression GetSingletonSequence(Expression expr, string aggregator)
+        private Expression GetSingletonSequence(Expression expr, bool isAsync)
         {
             LambdaExpression gator = null;
-            if (aggregator != null)
+            if (isAsync)
             {
 #if NETSTANDARD && !NETSTANDARD2_0
                 var p = Expression.Parameter(typeof(IAsyncEnumerable<>).MakeGenericType(expr.Type), "p");
-                gator = Expression.Lambda(Expression.Call(typeof(Extensions), nameof(Extensions.SingleOrDefaultCoreAsnyc), new[] { expr.Type }, p), p);
 #else
-                var p = Expression.Parameter(typeof(IEnumerable<>).MakeGenericType(expr.Type), "p");
-                gator = Expression.Lambda(Expression.Call(typeof(Enumerable), aggregator, new[] { expr.Type }, p), p);
+                var p = Expression.Parameter(typeof(Task<>).MakeGenericType(typeof(IEnumerable<>).MakeGenericType(expr.Type)), "p");
 #endif
+                gator = Expression.Lambda(Expression.Call(typeof(Extensions), nameof(Extensions.SingleOrDefaultCoreAsnyc), new[] { expr.Type }, p), p);
             }
+            else 
+            {
+                var p = Expression.Parameter(typeof(IEnumerable<>).MakeGenericType(expr.Type), "p");
+                gator = Expression.Lambda(Expression.Call(typeof(Enumerable), nameof(Enumerable.SingleOrDefault), new[] { expr.Type }, p), p);
+            }
+
             var alias = GetNextAlias();
             var select = new SelectExpression(alias, new[] { new ColumnDeclaration("v", expr) }, null, null);
-            return new ProjectionExpression(select, new ColumnExpression(expr.Type, alias, "v", null), gator, isQueryAsync);
+            return new ProjectionExpression(select, new ColumnExpression(expr.Type, alias, "v", null), gator, isAsync);
         }
 
         private Expression BindContains(Expression source, Expression match, bool isRoot)
@@ -1484,7 +1522,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
 
             //属性是一个集合的情况
-            if (source is MemberExpression mbrExp && source.Type.IsArray || 
+            if (source is MemberExpression mbrExp && source.Type.IsArray ||
                 (source.Type.IsGenericParameter &&
                     (source.Type.GetGenericTypeDefinition() == typeof(IEnumerable<>) || source.Type.GetGenericTypeDefinition() == typeof(List<>))))
             {
@@ -1504,7 +1542,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             match = Visit(match);
             Expression result = new InExpression(match, projection.Select);
-            return isRoot ? GetSingletonSequence(result, nameof(Queryable.SingleOrDefault)) : result;
+            return isRoot ? GetSingletonSequence(result, false) : result;
         }
 
         /// <summary>

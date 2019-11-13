@@ -7,19 +7,17 @@
 // -----------------------------------------------------------------------
 
 using Fireasy.Common.Dynamic;
+using Fireasy.Data.Entity.Linq;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fireasy.Data.Entity.Dynamic
 {
     public static class RepositoryExtension
     {
-        public static IQueryable Where(this IRepository repository, Expression predicate)
-        {
-            return Where(repository as IQueryable, predicate);
-        }
-
         public static IQueryable Where(this IQueryable queryable, Expression predicate)
         {
             if (queryable == null || predicate == null)
@@ -31,11 +29,6 @@ namespace Fireasy.Data.Entity.Dynamic
                 new[] { queryable.Expression, predicate });
 
             return queryable.Provider.CreateQuery(expression);
-        }
-
-        public static object FirstOrDefault(this IRepository repository, Expression predicate = null)
-        {
-            return FirstOrDefault(repository as IQueryable, predicate);
         }
 
         public static object FirstOrDefault(this IQueryable queryable, Expression predicate = null)
@@ -90,11 +83,6 @@ namespace Fireasy.Data.Entity.Dynamic
             return queryable.Provider.CreateQuery(expression);
         }
 
-        public static bool Any(this IRepository repository, Expression predicate)
-        {
-            return Any(repository as IQueryable, predicate);
-        }
-
         public static bool Any(this IQueryable queryable, Expression predicate)
         {
             if (queryable == null)
@@ -107,11 +95,6 @@ namespace Fireasy.Data.Entity.Dynamic
                 new[] { queryable.Expression, predicate });
 
             return (bool)queryable.Provider.Execute(expression);
-        }
-
-        public static bool All(this IRepository repository, Expression predicate)
-        {
-            return All(repository as IQueryable, predicate);
         }
 
         public static bool All(this IQueryable queryable, Expression predicate)

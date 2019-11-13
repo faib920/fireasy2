@@ -7,9 +7,11 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common;
 using Fireasy.Common.ComponentModel;
+using Fireasy.Common.Extensions;
 using Fireasy.Common.Logging;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 #if !NETCOREAPP
 using System.Web.Mvc;
 #else
@@ -39,11 +41,16 @@ namespace Fireasy.Web.Mvc
         {
 #if !NETCOREAPP
             var descriptor = ActionContext.Current != null ? ActionContext.Current.ActionDescriptor as ReflectedActionDescriptor : null;
-            if (descriptor != null && typeof(JsonResult).IsAssignableFrom(descriptor.MethodInfo.ReturnType))
+            if (descriptor != null && IsJsonResult(descriptor.MethodInfo.ReturnType))
 #else
             var descriptor = filterContext.ActionDescriptor as ControllerActionDescriptor;
-            if (descriptor != null && typeof(JsonResult).IsAssignableFrom(descriptor.MethodInfo.ReturnType))
+            if (descriptor != null && IsJsonResult(descriptor.MethodInfo.ReturnType))
 #endif
+            {
+                HandleExceptionForJson(filterContext);
+            }
+            else if (descriptor != null && 
+                descriptor.MethodInfo.GetCustomAttributes<ActionJsonResultAttribute>().Any())
             {
                 HandleExceptionForJson(filterContext);
             }
@@ -57,19 +64,24 @@ namespace Fireasy.Web.Mvc
         /// <param name="filterContext"></param>
         protected virtual void HandleExceptionForJson(ExceptionContext filterContext)
         {
+            ActionResult result;
             //如果是通知类的异常，直接输出提示
             var notifyExp = GetNotificationException(filterContext.Exception);
             if (notifyExp != null)
             {
-                filterContext.Result = new JsonResultWrapper(Result.Fail(notifyExp.Message));
-                filterContext.ExceptionHandled = true;
-                return;
+                result = new JsonResultWrapper(Result.Fail(notifyExp.Message));
             }
             else
             {
-                filterContext.Result = GetHandledResult(filterContext);
+                result = GetHandledResult(filterContext);
+            }
+
+            if (result != null)
+            {
+                filterContext.Result = result;
                 filterContext.ExceptionHandled = true;
             }
+
         }
 
         /// <summary>
@@ -106,8 +118,7 @@ namespace Fireasy.Web.Mvc
             if (ActionContext.Current != null)
             {
                 attr = ActionContext.Current.ActionDescriptor
-                    .GetCustomAttributes(typeof(EmptyArrayResultAttribute), false)
-                    .Cast<EmptyArrayResultAttribute>().FirstOrDefault();
+                    .GetCustomAttributes<EmptyArrayResultAttribute>().FirstOrDefault();
 
             }
 #else
@@ -134,6 +145,17 @@ namespace Fireasy.Web.Mvc
             }
 
             return new JsonResultWrapper(Result.Fail("发生错误，请查阅相关日志或联系管理员。"));
+        }
+
+        /// <summary>
+        /// 判断是否为 <see cref="JsonResult"/> 类型。
+        /// </summary>
+        /// <param name="returnType"></param>
+        /// <returns></returns>
+        private bool IsJsonResult(Type returnType)
+        {
+            return typeof(JsonResult).IsAssignableFrom(returnType) ||
+                (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>) && typeof(JsonResult).IsAssignableFrom(returnType.GetGenericArguments()[0]));
         }
 
         /// <summary>

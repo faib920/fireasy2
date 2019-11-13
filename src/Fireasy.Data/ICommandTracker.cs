@@ -22,6 +22,20 @@ namespace Fireasy.Data
         /// </summary>
         /// <param name="command">当前执行的命令。</param>
         /// <param name="period">所耗用的时间。</param>
+        void Write(IDbCommand command, TimeSpan period);
+
+        /// <summary>
+        /// 记录下执行失败的命令。
+        /// </summary>
+        /// <param name="command">当前执行的命令。</param>
+        /// <param name="exception"></param>
+        void Fail(IDbCommand command, Exception exception);
+
+        /// <summary>
+        /// 记录下当前执行的命令和所用的时间。
+        /// </summary>
+        /// <param name="command">当前执行的命令。</param>
+        /// <param name="period">所耗用的时间。</param>
         Task WriteAsync(IDbCommand command, TimeSpan period, CancellationToken cancellationToken = default);
 
         /// <summary>

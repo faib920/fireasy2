@@ -19,9 +19,20 @@ namespace Fireasy.NLog
     {
         private global::NLog.ILogger log;
 
-        public Logger()
+        protected Logger(Type type)
         {
-            log = global::NLog.LogManager.GetLogger("fireasy");
+            log = type == null ? global::NLog.LogManager.GetLogger("fireasy") : 
+                global::NLog.LogManager.GetLogger("fireasy", type);
+        }
+
+        public Logger()
+            : this(null)
+        {
+        }
+
+        public ILogger GetLogger<T>() where T : class
+        {
+            return new Logger(typeof(T));
         }
 
         /// <summary>

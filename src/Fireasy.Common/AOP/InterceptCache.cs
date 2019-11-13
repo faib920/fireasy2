@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Fireasy.Common.Extensions;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Fireasy.Common.Aop
 {
@@ -26,6 +27,7 @@ namespace Fireasy.Common.Aop
         internal static MethodInfo CallInfoGetMember = typeof(InterceptCallInfo).GetMethod($"get_{nameof(InterceptCallInfo.Member)}");
         internal static MethodInfo CallInfoSetMember = typeof(InterceptCallInfo).GetMethod($"set_{nameof(InterceptCallInfo.Member)}");
         internal static MethodInfo CallInfoSetTarget = typeof(InterceptCallInfo).GetMethod($"set_" + nameof(InterceptCallInfo.Target));
+        internal static MethodInfo CallInfoSetReturnType = typeof(InterceptCallInfo).GetMethod($"set_" + nameof(InterceptCallInfo.ReturnType));
         internal static MethodInfo CallInfoSetDefinedType = typeof(InterceptCallInfo).GetMethod($"set_{nameof(InterceptCallInfo.DefinedType)}");
         internal static MethodInfo CallInfoSetArguments = typeof(InterceptCallInfo).GetMethod($"set_{nameof(InterceptCallInfo.Arguments)}");
         internal static MethodInfo CallInfoGetArguments = typeof(InterceptCallInfo).GetMethod($"get_{nameof(InterceptCallInfo.Arguments)}");
@@ -45,6 +47,7 @@ namespace Fireasy.Common.Aop
         internal static MethodInfo AttributesGetItem = typeof(List<InterceptAttribute>).GetMethod($"get_Item");
         internal static MethodInfo MethodGetDefaultValue = typeof(ReflectionExtension).GetMethod(nameof(ReflectionExtension.GetDefaultValue));
         internal static MethodInfo MethodAllGetAttributes = typeof(AspectUtil).GetMethod(nameof(AspectUtil.GetInterceptAttributes));
+        internal static MethodInfo MthTaskFromResult = typeof(Task).GetMethod(nameof(Task.FromResult));
     }
 
     public class AspectUtil

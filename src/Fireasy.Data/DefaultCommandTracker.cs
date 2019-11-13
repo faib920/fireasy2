@@ -6,13 +6,14 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.Subscribes;
+using Fireasy.Data.Extensions;
 using System;
 using System.Data;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Fireasy.Common.Threading;
-using Fireasy.Data.Extensions;
 
 namespace Fireasy.Data
 {
@@ -21,47 +22,75 @@ namespace Fireasy.Data
     /// </summary>
     internal class DefaultCommandTracker : ICommandTracker
     {
-        private readonly AsyncLocker asyncLocker = new AsyncLocker();
         private string logPath;
 
         internal static ICommandTracker Instance = new DefaultCommandTracker();
+
+        protected DefaultCommandTracker()
+        {
+            DefaultSubscribeManager.Instance.AddSubscriber<CommandTrackerSubject>(s =>
+                {
+                    using (var writer = new StreamWriter(s.FileName, true, Encoding.Default))
+                    {
+                        writer.WriteLine(s.Content);
+                    }
+                });
+        }
+
+        void ICommandTracker.Write(IDbCommand command, TimeSpan period)
+        {
+            CreateDirectory();
+
+            var fileName = Path.Combine(logPath, DateTime.Today.ToString("yyyy-MM-dd") + ".log");
+            var content = $@"time: {DateTime.Now}
+sql: {command.Output()}
+timer(s): {period}
+===========================================================
+";
+
+            DefaultSubscribeManager.Instance.Publish(new CommandTrackerSubject { FileName = fileName, Content = content });
+        }
+
+        void ICommandTracker.Fail(IDbCommand command, Exception exception)
+        {
+            CreateDirectory();
+
+            var fileName = Path.Combine(logPath, DateTime.Today.ToString("yyyy-MM-dd") + ".error.log");
+            var content = $@"time: {DateTime.Now}
+sql: {command.Output()}
+error: {exception.Message}
+===========================================================
+";
+
+            DefaultSubscribeManager.Instance.Publish(new CommandTrackerSubject { FileName = fileName, Content = content });
+        }
 
         async Task ICommandTracker.WriteAsync(IDbCommand command, TimeSpan period, CancellationToken cancellationToken)
         {
             CreateDirectory();
 
-            using (var locker = await asyncLocker.LockAsync())
-            {
-                var fileName = Path.Combine(logPath, DateTime.Today.ToString("yyyy-MM-dd") + ".log");
-                using (var stream = new StreamWriter(fileName, true))
-                {
-                    await stream.WriteLineAsync("time: " + DateTime.Now);
-                    await stream.WriteLineAsync("sql: " + command.Output());
-                    await stream.WriteLineAsync("timer(s): " + period);
-                    await stream.WriteLineAsync("===========================================================");
-                    await stream.WriteLineAsync();
-                    await stream.FlushAsync();
-                }
-            }
+            var fileName = Path.Combine(logPath, DateTime.Today.ToString("yyyy-MM-dd") + ".log");
+            var content = $@"time: {DateTime.Now}
+sql: {command.Output()}
+timer(s): {period}
+===========================================================
+";
+
+            await DefaultSubscribeManager.Instance.PublishAsync(new CommandTrackerSubject { FileName = fileName, Content = content });
         }
 
         async Task ICommandTracker.FailAsync(IDbCommand command, Exception exception, CancellationToken cancellationToken)
         {
             CreateDirectory();
 
-            using (var locker = await asyncLocker.LockAsync())
-            {
-                var fileName = Path.Combine(logPath, DateTime.Today.ToString("yyyy-MM-dd") + ".error.log");
-                using (var stream = new StreamWriter(fileName, true))
-                {
-                    await stream.WriteLineAsync("time: " + DateTime.Now);
-                    await stream.WriteLineAsync("sql: " + command.Output());
-                    await stream.WriteLineAsync("error: " + exception.Message);
-                    await stream.WriteLineAsync("===========================================================");
-                    await stream.WriteLineAsync();
-                    await stream.FlushAsync();
-                }
-            }
+            var fileName = Path.Combine(logPath, DateTime.Today.ToString("yyyy-MM-dd") + ".error.log");
+            var content = $@"time: {DateTime.Now}
+sql: {command.Output()}
+error: {exception.Message}
+===========================================================
+";
+
+            await DefaultSubscribeManager.Instance.PublishAsync(new CommandTrackerSubject { FileName = fileName, Content = content });
         }
 
         private void CreateDirectory()
@@ -71,6 +100,13 @@ namespace Fireasy.Data
             {
                 Directory.CreateDirectory(logPath);
             }
+        }
+
+        private class CommandTrackerSubject
+        {
+            public string FileName { get; set; }
+
+            public string Content { get; set; }
         }
     }
 }

@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net45;netcoreapp2.1;</TargetFrameworks>
+    <TargetFrameworks>net45;netstandard2.0;</TargetFrameworks>
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
@@ -12,7 +12,7 @@
     <SignAssembly>True</SignAssembly>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Asp.Net WebSocket</Product>
-    <Version>2.1.0-beta2</Version>
+    <Version>2.1.0</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
@@ -26,12 +26,12 @@
     <DocumentationFile>..\..\Release\net45\Fireasy.Web.Sockets.xml</DocumentationFile>
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netcoreapp2.1|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
     <DocumentationFile>..\..\Release\netstandard2.0\Fireasy.Web.Sockets.xml</DocumentationFile>
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1;'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.WebSockets" Version="2.1.0" />
   </ItemGroup>
@@ -42,5 +42,4 @@
     <Reference Include="System.Web" />
     <Reference Include="System.Net.Http.WebRequest" />
   </ItemGroup>
-
 </Project>

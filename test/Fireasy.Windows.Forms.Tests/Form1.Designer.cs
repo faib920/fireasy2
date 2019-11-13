@@ -28,14 +28,26 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
+            this.button1 = new System.Windows.Forms.Button();
             this.treeList1 = new Fireasy.Windows.Forms.TreeList();
             this.treeListColumn1 = new Fireasy.Windows.Forms.TreeListColumn();
             this.treeListColumn2 = new Fireasy.Windows.Forms.TreeListColumn();
             this.treeListColumn3 = new Fireasy.Windows.Forms.TreeListColumn();
             this.treeListColumn4 = new Fireasy.Windows.Forms.TreeListColumn();
             this.treeListColumn5 = new Fireasy.Windows.Forms.TreeListColumn();
-            this.button1 = new System.Windows.Forms.Button();
+            this.stringLocalizerHolder1 = new Fireasy.Windows.Forms.StringLocalizerHolder(this.components);
             this.SuspendLayout();
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(353, 489);
+            this.button1.Name = "button1";
+            this.stringLocalizerHolder1.SetResourceKey(this.button1, "");
+            this.button1.Size = new System.Drawing.Size(75, 47);
+            this.button1.TabIndex = 1;
+            this.button1.Text = "button1";
+            this.button1.UseVisualStyleBackColor = true;
             // 
             // treeList1
             // 
@@ -53,6 +65,7 @@
             this.treeList1.Location = new System.Drawing.Point(12, 12);
             this.treeList1.Name = "treeList1";
             this.treeList1.NoneItemText = "没有可显示的数据";
+            this.stringLocalizerHolder1.SetResourceKey(this.treeList1, "");
             this.treeList1.RowNumberIndex = 0;
             this.treeList1.Size = new System.Drawing.Size(828, 494);
             this.treeList1.SortKey = null;
@@ -66,6 +79,7 @@
             this.treeListColumn1.ForeColor = System.Drawing.Color.Empty;
             this.treeListColumn1.Formatter = null;
             this.treeListColumn1.Image = null;
+            this.stringLocalizerHolder1.SetResourceKey(this.treeListColumn1, "");
             this.treeListColumn1.Text = "treeListColumn1";
             this.treeListColumn1.Validator = null;
             this.treeListColumn1.Width = 200;
@@ -76,6 +90,7 @@
             this.treeListColumn2.ForeColor = System.Drawing.Color.Empty;
             this.treeListColumn2.Formatter = null;
             this.treeListColumn2.Image = null;
+            this.stringLocalizerHolder1.SetResourceKey(this.treeListColumn2, "");
             this.treeListColumn2.Text = "treeListColumn2";
             this.treeListColumn2.Validator = null;
             this.treeListColumn2.Width = 200;
@@ -86,6 +101,7 @@
             this.treeListColumn3.ForeColor = System.Drawing.Color.Empty;
             this.treeListColumn3.Formatter = null;
             this.treeListColumn3.Image = null;
+            this.stringLocalizerHolder1.SetResourceKey(this.treeListColumn3, "");
             this.treeListColumn3.Text = "treeListColumn3";
             this.treeListColumn3.Validator = null;
             this.treeListColumn3.Width = 200;
@@ -96,6 +112,7 @@
             this.treeListColumn4.ForeColor = System.Drawing.Color.Empty;
             this.treeListColumn4.Formatter = null;
             this.treeListColumn4.Image = null;
+            this.stringLocalizerHolder1.SetResourceKey(this.treeListColumn4, "");
             this.treeListColumn4.Text = "treeListColumn4";
             this.treeListColumn4.Validator = null;
             this.treeListColumn4.Width = 200;
@@ -106,18 +123,15 @@
             this.treeListColumn5.ForeColor = System.Drawing.Color.Empty;
             this.treeListColumn5.Formatter = null;
             this.treeListColumn5.Image = null;
+            this.stringLocalizerHolder1.SetResourceKey(this.treeListColumn5, "");
             this.treeListColumn5.Text = "treeListColumn5";
             this.treeListColumn5.Validator = null;
             this.treeListColumn5.Width = 200;
             // 
-            // button1
+            // stringLocalizerHolder1
             // 
-            this.button1.Location = new System.Drawing.Point(353, 489);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 47);
-            this.button1.TabIndex = 1;
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
+            this.stringLocalizerHolder1.Name = "Demo";
+            this.stringLocalizerHolder1.SetResourceKey(this.stringLocalizerHolder1, "");
             // 
             // Form1
             // 
@@ -127,6 +141,7 @@
             this.Controls.Add(this.button1);
             this.Controls.Add(this.treeList1);
             this.Name = "Form1";
+            this.stringLocalizerHolder1.SetResourceKey(this, "");
             this.Text = "Form1";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.ResumeLayout(false);
@@ -142,6 +157,7 @@
         private TreeListColumn treeListColumn4;
         private TreeListColumn treeListColumn5;
         private System.Windows.Forms.Button button1;
+        private StringLocalizerHolder stringLocalizerHolder1;
     }
 }
 

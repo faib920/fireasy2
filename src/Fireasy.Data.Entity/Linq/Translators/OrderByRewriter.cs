@@ -16,7 +16,6 @@ namespace Fireasy.Data.Entity.Linq.Translators
     public class OrderByRewriter : DbExpressionVisitor
     {
         private IList<OrderExpression> gatheredOrderings;
-        private HashSet<string> uniqueColumns;
         private bool isOuterMostSelect = true;
         private bool suppressOrderby;
 

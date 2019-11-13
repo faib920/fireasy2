@@ -155,7 +155,7 @@ namespace Fireasy.Common.Caching
         /// <param name="expiration">判断对象过期的对象。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns></returns>
-        Task<T> TryGetAsync<T>(string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default);
+        Task<T> TryGetAsync<T>(string cacheKey, Func<Task<T>> factory, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 尝试获取指定缓存键的对象，如果没有则使用工厂函数添加对象到缓存中。
@@ -176,7 +176,7 @@ namespace Fireasy.Common.Caching
         /// <param name="expiration">判断对象过期的对象。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns></returns>
-        Task<object> TryGetAsync(Type dataType, string cacheKey, Func<object> factory, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default);
+        Task<object> TryGetAsync(Type dataType, string cacheKey, Func<Task<object>> factory, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 尝试获取指定缓存键的对象。

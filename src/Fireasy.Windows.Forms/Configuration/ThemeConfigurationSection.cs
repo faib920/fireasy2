@@ -7,6 +7,9 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
+#if NETCOREAPP
+using Microsoft.Extensions.Configuration;
+#endif
 using System;
 using System.Xml;
 
@@ -17,7 +20,7 @@ namespace Fireasy.Windows.Forms.Configuration
     {
         public override void Initialize(XmlNode section)
         {
-            var baseRedererTypeName = section.GetAttributeValue("treeList");
+            var baseRedererTypeName = section.GetAttributeValue("base");
             if (!string.IsNullOrEmpty(baseRedererTypeName))
             {
                 BaseRedererType = baseRedererTypeName.ParseType();
@@ -35,6 +38,29 @@ namespace Fireasy.Windows.Forms.Configuration
                 TabControlRedererType = tabControlRedererTypeName.ParseType();
             }
         }
+
+#if NETCOREAPP
+        public override void Bind(IConfiguration configuration)
+        {
+            var baseRedererTypeName = configuration.GetSection("base");
+            if (baseRedererTypeName.Exists() && !string.IsNullOrEmpty(baseRedererTypeName.Value))
+            {
+                BaseRedererType = baseRedererTypeName.Value.ParseType();
+            }
+
+            var treeListRedererTypeName = configuration.GetSection("treeList");
+            if (treeListRedererTypeName.Exists() && !string.IsNullOrEmpty(treeListRedererTypeName.Value))
+            {
+                TreeListRedererType = treeListRedererTypeName.Value.ParseType();
+            }
+
+            var tabControlRedererTypeName = configuration.GetSection("tabControl");
+            if (tabControlRedererTypeName.Exists() && !string.IsNullOrEmpty(tabControlRedererTypeName.Value))
+            {
+                TabControlRedererType = tabControlRedererTypeName.Value.ParseType();
+            }
+        }
+#endif
 
         public Type BaseRedererType { get; set; }
 

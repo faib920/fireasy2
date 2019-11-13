@@ -63,7 +63,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             translation = ComparisonRewriter.Rewrite(translation);
 
             Expression rewritten;
-            if (TranslateScope.Current.ContextService is IQueryPolicy policy)
+            if (TranslateScope.Current != null && TranslateScope.Current.ContextService is IQueryPolicy policy)
             {
                 rewritten = RelationshipIncluder.Include(policy, translation);
                 if (rewritten != translation)

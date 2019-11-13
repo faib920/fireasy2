@@ -26,7 +26,7 @@ namespace Fireasy.Data.Entity.Linq
         , IAsyncEnumerable<T>
 #endif
     {
-        private IList<T> list;
+        private IList list;
 
         protected QuerySet()
         {
@@ -39,7 +39,7 @@ namespace Fireasy.Data.Entity.Linq
             Expression = Expression.Constant(instance, typeof(QuerySet<T>));
         }
 
-        public QuerySet(QueryProvider provider, Expression expression)
+        public QuerySet(IQueryProvider provider, Expression expression)
         {
             Provider = provider ?? throw new ArgumentNullException(nameof(provider));
             Expression = expression ?? throw new ArgumentNullException(nameof(expression));
@@ -68,7 +68,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public IEnumerator<T> GetEnumerator()
         {
-            return ExecuteList().GetEnumerator();
+            var enumerable = Provider.Execute<IEnumerable<T>>(Expression);
+            return enumerable.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -85,7 +86,7 @@ namespace Fireasy.Data.Entity.Linq
 
         IList IListSource.GetList()
         {
-            return ExecuteList() as IList;
+            return list ?? (list = Provider.Execute<IEnumerable<T>>(Expression).ToList());
         }
 
         #endregion 实现IListSource接口
@@ -97,28 +98,11 @@ namespace Fireasy.Data.Entity.Linq
             get { return typeof(T); }
         }
 
-        public Expression Expression { get; private set; }
+        public Expression Expression { get; internal set; }
 
         public IQueryProvider Provider { get; private set; }
 
         #endregion 实现IQueryable接口
-
-        private IList<T> ExecuteList()
-        {
-            if (list == null)
-            {
-                if (Provider == null)
-                {
-                    list = new List<T>();
-                }
-                else
-                {
-                    list = Provider.Execute<IEnumerable<T>>(Expression)?.ToList();
-                }
-            }
-            return list;
-        }
-
 #if !NETFRAMEWORK && !NETSTANDARD2_0
         IAsyncEnumerator<T> IAsyncEnumerable<T>.GetAsyncEnumerator(CancellationToken cancellationToken)
         {
@@ -129,22 +113,15 @@ namespace Fireasy.Data.Entity.Linq
 
     internal static class QueryHelper
     {
+        private static MethodInfo MthWhere = typeof(Queryable).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Queryable.Where));
+
         internal static QuerySet<T> CreateQuery<T>(IQueryProvider provider, Expression expression)
         {
             var querySet = new QuerySet<T>(provider);
             if (expression != null)
             {
-                var query = (IQueryable)querySet;
-                var method = typeof(Queryable).GetMethods(BindingFlags.Public | BindingFlags.Static)
-                    .FirstOrDefault(s => s.Name == nameof(Queryable.Where));
-
-                if (method != null)
-                {
-                    method = method.MakeGenericMethod(typeof(T));
-                    expression = Expression.Call(method, query.Expression, expression);
-
-                    return (QuerySet<T>)query.Provider.CreateQuery<T>(expression);
-                }
+                expression = Expression.Call(MthWhere.MakeGenericMethod(typeof(T)), querySet.Expression, expression);
+                querySet.Expression = expression;
             }
 
             return querySet;

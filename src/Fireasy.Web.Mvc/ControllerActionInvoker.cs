@@ -19,9 +19,10 @@ namespace Fireasy.Web.Mvc
     /// <summary>
     /// 负责控制器的操作方法。该类在执行期间附加了一个 <see cref="ActionContext"/> 实例，以及对 <see cref="JsonResult"/> 类型的返回结果进行处理。
     /// </summary>
-    public class ControllerActionInvoker : System.Web.Mvc.ControllerActionInvoker
+    public class ControllerActionInvoker : System.Web.Mvc.Async.AsyncControllerActionInvoker
     {
         internal static ControllerActionInvoker Instance = new ControllerActionInvoker();
+        private ActionContext context;
 
         /// <summary>
         /// 获取参数的值。
@@ -78,6 +79,24 @@ namespace Fireasy.Web.Mvc
             }
         }
 
+        public override IAsyncResult BeginInvokeAction(ControllerContext controllerContext, string actionName, AsyncCallback callback, object state)
+        {
+            context = new ActionContext(controllerContext);
+            return base.BeginInvokeAction(controllerContext, actionName, callback, state);
+        }
+
+        public override bool EndInvokeAction(IAsyncResult asyncResult)
+        {
+            var ret = base.EndInvokeAction(asyncResult);
+
+            if (context != null)
+            {
+                context.Dispose();
+            }
+
+            return ret;
+        }
+
         /// <summary>
         /// 执行控制器的动作。
         /// </summary>
@@ -90,6 +109,16 @@ namespace Fireasy.Web.Mvc
             {
                 return base.InvokeAction(controllerContext, actionName);
             }
+        }
+
+        protected override void InvokeActionResult(ControllerContext controllerContext, ActionResult actionResult)
+        {
+            if (actionResult is JsonResult jsonResult && !(jsonResult is JsonResultWrapper))
+            {
+                actionResult = WrapJsonResult(jsonResult);
+            }
+
+            base.InvokeActionResult(controllerContext, actionResult);
         }
 
         /// <summary>
@@ -108,8 +137,7 @@ namespace Fireasy.Web.Mvc
             }
 
             var result = base.InvokeActionMethod(controllerContext, actionDescriptor, parameters);
-            var jsonResult = result as JsonResult;
-            if (jsonResult != null && !(result is JsonResultWrapper))
+            if (result is JsonResult jsonResult && !(jsonResult is JsonResultWrapper))
             {
                 return WrapJsonResult(jsonResult);
             }

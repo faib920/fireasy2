@@ -332,10 +332,10 @@ namespace Fireasy.Common.Tests
             }
 
             [Intercept(typeof(AsyncInterceptor))]
-            public virtual async Task<string> TestAsync(string str)
+            public virtual async Task<int?> TestAsync(string str)
             {
                 Console.WriteLine("tt");
-                return str;
+                return 100;
             }
         }
 
@@ -539,7 +539,7 @@ namespace Fireasy.Common.Tests
             {
                 if (info.InterceptType == InterceptType.AfterMethodCall)
                 {
-                    info.ReturnValue = Task.FromResult("hello " + (info.ReturnValue as Task<string>).Result);
+                    info.ReturnValue = null;
                 }
 
                 base.Intercept(info);

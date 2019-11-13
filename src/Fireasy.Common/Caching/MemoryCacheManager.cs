@@ -319,64 +319,64 @@ namespace Fireasy.Common.Caching
             }
         }
 
-        Task<T> ICacheManager.AddAsync<T>(string cacheKey, T value, TimeSpan? expire, CacheItemRemovedCallback removeCallback, CancellationToken cancellationToken)
+        async Task<T> ICacheManager.AddAsync<T>(string cacheKey, T value, TimeSpan? expire, CacheItemRemovedCallback removeCallback, CancellationToken cancellationToken)
         {
-            return Task.FromResult(Add(cacheKey, value, expire, removeCallback));
+            return Add(cacheKey, value, expire, removeCallback);
         }
 
-        Task<T> ICacheManager.AddAsync<T>(string cacheKey, T value, ICacheItemExpiration expiration, CacheItemRemovedCallback removeCallback, CancellationToken cancellationToken)
+        async Task<T> ICacheManager.AddAsync<T>(string cacheKey, T value, ICacheItemExpiration expiration, CacheItemRemovedCallback removeCallback, CancellationToken cancellationToken)
         {
-            return Task.FromResult(Add(cacheKey, value, expiration, removeCallback));
+            return Add(cacheKey, value, expiration, removeCallback);
         }
 
-        Task<bool> ICacheManager.ContainsAsync(string cacheKey, CancellationToken cancellationToken)
+        async Task<bool> ICacheManager.ContainsAsync(string cacheKey, CancellationToken cancellationToken)
         {
-            return Task.FromResult(Contains(cacheKey));
+            return Contains(cacheKey);
         }
 
-        Task<object> ICacheManager.GetAsync(string cacheKey, CancellationToken cancellationToken)
+        async Task<object> ICacheManager.GetAsync(string cacheKey, CancellationToken cancellationToken)
         {
             return Task.FromResult(Get(cacheKey));
         }
 
-        Task<T> ICacheManager.GetAsync<T>(string cacheKey, CancellationToken cancellationToken)
+        async Task<T> ICacheManager.GetAsync<T>(string cacheKey, CancellationToken cancellationToken)
         {
-            return Task.FromResult(Get<T>(cacheKey));
+            return Get<T>(cacheKey);
         }
 
-        Task<TimeSpan?> ICacheManager.GetExpirationTimeAsync(string cacheKey, CancellationToken cancellationToken)
+        async Task<TimeSpan?> ICacheManager.GetExpirationTimeAsync(string cacheKey, CancellationToken cancellationToken)
         {
-            return Task.FromResult(GetExpirationTime(cacheKey));
+            return GetExpirationTime(cacheKey);
         }
 
-        Task ICacheManager.SetExpirationTimeAsync(string cacheKey, Func<ICacheItemExpiration> expiration, CancellationToken cancellationToken)
+        async Task ICacheManager.SetExpirationTimeAsync(string cacheKey, Func<ICacheItemExpiration> expiration, CancellationToken cancellationToken)
         {
-            return Task.Run(() => SetExpirationTime(cacheKey, expiration));
+            SetExpirationTime(cacheKey, expiration);
         }
 
-        Task<T> ICacheManager.TryGetAsync<T>(string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration, CancellationToken cancellationToken)
+        async Task<T> ICacheManager.TryGetAsync<T>(string cacheKey, Func<Task<T>> factory, Func<ICacheItemExpiration> expiration, CancellationToken cancellationToken)
         {
-            return Task.FromResult(TryGet(cacheKey, factory, expiration));
+            return TryGet(cacheKey, () => factory().Result, expiration);
         }
 
-        Task<object> ICacheManager.TryGetAsync(Type dataType, string cacheKey, Func<object> factory, Func<ICacheItemExpiration> expiration, CancellationToken cancellationToken)
+        async Task<object> ICacheManager.TryGetAsync(Type dataType, string cacheKey, Func<Task<object>> factory, Func<ICacheItemExpiration> expiration, CancellationToken cancellationToken)
         {
-            return Task.FromResult(TryGet(dataType, cacheKey, factory, expiration));
+            return TryGet(dataType, cacheKey, () => factory().Result, expiration);
         }
 
-        Task<IEnumerable<string>> ICacheManager.GetKeysAsync(string pattern, CancellationToken cancellationToken)
+        async Task<IEnumerable<string>> ICacheManager.GetKeysAsync(string pattern, CancellationToken cancellationToken)
         {
-            return Task.FromResult(GetKeys(pattern));
+            return GetKeys(pattern);
         }
 
-        Task ICacheManager.RemoveAsync(string cacheKey, CancellationToken cancellationToken)
+        async Task ICacheManager.RemoveAsync(string cacheKey, CancellationToken cancellationToken)
         {
-            return Task.Run(() => Remove(cacheKey));
+            Remove(cacheKey);
         }
 
-        Task ICacheManager.ClearAsync(CancellationToken cancellationToken)
+        async Task ICacheManager.ClearAsync(CancellationToken cancellationToken)
         {
-            return Task.Run(Clear);
+            Clear();
         }
     }
 }

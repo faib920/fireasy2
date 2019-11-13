@@ -12,7 +12,7 @@
     <SignAssembly>True</SignAssembly>
     <DelaySign>False</DelaySign>
     <Product>Fireasy EasyUI Extensions</Product>
-    <Version>2.1.0-beta3</Version>
+    <Version>2.1.0</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Description>EasyUI for Asp.Net 扩展库。支持 .Net Core 3.0 版本。
 

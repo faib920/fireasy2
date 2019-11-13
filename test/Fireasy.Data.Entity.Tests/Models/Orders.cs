@@ -62,7 +62,7 @@ namespace Fireasy.Data.Entity.Tests.Models
         /// 获取或设置。
         /// </summary>
 
-        [PropertyMapping(ColumnName = "ShipVia", Description = "", IsNullable = true)]
+        [PropertyMapping(ColumnName = "ShipVia", Description = "", DefaultValue = 10L, IsNullable = true)]
         public virtual long? ShipVia { get; set; }
 
         /// <summary>

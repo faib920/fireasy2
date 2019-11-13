@@ -8,22 +8,32 @@ using Fireasy.Web.Mvc;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
+using Fireasy.Common.Extensions;
+using Fireasy.Common.Logging;
+using Fireasy.Common.Localization;
 
 namespace Fireasy.MvcCore.Tests.Controllers
 {
     public class HomeController : Controller
     {
         private IService service;
+        private ILogger logger;
 
-        public HomeController(IService context, ICacheManager cacheMgr)
+        public HomeController(IService context, ICacheManager cacheMgr, ILogger logger, IStringLocalizerManager localizer)
         {
+            var str = localizer.GetLocalizer("Test")["Name"];
+            this.logger = logger;
+            logger.Info("dfafasf");
             this.service = context;
         }
 
         public IActionResult Index()
         {
+            logger.Info("dfasdfaffsa");
             //try
             //{
             //    service.Update();
@@ -88,6 +98,11 @@ namespace Fireasy.MvcCore.Tests.Controllers
         {
             hosting.Option.Converters.Add(new DateTimeJsonConverter("hh:mm"));
             return new Entity { Date = DateTime.Now };
+        }
+
+        public async Task<List<string>> TestList()
+        {
+            return await Task.Run(() => new List<string> { "df", "gg" });
         }
     }
 

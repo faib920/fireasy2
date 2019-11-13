@@ -54,7 +54,7 @@ namespace Fireasy.Data.Entity.Linq
 
             try
             {
-                return (IQueryable)Activator.CreateInstance(typeof(QuerySet<>).MakeGenericType(elementType), new object[] { this, expression });
+                return QueryProviderCache.Create(elementType, this, expression);
             }
             catch (TargetInvocationException tie)
             {
@@ -80,7 +80,6 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public object Execute(Expression expression)
         {
-            ExecuteCache.TryExpire(expression);
             return entityQueryProvider.Execute(expression);
         }
 
@@ -94,10 +93,10 @@ namespace Fireasy.Data.Entity.Linq
         {
             if (!ExecuteCache.CanCache(expression))
             {
-                return (TResult)entityQueryProvider.Execute(expression);
+                return entityQueryProvider.Execute<TResult>(expression);
             }
 
-            return ExecuteCache.TryGet(expression, () => (TResult)entityQueryProvider.Execute(expression));
+            return ExecuteCache.TryGet(expression, () => entityQueryProvider.Execute<TResult>(expression));
         }
 
 #if !NETFRAMEWORK && !NETSTANDARD2_0
@@ -121,14 +120,14 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="expression">一个表示的表达式树 LINQ 查询。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns></returns>
-        public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken)
+        public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
         {
             if (!ExecuteCache.CanCache(expression))
             {
                 return await entityQueryProvider.ExecuteAsync<TResult>(expression);
             }
 
-            return await ExecuteCache.TryGet(expression, () => entityQueryProvider.ExecuteAsync<TResult>(expression, cancellationToken));
+            return await ExecuteCache.TryGetAsync(expression, () => entityQueryProvider.ExecuteAsync<TResult>(expression, cancellationToken));
         }
 
         /// <summary>

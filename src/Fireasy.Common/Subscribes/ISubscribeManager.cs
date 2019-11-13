@@ -71,12 +71,27 @@ namespace Fireasy.Common.Subscribes
         void AddSubscriber<TSubject>(Action<TSubject> subscriber) where TSubject : class;
 
         /// <summary>
+        /// 添加一个异步的订阅方法。
+        /// </summary>
+        /// <typeparam name="TSubject"></typeparam>
+        /// <param name="subscriber">读取主题的方法。</param>
+        void AddAsyncSubscriber<TSubject>(Func<TSubject, Task> subscriber) where TSubject : class;
+
+        /// <summary>
         /// 添加一个订阅方法。
         /// </summary>
         /// <typeparam name="TSubject"></typeparam>
         /// <param name="name">主题名称。</param>
         /// <param name="subscriber">读取主题的方法。</param>
         void AddSubscriber<TSubject>(string name, Action<TSubject> subscriber) where TSubject : class;
+
+        /// <summary>
+        /// 添加一个异步的订阅方法。
+        /// </summary>
+        /// <typeparam name="TSubject"></typeparam>
+        /// <param name="name">主题名称。</param>
+        /// <param name="subscriber">读取主题的方法。</param>
+        void AddAsyncSubscriber<TSubject>(string name, Func<TSubject, Task> subscriber) where TSubject : class;
 
         /// <summary>
         /// 添加一个订阅方法。

@@ -29,9 +29,11 @@ namespace Fireasy.RabbitMQ
                 }
 
                 setting.Server = configNode.GetAttributeValue("server");
+                setting.Port = configNode.GetAttributeValue<int>("port", -1);
                 setting.UserName = configNode.GetAttributeValue("userName");
                 setting.Password = configNode.GetAttributeValue("password");
                 setting.ExchangeType = configNode.GetAttributeValue("exchangeType");
+                setting.VirtualHost = configNode.GetAttributeValue("virtualHost");
                 setting.RequeueDelayTime = configNode.GetAttributeValue("requeueDelayTime").To<int?>();
             }
 
@@ -52,9 +54,11 @@ namespace Fireasy.RabbitMQ
                 }
 
                 setting.Server = configNode["server"];
+                setting.Port = configNode["port"].To<int>(-1);
                 setting.UserName = configNode["userName"];
                 setting.Password = configNode["password"];
                 setting.ExchangeType = configNode["exchangeType"];
+                setting.VirtualHost = configNode["virtualHost"];
                 setting.RequeueDelayTime = configNode["requeueDelayTime"].To<int?>();
             }
 

@@ -18,6 +18,13 @@ namespace Fireasy.Common.Logging
     public interface ILogger
     {
         /// <summary>
+        /// 获取一个 <see cref="ILogger"/> 的子实例。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        ILogger GetLogger<T>() where T : class;
+
+        /// <summary>
         /// 记录错误信息到日志。
         /// </summary>
         /// <param name="message">要记录的信息。</param>

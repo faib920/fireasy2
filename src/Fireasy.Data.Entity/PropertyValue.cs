@@ -14,7 +14,7 @@ using System.Data;
 namespace Fireasy.Data.Entity
 {
     /// <summary>
-    /// 使属性能够存储各种类型的值，而不需要进行装箱或拆箱。无法继承此类。
+    /// 使属性能够存储各种类型的值，而不需要进行装箱或拆箱。
     /// </summary>
     [Serializable]
     public struct PropertyValue : ICloneable
@@ -85,7 +85,35 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator bool(PropertyValue value)
         {
-            return value == Empty ? false : value.Boolean.Value;
+            if (value == Empty)
+            {
+                return false;
+            }
+
+            if (value.StorageType == StorageType.Boolean)
+            {
+                return value.Boolean == null ? false : value.Boolean.Value;
+            }
+
+            switch (value.StorageType)
+            {
+                case StorageType.Byte:
+                    return value.Byte == null ? false : value.Byte.Value > 1;
+                case StorageType.Int16:
+                    return value.Int16 == null ? false : value.Int16.Value > 1;
+                case StorageType.Int32:
+                    return value.Int32 == null ? false : value.Int32.Value > 1;
+                case StorageType.Int64:
+                    return value.Int64 == null ? false : value.Int64.Value > 1;
+                case StorageType.Single:
+                    return value.Single == null ? false : value.Single.Value > 1;
+                case StorageType.Decimal:
+                    return value.Decimal == null ? false : value.Decimal.Value > 1;
+                case StorageType.Double:
+                    return value.Double == null ? false : value.Double.Value > 1;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -105,7 +133,35 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator bool?(PropertyValue value)
         {
-            return value == Empty ? null : value.Boolean;
+            if (value == Empty)
+            {
+                return null;
+            }
+
+            if (value.StorageType == StorageType.Boolean)
+            {
+                return value.Boolean;
+            }
+
+            switch (value.StorageType)
+            {
+                case StorageType.Byte:
+                    return value.Byte == null ? (bool?)null : value.Byte.Value > 1;
+                case StorageType.Int16:
+                    return value.Int16 == null ? (bool?)null : value.Int16.Value > 1;
+                case StorageType.Int32:
+                    return value.Int32 == null ? (bool?)null : value.Int32.Value > 1;
+                case StorageType.Int64:
+                    return value.Int64 == null ? (bool?)null : value.Int64.Value > 1;
+                case StorageType.Single:
+                    return value.Single == null ? (bool?)null : value.Single.Value > 1;
+                case StorageType.Decimal:
+                    return value.Decimal == null ? (bool?)null : value.Decimal.Value > 1;
+                case StorageType.Double:
+                    return value.Double == null ? (bool?)null : value.Double.Value > 1;
+            }
+
+            return null;
         }
 
         #endregion
@@ -240,7 +296,35 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator decimal(PropertyValue value)
         {
-            return value == Empty ? 0 : value.Decimal.Value;
+            if (value == Empty)
+            {
+                return 0m;
+            }
+
+            if (value.StorageType == StorageType.Decimal)
+            {
+                return value.Decimal == null ? 0m : value.Decimal.Value;
+            }
+
+            switch (value.StorageType)
+            {
+                case StorageType.Byte:
+                    return value.Byte == null ? 0m : value.Byte.Value;
+                case StorageType.Boolean:
+                    return value.Boolean == null ? 0m : value.Boolean.Value ? 1m : 0m;
+                case StorageType.Int16:
+                    return value.Int16 == null ? 0m : value.Int16.Value;
+                case StorageType.Int32:
+                    return value.Int32 == null ? 0m : value.Int32.Value;
+                case StorageType.Int64:
+                    return value.Int64 == null ? 0m : (decimal)value.Int64.Value;
+                case StorageType.Single:
+                    return value.Single == null ? 0m : (decimal)value.Single.Value;
+                case StorageType.Double:
+                    return value.Double == null ? 0m : (decimal)value.Double.Value;
+            }
+
+            return 0;
         }
 
         /// <summary>
@@ -260,7 +344,35 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator decimal?(PropertyValue value)
         {
-            return value == Empty ? null : value.Decimal;
+            if (value == Empty)
+            {
+                return null;
+            }
+
+            if (value.StorageType == StorageType.Decimal)
+            {
+                return value.Decimal;
+            }
+
+            switch (value.StorageType)
+            {
+                case StorageType.Byte:
+                    return value.Byte;
+                case StorageType.Boolean:
+                    return value.Boolean == null ? null : (decimal?)(value.Boolean.Value ? 1m : 0m);
+                case StorageType.Int16:
+                    return value.Int16;
+                case StorageType.Int32:
+                    return value.Int32;
+                case StorageType.Int64:
+                    return value.Int64;
+                case StorageType.Single:
+                    return (decimal?)value.Single;
+                case StorageType.Double:
+                    return (decimal?)value.Double;
+            }
+
+            return null;
         }
 
         #endregion
@@ -283,7 +395,35 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator double(PropertyValue value)
         {
-            return value == Empty ? 0 : value.Double.Value;
+            if (value == Empty)
+            {
+                return 0d;
+            }
+
+            if (value.StorageType == StorageType.Double)
+            {
+                return value.Double == null ? 0d : value.Double.Value;
+            }
+
+            switch (value.StorageType)
+            {
+                case StorageType.Byte:
+                    return value.Byte == null ? 0d : value.Byte.Value;
+                case StorageType.Boolean:
+                    return value.Boolean == null ? 0d : value.Boolean.Value ? 1d : 0d;
+                case StorageType.Int16:
+                    return value.Int16 == null ? 0d : value.Int16.Value;
+                case StorageType.Int32:
+                    return value.Int32 == null ? 0d : value.Int32.Value;
+                case StorageType.Int64:
+                    return value.Int64 == null ? 0d : value.Int64.Value;
+                case StorageType.Single:
+                    return value.Single == null ? 0d : value.Single.Value;
+                case StorageType.Decimal:
+                    return value.Decimal == null ? 0d : (double)value.Decimal.Value;
+            }
+
+            return 0;
         }
 
         /// <summary>
@@ -303,7 +443,35 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator double?(PropertyValue value)
         {
-            return value == Empty ? null : value.Double;
+            if (value == Empty)
+            {
+                return null;
+            }
+
+            if (value.StorageType == StorageType.Double)
+            {
+                return value.Double;
+            }
+
+            switch (value.StorageType)
+            {
+                case StorageType.Byte:
+                    return value.Byte;
+                case StorageType.Boolean:
+                    return value.Boolean == null ? null : (double?)(value.Boolean.Value ? 1d : 0d);
+                case StorageType.Int16:
+                    return value.Int16;
+                case StorageType.Int32:
+                    return value.Int32;
+                case StorageType.Int64:
+                    return value.Int64;
+                case StorageType.Single:
+                    return value.Single;
+                case StorageType.Decimal:
+                    return (double?)value.Decimal;
+            }
+
+            return null;
         }
 
         #endregion
@@ -392,7 +560,35 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator int(PropertyValue value)
         {
-            return value == Empty ? 0 : value.Int32.Value;
+            if (value == Empty)
+            {
+                return 0;
+            }
+
+            if (value.StorageType == StorageType.Int32)
+            {
+                return value.Int32 == null ? 0 : value.Int32.Value;
+            }
+
+            switch (value.StorageType)
+            {
+                case StorageType.Byte:
+                    return value.Byte == null ? 0 : value.Byte.Value;
+                case StorageType.Boolean:
+                    return value.Boolean == null ? 0 : value.Boolean.Value ? 1 : 0;
+                case StorageType.Int16:
+                    return value.Int16 == null ? 0 : value.Int16.Value;
+                case StorageType.Int64:
+                    return value.Int64 == null ? 0 : (int)value.Int64.Value;
+                case StorageType.Single:
+                    return value.Single == null ? 0 : (int)value.Single.Value;
+                case StorageType.Decimal:
+                    return value.Decimal == null ? 0 : (int)value.Decimal.Value;
+                case StorageType.Double:
+                    return value.Double == null ? 0 : (int)value.Double.Value;
+            }
+
+            return 0;
         }
 
         /// <summary>
@@ -412,9 +608,36 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator int?(PropertyValue value)
         {
-            return value == Empty ? null : value.Int32;
-        }
+            if (value == Empty)
+            {
+                return null;
+            }
 
+            if (value.StorageType == StorageType.Int32)
+            {
+                return value.Int32;
+            }
+
+            switch (value.StorageType)
+            {
+                case StorageType.Byte:
+                    return value.Byte;
+                case StorageType.Boolean:
+                    return value.Boolean == null ? null : (int?)(value.Boolean.Value ? 1 : 0);
+                case StorageType.Int16:
+                    return value.Int16;
+                case StorageType.Int64:
+                    return (int?)value.Int64;
+                case StorageType.Single:
+                    return (int?)value.Single;
+                case StorageType.Decimal:
+                    return (int?)value.Decimal;
+                case StorageType.Double:
+                    return (int?)value.Double;
+            }
+
+            return null;
+        }
         #endregion
 
         #region short
@@ -435,7 +658,35 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator short(PropertyValue value)
         {
-            return value == Empty ? (short)0 : value.Int16.Value;
+            if (value == Empty)
+            {
+                return 0;
+            }
+
+            if (value.StorageType == StorageType.Int16)
+            {
+                return value.Int16 == null ? (short)0 : value.Int16.Value;
+            }
+
+            switch (value.StorageType)
+            {
+                case StorageType.Byte:
+                    return value.Byte == null ? (short)0 : value.Byte.Value;
+                case StorageType.Boolean:
+                    return value.Boolean == null ? (short)0 : (short)(value.Boolean.Value ? 1 : 0);
+                case StorageType.Int32:
+                    return value.Int32 == null ? (short)0 : (short)value.Int32.Value;
+                case StorageType.Int64:
+                    return value.Int64 == null ? (short)0 : (short)value.Int64.Value;
+                case StorageType.Single:
+                    return value.Single == null ? (short)0 : (short)value.Single.Value;
+                case StorageType.Decimal:
+                    return value.Decimal == null ? (short)0 : (short)value.Decimal.Value;
+                case StorageType.Double:
+                    return value.Double == null ? (short)0 : (short)value.Double.Value;
+            }
+
+            return 0;
         }
 
         /// <summary>
@@ -455,7 +706,35 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator short?(PropertyValue value)
         {
-            return value == Empty ? null : value.Int16;
+            if (value == Empty)
+            {
+                return null;
+            }
+
+            if (value.StorageType == StorageType.Int16)
+            {
+                return value.Int16;
+            }
+
+            switch (value.StorageType)
+            {
+                case StorageType.Byte:
+                    return value.Byte;
+                case StorageType.Boolean:
+                    return value.Boolean == null ? null : (short?)(value.Boolean.Value ? 1 : 0);
+                case StorageType.Int32:
+                    return (short?)value.Int32;
+                case StorageType.Int64:
+                    return (short?)value.Int64;
+                case StorageType.Single:
+                    return (short?)value.Single;
+                case StorageType.Decimal:
+                    return (short?)value.Decimal;
+                case StorageType.Double:
+                    return (short?)value.Double;
+            }
+
+            return null;
         }
 
         #endregion
@@ -478,7 +757,35 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator long(PropertyValue value)
         {
-            return value == Empty ? 0 : value.Int64.Value;
+            if (value == Empty)
+            {
+                return 0L;
+            }
+
+            if (value.StorageType == StorageType.Int64)
+            {
+                return value.Int64 == null ? 0L : value.Int64.Value;
+            }
+
+            switch (value.StorageType)
+            {
+                case StorageType.Byte:
+                    return value.Byte == null ? 0L : value.Byte.Value;
+                case StorageType.Boolean:
+                    return value.Boolean == null ? 0L : value.Boolean.Value ? 1 : 0;
+                case StorageType.Int16:
+                    return value.Int16 == null ? 0L : value.Int16.Value;
+                case StorageType.Int32:
+                    return value.Int32 == null ? 0L : value.Int32.Value;
+                case StorageType.Single:
+                    return value.Single == null ? 0L : (long)value.Single.Value;
+                case StorageType.Decimal:
+                    return value.Decimal == null ? 0L : (long)value.Decimal.Value;
+                case StorageType.Double:
+                    return value.Double == null ? 0L : (long)value.Double.Value;
+            }
+
+            return 0;
         }
 
         /// <summary>
@@ -498,7 +805,35 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator long?(PropertyValue value)
         {
-            return value == Empty ? null : value.Int64;
+            if (value == Empty)
+            {
+                return null;
+            }
+
+            if (value.StorageType == StorageType.Int64)
+            {
+                return value.Int64;
+            }
+
+            switch (value.StorageType)
+            {
+                case StorageType.Byte:
+                    return value.Byte;
+                case StorageType.Boolean:
+                    return value.Boolean == null ? null : (long?)(value.Boolean.Value ? 1 : 0);
+                case StorageType.Int16:
+                    return value.Int16;
+                case StorageType.Int32:
+                    return value.Int32;
+                case StorageType.Single:
+                    return (long?)value.Single;
+                case StorageType.Decimal:
+                    return (long?)value.Decimal;
+                case StorageType.Double:
+                    return (long?)value.Double;
+            }
+
+            return null;
         }
 
         #endregion
@@ -564,7 +899,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator string(PropertyValue value)
         {
-            return value == Empty ? string.Empty : value.String;
+            return value == Empty ? null : value.String;
         }
 
         #endregion

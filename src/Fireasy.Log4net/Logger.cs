@@ -10,6 +10,7 @@ using log4net;
 using log4net.Config;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,11 +23,22 @@ namespace Fireasy.Log4net
     {
         private ILog log;
 
-        public Logger()
+        protected Logger(Type type)
         {
-            var repository = LogManager.CreateRepository("fireasy");
+            var repository = LogManager.GetAllRepositories().FirstOrDefault(s => s.Name == "fireasy") ?? LogManager.CreateRepository("fireasy");
             XmlConfigurator.Configure(repository, new FileInfo("log4net.config"));
-            log = LogManager.GetLogger("fireasy", typeof(Logger));
+            log = type == null ? LogManager.GetLogger("fireasy", string.Empty) :
+                LogManager.GetLogger("fireasy", type);
+        }
+
+        public Logger()
+            : this (null)
+        {
+        }
+
+        public ILogger GetLogger<T>() where T : class
+        {
+            return new Logger(typeof(T));
         }
 
         /// <summary>
@@ -103,7 +115,7 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Error))
             {
-                log.Error(message, exception);
+                await Task.Run(() => log.Error(message, exception));
             }
         }
 
@@ -116,7 +128,7 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Info))
             {
-                log.Info(message, exception);
+                await Task.Run(() => log.Info(message, exception));
             }
         }
 
@@ -129,7 +141,7 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Warn))
             {
-                log.Warn(message, exception);
+                await Task.Run(() => log.Warn(message, exception));
             }
         }
 
@@ -142,7 +154,7 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Debug))
             {
-                log.Debug(message, exception);
+                await Task.Run(() => log.Debug(message, exception));
             }
         }
 
@@ -155,7 +167,7 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Fatal))
             {
-                log.Fatal(message, exception);
+                await Task.Run(() => log.Fatal(message, exception));
             }
         }
     }

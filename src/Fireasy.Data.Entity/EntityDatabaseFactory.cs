@@ -49,7 +49,7 @@ namespace Fireasy.Data.Entity
         /// <param name="option"></param>
         public static void StartTransaction(IDatabase database, EntityTransactionScopeOption option)
         {
-            var isolationLevel = IsolationLevel.ReadUncommitted;
+            var isolationLevel = IsolationLevel.ReadCommitted;
             if (option != null)
             {
                 //设置超时时间

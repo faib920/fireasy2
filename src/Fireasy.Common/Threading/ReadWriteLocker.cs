@@ -114,6 +114,10 @@ namespace Fireasy.Common.Threading
             {
                 method();
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
             finally
             {
                 if (isMustReadHeld)
