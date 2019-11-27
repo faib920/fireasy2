@@ -23,12 +23,13 @@ namespace Fireasy.Data
     internal class DefaultCommandTracker : ICommandTracker
     {
         private string logPath;
+        private ISubscribeManager subscribeMgr = DefaultSubscribeManager.Instance;
 
         internal static ICommandTracker Instance = new DefaultCommandTracker();
 
         protected DefaultCommandTracker()
         {
-            DefaultSubscribeManager.Instance.AddSubscriber<CommandTrackerSubject>(s =>
+            subscribeMgr.AddSubscriber<CommandTrackerSubject>(s =>
                 {
                     using (var writer = new StreamWriter(s.FileName, true, Encoding.Default))
                     {
@@ -48,7 +49,7 @@ timer(s): {period}
 ===========================================================
 ";
 
-            DefaultSubscribeManager.Instance.Publish(new CommandTrackerSubject { FileName = fileName, Content = content });
+            subscribeMgr.Publish(new CommandTrackerSubject { FileName = fileName, Content = content });
         }
 
         void ICommandTracker.Fail(IDbCommand command, Exception exception)
@@ -62,7 +63,7 @@ error: {exception.Message}
 ===========================================================
 ";
 
-            DefaultSubscribeManager.Instance.Publish(new CommandTrackerSubject { FileName = fileName, Content = content });
+            subscribeMgr.Publish(new CommandTrackerSubject { FileName = fileName, Content = content });
         }
 
         async Task ICommandTracker.WriteAsync(IDbCommand command, TimeSpan period, CancellationToken cancellationToken)
@@ -76,7 +77,7 @@ timer(s): {period}
 ===========================================================
 ";
 
-            await DefaultSubscribeManager.Instance.PublishAsync(new CommandTrackerSubject { FileName = fileName, Content = content });
+            await subscribeMgr.PublishAsync(new CommandTrackerSubject { FileName = fileName, Content = content });
         }
 
         async Task ICommandTracker.FailAsync(IDbCommand command, Exception exception, CancellationToken cancellationToken)
@@ -90,7 +91,7 @@ error: {exception.Message}
 ===========================================================
 ";
 
-            await DefaultSubscribeManager.Instance.PublishAsync(new CommandTrackerSubject { FileName = fileName, Content = content });
+            await subscribeMgr.PublishAsync(new CommandTrackerSubject { FileName = fileName, Content = content });
         }
 
         private void CreateDirectory()

@@ -1625,7 +1625,8 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var sorting = new SortDefinition();
                 sorting.Member = "ReorderLevelName";
-                sorting.Replace("ReorderLevelName", "Products.ReorderLevel");
+                //sorting.Replace("ReorderLevelName", "Products.ReorderLevel");
+                sorting.Replace<OrderDetails>("ReorderLevelName", s => s.Products.ReorderLevel);
 
                 var list = context.OrderDetails
                     .Select(s => s.ExtendAs<OrderDetails>(() => new OrderDetails

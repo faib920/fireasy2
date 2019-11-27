@@ -12,7 +12,7 @@
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Common Library</Product>
-    <Version>2.1.1</Version>
+    <Version>2.1.1.2</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>通用类库，提供配置、缓存、日志、AOP、IOC、JSON序列化、扩展方法、Emit、加解密等等基础方法。
 

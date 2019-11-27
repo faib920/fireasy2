@@ -37,7 +37,7 @@ namespace Fireasy.Data.Batcher
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
         public void Insert(IDatabase database, DataTable dataTable, int batchSize = 1000, Action<int> completePercentage = null)
         {
-            InsertAsync(database, dataTable, batchSize, completePercentage);
+            InsertAsync(database, dataTable, batchSize, completePercentage).AsSync();
         }
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace Fireasy.Data.Batcher
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
         public void Insert<T>(IDatabase database, IEnumerable<T> list, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
         {
-            InsertAsync(database, list, tableName, batchSize, completePercentage);
+            InsertAsync(database, list, tableName, batchSize, completePercentage).AsSync();
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace Fireasy.Data.Batcher
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
         public void Insert(IDatabase database, IDataReader reader, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
         {
-            InsertAsync(database, reader, tableName, batchSize, completePercentage);
+            InsertAsync(database, reader, tableName, batchSize, completePercentage).AsSync();
         }
 
         /// <summary>

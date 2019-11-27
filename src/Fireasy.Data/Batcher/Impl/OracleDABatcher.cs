@@ -37,7 +37,7 @@ namespace Fireasy.Data.Batcher
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
         public void Insert(IDatabase database, DataTable dataTable, int batchSize = 1000, Action<int> completePercentage = null)
         {
-            InsertAsync(database, dataTable, batchSize, completePercentage);
+            InsertAsync(database, dataTable, batchSize, completePercentage).AsSync();
         }
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace Fireasy.Data.Batcher
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
         public void Insert<T>(IDatabase database, IEnumerable<T> list, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
         {
-            InsertAsync(database, list, tableName, batchSize, completePercentage);
+            InsertAsync(database, list, tableName, batchSize, completePercentage).AsSync();
         }
 
         /// <summary>
@@ -163,7 +163,7 @@ namespace Fireasy.Data.Batcher
                     var data = InitArrayData(mapping.Count, length);
                     SetArrayBindCount(command, length);
 
-                    BatchSplitData(collection, batchSize,
+                    await BatchSplitDataAsync(collection, batchSize,
                         (index, batch, item) =>
                             {
                                 if (mapping == null)
@@ -173,12 +173,12 @@ namespace Fireasy.Data.Batcher
 
                                 FillArrayData(mapping, item, data, batch);
                             },
-                        (index, batch, surplus, lastBatch) =>
+                        async (index, batch, surplus, lastBatch) =>
                             {
                                 AddOrReplayParameters(syntax, mapping, command.Parameters, data,
                                     () => database.Provider.DbProviderFactory.CreateParameter());
 
-                                command.ExecuteNonQueryAsync(cancellationToken);
+                                await command.ExecuteNonQueryAsync(cancellationToken);
                                 completePercentage?.Invoke((int)(((index + 1.0) / count) * 100));
 
                                 if (!lastBatch)

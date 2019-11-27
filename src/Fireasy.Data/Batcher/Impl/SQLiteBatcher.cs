@@ -37,7 +37,7 @@ namespace Fireasy.Data.Batcher
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
         public void Insert(IDatabase database, DataTable dataTable, int batchSize = 1000, Action<int> completePercentage = null)
         {
-            InsertAsync(database, dataTable, batchSize, completePercentage);
+            InsertAsync(database, dataTable, batchSize, completePercentage).AsSync();
         }
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace Fireasy.Data.Batcher
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
         public void Insert<T>(IDatabase database, IEnumerable<T> list, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
         {
-            InsertAsync(database, list, tableName, batchSize, completePercentage);
+            InsertAsync(database, list, tableName, batchSize, completePercentage).AsSync();
         }
 
         /// <summary>
@@ -145,7 +145,7 @@ namespace Fireasy.Data.Batcher
                     var valueSeg = new List<string>(batchSize);
                     var count = collection.Count;
 
-                    BatchSplitData(collection, batchSize,
+                    await BatchSplitDataAsync(collection, batchSize,
                         (index, batch, item) => 
                             {
                                 if (mapping == null)
@@ -155,14 +155,14 @@ namespace Fireasy.Data.Batcher
 
                                 valueSeg.Add(string.Format("({0})", valueFunc(mapping, command, batch, item)));
                             },
-                        (index, batch, surplus, lastBatch) => 
+                        async (index, batch, surplus, lastBatch) => 
                             {
                                 var sql = string.Format("INSERT INTO {0}({1}) VALUES {2}",
                                     DbUtility.FormatByQuote(syntax, tableName),
                                     string.Join(",", mapping.Select(s => DbUtility.FormatByQuote(syntax, s.FieldName))), string.Join(",", valueSeg));
 
                                 command.CommandText = sql;
-                                command.ExecuteNonQueryAsync(cancellationToken);
+                                await command.ExecuteNonQueryAsync(cancellationToken);
                                 valueSeg.Clear();
                                 command.Parameters.Clear();
                                 completePercentage?.Invoke((int)(((index + 1.0) / count) * 100));

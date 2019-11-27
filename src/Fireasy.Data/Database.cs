@@ -750,7 +750,14 @@ namespace Fireasy.Data
 
                     ProcessGenerateDataTable(dataTable);
 
-                    return adapter.Update(dataTable);
+                    try
+                    {
+                        return adapter.Update(dataTable);
+                    }
+                    catch (Exception exp)
+                    {
+                        throw HandleException(adapter.InsertCommand, exp);
+                    }
 
                 }, false, DistributedMode.Master);
         }
@@ -1028,6 +1035,7 @@ namespace Fireasy.Data
             foreach (DataColumn column in table.Columns)
             {
                 var par = new Parameter(column.ColumnName) { SourceColumn = column.ColumnName };
+                par.DbType = column.DataType.GetDbType();
                 parameters.Add(par);
             }
 

@@ -19,7 +19,7 @@ namespace Fireasy.Data
     /// 查询参数集合。无法继承此类。
     /// </summary>
     [Serializable]
-    public sealed class ParameterCollection : IList<Parameter>, 
+    public sealed class ParameterCollection : IList<Parameter>,
         ICloneable
     {
         private readonly ArrayList arrayList;
@@ -452,10 +452,7 @@ namespace Fireasy.Data
             }
             #endregion
 
-            if (value != default)
-            {
-                parameter.Value = GetDBNullValue(value);
-            }
+            parameter.Value = GetDBNullValue(value);
 
             parameter.Direction = direction;
 
@@ -655,7 +652,7 @@ namespace Fireasy.Data
             var tor = arrayList.GetEnumerator();
             while (tor.MoveNext())
             {
-                yield return (Parameter) tor.Current;
+                yield return (Parameter)tor.Current;
             }
         }
 

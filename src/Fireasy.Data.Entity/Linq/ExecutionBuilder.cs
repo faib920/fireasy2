@@ -597,7 +597,6 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Parameterize(command);
             var result = translator(expression);
 
-
             if (isAsync)
             {
                 cancelToken = Expression.Parameter(typeof(CancellationToken), "token");

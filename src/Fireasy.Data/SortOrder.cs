@@ -9,6 +9,7 @@
 using Fireasy.Common;
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 
 namespace Fireasy.Data
 {
@@ -94,9 +95,45 @@ namespace Fireasy.Data
             return this;
         }
 
+        /// <summary>
+        /// 将 <paramref name="member"/> 替换为具体的成员。
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <param name="member">成员名称。</param>
+        /// <param name="expression">一个 <see cref="MemberExpression"/>。</param>
+        /// <returns></returns>
+        public SortDefinition Replace<TSource>(string member, Expression<Func<TSource, object>> expression)
+        {
+            if (Member == member)
+            {
+                Member = MemberFinder.Find(expression);
+            }
+
+            return this;
+        }
+
         public override string ToString()
         {
             return string.Format("Member:{0},Order:{1}", Member, Order);
+        }
+
+        private class MemberFinder : Common.Linq.Expressions.ExpressionVisitor
+        {
+            private List<string> names = new List<string>();
+
+            public static string Find(Expression expression)
+            {
+                var finder = new MemberFinder();
+                finder.Visit(expression);
+                return string.Join(".", finder.names);
+            }
+
+            protected override Expression VisitMember(MemberExpression mbrExp)
+            {
+                Visit(mbrExp.Expression);
+                names.Add(mbrExp.Member.Name);
+                return mbrExp;
+            }
         }
     }
 }

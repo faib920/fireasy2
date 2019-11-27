@@ -63,6 +63,11 @@ namespace Fireasy.Web.EasyUI
                         var func = (Func<T, object>)lambda.Compile();
                         dict.Add(mbrExp.Member.Name, func);
                     }
+                    else if (lambda.Body is UnaryExpression unaryExp && unaryExp.Operand is MemberExpression mbrExp1)
+                    {
+                        var func = (Func<T, object>)lambda.Compile();
+                        dict.Add(mbrExp1.Member.Name, func);
+                    }
                 }
             }
 

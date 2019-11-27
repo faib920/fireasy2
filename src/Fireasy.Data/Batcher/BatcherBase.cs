@@ -182,6 +182,34 @@ namespace Fireasy.Data.Batcher
         }
 
         /// <summary>
+        /// 异步的，根据 <paramref name="batchSize"/> 拆分集合中的数据。
+        /// </summary>
+        /// <param name="collection">数据集合。</param>
+        /// <param name="batchSize">每一批次写入的数据大小。</param>
+        /// <param name="rowAction">枚举第一条数据时执行的方法。参数1为记录索引，参数2为当前批次中记录的索引，参数3为当前的记录。</param>
+        /// <param name="splitAction">数据达到一批时执行的方法。参数1为记录索引，参数2为当前批次中记录的索引，参数3为剩余的记录条数，参数4为是否为最后的批次。</param>
+        protected async Task BatchSplitDataAsync(ICollection collection, int batchSize, Action<int, int, object> rowAction, Func<int, int, int, bool, Task> splitAction)
+        {
+            int batch = 0, index = 0;
+            var count = collection.Count;
+
+            foreach (var item in collection)
+            {
+                rowAction(index, batch, item);
+
+                var lastBatch = index == count - 1;
+
+                if (++batch == batchSize || (batch != 0 && lastBatch))
+                {
+                    await splitAction(index, batch, count - index - 1, lastBatch);
+                    batch = 0;
+                }
+
+                index++;
+            }
+        }
+
+        /// <summary>
         /// 转换为对象集合。
         /// </summary>
         /// <typeparam name="T"></typeparam>

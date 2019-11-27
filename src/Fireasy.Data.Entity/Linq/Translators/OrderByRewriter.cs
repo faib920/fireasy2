@@ -52,7 +52,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 bool hasOrderBy = select.OrderBy != null && select.OrderBy.Count > 0;
                 bool hasGroupBy = select.GroupBy != null && select.GroupBy.Count > 0;
                 bool canHaveOrderBy = saveIsOuterMostSelect || select.Take != null || select.Skip != null;
-                bool canReceiveOrderings = canHaveOrderBy && !hasGroupBy && !select.IsDistinct && !AggregateChecker.HasAggregates(select) && !suppressOrderby;
+                bool canReceiveOrderings = canHaveOrderBy && !hasGroupBy && /*!select.IsDistinct &&*/ !AggregateChecker.HasAggregates(select) && !suppressOrderby;
 
                 if (hasOrderBy)
                 {
@@ -74,7 +74,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     orderings = select.OrderBy;
                 }
 
-                bool canPassOnOrderings = !saveIsOuterMostSelect && !hasGroupBy && !select.IsDistinct && !suppressOrderby;
+                bool canPassOnOrderings = !saveIsOuterMostSelect && !hasGroupBy && /*!select.IsDistinct &&*/ !suppressOrderby;
                 ReadOnlyCollection<ColumnDeclaration> columns = select.Columns;
                 if (this.gatheredOrderings != null)
                 {

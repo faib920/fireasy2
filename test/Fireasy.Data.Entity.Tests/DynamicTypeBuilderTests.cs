@@ -74,11 +74,11 @@ namespace Fireasy.Data.Entity.Tests
                 var binExp = Expression.Equal(memExp, valExp);
                 var lambdaExp = Expression.Lambda(binExp, parExp);
 
-                var enumerable = (IEnumerable)((IQueryable)db.Set(entityType)).Where(lambdaExp).Select("Sex", "Name");
-                foreach (dynamic item in enumerable)
-                {
-                    Console.WriteLine(item.Name);
-                }
+                //var enumerable = (IEnumerable)((IQueryable)db.Set(entityType)).Where(lambdaExp).Select("Sex", "Name");
+                //foreach (dynamic item in enumerable)
+                //{
+                //    Console.WriteLine(item.Name);
+                //}
             }
         }
     }
