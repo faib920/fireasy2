@@ -12,13 +12,12 @@ using CSRedis;
 #else
 using StackExchange.Redis;
 using System.Linq;
+using System.Text.RegularExpressions;
 #endif
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Text.RegularExpressions;
 using System.Threading;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Redis
 {
@@ -421,44 +420,78 @@ namespace Fireasy.Redis
         {
             var client = GetConnection();
 #if NETSTANDARD
+            T GetCacheValue()
+            {
+                if (client.Exists(cacheKey))
+                {
+                    var redisValue = client.Get(cacheKey);
+                    if (!string.IsNullOrEmpty(redisValue))
+                    {
+                        CheckPredictToDelay(client, cacheKey, factory, expiration);
+
+                        return Deserialize<T>(redisValue);
+                    }
+                }
+
+                return default;
+            }
+
+            var value = GetCacheValue();
+            if (value != default)
+            {
+                return value;
+            }
+
             return Lock(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), () =>
                 {
-                    if (client.Exists(cacheKey))
+                    value = GetCacheValue();
+                    if (value != default)
                     {
-                        var redisValue = client.Get(cacheKey);
-                        if (!string.IsNullOrEmpty(redisValue))
-                        {
-                            CheckPredictToDelay(client, cacheKey, factory, expiration);
-
-                            return Deserialize<T>(redisValue);
-                        }
+                        return value;
                     }
 
                     var expiry = GetExpirationTime(expiration);
-                    var value = factory();
+                    value = factory();
 
-                    client.Set(cacheKey, Serialize(value), expiry == null ? -1 : (int)expiry.Value.TotalSeconds);
+                    client.Set(cacheKey, base.Serialize(value), expiry == null ? -1 : (int)expiry.Value.TotalSeconds);
 
                     return value;
                 });
 #else
             var db = GetDb(client);
 
+            T GetCacheValue()
+            {
+                if (db.KeyExists(cacheKey))
+                {
+                    var redisValue = db.StringGet(cacheKey);
+                    if (!string.IsNullOrEmpty(redisValue))
+                    {
+                        CheckPredictToDelay(db, cacheKey, factory, expiration);
+
+                        return Deserialize<T>(redisValue);
+                    }
+                }
+
+                return default;
+            }
+
+            var value = GetCacheValue();
+            if (value != default)
+            {
+                return value;
+            }
+
             return Lock(db, cacheKey, TimeSpan.FromSeconds(Setting.LockTimeout), () =>
                 {
-                    if (db.KeyExists(cacheKey))
+                    value = GetCacheValue();
+                    if (value != default)
                     {
-                        var redisValue = db.StringGet(cacheKey);
-                        if (!string.IsNullOrEmpty(redisValue))
-                        {
-                            CheckPredictToDelay(db, cacheKey, factory, expiration);
-
-                            return Deserialize<T>(redisValue);
-                        }
+                        return value;
                     }
 
                     var expiry = GetExpirationTime(expiration);
-                    var value = factory();
+                    value = factory();
 
                     db.StringSet(cacheKey, Serialize(value), expiry);
 
@@ -480,21 +513,38 @@ namespace Fireasy.Redis
         {
             var client = GetConnection();
 #if NETSTANDARD
+            async Task<T> GetCacheValue()
+            {
+                if (await client.ExistsAsync(cacheKey))
+                {
+                    var redisValue = await client.GetAsync(cacheKey);
+                    if (!string.IsNullOrEmpty(redisValue))
+                    {
+                        await CheckPredictToDelayAsync(client, cacheKey, factory, expiration);
+
+                        return Deserialize<T>(redisValue);
+                    }
+                }
+
+                return default;
+            }
+
+            var value = await GetCacheValue();
+            if (value != default)
+            {
+                return value;
+            }
+
             return await LockAsync(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
                 {
-                    if (await client.ExistsAsync(cacheKey))
+                    value = await GetCacheValue();
+                    if (value != default)
                     {
-                        var redisValue = await client.GetAsync(cacheKey);
-                        if (!string.IsNullOrEmpty(redisValue))
-                        {
-                            await CheckPredictToDelayAsync(client, cacheKey, factory, expiration);
-
-                            return Deserialize<T>(redisValue);
-                        }
+                        return value;
                     }
 
                     var expiry = GetExpirationTime(expiration);
-                    var value = await factory();
+                    value = await factory();
 
                     await client.SetAsync(cacheKey, Serialize(value), expiry == null ? -1 : (int)expiry.Value.TotalSeconds);
 
@@ -503,21 +553,38 @@ namespace Fireasy.Redis
 #else
             var db = GetDb(client);
 
+            async Task<T> GetCacheValue()
+            {
+                if (await db.KeyExistsAsync(cacheKey))
+                {
+                    var redisValue = await db.StringGetAsync(cacheKey);
+                    if (!string.IsNullOrEmpty(redisValue))
+                    {
+                        await CheckPredictToDelayAsync(db, cacheKey, factory, expiration);
+
+                        return Deserialize<T>(redisValue);
+                    }
+                }
+
+                return default;
+            }
+
+            var value = await GetCacheValue();
+            if (value != default)
+            {
+                return value;
+            }
+
             return await LockAsync(db, cacheKey, TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
                 {
-                    if (await db.KeyExistsAsync(cacheKey))
+                    value = await GetCacheValue();
+                    if (value != default)
                     {
-                        var redisValue = await db.StringGetAsync(cacheKey);
-                        if (!string.IsNullOrEmpty(redisValue))
-                        {
-                            await CheckPredictToDelayAsync(db, cacheKey, factory, expiration);
-
-                            return Deserialize<T>(redisValue);
-                        }
+                        return value;
                     }
 
                     var expiry = GetExpirationTime(expiration);
-                    var value = await factory();
+                    value = await factory();
 
                     await db.StringSetAsync(cacheKey, Serialize(value), expiry);
 
@@ -538,21 +605,38 @@ namespace Fireasy.Redis
         {
             var client = GetConnection();
 #if NETSTANDARD
+            object GetCacheValue()
+            {
+                if (client.Exists(cacheKey))
+                {
+                    var redisValue = client.Get(cacheKey);
+                    if (!string.IsNullOrEmpty(redisValue))
+                    {
+                        CheckPredictToDelay(client, cacheKey, factory, expiration);
+
+                        return Deserialize(dataType, redisValue);
+                    }
+                }
+
+                return null;
+            }
+
+            var value = GetCacheValue();
+            if (value != null)
+            {
+                return value;
+            }
+
             return Lock(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), () =>
                 {
-                    if (client.Exists(cacheKey))
+                    value = GetCacheValue();
+                    if (value != null)
                     {
-                        var redisValue = client.Get(cacheKey);
-                        if (!string.IsNullOrEmpty(redisValue))
-                        {
-                            CheckPredictToDelay(client, cacheKey, factory, expiration);
-
-                            return Deserialize(dataType, redisValue);
-                        }
+                        return value;
                     }
 
                     var expiry = GetExpirationTime(expiration);
-                    var value = factory();
+                    value = factory();
 
                     client.Set(cacheKey, Serialize(value), expiry == null ? -1 : (int)expiry.Value.TotalSeconds);
 
@@ -561,21 +645,38 @@ namespace Fireasy.Redis
 #else
             var db = GetDb(client);
 
+            object GetCacheValue()
+            {
+                if (db.KeyExists(cacheKey))
+                {
+                    var redisValue = db.StringGet(cacheKey);
+                    if (!string.IsNullOrEmpty(redisValue))
+                    {
+                        CheckPredictToDelay(db, cacheKey, factory, expiration);
+
+                        return Deserialize(dataType, redisValue);
+                    }
+                }
+
+                return null;
+            }
+
+            var value = GetCacheValue();
+            if (value != null)
+            {
+                return value;
+            }
+
             return Lock(db, cacheKey, TimeSpan.FromSeconds(Setting.LockTimeout), () =>
                 {
-                    if (db.KeyExists(cacheKey))
+                    value = GetCacheValue();
+                    if (value != null)
                     {
-                        var redisValue = db.StringGet(cacheKey);
-                        if (!string.IsNullOrEmpty(redisValue))
-                        {
-                            CheckPredictToDelay(db, cacheKey, factory, expiration);
-
-                            return Deserialize(dataType, redisValue);
-                        }
+                        return value;
                     }
 
                     var expiry = GetExpirationTime(expiration);
-                    var value = factory();
+                    value = factory();
 
                     db.StringSet(cacheKey, Serialize(value), expiry);
 
@@ -597,21 +698,38 @@ namespace Fireasy.Redis
         {
             var client = GetConnection();
 #if NETSTANDARD
+            async Task<object> GetCacheValue()
+            {
+                if (await client.ExistsAsync(cacheKey))
+                {
+                    var redisValue = await client.GetAsync(cacheKey);
+                    if (!string.IsNullOrEmpty(redisValue))
+                    {
+                        await CheckPredictToDelayAsync(client, cacheKey, factory, expiration);
+
+                        return Deserialize(dataType, redisValue);
+                    }
+                }
+
+                return null;
+            }
+
+            var value = await GetCacheValue();
+            if (value != null)
+            {
+                return value;
+            }
+
             return await LockAsync(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
                 {
-                    if (await client.ExistsAsync(cacheKey))
+                    value = GetCacheValue();
+                    if (value != null)
                     {
-                        var redisValue = await client.GetAsync(cacheKey);
-                        if (!string.IsNullOrEmpty(redisValue))
-                        {
-                            await CheckPredictToDelayAsync(client, cacheKey, factory, expiration);
-
-                            return Deserialize(dataType, redisValue);
-                        }
+                        return value;
                     }
 
                     var expiry = GetExpirationTime(expiration);
-                    var value = await factory();
+                    value = await factory();
 
                     await client.SetAsync(cacheKey, Serialize(value), expiry == null ? -1 : (int)expiry.Value.TotalSeconds);
 
@@ -620,21 +738,38 @@ namespace Fireasy.Redis
 #else
             var db = GetDb(client);
 
+            async Task<object> GetCacheValue()
+            {
+                if (await db.KeyExistsAsync(cacheKey))
+                {
+                    var redisValue = await db.StringGetAsync(cacheKey);
+                    if (!string.IsNullOrEmpty(redisValue))
+                    {
+                        await CheckPredictToDelayAsync(db, cacheKey, factory, expiration);
+
+                        return Deserialize(dataType, redisValue);
+                    }
+                }
+
+                return null;
+            }
+
+            var value = await GetCacheValue();
+            if (value != null)
+            {
+                return value;
+            }
+
             return await LockAsync(db, cacheKey, TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
                 {
-                    if (await db.KeyExistsAsync(cacheKey))
+                    value = await GetCacheValue();
+                    if (value != null)
                     {
-                        var redisValue = await db.StringGetAsync(cacheKey);
-                        if (!string.IsNullOrEmpty(redisValue))
-                        {
-                            await CheckPredictToDelayAsync(db, cacheKey, factory, expiration);
-
-                            return Deserialize(dataType, redisValue);
-                        }
+                        return value;
                     }
 
                     var expiry = GetExpirationTime(expiration);
-                    var value = await factory();
+                    value = await factory();
 
                     await db.StringSetAsync(cacheKey, Serialize(value), expiry);
 
