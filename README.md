@@ -9,10 +9,13 @@ Fireasy 支持 net3.5(已废弃)/net4.0(已废弃)/net4.5/net4.6/net4.7/netstand
 *	[Fireasy.Data.Entity](https://www.nuget.org/packages/Fireasy.Data.Entity)
 *	[Fireasy.Web.Mvc](https://www.nuget.org/packages/Fireasy.Web.Mvc)
 *	[Fireasy.Web.EasyUI](https://www.nuget.org/packages/Fireasy.Web.EasyUI)
+*	[Fireasy.Web.Sockets](https://www.nuget.org/packages/Fireasy.Web.Sockets)
+*	[Fireasy.Windows.Forms](https://www.nuget.org/packages/Fireasy.Windows.Forms)
 *	[Fireasy.Redis](https://www.nuget.org/packages/Fireasy.Redis)
 *	[Fireasy.RabbitMQ](https://www.nuget.org/packages/Fireasy.RabbitMQ)
 *	[Fireasy.NLog](https://www.nuget.org/packages/Fireasy.NLog)
 *	[Fireasy.Log4net](https://www.nuget.org/packages/Fireasy.Log4net)
+*	[Fireasy.Newtonsoft](https://www.nuget.org/packages/Fireasy.Newtonsoft)
 
 Fireasy 的Demo项目 [https://github.com/faib920/zero](https://github.com/faib920/zero)。
 
@@ -104,21 +107,29 @@ public void Sample()
 <b>`Fireasy.Data.Entity`</b>
 
 实体框架，Linq解析部份参考了iqtoolkit和NLite开源框架。
-*	依赖属性映射：采用WPF中依赖属性的方法进行字段属性的映射。
-*	LINQ查询：支持常用的LINQ查询。
-*	实体关系：与Entity Framework类似，可以定义实体间的关系，方便LINQ的关联查询。
-*	逻辑删除标记：实体设置逻辑删除标记后，查询中将过滤这些已经被标记的数据。
+*	依赖属性：你所看不到的又不得不了解的东西，它的存在为为了能够及时通知属性值的变更，属性的赋值与取值都跟它息息相关。
+*	实体属性及实体集属性：和ef里的导航属性是一个概念，目的是为了实现关联查询。
+*	实体模型：IEntity定义了一组实体的特性，正如上面说的一样，GetValue和SetValue离不开依赖属性，IsModified可判断属性值是否改变。LightEntity是目前所采用的基类，它在EntityContext初始化时，自动进行了AOP代理包装，使实体获得了状态记忆功能。因此你的属性需要定义成virtual。
+*	实体关系：与ef类似，用于定义实体间的关系，主外键名称一致的情况下会自动创建关系，否则需要使用RelationshipAttribute或RelationshipAssignAttribute关联。
+*	实体上下文：提供类似于ef的数据上下文，即EntityContext，它一样可以使用CodeFirst模式。
+*	实体仓储：每一个实体对应一个仓储，它们分布在EntityContext上，提供LINQ查询、新增、修改、删除等提供。
+*	仓储适配器：默认的适配器是基于Fireasy.Data的，你也可以实现其他的适配器，以达到在不改变Entity模型的情况下依然可以使用其他框架的目的，比如ef、mongodb等等。
+*	LINQ查询：支持常用的LINQ查询，如Where、OrderBy、GroupBy、Join等等。
+*	逻辑删除标记：实体设置逻辑删除标记后，查询时将自动过滤这些已经被标记的数据。
+*	全局筛选：Apply方法可以定义针对某实体类型的全局筛选条件。
 *	延迟加载：对于关联属性，可以在需要的时候才从库中读取加载。
-*	枚举描述属性：支持枚举属性，同时还可以定义与枚举相关联的文本描述作为附加的属性。
-*	子查询属性：可以定义一个子查询的属性。
+*	惰性加载：对于关联属性，由于延迟加载机制将发生n+1次数据库查询动作，此时可以使用Include方法将关联属性预先加载出来。
+*	扩展方法：对LINQ查询的扩展，比较常用的如Segment、AssertWhere、ExtendAs、BatchOr、BatchAnd、CacheParsing等等，具体的使用不在这里说明。
 *	树结构：采用类似00010001的编码来管理树结构，提供插入、移动、枚举孩子、递归父亲、获取兄弟等方法。
 *	数据验证：基于DataAnnotations制定实体的数据验证规则。
 *	持久化事务：基于Scope定义线程内的事务控制。
 *	持久化环境：根据环境内的参数，格式化实体所映射的表名称，实现数据表横向扩展。
+*	持久化事件订阅：提供一个订阅器，用于接收持久化事件，如新增、修改、删除等，事件分为Before和After，Before还可以对该操作进行取消。
 *	动态持久化：通过动态构造实体类型，实现其持久化操作。
-*	实体上下文：提供类似于Entity Framework的数据上下文。
-*	惰性加载：在枚举实体序列并使用关联属性时，由于延迟加载机制将发生n+1次数据库查询动作，此时可以使用Include方法将关联属性预先加载出来。
-*	数据缓存：提供LINQ解析缓存和数据缓存。
+*	解析缓存：LINQ解析时，可以通过配置开启自动缓存开关（默认开），开启后，LINQ的解析时间将会有效缩短，该缓存存放于内存中，部分LINQ解析缓存存在问题，可在查询中使用CacheParsing关闭。
+*	查询缓存：LINQ查询返回数据时，可以通过配置开启自动缓存开关（默认关），缓存是由Fireasy.Common缓存管理器提供的（最好是配置redis）。也可以在查询中使用CacheExecution指定是否开启查询缓存。
+*	自定义函数：在LINQ中使用自定义方法，该方法与数据库的自定义函数相对应。
+*	方法绑定：可在LINQ中自定义方法，对该方法进行绑定，即转换为可解析的Lambda表达式。
 
 ```C#
 public void Sample()
