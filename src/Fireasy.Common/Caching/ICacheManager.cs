@@ -225,5 +225,14 @@ namespace Fireasy.Common.Caching
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// </summary>
         Task ClearAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 获取一个哈希集。
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="cacheKey">用于哈希集的缓存键。</param>
+        /// <returns></returns>
+        ICacheHashSet<TKey, TValue> GetHashSet<TKey, TValue>(string cacheKey);
     }
 }

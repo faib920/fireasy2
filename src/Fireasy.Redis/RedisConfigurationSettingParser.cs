@@ -41,6 +41,8 @@ namespace Fireasy.Redis
                 setting.WriteBuffer = configNode.GetAttributeValue<int?>("writeBuffer");
                 setting.AdvanceDelay = configNode.GetAttributeValue<double?>("advanceDelay");
                 setting.LockTimeout = configNode.GetAttributeValue("lockTimeout", 10);
+                setting.ConnectTimeout = configNode.GetAttributeValue("connectTimeout", 5000);
+                setting.SyncTimeout = configNode.GetAttributeValue("syncTimeout", 10000);
                 setting.RequeueDelayTime = configNode.GetAttributeValue("requeueDelayTime").To<int?>();
 
                 foreach (XmlNode nd in configNode.SelectNodes("host"))
@@ -79,6 +81,8 @@ namespace Fireasy.Redis
                 setting.WriteBuffer = configNode["writeBuffer"].To<int?>();
                 setting.AdvanceDelay = configNode["advanceDelay"].To<double?>();
                 setting.LockTimeout = configNode["lockTimeout"].To(10);
+                setting.ConnectTimeout = configNode["connectTimeout"].To(5000);
+                setting.SyncTimeout = configNode["syncTimeout"].To(10000);
                 setting.RequeueDelayTime = configNode["requeueDelayTime"].To<int?>();
 
                 foreach (var nd in configNode.GetSection("host").GetChildren())

@@ -47,7 +47,7 @@ namespace Fireasy.Web.Sockets
                     var handler = GetHandler(handlerType);
                     if (handler != null)
                     {
-                        var acceptContext = new WebSocketAcceptContext(webSocket, context.User, option);
+                        var acceptContext = new WebSocketAcceptContext(context, webSocket, context.User, option);
                         await WebSocketHandler.Accept(handler, acceptContext);
                     }
                 }

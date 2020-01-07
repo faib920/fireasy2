@@ -13,6 +13,8 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq;
 
+[assembly: ConfigurationBinder(typeof(Microsoft.Extensions.DependencyInjection.ConfigurationBinder))]
+
 namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions

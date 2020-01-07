@@ -964,7 +964,7 @@ namespace Fireasy.Data.Entity.Linq
 
             var result = source.Provider.Execute<int>(expression);
 
-            if (primary != null && result > 0 && result != (int)entity.GetValue(primary))
+            if (primary != null && result > 0 && !entity.IsModified(primary.Name) && result != (int)entity.GetValue(primary))
             {
                 entity.SetValue(primary, PropertyValue.NewValue(result, primary.Type));
             }
@@ -983,15 +983,15 @@ namespace Fireasy.Data.Entity.Linq
                 new[] { Expression.Constant(source), (Expression)Expression.Constant(entity), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
             var primary = PropertyUnity.GetPrimaryProperties(entity.EntityType).FirstOrDefault(s => s.Info.GenerateType != IdentityGenerateType.None);
-            
+
             var result = await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<int>(expression, cancellationToken);
 
-            if (primary != null && result > 0 && result != (int)entity.GetValue(primary))
+            if (primary != null && result > 0 && !entity.IsModified(primary.Name) && result != (int)entity.GetValue(primary))
             {
                 entity.SetValue(primary, PropertyValue.NewValue(result, primary.Type));
             }
 
-            return result.To<int>();
+            return result;
         }
 
         /// <summary>
@@ -1195,29 +1195,29 @@ namespace Fireasy.Data.Entity.Linq
             return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<int>(expression, cancellationToken);
         }
 
-        internal static int BatchOperate(this IQueryable source, IEnumerable<IEntity> instances, LambdaExpression fnOperation)
+        internal static int BatchOperate(this IQueryable source, IEnumerable<IEntity> entitites, LambdaExpression fnOperation)
         {
-            if (instances.IsNullOrEmpty())
+            if (entitites.IsNullOrEmpty())
             {
                 return 0;
             }
 
             var method = (MethodInfo)MethodBase.GetCurrentMethod();
             var expression = Expression.Call(null, method,
-                new[] { Expression.Constant(source), (Expression)Expression.Constant(instances), fnOperation });
+                new[] { Expression.Constant(source), (Expression)Expression.Constant(entitites), fnOperation });
 
             return source.Provider.Execute<int>(expression);
         }
 
-        internal static async Task<int> BatchOperateAsync(this IQueryable source, IEnumerable<IEntity> instances, LambdaExpression fnOperation, CancellationToken cancellationToken = default)
+        internal static async Task<int> BatchOperateAsync(this IQueryable source, IEnumerable<IEntity> entitites, LambdaExpression fnOperation, CancellationToken cancellationToken = default)
         {
-            if (instances.IsNullOrEmpty())
+            if (entitites.IsNullOrEmpty())
             {
                 return 0;
             }
 
             var expression = Expression.Call(null, MthBatchOperateAsync,
-                new[] { Expression.Constant(source), (Expression)Expression.Constant(instances), fnOperation, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
+                new[] { Expression.Constant(source), (Expression)Expression.Constant(entitites), fnOperation, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
             return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<int>(expression, cancellationToken);
         }

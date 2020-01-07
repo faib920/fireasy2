@@ -8,6 +8,7 @@
 using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -20,9 +21,12 @@ namespace Fireasy.Common.Serialization
     public class SerializeOption
     {
         /// <summary>
-        /// 获取或设置是否对属性名使用 Camel 语法命名规则。默认为 false。
+        /// 初始化 <see cref="SerializeOption"/> 类的新实例。
         /// </summary>
-        public bool CamelNaming { get; set; }
+        public SerializeOption()
+        {
+            ContractResolver = new DefaultContractResolver(this);
+        }
 
         /// <summary>
         /// 获取或设置可包含的属性名数组。
@@ -50,14 +54,24 @@ namespace Fireasy.Common.Serialization
         public ConverterList Converters { get; set; } = new ConverterList();
 
         /// <summary>
-        /// 获取或设置是否忽略 <see cref="Type"/> 类型的属性。默认为 true。
+        /// 获取或设置序列化
         /// </summary>
-        public bool IgnoreType { get; set; } = true;
+        public IContractResolver ContractResolver { get; set; }
 
         /// <summary>
         /// 获取或设置是否缩进。默认为 true。
         /// </summary>
         public bool Indent { get; set; } = true;
+
+        /// <summary>
+        /// 获取或设置命名的处理方式。
+        /// </summary>
+        public NamingHandling NamingHandling { get; set; }
+
+        /// <summary>
+        /// 获取或设置空值的处理方式。
+        /// </summary>
+        public NullValueHandling NullValueHandling { get; set; }
 
         /// <summary>
         /// 获取或设置循环引用时如何处理。
@@ -70,17 +84,28 @@ namespace Fireasy.Common.Serialization
         public DateFormatHandling DateFormatHandling { get; set; }
 
         /// <summary>
+        /// 获取或设置日期的时区处理方式。
+        /// </summary>
+        public DateTimeZoneHandling DateTimeZoneHandling { get; set; }
+
+        /// <summary>
+        /// 获取或设置特定区域性。
+        /// </summary>
+        public CultureInfo Culture { get; set; } = CultureInfo.InvariantCulture;
+
+        /// <summary>
         /// 引用另一个对象的设置属性。
         /// </summary>
         /// <param name="other"></param>
         public virtual void Reference(SerializeOption other)
         {
-            CamelNaming = other.CamelNaming;
+            NamingHandling = other.NamingHandling;
             Converters.AddRange(other.Converters);
-            IgnoreType = other.IgnoreType;
             Indent = other.Indent;
             ReferenceLoopHandling = other.ReferenceLoopHandling;
             DateFormatHandling = other.DateFormatHandling;
+            DateTimeZoneHandling = other.DateTimeZoneHandling;
+            NullValueHandling = other.NullValueHandling;
 
             if (other.InclusiveNames != null)
             {
@@ -207,7 +232,7 @@ namespace Fireasy.Common.Serialization
     }
 
     /// <summary>
-    /// 日期格式的序列化策略。
+    /// 日期格式的处理。
     /// </summary>
     public enum DateFormatHandling
     {
@@ -220,8 +245,51 @@ namespace Fireasy.Common.Serialization
         /// </summary>
         IsoDateFormat,
         /// <summary>
-        /// Json 格式，如 "\/Date(1198908717056)\/"。
+        /// Micrisoft 格式，如 "\/Date(1198908717056)\/"。
         /// </summary>
-        JsonDateFormat
+        MicrosoftDateFormat
+    }
+
+    /// <summary>
+    /// 日期格式的时区处理。
+    /// </summary>
+    public enum DateTimeZoneHandling
+    {
+        /// <summary>
+        /// 本地时间。
+        /// </summary>
+        Local,
+        /// <summary>
+        /// UTC 时间。
+        /// </summary>
+        Utc,
+        /// <summary>
+        /// 未定。
+        /// </summary>
+        Unspecified
+    }
+
+    /// <summary>
+    /// 空值的处理方式。
+    /// </summary>
+    public enum NullValueHandling
+    {
+        /// <summary>
+        /// 仍然输出 null。
+        /// </summary>
+        Include,
+        /// <summary>
+        /// 忽略该值。
+        /// </summary>
+        Ignore
+    }
+
+    /// <summary>
+    /// 命名的处理方式。
+    /// </summary>
+    public enum NamingHandling
+    {
+        Default,
+        Camel,
     }
 }

@@ -75,7 +75,11 @@ namespace Fireasy.Windows.Forms
             }
             set
             {
-                if (Cells.Count > 0)
+                if (Cells.Count == 0)
+                {
+                    Cells.Add(new TreeListCell() { Value = value });
+                }
+                else
                 {
                     Cells[0].Value = value;
                 }

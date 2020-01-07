@@ -515,11 +515,12 @@ namespace Fireasy.Data.Entity.Tests
                 db.Orders.GroupBy(o => o.CustomerID).Select(g =>
                     new
                     {
+                        Key = g.Key,
                         Sum = g.Sum(o => o.OrderID),
                         Min = g.Min(o => o.OrderID),
-                        Max = g.Max(o => o.OrderID),
+                        Max = g.Max(o => o.OrderDate),
                         Avg = g.Average(o => o.OrderID)
-                    })
+                    }).OrderBy(s => s.Max)
                 );
         }
 

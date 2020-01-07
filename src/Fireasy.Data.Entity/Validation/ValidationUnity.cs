@@ -9,7 +9,6 @@ using Fireasy.Common;
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -37,28 +36,30 @@ namespace Fireasy.Data.Entity.Validation
         /// <exception cref="ArgumentNullException"><paramref name="entity"/> 或 <paramref name="property"/> 参数为 null。</exception>
         /// <exception cref="PropertyInvalidateException">实体属性验证失败且 <paramref name="callback"/> 参数为 null。</exception>
         /// <returns>验证通过为 true，否则为 false。</returns>
-        public static bool Validate(IEntity entity, IProperty property, PropertyValue value, Action<IProperty, IList<string>> callback = null)
+        public static bool Validate(IEntity entity, IProperty property, PropertyValue value, Action<IProperty, IList<ValidationErrorResult>> callback = null)
         {
             Guard.ArgumentNull(entity, nameof(entity));
             Guard.ArgumentNull(property, nameof(property));
 
             var validations = GetValidations(property);
-            if (validations == null)
+            if (validations == null || !validations.Any())
             {
                 return true;
             }
 
             var isValid = true;
-            var messages = new List<string>();
+            var messages = new List<ValidationErrorResult>();
 
             //获取属性真实的值
             var relValue = PropertyValue.GetValue(value);
-            if (relValue != null && relValue is IFormattable formatter)
-            {
-                relValue = relValue.ToString();
-            }
 
             var context = CreateContext(entity, property);
+
+            var displayName = property.Info.Description;
+            if (string.IsNullOrEmpty(displayName))
+            {
+                displayName = property.Name;
+            }
 
             foreach (var validation in validations)
             {
@@ -69,71 +70,9 @@ namespace Fireasy.Data.Entity.Validation
                     //验证失败，记录提示信息
                     if (result != ValidationResult.Success)
                     {
-                        messages.Add(result.ErrorMessage);
+                        messages.Add(new ValidationErrorResult(validation, displayName, result.ErrorMessage));
                         isValid = false;
                     }
-                }
-                catch (Exception exp)
-                {
-                    throw new PropertyInvalidateException(property, exp);
-                }
-            }
-
-            if (!isValid)
-            {
-                if (callback == null)
-                {
-                    throw new PropertyInvalidateException(property, messages);
-                }
-
-                //回调，将当前属性的异常信息通知调用程序
-                callback(property, messages);
-                return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// 对实体指定属性的值进行验证。
-        /// </summary>
-        /// <param name="property">要验证的实体属性。</param>
-        /// <param name="value">将赋给属性的值。</param>
-        /// <param name="callback">默认为 null。当实体属性验证失败时，可以使用该回调方法处理异常信息。</param>
-        /// <exception cref="ArgumentNullException"><paramref name="property"/> 参数为 null。</exception>
-        /// <exception cref="PropertyInvalidateException">实体属性验证失败且 <paramref name="callback"/> 参数为 null。</exception>
-        /// <returns>验证通过为 true，否则为 false。</returns>
-        public static bool Validate(IProperty property, object value, Action<IProperty, IList<string>> callback = null)
-        {
-            Guard.ArgumentNull(property, nameof(property));
-
-            var validations = GetValidations(property);
-            if (validations == null)
-            {
-                return true;
-            }
-
-            var isValid = true;
-            var messages = new List<string>();
-
-            //获取属性真实的值
-
-            foreach (var validation in validations)
-            {
-                var displayName = property.Info.Description;
-                if (string.IsNullOrEmpty(displayName))
-                {
-                    displayName = property.Name;
-                }
-
-                try
-                {
-                    validation.Validate(value, displayName);
-                }
-                catch (ValidationException exp)
-                {
-                    messages.Add(exp.Message);
-                    isValid = false;
                 }
                 catch (Exception exp)
                 {
@@ -172,7 +111,7 @@ namespace Fireasy.Data.Entity.Validation
             }
 
             var isValid = true;
-            var propertyErrors = new Dictionary<IProperty, IList<string>>();
+            var propertyErrors = new Dictionary<IProperty, IList<ValidationErrorResult>>();
             var errors = new List<string>();
 
             var proValidations = GetPropertyValidations(entity.EntityType).AsEnumerable();

@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NETSTANDARD
 using System;
 
 namespace Fireasy.Data.Provider
@@ -24,7 +23,11 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="OdbcProvider"/> 类的新实例。
         /// </summary>
         public OdbcProvider()
+#if NETFRAMEWORK
             : base(new InstallerProviderFactoryResolver("System.Data.Odbc"))
+#else
+            : base(new AssemblyProviderFactoryResolver("System.Data.Odbc.OleDbProviderFactory, System.Data.Odbc"))
+#endif
         {
         }
 
@@ -52,4 +55,3 @@ namespace Fireasy.Data.Provider
         }
     }
 }
-#endif

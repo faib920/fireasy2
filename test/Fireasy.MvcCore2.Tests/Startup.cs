@@ -30,6 +30,11 @@ namespace Fireasy.MvcCore.Tests
 
             services.AddTransient<IModel, TestModel>();
 
+            services.Configure<EntityOption>(s =>
+            {
+                s.Name = "test";
+            });
+
             services
                 .AddFireasy(Configuration)
                 .AddIoc(ContainerUnity.GetContainer())

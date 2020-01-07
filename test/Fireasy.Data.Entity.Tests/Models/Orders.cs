@@ -143,6 +143,7 @@ namespace Fireasy.Data.Entity.Tests.Models
         /// <summary>
         /// 属性 EmployeeID 的验证特性。
         /// </summary>
+        [Range(2, 4)]
         public object EmployeeID { get; set; }
 
         /// <summary>

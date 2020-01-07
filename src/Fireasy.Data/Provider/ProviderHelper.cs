@@ -6,7 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Configuration;
@@ -104,10 +103,8 @@ namespace Fireasy.Data.Provider
             lock (providerWappers)
             {
                 //内置的提供者
-#if !NETSTANDARD
                 AddProvider("OleDb", OleDbProvider.Instance);
                 AddProvider("Odbc", OdbcProvider.Instance);
-#endif
                 AddProvider("SqlServer", MsSqlProvider.Instance);
                 AddProvider("MsSql", MsSqlProvider.Instance);
                 AddProvider("Oracle", OracleProvider.Instance);

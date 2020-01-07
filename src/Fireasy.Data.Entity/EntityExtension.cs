@@ -6,14 +6,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using Fireasy.Common;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Linq.Expressions;
 using Fireasy.Data.Entity.Properties;
-using Fireasy.Data.RecordWrapper;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
@@ -53,28 +49,20 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 标记指定的属性已被修改。
+        /// 标记指定的属性是否已被修改。
         /// </summary>
         /// <typeparam name="TEntity"></typeparam>
         /// <typeparam name="TProperty"></typeparam>
         /// <param name="entity">当前的实体对象。</param>
         /// <param name="propertyExpression">被修改的属性的表达式。</param>
+        /// <param name="modified">是否被修改。默认为 true。</param>
         /// <returns></returns>
-        public static TEntity Modified<TEntity, TProperty>(this TEntity entity, Expression<Func<TEntity, TProperty>> propertyExpression) where TEntity : IEntity
+        public static TEntity Modified<TEntity, TProperty>(this TEntity entity, Expression<Func<TEntity, TProperty>> propertyExpression, bool modified = true) where TEntity : IEntity
         {
-            var lambdaExp = propertyExpression as LambdaExpression;
-            if (lambdaExp == null)
+            if (propertyExpression is LambdaExpression lambdaExp && lambdaExp.Body is MemberExpression memberExp)
             {
-                return entity;
+                entity.NotifyModified(memberExp.Member.Name, modified);
             }
-
-            var memberExp = lambdaExp.Body as MemberExpression;
-            if (memberExp == null)
-            {
-                return entity;
-            }
-
-            entity.NotifyModified(memberExp.Member.Name);
 
             return entity;
         }
@@ -101,12 +89,30 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
+        /// 获取实体指定属性修改前的值。
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <typeparam name="TProperty"></typeparam>
+        /// <param name="entity">当前的实体对象。</param>
+        /// <param name="propertyExpression">要获取值的属性表达式。</param>
+        /// <returns></returns>
+        public static PropertyValue GetOldValue<TEntity, TProperty>(this TEntity entity, Expression<Func<TEntity, TProperty>> propertyExpression) where TEntity : IEntity
+        {
+            if (propertyExpression is LambdaExpression lambdaExp && lambdaExp.Body is MemberExpression memberExp)
+            {
+                return GetOldValue(entity, memberExp.Member.Name);
+            }
+
+            throw new ArgumentException(nameof(propertyExpression));
+        }
+
+        /// <summary>
         /// 通过主键值使对象正常化。
         /// </summary>
-        /// <param name="entity"></param>
+        /// <param name="entity">当前的实体对象。</param>
         /// <param name="keyValues">主键值数组。</param>
         /// <returns></returns>
-        public static T Normalize<T>(this T entity, params PropertyValue[] keyValues) where T : IEntity
+        public static TEntity Normalize<TEntity>(this TEntity entity, params PropertyValue[] keyValues) where TEntity : IEntity
         {
             var primaryKeys = PropertyUnity.GetPrimaryProperties(entity.EntityType).ToArray();
             if (primaryKeys.Length != 0 && keyValues == null ||
@@ -128,7 +134,7 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 设置实体的状态。
         /// </summary>
-        /// <param name="entity">要设置状态的实体。</param>
+        /// <param name="entity">当前的实体对象。</param>
         /// <param name="state">要设置的状态。</param>
         public static void SetState(this IEntity entity, EntityState state)
         {
@@ -145,7 +151,7 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 锁定实体执行一个方法，即当前实体修改期间，不能再次对该实体进行操作。
         /// </summary>
-        /// <param name="entity"></param>
+        /// <param name="entity">当前的实体对象。</param>
         /// <param name="action"></param>
         public static void TryLockModifing(this IEntity entity, Action action)
         {
@@ -155,14 +161,14 @@ namespace Fireasy.Data.Entity
             }
 
             entity.IsModifyLocked = true;
-            action();
+            action?.Invoke();
             entity.IsModifyLocked = false;
         }
 
         /// <summary>
         /// 判断实体的属性是否修改。
         /// </summary>
-        /// <param name="entity"></param>
+        /// <param name="entity">当前的实体对象。</param>
         /// <param name="propertyName"></param>
         /// <returns></returns>
         public static bool IsModified(this IEntity entity, string propertyName)
@@ -173,6 +179,24 @@ namespace Fireasy.Data.Entity
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// 判断实体的属性是否修改。
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <typeparam name="TProperty"></typeparam>
+        /// <param name="entity">当前的实体对象。</param>
+        /// <param name="propertyExpression">要判断的属性表达式。</param>
+        /// <returns></returns>
+        public static bool IsModified<TEntity, TProperty>(this TEntity entity, Expression<Func<TEntity, TProperty>> propertyExpression) where TEntity : IEntity
+        {
+            if (propertyExpression is LambdaExpression lambdaExp && lambdaExp.Body is MemberExpression memberExp)
+            {
+                return IsModified(entity, memberExp.Member.Name);
+            }
+
+            throw new ArgumentException(nameof(propertyExpression));
         }
 
         /// <summary>
@@ -262,6 +286,18 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
+        /// 通过一个 lambda 表达式将属性值绑定到实体对象中。
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <param name="entity"></param>
+        /// <param name="newExpression"></param>
+        /// <returns></returns>
+        public static TEntity InitByExpression<TEntity>(this TEntity entity, Expression<Func<TEntity>> newExpression) where TEntity : IEntity
+        {
+            return (TEntity)InitByExpression((IEntity)entity, newExpression);
+        }
+
+        /// <summary>
         /// 通过一个 <see cref="MemberInitExpression"/> 表达式将属性值绑定到实体对象中。
         /// </summary>
         /// <param name="entity"></param>
@@ -287,6 +323,17 @@ namespace Fireasy.Data.Entity
             }
 
             return entity;
+        }
+
+        /// <summary>
+        /// 为实体对象应用默认值。
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        public static TEntity ApplyDefaultValue<TEntity>(this TEntity entity) where TEntity : IEntity
+        {
+            return (TEntity)ApplyDefaultValue((IEntity)entity);
         }
 
         /// <summary>

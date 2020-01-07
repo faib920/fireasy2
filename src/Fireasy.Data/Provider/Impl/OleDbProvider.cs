@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NETSTANDARD
 using Fireasy.Data.Identity;
 using Fireasy.Data.RecordWrapper;
 using Fireasy.Data.Schema;
@@ -27,9 +26,15 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="OleDbProvider"/> 类的新实例。
         /// </summary>
         public OleDbProvider()
+#if NETFRAMEWORK
             : base(new InstallerProviderFactoryResolver("System.Data.OleDb"))
+#else
+            : base(new AssemblyProviderFactoryResolver("System.Data.OleDb.OleDbFactory, System.Data.OleDb"))
+#endif
         {
+#if NETFRAMEWORK
             RegisterService<ISchemaProvider, OleDbSchema>();
+#endif
             RegisterService<IGeneratorProvider, BaseSequenceGenerator>();
             RegisterService<IRecordWrapper, GeneralRecordWrapper>();
         }
@@ -74,4 +79,3 @@ namespace Fireasy.Data.Provider
         }
     }
 }
-#endif

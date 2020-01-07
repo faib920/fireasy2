@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if !NETSTANDARD
+#if NETFRAMEWORK
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Extensions;
 using System;

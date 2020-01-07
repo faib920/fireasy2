@@ -31,28 +31,23 @@ namespace Fireasy.Windows.Forms
             get { return tree; }
         }
 
-        public new object SelectedItem
+        public TreeListColumnCollection Columns
         {
             get
             {
-                if (TreeList.SelectedItems.Count == 0)
-                {
-                    return null;
-                }
-
-                return TreeList.SelectedItems[0];
+                return TreeList.Columns;
             }
         }
 
-        public override string SelectedText
+        public new TreeListItemCollection Items
         {
             get
             {
-                return string.Empty;
+                return TreeList.Items;
             }
         }
 
-        public override object SelectedValue
+        public new object SelectedValue
         {
             get
             {
@@ -60,19 +55,19 @@ namespace Fireasy.Windows.Forms
             }
             set
             {
+                base.SelectedValue = value;
+
                 if (TreeList.ShowCheckBoxes)
                 {
-                    base.SelectedValue = value;
-
                     if (value != null)
                     {
                         var texts = new List<string>();
                         CheckItem(TreeList.Items, value as object[], texts);
-                        SetText(string.Join(",", texts));
+                        SelectedText = string.Join(",", texts);
                     }
                     else
                     {
-                        SetText(string.Empty);
+                        SelectedText = string.Empty;
                     }
                 }
                 else
@@ -80,7 +75,7 @@ namespace Fireasy.Windows.Forms
                     TreeList.SelectedItems.Clear();
                     if (!FindItem(TreeList.Items, value))
                     {
-                        SetText(string.Empty);
+                        SelectedText = string.Empty;
                     }
                 }
             }
@@ -109,7 +104,7 @@ namespace Fireasy.Windows.Forms
                 {
                     item.Selected = true;
                     base.SelectedValue = value;
-                    SetText(GetDisplayText(item));
+                    SelectedText = GetDisplayText(item);
                     ExpendAllParent(item);
                     return true;
                 }
@@ -166,7 +161,9 @@ namespace Fireasy.Windows.Forms
                 return;
             }
 
-            SetItem(GetDisplayText(e.Item), GetValue(e.Item));
+            SelectedItem = e.Item;
+            SelectedText = GetDisplayText(e.Item);
+            SelectedValue = GetValue(e.Item);
 
             HideDropDown();
         }
@@ -192,7 +189,8 @@ namespace Fireasy.Windows.Forms
                 array.Add(GetValue(item));
             }
 
-            SetItem(sb.ToString(), array.Count == 0 ? null : array.ToArray());
+            SelectedText = sb.ToString();
+            SelectedValue = array.Count == 0 ? null : array.ToArray();
         }
 
         private string GetDisplayText(TreeListItem item)

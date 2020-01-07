@@ -116,7 +116,6 @@ namespace Fireasy.Common.Threading
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
             }
             finally
             {

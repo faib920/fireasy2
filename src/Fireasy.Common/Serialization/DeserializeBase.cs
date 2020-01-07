@@ -31,24 +31,10 @@ namespace Fireasy.Common.Serialization
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        protected Dictionary<string, PropertyAccessor> GetAccessorCache(Type type)
+        protected Dictionary<string, SerializerPropertyMetadata> GetAccessorMetadataMappers(Type type)
         {
-            return context.SetAccessors.TryGetValue(type, () =>
-                {
-                    return type.GetProperties()
-                        .Where(s => s.CanWrite && !SerializerUtil.IsNoSerializable(option, s))
-                        .Select(s =>
-                            {
-                                var ele = s.GetCustomAttributes<TextSerializeElementAttribute>().FirstOrDefault();
-                                //如果使用Camel命名，则名称第一位小写
-                                var name = ele != null ?
-                                    ele.Name : (option.CamelNaming ?
-                                        char.ToLower(s.Name[0]) + s.Name.Substring(1) : s.Name);
-
-                                return new { name, p = s };
-                            })
-                        .ToDictionary(s => s.name, s => ReflectionCache.GetAccessor(s.p));
-                });
+            var cache = context.GetProperties(type, () => option.ContractResolver.GetProperties(type));
+            return cache.ToDictionary(s => s.PropertyName);
         }
 
         /// <summary>
@@ -109,9 +95,9 @@ namespace Fireasy.Common.Serialization
         protected object CreateGeneralObject(Type objType)
         {
             var obj = objType.New();
-            foreach (var acc in context.GetAccessorCache(objType).Where(s => s.DefaultValue != null))
+            foreach (var acc in context.GetProperties(objType, () => option.ContractResolver.GetProperties(objType)).Where(s => s.DefaultValue != null))
             {
-                acc.Accessor.SetValue(obj, acc.DefaultValue.ToType(acc.PropertyInfo.PropertyType));
+                acc.Setter(obj, acc.DefaultValue.ToType(acc.PropertyInfo.PropertyType));
             }
 
             return obj;

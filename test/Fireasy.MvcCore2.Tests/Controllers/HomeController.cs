@@ -1,20 +1,17 @@
 ﻿using Fireasy.Common.Caching;
+using Fireasy.Common.Localization;
+using Fireasy.Common.Logging;
 using Fireasy.Common.Serialization;
 using Fireasy.Data.Entity;
-using Fireasy.Data.Entity.Tests.Models;
 using Fireasy.MvcCore.Services;
 using Fireasy.MvcCore.Tests.Models;
 using Fireasy.Web.Mvc;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Mvc.Filters;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
-using Fireasy.Common.Extensions;
-using Fireasy.Common.Logging;
-using Fireasy.Common.Localization;
 
 namespace Fireasy.MvcCore.Tests.Controllers
 {
@@ -29,6 +26,11 @@ namespace Fireasy.MvcCore.Tests.Controllers
             this.logger = logger;
             logger.Info("dfafasf");
             this.service = context;
+        }
+
+        public override void OnActionExecuting(ActionExecutingContext context)
+        {
+            base.OnActionExecuting(context);
         }
 
         public IActionResult Index()

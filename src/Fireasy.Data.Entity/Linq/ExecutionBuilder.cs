@@ -633,7 +633,7 @@ namespace Fireasy.Data.Entity.Linq
                 }
                 else
                 {
-                    table.Columns.Add(nv.Name, DataExpressionColumn.CreateType(nv.Value.Type));
+                    table.Columns.Add(nv.Name, DataExpressionRow.CreateType(nv.Value.Type));
                 }
             }
 
@@ -669,7 +669,7 @@ namespace Fireasy.Data.Entity.Linq
                     {
                         exp = ParameterRewriter.Rewrite(exp, batch.Operation.Parameters[1], entity);
                         var setter = Expression.Lambda(exp, executor).Compile();
-                        row[nv.Key] = DataExpressionColumn.Create(exp.Type, setter);
+                        row[nv.Key] = DataExpressionRow.Create(exp.Type, setter);
                     }
                 }
 

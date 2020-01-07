@@ -43,11 +43,13 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var context = new DbContext())
             {
-                var rr = context.Customers.Get("ALFKI");
+                var rr = context.Customers.Where(s => s.CustomerID == "ALFKI").FirstOrDefault();
                 var customers = context.Customers.Get("ALFKI");
-                customers.Address = "11";
+                customers.Address = "bb21";
+                context.RemoveCache(typeof(Customers));
                 var r = context.Customers.UpdateAsync(customers);
-                //Assert.AreEqual(1, r);
+                rr = context.Customers.Where(s => s.CustomerID == "ALFKI").FirstOrDefault();
+                Assert.AreEqual(rr.Address, customers.Address);
             }
         }
 
@@ -410,11 +412,11 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var details = db.OrderDetails
                             .Include(s => s.Orders.Customers)
-                            .FirstOrDefault();
+                            .CacheExecution(true).Take(5);
 
-                //foreach (var detail in details)
+                foreach (var detail in details)
                 {
-                    Console.WriteLine(details.Orders.Customers.Address);
+                    //Console.WriteLine(detail.Orders.Customers.Address);
                 }
             }
         }
@@ -873,7 +875,7 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var customer = new Orders
                 {
-                    CustomerID = "A2",
+                    CustomerID = "A2111",
                     EmployeeID = 1,
                     OrderDate = DateTime.Now,
                     //ShipVia = 3
@@ -890,7 +892,7 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var customer = new Customers
                 {
-                    CustomerID = "Ad118",
+                    CustomerID = "766v",
                     CompanyName = "a2"
                     
                 };
@@ -907,7 +909,7 @@ namespace Fireasy.Data.Entity.Tests
             {
                 db.Customers.Insert(() => new Customers
                 {
-                    CustomerID = "DD",
+                    CustomerID = "DD1",
                     CompanyName = "kunming",
                     City = "kunming"
                 });
@@ -1268,6 +1270,10 @@ namespace Fireasy.Data.Entity.Tests
                 }
 
                 db.Products.Batch(list, (u, s) => u.Insert(s));
+
+                var p = Products.Wrap(() => new Products { ProductName = "b11", Discontinued = 0 });
+                db.Products.Insert(p);
+                Console.WriteLine(p.ProductID);
             }
         }
 

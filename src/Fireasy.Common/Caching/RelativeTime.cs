@@ -32,6 +32,11 @@ namespace Fireasy.Common.Caching
             lastAccessTime = DateTime.Now;
         }
 
+        public static implicit operator RelativeTime(TimeSpan value)
+        {
+            return new RelativeTime(value);
+        }
+
         /// <summary>
         /// 获取时间间隔。
         /// </summary>

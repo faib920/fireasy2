@@ -26,7 +26,8 @@ namespace Fireasy.Windows.Forms
         /// 初始化 <see cref="TreeListItemCollection"/> 类的新实例。
         /// </summary>
         public TreeListItemCollection()
-        { }
+        {
+        }
 
         internal TreeListItemCollection(TreeList treelist, TreeListItem parent, int level)
         {
@@ -41,7 +42,6 @@ namespace Fireasy.Windows.Forms
             Add(item);
             return item;
         }
-
 
         /// <summary>
         /// 添加一行以及单元格的数据。

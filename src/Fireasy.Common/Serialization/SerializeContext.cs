@@ -7,10 +7,8 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
-using Fireasy.Common.Reflection;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 
 namespace Fireasy.Common.Serialization
@@ -21,25 +19,7 @@ namespace Fireasy.Common.Serialization
     public class SerializeContext : Scope<SerializeContext>
     {
         private readonly List<object> objects = new List<object>();
-
-        /// <summary>
-        /// 初始化 <see cref="SerializeContext"/> 类的新实例。
-        /// </summary>
-        public SerializeContext()
-        {
-            GetAccessors = new Dictionary<Type, List<PropertyGetAccessorCache>>();
-            SetAccessors = new Dictionary<Type, Dictionary<string, PropertyAccessor>>();
-        }
-
-        /// <summary>
-        /// 获取或设置读取的类属性缓存。
-        /// </summary>
-        public Dictionary<Type, List<PropertyGetAccessorCache>> GetAccessors { get; set; }
-
-        /// <summary>
-        /// 获取或设置写入的类属性缓存。
-        /// </summary>
-        public Dictionary<Type, Dictionary<string, PropertyAccessor>> SetAccessors { get; set; }
+        private static SafetyDictionary<Type, List<SerializerPropertyMetadata>> cache = new SafetyDictionary<Type, List<SerializerPropertyMetadata>>();
 
         /// <summary>
         /// 获取或设置 <see cref="SerializeOption"/>。
@@ -52,33 +32,14 @@ namespace Fireasy.Common.Serialization
         public PropertySerialzeInfo SerializeInfo { get; internal set; }
 
         /// <summary>
-        /// 获取指定类型的属性访问缓存。
+        /// 获取指定类型的属性元数据。
         /// </summary>
         /// <param name="type"></param>
+        /// <param name="factory"></param>
         /// <returns></returns>
-        public List<PropertyGetAccessorCache> GetAccessorCache(Type type)
+        public List<SerializerPropertyMetadata> GetProperties(Type type, Func<List<SerializerPropertyMetadata>> factory)
         {
-            return GetAccessors.TryGetValue(type, () =>
-            {
-                return type.GetProperties()
-                    .Where(s => s.CanRead && !SerializerUtil.IsNoSerializable(Option, s))
-                    .Distinct(new SerializerUtil.PropertyEqualityComparer())
-                    .Select(s => new PropertyGetAccessorCache
-                    {
-                        Accessor = ReflectionCache.GetAccessor(s),
-                        Filter = (p, l) =>
-                        {
-                            return !SerializerUtil.CheckLazyValueCreate(l, p.Name);
-                        },
-                        PropertyInfo = s,
-                        PropertyName = SerializerUtil.GetPropertyName(s),
-                        Formatter = s.GetCustomAttributes<TextFormatterAttribute>().FirstOrDefault()?.Formatter,
-                        DefaultValue = s.GetCustomAttributes<DefaultValueAttribute>().FirstOrDefault()?.Value,
-                        Converter = s.GetCustomAttributes<TextPropertyConverterAttribute>().FirstOrDefault()?.ConverterType.New<ITextConverter>()
-                    })
-                    .Where(s => !string.IsNullOrEmpty(s.PropertyName))
-                    .ToList();
-            });
+            return cache.GetOrAdd(type, factory);
         }
 
         /// <summary>
@@ -124,51 +85,56 @@ namespace Fireasy.Common.Serialization
         /// <param name="disposing"></param>
         protected override void Dispose(bool disposing)
         {
-            GetAccessors.Clear();
+            cache.Clear();
             objects.Clear();
             base.Dispose(disposing);
         }
     }
 
     /// <summary>
-    /// 属性读取器的缓存。
+    /// 序列化属性映射元数据。
     /// </summary>
-    public class PropertyGetAccessorCache
+    public class SerializerPropertyMetadata
     {
         /// <summary>
-        /// 获取属性对应的访问器。
+        /// 获取或设置属性的取值方法。
         /// </summary>
-        public PropertyAccessor Accessor { get; internal set; }
+        public Func<object, object> Getter { get; set; }
 
         /// <summary>
-        /// 获取属性过滤的一个方法。
+        /// 获取或设置属性的赋值方法。
+        /// </summary>
+        public Action<object, object> Setter { get; set; }
+
+        /// <summary>
+        /// 获取或设置属性过滤的一个方法。
         /// </summary>
         public Func<PropertyInfo, ILazyManager, bool> Filter { get; internal set; }
 
         /// <summary>
-        /// 获取被缓存的 <see cref="PropertyInfo"/> 对象。
+        /// 获取或设置被缓存的 <see cref="PropertyInfo"/> 对象。
         /// </summary>
-        public PropertyInfo PropertyInfo { get; internal set; }
+        public PropertyInfo PropertyInfo { get; set; }
 
         /// <summary>
-        /// 获取被缓存的属性名称。
+        /// 获取或设置被缓存的属性名称。
         /// </summary>
-        public string PropertyName { get; internal set; }
+        public string PropertyName { get; set; }
 
         /// <summary>
-        /// 获取格式化文本的格式。
+        /// 获取或设置格式化文本的格式。
         /// </summary>
-        public string Formatter { get; internal set; }
+        public string Formatter { get; set; }
 
         /// <summary>
-        /// 获取缺省的值。
+        /// 获取或设置缺省的值。
         /// </summary>
-        public object DefaultValue { get; internal set; }
+        public object DefaultValue { get; set; }
 
         /// <summary>
-        /// 获取属性上的转换器。
+        /// 获取或设置属性上的转换器。
         /// </summary>
-        public ITextConverter Converter { get; internal set; }
+        public ITextConverter Converter { get; set; }
     }
 
     /// <summary>
@@ -176,12 +142,12 @@ namespace Fireasy.Common.Serialization
     /// </summary>
     public class PropertySerialzeInfo
     {
-        public PropertySerialzeInfo(PropertyGetAccessorCache cache)
+        public PropertySerialzeInfo(SerializerPropertyMetadata metadata)
         {
             ObjectType = ObjectType.GeneralObject;
-            PropertyType = cache.PropertyInfo.PropertyType;
-            PropertyName = cache.PropertyName;
-            Formatter = cache.Formatter;
+            PropertyType = metadata.PropertyInfo.PropertyType;
+            PropertyName = metadata.PropertyName;
+            Formatter = metadata.Formatter;
         }
 
         public PropertySerialzeInfo(ObjectType objectType, Type propertyType, string propertyName)

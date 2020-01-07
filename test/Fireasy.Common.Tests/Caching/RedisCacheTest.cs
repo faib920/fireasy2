@@ -44,12 +44,13 @@ namespace Fireasy.Common.Tests.Caching
             var cacheMgr = CacheManagerFactory.CreateManager("redis");
             var value = await cacheMgr.TryGetAsync("test1", () => Task.FromResult(100));
             var value1 = await cacheMgr.TryGetAsync("test3", () => Task.FromResult(100));
+            Thread.Sleep(10000);
             var value2 = await cacheMgr.TryGetAsync("test4", () => Task.FromResult(100));
-            Assert.AreEqual(true, await cacheMgr.ContainsAsync("test1"));
-            Assert.AreEqual(false, await cacheMgr.ContainsAsync("test2"));
+            //Assert.AreEqual(true, await cacheMgr.ContainsAsync("test1"));
+            //Assert.AreEqual(false, await cacheMgr.ContainsAsync("test2"));
 
-            var keys = cacheMgr.GetKeys("test*");
-            Console.WriteLine(keys.Count());
+            //var keys = cacheMgr.GetKeys("test*");
+            //Console.WriteLine(keys.Count());
         }
 
         [TestMethod]
@@ -116,7 +117,7 @@ namespace Fireasy.Common.Tests.Caching
         {
             Parallel.For(0, 10, i =>
                 {
-                    var cacheMgr = CacheManagerFactory.CreateManager("redis") as IDistributedCacheManager;
+                    var cacheMgr = CacheManagerFactory.CreateManager("redis") as IEnhancedCacheManager;
                     var inc = cacheMgr.TryIncrement("inc1", () => 0);
                     Console.WriteLine(inc);
                 });
@@ -127,7 +128,7 @@ namespace Fireasy.Common.Tests.Caching
         {
             Parallel.For(0, 10, i =>
                 {
-                    var cacheMgr = CacheManagerFactory.CreateManager("redis") as IDistributedCacheManager;
+                    var cacheMgr = CacheManagerFactory.CreateManager("redis") as IEnhancedCacheManager;
                     var dec = cacheMgr.TryDecrement("dec1", () => 100);
                     Console.WriteLine(dec);
                 });
@@ -155,11 +156,22 @@ namespace Fireasy.Common.Tests.Caching
             Assert.AreEqual("fireasy", test.B);
         }
 
+        [TestMethod]
+        public void TestHashset()
+        {
+            var cacheMgr = CacheManagerFactory.CreateManager("redis");
+            var set = cacheMgr.GetHashSet<string, Test1>("bee");
+            var a1 = set.TryGet("1", () => new Test1 { B = "aaaa1" });
+            var a2 = set.TryGet("2", () => new Test1 { B = "bbbb1" });
+        }
+
         public class Test1
         {
             public byte[] A { get; set; }
 
             public string B { get; set; }
+
+            public string C { get; set; }
         }
     }
 }

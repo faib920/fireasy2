@@ -7,7 +7,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Fireasy.Common.ComponentModel;
@@ -152,70 +151,6 @@ namespace Fireasy.Common.Configuration
         }
 #endif
 
-#if NETSTANDARD
-        /// <summary>
-        /// 绑定所有和 fireasy 有关的配置项。
-        /// </summary>
-        /// <param name="callAssembly"></param>
-        /// <param name="configuration"></param>
-        /// <param name="services"></param>
-        public static void Bind(Assembly callAssembly, IConfiguration configuration, IServiceCollection services = null)
-        {
-            var assemblies = new List<Assembly>();
-
-            FindReferenceAssemblies(callAssembly, assemblies);
-
-            foreach (var assembly in assemblies)
-            {
-                var type = assembly.GetType("Microsoft.Extensions.DependencyInjection.ConfigurationBinder");
-                if (type != null)
-                {
-                    var method = type.GetMethod("Bind", BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(IServiceCollection), typeof(IConfiguration) }, null);
-                    if (method != null)
-                    {
-                        method.Invoke(null, new object[] { services, configuration });
-                    }
-                }
-            }
-
-            assemblies.Clear();
-        }
-
-        private static bool ExcludeAssembly(string assemblyName)
-        {
-            return !assemblyName.StartsWith("system.", StringComparison.OrdinalIgnoreCase) &&
-                    !assemblyName.StartsWith("microsoft.", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static Assembly LoadAssembly(AssemblyName assemblyName)
-        {
-            try
-            {
-                return Assembly.Load(assemblyName);
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        private static void FindReferenceAssemblies(Assembly assembly, List<Assembly> assemblies)
-        {
-            foreach (var asb in assembly.GetReferencedAssemblies()
-                .Where(s => ExcludeAssembly(s.Name))
-                .Select(s => LoadAssembly(s))
-                .Where(s => s != null))
-            {
-                if (!assemblies.Contains(asb))
-                {
-                    assemblies.Add(asb);
-                }
-
-                FindReferenceAssemblies(asb, assemblies);
-            }
-        }
-
-#endif
         /// <summary>
         /// 根据提供的配置创建实例对象。
         /// </summary>

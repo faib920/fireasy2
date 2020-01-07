@@ -34,7 +34,7 @@ namespace Fireasy.Data.Entity.Linq
             //使用md5进行hash编码
             var md5 = new MD5CryptoServiceProvider();
             byte[] data = md5.ComputeHash(Encoding.Unicode.GetBytes(cacheKey));
-            return string.Concat(prefix, data.ToHex(true));
+            return string.Concat(prefix, ":", data.ToHex(true));
         }
     }
 }

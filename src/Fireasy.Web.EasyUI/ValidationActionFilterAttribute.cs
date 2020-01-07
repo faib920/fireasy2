@@ -46,7 +46,7 @@ namespace Fireasy.Web.EasyUI
             var result = new ArrayList();
             foreach (var k in exception.PropertyErrors)
             {
-                result.Add(new { Key = k.Key.Name, Value = string.Join("; ", k.Value.ToArray()) });
+                result.Add(new { Key = k.Key.Name, Value = string.Join("; ", k.Value.Select(s => s.ErrorMessage).ToArray()) });
             }
 
             return new JsonResult { Data = Result.Info("Invalid", result), JsonRequestBehavior = JsonRequestBehavior.AllowGet };

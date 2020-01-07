@@ -47,7 +47,7 @@ namespace Fireasy.Common.Caching
         /// <param name="value">要缓存的数据的值。</param>
         /// <param name="expiration">数据存放的有效时间。</param>
         /// <param name="notifyRemoved">缓存移除通知。</param>
-        public CacheItem(string key, object value, ICacheItemExpiration expiration, CacheItemRemovedCallback notifyRemoved)
+        public CacheItem(string key, object value, ICacheItemExpiration expiration, CacheItemRemovedCallback notifyRemoved = null)
         {
             //默认为30分钟的有效期
             Expiration = expiration ?? RelativeTime.Default;

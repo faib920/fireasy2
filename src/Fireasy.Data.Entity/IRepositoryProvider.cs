@@ -185,18 +185,18 @@ namespace Fireasy.Data.Entity
         /// 对实体集合进行批量操作。
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="instances"></param>
+        /// <param name="entities"></param>
         /// <param name="fnOperation"></param>
         /// <returns>影响的实体数。</returns>
-        int Batch(IEnumerable<TEntity> instances, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation);
+        int Batch(IEnumerable<TEntity> entities, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation);
 
         /// <summary>
         /// 对实体集合进行批量操作。
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="instances"></param>
+        /// <param name="entities"></param>
         /// <param name="fnOperation"></param>
         /// <returns>影响的实体数。</returns>
-        Task<int> BatchAsync(IEnumerable<TEntity> instances, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation, CancellationToken cancellationToken = default);
+        Task<int> BatchAsync(IEnumerable<TEntity> entities, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation, CancellationToken cancellationToken = default);
     }
 }

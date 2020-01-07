@@ -6,6 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.ComponentModel;
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +22,8 @@ namespace Fireasy.Common.Caching
     /// </summary>
     public sealed class MemoryCacheManager : ICacheManager
     {
+        private static SafetyDictionary<string, object> hashSet = new SafetyDictionary<string, object>();
+
         /// <summary>
         /// 获取 <see cref="MemoryCacheManager"/> 的静态实例。
         /// </summary>
@@ -270,6 +274,21 @@ namespace Fireasy.Common.Caching
         }
 
         /// <summary>
+        /// 获取一个哈希集。
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="cacheKey">用于哈希集的缓存键。</param>
+        /// <returns></returns>
+        public ICacheHashSet<TKey, TValue> GetHashSet<TKey, TValue>(string cacheKey)
+        {
+            return (ICacheHashSet<TKey, TValue>)hashSet.GetOrAdd(cacheKey, () =>
+            {
+                return new MemoryHashSet<TKey, TValue>();
+            });
+        }
+
+        /// <summary>
         /// 清除所有缓存。
         /// </summary>
         public void Clear()
@@ -356,12 +375,12 @@ namespace Fireasy.Common.Caching
 
         async Task<T> ICacheManager.TryGetAsync<T>(string cacheKey, Func<Task<T>> factory, Func<ICacheItemExpiration> expiration, CancellationToken cancellationToken)
         {
-            return TryGet(cacheKey, () => factory().Result, expiration);
+            return TryGet(cacheKey, () => factory().AsSync(), expiration);
         }
 
         async Task<object> ICacheManager.TryGetAsync(Type dataType, string cacheKey, Func<Task<object>> factory, Func<ICacheItemExpiration> expiration, CancellationToken cancellationToken)
         {
-            return TryGet(dataType, cacheKey, () => factory().Result, expiration);
+            return TryGet(dataType, cacheKey, () => factory().AsSync(), expiration);
         }
 
         async Task<IEnumerable<string>> ICacheManager.GetKeysAsync(string pattern, CancellationToken cancellationToken)

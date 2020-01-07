@@ -7,8 +7,8 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Fireasy.Data.Entity.Initializers
 {
@@ -43,10 +43,7 @@ namespace Fireasy.Data.Entity.Initializers
 
         public void PreInitialize(EntityContextPreInitializeContext context)
         {
-            foreach (var initer in initializers)
-            {
-                initer.PreInitialize(context);
-            }
+            initializers.ForEachParallel(s => s.PreInitialize(context));
         }
     }
 }

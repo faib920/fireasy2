@@ -27,7 +27,7 @@ namespace Fireasy.Web.EasyUI
                 return string.Empty;
             }
 
-            var option = new JsonSerializeOption { Format = JsonFormat.Object };
+            var option = new JsonSerializeOption { KeyHandling = JsonKeyHandling.None };
             var json = new JsonSerializer(option);
             json.Option.Converters.Add(new StringConverter());
             return json.Serialize(settings);

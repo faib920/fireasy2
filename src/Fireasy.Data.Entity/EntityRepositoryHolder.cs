@@ -5,28 +5,27 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.ComponentModel;
 using System;
-using System.Collections.Generic;
 
 namespace Fireasy.Data.Entity
 {
     public sealed class EntityRepositoryHolder
     {
-        private Dictionary<Type, IRepository> holders = new Dictionary<Type, IRepository>();
+        private SafetyDictionary<Type, IRepository> holders = new SafetyDictionary<Type, IRepository>();
 
         public IRepository GetDbSet(IContextService service, Type entityType)
         {
-            if (!holders.TryGetValue(entityType, out IRepository set))
+            return holders.GetOrAdd(entityType, () =>
             {
                 var provider = service.InitializeContext.Provider.GetService<IContextProvider>();
                 if (provider != null)
                 {
-                    set = provider.CreateRepositoryProvider(entityType, service).CreateRepository(service.InitializeContext.Options);
-                    holders[entityType] = set;
+                    return provider.CreateRepositoryProvider(entityType, service).CreateRepository(service.InitializeContext.Options);
                 }
-            }
 
-            return set;
+                return null;
+            });
         }
     }
 }

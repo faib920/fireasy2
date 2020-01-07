@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Fireasy.Web.Sockets
@@ -29,10 +30,66 @@ namespace Fireasy.Web.Sockets
         DateTime AliveTime { get; }
     }
 
-    internal abstract class InternalClientProxy : IClientProxy
+    public abstract class BaseClientProxy : IClientProxy
     {
         public DateTime AliveTime { get; set; }
 
         public abstract Task SendAsync(string method, params object[] arguments);
+    }
+
+    /// <summary>
+    /// 枚举器，表示多个连接代理。
+    /// </summary>
+    public class EnumerableClientProxy : BaseClientProxy
+    {
+        private Func<IEnumerable<IClientProxy>> proxyFactory;
+
+        public EnumerableClientProxy(Func<IEnumerable<IClientProxy>> proxyFactory)
+        {
+            this.proxyFactory = proxyFactory;
+        }
+
+        /// <summary>
+        ///  发送消息。
+        /// </summary>
+        /// <param name="method"></param>
+        /// <param name="arguments"></param>
+        /// <returns></returns>
+        public override Task SendAsync(string method, params object[] arguments)
+        {
+            foreach (var proxy in proxyFactory())
+            {
+                proxy.SendAsync(method, arguments);
+            }
+
+#if NETSTANDARD
+            return Task.CompletedTask;
+#else
+            return new Task(null);
+#endif
+        }
+    }
+
+    /// <summary>
+    /// 表示不做任何处理的连接代理。
+    /// </summary>
+    public class NullClientProxy : BaseClientProxy
+    {
+        public static NullClientProxy Instance = new NullClientProxy();
+
+        /// <summary>
+        ///  发送消息。
+        /// </summary>
+        /// <param name="method"></param>
+        /// <param name="arguments"></param>
+        /// <returns></returns>
+        public override Task SendAsync(string method, params object[] arguments)
+        {
+#if NETSTANDARD
+            return Task.CompletedTask;
+#else
+            return new Task(null);
+#endif
+        }
     }
 }

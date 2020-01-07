@@ -15,7 +15,7 @@ namespace Fireasy.Common.Caching
     /// <summary>
     /// 提供对缓存的优化。
     /// </summary>
-    public class CacheOptimizer
+    public class CacheOptimizer : IDisposable
     {
         private readonly Timer timer;
 
@@ -67,6 +67,11 @@ namespace Fireasy.Common.Caching
             CurrentMaxGen = Math.Max(CurrentMaxGen, item.Gen);
 
             return item;
+        }
+
+        public void Dispose()
+        {
+            timer?.Dispose();
         }
     }
 }

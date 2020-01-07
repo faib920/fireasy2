@@ -12,6 +12,7 @@
 
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Fireasy.App.Licence\Fireasy.App.Licence.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.Data.Entity\Fireasy.Data.Entity.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.Web.Mvc\Fireasy.Web.Mvc.csproj" />
     <ProjectReference Include="..\Fireasy.Data.Entity.Tests\Fireasy.Data.Entity.Tests.csproj" />

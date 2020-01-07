@@ -10,9 +10,9 @@ namespace Fireasy.Data.Entity.Tests
         protected override void OnConfiguring(EntityContextOptionsBuilder builder)
         {
             builder.Options.NotifyEvents = true;
-            //builder.UseOracleTrigger<Orders>().UseOracleTrigger<Products>().UseCodeFirst();
+            //builder.UseOracleTrigger<Products>().UseCodeFirst();
             //builder.UseEnvironment(s => s.AddVariable("Year", "2009")).UseCodeFirst();
-            //builder.UseCodeFirst();
+            builder.UseCodeFirst();
             base.OnConfiguring(builder);
         }
 

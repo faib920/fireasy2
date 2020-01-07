@@ -6,10 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Caching;
-using Fireasy.Common.Caching.Configuration;
-using Fireasy.Common.Configuration;
 using System;
-using System.Linq;
 
 namespace Fireasy.Web.Sockets
 {
@@ -17,10 +14,11 @@ namespace Fireasy.Web.Sockets
     /// 会话管理器。
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class SessionManager<T> where T : IEquatable<T>
+    public class SessionManager<T>
     {
-        private const string prefix1 = "ws_session_";
-        private const string prefix2 = "ws_identity_";
+        private const string WS_SESSION_KEY = "ws_session";
+        private const string WS_IDENTITY_KEY = "ws_identity";
+        private TimeSpan expire = TimeSpan.FromDays(5);
 
         /// <summary>
         /// 获取当前会话个数。
@@ -30,7 +28,8 @@ namespace Fireasy.Web.Sockets
             get
             {
                 var cacheMgr = CacheManagerFactory.CreateManager();
-                return cacheMgr.GetKeys(prefix2 + "*").Count();
+                var hashSet2 = cacheMgr.GetHashSet<int, string>(WS_IDENTITY_KEY);
+                return (int)hashSet2.Count;
             }
         }
 
@@ -41,11 +40,12 @@ namespace Fireasy.Web.Sockets
         /// <param name="identity">用户标识。</param>
         public virtual void Add(string connectionId, T identity)
         {
-            var section = ConfigurationUnity.GetSection<CachingConfigurationSection>();
-
             var cacheMgr = CacheManagerFactory.CreateManager();
-            cacheMgr.Add(prefix1 + connectionId, identity, new RelativeTime(TimeSpan.FromDays(5)));
-            cacheMgr.Add(prefix2 + identity, connectionId, new RelativeTime(TimeSpan.FromDays(5)));
+            var hashSet1 = cacheMgr.GetHashSet<string, T>(WS_SESSION_KEY);
+            var hashSet2 = cacheMgr.GetHashSet<string, string>(WS_IDENTITY_KEY);
+            
+            hashSet1.Add(connectionId, identity, new RelativeTime(expire));
+            hashSet2.Add(identity.ToString(), connectionId, new RelativeTime(expire));
         }
 
         /// <summary>
@@ -55,11 +55,13 @@ namespace Fireasy.Web.Sockets
         public virtual void Remove(string connectionId)
         {
             var cacheMgr = CacheManagerFactory.CreateManager();
-            var identity = cacheMgr.Get<T>(prefix1 + connectionId);
-            if (identity != null)
+            var hashSet1 = cacheMgr.GetHashSet<string, T>(WS_SESSION_KEY);
+            var hashSet2 = cacheMgr.GetHashSet<string, string>(WS_IDENTITY_KEY);
+
+            if (hashSet1.TryGet(connectionId, out T identity))
             {
-                cacheMgr.Remove(prefix1 + connectionId);
-                cacheMgr.Remove(prefix2 + identity);
+                hashSet1.Remove(connectionId);
+                hashSet2.Remove(identity.ToString());
             }
         }
 
@@ -76,7 +78,8 @@ namespace Fireasy.Web.Sockets
             }
 
             var cacheMgr = CacheManagerFactory.CreateManager();
-            if (cacheMgr.TryGet(prefix2 + identity, out string key))
+            var hashSet = cacheMgr.GetHashSet<string, string>(WS_IDENTITY_KEY);
+            if (hashSet.TryGet(identity.ToString(), out string key))
             {
                 return key;
             }
@@ -92,7 +95,8 @@ namespace Fireasy.Web.Sockets
         public virtual T FindIdentity(string connectionId)
         {
             var cacheMgr = CacheManagerFactory.CreateManager();
-            if (cacheMgr.TryGet(prefix1 + connectionId, out T value))
+            var hashSet = cacheMgr.GetHashSet<string, T>(WS_SESSION_KEY);
+            if (hashSet.TryGet(connectionId, out T value))
             {
                 return value;
             }

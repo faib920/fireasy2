@@ -61,16 +61,27 @@ namespace Fireasy.Common.Extensions
         /// <param name="action"></param>
         public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
         {
-            if (source == null)
-            {
-                return;
-            }
-
+            Guard.ArgumentNull(source, nameof(source));
             Guard.ArgumentNull(action, nameof(action));
+
             foreach (var item in source)
             {
                 action(item);
             }
+        }
+
+        /// <summary>
+        /// 并行的方式枚举序列中的所有元素，并执行指定的方法。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="action"></param>
+        public static void ForEachParallel<T>(this IEnumerable<T> source, Action<T> action)
+        {
+            Guard.ArgumentNull(source, nameof(source));
+            Guard.ArgumentNull(action, nameof(action));
+
+            source.AsParallel().ForAll(action);
         }
 
         /// <summary>

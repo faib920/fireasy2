@@ -9,6 +9,8 @@
 using Fireasy.Common.Configuration;
 using Microsoft.Extensions.Configuration;
 
+[assembly: ConfigurationBinder(typeof(Microsoft.Extensions.DependencyInjection.ConfigurationBinder))]
+
 namespace Microsoft.Extensions.DependencyInjection
 {
     internal class ConfigurationBinder

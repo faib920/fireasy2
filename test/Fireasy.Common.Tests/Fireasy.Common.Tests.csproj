@@ -46,6 +46,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.0" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Fireasy.App.Licence\Fireasy.App.Licence.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.Common\Fireasy.Common.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.Log4net\Fireasy.Log4net.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.NLog\Fireasy.NLog.csproj" />

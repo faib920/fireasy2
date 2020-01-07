@@ -7,7 +7,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using Fireasy.Common.Caching;
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Emit;
 using Fireasy.Common.Extensions;
 using System;
@@ -16,7 +16,6 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace Fireasy.Common.Aop
 {
@@ -25,6 +24,8 @@ namespace Fireasy.Common.Aop
     /// </summary>
     public static class InterceptBuilder
     {
+        private static SafetyDictionary<Type, Type> cache = new SafetyDictionary<Type, Type>();
+
         /// <summary>
         /// 成员的前缀
         /// </summary>
@@ -38,15 +39,14 @@ namespace Fireasy.Common.Aop
         private const short STACK_RETURNVALUE_INDEX = 4;
 
         /// <summary>
-        /// 创建一个代理类型。
+        /// 创建一个代理类型，并将代理类放入缓存中。
         /// </summary>
         /// <param name="type">要注入AOP的类型。</param>
         /// <param name="option"></param>
         /// <returns>代理类。</returns>
         public static Type BuildTypeCached(Type type, InterceptBuildOption option = null)
         {
-            var cacheMgr = MemoryCacheManager.Instance;
-            return cacheMgr.TryGet(string.Concat("Aspect_", type.FullName), () => BuildType(type, option), () => NeverExpired.Instance);
+            return cache.GetOrAdd(type, () => BuildType(type, option));
         }
 
         /// <summary>

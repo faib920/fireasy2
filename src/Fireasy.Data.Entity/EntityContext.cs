@@ -15,6 +15,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace Fireasy.Data.Entity
 {
@@ -230,6 +231,52 @@ namespace Fireasy.Data.Entity
         public void RollbackTransaction()
         {
             service.RollbackTransaction();
+        }
+
+        /// <summary>
+        /// 清除指定实体类型相关联的数据缓存。
+        /// </summary>
+        /// <param name="types">要清除的关联的缓存。</param>
+        /// <returns></returns>
+        public void RemoveCache(params Type[] types)
+        {
+            if (types != null)
+            {
+                ExecuteCache.ClearKeys(types);
+            }
+        }
+
+        /// <summary>
+        /// 异步的，清除指定实体类型相关联的数据缓存。
+        /// </summary>
+        /// <param name="types">要清除的关联的缓存。</param>
+        /// <returns></returns>
+        public async Task RemoveCacheAsync(params Type[] types)
+        {
+            if (types != null)
+            {
+                await Task.Run(() => ExecuteCache.ClearKeys(types));
+            }
+        }
+
+        /// <summary>
+        /// 清除指定实体类型相关联的数据缓存。
+        /// </summary>
+        /// <typeparam name="TEntity">要清除的关联的缓存</typeparam>
+        /// <returns></returns>
+        public void RemoveCache<TEntity>()
+        {
+            ExecuteCache.ClearKeys(typeof(TEntity));
+        }
+
+        /// <summary>
+        /// 异步的，清除指定实体类型相关联的数据缓存。
+        /// </summary>
+        /// <typeparam name="TEntity">要清除的关联的缓存</typeparam>
+        /// <returns></returns>
+        public async Task RemoveCacheAsync<TEntity>()
+        {
+            await Task.Run(() => ExecuteCache.ClearKeys(typeof(TEntity)));
         }
 
         /// <summary>

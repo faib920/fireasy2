@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Xml;
-using Fireasy.Common.Extensions;
-using System.Collections;
-using System.Dynamic;
-using System.Data;
+﻿using Fireasy.Common.Extensions;
 using Fireasy.Common.Reflection;
-using System.Collections.ObjectModel;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Data;
+using System.Dynamic;
+using System.Globalization;
+using System.Linq;
 using System.Reflection;
+using System.Xml;
 
 namespace Fireasy.Common.Serialization
 {
@@ -112,7 +112,7 @@ namespace Fireasy.Common.Serialization
         {
             var stype = type.GetNonNullableType();
             var typeCode = Type.GetTypeCode(stype);
-            if (typeCode == TypeCode.Object)
+            if (typeCode == TypeCode.Object && stype != typeof(TimeSpan))
             {
                 return ParseObject(type);
             }
@@ -139,6 +139,19 @@ namespace Fireasy.Common.Serialization
                 XmlReaderHelper.ReadAndConsumeMatchingEndElement(xmlReader);
             }
 
+            if (type.GetNonNullableType() == typeof(DateTime))
+            {
+                CheckNullString(value, type);
+                return SerializerUtil.ParseDateTime(value, option.Culture, option.DateTimeZoneHandling);
+            }
+            else if (type.GetNonNullableType() == typeof(TimeSpan))
+            {
+                if (TimeSpan.TryParse(value, out TimeSpan result))
+                {
+                    return result;
+                }
+            }
+
             return value.ToType(type);
         }
 
@@ -149,25 +162,29 @@ namespace Fireasy.Common.Serialization
 
             while (xmlReader.Read())
             {
-                XmlReaderHelper.ReadUntilTypeReached(xmlReader, XmlNodeType.Element);
+                XmlReaderHelper.ReadUntilAnyTypesReached(xmlReader, new[] { XmlNodeType.Element, XmlNodeType.EndElement, XmlNodeType.Text, XmlNodeType.CDATA });
 
-                if (xmlReader.NodeType == XmlNodeType.Element)
+                if (xmlReader.NodeType == XmlNodeType.EndElement)
+                {
+                    xmlReader.ReadEndElement();
+                    break;
+                }
+                else if (xmlReader.NodeType == XmlNodeType.Element)
                 {
                     var name = xmlReader.Name;
-                    var value = Deserialize(typeof(object));
-                    if (value != null)
+                    try
                     {
+                        var value = Deserialize(typeof(object));
                         dynamicObject.Add(name, value);
                     }
-                }
-                else
-                {
-                    if (xmlReader.NodeType == XmlNodeType.EndElement)
+                    catch (AssumeContentException exp)
                     {
-                        xmlReader.ReadEndElement();
+                        dynamicObject.Add(name, exp.Content);
                     }
-
-                    break;
+                }
+                else if (xmlReader.NodeType == XmlNodeType.Text || xmlReader.NodeType == XmlNodeType.CDATA)
+                {
+                    throw new AssumeContentException(xmlReader.ReadContentAsString());
                 }
             }
 
@@ -176,19 +193,23 @@ namespace Fireasy.Common.Serialization
 
         private object DeserializeList(Type listType)
         {
-            IList container = null;
-            Type elementType = null;
+            Type elementType;
             var isReadonly = listType.IsGenericType && listType.GetGenericTypeDefinition() == typeof(IReadOnlyCollection<>);
 
-            CreateListContainer(listType, out elementType, out container);
+            CreateListContainer(listType, out elementType, out IList container);
 
             xmlReader.ReadStartElement();
 
             while (true)
             {
-                XmlReaderHelper.ReadUntilAnyTypesReached(xmlReader, new[] { XmlNodeType.Element, XmlNodeType.Text, XmlNodeType.CDATA });
+                XmlReaderHelper.ReadUntilAnyTypesReached(xmlReader, new[] { XmlNodeType.Element, XmlNodeType.Text, XmlNodeType.CDATA, XmlNodeType.EndElement });
 
-                if (xmlReader.NodeType == XmlNodeType.Element)
+                if (xmlReader.NodeType == XmlNodeType.EndElement)
+                {
+                    xmlReader.ReadEndElement();
+                    break;
+                }
+                else if (xmlReader.NodeType == XmlNodeType.Element)
                 {
                     container.Add(Deserialize(elementType));
                 }
@@ -198,15 +219,6 @@ namespace Fireasy.Common.Serialization
                     {
                         container.Add(str.ToType(elementType));
                     }
-                }
-                else
-                {
-                    if (xmlReader.NodeType == XmlNodeType.EndElement)
-                    {
-                        xmlReader.ReadEndElement();
-                    }
-
-                    break;
                 }
             }
 
@@ -226,10 +238,8 @@ namespace Fireasy.Common.Serialization
 
         private IDictionary DeserializeDictionary(Type dictType)
         {
-            IDictionary container = null;
-            Type[] keyValueTypes = null;
-
-            CreateDictionaryContainer(dictType, out keyValueTypes, out container);
+            Type[] keyValueTypes;
+            CreateDictionaryContainer(dictType, out keyValueTypes, out IDictionary container);
 
             while (xmlReader.Read())
             {
@@ -262,7 +272,7 @@ namespace Fireasy.Common.Serialization
         private object ParseGeneralObject(Type type)
         {
             var instance = CreateGeneralObject(type);
-            var cache = GetAccessorCache(instance.GetType());
+            var mappers = GetAccessorMetadataMappers(instance.GetType());
 
             if (xmlReader.AttributeCount > 0)
             {
@@ -270,11 +280,11 @@ namespace Fireasy.Common.Serialization
                 {
                     xmlReader.MoveToAttribute(i);
 
-                    if (cache.TryGetValue(xmlReader.Name, out PropertyAccessor accessor))
+                    if (mappers.TryGetValue(xmlReader.Name, out SerializerPropertyMetadata metadata))
                     {
                         if (!string.IsNullOrEmpty(xmlReader.Value))
                         {
-                            accessor.SetValue(instance, xmlReader.Value.ToType(accessor.PropertyInfo.PropertyType));
+                            metadata.Setter?.Invoke(instance, xmlReader.Value.ToType(metadata.PropertyInfo.PropertyType));
                         }
                     }
                 }
@@ -294,14 +304,19 @@ namespace Fireasy.Common.Serialization
             {
                 XmlReaderHelper.ReadUntilAnyTypesReached(xmlReader, new XmlNodeType[] { XmlNodeType.Element, XmlNodeType.EndElement, XmlNodeType.Text, XmlNodeType.CDATA });
 
-                if (xmlReader.NodeType == XmlNodeType.Element)
+                if (xmlReader.NodeType == XmlNodeType.EndElement)
                 {
-                    if (cache.TryGetValue(xmlReader.Name, out PropertyAccessor accessor))
+                    xmlReader.ReadEndElement();
+                    break;
+                }
+                else if (xmlReader.NodeType == XmlNodeType.Element)
+                {
+                    if (mappers.TryGetValue(xmlReader.Name, out SerializerPropertyMetadata metadata))
                     {
-                        var value = Deserialize(accessor.PropertyInfo.PropertyType);
+                        var value = Deserialize(metadata.PropertyInfo.PropertyType);
                         if (value != null)
                         {
-                            accessor.SetValue(instance, value);
+                            metadata.Setter?.Invoke(instance, value);
                         }
                     }
                     else
@@ -313,12 +328,12 @@ namespace Fireasy.Common.Serialization
                 {
                     if (xmlReader.HasValue)
                     {
-                        if (cache.TryGetValue(xmlReader.Name, out PropertyAccessor accessor))
+                        if (mappers.TryGetValue(xmlReader.Name, out SerializerPropertyMetadata metadata))
                         {
-                            var value = Deserialize(accessor.PropertyInfo.PropertyType);
+                            var value = Deserialize(metadata.PropertyInfo.PropertyType);
                             if (value != null)
                             {
-                                accessor.SetValue(instance, value);
+                                metadata.Setter?.Invoke(instance, value);
                             }
                         }
 
@@ -342,6 +357,14 @@ namespace Fireasy.Common.Serialization
         private object ParseAnonymousObject(Type type)
         {
             return null;
+        }
+
+        private static void CheckNullString(object value, Type type)
+        {
+            if ((value == null || value.ToString().Length == 0) && !type.IsNullableType())
+            {
+                throw new SerializationException(SR.GetString(SRKind.JsonNullableType, type));
+            }
         }
 
         internal class XmlReaderHelper
@@ -473,7 +496,7 @@ namespace Fireasy.Common.Serialization
                     {
                         reader.Read();
 
-                        return "";
+                        return string.Empty;
                     }
 
                     reader.ReadStartElement();
@@ -493,5 +516,16 @@ namespace Fireasy.Common.Serialization
                 return s;
             }
         }
+
+        private class AssumeContentException : Exception
+        {
+            public AssumeContentException(string content)
+            {
+                Content = content;
+            }
+
+            public string Content { get; private set; }
+        }
+
     }
 }

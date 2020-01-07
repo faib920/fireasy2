@@ -6,12 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Drawing;
-using System.Linq;
 using System.Security.Permissions;
-using System.Text;
 using System.Windows.Forms;
 
 namespace Fireasy.Windows.Forms
@@ -23,7 +19,6 @@ namespace Fireasy.Windows.Forms
         private bool isFirstDrop = true;
         private bool isOpened = false;
         private bool isDroped = false;
-        private object selectedValue;
 
         public new event EventHandler DropDown;
         public new event EventHandler DropDownClosed;
@@ -107,10 +102,7 @@ namespace Fireasy.Windows.Forms
         {
             if (dropDown != null)
             {
-                if (DropDown != null)
-                {
-                    DropDown(this, EventArgs.Empty);
-                }
+                DropDown?.Invoke(this, EventArgs.Empty);
 
                 if (isFirstDrop)
                 {
@@ -136,14 +128,11 @@ namespace Fireasy.Windows.Forms
             if (dropDown != null)
             {
                 dropDown.Hide();
-                if (DropDownClosed != null)
-                {
-                    DropDownClosed(this, EventArgs.Empty);
-                }
+                DropDownClosed?.Invoke(this, EventArgs.Empty);
             }
         }
 
-        public void SetText(string text)
+        public virtual void SetText(string text)
         {
             if (Items.Count == 0)
             {
@@ -155,11 +144,11 @@ namespace Fireasy.Windows.Forms
                 return;
             }
 
-            Items[0] = text;
+            Items[0] = SelectedValue = text;
             SelectedIndex = 0;
         }
 
-        public void SetItem(string text, object value)
+        public virtual void SetItem(string text, object value)
         {
             SelectedValue = value;
             SetText(text);
@@ -169,17 +158,6 @@ namespace Fireasy.Windows.Forms
         {
             dropDown.Width = DropDownWidth;
             base.OnResize(e);
-        }
-
-        public virtual new object SelectedValue
-        {
-            get { return selectedValue; }
-            set { selectedValue = value; }
-        }
-
-        public virtual new string SelectedText
-        {
-            get { return string.Empty; }
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)

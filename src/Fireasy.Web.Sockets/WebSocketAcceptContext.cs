@@ -5,6 +5,9 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+#if NETSTANDARD
+using Microsoft.AspNetCore.Http;
+#endif
 using System.Net.WebSockets;
 using System.Security.Principal;
 
@@ -14,14 +17,24 @@ namespace Fireasy.Web.Sockets
     {
         public WebSocket WebSocket { get; }
 
+#if NETSTANDARD
+        public HttpContext HttpContext { get; }
+#endif
+
         public IPrincipal User { get; }
 
         public WebSocketBuildOption Option { get; }
 
         public string ConnectionId { get; internal set; }
 
+#if NETSTANDARD
+        public WebSocketAcceptContext(HttpContext context, WebSocket webSocket, IPrincipal user, WebSocketBuildOption option)
+        {
+            HttpContext = context;
+#else
         public WebSocketAcceptContext(WebSocket webSocket, IPrincipal user, WebSocketBuildOption option)
         {
+#endif
             WebSocket = webSocket;
             User = user;
             Option = option;

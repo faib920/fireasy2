@@ -6,11 +6,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
 
 namespace Fireasy.Windows.Forms
 {
@@ -19,7 +15,8 @@ namespace Fireasy.Windows.Forms
         private TreeList treelist;
 
         public TreeListColumnCollection()
-        { }
+        {
+        }
 
         internal TreeListColumnCollection(TreeList treelist)
         {

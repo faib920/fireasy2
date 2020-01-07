@@ -12,9 +12,9 @@ using System.Threading.Tasks;
 namespace Fireasy.Common.Caching
 {
     /// <summary>
-    /// 分布式缓存管理器。
+    /// 增强的缓存管理器。
     /// </summary>
-    public interface IDistributedCacheManager : ICacheManager
+    public interface IEnhancedCacheManager : ICacheManager
     {
         /// <summary>
         /// 尝试获取增量。

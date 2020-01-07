@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;
+using Fireasy.Common.ComponentModel;
 
 namespace Fireasy.Redis
 {
@@ -25,8 +26,10 @@ namespace Fireasy.Redis
     /// 基于 Redis 的缓存管理器。
     /// </summary>
     [ConfigurationSetting(typeof(RedisConfigurationSetting))]
-    public class CacheManager : RedisComponent, IDistributedCacheManager
+    public class CacheManager : RedisComponent, IEnhancedCacheManager
     {
+        private static SafetyDictionary<string, object> hashSet = new SafetyDictionary<string, object>();
+
         /// <summary>
         /// 将对象插入到缓存管理器中。
         /// </summary>
@@ -386,6 +389,7 @@ namespace Fireasy.Redis
         public void Remove(string cacheKey)
         {
             var client = GetConnection();
+
 #if NETSTANDARD
             client.Del(cacheKey);
 #else
@@ -420,83 +424,97 @@ namespace Fireasy.Redis
         {
             var client = GetConnection();
 #if NETSTANDARD
-            T GetCacheValue()
+            try
             {
-                if (client.Exists(cacheKey))
+                CheckCache<T> GetCacheValue()
                 {
-                    var redisValue = client.Get(cacheKey);
-                    if (!string.IsNullOrEmpty(redisValue))
+                    if (client.Exists(cacheKey))
                     {
-                        CheckPredictToDelay(client, cacheKey, factory, expiration);
+                        var redisValue = client.Get(cacheKey);
+                        if (!string.IsNullOrEmpty(redisValue))
+                        {
+                            CheckPredictToDelay(client, cacheKey, factory, expiration);
 
-                        return Deserialize<T>(redisValue);
+                            return CheckCache<T>.Result(Deserialize<T>(redisValue));
+                        }
                     }
+
+                    return CheckCache<T>.Null();
                 }
 
-                return default;
-            }
-
-            var value = GetCacheValue();
-            if (value != default)
-            {
-                return value;
-            }
-
-            return Lock(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), () =>
+                var ck = GetCacheValue();
+                if (ck.HasValue)
                 {
-                    value = GetCacheValue();
-                    if (value != default)
+                    return ck.Value;
+                }
+
+                return RedisHelper.Lock(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), () =>
                     {
+                        var ck1 = GetCacheValue();
+                        if (ck1.HasValue)
+                        {
+                            return ck1.Value;
+                        }
+
+                        var expiry = GetExpirationTime(expiration);
+                        var value = factory();
+
+                        client.Set(cacheKey, base.Serialize(value), expiry == null ? -1 : (int)expiry.Value.TotalSeconds);
+
                         return value;
-                    }
-
-                    var expiry = GetExpirationTime(expiration);
-                    value = factory();
-
-                    client.Set(cacheKey, base.Serialize(value), expiry == null ? -1 : (int)expiry.Value.TotalSeconds);
-
-                    return value;
-                });
+                    });
+            }
+            catch (Exception exp)
+            {
+                return factory();
+            }
 #else
-            var db = GetDb(client);
-
-            T GetCacheValue()
+            try
             {
-                if (db.KeyExists(cacheKey))
-                {
-                    var redisValue = db.StringGet(cacheKey);
-                    if (!string.IsNullOrEmpty(redisValue))
-                    {
-                        CheckPredictToDelay(db, cacheKey, factory, expiration);
+                var db = GetDb(client);
 
-                        return Deserialize<T>(redisValue);
+                CheckCache<T> GetCacheValue()
+                {
+                    if (db.KeyExists(cacheKey))
+                    {
+                        var redisValue = db.StringGet(cacheKey);
+                        if (!string.IsNullOrEmpty(redisValue))
+                        {
+                            CheckPredictToDelay(db, cacheKey, factory, expiration);
+
+                            return CheckCache<T>.Result(Deserialize<T>(redisValue));
+                        }
                     }
+
+                    return CheckCache<T>.Null();
                 }
 
-                return default;
-            }
-
-            var value = GetCacheValue();
-            if (value != default)
-            {
-                return value;
-            }
-
-            return Lock(db, cacheKey, TimeSpan.FromSeconds(Setting.LockTimeout), () =>
+                var ck = GetCacheValue();
+                if (ck.HasValue)
                 {
-                    value = GetCacheValue();
-                    if (value != default)
+                    return ck.Value;
+                }
+
+                return RedisHelper.Lock(db, cacheKey, TimeSpan.FromSeconds(Setting.LockTimeout), () =>
                     {
+                        var ck1 = GetCacheValue();
+                        if (ck1.HasValue)
+                        {
+                            return ck1.Value;
+                        }
+
+                        var expiry = GetExpirationTime(expiration);
+                        var value = factory();
+
+                        db.StringSet(cacheKey, Serialize(value), expiry);
+
                         return value;
-                    }
-
-                    var expiry = GetExpirationTime(expiration);
-                    value = factory();
-
-                    db.StringSet(cacheKey, Serialize(value), expiry);
-
-                    return value;
-                });
+                    });
+            }
+            catch (Exception exp)
+            {
+                return factory();
+            }
 #endif
         }
 
@@ -513,83 +531,97 @@ namespace Fireasy.Redis
         {
             var client = GetConnection();
 #if NETSTANDARD
-            async Task<T> GetCacheValue()
+            try
             {
-                if (await client.ExistsAsync(cacheKey))
+                async Task<CheckCache<T>> GetCacheValue()
                 {
-                    var redisValue = await client.GetAsync(cacheKey);
-                    if (!string.IsNullOrEmpty(redisValue))
+                    if (await client.ExistsAsync(cacheKey))
                     {
-                        await CheckPredictToDelayAsync(client, cacheKey, factory, expiration);
+                        var redisValue = await client.GetAsync(cacheKey);
+                        if (!string.IsNullOrEmpty(redisValue))
+                        {
+                            await CheckPredictToDelayAsync(client, cacheKey, factory, expiration);
 
-                        return Deserialize<T>(redisValue);
+                            return CheckCache<T>.Result(Deserialize<T>(redisValue));
+                        }
                     }
+
+                    return CheckCache<T>.Null();
                 }
 
-                return default;
-            }
-
-            var value = await GetCacheValue();
-            if (value != default)
-            {
-                return value;
-            }
-
-            return await LockAsync(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
+                var ck = await GetCacheValue();
+                if (ck.HasValue)
                 {
-                    value = await GetCacheValue();
-                    if (value != default)
+                    return ck.Value;
+                }
+
+                return await RedisHelper.LockAsync(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
                     {
+                        var ck1 = await GetCacheValue();
+                        if (ck1.HasValue)
+                        {
+                            return ck1.Value;
+                        }
+
+                        var expiry = GetExpirationTime(expiration);
+                        var value = await factory();
+
+                        await client.SetAsync(cacheKey, Serialize(value), expiry == null ? -1 : (int)expiry.Value.TotalSeconds);
+
                         return value;
-                    }
-
-                    var expiry = GetExpirationTime(expiration);
-                    value = await factory();
-
-                    await client.SetAsync(cacheKey, Serialize(value), expiry == null ? -1 : (int)expiry.Value.TotalSeconds);
-
-                    return value;
-                });
+                    });
+            }
+            catch (Exception exp)
+            {
+                return await factory();
+            }
 #else
-            var db = GetDb(client);
-
-            async Task<T> GetCacheValue()
+            try
             {
-                if (await db.KeyExistsAsync(cacheKey))
-                {
-                    var redisValue = await db.StringGetAsync(cacheKey);
-                    if (!string.IsNullOrEmpty(redisValue))
-                    {
-                        await CheckPredictToDelayAsync(db, cacheKey, factory, expiration);
+                var db = GetDb(client);
 
-                        return Deserialize<T>(redisValue);
+                async Task<CheckCache<T>> GetCacheValue()
+                {
+                    if (await db.KeyExistsAsync(cacheKey))
+                    {
+                        var redisValue = await db.StringGetAsync(cacheKey);
+                        if (!string.IsNullOrEmpty(redisValue))
+                        {
+                            await CheckPredictToDelayAsync(db, cacheKey, factory, expiration);
+
+                            return CheckCache<T>.Result(Deserialize<T>(redisValue));
+                        }
                     }
+
+                    return CheckCache<T>.Null();
                 }
 
-                return default;
-            }
-
-            var value = await GetCacheValue();
-            if (value != default)
-            {
-                return value;
-            }
-
-            return await LockAsync(db, cacheKey, TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
+                var ck = await GetCacheValue();
+                if (ck.HasValue)
                 {
-                    value = await GetCacheValue();
-                    if (value != default)
+                    return ck.Value;
+                }
+
+                return await RedisHelper.LockAsync(db, cacheKey, TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
                     {
+                        var ck1 = await GetCacheValue();
+                        if (ck1.HasValue)
+                        {
+                            return ck1.Value;
+                        }
+
+                        var expiry = GetExpirationTime(expiration);
+                        var value = await factory();
+
+                        await db.StringSetAsync(cacheKey, Serialize(value), expiry);
+
                         return value;
-                    }
-
-                    var expiry = GetExpirationTime(expiration);
-                    value = await factory();
-
-                    await db.StringSetAsync(cacheKey, Serialize(value), expiry);
-
-                    return value;
-                });
+                    });
+            }
+            catch (Exception exp)
+            {
+                return await factory();
+            }
 #endif
         }
 
@@ -605,83 +637,97 @@ namespace Fireasy.Redis
         {
             var client = GetConnection();
 #if NETSTANDARD
-            object GetCacheValue()
+            try
             {
-                if (client.Exists(cacheKey))
+                object GetCacheValue()
                 {
-                    var redisValue = client.Get(cacheKey);
-                    if (!string.IsNullOrEmpty(redisValue))
+                    if (client.Exists(cacheKey))
                     {
-                        CheckPredictToDelay(client, cacheKey, factory, expiration);
+                        var redisValue = client.Get(cacheKey);
+                        if (!string.IsNullOrEmpty(redisValue))
+                        {
+                            CheckPredictToDelay(client, cacheKey, factory, expiration);
 
-                        return Deserialize(dataType, redisValue);
+                            return Deserialize(dataType, redisValue);
+                        }
                     }
+
+                    return null;
                 }
 
-                return null;
-            }
-
-            var value = GetCacheValue();
-            if (value != null)
-            {
-                return value;
-            }
-
-            return Lock(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), () =>
+                var value = GetCacheValue();
+                if (value != null)
                 {
-                    value = GetCacheValue();
-                    if (value != null)
-                    {
-                        return value;
-                    }
-
-                    var expiry = GetExpirationTime(expiration);
-                    value = factory();
-
-                    client.Set(cacheKey, Serialize(value), expiry == null ? -1 : (int)expiry.Value.TotalSeconds);
-
                     return value;
-                });
+                }
+
+                return RedisHelper.Lock(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), () =>
+                    {
+                        value = GetCacheValue();
+                        if (value != null)
+                        {
+                            return value;
+                        }
+
+                        var expiry = GetExpirationTime(expiration);
+                        value = factory();
+
+                        client.Set(cacheKey, Serialize(value), expiry == null ? -1 : (int)expiry.Value.TotalSeconds);
+
+                        return value;
+                    });
+            }
+            catch (Exception exp)
+            {
+                return factory();
+            }
 #else
-            var db = GetDb(client);
-
-            object GetCacheValue()
+            try
             {
-                if (db.KeyExists(cacheKey))
-                {
-                    var redisValue = db.StringGet(cacheKey);
-                    if (!string.IsNullOrEmpty(redisValue))
-                    {
-                        CheckPredictToDelay(db, cacheKey, factory, expiration);
+                var db = GetDb(client);
 
-                        return Deserialize(dataType, redisValue);
+                object GetCacheValue()
+                {
+                    if (db.KeyExists(cacheKey))
+                    {
+                        var redisValue = db.StringGet(cacheKey);
+                        if (!string.IsNullOrEmpty(redisValue))
+                        {
+                            CheckPredictToDelay(db, cacheKey, factory, expiration);
+
+                            return Deserialize(dataType, redisValue);
+                        }
                     }
+
+                    return null;
                 }
 
-                return null;
-            }
-
-            var value = GetCacheValue();
-            if (value != null)
-            {
-                return value;
-            }
-
-            return Lock(db, cacheKey, TimeSpan.FromSeconds(Setting.LockTimeout), () =>
+                var value = GetCacheValue();
+                if (value != null)
                 {
-                    value = GetCacheValue();
-                    if (value != null)
-                    {
-                        return value;
-                    }
-
-                    var expiry = GetExpirationTime(expiration);
-                    value = factory();
-
-                    db.StringSet(cacheKey, Serialize(value), expiry);
-
                     return value;
-                });
+                }
+
+                return RedisHelper.Lock(db, cacheKey, TimeSpan.FromSeconds(Setting.LockTimeout), () =>
+                    {
+                        value = GetCacheValue();
+                        if (value != null)
+                        {
+                            return value;
+                        }
+
+                        var expiry = GetExpirationTime(expiration);
+                        value = factory();
+
+                        db.StringSet(cacheKey, Serialize(value), expiry);
+
+                        return value;
+                    });
+            }
+            catch (Exception exp)
+            {
+                return factory();
+            }
 #endif
         }
 
@@ -698,83 +744,97 @@ namespace Fireasy.Redis
         {
             var client = GetConnection();
 #if NETSTANDARD
-            async Task<object> GetCacheValue()
+            try
             {
-                if (await client.ExistsAsync(cacheKey))
+                async Task<object> GetCacheValue()
                 {
-                    var redisValue = await client.GetAsync(cacheKey);
-                    if (!string.IsNullOrEmpty(redisValue))
+                    if (await client.ExistsAsync(cacheKey))
                     {
-                        await CheckPredictToDelayAsync(client, cacheKey, factory, expiration);
+                        var redisValue = await client.GetAsync(cacheKey);
+                        if (!string.IsNullOrEmpty(redisValue))
+                        {
+                            await CheckPredictToDelayAsync(client, cacheKey, factory, expiration);
 
-                        return Deserialize(dataType, redisValue);
+                            return Deserialize(dataType, redisValue);
+                        }
                     }
+
+                    return null;
                 }
 
-                return null;
-            }
-
-            var value = await GetCacheValue();
-            if (value != null)
-            {
-                return value;
-            }
-
-            return await LockAsync(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
+                var value = await GetCacheValue();
+                if (value != null)
                 {
-                    value = GetCacheValue();
-                    if (value != null)
-                    {
-                        return value;
-                    }
-
-                    var expiry = GetExpirationTime(expiration);
-                    value = await factory();
-
-                    await client.SetAsync(cacheKey, Serialize(value), expiry == null ? -1 : (int)expiry.Value.TotalSeconds);
-
                     return value;
-                });
+                }
+
+                return await RedisHelper.LockAsync(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
+                    {
+                        value = GetCacheValue();
+                        if (value != null)
+                        {
+                            return value;
+                        }
+
+                        var expiry = GetExpirationTime(expiration);
+                        value = await factory();
+
+                        await client.SetAsync(cacheKey, Serialize(value), expiry == null ? -1 : (int)expiry.Value.TotalSeconds);
+
+                        return value;
+                    });
+            }
+            catch (Exception exp)
+            {
+                return await factory();
+            }
 #else
-            var db = GetDb(client);
-
-            async Task<object> GetCacheValue()
+            try
             {
-                if (await db.KeyExistsAsync(cacheKey))
-                {
-                    var redisValue = await db.StringGetAsync(cacheKey);
-                    if (!string.IsNullOrEmpty(redisValue))
-                    {
-                        await CheckPredictToDelayAsync(db, cacheKey, factory, expiration);
+                var db = GetDb(client);
 
-                        return Deserialize(dataType, redisValue);
+                async Task<object> GetCacheValue()
+                {
+                    if (await db.KeyExistsAsync(cacheKey))
+                    {
+                        var redisValue = await db.StringGetAsync(cacheKey);
+                        if (!string.IsNullOrEmpty(redisValue))
+                        {
+                            await CheckPredictToDelayAsync(db, cacheKey, factory, expiration);
+
+                            return Deserialize(dataType, redisValue);
+                        }
                     }
+
+                    return null;
                 }
 
-                return null;
-            }
-
-            var value = await GetCacheValue();
-            if (value != null)
-            {
-                return value;
-            }
-
-            return await LockAsync(db, cacheKey, TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
+                var value = await GetCacheValue();
+                if (value != null)
                 {
-                    value = await GetCacheValue();
-                    if (value != null)
-                    {
-                        return value;
-                    }
-
-                    var expiry = GetExpirationTime(expiration);
-                    value = await factory();
-
-                    await db.StringSetAsync(cacheKey, Serialize(value), expiry);
-
                     return value;
-                });
+                }
+
+                return await RedisHelper.LockAsync(db, cacheKey, TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
+                    {
+                        value = await GetCacheValue();
+                        if (value != null)
+                        {
+                            return value;
+                        }
+
+                        var expiry = GetExpirationTime(expiration);
+                        value = await factory();
+
+                        await db.StringSetAsync(cacheKey, Serialize(value), expiry);
+
+                        return value;
+                    });
+            }
+            catch (Exception exp)
+            {
+                return await factory();
+            }
 #endif
         }
 
@@ -828,7 +888,7 @@ namespace Fireasy.Redis
         {
             var client = GetConnection();
 #if NETSTANDARD
-            return Lock(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), () =>
+            return RedisHelper.Lock(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), () =>
                 {
                     long ret = 0;
                     if (client.Exists(cacheKey))
@@ -847,7 +907,7 @@ namespace Fireasy.Redis
 #else
             var db = GetDb(client);
 
-            return Lock(db, cacheKey, TimeSpan.FromSeconds(Setting.LockTimeout), () =>
+            return RedisHelper.Lock(db, cacheKey, TimeSpan.FromSeconds(Setting.LockTimeout), () =>
                 {
                     long ret = 0;
                     if (db.KeyExists(cacheKey))
@@ -879,7 +939,7 @@ namespace Fireasy.Redis
         {
             var client = GetConnection();
 #if NETSTANDARD
-            return await LockAsync(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
+            return await RedisHelper.LockAsync(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
                 {
                     long ret = 0;
                     if (await client.ExistsAsync(cacheKey))
@@ -898,7 +958,7 @@ namespace Fireasy.Redis
 #else
             var db = GetDb(client);
 
-            return await LockAsync(db, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
+            return await RedisHelper.LockAsync(db, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
                 {
                     long ret = 0;
                     if (await db.KeyExistsAsync(cacheKey))
@@ -929,7 +989,7 @@ namespace Fireasy.Redis
         {
             var client = GetConnection();
 #if NETSTANDARD
-            return Lock(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), () =>
+            return RedisHelper.Lock(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), () =>
                 {
                     long ret = 0;
                     if (client.Exists(cacheKey))
@@ -949,7 +1009,7 @@ namespace Fireasy.Redis
 #else
             var db = GetDb(client);
 
-            return Lock(db, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), () =>
+            return RedisHelper.Lock(db, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), () =>
                 {
                     long ret = 0;
                     if (db.KeyExists(cacheKey))
@@ -982,7 +1042,7 @@ namespace Fireasy.Redis
         {
             var client = GetConnection();
 #if NETSTANDARD
-            return await LockAsync(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
+            return await RedisHelper.LockAsync(client, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
                 {
                     long ret = 0;
                     if (await client.ExistsAsync(cacheKey))
@@ -1002,7 +1062,7 @@ namespace Fireasy.Redis
 #else
             var db = GetDb(client);
 
-            return await LockAsync(db, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
+            return await RedisHelper.LockAsync(db, GetLockToken(cacheKey), TimeSpan.FromSeconds(Setting.LockTimeout), async () =>
                 {
                     long ret = 0;
                     if (await db.KeyExistsAsync(cacheKey))
@@ -1020,6 +1080,27 @@ namespace Fireasy.Redis
                     return ret;
                 });
 #endif
+        }
+
+        /// <summary>
+        /// 获取一个哈希集。
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="cacheKey">用于哈希集的缓存键。</param>
+        /// <returns></returns>
+        public ICacheHashSet<TKey, TValue> GetHashSet<TKey, TValue>(string cacheKey)
+        {
+            var client = GetConnection();
+
+            return (ICacheHashSet<TKey, TValue>)hashSet.GetOrAdd(cacheKey, () =>
+                {
+#if NETSTANDARD
+                    return new RedisHashSet<TKey, TValue>(Setting, cacheKey, () => client, v => Serialize(v), s => Deserialize<RedisCacheItem<TValue>>(s));
+#else
+                    return new RedisHashSet<TKey, TValue>(Setting, cacheKey, () => GetDb(client), v => Serialize(v), s => Deserialize<RedisCacheItem<TValue>>(s));
+#endif
+                });
         }
 
 #if NETSTANDARD
@@ -1082,7 +1163,7 @@ namespace Fireasy.Redis
                 }
             }
         }
-        
+
         private void SetKeyExpiration(CSRedisClient client, string cacheKey, Func<ICacheItemExpiration> expiration)
         {
             var expiry = GetExpirationTime(expiration);

@@ -1,4 +1,5 @@
 ﻿using Fireasy.Data.Entity;
+using Microsoft.Extensions.Options;
 using System;
 using System.Linq;
 
@@ -15,7 +16,6 @@ namespace Fireasy.MvcCore.Services
 
         public void Update()
         {
-            Console.WriteLine(context.g);
             Console.WriteLine(DateTime.Now + " " + context.Orders.Count());
             context.Orders.Update(() => new Orders { OrderDate = DateTime.Now }, s => true);
         }
@@ -26,12 +26,15 @@ namespace Fireasy.MvcCore.Services
         void Update();
     }
 
+    public class EntityOption
+    {
+        public string Name { get; set; }
+    }
+
 
     public class TestContext : EntityContext
     {
-        public Guid g = Guid.NewGuid();
-
-        public TestContext(EntityContextOptions options)
+        public TestContext(EntityContextOptions options, IOptions<EntityOption> p)
             : base(options)
         {
         }

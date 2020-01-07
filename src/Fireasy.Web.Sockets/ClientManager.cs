@@ -12,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Fireasy.Web.Sockets
 {
@@ -21,7 +20,6 @@ namespace Fireasy.Web.Sockets
     /// </summary>
     public class ClientManager
     {
-        private static SafetyDictionary<Type, ClientManager> managers = new SafetyDictionary<Type, ClientManager>();
         private SafetyDictionary<string, IClientProxy> clients = new SafetyDictionary<string, IClientProxy>();
         private SafetyDictionary<string, List<string>> groups = new SafetyDictionary<string, List<string>>();
         private readonly Timer timer = null;
@@ -32,12 +30,10 @@ namespace Fireasy.Web.Sockets
             this.option = option;
 
             //开启一个定时器，一定时间去检查一下有没有死亡而没有释放的连接实例
-            timer = new Timer(CheckAlive, null, TimeSpan.FromSeconds(10), option.HeartbeatInterval);
-        }
-
-        internal static ClientManager GetManager(Type handlerType, WebSocketBuildOption option)
-        {
-            return managers.GetOrAdd(handlerType, () => option.Distributed ? new DistributedClientManager(option) : new ClientManager(option));
+            if (option.HeartbeatInterval != TimeSpan.Zero)
+            {
+                timer = new Timer(CheckAlive, null, TimeSpan.FromSeconds(10), option.HeartbeatInterval);
+            }
         }
 
         /// <summary>
@@ -137,62 +133,6 @@ namespace Fireasy.Web.Sockets
             }
 
             return NullClientProxy.Instance;
-        }
-    }
-
-    /// <summary>
-    /// 枚举器，表示多个连接代理。
-    /// </summary>
-    internal class EnumerableClientProxy : InternalClientProxy
-    {
-        private Func<IEnumerable<IClientProxy>> proxyFactory;
-
-        public EnumerableClientProxy(Func<IEnumerable<IClientProxy>> proxyFactory)
-        {
-            this.proxyFactory = proxyFactory;
-        }
-
-        /// <summary>
-        ///  发送消息。
-        /// </summary>
-        /// <param name="method"></param>
-        /// <param name="arguments"></param>
-        /// <returns></returns>
-        public override Task SendAsync(string method, params object[] arguments)
-        {
-            foreach (var proxy in proxyFactory())
-            {
-                proxy.SendAsync(method, arguments);
-            }
-
-#if NETSTANDARD
-            return Task.CompletedTask;
-#else
-            return new Task(null);
-#endif
-        }
-    }
-
-    /// <summary>
-    /// 表示不做任何处理的连接代理。
-    /// </summary>
-    internal class NullClientProxy : InternalClientProxy
-    {
-        public static NullClientProxy Instance = new NullClientProxy();
-
-        /// <summary>
-        ///  发送消息。
-        /// </summary>
-        /// <param name="method"></param>
-        /// <param name="arguments"></param>
-        /// <returns></returns>
-        public override Task SendAsync(string method, params object[] arguments)
-        {
-#if NETSTANDARD
-            return Task.CompletedTask;
-#else
-            return new Task(null);
-#endif
         }
     }
 }

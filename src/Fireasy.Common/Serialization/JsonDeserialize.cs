@@ -73,7 +73,10 @@ namespace Fireasy.Common.Serialization
             {
                 return DeserializeBytes();
             }
-
+            if (type.GetNonNullableType() == typeof(TimeSpan))
+            {
+                return DeserializeTimeSpan(type.IsNullableType());
+            }
 
             if (typeof(ArrayList).IsAssignableFrom(type))
             {
@@ -174,7 +177,7 @@ namespace Fireasy.Common.Serialization
             {
                 case TypeCode.DateTime:
                     CheckNullString(value, type);
-                    return DeserializeDateTime(value.ToString());
+                    return SerializerUtil.ParseDateTime(value.ToString(), option.Culture, option.DateTimeZoneHandling);
                 case TypeCode.String:
                     return value == null ? null : DeserializeString(value.ToString());
                 default:
@@ -522,7 +525,28 @@ namespace Fireasy.Common.Serialization
         private byte[] DeserializeBytes()
         {
             var str = jsonReader.ReadAsString();
+            if (string.IsNullOrEmpty(str))
+            {
+                return null;
+            }
+
             return Convert.FromBase64String(str);
+        }
+
+        private TimeSpan? DeserializeTimeSpan(bool isNullable)
+        {
+            if (jsonReader.IsNull())
+            {
+                return isNullable ? (TimeSpan?)null : TimeSpan.Zero;
+            }
+
+            var str = jsonReader.ReadAsString();
+            if (TimeSpan.TryParse(str, out TimeSpan result))
+            {
+                return result;
+            }
+
+            return null;
         }
 
         private object DeserializeSingleArray()
@@ -546,43 +570,14 @@ namespace Fireasy.Common.Serialization
             return array;
         }
 
-        private static DateTime? DeserializeDateTime(string value)
+        private DateTime? DeserializeDateTime(string value)
         {
             if (value.Length == 0)
             {
                 return null;
             }
 
-            DateTime d;
-            if (DateTime.TryParse(value, out d))
-            {
-                return d;
-            }
-
-            return ParseUtcDateTime(value);
-        }
-
-        private static DateTime? ParseUtcDateTime(string value)
-        {
-            var regex = new Regex(@"Date\((|-)(\d+)(|\+|-)(|0800)\)");
-            var matches = regex.Matches(value);
-
-            if (matches.Count == 0)
-            {
-                throw new SerializationException(SR.GetString(SRKind.DeserializeError, value, typeof(DateTime)));
-            }
-
-            var dkind = matches[0].Groups[3].Value == string.Empty ? DateTimeKind.Utc : DateTimeKind.Local;
-            var time = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            var ticks = long.Parse(matches[0].Groups[1].Value + matches[0].Groups[2].Value, NumberStyles.Integer, CultureInfo.InvariantCulture);
-            var date = new DateTime((ticks * 10000) + time.Ticks, DateTimeKind.Utc);
-
-            if (dkind == DateTimeKind.Local)
-            {
-                return date.ToLocalTime();
-            }
-
-            return date;
+            return SerializerUtil.ParseDateTime(value, null, option.DateTimeZoneHandling);
         }
 
         private string DeserializeString(string value)
@@ -598,7 +593,7 @@ namespace Fireasy.Common.Serialization
         private Type DeserializeType()
         {
             var value = jsonReader.ReadAsString();
-            if (option.IgnoreType)
+            if (string.IsNullOrEmpty(value))
             {
                 return null;
             }
@@ -622,7 +617,7 @@ namespace Fireasy.Common.Serialization
             jsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
 
             var instance = CreateGeneralObject(type);
-            var cache = GetAccessorCache(instance.GetType());
+            var mappers = GetAccessorMetadataMappers(instance.GetType());
 
             while (true)
             {
@@ -637,17 +632,16 @@ namespace Fireasy.Common.Serialization
                 jsonReader.AssertAndConsume(JsonTokens.PairSeparator);
                 jsonReader.SkipWhiteSpaces();
 
-                PropertyAccessor accessor;
-                if (!cache.TryGetValue(name, out accessor))
+                if (!mappers.TryGetValue(name, out SerializerPropertyMetadata metadata))
                 {
                     jsonReader.ReadValue();
                 }
                 else
                 {
-                    var value = Deserialize(accessor.PropertyInfo.PropertyType);
+                    var value = Deserialize(metadata.PropertyInfo.PropertyType);
                     if (value != null)
                     {
-                        accessor.SetValue(instance, value);
+                        metadata.Setter?.Invoke(instance, value);
                     }
                 }
 

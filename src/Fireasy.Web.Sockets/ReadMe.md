@@ -1,4 +1,4 @@
-﻿Fireasy.Web.Sockets 在 .Net Core 下实现了类似于 SignalR 的集线器功能。最新版本使用 redis 缓存及消息队列实现了群集部署。
+﻿Fireasy.Web.Sockets 在 .Net Core 下实现了类似于 SignalR 的集线器功能。最新版本使用 redis 缓存及消息队列实现了集群部署。如果你要使用集群，则将 Caching 及 Subscribes 配置为 redis。
 
 <b>Startup 配置</b>
 
@@ -11,7 +11,7 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         options.ReceiveBufferSize = 4 * 1024;
         options.KeepAliveInterval = TimeSpan.FromSeconds(10);
         options.Distributed = true; //集群支持
-        options.MapHandler<NotifyHandler>("/wsNotify");
+        options.MapHandler<NotifyHandler>("/wsNotify"); //添加处理器
     });
 }
 ```

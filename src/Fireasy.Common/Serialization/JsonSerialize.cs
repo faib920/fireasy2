@@ -147,6 +147,7 @@ namespace Fireasy.Common.Serialization
         {
             var flag = new AssertFlag();
             jsonWriter.WriteStartObject();
+            var index = 0;
             foreach (DataTable table in set.Tables)
             {
                 if (!flag.AssertTrue())
@@ -154,7 +155,8 @@ namespace Fireasy.Common.Serialization
                     jsonWriter.WriteComma();
                 }
 
-                jsonWriter.WriteKey(SerializeName(table.TableName));
+                var name = string.IsNullOrEmpty(table.TableName) ? "Table" + (index++) : table.TableName;
+                jsonWriter.WriteKey(SerializeName(name));
                 SerializeDataTable(table);
             }
 
@@ -250,7 +252,7 @@ namespace Fireasy.Common.Serialization
             foreach (var name in dynamicObject.Keys)
             {
                 dynamicObject.TryGetValue(name, out object value);
-                if (option.IgnoreNull && value == null)
+                if (option.NullValueHandling == NullValueHandling.Ignore && value == null)
                 {
                     continue;
                 }
@@ -278,15 +280,15 @@ namespace Fireasy.Common.Serialization
             var type = obj.GetType();
             jsonWriter.WriteStartObject();
 
-            foreach (var acc in context.GetAccessorCache(type))
+            foreach (var acc in context.GetProperties(type, () => option.ContractResolver.GetProperties(type)))
             {
                 if (acc.Filter(acc.PropertyInfo, lazyMgr))
                 {
                     continue;
                 }
 
-                var value = acc.Accessor.GetValue(obj);
-                if (option.IgnoreNull && value == null)
+                var value = acc.Getter.Invoke(obj);
+                if (option.NullValueHandling == NullValueHandling.Ignore && value == null)
                 {
                     continue;
                 }
@@ -342,6 +344,11 @@ namespace Fireasy.Common.Serialization
                 jsonWriter.WriteValue(((Enum)value).ToString(context.SerializeInfo?.Formatter ?? "D"));
                 return;
             }
+            else if (type == typeof(TimeSpan))
+            {
+                jsonWriter.WriteString(((TimeSpan)value).ToString());
+                return;
+            }
 
             switch (Type.GetTypeCode(type))
             {
@@ -376,37 +383,44 @@ namespace Fireasy.Common.Serialization
 
         private void SerializeDateTime(DateTime value)
         {
+            value = SerializerUtil.EnsureDateTime(value, option.DateTimeZoneHandling);
+
             if (option.DateFormatHandling == DateFormatHandling.Default)
             {
                 jsonWriter.WriteValue(string.Concat(JsonTokens.StringDelimiter, (value.Year <= 1 ? string.Empty : value.ToString(context.SerializeInfo?.Formatter ?? "yyyy-MM-dd")), JsonTokens.StringDelimiter));
             }
             else if (option.DateFormatHandling == DateFormatHandling.IsoDateFormat)
             {
-                jsonWriter.WriteValue(string.Concat(JsonTokens.StringDelimiter, value.GetDateTimeFormats('s')[0].ToString(), JsonTokens.StringDelimiter));
+                jsonWriter.WriteValue(string.Concat(JsonTokens.StringDelimiter, value.GetDateTimeFormats('s')[0].ToString(option.Culture), JsonTokens.StringDelimiter));
             }
-            else if (option.DateFormatHandling == DateFormatHandling.JsonDateFormat)
+            else if (option.DateFormatHandling == DateFormatHandling.MicrosoftDateFormat)
             {
-                var offset = TimeZone.CurrentTimeZone.GetUtcOffset(value);
+                var offset = TimeZoneInfo.Local.GetUtcOffset(value);
                 var time = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
                 var ticks = (value.ToUniversalTime().Ticks - time.Ticks) / 10000;
 
                 var sb = new StringBuilder();
                 sb.Append("\"\\/Date(" + ticks);
-                sb.Append(offset.Ticks >= 0 ? "+" : "-");
-                var h = Math.Abs(offset.Hours);
-                var m = Math.Abs(offset.Minutes);
-                if (h < 10)
+
+                if (value.Kind == DateTimeKind.Local)
                 {
-                    sb.Append(0);
+                    sb.Append(offset.Ticks >= 0 ? "+" : "-");
+                    var h = Math.Abs(offset.Hours);
+                    var m = Math.Abs(offset.Minutes);
+                    if (h < 10)
+                    {
+                        sb.Append(0);
+                    }
+
+                    sb.Append(h);
+                    if (m < 10)
+                    {
+                        sb.Append(0);
+                    }
+
+                    sb.Append(m);
                 }
 
-                sb.Append(h);
-                if (m < 10)
-                {
-                    sb.Append(0);
-                }
-
-                sb.Append(m);
                 sb.Append(")\\/\"");
                 jsonWriter.WriteValue(sb);
             }
@@ -420,7 +434,7 @@ namespace Fireasy.Common.Serialization
             }
             else
             {
-                jsonWriter.WriteValue(string.Concat(JsonTokens.StringDelimiter, value.As<IFormattable>().ToString(context.SerializeInfo.Formatter, CultureInfo.InvariantCulture), JsonTokens.StringDelimiter));
+                jsonWriter.WriteValue(string.Concat(JsonTokens.StringDelimiter, value.As<IFormattable>().ToString(context.SerializeInfo.Formatter, option.Culture), JsonTokens.StringDelimiter));
             }
         }
 
@@ -432,7 +446,7 @@ namespace Fireasy.Common.Serialization
 
         private void SerializeKeyValue(object key, object value)
         {
-            if (option.IgnoreNull && value == null)
+            if (option.NullValueHandling == NullValueHandling.Ignore && value == null)
             {
                 return;
             }
@@ -448,24 +462,19 @@ namespace Fireasy.Common.Serialization
                 return string.Empty;
             }
 
-            if (option.Format == JsonFormat.Object)
+            name = option.ContractResolver.ResolvePropertyName(name);
+
+            if (option.KeyHandling == JsonKeyHandling.None)
             {
-                return option.CamelNaming ? char.ToLower(name[0]) + name.Substring(1) : name;
+                return name;
             }
 
-            return string.Concat(JsonTokens.StringDelimiter, (option.CamelNaming ? char.ToLower(name[0]) + name.Substring(1) : name), JsonTokens.StringDelimiter);
+            return string.Concat(JsonTokens.StringDelimiter, name, JsonTokens.StringDelimiter);
         }
 
         private void SerializeType(Type type)
         {
-            if (option.IgnoreType)
-            {
-                jsonWriter.WriteNull();
-            }
-            else
-            {
-                jsonWriter.WriteString(type.FullName + ", " + type.Assembly.FullName);
-            }
+            jsonWriter.WriteString(type.FullName + ", " + type.Assembly.FullName);
         }
 
         /// <summary>

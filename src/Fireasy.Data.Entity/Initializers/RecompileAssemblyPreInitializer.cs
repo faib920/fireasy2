@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using System.Linq;
 
 namespace Fireasy.Data.Entity.Initializers
@@ -20,10 +21,9 @@ namespace Fireasy.Data.Entity.Initializers
             {
                 var injection = context.Service.Provider.GetService<IInjectionProvider>();
 
-                foreach (var assembly in context.Mappers.GroupBy(s => s.EntityType.Assembly))
-                {
-                    EntityProxyManager.CompileAll(assembly.Key, injection);
-                }
+                context.Mappers.GroupBy(s => s.EntityType.Assembly)
+                    .Select(s => s.Key)
+                    .ForEachParallel(s => EntityProxyManager.CompileAll(s, injection));
             }
         }
     }

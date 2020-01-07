@@ -32,7 +32,7 @@ namespace Fireasy.Data
     /// </summary>
     public class Database : IDatabase, IDistributedDatabase
     {
-        private readonly TransactionStack tranStack;
+        private TransactionStack tranStack;
         private bool isDisposed;
         private readonly DatabaseScope dbScope;
         private DbConnection connMaster;
@@ -735,6 +735,8 @@ namespace Fireasy.Data
 
             return UsingConnection(connection =>
                 {
+                    HandleDynamicDataTable(dataTable);
+
                     var parameters = GetTableParameters(dataTable);
                     var adapter = Provider.DbProviderFactory.CreateDataAdapter();
                     if (adapter == null)
@@ -747,8 +749,6 @@ namespace Fireasy.Data
                         adapter.InsertCommand = CreateDbCommand(connection, insertCommand, parameters);
                         adapter.InsertCommand.UpdatedRowSource = UpdateRowSource.Both;
                     }
-
-                    ProcessGenerateDataTable(dataTable);
 
                     try
                     {
@@ -834,7 +834,7 @@ namespace Fireasy.Data
         /// <param name="queryCommand">查询命令。</param>
         /// <param name="parameters">参数集合。</param>
         /// <returns>一个由 <see cref="IQueryCommand"/> 和参数集合组成的 <see cref="DbCommand"/> 对象。</returns>
-        private DbCommand CreateDbCommand(DbConnection connection, IQueryCommand queryCommand, IEnumerable<Parameter> parameters)
+        private DbCommand CreateDbCommand(DbConnection connection, IQueryCommand queryCommand, ParameterCollection parameters)
         {
             var command = connection.CreateCommand();
             Guard.NullReference(command);
@@ -983,7 +983,7 @@ namespace Fireasy.Data
 
             if (syntax != null && !syntax.ParameterPrefix.Equals("@") && Regex.IsMatch(commandText, "(@)"))
             {
-                return Regex.Replace(commandText, "(@)", syntax.ParameterPrefix.ToString());
+                return Regex.Replace(commandText, "(@)", syntax.ParameterPrefix);
             }
 
             return commandText;
@@ -1197,7 +1197,7 @@ namespace Fireasy.Data
         /// 处理使用了 <see cref="IGeneratorProvider"/> 生成数据的数据表。
         /// </summary>
         /// <param name="dataTable"></param>
-        private void ProcessGenerateDataTable(DataTable dataTable)
+        private void HandleDynamicDataTable(DataTable dataTable)
         {
             DataColumn genColumn = null;
             DataColumn newColumn = null;
@@ -1206,7 +1206,7 @@ namespace Fireasy.Data
                 var column = dataTable.Columns[i];
 
                 Type parType;
-                if ((parType = DataExpressionColumn.GetParameterType(column.DataType)) != null)
+                if ((parType = DataExpressionRow.GetParameterType(column.DataType)) != null)
                 {
                     newColumn = dataTable.Columns.Add(column.ColumnName + "_NEW", parType);
                     genColumn = column;
@@ -1217,7 +1217,7 @@ namespace Fireasy.Data
             {
                 foreach (DataRow row in dataTable.Rows)
                 {
-                    var id = (row[genColumn] as DataExpressionColumn).Setter.DynamicInvoke(this);
+                    var id = (row[genColumn] as DataExpressionRow).GetValue(this);
                     row[genColumn.ColumnName + "_NEW"] = id;
                 }
 

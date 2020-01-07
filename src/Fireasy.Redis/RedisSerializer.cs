@@ -24,7 +24,6 @@ namespace Fireasy.Redis
         public virtual string Serialize<T>(T obj)
         {
             var option = new JsonSerializeOption();
-            option.IgnoreNull = false;
             option.Converters.Add(new FullDateTimeJsonConverter());
             var serializer = new JsonSerializer(option);
             return serializer.Serialize(obj);

@@ -303,7 +303,8 @@ studio");
             {
                 Age = 12,
                 Name = "huangxd",
-                Birthday = DateTime.Parse("1982-9-20")
+                Birthday = DateTime.Parse("1982-9-20"),
+                Time = TimeSpan.Parse("12:00:00")
             };
 
             var xml = serializer.Serialize(obj);
@@ -317,7 +318,7 @@ studio");
         [TestMethod()]
         public void TestSerializeObjectWithCamel()
         {
-            var option = new XmlSerializeOption { CamelNaming = true };
+            var option = new XmlSerializeOption { NamingHandling = NamingHandling.Camel };
             var serializer = new XmlSerializer(option);
 
             var obj = new JsonData
@@ -517,7 +518,7 @@ studio");
         [TestMethod()]
         public void TestSerializeType()
         {
-            var serializer = new XmlSerializer(new XmlSerializeOption { IgnoreType = false });
+            var serializer = new XmlSerializer(new XmlSerializeOption {  });
 
             var obj = new JsonData
             {
@@ -1041,10 +1042,6 @@ studio");
             var serializer = new XmlSerializer();
             var xml = @"<JsonData>
  <Name>huangxd</Name>
- <Birthday>2019-1-1</Birthday>
- <Record>
-   <Company>fireasy</Company>
- </Record>
  <WorkRecords>
   <Record>
     <Company>fireasy</Company>
@@ -1053,6 +1050,11 @@ studio");
     <Company>fireasy</Company>
   </Record>
  </WorkRecords>
+  <Record>
+   <Company>fireasy</Company>
+ </Record>
+<Birthday>2019-1-1</Birthday>
+ <Time>12:00:00</Time>
 </JsonData>
 ";
 
@@ -1075,13 +1077,13 @@ studio");
 <Result>
   <succeed>true</succeed>
   <data>
-    <Name>fireasy</Name>
-    <Birthday>2018-12-1</Birthday>
-    <Age>12</Age>
     <Record>
       <Company>fireasy</Company>
       <StartDate>2018-12-1</StartDate>
     </Record>
+    <Name>fireasy</Name>
+    <Birthday>2018-12-1</Birthday>
+    <Age>12</Age>
   </data>
 </Result>");
 
@@ -1165,7 +1167,7 @@ studio");
         [TestMethod()]
         public void TestDeserializeObjectWithCamelNaming()
         {
-            var option = new XmlSerializeOption { CamelNaming = true };
+            var option = new XmlSerializeOption { NamingHandling = NamingHandling.Camel };
             var serializer = new XmlSerializer(option);
 
             var obj = serializer.Deserialize<JsonData>(
@@ -1216,7 +1218,7 @@ studio");
         [TestMethod()]
         public void TestDeserializeObjectWithElement()
         {
-            var serializer = new XmlSerializer(new XmlSerializeOption { CamelNaming = true });
+            var serializer = new XmlSerializer(new XmlSerializeOption { NamingHandling = NamingHandling.Camel });
 
             var obj = serializer.Deserialize<ElementData>(
                 "<ElementData><xm>huangxd</xm></ElementData>"
@@ -1229,7 +1231,7 @@ studio");
         [TestMethod()]
         public void TestDeserializeType()
         {
-            var serializer = new XmlSerializer(new XmlSerializeOption { IgnoreType = false });
+            var serializer = new XmlSerializer(new XmlSerializeOption {  });
             var xml = new JsonText(@"{'Name':null,'WorkRecords':null,'DataType':'Fireasy.Common.Serialization.Test.XmlSerializerTests+WorkRecord, Fireasy.Common.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null'}").ToString();
             var obj = serializer.Deserialize<JsonData>(xml);
             Assert.IsNotNull(obj);
@@ -1728,6 +1730,8 @@ total co.ltd
             public Type DataType { get; set; }
 
             public WorkRecord Record { get; set; }
+
+            public TimeSpan Time { get; set; }
         }
 
         public class WorkRecord

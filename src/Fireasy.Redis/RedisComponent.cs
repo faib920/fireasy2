@@ -15,8 +15,6 @@ using System.Text;
 using StackExchange.Redis;
 #endif
 using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Fireasy.Redis
 {
@@ -31,163 +29,6 @@ namespace Fireasy.Redis
 #endif
 
         protected RedisConfigurationSetting Setting { get; private set; }
-
-#if NETSTANDARD
-        protected void Lock(CSRedisClient client, string token, TimeSpan timeout, Action action)
-        {
-            CSRedisClientLock locker;
-            while ((locker = client.Lock(token, (int)timeout.TotalSeconds)) == null)
-            {
-                Thread.Sleep(10);
-            }
-
-            try
-            {
-                action();
-            }
-            finally
-            {
-                locker.Dispose();
-            }
-        }
-
-        protected T Lock<T>(CSRedisClient client, string token, TimeSpan timeout, Func<T> func)
-        {
-            CSRedisClientLock locker;
-            while ((locker = client.Lock(token, (int)timeout.TotalSeconds)) == null)
-            {
-                Thread.Sleep(10);
-            }
-
-            T result;
-            try
-            {
-                result = func();
-            }
-            finally
-            {
-                locker.Dispose();
-            }
-
-            return result;
-        }
-
-        protected async Task LockAsync(CSRedisClient client, string token, TimeSpan timeout, Task task)
-        {
-            CSRedisClientLock locker;
-            while ((locker = client.Lock(token, (int)timeout.TotalSeconds)) == null)
-            {
-                Thread.Sleep(10);
-            }
-
-            try
-            {
-                await task;
-            }
-            finally
-            {
-                locker.Dispose();
-            }
-        }
-
-        protected async Task<T> LockAsync<T>(CSRedisClient client, string token, TimeSpan timeout, Func<Task<T>> func)
-        {
-            CSRedisClientLock locker;
-            while ((locker = client.Lock(token, (int)timeout.TotalSeconds)) == null)
-            {
-                Thread.Sleep(10);
-            }
-
-            T result;
-            try
-            {
-                result = await func();
-            }
-            finally
-            {
-                locker.Dispose();
-            }
-
-            return result;
-        }
-#else
-        protected void Lock(IDatabase db, string token, TimeSpan timeout, Action action)
-        {
-            var lockValue = $"{token}:LOCK_TOKEN";
-
-            while (!db.LockTake(lockValue, token, timeout))
-            {
-                Thread.Sleep(100);
-            }
-
-            try
-            {
-                action();
-            }
-            finally
-            {
-                db.LockRelease(lockValue, token);
-            }
-        }
-
-        protected T Lock<T>(IDatabase db, string token, TimeSpan timeout, Func<T> func)
-        {
-            var lockValue = $"{token}:LOCK_TOKEN";
-
-            while (!db.LockTake(lockValue, token, timeout))
-            {
-                Thread.Sleep(100);
-            }
-
-            try
-            {
-                return func();
-            }
-            finally
-            {
-                db.LockRelease(lockValue, token);
-            }
-        }
-
-        protected async Task LockAsync(IDatabase db, string token, TimeSpan timeout, Task task)
-        {
-            var lockValue = $"{token}:LOCK_TOKEN";
-
-            while (!await db.LockTakeAsync(lockValue, token, timeout))
-            {
-                Thread.Sleep(100);
-            }
-
-            try
-            {
-                await task;
-            }
-            finally
-            {
-                await db.LockReleaseAsync(lockValue, token);
-            }
-        }
-
-        protected async Task<T> LockAsync<T>(IDatabase db, string token, TimeSpan timeout, Func<Task<T>> func)
-        {
-            var lockValue = $"token_{token}";
-
-            while (!await db.LockTakeAsync(lockValue, token, timeout))
-            {
-                Thread.Sleep(100);
-            }
-
-            try
-            {
-                return await func();
-            }
-            finally
-            {
-                await db.LockReleaseAsync(lockValue, token);
-            }
-        }
-
-#endif
 
         /// <summary>
         /// 序列化对象。
@@ -305,6 +146,16 @@ namespace Fireasy.Redis
                         connStr.Append($",poolsize={this.Setting.PoolSize}");
                     }
 
+                    if (this.Setting.ConnectTimeout != 5000)
+                    {
+                        connStr.Append($",connectTimeout={this.Setting.ConnectTimeout}");
+                    }
+
+                    if (this.Setting.SyncTimeout != 10000)
+                    {
+                        connStr.Append($",syncTimeout={this.Setting.SyncTimeout}");
+                    }
+
                     connStr.Append(",allowAdmin=true");
             #endregion
 
@@ -330,12 +181,22 @@ namespace Fireasy.Redis
                     AllowAdmin = true,
                     Ssl = this.Setting.Ssl,
                     Proxy = this.Setting.Twemproxy ? Proxy.Twemproxy : Proxy.None,
-                    AbortOnConnectFail = false
+                    AbortOnConnectFail = false,
                 };
 
                 if (this.Setting.WriteBuffer != null)
                 {
                     Options.WriteBuffer = (int)this.Setting.WriteBuffer;
+                }
+
+                if (this.Setting.ConnectTimeout != 5000)
+                {
+                    Options.ConnectTimeout = this.Setting.ConnectTimeout;
+                }
+
+                if (this.Setting.SyncTimeout != 10000)
+                {
+                    Options.SyncTimeout = this.Setting.SyncTimeout;
                 }
 
                 foreach (var host in this.Setting.Hosts)

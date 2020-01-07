@@ -218,7 +218,8 @@ studio");
         public void TestSerializeDateTime()
         {
             var option = new JsonSerializeOption();
-            option.DateFormatHandling = DateFormatHandling.JsonDateFormat;
+            option.DateFormatHandling = DateFormatHandling.IsoDateFormat;
+            //option.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
             var serializer = new JsonSerializer(option);
 
             var json = serializer.Serialize(DEFAULT_DATE);
@@ -226,30 +227,13 @@ studio");
             Console.WriteLine(json);
 
             var s = new Newtonsoft.Json.JsonSerializer();
-            s.DateFormatHandling = Newtonsoft.Json.DateFormatHandling.MicrosoftDateFormat;
-            s.DateTimeZoneHandling = Newtonsoft.Json.DateTimeZoneHandling.Utc;
+            s.DateFormatHandling = Newtonsoft.Json.DateFormatHandling.IsoDateFormat;
+            //s.DateTimeZoneHandling = Newtonsoft.Json.DateTimeZoneHandling.Utc;
             using (var t = new StringWriter())
             {
                 s.Serialize(t, DEFAULT_DATE);
                 Console.WriteLine(t.ToString());
             }
-        }
-
-        /// <summary>
-        /// 使用日期及Object格式测试Serialize方法。
-        /// </summary>
-        [TestMethod()]
-        public void TestSerializeDateTimeToObject()
-        {
-            var option = new JsonSerializeOption { Format = JsonFormat.Object };
-            var serializer = new JsonSerializer(option);
-
-            var json = serializer.Serialize(DEFAULT_DATE);
-
-            Console.WriteLine(json);
-
-            json = Newtonsoft.Json.JsonConvert.SerializeObject(DEFAULT_DATE);
-            Console.WriteLine(json);
         }
 
         /// <summary>
@@ -285,7 +269,8 @@ studio");
             {
                 Age = 12,
                 Name = "huangxd",
-                Birthday = DateTime.Parse("1982-9-20")
+                Birthday = DateTime.Parse("1982-9-20"),
+                Time = TimeSpan.Parse("12:00:00")
             };
 
             var json = serializer.Serialize(obj);
@@ -299,7 +284,7 @@ studio");
         [TestMethod()]
         public void TestSerializeObjectWithCamel()
         {
-            var option = new JsonSerializeOption { CamelNaming = true };
+            var option = new JsonSerializeOption { NamingHandling = NamingHandling.Camel };
             var serializer = new JsonSerializer(option);
 
             var obj = new JsonData
@@ -457,7 +442,7 @@ studio");
         [TestMethod]
         public void TestSerializeIgnoreNull()
         {
-            var option = new JsonSerializeOption { IgnoreNull = true };
+            var option = new JsonSerializeOption {  NullValueHandling = NullValueHandling.Ignore };
             var serializer = new JsonSerializer(option);
 
             var obj = new JsonData
@@ -499,7 +484,7 @@ studio");
         [TestMethod()]
         public void TestSerializeType()
         {
-            var serializer = new JsonSerializer(new JsonSerializeOption { IgnoreType = false });
+            var serializer = new JsonSerializer();
 
             var obj = new JsonData
             {
@@ -690,7 +675,7 @@ studio");
         [TestMethod()]
         public void TestSerializeArray()
         {
-            var o = new JsonSerializeOption { IgnoreNull = false };
+            var o = new JsonSerializeOption { NullValueHandling = NullValueHandling.Include };
             var serializer = new JsonSerializer();
 
             var array = new JsonData[]
@@ -1020,9 +1005,19 @@ studio");
         [TestMethod()]
         public void TestDeserializeDateTime()
         {
-            var serializer = new JsonSerializer();
+            var option = new JsonSerializeOption { DateTimeZoneHandling = DateTimeZoneHandling.Utc };
+            var serializer = new JsonSerializer(option);
 
             var d = serializer.Deserialize<DateTime>("\"2012-6-7 12:45:33\"");
+            var d1 = serializer.Deserialize<DateTime>("\"2012-6-7T12:45:33\"");
+            var d2 = serializer.Deserialize<DateTime>("\"2012-6-7T12:45:33.800+2:00\"");
+
+            Console.WriteLine(d1);
+            Console.WriteLine(d2);
+
+            var settings = new Newtonsoft.Json.JsonSerializerSettings { DateTimeZoneHandling = Newtonsoft.Json.DateTimeZoneHandling.Utc };
+            var d3 = Newtonsoft.Json.JsonConvert.DeserializeObject<DateTime>("\"2012-6-7T12:45:33\"", settings);
+            var d4 = Newtonsoft.Json.JsonConvert.DeserializeObject<DateTime>("\"2012-6-7T12:45:33.800+2:00\"", settings);
 
             Assert.AreEqual(d, new DateTime(2012, 6, 7, 12, 45, 33));
         }
@@ -1047,6 +1042,20 @@ studio");
         /// 测试Deserialize方法，返回日期。
         /// </summary>
         [TestMethod()]
+        public void TestDeserializeTimeSpan()
+        {
+            var serializer = new JsonSerializer();
+
+            var d1 = serializer.Deserialize<TimeSpan?>("45345");
+            Assert.IsNotNull(d1);
+            var d2 = serializer.Deserialize<TimeSpan?>("null");
+            Assert.IsNull(d2);
+        }
+
+        /// <summary>
+        /// 测试Deserialize方法，返回日期。
+        /// </summary>
+        [TestMethod()]
         public void TestDeserializeDateTimeWithConverter()
         {
             var option = new JsonSerializeOption { Converters = new ConverterList { new DateTimeJsonConverter("d-M-yyyy") } };
@@ -1065,7 +1074,9 @@ studio");
         {
             var serializer = new JsonSerializer();
 
-            var d = serializer.Deserialize<DateTime>(@"""\/Date(1339044333000+0800)\/""");
+            var d1 = Newtonsoft.Json.JsonConvert.DeserializeObject<DateTime>(@"""/Date(1339044333000+0800)/""");
+
+            var d = serializer.Deserialize<DateTime>(@"""/Date(1339044333000+0800)/""");
 
             Assert.AreEqual(d, new DateTime(2012, 6, 7, 12, 45, 33));
         }
@@ -1102,7 +1113,7 @@ studio");
             var serializer = new JsonSerializer();
 
             var obj = serializer.Deserialize<JsonData>(
-                new JsonText(@"{'Name':null,'Birthday':'\/Date(401299200000+0800)\/','Age':12,'WorkRecords':null}").ToString()
+                new JsonText(@"{'Name':null,'Birthday':'/Date(401299200000+0800)/','Age':12,'WorkRecords':null,'Time':'12:00:00'}").ToString()
                 );
 
             Assert.IsNotNull(obj);
@@ -1134,7 +1145,7 @@ studio");
             var serializer = new JsonSerializer();
 
             var obj = serializer.Deserialize<object>(
-                new JsonText(@"[{'Name':null,'Birthday':'\/Date(401299200000+0800)\/','Age':12,'WorkRecords':null}]").ToString()
+                new JsonText(@"[{'Name':null,'Birthday':'/Date(401299200000+0800)/','Age':12,'WorkRecords':null}]").ToString()
                 );
 
             Assert.IsNotNull(obj);
@@ -1164,7 +1175,7 @@ studio");
             var serializer = new JsonSerializer();
 
             var obj = serializer.Deserialize<IJsonData>(
-                new JsonText(@"{'Name':'huangxd','Birthday':'\/Date(401299200000+0800)\/','Age':12,'WorkRecords':null}").ToString()
+                new JsonText(@"{'Name':'huangxd','Birthday':'/Date(401299200000+0800)/','Age':12,'WorkRecords':null}").ToString()
                 );
 
             Assert.IsNotNull(obj);
@@ -1180,7 +1191,7 @@ studio");
             var serializer = new JsonSerializer();
 
             var obj = serializer.Deserialize<JsonData>(
-                new JsonText(@"{Name:'huangxd',Birthday:'\/Date(401299200000+0800)\/',Age:12,WorkRecords:null}").ToString()
+                new JsonText(@"{Name:'huangxd',Birthday:'/Date(401299200000+0800)/',Age:12,WorkRecords:null}").ToString()
                 );
 
             Assert.IsNotNull(obj);
@@ -1196,7 +1207,7 @@ studio");
             var serializer = new JsonSerializer();
 
             var obj = serializer.Deserialize<JsonData>(
-                new JsonText(@"{'Name':'huangxd','Birthday':'\/Date(401299200000+0800)\/','Age':12,'WorkRecords':[{'Company':'company1','StartDate':'\/Date(401299200000+0800)\/','EndDate':'\/Date(401299200000+0800)\/'},{'Company':'company1','StartDate':'\/Date(401299200000+0800)\/','EndDate':null}]}").ToString()
+                new JsonText(@"{'Name':'huangxd','Birthday':'/Date(401299200000+0800)/','Age':12,'WorkRecords':[{'Company':'company1','StartDate':'/Date(401299200000+0800)/','EndDate':'/Date(401299200000+0800)/'},{'Company':'company1','StartDate':'/Date(401299200000+0800)/','EndDate':null}]}").ToString()
                 );
 
             Assert.IsNotNull(obj);
@@ -1209,11 +1220,11 @@ studio");
         [TestMethod()]
         public void TestDeserializeObjectWithCamelNaming()
         {
-            var option = new JsonSerializeOption { CamelNaming = true };
+            var option = new JsonSerializeOption { NamingHandling = NamingHandling.Camel };
             var serializer = new JsonSerializer(option);
 
             var obj = serializer.Deserialize<JsonData>(
-                new JsonText(@"{'name':'huangxd','birthday':'\/Date(401299200000+0800)\/','age':12,'workRecords':null}").ToString()
+                new JsonText(@"{'name':'huangxd','birthday':'/Date(401299200000+0800)/','age':12,'workRecords':null}").ToString()
                 );
 
             Assert.IsNotNull(obj);
@@ -1229,7 +1240,7 @@ studio");
             var serializer = new JsonSerializer();
 
             var obj = serializer.Deserialize(
-                new JsonText(@"{'Name':'huangxd','Birthday':'\/Date(401299200000+0800)\/','Age':12,'WorkRecords':null}").ToString(),
+                new JsonText(@"{'Name':'huangxd','Birthday':'/Date(401299200000+0800)/','Age':12,'WorkRecords':null}").ToString(),
                 new { Name = "", Birthday = DateTime.MinValue, Age = 0 }
                 );
 
@@ -1246,7 +1257,7 @@ studio");
             var serializer = new JsonSerializer();
 
             var obj = serializer.Deserialize(
-                new JsonText(@"{'Name':'huangxd','n':null,'isdad':true,'bodDate':'\/Date(401299200000+0800)\/','Birthday':'\/Date(401299200000+0800)\/','Age':12,'WorkRecords':null}").ToString(),
+                new JsonText(@"{'Name':'huangxd','n':null,'isdad':true,'bodDate':'/Date(401299200000+0800)/','Birthday':'/Date(401299200000+0800)/','Age':12,'WorkRecords':null}").ToString(),
                 new { Name = "", Age = 0, Birthday = DateTime.MinValue }
                 );
 
@@ -1260,7 +1271,7 @@ studio");
         [TestMethod()]
         public void TestDeserializeObjectWithElement()
         {
-            var serializer = new JsonSerializer(new JsonSerializeOption { CamelNaming = true });
+            var serializer = new JsonSerializer(new JsonSerializeOption { NamingHandling = NamingHandling.Camel });
 
             var obj = serializer.Deserialize<ElementData>(
                 new JsonText(@"{'xm':'huangxd'}").ToString()
@@ -1273,7 +1284,7 @@ studio");
         [TestMethod()]
         public void TestDeserializeType()
         {
-            var serializer = new JsonSerializer(new JsonSerializeOption { IgnoreType = false });
+            var serializer = new JsonSerializer();
             var json = new JsonText(@"{'Name':null,'WorkRecords':null,'DataType':'Fireasy.Common.Serialization.Test.JsonSerializerTests+WorkRecord, Fireasy.Common.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null'}").ToString();
             var obj = serializer.Deserialize<JsonData>(json);
             Assert.IsNotNull(obj);
@@ -1306,7 +1317,7 @@ studio");
                     sb.Append(",");
                 }
 
-                sb.Append(@"{'Name':'huangxd','Birthday':'\/Date(401299200000+0800)\/','Age':12,'WorkRecords':null}");
+                sb.Append(@"{'Name':'huangxd','Birthday':'/Date(401299200000+0800)/','Age':12,'WorkRecords':null}");
             }
 
             var json = new JsonText("[" + sb.ToString() + "]").ToString();
@@ -1336,7 +1347,7 @@ studio");
         {
             var serializer = new JsonSerializer();
 
-            var json = new JsonText(@"[{'Name':'huangxd','Birthday':'\/Date(401299200000+0800)\/','Age':12,'WorkRecords':null},{'Name':'liping','Birthday':'\/Date(401299200000+0800)\/','Age':22,'WorkRecords':null}]").ToString();
+            var json = new JsonText(@"[{'Name':'huangxd','Birthday':'/Date(401299200000+0800)/','Age':12,'WorkRecords':null},{'Name':'liping','Birthday':'/Date(401299200000+0800)/','Age':22,'WorkRecords':null}]").ToString();
 
             var array = serializer.Deserialize<JsonData[]>(json);
 
@@ -1414,9 +1425,10 @@ studio");
         [TestMethod()]
         public void TestDeserializeDictionary()
         {
-            var serializer = new JsonSerializer();
+            var option = new JsonSerializeOption { NamingHandling = NamingHandling.Camel };
+            var serializer = new JsonSerializer(option);
 
-            var json = new JsonText(@"{'huangxd':{'Name':'huangxd','Birthday':'\/Date(401299200000+0800)\/','Age':12,'WorkRecords':null},'liping':{'Name':'liping','Birthday':'\/Date(401299200000+0800)\/','Age':22,'WorkRecords':null}}").ToString();
+            var json = new JsonText(@"{'huangxd':{'name':'huangxd','birthday':'/Date(401299200000+0800)/','Age':12,'WorkRecords':null},'liping':{'Name':'liping','Birthday':'/Date(401299200000+0800)/','Age':22,'WorkRecords':null}}").ToString();
 
             var dictionary = serializer.Deserialize<Dictionary<string, JsonData>>(json);
 
@@ -1448,7 +1460,7 @@ studio");
         {
             var serializer = new JsonSerializer();
 
-            var json = new JsonText(@"[{'Name':null,'Birthday':'\/Date(401299200000+0800)\/','Age':12},{'Name':'liping','Age':22,'Birthday':'\/Date(401299200000+0800)\/'}]").ToString();
+            var json = new JsonText(@"[{'Name':null,'Birthday':'/Date(401299200000+0800)/','Age':12},{'Name':'liping','Age':22,'Birthday':'/Date(401299200000+0800)/'}]").ToString();
 
             var table = serializer.Deserialize<DataTable>(json);
 
@@ -1464,7 +1476,7 @@ studio");
         {
             var serializer = new JsonSerializer();
 
-            var json = new JsonText(@"{'table1':[{'Name':'huangxd','Birthday':'\/Date(401299200000+0800)\/','Age':12},{'Name':'liping','Age':22,'Birthday':'\/Date(401299200000+0800)\/'}]}").ToString();
+            var json = new JsonText(@"{'table1':[{'Name':'huangxd','Birthday':'/Date(401299200000+0800)/','Age':12},{'Name':'liping','Age':22,'Birthday':'/Date(401299200000+0800)/'}]}").ToString();
 
             var ds = serializer.Deserialize<DataSet>(json);
 
@@ -1664,6 +1676,8 @@ studio");
             public Type DataType { get; set; }
 
             public WorkRecord Record { get; set; }
+
+            public TimeSpan Time { get; set; }
         }
 
         public class WorkRecord

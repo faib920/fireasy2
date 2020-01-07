@@ -1,6 +1,7 @@
 ﻿using Fireasy.Common.Configuration;
 #if NETCOREAPP
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 #endif
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,7 @@ namespace Fireasy.Data.Entity.Tests
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .Build();
 
-            ConfigurationUnity.Bind(typeof(InitConfig).Assembly, config);
+            config.Initialize(typeof(InitConfig).Assembly);
 #endif
         }
     }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Fireasy.Data.Entity.Linq;
 using System.Threading.Tasks;
+using Fireasy.Common.Extensions;
 
 namespace Fireasy.Data.Entity.Tests
 {
@@ -50,14 +51,35 @@ namespace Fireasy.Data.Entity.Tests
         }
 
         [TestMethod]
-        public void TestQueryChildren()
+        public async Task TestQueryChildren()
+        {
+            var list = await LL(null, 1000025);
+            Console.WriteLine(list);
+        }
+
+        private async Task<IEnumerable<Depts>> LL(long? parentId, long? targetId)
         {
             using (var db = new DbContext())
             {
                 var rep = db.CreateTreeRepository<Depts>();
-                var yn = db.Depts.FirstOrDefault(s => s.DeptName == "云南");
-                var list = rep.QueryChildren(yn).ToList();
-                Assert.AreEqual(list[0].DeptName, "昆明");
+                Depts parent = parentId == null ? null : db.Depts.Get(parentId);
+                var list = await rep.QueryChildren(parent)
+                .Select(s => s.ExtendAs<Depts>(() => new Depts
+                {
+                    HasChildren = rep.HasChildren(s, null)
+                }))
+                    .ToListAsync();
+
+                if (targetId != null && !TreeNodeExpandChecker.IsExpanded())
+                {
+                    var target = await db.Depts.GetAsync(targetId);
+                    var parents = await rep.RecurrenceParent(target).Select(s => s.DeptID).ToListAsync();
+
+                    await list.ExpandAsync(parents, async childId => await LL(childId, targetId),
+                        parents.Count - 1);
+                }
+
+                return list;
             }
         }
 

@@ -5,22 +5,26 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-
-namespace Fireasy.Common.Serialization
+namespace Fireasy.App.Licence
 {
     /// <summary>
-    /// Json序列化的格式。
+    /// 授权码参数。
     /// </summary>
-    public enum JsonFormat
+    public class LicenceOption
     {
         /// <summary>
-        /// 对象的格式。
+        /// 获取或设置应用标识。
         /// </summary>
-        Object,
+        public string AppKey { get; set; }
 
         /// <summary>
-        /// Javascript可识别的字符串。
+        /// 获取或设置本地请求码。
         /// </summary>
-        String
+        public string LocalKey { get; set; }
+
+        /// <summary>
+        /// 获取或设置加密方式。
+        /// </summary>
+        public LicenseEncryptKinds EncryptKind { get; set; }
     }
 }

@@ -29,7 +29,7 @@ namespace Fireasy.Data.Provider
         Exception Exception { get; }
     }
 
-#if !NETSTANDARD
+#if NETFRAMEWORK
     /// <summary>
     /// 通过 DbProviderFactories.GetFactory 从系统环境中安装的驱动中解析。
     /// </summary>

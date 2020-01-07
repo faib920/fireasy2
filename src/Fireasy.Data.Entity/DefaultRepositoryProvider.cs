@@ -390,12 +390,14 @@ namespace Fireasy.Data.Entity
                 context.Database.BeginTransaction();
             }
 
-            T result = default;
+            var result = default(T);
 
             try
             {
                 result = opContext.CreateFunc.Await(Queryable, entity);
-                if (result != default)
+
+                var ret = result is Task<int> ? (result as Task<int>).Result : result.To<int>();
+                if (ret > 0)
                 {
                     entity.As<IEntityPersistentEnvironment>(s => s.Environment = context.Environment);
                     entity.As<IEntityPersistentInstanceContainer>(s => s.InstanceName = context.InstanceName);

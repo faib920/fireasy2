@@ -19,8 +19,6 @@ namespace Fireasy.Data.Entity
         IEntityPersistentInstanceContainer,
         IEntityPersistentEnvironment
     {
-        private EntityRepositoryHolder holder = new EntityRepositoryHolder();
-
         /// <summary>
         /// 初始化 <see cref="ContextServiceBase"/> 类的新实例。
         /// </summary>
@@ -51,7 +49,7 @@ namespace Fireasy.Data.Entity
 
         public virtual IRepository GetDbSet(Type entityType)
         {
-            return holder.GetDbSet(this, entityType);
+            return new EntityRepositoryHolder().GetDbSet(this, entityType);
         }
     }
 }

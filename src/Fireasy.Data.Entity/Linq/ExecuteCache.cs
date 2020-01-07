@@ -12,7 +12,6 @@ using Fireasy.Common.Threading;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Linq.Translators.Configuration;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -25,7 +24,7 @@ namespace Fireasy.Data.Entity.Linq
     /// </summary>
     internal class ExecuteCache
     {
-        private const string CACHE_KEY = "fireasy.exec.";
+        private const string CACHE_KEY = "fireasy.exec";
         private static ReadWriteLocker locker = new ReadWriteLocker();
 
         /// <summary>
@@ -41,11 +40,7 @@ namespace Fireasy.Data.Entity.Linq
             var option = section == null ? TranslateOptions.Default : section.Options;
             var result = CacheableChecker.Check(expression);
 
-            var isQuerable = typeof(IQueryable).IsAssignableFrom(expression.Type) ||
-                typeof(Task<IQueryable>).IsAssignableFrom(expression.Type) ||
-                (expression.Type.IsGenericType && typeof(IEnumerable).IsAssignableFrom(expression.Type.GetGenericArguments()[0]));
-
-            return isQuerable && (result.Enabled == true || (result.Enabled == null && option.CacheExecution));
+            return result.Enabled == true || (result.Enabled == null && option.CacheExecution);
         }
 
         /// <summary>
@@ -114,15 +109,9 @@ namespace Fireasy.Data.Entity.Linq
             var segment = SegmentFinder.Find(expression);
             var pager = segment as DataPager;
 
-#if NET45
             var cacheItem = cacheMgr.TryGet(cacheKey,
                 () => HandleCacheItem(cacheKey, expression, func().AsSync(), pager),
                 () => new RelativeTime(result.Expired ?? TimeSpan.FromSeconds(option.CacheExecutionTimes)));
-#else
-            var cacheItem = await cacheMgr.TryGetAsync(cacheKey,
-                async () => HandleCacheItem(cacheKey, expression, await func(), pager),
-                () => new RelativeTime(result.Expired ?? TimeSpan.FromSeconds(option.CacheExecutionTimes)));
-#endif
 
             if (pager != null)
             {
@@ -183,69 +172,80 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="expression"></param>
         private static void Reference(string key, Expression expression)
         {
-            var cacheMgr = CacheManagerFactory.CreateManager();
             var types = RelationshipFinder.Find(expression);
 
-            locker.LockWrite(() =>
-                {
-                    var rootKey = $"{CACHE_KEY}keys";
-                    var keyDict = cacheMgr.TryGet(rootKey, () => new Dictionary<string, List<string>>(), () => NeverExpired.Instance);
+            var cacheMgr = CacheManagerFactory.CreateManager();
+            var rootKey = $"{CACHE_KEY}.keys";
+            var hashSet = cacheMgr.GetHashSet<string, List<string>>(rootKey);
 
-                    foreach (var type in types)
+            foreach (var type in types)
+            {
+                locker.LockWrite(() =>
                     {
-                        if (!keyDict.TryGetValue(type.FullName, out List<string> keys))
-                        {
-                            keys = new List<string>();
-                            keyDict.Add(type.FullName, keys);
-                        }
+                        var keys = hashSet.TryGet(type.FullName, () => new List<string>());
 
                         if (!keys.Contains(key))
                         {
                             keys.Add(key);
                         }
-                    }
 
-                    cacheMgr.Add(rootKey, keyDict, NeverExpired.Instance);
-                });
+                        hashSet.Add(type.FullName, keys);
+                    });
+            }
         }
 
         /// <summary>
         /// 清理实体类型的全部缓存键。
         /// </summary>
-        /// <param name="type"></param>
-        private static void ClearKeys(Type type)
+        /// <param name="types"></param>
+        internal static void ClearKeys(params Type[] types)
         {
-            locker.LockWrite(() =>
+            if (types == null || types.Length == 0)
+            {
+                return;
+            }
+
+            var cacheMgr = CacheManagerFactory.CreateManager();
+            var rootKey = $"{CACHE_KEY}.keys";
+            var hashSet = cacheMgr.GetHashSet<string, List<string>>(rootKey);
+
+            types.ForEach(type =>
                 {
-                    var cacheMgr = CacheManagerFactory.CreateManager();
-                    var rootKey = $"{CACHE_KEY}keys";
-                    if (cacheMgr.TryGet(rootKey, out Dictionary<string, List<string>> keyDict))
-                    {
-                        //清除当前所有key
-                        if (keyDict.TryGetValue(type.FullName, out List<string> keys))
+                    locker.LockWrite(() =>
                         {
-                            for (var i = keys.Count - 1; i >= 0; i--)
+                            if (hashSet.TryGet(type.FullName, out List<string> keys))
                             {
-                                cacheMgr.Remove(keys[i]);
-                                keys.Remove(keys[i]);
+                                keys.ForEach(s => cacheMgr.Remove(s));
+                                hashSet.Remove(type.FullName);
                             }
-                        }
-
-                        //清除无用的key
-                        foreach (var kvp in keyDict)
-                        {
-                            for (var i = kvp.Value.Count - 1; i >= 0; i--)
-                            {
-                                if (!cacheMgr.Contains(kvp.Value[i]))
-                                {
-                                    kvp.Value.RemoveAt(i);
-                                }
-                            }
-                        }
-
-                        cacheMgr.Add(rootKey, keyDict, NeverExpired.Instance);
-                    }
+                        });
                 });
+
+            foreach (var key in hashSet.GetKeys())
+            {
+                if (!hashSet.TryGet(key, out List<string> keys1))
+                {
+                    continue;
+                }
+
+                locker.LockWrite(() =>
+                    {
+                        var isChanged = false;
+                        for (var i = keys1.Count - 1; i >= 0; i--)
+                        {
+                            if (!cacheMgr.Contains(keys1[i]))
+                            {
+                                isChanged = true;
+                                keys1.RemoveAt(i);
+                            }
+                        }
+
+                        if (isChanged)
+                        {
+                            hashSet.Add(key, keys1);
+                        }
+                    });
+            }
         }
 
         /// <summary>
@@ -287,6 +287,22 @@ namespace Fireasy.Data.Entity.Linq
             {
                 switch (node.Method.Name)
                 {
+                    case nameof(Extensions.RemoveWhere):
+                    case nameof(Extensions.RemoveWhereAsync):
+                    case nameof(Extensions.UpdateWhere):
+                    case nameof(Extensions.UpdateWhereAsync):
+                    case nameof(Extensions.CreateEntity):
+                    case nameof(Extensions.CreateEntityAsync):
+                    case nameof(Extensions.BatchOperate):
+                    case nameof(Extensions.BatchOperateAsync):
+                    case nameof(IRepository.Insert):
+                    case nameof(IRepository.InsertAsync):
+                    case nameof(IRepository.Update):
+                    case nameof(IRepository.UpdateAsync):
+                    case nameof(IRepository.Delete):
+                    case nameof(IRepository.DeleteAsync):
+                        result.Enabled = false;
+                        break;
                     case nameof(Extensions.CacheExecution):
                         result.Enabled = (bool)((ConstantExpression)node.Arguments[1]).Value;
                         if (result.Enabled == true && node.Arguments.Count == 3)

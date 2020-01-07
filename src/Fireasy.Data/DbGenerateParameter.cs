@@ -11,25 +11,30 @@ using System;
 
 namespace Fireasy.Data
 {
-    public class DataExpressionColumn
+    public class DataExpressionRow
     {
-        public Delegate Setter { get; set; }
+        public Delegate Setter { get; private set; }
+
+        public object GetValue(IDatabase database)
+        {
+            return Setter.DynamicInvoke(database);
+        }
 
         public static Type CreateType(Type type)
         {
-            return typeof(InnerDataExpressionColumn<>).MakeGenericType(type);
+            return typeof(GenericDataExpressionRow<>).MakeGenericType(type);
         }
 
-        public static DataExpressionColumn Create(Type type, Delegate factory)
+        public static DataExpressionRow Create(Type type, Delegate factory)
         {
-            var par = typeof(InnerDataExpressionColumn<>).MakeGenericType(type).New<DataExpressionColumn>();
+            var par = typeof(GenericDataExpressionRow<>).MakeGenericType(type).New<DataExpressionRow>();
             par.Setter = factory;
             return par;
         }
 
         public static Type GetParameterType(Type type)
         {
-            if (typeof(DataExpressionColumn).IsAssignableFrom(type) && type.IsGenericType)
+            if (typeof(DataExpressionRow).IsAssignableFrom(type) && type.IsGenericType)
             {
                 return type.GetGenericArguments()[0];
             }
@@ -37,7 +42,7 @@ namespace Fireasy.Data
             return null;
         }
 
-        private class InnerDataExpressionColumn<T> : DataExpressionColumn
+        private class GenericDataExpressionRow<T> : DataExpressionRow
         {
         }
     }

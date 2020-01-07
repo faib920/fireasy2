@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+#if NETFRAMEWORK
 using System.Net;
 using System.Threading.Tasks;
 
@@ -39,3 +40,4 @@ namespace Fireasy.Web.Sockets
         }
     }
 }
+#endif

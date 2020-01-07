@@ -78,7 +78,7 @@ namespace Fireasy.Data.Entity
 
             if (applyDefaultValue)
             {
-                return (TEntity)entity.ApplyDefaultValue();
+                return entity.ApplyDefaultValue();
             }
 
             return entity;

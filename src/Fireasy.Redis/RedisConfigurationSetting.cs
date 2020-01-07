@@ -78,6 +78,16 @@ namespace Fireasy.Redis
         public int LockTimeout { get; set; }
 
         /// <summary>
+        /// 获取或设置连接超时时间（毫秒）。默认为 5000 毫秒。
+        /// </summary>
+        public int ConnectTimeout { get; set; } = 5000;
+
+        /// <summary>
+        /// 获取或设置发送/接收超时时间（毫秒）。默认为 10000 毫秒。
+        /// </summary>
+        public int SyncTimeout { get; set; } = 10000;
+
+        /// <summary>
         /// 获取或设置异常时重入队列的延迟时间（毫秒）。未指定表示不重入队列。
         /// </summary>
         public int? RequeueDelayTime { get; set; }

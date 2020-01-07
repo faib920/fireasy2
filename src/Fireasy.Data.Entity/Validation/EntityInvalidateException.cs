@@ -21,7 +21,7 @@ namespace Fireasy.Data.Entity.Validation
         /// </summary>
         /// <param name="propertyErrors"></param>
         /// <param name="errors"></param>
-        public EntityInvalidateException(Dictionary<IProperty, IList<string>> propertyErrors, IList<string> errors)
+        public EntityInvalidateException(Dictionary<IProperty, IList<ValidationErrorResult>> propertyErrors, IList<string> errors)
             : base(GetMessage(propertyErrors, errors))
         {
             PropertyErrors = propertyErrors;
@@ -45,9 +45,9 @@ namespace Fireasy.Data.Entity.Validation
         /// <summary>
         /// 获取每一个属性验证的错误信息。
         /// </summary>
-        public Dictionary<IProperty, IList<string>> PropertyErrors { get; set; }
+        public Dictionary<IProperty, IList<ValidationErrorResult>> PropertyErrors { get; set; }
 
-        private static string GetMessage(Dictionary<IProperty, IList<string>> propertyErrors, IList<string> errors)
+        private static string GetMessage(Dictionary<IProperty, IList<ValidationErrorResult>> propertyErrors, IList<string> errors)
         {
             var sb = new StringBuilder();
             sb.AppendLine(SR.GetString(SRKind.EntityInvalidate));
@@ -60,7 +60,7 @@ namespace Fireasy.Data.Entity.Validation
             {
                 foreach (var v in error.Value)
                 {
-                    sb.AppendLine(" " + v);
+                    sb.AppendLine(" " + v.ErrorMessage);
                 }
             }
 

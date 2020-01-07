@@ -491,14 +491,35 @@ namespace Fireasy.Data.Extensions
         /// <param name="parameters"></param>
         public static void PrepareParameters(this DbCommand command, IProvider provider, IEnumerable<Parameter> parameters)
         {
-            if (parameters == null)
-            {
-                return;
-            }
+            var syntax = provider.GetService<ISyntaxProvider>();
 
-            foreach (var par in parameters)
+            foreach (var parameter in parameters)
             {
-                command.Parameters.Add(provider.PrepareParameter(par.ToDbParameter(provider)));
+                if (command.CommandType == CommandType.Text && parameter.Value is IEnumerable && !(parameter.Value is string))
+                {
+                    var parmeterName = parameter.ParameterName[0] == syntax.ParameterPrefix[0] ? parameter.ParameterName : syntax.ParameterPrefix + parameter.ParameterName;
+
+                    var sb = new StringBuilder();
+                    var index = 0;
+                    foreach (var value in parameter.Value as IEnumerable)
+                    {
+                        if (sb.Length > 0)
+                        {
+                            sb.Append(", ");
+                        }
+
+                        var name = string.Concat(parmeterName, "_", index++);
+                        var newPar = new Parameter(name, value);
+                        sb.Append(name);
+                        command.Parameters.Add(provider.PrepareParameter(newPar.ToDbParameter(provider)));
+                    }
+
+                    command.CommandText = command.CommandText.Replace(parmeterName, sb.ToString());
+                }
+                else
+                {
+                    command.Parameters.Add(provider.PrepareParameter(parameter.ToDbParameter(provider)));
+                }
             }
         }
 

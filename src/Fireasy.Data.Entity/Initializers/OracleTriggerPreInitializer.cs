@@ -43,49 +43,51 @@ namespace Fireasy.Data.Entity.Initializers
                 }
 
                 var pk = PropertyUnity.GetPrimaryProperties(map.EntityType).FirstOrDefault(s => s.Info.GenerateType != IdentityGenerateType.None);
-                if (pk != null)
+                if (pk == null)
                 {
-                    var database = context.EntityContext.Database;
-                    var metadata = EntityMetadataUnity.GetEntityMetadata(map.EntityType);
-                    var tableName = metadata.TableName.ToUpper();
-                    var columnName = pk.Info.FieldName.ToUpper();
+                    continue;
+                }
 
-                    var sequenceName = FixSequenceName(tableName, columnName);
+                var database = context.EntityContext.Database;
+                var metadata = EntityMetadataUnity.GetEntityMetadata(map.EntityType);
+                var tableName = metadata.TableName.ToUpper();
+                var columnName = pk.Info.FieldName.ToUpper();
 
-                    //创建序列
-                    SqlCommand sql = $"SELECT 1 FROM USER_SEQUENCES WHERE SEQUENCE_NAME = '{sequenceName}'";
-                    var result = database.ExecuteScalar(sql);
+                var sequenceName = FixSequenceName(tableName, columnName);
 
-                    //不存在的话先创建序列
-                    if (result == DBNull.Value || result == null)
-                    {
-                        //取表中该列的最大值 + 1
-                        sql = $"SELECT MAX({columnName}) FROM {tableName}";
-                        var value = database.ExecuteScalar<int>(sql) + 1;
+                //创建序列
+                SqlCommand sql = $"SELECT 1 FROM USER_SEQUENCES WHERE SEQUENCE_NAME = '{sequenceName}'";
+                var result = database.ExecuteScalar(sql);
 
-                        sql = @"CREATE SEQUENCE {sequenceName} START WITH {value}";
-                        database.ExecuteNonQuery(sql);
-                    }
+                //不存在的话先创建序列
+                if (result == DBNull.Value || result == null)
+                {
+                    //取表中该列的最大值 + 1
+                    sql = $"SELECT MAX({columnName}) FROM {tableName}";
+                    var value = database.ExecuteScalar<int>(sql) + 1;
 
-                    //创建触发器
-                    sql = $"SELECT 1 FROM ALL_TRIGGERS WHERE TRIGGER_NAME = 'TRIG_{tableName}'";
-                    result = database.ExecuteScalar(sql);
+                    sql = @"CREATE SEQUENCE {sequenceName} START WITH {value}";
+                    database.ExecuteNonQuery(sql);
+                }
 
-                    //不存在的话先创建序列
-                    if (result == DBNull.Value || result == null)
-                    {
-                        sql = $@"
+                //创建触发器
+                sql = $"SELECT 1 FROM ALL_TRIGGERS WHERE TRIGGER_NAME = 'TRIG_{tableName}'";
+                result = database.ExecuteScalar(sql);
+
+                //不存在的话先创建序列
+                if (result == DBNull.Value || result == null)
+                {
+                    sql = $@"
 CREATE OR REPLACE TRIGGER TRIG_{tableName}
 BEFORE INSERT ON {tableName} FOR EACH ROW WHEN (NEW.{columnName} IS NULL OR NEW.{columnName} = 0)
 BEGIN
 SELECT {sequenceName}.NEXTVAL INTO:NEW.{columnName} FROM DUAL;
 END;";
 
-                        database.ExecuteNonQuery(sql);
-                    }
-
-                    pk.Info.GenerateType = IdentityGenerateType.None;
+                    database.ExecuteNonQuery(sql);
                 }
+
+                pk.Info.GenerateType = IdentityGenerateType.None;
             }
         }
 

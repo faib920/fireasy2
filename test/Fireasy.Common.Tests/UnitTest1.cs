@@ -2,6 +2,9 @@
 using Fireasy.Common.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,7 +22,7 @@ namespace Fireasy.Common.Tests
 
         public static AAA GetInstance()
         {
-            insta = SingletonLocker.Lock(ref insta, ()=> new AAA());
+            insta = SingletonLocker.Lock(ref insta, () => new AAA());
             return insta;
         }
 
@@ -34,10 +37,32 @@ namespace Fireasy.Common.Tests
         [TestMethod]
         public void Test()
         {
-            Parallel.For(1, 10, i =>
+            var dic1 = new Dictionary<string, string>();
+            var dic2 = new Dictionary<Type, string>();
+
+            foreach (var assn in typeof(UnitTest1).Assembly.GetReferencedAssemblies().Distinct())
             {
-                AAA.GetInstance();
+                Console.WriteLine(assn);
+                var ass = Assembly.Load(assn);
+                foreach (var type in ass.GetTypes())
+                {
+                    dic1.Add(type.AssemblyQualifiedName, type.FullName);
+                    dic2.Add(type, type.FullName);
+                }
+            }
+
+            var k = dic2.Last().Key;
+
+            var t = TimeWatcher.Watch(() =>
+            {
+                dic1[k.AssemblyQualifiedName] = "dd";
             });
+            Console.WriteLine(t);
+            t = TimeWatcher.Watch(() =>
+            {
+                dic2[k] = "dd";
+            });
+            Console.WriteLine(t);
         }
 
         String CreateKey(int numBytes)

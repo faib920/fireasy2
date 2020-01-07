@@ -27,9 +27,9 @@ namespace Fireasy.Data.Entity.Linq.Translators.Configuration
                         HideTableAliases = ndOption.GetAttributeValue("hideTableAliases", false),
                         HideColumnAliases = ndOption.GetAttributeValue("hideColumnAliases", false),
                         CacheParsing = ndOption.GetAttributeValue("cacheParsing", true),
-                        CacheParsingTimes = ndOption.GetAttributeValue("cacheParsingTimes", 300),
+                        CacheParsingTimes = ndOption.GetAttributeValue("cacheParsingTimes", 600),
                         CacheExecution = ndOption.GetAttributeValue("cacheExecution", false),
-                        CacheExecutionTimes = ndOption.GetAttributeValue("cacheExecutionTimes", 60)
+                        CacheExecutionTimes = ndOption.GetAttributeValue("cacheExecutionTimes", 300)
                     };
             }
         }
@@ -49,9 +49,9 @@ namespace Fireasy.Data.Entity.Linq.Translators.Configuration
                         HideTableAliases = ndOption.GetSection("hideTableAliases").Value.To(false),
                         HideColumnAliases = ndOption.GetSection("hideColumnAliases").Value.To(false),
                         CacheParsing = ndOption.GetSection("cacheParsing").Value.To(true),
-                        CacheParsingTimes = ndOption.GetSection("cacheParsingTimes").Value.To(300),
+                        CacheParsingTimes = ndOption.GetSection("cacheParsingTimes").Value.To(600),
                         CacheExecution = ndOption.GetSection("cacheExecution").Value.To(false),
-                        CacheExecutionTimes = ndOption.GetSection("cacheExecutionTimes").Value.To(60)
+                        CacheExecutionTimes = ndOption.GetSection("cacheExecutionTimes").Value.To(300)
                     };
             }
         }

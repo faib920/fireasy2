@@ -303,6 +303,10 @@ namespace Fireasy.Common.Serialization
             {
                 xmlWriter.WriteValue(((Enum)value).ToString("D"));
             }
+            else if (type == typeof(TimeSpan))
+            {
+                xmlWriter.WriteString(((TimeSpan)value).ToString());
+            }
             else
             {
                 switch (Type.GetTypeCode(type))
@@ -350,7 +354,7 @@ namespace Fireasy.Common.Serialization
             }
             else if (option.DateFormatHandling == DateFormatHandling.IsoDateFormat)
             {
-                xmlWriter.WriteValue(value.GetDateTimeFormats('s')[0].ToString());
+                xmlWriter.WriteValue(value.GetDateTimeFormats('s')[0].ToString(option.Culture));
             }
         }
 
@@ -388,7 +392,7 @@ namespace Fireasy.Common.Serialization
                 xmlWriter.WriteStartElement(GetElementName(type));
             }
 
-            var cache = context.GetAccessorCache(type);
+            var cache = context.GetProperties(type, () => option.ContractResolver.GetProperties(type));
             var queue = new PriorityActionQueue();
 
             foreach (var acc in cache)
@@ -398,13 +402,14 @@ namespace Fireasy.Common.Serialization
                     continue;
                 }
 
-                var value = acc.Accessor.GetValue(obj);
-                if (value == null)
+                var value = acc.Getter.Invoke(obj);
+                if ((option.NullValueHandling == NullValueHandling.Ignore && value == null) ||
+                    (value == null && option.NodeStyle == XmlNodeStyle.Attribute))
                 {
                     continue;
                 }
 
-                var objType = acc.PropertyInfo.PropertyType == typeof(object) ? value.GetType() : acc.PropertyInfo.PropertyType;
+                var objType = acc.PropertyInfo.PropertyType == typeof(object) && value != null ? value.GetType() : acc.PropertyInfo.PropertyType;
                 if (option.NodeStyle == XmlNodeStyle.Attribute && objType.IsStringable())
                 {
                     queue.Add(0, () =>
@@ -459,15 +464,13 @@ namespace Fireasy.Common.Serialization
 
         private void WriteXmlElement(string name, bool startEle, Action action)
         {
+            name = option.ContractResolver.ResolvePropertyName(name);
             if (startEle)
             {
-                xmlWriter.WriteStartElement(option.CamelNaming ? char.ToLower(name[0]) + name.Substring(1) : name);
+                xmlWriter.WriteStartElement(name);
             }
 
-            if (action != null)
-            {
-                action();
-            }
+            action?.Invoke();
 
             if (startEle)
             {
@@ -521,7 +524,7 @@ namespace Fireasy.Common.Serialization
                 case TypeCode.Double:
                     return "double";
                 default:
-                    return option.CamelNaming ? char.ToLower(type.Name[0]) + type.Name.Substring(1) : type.Name;
+                    return option.ContractResolver.ResolvePropertyName(type.Name);
             }
         }
 

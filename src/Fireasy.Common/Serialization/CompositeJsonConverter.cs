@@ -59,15 +59,15 @@ namespace Fireasy.Common.Serialization
             var context = SerializeContext.Current;
             var option = context.Option as JsonSerializeOption;
 
-            foreach (var acc in context.GetAccessorCache(type))
+            foreach (var acc in context.GetProperties(type, () => option.ContractResolver.GetProperties(type)))
             {
                 if (acc.Filter(acc.PropertyInfo, lazyMgr))
                 {
                     continue;
                 }
 
-                var value = acc.Accessor.GetValue(obj);
-                if (option.IgnoreNull && value == null)
+                var value = acc.Getter.Invoke(obj);
+                if (option.NullValueHandling == NullValueHandling.Ignore && value == null)
                 {
                     continue;
                 }
@@ -98,12 +98,7 @@ namespace Fireasy.Common.Serialization
                 return string.Empty;
             }
 
-            if (option.Format == JsonFormat.Object)
-            {
-                return option.CamelNaming ? char.ToLower(name[0]) + name.Substring(1) : name;
-            }
-
-            return JsonTokens.StringDelimiter + (option.CamelNaming ? char.ToLower(name[0]) + name.Substring(1) : name) + JsonTokens.StringDelimiter;
+            return string.Concat(JsonTokens.StringDelimiter, name, JsonTokens.StringDelimiter);
         }
     }
 }

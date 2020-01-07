@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Text;
 
 namespace Fireasy.Data.Entity
 {
@@ -31,7 +32,8 @@ namespace Fireasy.Data.Entity
         ISupportInitializeNotification,
         ILazyManager,
         IEntityRelation,
-        IPropertyFieldMappingResolver
+        IPropertyFieldMappingResolver,
+        IHashKeyObject
     {
         private EntityEntryDictionary valueEntry;
         private EntityOwner owner;
@@ -60,6 +62,7 @@ namespace Fireasy.Data.Entity
         private Type entityType;
         private EntityState state;
         private bool isInitialized;
+        private object hashKey;
 
         /// <summary>
         /// 初始化 <see cref="T:Fireasy.Data.Entity.EntityObject"/> 类的新实例。对象的初始状态为 Attached。
@@ -371,6 +374,45 @@ namespace Fireasy.Data.Entity
         }
         #endregion
 
+        #region 实现 IHashKeyObject
+        object IHashKeyObject.Key
+        {
+            get
+            {
+                if (hashKey == null)
+                {
+                    var properties = PropertyUnity.GetPrimaryProperties(entityType);
+                    if (properties.Count() == 1)
+                    {
+                        var value = GetValue(properties.FirstOrDefault());
+                        if (!PropertyValue.IsEmpty(value))
+                        {
+                            hashKey = value.GetValue();
+                        }
+                    }
+                    else if (properties.Count() > 1)
+                    {
+                        var sb = new StringBuilder();
+                        foreach (var prop in PropertyUnity.GetPrimaryProperties(entityType))
+                        {
+                            var value = GetValue(prop);
+                            if (sb.Length > 0)
+                            {
+                                sb.Append("_");
+                            }
+
+                            sb.Append((PropertyValue.IsEmpty(value) ? "N" : value));
+                        }
+
+                        hashKey = sb.ToString();
+                    }
+                }
+
+                return hashKey;
+            }
+        }
+        #endregion
+
         #region 实现 ILazyManager
         /// <summary>
         /// 判断属性是否已经创建。
@@ -415,8 +457,8 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
 		public override int GetHashCode()
         {
-            var pkProperties = PropertyUnity.GetPrimaryProperties(entityType);
-            return pkProperties.Select(GetValue).Aggregate(0, (current, value) => current ^ (value == null ? 0 : value.GetHashCode()));
+            var key = ((IHashKeyObject)this).Key;
+            return key == null ? 0 : key.GetHashCode();
         }
 
         /// <summary>

@@ -192,7 +192,7 @@ namespace Fireasy.Common.ComponentModel
 
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
-            return new SafetyDictionaryEnumerator<TKey, TValue>(dic.GetEnumerator());
+            return new SafetyDictionaryEnumerator(dic.GetEnumerator());
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -210,7 +210,7 @@ namespace Fireasy.Common.ComponentModel
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
-        private class SafetyDictionaryEnumerator<TKey, TValue> : IEnumerator<KeyValuePair<TKey, TValue>>
+        private class SafetyDictionaryEnumerator : IEnumerator<KeyValuePair<TKey, TValue>>
         {
             private IEnumerator<KeyValuePair<TKey, Lazy<TValue>>> enumerator;
 

@@ -22,11 +22,11 @@ namespace Fireasy.Data.Entity.Validation
         /// </summary>
         /// <param name="property">所验证的实体属性。</param>
         /// <param name="errors">验证器产生的错误信息列表。</param>
-        public PropertyInvalidateException(IProperty property, List<string> errors)
+        public PropertyInvalidateException(IProperty property, IList<ValidationErrorResult> errors)
             : base (GetMessage(property, errors))
         {
             Property = property;
-            Errors = errors.AsReadOnly();
+            Errors = new ReadOnlyCollection<ValidationErrorResult>(errors);
         }
 
         /// <summary>
@@ -48,15 +48,15 @@ namespace Fireasy.Data.Entity.Validation
         /// <summary>
         /// 获取错误验证器产生的信息列表。
         /// </summary>
-        public ReadOnlyCollection<string> Errors { get; private set; }
+        public ReadOnlyCollection<ValidationErrorResult> Errors { get; private set; }
 
-        private static string GetMessage(IProperty property, IList<string> errors)
+        private static string GetMessage(IProperty property, IList<ValidationErrorResult> errors)
         {
             var sb = new StringBuilder();
             sb.AppendLine(SR.GetString(SRKind.EntityInvalidate));
             foreach (var error in errors)
             {
-                sb.AppendLine(error);
+                sb.AppendLine(error.ErrorMessage);
             }
 
             return sb.ToString();

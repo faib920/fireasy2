@@ -13,12 +13,43 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace Fireasy.Data.Entity.Tests
 {
     [TestClass]
     public class EntityTest
     {
+        [TestMethod]
+        public void Test()
+        {
+            var dic1 = new Dictionary<string, string>();
+            var dic2 = new Dictionary<Type, string>();
+
+            foreach (var assn in typeof(EntityTest).Assembly.GetReferencedAssemblies().Distinct())
+            {
+                var ass = Assembly.Load(assn);
+                foreach (var type in ass.GetTypes())
+                {
+                    dic1.Add(type.AssemblyQualifiedName, type.FullName);
+                    dic2.Add(type, type.FullName);
+                }
+            }
+
+            var k = dic2.Last().Key;
+
+            var t = TimeWatcher.Watch(() =>
+            {
+                dic1[k.AssemblyQualifiedName] = "dd";
+            });
+            Console.WriteLine(t);
+            t = TimeWatcher.Watch(() =>
+            {
+                dic2[k] = "dd";
+            });
+            Console.WriteLine(t);
+        }
 
         [TestMethod]
         public void TestModified()
@@ -27,8 +58,8 @@ namespace Fireasy.Data.Entity.Tests
             {
                 ContactName = "fireasy"
             };
-            Assert.IsFalse(customer.IsModified("ContactName"));
-            Assert.IsFalse(customer.IsModified("CustomerID"));
+            Assert.IsFalse(customer.IsModified(s => s.ContactName));
+            Assert.IsFalse(customer.IsModified(s => s.CustomerID));
             Assert.AreEqual(customer.ContactName, "fireasy");
         }
 
@@ -51,19 +82,24 @@ namespace Fireasy.Data.Entity.Tests
 
             customer.Modified(s => s.CustomerID).Modified(s => s.ContactName);
 
-            Assert.IsTrue(customer.IsModified("ContactName"));
-            Assert.IsTrue(customer.IsModified("CustomerID"));
+            Assert.IsTrue(customer.IsModified(s => s.ContactName));
+            Assert.IsTrue(customer.IsModified(s => s.CustomerID));
             Assert.AreEqual(customer.ContactName, "fireasy");
         }
 
         [TestMethod]
         public void TestModified_New()
         {
-            var product = Products.New(true);
+            var product = Products.New();
             product.ProductName = "fireasy";
 
-            Assert.IsTrue(product.IsModified("ProductName"));
-            Assert.IsFalse(product.IsModified("ProductID"));
+            Assert.IsTrue(product.IsModified(s => s.ProductName));
+            Assert.IsFalse(product.IsModified(s => s.ProductID));
+
+            product.Modified(s => s.ProductName, false);
+
+            Assert.IsFalse(product.IsModified(s => s.ProductName));
+
             Assert.AreEqual(product.ProductName, "fireasy");
         }
 

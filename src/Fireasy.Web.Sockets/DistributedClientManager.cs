@@ -6,7 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Caching;
-using Fireasy.Common.Extensions;
 using Fireasy.Common.Serialization;
 using Fireasy.Common.Subscribes;
 using System;
@@ -22,7 +21,7 @@ namespace Fireasy.Web.Sockets
     /// </summary>
     public class DistributedClientManager : ClientManager
     {
-        private const string prefix = "ws_client_";
+        private const string WS_KEY = "ws_alive_keys";
         private string aliveKey;
 
         /// <summary>
@@ -53,9 +52,10 @@ namespace Fireasy.Web.Sockets
         public override void Add(string connectionId, IClientProxy handler)
         {
             var cacheMgr = CacheManagerFactory.CreateManager();
+            var hashSet = cacheMgr.GetHashSet<string, string>(WS_KEY);
 
             //在redis缓存里存放连接标识对应的aliveKey，即服务标识，以方便后面查找
-            cacheMgr.Add(prefix + connectionId, aliveKey, new RelativeTime(TimeSpan.FromDays(5)));
+            hashSet.Add(connectionId, aliveKey, new RelativeTime(TimeSpan.FromDays(5)));
 
             base.Add(connectionId, handler);
         }
@@ -63,7 +63,9 @@ namespace Fireasy.Web.Sockets
         public override void Remove(string connectionId)
         {
             var cacheMgr = CacheManagerFactory.CreateManager();
-            cacheMgr.Remove(prefix + connectionId);
+            var hashSet = cacheMgr.GetHashSet<string, string>(WS_KEY);
+
+            hashSet.Remove(connectionId);
 
             base.Remove(connectionId);
         }
@@ -96,7 +98,9 @@ namespace Fireasy.Web.Sockets
 
             //如果没有，则去redis缓存里查找出aliveKey，并使用分布式代理进行传递
             var cacheMgr = CacheManagerFactory.CreateManager();
-            if (cacheMgr.TryGet(prefix + connectionId, out string aliveKey))
+            var hashSet = cacheMgr.GetHashSet<string, string>(WS_KEY);
+
+            if (hashSet.TryGet(connectionId, out string aliveKey))
             {
                 return new DistributedUserClientProxy(aliveKey, connectionId);
             }
@@ -117,6 +121,8 @@ namespace Fireasy.Web.Sockets
             }
 
             var cacheMgr = CacheManagerFactory.CreateManager();
+            var hashSet = cacheMgr.GetHashSet<string, string>(WS_KEY);
+
             var clients = new List<IClientProxy>();
 
             foreach (var connectionId in connectionIds.Distinct())
@@ -126,7 +132,7 @@ namespace Fireasy.Web.Sockets
                 {
                     clients.Add(client);
                 }
-                else if (cacheMgr.TryGet(prefix + connectionId, out string aliveKey))
+                else if (hashSet.TryGet(connectionId, out string aliveKey))
                 {
                     clients.Add(new DistributedUserClientProxy(aliveKey, connectionId));
                 }
@@ -139,7 +145,7 @@ namespace Fireasy.Web.Sockets
     /// <summary>
     /// 分布式代理。
     /// </summary>
-    internal class DistributedUserClientProxy : InternalClientProxy
+    public class DistributedUserClientProxy : BaseClientProxy
     {
         private string aliveKey;
         private List<string> connections;

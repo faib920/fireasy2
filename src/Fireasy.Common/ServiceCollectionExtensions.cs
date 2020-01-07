@@ -24,7 +24,13 @@ using Fireasy.Common.Threading;
 using Fireasy.Common.Threading.Configuration;
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+
+[assembly: ConfigurationBinder(typeof(Microsoft.Extensions.DependencyInjection.ConfigurationBinder))]
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -38,7 +44,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IServiceCollection AddFireasy(this IServiceCollection services, IConfiguration configuration, Action<Fireasy.Common.CoreOptions> setupAction = null)
         {
-            ConfigurationUnity.Bind(Assembly.GetCallingAssembly(), configuration, services);
+            configuration.Initialize(Assembly.GetCallingAssembly(), services);
 
             var options = new Fireasy.Common.CoreOptions();
             setupAction?.Invoke(options);
@@ -88,6 +94,70 @@ namespace Microsoft.Extensions.DependencyInjection
 
             return type;
         }
+
+        /// <summary>
+        /// 绑定所有和 fireasy 有关的配置项。
+        /// </summary>
+        /// <param name="callAssembly"></param>
+        /// <param name="configuration"></param>
+        /// <param name="services"></param>
+        public static void Initialize(this IConfiguration configuration, Assembly callAssembly, IServiceCollection services = null)
+        {
+            var assemblies = new List<Assembly>();
+
+            FindReferenceAssemblies(callAssembly, assemblies);
+
+            assemblies.AsParallel().ForAll(assembly =>
+                {
+                    var binderAttr = assembly.GetCustomAttributes<ConfigurationBinderAttribute>().FirstOrDefault();
+                    var type = binderAttr != null ? binderAttr.BinderType : assembly.GetType("Microsoft.Extensions.DependencyInjection.ConfigurationBinder");
+                    if (type != null)
+                    {
+                        var method = type.GetMethod("Bind", BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(IServiceCollection), typeof(IConfiguration) }, null);
+                        if (method != null)
+                        {
+                            method.Invoke(null, new object[] { services, configuration });
+                        }
+                    }
+                });
+
+            assemblies.Clear();
+        }
+
+        private static bool ExcludeAssembly(string assemblyName)
+        {
+            return !assemblyName.StartsWith("system.", StringComparison.OrdinalIgnoreCase) &&
+                    !assemblyName.StartsWith("microsoft.", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static Assembly LoadAssembly(AssemblyName assemblyName)
+        {
+            try
+            {
+                return Assembly.Load(assemblyName);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static void FindReferenceAssemblies(Assembly assembly, List<Assembly> assemblies)
+        {
+            foreach (var asb in assembly.GetReferencedAssemblies()
+                .Where(s => ExcludeAssembly(s.Name))
+                .Select(s => LoadAssembly(s))
+                .Where(s => s != null))
+            {
+                if (!assemblies.Contains(asb))
+                {
+                    assemblies.Add(asb);
+                }
+
+                FindReferenceAssemblies(asb, assemblies);
+            }
+        }
+
     }
 
     internal class ConfigurationBinder

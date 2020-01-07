@@ -67,7 +67,7 @@ namespace Fireasy.Web.Sockets
         {
             handler.cancelToken = new CancellationTokenSource();
             handler.acceptContext = acceptContext;
-            handler.Clients = ClientManager.GetManager(handler.GetType(), acceptContext.Option);
+            handler.Clients = ClientManagerCache.GetManager(handler.GetType(), acceptContext);
 
             try
             {

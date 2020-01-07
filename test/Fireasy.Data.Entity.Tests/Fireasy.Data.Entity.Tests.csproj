@@ -15,8 +15,9 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0-preview-20170628-02" />
     <PackageReference Include="MSTest.TestAdapter" Version="1.1.18" />
     <PackageReference Include="MSTest.TestFramework" Version="1.1.18" />
-    <PackageReference Include="MySqlConnector" Version="0.60.3-beta1" />
+    <PackageReference Include="MySql.Data" Version="8.0.18" />
     <PackageReference Include="sqlSugar" Version="4.9.9.1" />
+    <PackageReference Include="System.Data.OleDb" Version="4.6.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)'=='netcoreapp2.0'">
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.0" />

@@ -6,6 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+
 namespace Fireasy.Common.Serialization
 {
     /// <summary>
@@ -19,18 +21,13 @@ namespace Fireasy.Common.Serialization
         public JsonSerializeOption()
         {
             Indent = false;
-            Format = JsonFormat.String;
+            KeyHandling = JsonKeyHandling.Quote;
         }
 
         /// <summary>
-        /// 获取或设置Json序列化的格式。
+        /// 获取或设置 Key 的输出处理。
         /// </summary>
-        public JsonFormat Format { get; set; }
-
-        /// <summary>
-        /// 获取或设置是否忽略为 null 的值。默认为 true。
-        /// </summary>
-        public bool IgnoreNull { get; set; } = true;
+        public JsonKeyHandling KeyHandling { get; set; }
 
         /// <summary>
         /// 引用另一个对象的设置属性。
@@ -42,9 +39,23 @@ namespace Fireasy.Common.Serialization
 
             if (other is JsonSerializeOption joption)
             {
-                Format = joption.Format;
-                IgnoreNull = joption.IgnoreNull;
+                KeyHandling = joption.KeyHandling;
             }
         }
+    }
+
+    /// <summary>
+    /// Key 的输出处理。
+    /// </summary>
+    public enum JsonKeyHandling
+    {
+        /// <summary>
+        /// 无。
+        /// </summary>
+        None,
+        /// <summary>
+        /// 名称前后加双引号。
+        /// </summary>
+        Quote
     }
 }

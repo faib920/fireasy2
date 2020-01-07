@@ -16,7 +16,8 @@ namespace Fireasy.Windows.Forms
         private int sortVersion;
 
         public TreeListGroupCollection()
-        { }
+        {
+        }
 
         internal TreeListGroupCollection(TreeList treelist)
         {
