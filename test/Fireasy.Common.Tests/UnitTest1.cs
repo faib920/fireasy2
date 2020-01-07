@@ -11,58 +11,13 @@ using System.Threading.Tasks;
 
 namespace Fireasy.Common.Tests
 {
-    public class AAA
-    {
-        private static AAA insta;
-
-        public AAA()
-        {
-            Console.WriteLine("dfsafsadf");
-        }
-
-        public static AAA GetInstance()
-        {
-            insta = SingletonLocker.Lock(ref insta, () => new AAA());
-            return insta;
-        }
-
-        public void Test()
-        {
-
-        }
-    }
     [TestClass]
     public class UnitTest1
     {
         [TestMethod]
         public void Test()
         {
-            var dic1 = new Dictionary<string, string>();
-            var dic2 = new Dictionary<Type, string>();
 
-            foreach (var assn in typeof(UnitTest1).Assembly.GetReferencedAssemblies().Distinct())
-            {
-                Console.WriteLine(assn);
-                var ass = Assembly.Load(assn);
-                foreach (var type in ass.GetTypes())
-                {
-                    dic1.Add(type.AssemblyQualifiedName, type.FullName);
-                    dic2.Add(type, type.FullName);
-                }
-            }
-
-            var k = dic2.Last().Key;
-
-            var t = TimeWatcher.Watch(() =>
-            {
-                dic1[k.AssemblyQualifiedName] = "dd";
-            });
-            Console.WriteLine(t);
-            t = TimeWatcher.Watch(() =>
-            {
-                dic2[k] = "dd";
-            });
-            Console.WriteLine(t);
         }
 
         String CreateKey(int numBytes)
