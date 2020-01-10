@@ -29,8 +29,9 @@ namespace Fireasy.Data.Entity.Linq.Translators.Configuration
                         CacheParsing = ndOption.GetAttributeValue("cacheParsing", true),
                         CacheParsingTimes = ndOption.GetAttributeValue("cacheParsingTimes", 600),
                         CacheExecution = ndOption.GetAttributeValue("cacheExecution", false),
-                        CacheExecutionTimes = ndOption.GetAttributeValue("cacheExecutionTimes", 300)
-                    };
+                        CacheExecutionTimes = ndOption.GetAttributeValue("cacheExecutionTimes", 300),
+                        TraceEntityState = ndOption.GetAttributeValue("traceEntityState", true),
+                };
             }
         }
 
@@ -51,8 +52,9 @@ namespace Fireasy.Data.Entity.Linq.Translators.Configuration
                         CacheParsing = ndOption.GetSection("cacheParsing").Value.To(true),
                         CacheParsingTimes = ndOption.GetSection("cacheParsingTimes").Value.To(600),
                         CacheExecution = ndOption.GetSection("cacheExecution").Value.To(false),
-                        CacheExecutionTimes = ndOption.GetSection("cacheExecutionTimes").Value.To(300)
-                    };
+                        CacheExecutionTimes = ndOption.GetSection("cacheExecutionTimes").Value.To(300),
+                        TraceEntityState = ndOption.GetSection("traceEntityState").Value.To(true)
+                };
             }
         }
 #endif

@@ -8,6 +8,7 @@
 
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
+using Fireasy.Common.Serialization;
 using Fireasy.Data.Entity.Properties;
 using System;
 using System.Collections.Generic;
@@ -33,7 +34,8 @@ namespace Fireasy.Data.Entity
         ILazyManager,
         IEntityRelation,
         IPropertyFieldMappingResolver,
-        IHashKeyObject
+        IHashKeyObject,
+        IDeserializeProcessor
     {
         private EntityEntryDictionary valueEntry;
         private EntityOwner owner;
@@ -536,10 +538,10 @@ namespace Fireasy.Data.Entity
                 relationProperty.Options.LoadBehavior != LoadBehavior.None)
             {
                 var value = EntityLazyloader.Load(this, relationProperty);
-                InnerLazyMgr.SetValueCreated(property.Name);
 
-                if (value != null)
+                if (value != null && !PropertyValue.IsEmpty(value))
                 {
+                    InnerLazyMgr.SetValueCreated(property.Name);
                     InnerEntry.Initializate(property.Name, value, () => value.DataType = property.Info.DataType);
                 }
 
@@ -701,6 +703,31 @@ namespace Fireasy.Data.Entity
         IEnumerable<PropertyFieldMapping> IPropertyFieldMappingResolver.GetDbMapping()
         {
             return EntityPropertyFieldMappingResolver.GetDbMapping(entityType);
+        }
+        #endregion
+
+        #region 实现IDeserializeProcessor
+        void IDeserializeProcessor.PreDeserialize()
+        {
+            BeginInit();
+        }
+
+        bool IDeserializeProcessor.SetValue(string name, object value)
+        {
+            var property = PropertyUnity.GetProperty(entityType, name);
+            if (property != null)
+            {
+                InitializeValue(property, PropertyValue.NewValue(value, property.Type));
+                return true;
+            }
+
+            return false;
+        }
+
+        void IDeserializeProcessor.PostDeserialize()
+        {
+            this.SetState(EntityState.Unchanged);
+            EndInit();
         }
         #endregion
     }

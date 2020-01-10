@@ -282,10 +282,7 @@ namespace Fireasy.Common.Caching
         /// <returns></returns>
         public ICacheHashSet<TKey, TValue> GetHashSet<TKey, TValue>(string cacheKey)
         {
-            return (ICacheHashSet<TKey, TValue>)hashSet.GetOrAdd(cacheKey, () =>
-            {
-                return new MemoryHashSet<TKey, TValue>();
-            });
+            return (ICacheHashSet<TKey, TValue>)hashSet.GetOrAdd(cacheKey, () => new MemoryHashSet<TKey, TValue>());
         }
 
         /// <summary>
@@ -333,6 +330,7 @@ namespace Fireasy.Common.Caching
                     if (cacheDictionary.TryRemove(kvp.Key, out CacheItem entry))
                     {
                         NotifyCacheRemoved(entry);
+                        entry.TryDispose();
                     }
                 }
             }

@@ -6,13 +6,13 @@
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
     <FileVersion>2.1.2.02</FileVersion>
-    <Copyright>Copyright © Fireasy 2013-2019</Copyright>
+    <Copyright>Copyright © Fireasy 2013-2020</Copyright>
     <AssemblyVersion>2.1.2.02</AssemblyVersion>
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>True</SignAssembly>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Data Library</Product>
-    <Version>2.1.2-beta2</Version>
+    <Version>2.1.2-beta3</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Description>数据库访问库，提供 SqlServer, MySql, Oracle, SQLite, PostgreSql 等数据库的驱动适配，以及插件服务，如SQL语法、数据库架构、批量插入、记录包装等。
 

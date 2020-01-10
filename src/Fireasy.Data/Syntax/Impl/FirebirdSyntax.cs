@@ -15,26 +15,13 @@ namespace Fireasy.Data.Syntax
 {
     public class FirebirdSyntax : ISyntaxProvider
     {
-        private StringSyntax strSyntax;
-        private DateTimeSyntax dtSyntax;
-        private MathSyntax mathSyntax;
-
         IProvider IProviderService.Provider { get; set; }
 
-        public StringSyntax String
-        {
-            get { return strSyntax ?? (strSyntax = new FirebirdStringSyntax()); }
-        }
+        public StringSyntax String => new FirebirdStringSyntax();
 
-        public DateTimeSyntax DateTime
-        {
-            get { return dtSyntax ?? (dtSyntax = new FirebirdDateTimeSyntax()); }
-        }
+        public DateTimeSyntax DateTime => new FirebirdDateTimeSyntax();
 
-        public MathSyntax Math
-        {
-            get { return mathSyntax ?? (mathSyntax = new FirebirdMathSyntax()); }
-        }
+        public MathSyntax Math => new FirebirdMathSyntax();
 
         public string IdentitySelect
         {

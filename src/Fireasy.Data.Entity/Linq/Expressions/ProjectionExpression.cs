@@ -2,7 +2,6 @@
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Expressions
@@ -12,12 +11,12 @@ namespace Fireasy.Data.Entity.Linq.Expressions
     /// </summary>
     public sealed class ProjectionExpression : DbExpression
     {
-        public ProjectionExpression(SelectExpression source, Expression projector, bool isAsync)
-            : this(source, projector, null, isAsync)
+        public ProjectionExpression(SelectExpression source, Expression projector, bool isAsync, bool isNoTracking)
+            : this(source, projector, null, isAsync, isNoTracking)
         {
         }
 
-        public ProjectionExpression(SelectExpression source, Expression projector, LambdaExpression aggregator, bool isAsync)
+        public ProjectionExpression(SelectExpression source, Expression projector, LambdaExpression aggregator, bool isAsync, bool isNoTracking)
             : base(DbExpressionType.Projection, 
                   aggregator != null ? 
                     (isAsync && aggregator.Body.Type.IsGenericType ? 
@@ -28,6 +27,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
             Projector = projector;
             Aggregator = aggregator;
             IsAsync = isAsync;
+            IsNoTracking = isNoTracking;
         }
 
         /// <summary>
@@ -61,11 +61,13 @@ namespace Fireasy.Data.Entity.Linq.Expressions
 
         public bool IsAsync { get; private set; }
 
+        public bool IsNoTracking { get; private set; }
+
         public ProjectionExpression Update(SelectExpression select, Expression projector, LambdaExpression aggregator)
         {
             if (select != Select || projector != Projector || aggregator != Aggregator)
             {
-                return new ProjectionExpression(select, projector, aggregator, IsAsync);
+                return new ProjectionExpression(select, projector, aggregator, IsAsync, IsNoTracking);
             }
             return this;
         }

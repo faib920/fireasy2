@@ -27,16 +27,18 @@ namespace Fireasy.Data.Entity
         IProvider Provider { get; }
 
         /// <summary>
-        /// 返回 <see cref="IDatabase"/> 对象。
+        /// 创建仓储提供者对象。
         /// </summary>
-        IDatabase Database { get; }
+        /// <param name="entityType">实体类型。</param>
+        /// <returns></returns>
+        IRepositoryProvider CreateRepositoryProvider(Type entityType);
 
         /// <summary>
-        /// 返回指定实体类型的 <see cref="IRepository"/> 对象。
+        /// 创建仓储提供者对象。
         /// </summary>
-        /// <param name="entityType"></param>
+        /// <typeparam name="TEntity">实体类型。</typeparam>
         /// <returns></returns>
-        IRepository GetDbSet(Type entityType);
+        IRepositoryProvider<TEntity> CreateRepositoryProvider<TEntity>() where TEntity : class, IEntity;
 
         /// <summary>
         /// 开启一个事务。

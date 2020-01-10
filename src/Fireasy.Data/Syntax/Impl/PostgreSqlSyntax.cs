@@ -16,35 +16,22 @@ namespace Fireasy.Data.Syntax
     /// </summary>
     public class PostgreSqlSyntax : ISyntaxProvider
     {
-        private StringSyntax strSyntax;
-        private DateTimeSyntax dtSyntax;
-        private MathSyntax mathSyntax;
-
         IProvider IProviderService.Provider { get; set; }
 
         /// <summary>
         /// 获取字符串函数相关的语法。
         /// </summary>
-        public virtual StringSyntax String
-        {
-            get { return strSyntax ?? (strSyntax = new PostgreSqlStringSyntax()); }
-        }
+        public virtual StringSyntax String => new PostgreSqlStringSyntax();
 
         /// <summary>
         /// 获取日期函数相关的语法。
         /// </summary>
-        public virtual DateTimeSyntax DateTime
-        {
-            get { return dtSyntax ?? (dtSyntax = new PostgreSqlDateTimeSyntax()); }
-        }
+        public virtual DateTimeSyntax DateTime => new PostgreSqlDateTimeSyntax();
 
         /// <summary>
         /// 获取数学函数相关的语法。
         /// </summary>
-        public virtual MathSyntax Math
-        {
-            get { return mathSyntax ?? (mathSyntax = new PostgreSqlMathSyntax()); }
-        }
+        public virtual MathSyntax Math => new PostgreSqlMathSyntax();
 
         /// <summary>
         /// 获取最近创建的自动编号的查询文本。

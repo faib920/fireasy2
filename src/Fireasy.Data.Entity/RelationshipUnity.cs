@@ -86,11 +86,11 @@ namespace Fireasy.Data.Entity
 
         private static SafetyDictionary<string, RelationshipMetadata> GetRelationships(Assembly assembly)
         {
-            return relationCache.GetOrAdd(assembly, () =>
+            return relationCache.GetOrAdd(assembly, key =>
             {
                 try
                 {
-                    var dict = assembly.GetCustomAttributes<RelationshipAttribute>()
+                    var dict = key.GetCustomAttributes<RelationshipAttribute>()
                         .ToDictionary(s => s.Name, s => new RelationshipMetadata(s.ThisType, s.OtherType,
                             GetDirection(s.KeyExpression), RelationshipSource.AssemblyAttribute, ParseRelationshipKeys(s.ThisType, s.OtherType, s.KeyExpression)));
 

@@ -1,11 +1,17 @@
-﻿using Fireasy.Common.Extensions;
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using Fireasy.Common.Reflection;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Dynamic;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Xml;
@@ -273,6 +279,8 @@ namespace Fireasy.Common.Serialization
         {
             var instance = CreateGeneralObject(type);
             var mappers = GetAccessorMetadataMappers(instance.GetType());
+            var processor = instance as IDeserializeProcessor;
+            processor?.PreDeserialize();
 
             if (xmlReader.AttributeCount > 0)
             {
@@ -284,7 +292,12 @@ namespace Fireasy.Common.Serialization
                     {
                         if (!string.IsNullOrEmpty(xmlReader.Value))
                         {
-                            metadata.Setter?.Invoke(instance, xmlReader.Value.ToType(metadata.PropertyInfo.PropertyType));
+                            var value = xmlReader.Value.ToType(metadata.PropertyInfo.PropertyType);
+                            if (processor == null || !processor.SetValue(xmlReader.Name, value))
+                            {
+                                metadata.Setter?.Invoke(instance, value);
+                            }
+
                         }
                     }
                 }
@@ -314,7 +327,7 @@ namespace Fireasy.Common.Serialization
                     if (mappers.TryGetValue(xmlReader.Name, out SerializerPropertyMetadata metadata))
                     {
                         var value = Deserialize(metadata.PropertyInfo.PropertyType);
-                        if (value != null)
+                        if (processor == null || !processor.SetValue(xmlReader.Name, value))
                         {
                             metadata.Setter?.Invoke(instance, value);
                         }
@@ -331,7 +344,7 @@ namespace Fireasy.Common.Serialization
                         if (mappers.TryGetValue(xmlReader.Name, out SerializerPropertyMetadata metadata))
                         {
                             var value = Deserialize(metadata.PropertyInfo.PropertyType);
-                            if (value != null)
+                            if (processor == null || !processor.SetValue(xmlReader.Name, value))
                             {
                                 metadata.Setter?.Invoke(instance, value);
                             }
@@ -350,6 +363,8 @@ namespace Fireasy.Common.Serialization
                     break;
                 }
             }
+
+            processor?.PostDeserialize();
 
             return instance;
         }

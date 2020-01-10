@@ -29,15 +29,15 @@ namespace Fireasy.Data.Entity.Metadata
 
             var mapType = entityType.GetMapEntityType();
 
-            var result = cache.GetOrAdd(mapType, () =>
+            var result = cache.GetOrAdd(mapType, key =>
             {
-                var metadata = new EntityMetadata(mapType);
+                var metadata = new EntityMetadata(key);
 
                 //由于此代码段是缓存项创建工厂函数，此时的 metadata 并未添加到缓存中，接下来 PropertyUnity 
                 //会再一次获取 EntityMetadata，因此需要在此线程中共享出 EntityMetadata
                 using (var scope = new MetadataScope { Metadata = metadata })
                 {
-                    metadata.Attach(mapType);
+                    metadata.Attach(key);
                 }
 
                 return metadata;

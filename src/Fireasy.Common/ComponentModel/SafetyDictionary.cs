@@ -60,6 +60,18 @@ namespace Fireasy.Common.ComponentModel
         }
 
         /// <summary>
+        /// 尝试通过 key 获取值，如果 key 不存在则通过函数生成新值并添加到字典中。
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="valueFactory">新值的函数。</param>
+        /// <returns></returns>
+        public TValue GetOrAdd(TKey key, Func<TKey, TValue> valueFactory)
+        {
+            var lazy = dic.GetOrAdd(key, k => new Lazy<TValue>(() => valueFactory(key), mode));
+            return lazy != null && lazy.Value != null ? lazy.Value : default(TValue);
+        }
+
+        /// <summary>
         /// 尝试添加新值。
         /// </summary>
         /// <param name="key"></param>

@@ -32,13 +32,13 @@ namespace Fireasy.Web.EasyUI
 
         private static Dictionary<string, Func<T, object>> GetProperties(Expression<Func<T, object>> textExp)
         {
-            var result = cache.GetOrAdd(typeof(T), () =>
+            var result = cache.GetOrAdd(typeof(T), key =>
                 {
-                    var parExp = Expression.Parameter(typeof(T), "s");
+                    var parExp = Expression.Parameter(key, "s");
 
                     var dict = new Dictionary<string, Func<T, object>>();
 
-                    foreach (var property in typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.Public))
+                    foreach (var property in key.GetProperties(BindingFlags.Instance | BindingFlags.Public))
                     {
                         var proExp = Expression.Property(parExp, property);
                         var cvtExp = Expression.Convert(proExp, typeof(object));

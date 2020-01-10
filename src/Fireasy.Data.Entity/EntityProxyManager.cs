@@ -19,7 +19,7 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public static class EntityProxyManager
     {
-        private static SafetyDictionary<string, Assembly> cache = new SafetyDictionary<string, Assembly>();
+        private static SafetyDictionary<Assembly, Assembly> cache = new SafetyDictionary<Assembly, Assembly>();
 
         /// <summary>
         /// 获取类型的代理类型。
@@ -49,12 +49,12 @@ namespace Fireasy.Data.Entity
 
         public static Assembly CompileAll(Assembly assembly, IInjectionProvider injection)
         {
-            return cache.GetOrAdd(assembly.FullName, () =>
+            return cache.GetOrAdd(assembly, key =>
                 {
-                    var assemblyName = string.Concat(assembly.GetName().Name, "_Dynamic");
+                    var assemblyName = string.Concat(key.GetName().Name, "_Dynamic");
                     var assemblyBuilder = new DynamicAssemblyBuilder(assemblyName);
 
-                    assembly.GetExportedTypes()
+                    key.GetExportedTypes()
                         .Where(s => s.IsNotCompiled())
                         .ForEach(s => EntityProxyBuilder.BuildType(s, null, assemblyBuilder, injection));
 

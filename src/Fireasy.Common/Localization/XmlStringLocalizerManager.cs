@@ -63,10 +63,10 @@ namespace Fireasy.Common.Localization
                 return NullStringLocalizer.Instance;
             }
 
-            return localizers.GetOrAdd(fileName, () =>
+            return localizers.GetOrAdd(fileName, key =>
                 {
                     var doc = new XmlDocument();
-                    doc.Load(fileName);
+                    doc.Load(key);
                     return new XmlStringLocalizer(doc, cultureInfo);
                 });
         }

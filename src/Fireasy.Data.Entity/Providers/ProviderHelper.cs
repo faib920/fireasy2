@@ -52,7 +52,7 @@ namespace Fireasy.Data.Entity.Providers
                     provider.RegisterService(serviceType, new FirebirdTranslateProvider());
                     break;
                 default:
-                    throw new Exception(SR.GetString(SRKind.TranslatorNotSupported, provider.GetType().Name));
+                    return null;
             }
 
             return provider.GetService<ITranslateProvider>();
@@ -97,7 +97,7 @@ namespace Fireasy.Data.Entity.Providers
                     provider.RegisterService(serviceType, new FirebirdTableGenerator());
                     break;
                 default:
-                    throw new Exception(SR.GetString(SRKind.TranslatorNotSupported, provider.GetType().Name));
+                    return null;
             }
 
             return provider.GetService<ITableGenerateProvider>();

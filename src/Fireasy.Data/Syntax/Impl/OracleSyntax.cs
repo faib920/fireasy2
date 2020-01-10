@@ -17,35 +17,22 @@ namespace Fireasy.Data.Syntax
     /// </summary>
     public class OracleSyntax : ISyntaxProvider
     {
-        private StringSyntax strSyntax;
-        private DateTimeSyntax dtSyntax;
-        private MathSyntax mathSyntax;
-
         IProvider IProviderService.Provider { get; set; }
 
         /// <summary>
         /// 获取字符串函数相关的语法。
         /// </summary>
-        public virtual StringSyntax String
-        {
-            get { return strSyntax ?? (strSyntax = new OracleStringSyntax()); }
-        }
+        public virtual StringSyntax String => new OracleStringSyntax();
 
         /// <summary>
         /// 获取日期函数相关的语法。
         /// </summary>
-        public virtual DateTimeSyntax DateTime
-        {
-            get { return dtSyntax ?? (dtSyntax = new OracleDateTimeSyntax()); }
-        }
+        public virtual DateTimeSyntax DateTime => new OracleDateTimeSyntax();
 
         /// <summary>
         /// 获取数学函数相关的语法。
         /// </summary>
-        public virtual MathSyntax Math
-        {
-            get { return mathSyntax ?? (mathSyntax = new OracleMathSyntax()); }
-        }
+        public virtual MathSyntax Math => new OracleMathSyntax();
 
         /// <summary>
         /// 获取最近创建的自动编号的查询文本。

@@ -31,11 +31,20 @@ namespace Fireasy.Data.Entity.Initializers
 
         void IEntityContextPreInitializer.PreInitialize(EntityContextPreInitializeContext context)
         {
+            var aware = context.Service as IDatabaseAware;
+            if (aware == null)
+            {
+                return;
+            }
+
             var tbGen = context.Service.Provider.GetTableGenerateProvider();
-            context.Mappers.ForEach(s => TryCreate(context.Service, tbGen, s.EntityType));
+            if (tbGen != null)
+            {
+                context.Mappers.ForEach(s => TryCreate(context.Service, aware.Database, tbGen, s.EntityType));
+            }
         }
 
-        protected virtual bool TryCreate(IContextService service, ITableGenerateProvider tbGen, Type entityType)
+        protected virtual bool TryCreate(IContextService service, IDatabase database, ITableGenerateProvider tbGen, Type entityType)
         {
             var metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
 
@@ -55,12 +64,12 @@ namespace Fireasy.Data.Entity.Initializers
             return cache.GetOrAdd(cacheKey, () =>
             {
                 //判断数据表是否已存在
-                if (tbGen.IsExists(service.Database, tableName))
+                if (tbGen.IsExists(database, tableName))
                 {
                     try
                     {
                         //尝试添加新的字段
-                        var properties = tbGen.TryAddFields(service.Database, metadata, tableName);
+                        var properties = tbGen.TryAddFields(database, metadata, tableName);
                         if (properties.Any())
                         {
                             //通知 context 仓储已经以身改变
@@ -89,7 +98,7 @@ namespace Fireasy.Data.Entity.Initializers
                     try
                     {
                         //尝试创建数据表
-                        if (tbGen.TryCreate(service.Database, metadata, tableName))
+                        if (tbGen.TryCreate(database, metadata, tableName))
                         {
                             //通知 context 仓储已经创建
                             EventHandler?.Invoke(new RespositoryChangedEventArgs

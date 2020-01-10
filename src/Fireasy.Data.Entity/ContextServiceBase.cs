@@ -5,20 +5,23 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.ComponentModel;
+using Fireasy.Data.Provider;
 using System;
 using System.Data;
-using Fireasy.Data.Provider;
 
 namespace Fireasy.Data.Entity
 {
     /// <summary>
     /// <see cref="IContextService"/> 的抽象类。
     /// </summary>
-    public abstract class ContextServiceBase : 
+    public abstract class ContextServiceBase :
         IContextService,
         IEntityPersistentInstanceContainer,
         IEntityPersistentEnvironment
     {
+        private SafetyDictionary<Type, IRepositoryProvider> providers = new SafetyDictionary<Type, IRepositoryProvider>();
+
         /// <summary>
         /// 初始化 <see cref="ContextServiceBase"/> 类的新实例。
         /// </summary>
@@ -37,8 +40,6 @@ namespace Fireasy.Data.Entity
 
         public IProvider Provider { get; protected set; }
 
-        public IDatabase Database { get; protected set; }
-
         public abstract void BeginTransaction(IsolationLevel level);
 
         public abstract void CommitTransaction();
@@ -47,9 +48,24 @@ namespace Fireasy.Data.Entity
 
         public abstract void Dispose();
 
-        public virtual IRepository GetDbSet(Type entityType)
+        public virtual IRepositoryProvider CreateRepositoryProvider(Type entityType)
         {
-            return new EntityRepositoryHolder().GetDbSet(this, entityType);
+            return providers.GetOrAdd(entityType, key => CreateFactory(key));
+        }
+
+        public virtual IRepositoryProvider<TEntity> CreateRepositoryProvider<TEntity>() where TEntity : class, IEntity
+        {
+            return (IRepositoryProvider<TEntity>)CreateRepositoryProvider(typeof(TEntity));
+        }
+
+        protected abstract Func<Type, IRepositoryProvider> CreateFactory { get; }
+    }
+
+    static class ContextServiceExtensions
+    {
+        public static IRepository CreateRepository(this IContextService service, Type entityType)
+        {
+            return service.CreateRepositoryProvider(entityType).CreateRepository(service.InitializeContext.Options);
         }
     }
 }

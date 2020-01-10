@@ -28,6 +28,16 @@ namespace Fireasy.Common.Serialization
             ContractResolver = new DefaultContractResolver(this);
         }
 
+        static SerializeOption()
+        {
+            GlobalConverters = new ConverterList();
+        }
+
+        /// <summary>
+        /// 全局的转换器。
+        /// </summary>
+        public static ConverterList GlobalConverters { get; private set; }
+
         /// <summary>
         /// 获取或设置可包含的属性名数组。
         /// </summary>

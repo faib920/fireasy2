@@ -98,8 +98,7 @@ namespace Fireasy.Common.Extensions
         /// <param name="disobj"></param>
         public static void TryDispose(this object disobj)
         {
-            var p = disobj as IDisposable;
-            if (p != null)
+            if (disobj is IDisposable p)
             {
                 p.Dispose();
             }
@@ -126,16 +125,17 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static T As<T>(this object obj, Action<T> action, Action other = null) where T : class
         {
-            var item = obj as T;
-            if (item != null && action != null)
+            if (obj is T item)
             {
-                action(item);
+                action?.Invoke(item);
+                return item;
             }
-            else if (other != null)
+            else
             {
-                other();
+                other?.Invoke();
             }
-            return item;
+
+            return default(T);
         }
 
         /// <summary>
@@ -148,8 +148,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static V As<T, V>(this object obj, Func<T, V> func) where T : class
         {
-            var item = obj as T;
-            if (item != null && func != null)
+            if (obj is T item && func != null)
             {
                 return func(item);
             }

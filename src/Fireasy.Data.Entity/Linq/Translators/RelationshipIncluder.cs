@@ -65,7 +65,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
                 if (newBindings != null)
                 {
-                    entity = new EntityExpression(entity.Metadata, Expression.MemberInit(init.NewExpression, newBindings), entity.IsNoTracking);
+                    entity = new EntityExpression(entity.Metadata, Expression.MemberInit(init.NewExpression, newBindings));
                 }
 
                 includeScope = save;

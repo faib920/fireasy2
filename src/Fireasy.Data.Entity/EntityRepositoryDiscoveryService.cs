@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
 
 namespace Fireasy.Data.Entity
 {
@@ -53,11 +54,10 @@ namespace Fireasy.Data.Entity
         // is returned from a cache.
         // </summary>
         // <returns> A dictionary of potential entity type to the list of the names of the properties that used the type. </returns>
-        private Dictionary<Type, List<string>> GetSets()
+        private EntityContextTypesInitializersPair GetSets()
         {
-            EntityContextTypesInitializersPair setsInfo;
             var contextType = _context.GetType();
-            if (!_objectSetInitializers.TryGetValue(contextType, out setsInfo))
+            return _objectSetInitializers.GetOrAdd(contextType, key =>
             {
                 // It is possible that multiple threads will enter this code and create the list
                 // and the delegates.  However, the result will always be the same so we may, in
@@ -70,12 +70,12 @@ namespace Fireasy.Data.Entity
                 var typeMap = new Dictionary<Type, List<string>>();
 
                 var reposMaps = (from s in
-                    contextType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    key.GetProperties(BindingFlags.Public | BindingFlags.Instance)
                     .Where(p => p.GetIndexParameters().Length == 0
                         && p.DeclaringType != typeof(EntityContext))
-                    let entityType = GetSetType(s.PropertyType)
-                    where entityType != null
-                    select new EntityRepositoryMapper { Property = s, EntityType = entityType }).ToList();
+                                 let entityType = GetSetType(s.PropertyType)
+                                 where entityType != null
+                                 select new EntityRepositoryMapper { Property = s, EntityType = entityType }).ToList();
 
                 _options.Initializers?.PreInitialize(new EntityContextPreInitializeContext(_context, _service, reposMaps));
 
@@ -118,21 +118,15 @@ namespace Fireasy.Data.Entity
                 }
 
                 Action<EntityContext> initializer = dbContext =>
+                {
+                    foreach (var initer in initDelegates)
                     {
-                        foreach (var initer in initDelegates)
-                        {
-                            initer(dbContext);
-                        }
-                    };
+                        initer(dbContext);
+                    }
+                };
 
-                setsInfo = new EntityContextTypesInitializersPair(typeMap, initializer);
-
-                // If TryAdd fails it just means some other thread got here first, which is okay
-                // since the end result is the same info anyway.
-                _objectSetInitializers.TryAdd(_context.GetType(), setsInfo);
-            }
-
-            return setsInfo.EntityTypeToPropertyNameMap;
+                return new EntityContextTypesInitializersPair(typeMap, initializer);
+            });
         }
 
         // <summary>
@@ -140,11 +134,7 @@ namespace Fireasy.Data.Entity
         // </summary>
         public void InitializeSets()
         {
-            GetSets(); // Ensures sets have been discovered
-            if (_objectSetInitializers[_context.GetType()] != null)
-            {
-                _objectSetInitializers[_context.GetType()].SetsInitializer(_context);
-            }
+            GetSets()?.SetsInitializer(_context); // Ensures sets have been discovered
         }
 
         #endregion

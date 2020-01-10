@@ -75,6 +75,7 @@ namespace Fireasy.Data.Entity
             var op = (EntityContextOptions)obj;
             return NotifyEvents == op.NotifyEvents &&
                 ValidateEntity == op.ValidateEntity &&
+                IsolationLevel == op.IsolationLevel &&
                 ConfigName == op.ConfigName;
         }
     }

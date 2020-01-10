@@ -32,7 +32,7 @@ namespace Fireasy.Common.Serialization
         private TypeConverterCache<JsonConverter> cacheConverter = new TypeConverterCache<JsonConverter>();
 
         internal JsonDeserialize(JsonSerializer serializer, JsonReader reader, JsonSerializeOption option)
-            : base (option)
+            : base(option)
         {
             this.serializer = serializer;
             jsonReader = reader;
@@ -618,6 +618,8 @@ namespace Fireasy.Common.Serialization
 
             var instance = CreateGeneralObject(type);
             var mappers = GetAccessorMetadataMappers(instance.GetType());
+            var processor = instance as IDeserializeProcessor;
+            processor?.PreDeserialize();
 
             while (true)
             {
@@ -641,7 +643,10 @@ namespace Fireasy.Common.Serialization
                     var value = Deserialize(metadata.PropertyInfo.PropertyType);
                     if (value != null)
                     {
-                        metadata.Setter?.Invoke(instance, value);
+                        if (processor == null || !processor.SetValue(name, value))
+                        {
+                            metadata.Setter?.Invoke(instance, value);
+                        }
                     }
                 }
 
@@ -651,6 +656,8 @@ namespace Fireasy.Common.Serialization
                     break;
                 }
             }
+
+            processor?.PostDeserialize();
 
             return instance;
         }

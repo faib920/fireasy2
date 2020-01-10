@@ -46,7 +46,7 @@ namespace Fireasy.Common.Aop
         /// <returns>代理类。</returns>
         public static Type BuildTypeCached(Type type, InterceptBuildOption option = null)
         {
-            return cache.GetOrAdd(type, () => BuildType(type, option));
+            return cache.GetOrAdd(type, key => BuildType(key, option));
         }
 
         /// <summary>

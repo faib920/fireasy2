@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 
 namespace Fireasy.Common.Serialization
 {
@@ -22,6 +23,7 @@ namespace Fireasy.Common.Serialization
         {
             Indent = false;
             KeyHandling = JsonKeyHandling.Quote;
+            Converters.AddRange(GlobalConverters.GetConverters(typeof(JsonConverter)));
         }
 
         /// <summary>

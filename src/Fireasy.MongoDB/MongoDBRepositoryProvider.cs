@@ -5,6 +5,8 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.ComponentModel;
+using Fireasy.Common.Threading;
 using Fireasy.Data.Entity;
 using Fireasy.Data.Entity.Metadata;
 using MongoDB.Bson.Serialization;
@@ -22,27 +24,23 @@ namespace Fireasy.MongoDB
 {
     public sealed class MongoDBRepositoryProvider<TEntity> : IRepositoryProvider<TEntity> where TEntity : class, IEntity
     {
+        private static SafetyDictionary<Type, CustomBsonSerializer> cache = new SafetyDictionary<Type, CustomBsonSerializer>();
+
         private MongoCollection<TEntity> collection;
+        private IRepository repository;
 
-        public MongoDBRepositoryProvider(IContextService service)
+        public MongoDBRepositoryProvider(MongoDBContextService service)
         {
-            var context = service.InitializeContext;
-            var connectionString = context.ConnectionString;
-            var serverName = connectionString.Properties.TryGetValue("server");
-            var database = connectionString.Properties.TryGetValue("database");
-            if (string.IsNullOrEmpty(database))
-            {
-                database = "admin";
-            }
-
-            var client = new MongoClient(serverName);
-            var server = client.GetServer();
-            var db = server.GetDatabase(database);
             var metadata = EntityMetadataUnity.GetEntityMetadata(typeof(TEntity));
             var collectionSettings = new MongoCollectionSettings { AssignIdOnInsert = false };
-            collection = db.GetCollection<TEntity>(metadata.TableName, collectionSettings);
+            collection = service.Database.GetCollection<TEntity>(metadata.TableName, collectionSettings);
 
-            BsonSerializer.RegisterSerializer(new CustomBsonSerializer());
+            cache.GetOrAdd(typeof(TEntity), () =>
+                {
+                    var serializer = new CustomBsonSerializer();
+                    BsonSerializer.RegisterSerializer(serializer);
+                    return serializer;
+                });
 
             var provider = new MongoQueryProvider(collection);
             QueryProvider = provider;
@@ -231,13 +229,13 @@ namespace Fireasy.MongoDB
 
         IRepository IRepositoryProvider.CreateRepository(EntityContextOptions options)
         {
-            return new EntityRepository<TEntity>(this, options);
+            return SingletonLocker.Lock(ref repository, () => new EntityRepository<TEntity>(this, options));
         }
 
         private class CustomBsonSerializer : BsonClassMapSerializer<TEntity>
         {
             public CustomBsonSerializer()
-                : base (BsonClassMap.RegisterClassMap<TEntity>().Freeze())
+                : base(BsonClassMap.RegisterClassMap<TEntity>().Freeze())
             {
             }
 

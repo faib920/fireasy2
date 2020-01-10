@@ -15,7 +15,7 @@ namespace Fireasy.Common.Caching
     /// <summary>
     /// 提供对缓存的优化。
     /// </summary>
-    public class CacheOptimizer : IDisposable
+    internal class CacheOptimizer : IDisposable
     {
         private readonly Timer timer;
 
@@ -33,10 +33,10 @@ namespace Fireasy.Common.Caching
         /// 初始化 <see cref="CacheOptimizer"/> 类的新实例。
         /// </summary>
         /// <param name="checkExpired">检查缓存过期的方法。</param>
-        public CacheOptimizer(Action checkExpired)
+        /// <param name="period">检查周期（以毫秒为单位）。</param>
+        public CacheOptimizer(Action checkExpired, int period = 60000)
         {
-            //5分钟清理一次过期的缓存
-            timer = new Timer(state => checkExpired(), null, 1000 * 60, 1000 * 60 * 5);
+            timer = new Timer(state => checkExpired(), null, 3000, period);
         }
 
         /// <summary>

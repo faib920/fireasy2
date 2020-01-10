@@ -28,6 +28,16 @@ namespace Fireasy.Common.Serialization
         }
 
         /// <summary>
+        /// 获取指定类型的序列化转换器。
+        /// </summary>
+        /// <param name="converterType"></param>
+        /// <returns></returns>
+        public IEnumerable<ITextConverter> GetConverters(Type converterType)
+        {
+            return this.Where(s => converterType.IsAssignableFrom(s.GetType()));
+        }
+
+        /// <summary>
         /// 获取指定类型的可写的序列化转换器。
         /// </summary>
         /// <param name="type">要判断的类型。</param>

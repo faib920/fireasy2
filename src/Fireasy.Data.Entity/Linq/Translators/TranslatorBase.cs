@@ -52,8 +52,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
             if (TranslateScope.Current != null)
             {
                 Options = TranslateScope.Current.Options;
-                Syntax = TranslateScope.Current.ContextService.Provider.GetService<ISyntaxProvider>();
-                Environment = (TranslateScope.Current.ContextService as IEntityPersistentEnvironment)?.Environment;
+                Syntax = TranslateScope.Current.SyntaxProvider;
+                Environment = TranslateScope.Current.PersistentEnvironment;
             }
         }
 
@@ -375,7 +375,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             var kvpConstructor = typeof(KeyValuePair<,>).MakeGenericType(innerKey.Type, join.Projection.Projector.Type).GetConstructor(new Type[] { innerKey.Type, join.Projection.Projector.Type });
             var constructKVPair = Expression.New(kvpConstructor, innerKey, join.Projection.Projector);
-            Expression newProjection = new ProjectionExpression(join.Projection.Select, constructKVPair, false);
+            Expression newProjection = new ProjectionExpression(join.Projection.Select, constructKVPair, false, join.Projection.IsNoTracking);
 
             var kvp = Expression.Parameter(constructKVPair.Type, "kvp");
 

@@ -15,6 +15,7 @@ namespace Fireasy.Common.Serialization
             CData = true;
             Declaration = true;
             StartElement = true;
+            Converters.AddRange(GlobalConverters.GetConverters(typeof(XmlConverter)));
         }
 
         /// <summary>

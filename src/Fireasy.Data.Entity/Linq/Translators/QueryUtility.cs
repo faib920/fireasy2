@@ -114,18 +114,18 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var entityType = entity.EntityType;
             var table = new TableExpression(tableAlias, entity.TableName, entityType);
 
-            var projector = GetTypeProjection(table, entity, isNoTracking);
+            var projector = GetTypeProjection(table, entity);
             var pc = ColumnProjector.ProjectColumns(CanBeColumnExpression, projector, null, selectAlias, tableAlias);
 
             var proj = new ProjectionExpression(
                 new SelectExpression(selectAlias, pc.Columns, table, null),
-                pc.Projector, isAsync
+                pc.Projector, isAsync, isNoTracking
                 );
 
             return (ProjectionExpression)ApplyPolicy(proj, entityType);
         }
 
-        internal static Expression GetTypeProjection(Expression root, EntityMetadata entity, bool isNoTracking)
+        internal static Expression GetTypeProjection(Expression root, EntityMetadata entity)
         {
             var entityType = entity.EntityType;
             var bindings = new List<MemberBinding>();
@@ -141,7 +141,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 }
             }
 
-            return new EntityExpression(entity, Expression.MemberInit(Expression.New(entityType), bindings), isNoTracking);
+            return new EntityExpression(entity, Expression.MemberInit(Expression.New(entityType), bindings));
         }
 
         internal static Expression GetMemberExpression(Expression root, IProperty property)
@@ -180,7 +180,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 var aggregator = GetAggregator(property.Type, typeof(IEnumerable<>).MakeGenericType(pc.Projector.Type));
                 var result = new ProjectionExpression(
                     new SelectExpression(newAlias, pc.Columns, projection.Select, where),
-                    pc.Projector, aggregator, projection.IsAsync
+                    pc.Projector, aggregator, projection.IsAsync, projection.IsNoTracking
                     );
 
                 return ApplyPolicy(result, property.Info.ReflectionInfo);
@@ -210,7 +210,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 if (replace)
                 {
-                    var row = GetTypeProjection(table, metadata, false);
+                    var row = GetTypeProjection(table, metadata);
                     where = DbExpressionReplacer.Replace(predicate.Body, predicate.Parameters[0], row);
                 }
                 else
@@ -235,7 +235,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             if (predicate != null)
             {
-                var row = GetTypeProjection(table, metadata, false);
+                var row = GetTypeProjection(table, metadata);
                 where = DbExpressionReplacer.Replace(predicate.Body, predicate.Parameters[0], row);
             }
 
@@ -292,7 +292,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             if (predicate != null)
             {
-                var row = GetTypeProjection(table, metadata, false);
+                var row = GetTypeProjection(table, metadata);
                 where = DbExpressionReplacer.Replace(predicate.Body, predicate.Parameters[0], row);
             }
 
@@ -315,7 +315,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
             var table = new TableExpression(new TableAlias(), metadata.TableName, metadata.EntityType);
             Expression where = null;
-            var row = GetTypeProjection(table, metadata, false);
+            var row = GetTypeProjection(table, metadata);
 
             if (predicate != null)
             {
@@ -350,10 +350,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
             var table = new TableExpression(new TableAlias(), metadata.TableName, entityType);
             insertExp = new InsertCommandExpression(table, func(table), isAsync)
-                {
-                    WithAutoIncrement = !string.IsNullOrEmpty(syntax.IdentitySelect) && HasAutoIncrement(instance.Type),
-                    WithGenerateValue = HasGenerateValue(instance.Type)
-                };
+            {
+                WithAutoIncrement = !string.IsNullOrEmpty(syntax.IdentitySelect) && HasAutoIncrement(instance.Type),
+                WithGenerateValue = HasGenerateValue(instance.Type)
+            };
 
             return insertExp;
         }
@@ -522,12 +522,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private static Expression ApplyPolicy(Expression expression, MemberInfo member)
         {
-            if (TranslateScope.Current != null)
+            if (TranslateScope.Current != null && TranslateScope.Current.QueryPolicy != null)
             {
-                if (TranslateScope.Current.ContextService is IQueryPolicy policy)
-                {
-                    return policy.ApplyPolicy(expression, member);
-                }
+                return TranslateScope.Current.QueryPolicy.ApplyPolicy(expression, member);
             }
 
             return expression;

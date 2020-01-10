@@ -70,6 +70,8 @@ namespace Fireasy.Data.Entity
         internal const string InvalidOperationAsNoTracking = "InvalidOperationAsNoTracking";
         internal const string MustAssignEntityContextInitializeContext = "MustAssignEntityContextInitializeContext";
         internal const string TreeCodeOutOfRange = "TreeCodeOutOfRange";
+        internal const string NotFoundDatabaseAware = "NotFoundDatabaseAware";
+        internal const string NotImplementAsyncQueryProvider = "NotImplementAsyncQueryProvider";
     }
 
     internal sealed class SR

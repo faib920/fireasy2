@@ -5,9 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.Extensions;
 using Fireasy.Data.Provider;
-using System;
 
 namespace Fireasy.Data.Entity
 {
@@ -17,19 +15,6 @@ namespace Fireasy.Data.Entity
     public sealed class DefaultContextProvider : IContextProvider
     {
         IProvider IProviderService.Provider { get; set; }
-
-        IRepositoryProvider IContextProvider.CreateRepositoryProvider(Type entityType, IContextService service)
-        {
-            var constructor = typeof(DefaultRepositoryProvider<>)
-                .MakeGenericType(entityType).GetConstructors()[0];
-
-            return (IRepositoryProvider)constructor.FastInvoke(service);
-        }
-
-        IRepositoryProvider<TEntity> IContextProvider.CreateRepositoryProvider<TEntity>(IContextService service)
-        {
-            return new DefaultRepositoryProvider<TEntity>(service);
-        }
 
         IContextService IContextProvider.CreateContextService(EntityContextInitializeContext context)
         {

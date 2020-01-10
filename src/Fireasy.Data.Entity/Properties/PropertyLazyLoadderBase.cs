@@ -6,8 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
-using Fireasy.Data.Entity.Linq;
-using Fireasy.Data.Entity.Metadata;
 using System;
 using System.Linq;
 using System.Linq.Expressions;
@@ -93,16 +91,17 @@ namespace Fireasy.Data.Entity.Properties
             {
                 service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
 
-                var repProvider = provider.CreateRepositoryProvider(entityProperty.RelationalType, service);
+                var repProvider = service.CreateRepositoryProvider(entityProperty.RelationalType);
                 var expression = BuidRelationExpression(entity, entityProperty);
                 if (expression != null)
                 {
                     var value = Execute(repProvider.Queryable, expression);
 
-                    //设置实体所属的实体Owner
-                    value.As<IEntityRelation>(e => e.Owner = new EntityOwner(entity, property));
-
-                    return value == null ? PropertyValue.Empty : PropertyValue.NewValue(value);
+                    if (value != null)
+                    {
+                        value.As<IEntityRelation>(e => e.Owner = new EntityOwner(entity, property));
+                        return PropertyValue.NewValue(value, property.Type);
+                    }
                 }
 
                 return PropertyValue.Empty;
@@ -163,7 +162,7 @@ namespace Fireasy.Data.Entity.Properties
             {
                 service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
 
-                var repProvider = provider.CreateRepositoryProvider(entityProperty.RelationalType, service);
+                var repProvider = service.CreateRepositoryProvider(entityProperty.RelationalType);
                 var expression = BuidRelationExpression(entity, entityProperty);
                 object result = null;
                 if (expression != null)
@@ -236,7 +235,7 @@ namespace Fireasy.Data.Entity.Properties
             {
                 service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
 
-                var repProvider = provider.CreateRepositoryProvider(referenceProperty.RelationalType, service);
+                var repProvider = service.CreateRepositoryProvider(referenceProperty.RelationalType);
                 var expression = BuidRelationExpression(entity, referenceProperty);
                 if (expression != null)
                 {

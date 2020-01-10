@@ -177,7 +177,7 @@ namespace Fireasy.Data.Entity.Validation
             var entityType = property.EntityType;
             var propertyName = property.Name;
 
-            var pdic = propertyValidations.GetOrAdd(entityType, () => GetPropertyValidations(entityType));
+            var pdic = propertyValidations.GetOrAdd(entityType, key => GetPropertyValidations(key));
 
             if (!pdic.TryGetValue(propertyName, out List<ValidationAttribute> attrs))
             {
@@ -197,7 +197,7 @@ namespace Fireasy.Data.Entity.Validation
         {
             Guard.ArgumentNull(entityType, nameof(entityType));
 
-            return entityValidations.GetOrAdd(entityType, () => GetEntityValidations(entityType));
+            return entityValidations.GetOrAdd(entityType, key => GetEntityValidations(key));
         }
 
         /// <summary>

@@ -74,7 +74,12 @@ namespace Fireasy.Data.Entity
         {
             get
             {
-                return service?.Database;
+                if (service is IDatabaseAware aware)
+                {
+                    return aware.Database;
+                }
+
+                return null;
             }
         }
 
@@ -107,7 +112,13 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public IRepository<TEntity> Set<TEntity>() where TEntity : IEntity
         {
-            return (IRepository<TEntity>)service.GetDbSet(typeof(TEntity));
+            var rep = service.CreateRepositoryProvider(typeof(TEntity)).CreateRepository(options);
+            if (rep != null)
+            {
+                return (IRepository<TEntity>)rep;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -117,7 +128,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public IRepository Set(Type entityType)
         {
-            return service.GetDbSet(entityType);
+            return service.CreateRepositoryProvider(entityType).CreateRepository(options);
         }
 
         /// <summary>
@@ -139,10 +150,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityContext Include<TEntity>(Expression<Func<TEntity, object>> fnMember) where TEntity : IEntity
         {
-            if (service is IQueryPolicy policy)
-            {
-                policy.IncludeWith(fnMember);
-            }
+            InvokeQueryPolicy(q => q.IncludeWith(fnMember));
 
             return this;
         }
@@ -155,10 +163,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityContext Associate<TEntity>(Expression<Func<TEntity, IEnumerable>> memberQuery) where TEntity : IEntity
         {
-            if (service is IQueryPolicy policy)
-            {
-                policy.AssociateWith(memberQuery);
-            }
+            InvokeQueryPolicy(q => q.AssociateWith(memberQuery));
 
             return this;
         }
@@ -171,10 +176,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityContext Apply<TEntity>(Expression<Func<IEnumerable<TEntity>, IEnumerable<TEntity>>> fnApply) where TEntity : IEntity
         {
-            if (service is IQueryPolicy policy)
-            {
-                policy.Apply(fnApply);
-            }
+            InvokeQueryPolicy(q => q.Apply(fnApply));
 
             return this;
         }
@@ -187,10 +189,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityContext Apply(Type entityType, LambdaExpression fnApply)
         {
-            if (service is IQueryPolicy policy)
-            {
-                policy.Apply(entityType, fnApply);
-            }
+            InvokeQueryPolicy(q => q.Apply(entityType, fnApply));
 
             return this;
         }
@@ -337,9 +336,9 @@ namespace Fireasy.Data.Entity
             {
                 return service;
             }
-            else if (serviceType == typeof(IDatabase))
+            else if (serviceType == typeof(IDatabase) && service is IDatabaseAware aware)
             {
-                return service.Database;
+                return aware.Database;
             }
             else if (serviceType == typeof(IProvider))
             {
@@ -358,6 +357,18 @@ namespace Fireasy.Data.Entity
             }
 
             return default;
+        }
+
+        private void InvokeQueryPolicy(Action<IQueryPolicy> action)
+        {
+            if (service is IQueryPolicy policy)
+            {
+                action(policy);
+            }
+            else if (service is IQueryPolicyAware aware && aware.QueryPolicy != null)
+            {
+                action(aware.QueryPolicy);
+            }
         }
     }
 }

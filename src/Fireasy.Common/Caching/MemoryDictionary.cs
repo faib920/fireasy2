@@ -15,7 +15,7 @@ namespace Fireasy.Common.Caching
     /// <summary>
     /// 缓存字典。无法继承此类。
     /// </summary>
-    public sealed class MemoryDictionary : SafetyDictionary<string, CacheItem>
+    internal sealed class MemoryDictionary : SafetyDictionary<string, CacheItem>
     {
         /// <summary>
         /// 检查字典的容量。

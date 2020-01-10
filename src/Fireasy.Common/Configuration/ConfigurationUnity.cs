@@ -84,10 +84,10 @@ namespace Fireasy.Common.Configuration
                 return default;
             }
 
-            return (T)cfgCache.GetOrAdd(attribute.Name, () =>
+            return (T)cfgCache.GetOrAdd(attribute.Name, key =>
                 {
                     var section = new T();
-                    section.Bind(configuration.GetSection(attribute.Name.Replace("/", ":")));
+                    section.Bind(configuration.GetSection(key.Replace("/", ":")));
                     return section;
                 });
         }
@@ -100,7 +100,7 @@ namespace Fireasy.Common.Configuration
             var configFileName = ConfigurationManager.AppSettings[CUSTOM_CONFIG_NAME];
             if (string.IsNullOrEmpty(configFileName))
             {
-                return cfgCache.GetOrAdd(sectionName, () => ConfigurationManager.GetSection(sectionName) as IConfigurationSection);
+                return cfgCache.GetOrAdd(sectionName, key => ConfigurationManager.GetSection(key) as IConfigurationSection);
             }
 
             configFileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, configFileName);

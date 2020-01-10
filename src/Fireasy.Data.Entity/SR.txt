@@ -57,3 +57,5 @@ EmailValideError=字段 {0} 不是有效的电子邮件。
 InvalidOperationAsNoTracking=使用 AsNoTracking 模式时不允许此操作。
 MustAssignEntityContextInitializeContext=必须指定 EntityContextInitializeContext 对象。
 TreeCodeOutOfRange=末级编码超出预设的{0}位编码。
+NotFoundDatabaseAware=没有发现 IDatabase 实例。
+NotImplementAsyncQueryProvider=没有实现 IAsyncQueryProvider 接口。

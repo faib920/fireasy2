@@ -5,18 +5,16 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System.Linq;
-
-namespace Fireasy.Data.Entity
+namespace Fireasy.Data.Entity.Linq
 {
     /// <summary>
-    /// 表示能够发现 <see cref="IQueryProvider"/> 实例。
+    /// 表示能够发现 <see cref="IQueryPolicy"/> 实例。
     /// </summary>
-    public interface IQueryProviderAware
+    public interface IQueryPolicyAware
     {
         /// <summary>
-        /// 获取 <see cref="IQueryProvider"/> 实例。
+        /// 获取 <see cref="IQueryPolicy"/> 实例。
         /// </summary>
-        IQueryProvider Provider { get; }
+        IQueryPolicy QueryPolicy { get; }
     }
 }

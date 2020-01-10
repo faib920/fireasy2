@@ -19,9 +19,9 @@ namespace Fireasy.Data.Entity.Linq
 
         internal static IQueryable Create(Type type, IQueryProvider queryProvider, Expression expression)
         {
-            var func = cache.GetOrAdd(type, () =>
+            var func = cache.GetOrAdd(type, key =>
                 {
-                    var rcons = typeof(QuerySet<>).MakeGenericType(type).GetConstructors()[1];
+                    var rcons = typeof(QuerySet<>).MakeGenericType(key).GetConstructors()[1];
                     var parExp1 = Expression.Parameter(typeof(IQueryProvider));
                     var parExp2 = Expression.Parameter(typeof(Expression));
                     var newExp = Expression.New(rcons, parExp1, parExp2);

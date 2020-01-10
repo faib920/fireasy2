@@ -29,6 +29,7 @@ namespace Fireasy.Data.Entity.Linq
         private Scope scope;
         private bool isTop = true;
         private bool isAsync = false;
+        private bool isNoTracking = false;
         private MemberInfo receivingMember;
         private int nReaders = 0;
         private int nLookup = 0;
@@ -61,14 +62,24 @@ namespace Fireasy.Data.Entity.Linq
         /// </summary>
         /// <param name="expression"></param>
         /// <param name="translator">翻译器。</param>
+        /// <param name="options"></param>
         /// <returns></returns>
-        public static Expression Build(Expression expression, Func<Expression, TranslateResult> translator, bool? isAsync = null)
+        public static Expression Build(Expression expression, Func<Expression, TranslateResult> translator, BuildOptions options)
         {
-            var builder = new ExecutionBuilder() { executor = Expression.Parameter(typeof(IDatabase), "db"), translator = translator };
-
-            if (isAsync != null)
+            var builder = new ExecutionBuilder()
             {
-                builder.isAsync = (bool)isAsync;
+                executor = Expression.Parameter(typeof(IDatabase), "db"),
+                translator = translator
+            };
+
+            if (options.IsAsync != null)
+            {
+                builder.isAsync = (bool)options.IsAsync;
+            }
+
+            if (options.IsNoTracking == true)
+            {
+                builder.isNoTracking = true;
             }
 
             var newExpression = builder.Bind(expression);
@@ -226,11 +237,12 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         protected override Expression VisitProjection(ProjectionExpression proj)
         {
-            isAsync = isAsync || proj.IsAsync;
-
             if (isTop)
             {
                 isTop = false;
+                isAsync = isAsync || proj.IsAsync;
+                isNoTracking = isNoTracking || proj.IsNoTracking;
+
                 return ExecuteProjection(proj, scope != null);
             }
             else
@@ -239,72 +251,21 @@ namespace Fireasy.Data.Entity.Linq
             }
         }
 
-        protected override MemberBinding VisitBinding(MemberBinding binding)
+        protected override Expression VisitMemberInit(MemberInitExpression mbmInitExp)
         {
-            var save = receivingMember;
-            receivingMember = binding.Member;
-            var result = base.VisitBinding(binding);
-            receivingMember = save;
-            return result;
+            if (typeof(IEntity).IsAssignableFrom(mbmInitExp.Type))
+            {
+                return ConvertEntityExpression(mbmInitExp);
+            }
+
+            return base.VisitMemberInit(mbmInitExp);
         }
 
         protected override Expression VisitEntity(EntityExpression entity)
         {
             var mbmInitExp = entity.Expression as MemberInitExpression;
 
-            var properties = new List<Expression>();
-            var values = new List<Expression>();
-            var bindings = new List<MemberBinding>();
-
-            mbmInitExp.Bindings.ForEach(s =>
-                {
-                    if (s is MemberAssignment assign)
-                    {
-                        var expression = Visit(assign.Expression);
-                        if (entity.IsNoTracking)
-                        {
-                            bindings.Add(Expression.Bind(assign.Member, expression));
-                        }
-                        else
-                        {
-                            var proprety = PropertyUnity.GetProperty(mbmInitExp.Type, assign.Member.Name);
-                            properties.Add(Expression.Constant(proprety));
-
-                            if (PropertyValue.IsSupportedType(proprety.Type))
-                            {
-                                if (expression.Type.GetNonNullableType().IsEnum)
-                                {
-                                    expression = Expression.Convert(expression, typeof(Enum));
-                                }
-
-                                var pValue = Expression.Convert(expression, typeof(PropertyValue));
-                                values.Add(pValue);
-                            }
-                            else
-                            {
-                                var pValue = Expression.Call(null, MthNewPropertyValue, expression, Expression.Constant(null, typeof(Type)));
-                                values.Add(pValue);
-                            }
-                        }
-                    }
-                });
-
-            if (entity.IsNoTracking)
-            {
-                return Expression.MemberInit(mbmInitExp.NewExpression, bindings);
-            }
-
-            var e = TranslateScope.Current.ContextService as IEntityPersistentEnvironment;
-            var c = TranslateScope.Current.ContextService as IEntityPersistentInstanceContainer;
-
-            var constCall = Expression.Call(null, MthConstruct,
-                Visit(mbmInitExp.NewExpression),
-                Expression.NewArrayInit(typeof(IProperty), properties.ToArray()),
-                Expression.NewArrayInit(typeof(PropertyValue), values.ToArray()),
-                Expression.Constant(c, typeof(IEntityPersistentInstanceContainer)),
-                Expression.Constant(e, typeof(IEntityPersistentEnvironment)));
-
-            return Expression.Convert(constCall, entity.Type);
+            return ConvertEntityExpression(mbmInitExp);
         }
 
         protected override Expression VisitNew(NewExpression node)
@@ -320,6 +281,15 @@ namespace Fireasy.Data.Entity.Linq
             }
 
             return base.VisitNew(node);
+        }
+
+        protected override MemberBinding VisitBinding(MemberBinding binding)
+        {
+            var save = receivingMember;
+            receivingMember = binding.Member;
+            var result = base.VisitBinding(binding);
+            receivingMember = save;
+            return result;
         }
 
         protected override Expression VisitConstant(ConstantExpression constExp)
@@ -445,7 +415,7 @@ namespace Fireasy.Data.Entity.Linq
 
             ConstructorInfo kvpConstructor = typeof(KeyValuePair<,>).MakeGenericType(innerKey.Type, join.Projection.Projector.Type).GetConstructor(new Type[] { innerKey.Type, join.Projection.Projector.Type });
             Expression constructKVPair = Expression.New(kvpConstructor, innerKey, join.Projection.Projector);
-            ProjectionExpression newProjection = new ProjectionExpression(join.Projection.Select, constructKVPair, isAsync);
+            ProjectionExpression newProjection = new ProjectionExpression(join.Projection.Select, constructKVPair, isAsync, join.Projection.IsNoTracking);
 
             int iLookup = ++nLookup;
             Expression execution = ExecuteProjection(newProjection, false);
@@ -509,6 +479,11 @@ namespace Fireasy.Data.Entity.Linq
             return BuildExecuteEnumerableCommand(projection, okayToDefer);
         }
 
+        protected override Expression VisitTable(TableExpression table)
+        {
+            return base.VisitTable(table);
+        }
+
         private Expression BuildExecuteEnumerableCommand(ProjectionExpression projection, bool okayToDefer)
         {
             var elementType = projection.IsSingleton ? projection.Type : projection.Type.GetEnumerableElementType();
@@ -521,7 +496,7 @@ namespace Fireasy.Data.Entity.Linq
             scope = new Scope(this.scope, recordWrapper, dataReader, projection.Select.Alias, projection.Select.Columns);
 
             var projector = this.Visit(projection.Projector);
-            var rowMapper = CreateDataRowWrapper(projection, projector, elementType);
+            var rowMapper = CreateDataRowWrapper(projector, elementType);
             var rowMapperType = typeof(IDataRowMapper<>).MakeGenericType(elementType);
             scope = saveScope;
 
@@ -764,11 +739,10 @@ namespace Fireasy.Data.Entity.Linq
         /// <summary>
         /// 创建 <see cref="IDataRowMapper"/>。
         /// </summary>
-        /// <param name="projection"></param>
         /// <param name="projector"></param>
         /// <param name="elementType"></param>
         /// <returns></returns>
-        private IDataRowMapper CreateDataRowWrapper(ProjectionExpression projection, Expression projector, Type elementType)
+        private IDataRowMapper CreateDataRowWrapper(Expression projector, Type elementType)
         {
             var funcType = typeof(Func<,>).MakeGenericType(typeof(IDataReader), elementType);
             var lambda = Expression.Lambda(funcType, projector, scope.dataReader);
@@ -781,11 +755,11 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="entity">实体对象。</param>
         /// <param name="properties">属性数组。</param>
         /// <param name="values">值数组。</param>
-        /// <param name="instanceContainer"><see cref="IEntityPersistentInstanceContainer"/> 对象。</param>
-        /// <param name="environment"><see cref="IEntityPersistentEnvironment"/> 对象。</param>
+        /// <param name="instanceName"></param>
+        /// <param name="environment"></param>
         /// <returns></returns>
         private static IEntity ConstructEntity(IEntity entity, IProperty[] properties, PropertyValue[] values,
-            IEntityPersistentInstanceContainer instanceContainer, IEntityPersistentEnvironment environment)
+            string instanceName, EntityPersistentEnvironment environment)
         {
             entity.As<ISupportInitializeNotification>(s => s.BeginInit());
 
@@ -799,15 +773,7 @@ namespace Fireasy.Data.Entity.Linq
             entity.SetState(EntityState.Unchanged);
 
             //设置 InstanceName 和 Environment
-            if (!string.IsNullOrEmpty(instanceContainer.InstanceName) && entity is IEntityPersistentInstanceContainer con)
-            {
-                con.InstanceName = instanceContainer.InstanceName;
-            }
-
-            if (environment.Environment != null && entity is IEntityPersistentEnvironment env)
-            {
-                env.Environment = environment.Environment;
-            }
+            entity.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
 
             entity.As<ISupportInitializeNotification>(s => s.EndInit());
 
@@ -939,6 +905,66 @@ namespace Fireasy.Data.Entity.Linq
             return rows;
         }
 
+        private Expression ConvertEntityExpression(MemberInitExpression mbmInitExp)
+        {
+            if (isNoTracking == true)
+            {
+                return mbmInitExp.Update(mbmInitExp.NewExpression, mbmInitExp.Bindings.Select(s => VisitBinding(s)));
+            }
+
+            var properties = new List<Expression>();
+            var values = new List<Expression>();
+            var bindings = new List<MemberBinding>();
+
+            mbmInitExp.Bindings.ForEach(s =>
+            {
+                if (s is MemberAssignment assign)
+                {
+                    var expression = Visit(assign.Expression);
+                    var proprety = PropertyUnity.GetProperty(mbmInitExp.Type, assign.Member.Name);
+                    if (proprety == null)
+                    {
+                        bindings.Add(Expression.Bind(assign.Member, expression));
+                    }
+                    else
+                    {
+                        properties.Add(Expression.Constant(proprety));
+
+                        if (PropertyValue.IsSupportedType(proprety.Type))
+                        {
+                            if (expression.Type.GetNonNullableType().IsEnum)
+                            {
+                                expression = Expression.Convert(expression, typeof(Enum));
+                            }
+
+                            var pValue = Expression.Convert(expression, typeof(PropertyValue));
+                            values.Add(pValue);
+                        }
+                        else
+                        {
+                            var pValue = Expression.Call(null, MthNewPropertyValue, expression, Expression.Constant(null, typeof(Type)));
+                            values.Add(pValue);
+                        }
+                    }
+                }
+            });
+
+            var newExp = Visit(mbmInitExp.NewExpression);
+            if (bindings.Count > 0)
+            {
+                newExp = Expression.MemberInit((NewExpression)newExp, bindings.ToArray());
+            }
+
+            var constCall = Expression.Call(null, MthConstruct,
+                newExp,
+                Expression.NewArrayInit(typeof(IProperty), properties.ToArray()),
+                Expression.NewArrayInit(typeof(PropertyValue), values.ToArray()),
+                Expression.Constant(TranslateScope.Current.InstanceName, typeof(string)),
+                Expression.Constant(TranslateScope.Current.PersistentEnvironment, typeof(EntityPersistentEnvironment)));
+
+            return Expression.Convert(constCall, mbmInitExp.Type);
+        }
+
         private class Scope
         {
             internal Scope outer;
@@ -1040,37 +1066,44 @@ namespace Fireasy.Data.Entity.Linq
         private class ProjectionRowMapper<T> : ExpressionRowMapper<T>
         {
             private ParameterExpression executor;
-            private LambdaExpression lambda;
+            private LambdaExpression expression;
             private ParameterExpression recordWrapper;
 
-            public ProjectionRowMapper(ParameterExpression executor, LambdaExpression lambda, ParameterExpression recordWrapper)
+            public ProjectionRowMapper(ParameterExpression executor, LambdaExpression expression, ParameterExpression recordWrapper)
             {
                 this.executor = executor;
-                this.lambda = lambda;
+                this.expression = expression;
                 this.recordWrapper = recordWrapper;
             }
 
             protected override Expression<Func<IDatabase, IDataReader, T>> BuildExpressionForDataReader()
             {
-                lambda = (LambdaExpression)DbExpressionReplacer.Replace(lambda, recordWrapper, Expression.Constant(RecordWrapper, typeof(IRecordWrapper)));
-                if (lambda.Parameters.Count == 1 && lambda.Parameters[0].Type != typeof(IDatabase))
+                expression = (LambdaExpression)DbExpressionReplacer.Replace(expression, recordWrapper, Expression.Constant(RecordWrapper, typeof(IRecordWrapper)));
+                if (expression.Parameters.Count == 1 && expression.Parameters[0].Type != typeof(IDatabase))
                 {
-                    return Expression.Lambda<Func<IDatabase, IDataReader, T>>(lambda.Body, executor, lambda.Parameters[0]);
+                    return Expression.Lambda<Func<IDatabase, IDataReader, T>>(expression.Body, executor, expression.Parameters[0]);
                 }
 
-                return (Expression<Func<IDatabase, IDataReader, T>>)lambda;
+                return (Expression<Func<IDatabase, IDataReader, T>>)expression;
             }
 
             protected override Expression<Func<IDatabase, DataRow, T>> BuildExpressionForDataRow()
             {
-                lambda = (LambdaExpression)DbExpressionReplacer.Replace(lambda, recordWrapper, Expression.Constant(RecordWrapper, typeof(IRecordWrapper)));
-                if (lambda.Parameters.Count == 1 && lambda.Parameters[0].Type != typeof(IDatabase))
+                expression = (LambdaExpression)DbExpressionReplacer.Replace(expression, recordWrapper, Expression.Constant(RecordWrapper, typeof(IRecordWrapper)));
+                if (expression.Parameters.Count == 1 && expression.Parameters[0].Type != typeof(IDatabase))
                 {
-                    return Expression.Lambda<Func<IDatabase, DataRow, T>>(lambda.Body, executor, lambda.Parameters[0]);
+                    return Expression.Lambda<Func<IDatabase, DataRow, T>>(expression.Body, executor, expression.Parameters[0]);
                 }
 
-                return (Expression<Func<IDatabase, DataRow, T>>)lambda;
+                return (Expression<Func<IDatabase, DataRow, T>>)expression;
             }
+        }
+
+        public class BuildOptions
+        {
+            public bool? IsAsync { get; set; }
+
+            public bool? IsNoTracking { get; set; }
         }
     }
 }

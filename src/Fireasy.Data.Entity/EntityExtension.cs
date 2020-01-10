@@ -366,8 +366,10 @@ namespace Fireasy.Data.Entity
                 return default(T);
             }
 
-            item.As<IEntityPersistentInstanceContainer>(e =>
-                    e.InstanceName = instanceName);
+            if (item is IEntityPersistentInstanceContainer e)
+            {
+                e.InstanceName = instanceName;
+            }
 
             return item;
         }
@@ -384,13 +386,10 @@ namespace Fireasy.Data.Entity
                 return default(T);
             }
 
-            item.As<IEntityPersistentEnvironment>(e =>
-                {
-                    if (environment != null)
-                    {
-                        e.Environment = environment;
-                    }
-                });
+            if (item is IEntityPersistentEnvironment e && environment != null)
+            {
+                e.Environment = environment;
+            }
 
             return item;
         }

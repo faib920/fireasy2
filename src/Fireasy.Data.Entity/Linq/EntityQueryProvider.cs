@@ -9,7 +9,6 @@ using Fireasy.Common;
 using Fireasy.Common.Configuration;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Linq.Translators.Configuration;
-using Fireasy.Data.Entity.Providers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,13 +22,10 @@ namespace Fireasy.Data.Entity.Linq
     /// <summary>
     /// 为实体提供 LINQ 查询的支持。无法继承此类。
     /// </summary>
-    public sealed class EntityQueryProvider : IEntityQueryProvider,
-        IEntityPersistentEnvironment,
-        IEntityPersistentInstanceContainer
+    public sealed class EntityQueryProvider : IEntityQueryProvider
     {
-        private string instanceName;
-        private EntityPersistentEnvironment environment;
         private IContextService service;
+        private IDatabase database;
 
         /// <summary>
         /// 使用一个 <see cref="IDatabase"/> 对象初始化 <see cref="EntityQueryProvider"/> 类的新实例。
@@ -39,25 +35,17 @@ namespace Fireasy.Data.Entity.Linq
         {
             Guard.ArgumentNull(service, nameof(service));
 
+
+            if (service is IDatabaseAware aware)
+            {
+                database = aware.Database;
+            }
+            else
+            {
+                throw new InvalidOperationException(SR.GetString(SRKind.NotFoundDatabaseAware));
+            }
+
             this.service = service;
-        }
-
-        /// <summary>
-        /// 获取或设置持久化环境。
-        /// </summary>
-        EntityPersistentEnvironment IEntityPersistentEnvironment.Environment
-        {
-            get { return environment; }
-            set { environment = value; }
-        }
-
-        /// <summary>
-        /// 获取或设置实例名称。
-        /// </summary>
-        string IEntityPersistentInstanceContainer.InstanceName
-        {
-            get { return instanceName; }
-            set { instanceName = value; }
         }
 
         /// <summary>
@@ -74,12 +62,12 @@ namespace Fireasy.Data.Entity.Linq
 
             if (!attrs.Item2)
             {
-                return efn.DynamicInvoke(service.Database);
+                return efn.DynamicInvoke(database);
             }
 
             var segment = SegmentFinder.Find(expression);
 
-            return efn.DynamicInvoke(service.Database, segment);
+            return efn.DynamicInvoke(database, segment);
         }
 
         /// <summary>
@@ -112,11 +100,11 @@ namespace Fireasy.Data.Entity.Linq
                 if (attrs.Item2)
                 {
                     var segment = SegmentFinder.Find(expression);
-                    result = efn.DynamicInvoke(service.Database, segment, cancellationToken);
+                    result = efn.DynamicInvoke(database, segment, cancellationToken);
                 }
                 else
                 {
-                    result = efn.DynamicInvoke(service.Database, cancellationToken);
+                    result = efn.DynamicInvoke(database, cancellationToken);
                 }
             }
             else
@@ -124,11 +112,11 @@ namespace Fireasy.Data.Entity.Linq
                 if (attrs.Item2)
                 {
                     var segment = SegmentFinder.Find(expression);
-                    result = efn.DynamicInvoke(service.Database, segment);
+                    result = efn.DynamicInvoke(database, segment);
                 }
                 else
                 {
-                    result = efn.DynamicInvoke(service.Database);
+                    result = efn.DynamicInvoke(database);
                 }
             }
 
@@ -148,11 +136,11 @@ namespace Fireasy.Data.Entity.Linq
                 if (attrs.Item2)
                 {
                     var segment = SegmentFinder.Find(expression);
-                    result = efn.DynamicInvoke(service.Database, segment, cancellationToken);
+                    result = efn.DynamicInvoke(database, segment, cancellationToken);
                 }
                 else
                 {
-                    result = efn.DynamicInvoke(service.Database, cancellationToken);
+                    result = efn.DynamicInvoke(database, cancellationToken);
                 }
             }
             else
@@ -160,11 +148,11 @@ namespace Fireasy.Data.Entity.Linq
                 if (attrs.Item2)
                 {
                     var segment = SegmentFinder.Find(expression);
-                    result = efn.DynamicInvoke(service.Database, segment);
+                    result = efn.DynamicInvoke(database, segment);
                 }
                 else
                 {
-                    result = efn.DynamicInvoke(service.Database);
+                    result = efn.DynamicInvoke(database);
                 }
             }
 
@@ -187,15 +175,15 @@ namespace Fireasy.Data.Entity.Linq
                 }
 
                 var section = ConfigurationUnity.GetSection<TranslatorConfigurationSection>();
-                var trans = service.InitializeContext.Provider.GetTranslateProvider();
                 var options = GetTranslateOptions();
 
-                using (var scope = new TranslateScope(service, trans, options))
+                using (var scope = new TranslateScope(service, options))
                 {
-                    var translation = trans.Translate(expression);
-                    var translator = trans.CreateTranslator();
+                    var translation = scope.TranslateProvider.Translate(expression);
+                    var translator = scope.TranslateProvider.CreateTranslator();
 
-                    return ExecutionBuilder.Build(translation, e => translator.Translate(e), isAsync);
+                    var buildOptions = new ExecutionBuilder.BuildOptions { IsAsync = isAsync, IsNoTracking = !options.TraceEntityState };
+                    return ExecutionBuilder.Build(translation, e => translator.Translate(e), buildOptions);
                 }
             }
             catch (Exception ex)
@@ -220,13 +208,12 @@ namespace Fireasy.Data.Entity.Linq
                     expression = lambda.Body;
                 }
 
-                var trans = service.InitializeContext.Provider.GetTranslateProvider();
                 options = options ?? GetTranslateOptions();
 
-                using (var scope = new TranslateScope(service, trans, options))
+                using (var scope = new TranslateScope(service, options))
                 {
-                    var translation = trans.Translate(expression);
-                    var translator = trans.CreateTranslator();
+                    var translation = scope.TranslateProvider.Translate(expression);
+                    var translator = scope.TranslateProvider.CreateTranslator();
 
                     TranslateResult result;
                     var selects = SelectGatherer.Gather(translation).ToList();

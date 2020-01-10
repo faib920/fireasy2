@@ -27,7 +27,7 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public static FieldAccessor GetAccessor(FieldInfo field)
         {
-            return fieldAccessors.GetOrAdd(field, () => new FieldAccessor(field));
+            return fieldAccessors.GetOrAdd(field, key => new FieldAccessor(key));
         }
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public static PropertyAccessor GetAccessor(PropertyInfo property)
         {
-            return propertyAccessors.GetOrAdd(property, () => new PropertyAccessor(property));
+            return propertyAccessors.GetOrAdd(property, key => new PropertyAccessor(key));
         }
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public static MethodInvoker GetInvoker(MethodInfo method)
         {
-            return methodInvoker.GetOrAdd(method, () => new MethodInvoker(method));
+            return methodInvoker.GetOrAdd(method, key => new MethodInvoker(key));
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public static ConstructorInvoker GetInvoker(ConstructorInfo constructor)
         {
-            return construtorInvoker.GetOrAdd(constructor, () => new ConstructorInvoker(constructor));
+            return construtorInvoker.GetOrAdd(constructor, key => new ConstructorInvoker(key));
         }
     }
 }

@@ -501,6 +501,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<List<TSource>> ToListAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthToListAsync.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -534,6 +536,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<TSource> FirstOrDefaultAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthFirstOrDefaultAsync2.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -551,6 +555,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<TSource> FirstOrDefaultAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthFirstOrDefaultAsync3.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -567,6 +573,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<TSource> LastOrDefaultAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthLastOrDefaultAsync2.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -584,6 +592,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<TSource> LastOrDefaultAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthLastOrDefaultAsync3.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -600,6 +610,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<TSource> SingleOrDefaultAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthSingleOrDefaultAsync2.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -617,6 +629,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<TSource> SingleOrDefaultAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthSingleOrDefaultAsync3.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -633,6 +647,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<bool> AnyAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthAnyAsync2.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -650,6 +666,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<bool> AnyAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthAnyAsync3.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -666,6 +684,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<bool> AllAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthAllAsync2.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -683,6 +703,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<bool> AllAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthAllAsync3.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -699,6 +721,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<int> CountAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthCountAsync2.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -716,6 +740,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<int> CountAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthCountAsync3.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -732,6 +758,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<TResult> AverageAsync<TResult>(this IQueryable<TResult> source, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthAverageAsync2.MakeGenericMethod(typeof(TResult));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -750,6 +778,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<TResult> AverageAsync<TSource, TResult>(this IQueryable<TSource> source, Expression<Func<TSource, TResult>> selector, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthAverageAsync3.MakeGenericMethod(typeof(TSource), typeof(TResult));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), selector, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -766,6 +796,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<TResult> SumAsync<TResult>(this IQueryable<TResult> source, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthSumAsync2.MakeGenericMethod(typeof(TResult));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -784,6 +816,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<TResult> SumAsync<TSource, TResult>(this IQueryable<TSource> source, Expression<Func<TSource, TResult>> selector, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthSumAsync3.MakeGenericMethod(typeof(TSource), typeof(TResult));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), selector, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -800,6 +834,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<TResult> MaxAsync<TResult>(this IQueryable<TResult> source, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthMaxAsync2.MakeGenericMethod(typeof(TResult));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -818,6 +854,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<TResult> MaxAsync<TSource, TResult>(this IQueryable<TSource> source, Expression<Func<TSource, TResult>> selector, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthMaxAsync3.MakeGenericMethod(typeof(TSource), typeof(TResult));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), selector, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -834,6 +872,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<TResult> MinAsync<TResult>(this IQueryable<TResult> source, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthMinAsync2.MakeGenericMethod(typeof(TResult));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -852,6 +892,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static async Task<TResult> MinAsync<TSource, TResult>(this IQueryable<TSource> source, Expression<Func<TSource, TResult>> selector, CancellationToken cancellationToken = default)
         {
+            CheckAsyncImplementd(source.Provider);
+
             var method = MthMinAsync3.MakeGenericMethod(typeof(TSource), typeof(TResult));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), selector, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
@@ -1444,6 +1486,18 @@ namespace Fireasy.Data.Entity.Linq
             }
 
             return source.Provider.CreateQuery<T>(expression);
+        }
+
+        /// <summary>
+        /// 检查是否实现了 IAsyncQueryProvider 接口。
+        /// </summary>
+        /// <param name="provider"></param>
+        private static void CheckAsyncImplementd(IQueryProvider provider)
+        {
+            if (!(provider is IAsyncQueryProvider))
+            {
+                throw new NotImplementedException(SR.GetString(SRKind.NotImplementAsyncQueryProvider));
+            }
         }
 
         /// <summary>

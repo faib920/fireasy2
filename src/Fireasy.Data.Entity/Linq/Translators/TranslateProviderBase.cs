@@ -41,7 +41,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private Expression TranslateInternal(Expression expression)
         {
-            var syntax = TranslateScope.Current.ContextService.Provider.GetService<ISyntaxProvider>();
+            var syntax = TranslateScope.Current.SyntaxProvider;
             var translation = QueryBinder.Bind(expression, syntax);
 
             translation = LogicalDeleteFlagRewriter.Rewrite(translation);
@@ -63,9 +63,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
             translation = ComparisonRewriter.Rewrite(translation);
 
             Expression rewritten;
-            if (TranslateScope.Current != null && TranslateScope.Current.ContextService is IQueryPolicy policy)
+            if (TranslateScope.Current != null && TranslateScope.Current.QueryPolicy != null)
             {
-                rewritten = RelationshipIncluder.Include(policy, translation);
+                rewritten = RelationshipIncluder.Include(TranslateScope.Current.QueryPolicy, translation);
                 if (rewritten != translation)
                 {
                     translation = rewritten;

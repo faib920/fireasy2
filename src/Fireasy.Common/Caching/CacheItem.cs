@@ -13,7 +13,7 @@ namespace Fireasy.Common.Caching
     /// 放入缓存中的数据的扩展结构。无法继承此类。
     /// </summary>
     [Serializable]
-    public sealed class CacheItem
+    internal sealed class CacheItem
     {
         /// <summary>
         /// 获取项的键名。

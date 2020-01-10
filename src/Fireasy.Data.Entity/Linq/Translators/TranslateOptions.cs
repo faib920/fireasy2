@@ -59,6 +59,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
         public int CacheExecutionTimes { get; set; } = 300;
 
         /// <summary>
+        /// 获取或设置是否跟踪返回的实体的状态。默认为 true。
+        /// </summary>
+        public bool TraceEntityState { get; set; } = true;
+
+        /// <summary>
         /// 克隆一份选项。
         /// </summary>
         /// <returns></returns>
@@ -73,7 +78,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     CacheParsingTimes = CacheParsingTimes,
                     CacheExecution = CacheExecution,
                     CacheExecutionTimes = CacheExecutionTimes,
-                    WhereOnly = WhereOnly
+                    WhereOnly = WhereOnly,
+                    TraceEntityState = TraceEntityState
                 };
         }
     }

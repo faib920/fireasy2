@@ -48,9 +48,17 @@ namespace Fireasy.Data.Entity
             entityType = typeof(TEntity);
             metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
             metaTree = metadata.EntityTree;
-            database = service.Database;
-            syntax = database.Provider.GetService<ISyntaxProvider>();
+            syntax = service.Provider.GetService<ISyntaxProvider>();
             options = service.InitializeContext.Options;
+
+            if (service is IDatabaseAware aware)
+            {
+                database = aware.Database;
+            }
+            else
+            {
+                throw new InvalidOperationException(SR.GetString(SRKind.NotFoundDatabaseAware));
+            }
         }
 
         IQueryProvider IQueryProviderAware.Provider
