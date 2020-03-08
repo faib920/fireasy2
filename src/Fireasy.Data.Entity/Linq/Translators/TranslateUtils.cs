@@ -10,18 +10,17 @@ using System.Reflection;
 using Fireasy.Common.Extensions;
 using System.Linq;
 using System;
-using Fireasy.Common.ComponentModel;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
     /// <summary>
     /// LINQ解析的实用功能。
     /// </summary>
-    public class TranslateUtils
+    public static class TranslateUtils
     {
-        private static SafetyDictionary<MethodInfo, IMethodCallBinder> defBinders = new SafetyDictionary<MethodInfo, IMethodCallBinder>();
-        private static SafetyDictionary<Func<MethodInfo, bool>, IMethodCallBinder> matchBinders = new SafetyDictionary<Func<MethodInfo, bool>, IMethodCallBinder>();
-        private static SafetyDictionary<MethodInfo, string> functions = new SafetyDictionary<MethodInfo, string>();
+        private readonly static ConcurrentDictionary<MethodInfo, IMethodCallBinder> defBinders = new ConcurrentDictionary<MethodInfo, IMethodCallBinder>();
+        private readonly static ConcurrentDictionary<Func<MethodInfo, bool>, IMethodCallBinder> matchBinders = new ConcurrentDictionary<Func<MethodInfo, bool>, IMethodCallBinder>();
+        private readonly static ConcurrentDictionary<MethodInfo, string> functions = new ConcurrentDictionary<MethodInfo, string>();
 
         /// <summary>
         /// 添加方法调用的绑定。
@@ -70,14 +69,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         public static string GetCustomFunction(MethodInfo method)
         {
-            if (!functions.TryGetValue(method, out string funcName))
+            if (!functions.TryGetValue(method, out string funcName) && method.IsDefined<FunctionBindAttribute>())
             {
                 var attr = method.GetCustomAttributes<FunctionBindAttribute>().FirstOrDefault();
-                if (attr != null)
-                {
-                    funcName = attr.FunctionName;
-                    functions.TryAdd(method, funcName);
-                }
+                funcName = attr.FunctionName;
+                functions.TryAdd(method, funcName);
             }
 
             return funcName;
@@ -98,24 +94,21 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 }
             }
 
-            if (!defBinders.TryGetValue(method, out IMethodCallBinder binder))
+            if (!defBinders.TryGetValue(method, out IMethodCallBinder binder) && method.IsDefined<MethodCallBindAttribute>())
             {
                 var attr = method.GetCustomAttributes<MethodCallBindAttribute>().FirstOrDefault();
-                if (attr != null)
+                if (attr.BinderType == null)
                 {
-                    if (attr.BinderType == null)
-                    {
-                        return null;
-                    }
-
-                    binder = attr.BinderType.New<IMethodCallBinder>();
-                    if (binder == null)
-                    {
-                        throw new ArgumentException(SR.GetString(SRKind.ClassNotImplInterface, "IMethodCallBinder"));
-                    }
-
-                    defBinders.TryAdd(method, binder);
+                    return null;
                 }
+
+                binder = attr.BinderType.New<IMethodCallBinder>();
+                if (binder == null)
+                {
+                    throw new ArgumentException(SR.GetString(SRKind.ClassNotImplInterface, "IMethodCallBinder"));
+                }
+
+                defBinders.TryAdd(method, binder);
             }
 
             return binder;

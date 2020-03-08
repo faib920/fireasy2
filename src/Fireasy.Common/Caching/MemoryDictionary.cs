@@ -6,8 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using Fireasy.Common.ComponentModel;
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 
 namespace Fireasy.Common.Caching
@@ -15,7 +15,7 @@ namespace Fireasy.Common.Caching
     /// <summary>
     /// 缓存字典。无法继承此类。
     /// </summary>
-    internal sealed class MemoryDictionary : SafetyDictionary<string, CacheItem>
+    internal sealed class MemoryDictionary : ConcurrentDictionary<string, CacheItem>
     {
         /// <summary>
         /// 检查字典的容量。
@@ -27,19 +27,15 @@ namespace Fireasy.Common.Caching
         public void CheckCapacity(string cacheKey, int capacity, int maxGen, Action<CacheItem> onRemoved)
         {
             short gen = 0;
-            while (Count > capacity && gen <= maxGen && gen < CacheOptimizer.MAX_GEN_LIMIT)
+            while (Count > capacity && gen <= maxGen && gen < short.MaxValue)
             {
                 //查找出未创建值的，以及最小代或过期的，将它移除
-                var needRemoveds = LazyValues.Where(s => s.Key != cacheKey &&
-                    (!s.Value.IsValueCreated || s.Value.Value.Gen == gen || s.Value.Value.HasExpired())).ToArray();
+                var needRemoveds = this.Where(s => s.Key != cacheKey &&
+                    (s.Value.Gen == gen || s.Value.HasExpired())).ToArray();
 
                 foreach (var item in needRemoveds)
                 {
-                    if (!item.Value.IsValueCreated)
-                    {
-                        LazyValues.TryRemove(item.Key, out Lazy<CacheItem> entry);
-                    }
-                    else if (TryRemove(item.Key, out CacheItem entry))
+                    if (TryRemove(item.Key, out CacheItem entry))
                     {
                         onRemoved(entry);
                     }

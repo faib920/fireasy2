@@ -1,15 +1,22 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+using System;
 
 namespace Fireasy.Data.Provider
 {
     [AttributeUsage(AttributeTargets.Interface, AllowMultiple = false)]
     public class DefaultProviderServiceAttribute : Attribute
     {
-        public DefaultProviderServiceAttribute(Type defaultType)
+        public DefaultProviderServiceAttribute(Type serviceType)
         {
-            DefaultType = defaultType;
+            ServiceType = serviceType;
         }
 
-        public Type DefaultType { get; set; }
+        public Type ServiceType { get; set; }
     }
 }

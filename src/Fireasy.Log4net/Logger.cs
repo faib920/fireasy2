@@ -9,6 +9,7 @@ using Fireasy.Common.Logging;
 using log4net;
 using log4net.Config;
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -21,12 +22,23 @@ namespace Fireasy.Log4net
     /// </summary>
     public class Logger : ILogger
     {
-        private ILog log;
+        private readonly ILog log;
+        private readonly Log4netOptions options;
+        private static readonly ConcurrentDictionary<Type, ILogger> loggers = new ConcurrentDictionary<Type, ILogger>();
 
         protected Logger(Type type)
+            : this(type, null)
         {
+        }
+
+        public Logger(Type type, Log4netOptions options)
+        {
+            this.options = options;
             var repository = LogManager.GetAllRepositories().FirstOrDefault(s => s.Name == "fireasy") ?? LogManager.CreateRepository("fireasy");
-            XmlConfigurator.Configure(repository, new FileInfo("log4net.config"));
+            
+            XmlConfigurator.Configure(repository, 
+                new FileInfo(options == null || string.IsNullOrEmpty(options.XmlFile) ? "log4net.config" : options.XmlFile));
+            
             log = type == null ? LogManager.GetLogger("fireasy", string.Empty) :
                 LogManager.GetLogger("fireasy", type);
         }
@@ -38,7 +50,7 @@ namespace Fireasy.Log4net
 
         public ILogger GetLogger<T>() where T : class
         {
-            return new Logger(typeof(T));
+            return loggers.GetOrAdd(typeof(T), k => new Logger(k, options));
         }
 
         /// <summary>

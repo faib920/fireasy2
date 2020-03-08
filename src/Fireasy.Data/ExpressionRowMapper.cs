@@ -30,10 +30,7 @@ namespace Fireasy.Data
             }
 
             var result = funcDataRecd(database, reader);
-            if (Initializer != null)
-            {
-                Initializer(result);
-            }
+            Initializer?.Invoke(result);
 
             return result;
         }
@@ -51,10 +48,7 @@ namespace Fireasy.Data
             }
 
             var result = funcDataRow(database, row);
-            if (Initializer != null)
-            {
-                Initializer(result);
-            }
+            Initializer?.Invoke(result);
 
             return result;
         }
@@ -79,8 +73,16 @@ namespace Fireasy.Data
             return Map(database, row);
         }
 
+        /// <summary>
+        /// 为 <see cref="IDataReader"/> 构造表达式。
+        /// </summary>
+        /// <returns></returns>
         protected abstract Expression<Func<IDatabase, IDataReader, T>> BuildExpressionForDataReader();
 
+        /// <summary>
+        /// 为 <see cref="DataReader"/> 构造表达式。
+        /// </summary>
+        /// <returns></returns>
         protected abstract Expression<Func<IDatabase, DataRow, T>> BuildExpressionForDataRow();
     }
 }

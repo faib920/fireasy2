@@ -16,7 +16,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <param name="nodeType">表达式的类型。</param>
         /// <param name="type">表达式的数据类型。</param>
         /// <param name="alias">表的别名。</param>
-        public AliasedExpression(DbExpressionType nodeType, Type type, TableAlias alias)
+        protected AliasedExpression(DbExpressionType nodeType, Type type, TableAlias alias)
             : base(nodeType, type)
         {
             Alias = alias;

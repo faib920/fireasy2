@@ -16,7 +16,7 @@ namespace Fireasy.Data.Converter
 {
     public class ArrayConverter : IValueConverter
     {
-        private Type elementType;
+        private readonly Type elementType;
 
         public ArrayConverter(Type elementType)
         {

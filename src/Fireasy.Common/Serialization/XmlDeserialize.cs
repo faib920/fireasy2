@@ -22,10 +22,9 @@ namespace Fireasy.Common.Serialization
     {
         private readonly XmlSerializeOption option;
         private readonly XmlSerializer serializer;
-        private XmlReader xmlReader;
-        private bool isDisposed;
-        private static MethodInfo mthToArray = typeof(Enumerable).GetMethod(nameof(Enumerable.ToArray), BindingFlags.Public | BindingFlags.Static);
-        private TypeConverterCache<XmlConverter> cacheConverter = new TypeConverterCache<XmlConverter>();
+        private readonly XmlReader xmlReader;
+        private static readonly MethodInfo MthToArray = typeof(Enumerable).GetMethod(nameof(Enumerable.ToArray), BindingFlags.Public | BindingFlags.Static);
+        private readonly TypeConverterCache<XmlConverter> cacheConverter = new TypeConverterCache<XmlConverter>();
 
         internal XmlDeserialize(XmlSerializer serializer, XmlReader reader, XmlSerializeOption option)
             : base(option)
@@ -199,10 +198,9 @@ namespace Fireasy.Common.Serialization
 
         private object DeserializeList(Type listType)
         {
-            Type elementType;
             var isReadonly = listType.IsGenericType && listType.GetGenericTypeDefinition() == typeof(IReadOnlyCollection<>);
 
-            CreateListContainer(listType, out elementType, out IList container);
+            CreateListContainer(listType, out Type elementType, out IList container);
 
             xmlReader.ReadStartElement();
 
@@ -230,7 +228,7 @@ namespace Fireasy.Common.Serialization
 
             if (listType.IsArray)
             {
-                var invoker = ReflectionCache.GetInvoker(mthToArray.MakeGenericMethod(elementType));
+                var invoker = ReflectionCache.GetInvoker(MthToArray.MakeGenericMethod(elementType));
                 return invoker.Invoke(null, container);
             }
 
@@ -244,8 +242,7 @@ namespace Fireasy.Common.Serialization
 
         private IDictionary DeserializeDictionary(Type dictType)
         {
-            Type[] keyValueTypes;
-            CreateDictionaryContainer(dictType, out keyValueTypes, out IDictionary container);
+            CreateDictionaryContainer(dictType, out Type[] keyValueTypes, out IDictionary container);
 
             while (xmlReader.Read())
             {
@@ -530,6 +527,16 @@ namespace Fireasy.Common.Serialization
 
                 return s;
             }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                xmlReader.Dispose();
+            }
+
+            base.Dispose(disposing);
         }
 
         private class AssumeContentException : Exception

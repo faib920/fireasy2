@@ -17,7 +17,7 @@ namespace Fireasy.Common.Dynamic
     /// </summary>
     public class DynamicExpandoObject : DynamicObject, IDictionary<string, object>
     {
-        private Dictionary<string, object> values = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, object> values = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// 初始化 <see cref="DynamicExpandoObject"/> 类的新实例。
@@ -27,7 +27,7 @@ namespace Fireasy.Common.Dynamic
         }
 
         /// <summary>
-        /// 使用一组 <see cref="IEnumerable&lt;KeyValuePair&lt;string, object&gt;&gt;"/> 初始化 <see cref="DynamicExpandoObject"/> 类的新实例。
+        /// 使用一组 <see cref="IEnumerable{KeyValuePair{string, object}}"/> 初始化 <see cref="DynamicExpandoObject"/> 类的新实例。
         /// </summary>
         /// <param name="source"></param>
         public DynamicExpandoObject(IEnumerable<KeyValuePair<string, object>> source)
@@ -88,8 +88,7 @@ namespace Fireasy.Common.Dynamic
             if (values.ContainsKey(binder.Name))
             {
                 result = values[binder.Name];
-                var dydel = result as DynamicDelegate;
-                if (dydel != null)
+                if (result is DynamicDelegate dydel)
                 {
                     result = dydel.Invoke(this, args);
                     return true;
@@ -108,7 +107,7 @@ namespace Fireasy.Common.Dynamic
         /// <returns></returns>
         public override bool TrySetIndex(SetIndexBinder binder, object[] indexes, object value)
         {
-            var key = "__" + string.Join("-", indexes);
+            var key = $"__{string.Join("-", indexes)}";
             return values.TryAdd(key, value);
         }
 
@@ -121,7 +120,7 @@ namespace Fireasy.Common.Dynamic
         /// <returns></returns>
         public override bool TryGetIndex(GetIndexBinder binder, object[] indexes, out object result)
         {
-            var key = "__" + string.Join("-", indexes);
+            var key = $"__{string.Join("-", indexes)}";
             return values.TryGetValue(key, out result);
         }
 

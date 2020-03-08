@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.ComponentModel;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
@@ -18,7 +18,7 @@ namespace Fireasy.Common.Localization
     /// </summary>
     public class XmlStringLocalizerManager : IStringLocalizerManager
     {
-        private static SafetyDictionary<string, IStringLocalizer> localizers = new SafetyDictionary<string, IStringLocalizer>();
+        private static readonly ConcurrentDictionary<string, IStringLocalizer> localizers = new ConcurrentDictionary<string, IStringLocalizer>();
 
         /// <summary>
         /// 获取或设置 <see cref="CultureInfo"/> 对象。

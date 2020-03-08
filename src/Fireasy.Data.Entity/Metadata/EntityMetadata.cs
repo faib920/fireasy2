@@ -19,9 +19,8 @@ namespace Fireasy.Data.Entity.Metadata
     /// </summary>
     public sealed class EntityMetadata
     {
-        private readonly MetadataPropertyDictionary properties = new MetadataPropertyDictionary();
         private readonly List<IProperty> concurrencyProperties = new List<IProperty>();
-        private List<Type> inheritedTypes = new List<Type>();
+        private readonly List<Type> inheritedTypes = new List<Type>();
 
         /// <summary>
         /// 初始化 <see cref="EntityMetadata"/> 类的新实例。
@@ -37,6 +36,7 @@ namespace Fireasy.Data.Entity.Metadata
             {
                 TableName = mapper.TableName;
                 Description = mapper.Description;
+                IsReadonly = mapper.IsReadonly;
             }
             else
             {
@@ -69,9 +69,14 @@ namespace Fireasy.Data.Entity.Metadata
         public string TableName { get; internal set; }
 
         /// <summary>
-        /// 获取或设置注释。
+        /// 获取注释。
         /// </summary>
         public string Description { get; internal set; }
+
+        /// <summary>
+        /// 获取是否只读。
+        /// </summary>
+        public bool IsReadonly { get; internal set; }
 
         /// <summary>
         /// 获取标识逻辑删除的属性。
@@ -92,13 +97,7 @@ namespace Fireasy.Data.Entity.Metadata
         /// <summary>
         /// 获取实体的所有属性列表。
         /// </summary>
-        public MetadataPropertyDictionary Properties
-        {
-            get
-            {
-                return properties;
-            }
-        }
+        public MetadataPropertyDictionary Properties { get; } = new MetadataPropertyDictionary();
 
         /// <summary>
         /// 获取实体树结构的元数据。
@@ -112,7 +111,7 @@ namespace Fireasy.Data.Entity.Metadata
         /// <returns></returns>
         public IDictionary<string, IProperty> Filter(Type entityType)
         {
-            return properties.GetDictionary()
+            return Properties.GetDictionary()
                 .Where(s => s.Value.Info != null && s.Value.Info.ReflectionInfo != null && s.Value.Info.ReflectionInfo.DeclaringType.IsAssignableFrom(entityType))
                 .ToDictionary(s => s.Key, s => s.Value);
         }
@@ -149,7 +148,7 @@ namespace Fireasy.Data.Entity.Metadata
         /// <param name="property"></param>
         internal void InternalAddProperty(IProperty property)
         {
-            if (properties.Keys.Any(s => s == property.Name))
+            if (Properties.Keys.Any(s => s == property.Name))
             {
                 return;
             }
@@ -164,7 +163,7 @@ namespace Fireasy.Data.Entity.Metadata
                 concurrencyProperties.Add(property);
             }
 
-            properties.Add(property.Name, property);
+            Properties.Add(property.Name, property);
 
             if (EntityTree != null)
             {
@@ -175,7 +174,7 @@ namespace Fireasy.Data.Entity.Metadata
 
     public class MetadataPropertyDictionary
     {
-        private Dictionary<string, IProperty> dic = new Dictionary<string, IProperty>();
+        private readonly Dictionary<string, IProperty> dic = new Dictionary<string, IProperty>();
 
         internal void Add(string name, IProperty property)
         {

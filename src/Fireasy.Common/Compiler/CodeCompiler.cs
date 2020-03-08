@@ -37,7 +37,6 @@ namespace Fireasy.Common.Compiler
 #if !NETSTANDARD
             CodeProvider = new CSharpCodeProvider();
 #endif
-            Assemblies = new List<string>();
         }
 
 #if !NETSTANDARD
@@ -60,7 +59,7 @@ namespace Fireasy.Common.Compiler
         /// <summary>
         /// 获取附加的程序集。
         /// </summary>
-        public List<string> Assemblies { get; private set; }
+        public List<string> Assemblies { get; private set; } = new List<string>();
 
 #if !NETSTANDARD
         /// <summary>
@@ -160,22 +159,20 @@ namespace Fireasy.Common.Compiler
             }
             else
             {
-                using (var ms = new MemoryStream())
+                using var ms = new MemoryStream();
+                var result = compilation.Emit(ms);
+                if (result.Success)
                 {
-                    var result = compilation.Emit(ms);
-                    if (result.Success)
-                    {
-                        return Assembly.Load(ms.ToArray());
-                    }
-                    else
-                    {
-                        ThrowCompileException(result);
-                        return null;
-                    }
+                    return Assembly.Load(ms.ToArray());
+                }
+                else
+                {
+                    ThrowCompileException(result);
+                    return null;
                 }
             }
 #endif
-        }
+        }   
 
         /// <summary>
         /// 编译代码生成一个新类型。
@@ -300,7 +297,7 @@ namespace Fireasy.Common.Compiler
                 errorBuilder.AppendLine(string.Format("({0},{1}): {2}", error.Line, error.Column, error.ErrorText));
             }
 
-            throw new CodeCompilerException(errorBuilder.ToString());
+            throw new CodeCompileException(errorBuilder.ToString());
         }
 #else
         private void ThrowCompileException(EmitResult result)
@@ -314,7 +311,7 @@ namespace Fireasy.Common.Compiler
                 errorBuilder.AppendFormat("{0}: {1}", diagnostic.Id, diagnostic.GetMessage());
             }
 
-            throw new CodeCompilerException(errorBuilder.ToString());
+            throw new CodeCompileException(errorBuilder.ToString());
         }
 #endif
 
@@ -322,7 +319,7 @@ namespace Fireasy.Common.Compiler
         {
             if (compileType == null)
             {
-                return default(TDelegate);
+                return default;
             }
 
             var theMethod = string.IsNullOrEmpty(methodName) ? compileType.GetMethods()[0] : compileType.GetMethod(methodName);

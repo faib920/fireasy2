@@ -56,17 +56,17 @@ namespace Fireasy.Common.Ioc.Configuration
         {
             Bind(configuration, 
                 "settings", 
-                func: c => InitializeSetting(c, new ContainerConfigurationSetting
+                func: c => InitializeSetting(new ContainerConfigurationSetting
                     {
                         Name = c.Key
-                    }));
+                    }, c));
 
             DefaultInstanceName = configuration.GetSection("default").Value;
 
             base.Bind(configuration);
         }
 
-        private ContainerConfigurationSetting InitializeSetting(IConfiguration config, ContainerConfigurationSetting setting)
+        private ContainerConfigurationSetting InitializeSetting(ContainerConfigurationSetting setting, IConfiguration config)
         {
             var list = new List<RegistrationSetting>();
             foreach (var child in config.GetChildren())
@@ -172,9 +172,9 @@ namespace Fireasy.Common.Ioc.Configuration
                     });
                 }
             }
-            catch
+            catch (Exception exp)
             {
-                Trace.WriteLine($"Load assembly {assemblyName} failed.");
+                Tracer.Error($"Load assembly {assemblyName} failed.\n{exp.Output()}");
             }
         }
     }

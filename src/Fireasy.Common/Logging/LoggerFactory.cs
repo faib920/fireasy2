@@ -83,7 +83,8 @@ namespace Fireasy.Common.Logging
                 return null;
             }
 
-            return ConfigurationUnity.Cached<ILogger>($"Logger_{configName}", () => ConfigurationUnity.CreateInstance<LoggingConfigurationSetting, ILogger>(setting, s => s.LogType));
+            return ConfigurationUnity.Cached<ILogger>($"Logger_{configName}", 
+                () => ConfigurationUnity.CreateInstance<LoggingConfigurationSetting, ILogger>(setting, s => s.LogType));
         }
     }
 }

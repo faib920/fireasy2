@@ -15,10 +15,9 @@ namespace Fireasy.Common.Serialization
     /// <summary>
     /// 表示可连续读取json文本的读取器。
     /// </summary>
-    public sealed class JsonReader : IDisposable
+    public sealed class JsonReader : DisposeableBase
     {
         private TextReader reader;
-        private bool isDisposed;
 
         /// <summary>
         /// 初始化 <see cref="JsonReader"/> 类的新实例。
@@ -137,21 +136,18 @@ namespace Fireasy.Common.Serialization
                 return null;
             }
 
-            DateTime dd;
-            var it = 0;
-            var dt = 0m;
 
-            if (int.TryParse(s, out it))
+            if (int.TryParse(s, out int it))
             {
                 return it;
             }
 
-            if (decimal.TryParse(s, out dt))
+            if (decimal.TryParse(s, out decimal dt))
             {
                 return dt;
             }
 
-            if (DateTime.TryParse(s, out dd))
+            if (DateTime.TryParse(s, out DateTime dd))
             {
                 return dd;
             }
@@ -162,9 +158,8 @@ namespace Fireasy.Common.Serialization
         public long ReadAsInt16()
         {
             var s = ReadNonString().ToString();
-            short it = 0;
 
-            if (short.TryParse(s, out it))
+            if (short.TryParse(s, out short it))
             {
                 return it;
             }
@@ -175,9 +170,8 @@ namespace Fireasy.Common.Serialization
         public int ReadAsInt32()
         {
             var s = ReadNonString().ToString();
-            var it = 0;
 
-            if (int.TryParse(s, out it))
+            if (int.TryParse(s, out int it))
             {
                 return it;
             }
@@ -188,9 +182,8 @@ namespace Fireasy.Common.Serialization
         public long ReadAsInt64()
         {
             var s = ReadNonString().ToString();
-            var it = 0L;
 
-            if (long.TryParse(s, out it))
+            if (long.TryParse(s, out long it))
             {
                 return it;
             }
@@ -201,9 +194,8 @@ namespace Fireasy.Common.Serialization
         public decimal ReadAsDecimal()
         {
             var s = ReadNonString().ToString();
-            var dt = 0m;
 
-            if (decimal.TryParse(s, out dt))
+            if (decimal.TryParse(s, out decimal dt))
             {
                 return dt;
             }
@@ -214,9 +206,8 @@ namespace Fireasy.Common.Serialization
         public DateTime ReadAsDateTime()
         {
             var s = ReadNonString().ToString();
-            DateTime dd;
 
-            if (DateTime.TryParse(s, out dd))
+            if (DateTime.TryParse(s, out DateTime dd))
             {
                 return dd;
             }
@@ -448,27 +439,18 @@ namespace Fireasy.Common.Serialization
 
         private static string FromEscaped(char c)
         {
-            switch (c)
+            return c switch
             {
-                case '"':
-                    return "\"";
-                case '\\':
-                    return "\\";
-                case 'b':
-                    return "\b";
-                case 'f':
-                    return "\f";
-                case 'r':
-                    return "\r";
-                case 'n':
-                    return "\n";
-                case 't':
-                    return "\t";
-                case 'u':
-                    return "u";
-                default:
-                    return string.Empty;
-            }
+                '"' => "\"",
+                '\\' => "\\",
+                'b' => "\b",
+                'f' => "\f",
+                'r' => "\r",
+                'n' => "\n",
+                't' => "\t",
+                'u' => "u",
+                _ => string.Empty,
+            };
         }
 
         /// <summary>
@@ -510,14 +492,6 @@ namespace Fireasy.Common.Serialization
         }
 
         /// <summary>
-        /// 释放对象所占用的所有资源。
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-        }
-
-        /// <summary>
         /// 循环读取一个数组块。该块以符号 [ 开始，以符号 ] 结束。
         /// </summary>
         /// <param name="loop">应用数组单位的方法。</param>
@@ -553,13 +527,8 @@ namespace Fireasy.Common.Serialization
         /// 释放对象所占用的非托管和托管资源。
         /// </summary>
         /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
-        private void Dispose(bool disposing)
+        protected override void Dispose(bool disposing)
         {
-            if (isDisposed)
-            {
-                return;
-            }
-
             if (disposing)
             {
                 if (reader != null)
@@ -568,8 +537,6 @@ namespace Fireasy.Common.Serialization
                     reader = null;
                 }
             }
-
-            isDisposed = true;
         }
     }
 }

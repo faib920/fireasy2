@@ -191,29 +191,24 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected class BindResult
         {
-            ReadOnlyCollection<ColumnDeclaration> columns;
-            ReadOnlyCollection<OrderExpression> orderings;
             public BindResult(IEnumerable<ColumnDeclaration> columns, IEnumerable<OrderExpression> orderings)
             {
-                this.columns = columns as ReadOnlyCollection<ColumnDeclaration>;
-                if (this.columns == null)
+                Columns = columns as ReadOnlyCollection<ColumnDeclaration>;
+                if (Columns == null)
                 {
-                    this.columns = new List<ColumnDeclaration>(columns).AsReadOnly();
+                    Columns = new List<ColumnDeclaration>(columns).AsReadOnly();
                 }
-                this.orderings = orderings as ReadOnlyCollection<OrderExpression>;
-                if (this.orderings == null)
+
+                Orderings = orderings as ReadOnlyCollection<OrderExpression>;
+                if (Orderings == null)
                 {
-                    this.orderings = new List<OrderExpression>(orderings).AsReadOnly();
+                    Orderings = new List<OrderExpression>(orderings).AsReadOnly();
                 }
             }
-            public ReadOnlyCollection<ColumnDeclaration> Columns
-            {
-                get { return this.columns; }
-            }
-            public ReadOnlyCollection<OrderExpression> Orderings
-            {
-                get { return this.orderings; }
-            }
+
+            public ReadOnlyCollection<ColumnDeclaration> Columns { get; private set; }
+
+            public ReadOnlyCollection<OrderExpression> Orderings { get; private set; }
         }
 
         /// <summary>

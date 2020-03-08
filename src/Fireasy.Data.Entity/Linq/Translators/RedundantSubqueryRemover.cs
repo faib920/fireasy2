@@ -4,7 +4,6 @@
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Linq.Expressions;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Translators
@@ -54,8 +53,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             foreach (ColumnDeclaration decl in select.Columns)
             {
-                var col = decl.Expression as ColumnExpression;
-                if (col == null || decl.Name != col.Name)
+                if (!(decl.Expression is ColumnExpression col) || decl.Name != col.Name)
                 {
                     return false;
                 }
@@ -71,8 +69,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 return false;
             }
 
-            var fromSelect = select.From as SelectExpression;
-            if (fromSelect == null || select.Columns.Count != fromSelect.Columns.Count)
+            if (!(select.From is SelectExpression fromSelect) || select.Columns.Count != fromSelect.Columns.Count)
             {
                 return false;
             }
@@ -82,8 +79,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             // in from.
             for (int i = 0, n = select.Columns.Count; i < n; i++)
             {
-                var col = select.Columns[i].Expression as ColumnExpression;
-                if (col == null || !(col.Name == fromColumns[i].Name))
+                if (!(select.Columns[i].Expression is ColumnExpression col) || !(col.Name == fromColumns[i].Name))
                 {
                     return false;
                 }
@@ -192,9 +188,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
                     var orderBy = select.OrderBy != null && select.OrderBy.Count > 0 ? select.OrderBy : fromSelect.OrderBy;
                     var groupBy = select.GroupBy != null && select.GroupBy.Count > 0 ? select.GroupBy : fromSelect.GroupBy;
-                    var skip = select.Skip != null ? select.Skip : fromSelect.Skip;
-                    var take = select.Take != null ? select.Take : fromSelect.Take;
-                    var segment = select.Segment != null ? select.Segment : fromSelect.Segment;
+                    var skip = select.Skip ?? fromSelect.Skip;
+                    var take = select.Take ?? fromSelect.Take;
+                    var segment = select.Segment ?? fromSelect.Segment;
                     bool isDistinct = select.IsDistinct | fromSelect.IsDistinct;
 
                     if (where != select.Where

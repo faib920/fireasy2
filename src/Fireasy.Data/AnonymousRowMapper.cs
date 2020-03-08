@@ -27,6 +27,13 @@ namespace Fireasy.Data
         private Func<IDataReader, T> funcDataRecd;
         private Func<DataRow, T> funcDataRow;
 
+        private class MethodCache
+        {
+            internal static readonly MethodInfo ToType = typeof(GenericExtension).GetMethod(nameof(GenericExtension.ToType));
+            internal static readonly MethodInfo GetValue = typeof(IRecordWrapper).GetMethod(nameof(IRecordWrapper.GetValue), new[] { typeof(IDataReader), typeof(string) });
+            internal static readonly PropertyInfo DataRowIndex = typeof(DataRow).GetProperty("Item", new[] { typeof(string) });
+        }
+
         /// <summary>
         /// 将一个 <see cref="IDataReader"/> 转换为一个 <typeparamref name="T"/> 的对象。
         /// </summary>
@@ -89,13 +96,11 @@ namespace Fireasy.Data
             var conInfo = typeof(T).GetConstructors().FirstOrDefault();
             Guard.NullReference(conInfo);
             var parExp = Expression.Parameter(typeof(IDataReader), "s");
-            var convertMethod = typeof(GenericExtension).GetMethod("ToType");
-            var itemGetMethod = typeof(IRecordWrapper).GetMethod("GetValue", new[] { typeof(IDataReader), typeof(string) });
             var parameters =
                 GetParameters(conInfo).Select(s => (Expression)Expression.Convert(
-                            Expression.Call(convertMethod, new Expression[] 
+                            Expression.Call(MethodCache.ToType, new Expression[] 
                                     { 
-                                        Expression.Call(Expression.Constant(RecordWrapper), itemGetMethod, new Expression[] { parExp, Expression.Constant(s.Name) }),
+                                        Expression.Call(Expression.Constant(RecordWrapper), MethodCache.GetValue, new Expression[] { parExp, Expression.Constant(s.Name) }),
                                         Expression.Constant(s.ParameterType),
                                         Expression.Constant(null)
                                     }
@@ -112,13 +117,11 @@ namespace Fireasy.Data
             var conInfo = typeof(T).GetConstructors().FirstOrDefault();
             Guard.NullReference(conInfo);
             var parExp = Expression.Parameter(typeof(DataRow), "s");
-            var convertMethod = typeof(GenericExtension).GetMethod("ToType");
-            var itemProperty = typeof(DataRow).GetProperty("Item", new[] { typeof(string) });
             var parameters =
                 GetParameters(conInfo).Select(s => (Expression)Expression.Convert(
-                            Expression.Call(convertMethod, new Expression[] 
+                            Expression.Call(MethodCache.ToType, new Expression[] 
                                     { 
-                                        Expression.MakeIndex(parExp, itemProperty, new List<Expression> { Expression.Constant(s.Name) }),
+                                        Expression.MakeIndex(parExp, MethodCache.DataRowIndex, new List<Expression> { Expression.Constant(s.Name) }),
                                         Expression.Constant(s.ParameterType),
                                         Expression.Constant(null)
                                     }

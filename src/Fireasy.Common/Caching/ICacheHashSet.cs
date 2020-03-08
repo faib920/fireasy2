@@ -23,20 +23,20 @@ namespace Fireasy.Common.Caching
         /// 尝试从集合中获取指定 <paramref name="key"/> 的数据，如果没有则使用工厂函数添加对象到集合中。
         /// </summary>
         /// <param name="key">标识数据的 key。</param>
-        /// <param name="factory">用于添加缓存对象的工厂函数。</param>
+        /// <param name="valueCreator">用于添加缓存对象的工厂函数。</param>
         /// <param name="expiration">判断对象过期的对象。</param>
         /// <returns></returns>
-        TValue TryGet(TKey key, Func<TValue> factory, Func<ICacheItemExpiration> expiration = null);
+        TValue TryGet(TKey key, Func<TValue> valueCreator, Func<ICacheItemExpiration> expiration = null);
 
         /// <summary>
         /// 异步的，尝试从集合中获取指定 <paramref name="key"/> 的数据，如果没有则使用工厂函数添加对象到集合中。
         /// </summary>
         /// <param name="key">标识数据的 key。</param>
-        /// <param name="factory">用于添加缓存对象的工厂函数。</param>
+        /// <param name="valueCreator">用于添加缓存对象的工厂函数。</param>
         /// <param name="expiration">判断对象过期的对象。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns></returns>
-        Task<TValue> TryGetAsync(TKey key, Func<Task<TValue>> factory, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default);
+        Task<TValue> TryGetAsync(TKey key, Func<Task<TValue>> valueCreator, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 将值插入到哈希集合中。
@@ -67,6 +67,12 @@ namespace Fireasy.Common.Caching
         /// </summary>
         /// <returns></returns>
         IEnumerable<TKey> GetKeys();
+
+        /// <summary>
+        /// 获取所有的 value。
+        /// </summary>
+        /// <returns></returns>
+        IEnumerable<TValue> GetValues();
 
         /// <summary>
         /// 异步的，获取所有的 key。

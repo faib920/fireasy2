@@ -50,7 +50,7 @@ namespace Fireasy.Common.ComponentModel
             return TypeDescriptor.GetEvents(this, attributes, true);
         }
 
-        EventDescriptorCollection System.ComponentModel.ICustomTypeDescriptor.GetEvents()
+        EventDescriptorCollection ICustomTypeDescriptor.GetEvents()
         {
             return TypeDescriptor.GetEvents(this, true);
         }
@@ -109,9 +109,7 @@ namespace Fireasy.Common.ComponentModel
             {
                 get 
                 {
-                    object value;
-                    instance.TryGetMember(name, out value);
-                    return value == null ? null : value.GetType();
+                    return instance.TryGetMember(name, out object value) ? value.GetType() : null;
                 }
             }
 
@@ -122,8 +120,7 @@ namespace Fireasy.Common.ComponentModel
 
             public override object GetValue(object component)
             {
-                object value;
-                instance.TryGetMember(name, out value);
+                instance.TryGetMember(name, out object value);
                 return value;
             }
 

@@ -16,7 +16,7 @@ namespace Fireasy.Common.Subscribes
     /// </summary>
     public class SynchronizedSubscribeManager : ISubscribeManager
     {
-        private static SubscriberCollection subscribers = new SubscriberCollection();
+        private static readonly SubscriberCollection subscribers = new SubscriberCollection();
 
         /// <summary>
         /// 缺省实例。
@@ -76,7 +76,7 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            subscribers.AddSyncSubscriber(TopicHelper.GetTopicName(typeof(TSubject)), subscriber);
+            subscribers.AddSyncSubscriber(typeof(TSubject), TopicHelper.GetTopicName(typeof(TSubject)), subscriber);
         }
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            subscribers.AddAsyncSubscriber(TopicHelper.GetTopicName(typeof(TSubject)), subscriber);
+            subscribers.AddAsyncSubscriber(typeof(TSubject), TopicHelper.GetTopicName(typeof(TSubject)), subscriber);
         }
 
         /// <summary>
@@ -101,7 +101,7 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            subscribers.AddSyncSubscriber(name, subscriber);
+            subscribers.AddSyncSubscriber(typeof(TSubject), name, subscriber);
         }
 
         /// <summary>
@@ -114,7 +114,7 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            subscribers.AddAsyncSubscriber(name, subscriber);
+            subscribers.AddAsyncSubscriber(typeof(TSubject), name, subscriber);
         }
 
         /// <summary>
@@ -126,7 +126,7 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            subscribers.AddSyncSubscriber(TopicHelper.GetTopicName(subjectType), subscriber);
+            subscribers.AddSyncSubscriber(subjectType, TopicHelper.GetTopicName(subjectType), subscriber);
         }
 
         /// <summary>

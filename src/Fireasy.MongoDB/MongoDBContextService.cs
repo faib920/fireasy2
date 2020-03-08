@@ -15,14 +15,12 @@ namespace Fireasy.MongoDB
 {
     public class MongoDBContextService : ContextServiceBase
     {
-        private MongoClient client;
+        private readonly MongoClient client;
 
-        public MongoDBContextService(EntityContextInitializeContext context)
-            : base (context)
+        public MongoDBContextService(ContextServiceContext context)
+            : base(context)
         {
-            Provider = context.Provider;
-
-            var connectionString = context.ConnectionString;
+            var connectionString = context.Options.ConnectionString;
             var serverName = connectionString.Properties.TryGetValue("server");
             var database = connectionString.Properties.TryGetValue("database");
             if (string.IsNullOrEmpty(database))
@@ -40,29 +38,44 @@ namespace Fireasy.MongoDB
         /// <summary>
         /// 获取 <see cref="MongoDatabase"/> 对象。
         /// </summary>
-        public new MongoDatabase Database { get; private set; }
+        public MongoDatabase Database { get; private set; }
 
         /// <summary>
         /// 获取事务会话。
         /// </summary>
         public IClientSession Session { get; private set; }
 
+        /// <summary>
+        /// 开启事务。
+        /// </summary>
+        /// <param name="level"></param>
         public override void BeginTransaction(IsolationLevel level = IsolationLevel.ReadCommitted)
         {
             Session = client.StartSession();
+            Session.StartTransaction();
         }
 
+        /// <summary>
+        /// 提交事务。
+        /// </summary>
         public override void CommitTransaction()
         {
             Session?.CommitTransaction();
         }
 
+        /// <summary>
+        /// 回滚事务。
+        /// </summary>
         public override void RollbackTransaction()
         {
             Session?.AbortTransaction();
         }
 
-        public override void Dispose()
+        /// <summary>
+        /// 释放资源。
+        /// </summary>
+        /// <param name="disposing"></param>
+        protected override void Dispose(bool disposing)
         {
             Session?.Dispose();
         }

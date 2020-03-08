@@ -6,8 +6,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
 {
     public class JoinColumnGatherer
     {
-        HashSet<TableAlias> aliases;
-        HashSet<ColumnExpression> columns = new HashSet<ColumnExpression>();
+        private readonly HashSet<TableAlias> aliases;
+        private readonly HashSet<ColumnExpression> columns = new HashSet<ColumnExpression>();
 
         private JoinColumnGatherer(HashSet<TableAlias> aliases)
         {
@@ -23,28 +23,27 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private void Gather(Expression expression)
         {
-            BinaryExpression b = expression as BinaryExpression;
-            if (b != null)
+            if (expression is BinaryExpression bin)
             {
-                switch (b.NodeType)
+                switch (bin.NodeType)
                 {
                     case ExpressionType.Equal:
                     case ExpressionType.NotEqual:
-                        if (IsExternalColumn(b.Left) && GetColumn(b.Right) != null)
+                        if (IsExternalColumn(bin.Left) && GetColumn(bin.Right) != null)
                         {
-                            this.columns.Add(GetColumn(b.Right));
+                            this.columns.Add(GetColumn(bin.Right));
                         }
-                        else if (IsExternalColumn(b.Right) && GetColumn(b.Left) != null)
+                        else if (IsExternalColumn(bin.Right) && GetColumn(bin.Left) != null)
                         {
-                            this.columns.Add(GetColumn(b.Left));
+                            this.columns.Add(GetColumn(bin.Left));
                         }
                         break;
                     case ExpressionType.And:
                     case ExpressionType.AndAlso:
-                        if (b.Type == typeof(bool) || b.Type == typeof(bool?))
+                        if (bin.Type == typeof(bool) || bin.Type == typeof(bool?))
                         {
-                            this.Gather(b.Left);
-                            this.Gather(b.Right);
+                            this.Gather(bin.Left);
+                            this.Gather(bin.Right);
                         }
                         break;
                 }

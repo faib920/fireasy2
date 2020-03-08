@@ -301,11 +301,11 @@ namespace Fireasy.Data.Entity
         /// 通过一个 <see cref="MemberInitExpression"/> 表达式将属性值绑定到实体对象中。
         /// </summary>
         /// <param name="entity"></param>
-        /// <param name="factory"></param>
+        /// <param name="creator"></param>
         /// <returns></returns>
-        public static IEntity InitByExpression(this IEntity entity, LambdaExpression factory)
+        public static IEntity InitByExpression(this IEntity entity, LambdaExpression creator)
         {
-            if (factory.Body is MemberInitExpression initExp)
+            if (creator.Body is MemberInitExpression initExp)
             {
                 foreach (var bind in initExp.Bindings)
                 {
@@ -347,7 +347,7 @@ namespace Fireasy.Data.Entity
             {
                 if (!PropertyValue.IsEmpty(property.Info.DefaultValue))
                 {
-                    entity.InitializeValue(property, property.Info.DefaultValue);
+                    entity.InitializeValue(property, property.Info.DefaultValue.TryAllotValue(property.Type, property.Info.DefaultValueFormatter));
                 }
             }
 
@@ -363,7 +363,7 @@ namespace Fireasy.Data.Entity
         {
             if (item == null)
             {
-                return default(T);
+                return default;
             }
 
             if (item is IEntityPersistentInstanceContainer e)
@@ -383,7 +383,7 @@ namespace Fireasy.Data.Entity
         {
             if (item == null)
             {
-                return default(T);
+                return default;
             }
 
             if (item is IEntityPersistentEnvironment e && environment != null)
@@ -428,7 +428,7 @@ namespace Fireasy.Data.Entity
         internal static EntityPersistentEnvironment GetEnvironment(this IEntity entity)
         {
             var env = entity.As<IEntityPersistentEnvironment>();
-            return env != null ? env.Environment : null;
+            return env?.Environment;
         }
 
         /// <summary>
@@ -441,6 +441,5 @@ namespace Fireasy.Data.Entity
             var con = entity.As<IEntityPersistentInstanceContainer>();
             return con != null ? con.InstanceName : string.Empty;
         }
-
     }
 }

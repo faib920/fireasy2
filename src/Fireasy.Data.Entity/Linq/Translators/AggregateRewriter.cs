@@ -49,13 +49,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitAggregateSubquery(AggregateSubqueryExpression aggregate)
         {
-            Expression mapped;
-            return map.TryGetValue(aggregate, out mapped) ? mapped : Visit(aggregate.AggregateAsSubquery);
+            return map.TryGetValue(aggregate, out Expression mapped) ? mapped : Visit(aggregate.AggregateAsSubquery);
         }
 
         private class AggregateGatherer : DbExpressionVisitor
         {
-            private List<AggregateSubqueryExpression> aggregates = new List<AggregateSubqueryExpression>();
+            private readonly List<AggregateSubqueryExpression> aggregates = new List<AggregateSubqueryExpression>();
 
             public static ReadOnlyCollection<AggregateSubqueryExpression> Gather(Expression expression)
             {

@@ -10,7 +10,6 @@ using System;
 using System.Collections;
 using System.Data;
 using System.Linq;
-using System.Globalization;
 using Fireasy.Common.Extensions;
 using System.Dynamic;
 using Fireasy.Common.ComponentModel;
@@ -19,14 +18,13 @@ using System.Text;
 
 namespace Fireasy.Common.Serialization
 {
-    internal sealed class JsonSerialize : IDisposable
+    internal sealed class JsonSerialize : DisposeableBase
     {
         private readonly JsonSerializeOption option;
         private readonly JsonSerializer serializer;
         private JsonWriter jsonWriter;
         private readonly SerializeContext context;
-        private bool isDisposed;
-        private TypeConverterCache<JsonConverter> cacheConverter = new TypeConverterCache<JsonConverter>();
+        private readonly TypeConverterCache<JsonConverter> cacheConverter = new TypeConverterCache<JsonConverter>();
 
         internal JsonSerialize(JsonSerializer serializer, JsonWriter writer, JsonSerializeOption option)
         {
@@ -481,21 +479,14 @@ namespace Fireasy.Common.Serialization
         /// 释放对象所占用的非托管和托管资源。
         /// </summary>
         /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
-        private void Dispose(bool disposing)
+        protected override void Dispose(bool disposing)
         {
-            if (isDisposed)
-            {
-                return;
-            }
-
             if (disposing)
             {
                 context.Dispose();
                 jsonWriter.Dispose();
                 jsonWriter = null;
             }
-
-            isDisposed = true;
         }
 
         private IEnumerable<DataColumn> GetDataColumns(DataTable table)
@@ -507,14 +498,6 @@ namespace Fireasy.Common.Serialization
                     yield return column;
                 }
             }
-        }
-
-        /// <summary>
-        /// 释放对象所占用的所有资源。
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
         }
     }
 }

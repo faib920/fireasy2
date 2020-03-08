@@ -143,10 +143,7 @@ namespace Fireasy.Common.Emit
         /// <returns></returns>
         public DynamicMethodBuilder AppendCode(Action<EmitHelper> ilCoding)
         {
-            if (ilCoding != null)
-            {
-                ilCoding(Context.Emitter);
-            }
+            ilCoding?.Invoke(Context.Emitter);
 
             return this;
         }

@@ -41,7 +41,7 @@ namespace Fireasy.Common.Configuration
             var attribute = typeof(T).GetCustomAttributes<ConfigurationSectionStorageAttribute>().FirstOrDefault();
             if (attribute == null)
             {
-                return default(T);
+                return default;
             }
 
 #if NETSTANDARD
@@ -157,9 +157,10 @@ namespace Fireasy.Common.Configuration
         /// <typeparam name="TSetting"></typeparam>
         /// <typeparam name="TInstance"></typeparam>
         /// <param name="setting"></param>
-        /// <param name="typeFunc"></param>
+        /// <param name="valueCreator"></param>
+        /// <param name="initializer"></param>
         /// <returns></returns>
-        public static TInstance CreateInstance<TSetting, TInstance>(IConfigurationSettingItem setting, Func<TSetting, Type> typeFunc) where TSetting : class, IConfigurationSettingItem
+        public static TInstance CreateInstance<TSetting, TInstance>(IConfigurationSettingItem setting, Func<TSetting, Type> valueCreator, Action<TSetting, TInstance> initializer = null) where TSetting : class, IConfigurationSettingItem
         {
             var relSetting = setting as TSetting;
             IConfigurationSettingItem extendSetting = null;
@@ -169,16 +170,18 @@ namespace Fireasy.Common.Configuration
                 extendSetting = wsetting.Extend;
             }
 
-            if (relSetting == null || typeFunc(relSetting) == null)
+            if (relSetting == null || valueCreator(relSetting) == null)
             {
-                return default(TInstance);
+                return default;
             }
 
-            var instance = typeFunc(relSetting).New<TInstance>();
+            var instance = valueCreator(relSetting).New<TInstance>();
             if (instance == null)
             {
-                return default(TInstance);
+                return default;
             }
+
+            initializer?.Invoke(relSetting, instance);
 
             if (extendSetting != null)
             {
@@ -193,11 +196,11 @@ namespace Fireasy.Common.Configuration
         /// </summary>
         /// <typeparam name="TSetting"></typeparam>
         /// <param name="cacheKey"></param>
-        /// <param name="factory"></param>
+        /// <param name="valueCreator"></param>
         /// <returns></returns>
-        public static TInstance Cached<TInstance>(string cacheKey, Func<object> factory)
+        public static TInstance Cached<TInstance>(string cacheKey, Func<object> valueCreator)
         {
-            var obj = objCache.GetOrAdd(cacheKey, factory);
+            var obj = objCache.GetOrAdd(cacheKey, valueCreator);
             if (obj != null)
             {
                 return (TInstance)obj;

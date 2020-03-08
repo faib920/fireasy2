@@ -12,7 +12,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class QueryDuplicator : DbExpressionVisitor
     {
-        private Dictionary<TableAlias, TableAlias> map = new Dictionary<TableAlias, TableAlias>();
+        private readonly Dictionary<TableAlias, TableAlias> map = new Dictionary<TableAlias, TableAlias>();
 
         internal static Expression Duplicate(Expression expression)
         {
@@ -38,8 +38,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitColumn(ColumnExpression column)
         {
-            TableAlias newAlias;
-            if (this.map.TryGetValue(column.Alias, out newAlias))
+            if (map.TryGetValue(column.Alias, out TableAlias newAlias))
             {
                 return new ColumnExpression(column.Type, newAlias, column.Name, column.MapInfo);
             }

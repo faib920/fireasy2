@@ -11,13 +11,23 @@ using System;
 
 namespace Fireasy.Data.Entity
 {
+    /// <summary>
+    /// <see cref="EntityContextOptions"/> 构造器。
+    /// </summary>
     public class EntityContextOptionsBuilder
     {
+        /// <summary>
+        /// 初始化 <see cref="EntityContextOptionsBuilder"/> 类的新实例。
+        /// </summary>
+        /// <param name="options"></param>
         public EntityContextOptionsBuilder(EntityContextOptions options)
         {
             Options = options;
         }
 
+        /// <summary>
+        /// 获取 <see cref="EntityContextOptions"/> 参数。
+        /// </summary>
         public EntityContextOptions Options { get; private set; }
 
         /// <summary>
@@ -27,7 +37,8 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityContextOptionsBuilder UseSqlServer(string connectionString)
         {
-            Options.ContextFactory = () => new EntityContextInitializeContext(MsSqlProvider.Instance, connectionString);
+            Options.Provider = MsSqlProvider.Instance;
+            Options.ConnectionString = connectionString;
             return this;
         }
 
@@ -38,7 +49,8 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityContextOptionsBuilder UseMySql(string connectionString)
         {
-            Options.ContextFactory = () => new EntityContextInitializeContext(MySqlProvider.Instance, connectionString);
+            Options.Provider = MySqlProvider.Instance;
+            Options.ConnectionString = connectionString;
             return this;
         }
 
@@ -49,7 +61,8 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityContextOptionsBuilder UseSQLite(string connectionString)
         {
-            Options.ContextFactory = () => new EntityContextInitializeContext(SQLiteProvider.Instance, connectionString);
+            Options.Provider = SQLiteProvider.Instance;
+            Options.ConnectionString = connectionString;
             return this;
         }
 
@@ -60,7 +73,8 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityContextOptionsBuilder UseOracle(string connectionString)
         {
-            Options.ContextFactory = () => new EntityContextInitializeContext(OracleProvider.Instance, connectionString);
+            Options.Provider = OracleProvider.Instance;
+            Options.ConnectionString = connectionString;
             return this;
         }
 
@@ -71,7 +85,8 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityContextOptionsBuilder UseFirebird(string connectionString)
         {
-            Options.ContextFactory = () => new EntityContextInitializeContext(FirebirdProvider.Instance, connectionString);
+            Options.Provider = FirebirdProvider.Instance;
+            Options.ConnectionString = connectionString;
             return this;
         }
 
@@ -82,30 +97,31 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityContextOptionsBuilder UsePostgreSql(string connectionString)
         {
-            Options.ContextFactory = () => new EntityContextInitializeContext(PostgreSqlProvider.Instance, connectionString);
+            Options.Provider = PostgreSqlProvider.Instance;
+            Options.ConnectionString = connectionString;
             return this;
         }
 
         /// <summary>
         /// 使用 CodeFirst 模式。
         /// </summary>
-        /// <param name="changed"></param>
+        /// <param name="changedAction"></param>
         /// <returns></returns>
-        public EntityContextOptionsBuilder UseCodeFirst(Action<RespositoryChangedEventArgs> changed = null)
+        public EntityContextOptionsBuilder UseCodeFirst(Action<RespositoryChangedEventArgs> changedAction = null)
         {
-            Options.Initializers.Add<RespositoryCreatePreInitializer>(s => s.EventHandler = changed);
+            Options.Initializers.Add<RespositoryCreatePreInitializer>(s => s.EventHandler = changedAction);
             return this;
         }
 
         /// <summary>
         /// 使用持久化环境进行分表配置。
         /// </summary>
-        /// <param name="setup">对 <see cref="EntityPersistentEnvironment"/> 进行配置的方法。</param>
+        /// <param name="setupAction">对 <see cref="EntityPersistentEnvironment"/> 进行配置的方法。</param>
         /// <returns></returns>
-        public EntityContextOptionsBuilder UseEnvironment(Action<EntityPersistentEnvironment> setup)
+        public EntityContextOptionsBuilder UseEnvironment(Action<EntityPersistentEnvironment> setupAction)
         {
             var environment = new EntityPersistentEnvironment();
-            setup?.Invoke(environment);
+            setupAction?.Invoke(environment);
             Options.Initializers.Add<EnvironmentPreInitializer>(s => s.Environment = environment);
             return this;
         }
@@ -123,11 +139,11 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 针对 Oracle 数据库，采用触发器将序列值作为新增数据的主键值。
         /// </summary>
-        /// <typeparam name="T">指定具体的实体类。</typeparam>
+        /// <typeparam name="TEntity">指定具体的实体类。</typeparam>
         /// <returns></returns>
-        public EntityContextOptionsBuilder UseOracleTrigger<T>() where T : IEntity
+        public EntityContextOptionsBuilder UseOracleTrigger<TEntity>() where TEntity : IEntity
         {
-            Options.Initializers.Add<OracleTriggerPreInitializer>(s => s.Add(typeof(T)));
+            Options.Initializers.Add<OracleTriggerPreInitializer>(s => s.Add(typeof(TEntity)));
             return this;
         }
     }

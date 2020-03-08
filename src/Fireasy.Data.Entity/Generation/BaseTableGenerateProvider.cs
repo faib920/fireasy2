@@ -91,13 +91,16 @@ namespace Fireasy.Data.Entity.Generation
             if (!string.IsNullOrEmpty(tableName) && syntax != null)
             {
                 //判断表是否存在
-                SqlCommand sql = syntax.ExistsTable(tableName);
-                using (var reader = database.ExecuteReader(sql))
+                var sql = syntax.ExistsTable(tableName);
+                if (string.IsNullOrEmpty(sql))
                 {
-                    if (reader.Read())
-                    {
-                        return IsExistsTable(reader);
-                    }
+                    return true;
+                }
+
+                using var reader = database.ExecuteReader((SqlCommand)sql);
+                if (reader.Read())
+                {
+                    return IsExistsTable(reader);
                 }
             }
 
@@ -142,7 +145,7 @@ namespace Fireasy.Data.Entity.Generation
         /// <param name="property"></param>
         protected virtual void AppendFieldToBuilder(StringBuilder builder, ISyntaxProvider syntax, IProperty property)
         {
-            builder.AppendFormat(" {0}", Quote(syntax, property.Info.FieldName));
+            builder.Append($" {Quote(syntax, property.Info.FieldName)}");
 
             //数据类型及长度精度等
             builder.AppendFormat(" {0}", syntax.Column((DbType)property.Info.DataType,
@@ -160,13 +163,13 @@ namespace Fireasy.Data.Entity.Generation
             if (property.Info.GenerateType == IdentityGenerateType.AutoIncrement &&
                 !string.IsNullOrEmpty(syntax.IdentityColumn))
             {
-                builder.AppendFormat(" {0}", syntax.IdentityColumn);
+                builder.Append($" {syntax.IdentityColumn}");
             }
 
             //不可空
             if (!property.Info.IsNullable)
             {
-                builder.AppendFormat(" not null");
+                builder.Append(" not null");
             }
 
             //默认值
@@ -174,26 +177,26 @@ namespace Fireasy.Data.Entity.Generation
             {
                 if (property.Type == typeof(string))
                 {
-                    builder.AppendFormat(" default '{0}'", property.Info.DefaultValue);
+                    builder.Append($" default '{property.Info.DefaultValue}'");
                 }
                 else if (property.Type.IsEnum)
                 {
-                    builder.AppendFormat(" default {0}", (int)property.Info.DefaultValue.GetValue());
+                    builder.Append($" default {(int)property.Info.DefaultValue.GetValue()}");
                 }
                 else if (property.Type == typeof(bool) || property.Type == typeof(bool?))
                 {
-                    builder.AppendFormat(" default {0}", (bool)property.Info.DefaultValue ? 1 : 0);
+                    builder.Append($" default {((bool)property.Info.DefaultValue ? 1 : 0)}");
                 }
                 else
                 {
-                    builder.AppendFormat(" default {0}", property.Info.DefaultValue);
+                    builder.Append($" default {property.Info.DefaultValue}");
                 }
             }
         }
 
         private void BatchExecute(IDatabase database, SqlCommand[] commands)
         {
-            commands.ForEach(s => database.ExecuteNonQuery(s));
+            commands.ForEach(async c => await database.ExecuteNonQueryAsync(c));
         }
     }
 }

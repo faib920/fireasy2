@@ -36,6 +36,8 @@ namespace Fireasy.Redis
 
                 setting.PoolSize = configNode.GetAttributeValue<int?>("poolSize");
                 setting.DefaultDb = configNode.GetAttributeValue("defaultDb", 0);
+                setting.DbRange = configNode.GetAttributeValue("dbRange");
+                setting.KeyRule = configNode.GetAttributeValue("keyRule");
                 setting.Password = configNode.GetAttributeValue("password");
                 setting.Ssl = configNode.GetAttributeValue<bool>("ssl");
                 setting.WriteBuffer = configNode.GetAttributeValue<int?>("writeBuffer");
@@ -47,10 +49,10 @@ namespace Fireasy.Redis
 
                 foreach (XmlNode nd in configNode.SelectNodes("host"))
                 {
-                    var host = new RedisHost();
-                    host.Server = nd.GetAttributeValue("server");
-                    host.Port = nd.GetAttributeValue("port", 0);
-                    host.ReadOnly = nd.GetAttributeValue("readonly", false);
+                    var host = new RedisHost(nd.GetAttributeValue("server"), nd.GetAttributeValue("port", 0))
+                    {
+                        ReadOnly = nd.GetAttributeValue("readonly", false)
+                    };
 
                     setting.Hosts.Add(host);
                 }
@@ -76,6 +78,8 @@ namespace Fireasy.Redis
 
                 setting.PoolSize = configNode["poolSize"].To<int?>();
                 setting.DefaultDb = configNode["defaultDb"].To(0);
+                setting.DbRange = configNode["dbRange"];
+                setting.KeyRule = configNode["keyRule"];
                 setting.Password = configNode["password"];
                 setting.Ssl = configNode["ssl"].To<bool>();
                 setting.WriteBuffer = configNode["writeBuffer"].To<int?>();
@@ -87,10 +91,10 @@ namespace Fireasy.Redis
 
                 foreach (var nd in configNode.GetSection("host").GetChildren())
                 {
-                    var host = new RedisHost();
-                    host.Server = nd["server"];
-                    host.Port = nd["port"].To(0);
-                    host.ReadOnly = nd["readonly"].To(false);
+                    var host = new RedisHost(nd["server"], nd["port"].To(0))
+                    {
+                        ReadOnly = nd["readonly"].To(false)
+                    };
 
                     setting.Hosts.Add(host);
                 }

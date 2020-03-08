@@ -29,6 +29,7 @@ namespace Fireasy.Common
         internal const string NotConcreteType = "NotConcreteType";
         internal const string NoDefaultConstructor = "NoDefaultConstructor";
         internal const string NoDefaultOrDefaultValueConstructor = "NoDefaultOrDefaultValueConstructor";
+        internal const string NoMatchConstructor = "NoMatchConstructor";
         internal const string ConstructorHasParameterOfValueType = "ConstructorHasParameterOfValueType";
         internal const string CollectionHasEmptyItem = "CollectionHasEmptyItem";
         internal const string RecursiveInvoke = "RecursiveInvoke";
@@ -58,6 +59,7 @@ namespace Fireasy.Common
         internal const string AlgorithmNotSupported = "AlgorithmNotSupported";
         internal const string CacheServerAnomaly = "CacheServerAnomaly";
         internal const string KeyMustBeStringable = "KeyMustBeStringable";
+        internal const string UnableCreateCachedDelegate = "UnableCreateCachedDelegate";
     }
 
     internal class SR

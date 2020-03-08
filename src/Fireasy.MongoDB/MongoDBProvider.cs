@@ -8,7 +8,6 @@
 using Fireasy.Data;
 using Fireasy.Data.Entity;
 using Fireasy.Data.Provider;
-using System;
 
 namespace Fireasy.MongoDB
 {
@@ -24,14 +23,29 @@ namespace Fireasy.MongoDB
 
         public override string ProviderName => "MongoDB";
 
+        /// <summary>
+        /// 获取当前连接的参数。
+        /// </summary>
+        /// <returns></returns>
         public override ConnectionParameter GetConnectionParameter(ConnectionString connectionString)
         {
-            throw new NotImplementedException();
+            return new ConnectionParameter
+            {
+                Server = connectionString.Properties["server"],
+                Database = connectionString.Properties.TryGetValue("database")
+            };
         }
 
-        public override string UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter)
+        /// <summary>
+        /// 使用参数更新指定的连接。
+        /// </summary>
+        /// <param name="connectionString">连接字符串对象。</param>
+        /// <param name="parameter"></param>
+        public override void UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter)
         {
-            throw new NotImplementedException();
+            connectionString.Properties.TrySetValue(parameter.Server, "server")
+                .TrySetValue(parameter.Database, "database")
+                .Update();
         }
     }
 }

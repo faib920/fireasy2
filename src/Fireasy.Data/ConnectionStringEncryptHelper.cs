@@ -48,20 +48,20 @@ namespace Fireasy.Data
         internal static string Decrypt(string data)
         {
             var bytes = ToBytes(data);
-            var keys = new[] { bytes[2], bytes[0], bytes[bytes.Length - 3], bytes[1], 
-                bytes[bytes.Length - 1], bytes[bytes.Length - 2], bytes[3], bytes[bytes.Length - 4] };
+            var l = bytes.Length;
+            var keys = new[] { bytes[2], bytes[0], bytes[l - 3], bytes[1], 
+                bytes[l - 1], bytes[l - 2], bytes[3], bytes[l - 4] };
 
             var encrypt = CryptographyFactory.Create(CryptoAlgorithm.RC2) as SymmetricCrypto;
             encrypt.CryptKey = keys;
 
-            var bd = new byte[bytes.Length - 8];
+            var bd = new byte[l - 8];
             Array.Copy(bytes, 4, bd, 0, bd.Length);
             return encrypt.Decrypt(bd, Encoding.GetEncoding(0));
         }
 
         private static string ToHex(byte[] bytes)
         {
-            var rnd = new Random();
             var sb = new StringBuilder();
             for (var i = 0; i < bytes.Length; i++)
             {
@@ -73,9 +73,10 @@ namespace Fireasy.Data
 
         private static byte[] ToBytes(string str)
         {
-            var bytes = new byte[str.Length / 2];
+            var l = str.Length;
+            var bytes = new byte[l / 2];
 
-            for (var i = 0; i < str.Length; i += 2)
+            for (var i = 0; i < l; i += 2)
             {
                 bytes[i / 2] = byte.Parse(str.Substring(i, 2), NumberStyles.HexNumber);
             }

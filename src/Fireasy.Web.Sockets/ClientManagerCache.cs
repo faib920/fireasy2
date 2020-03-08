@@ -20,17 +20,12 @@ namespace Fireasy.Web.Sockets
             {
                 ClientManager manager = null;
 #if NETSTANDARD
-                    if (acceptContext.HttpContext != null)
-                    {
-                        manager = acceptContext.HttpContext.RequestServices.GetService(typeof(ClientManager)) as ClientManager;
-                    }
-#endif
-                if (manager == null)
+                if (acceptContext.HttpContext != null)
                 {
-                    manager = acceptContext.Option.Distributed ? new DistributedClientManager(acceptContext.Option) : new ClientManager(acceptContext.Option);
+                    manager = acceptContext.HttpContext.RequestServices.GetService(typeof(ClientManager)) as ClientManager;
                 }
-
-                return manager;
+#endif
+                return manager ?? new ClientManager(acceptContext.Option);
             });
         }
     }

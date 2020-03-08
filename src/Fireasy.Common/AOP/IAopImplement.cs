@@ -10,7 +10,7 @@ using Fireasy.Common.Ioc;
 namespace Fireasy.Common.Aop
 {
     /// <summary>
-    /// 标记实现 Aop 的类型。
+    /// 标记已经实现了 Aop 的类型。
     /// </summary>
     [IgnoreRegister]
     public interface IAopImplement

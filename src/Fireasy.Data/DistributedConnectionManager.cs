@@ -13,9 +13,9 @@ namespace Fireasy.Data
     /// <summary>
     /// 分布式数据库连接串管理器。
     /// </summary>
-    public class DistributedConnectionManager
+    public static class DistributedConnectionManager
     {
-        private static Random random = new Random();
+        private static readonly Random random = new Random();
 
         /// <summary>
         /// 根据调度算法从配置中获取一个 <see cref="DistributedConnectionString"/> 对象。

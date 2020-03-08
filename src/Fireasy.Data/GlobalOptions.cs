@@ -15,7 +15,7 @@ namespace Fireasy.Data
         public readonly static GlobalOptions Default = new GlobalOptions();
 
         /// <summary>
-        /// 获取或设置是否附加逃逸符。默认为 false。
+        /// 获取或设置是否附加引号标识符。默认为 false。
         /// </summary>
         public bool AttachQuote { get; set; }
     }

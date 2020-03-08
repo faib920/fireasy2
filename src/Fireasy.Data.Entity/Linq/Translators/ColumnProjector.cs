@@ -141,7 +141,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             private readonly Func<Expression, bool> fnCanBeColumn;
             private bool isBlocked;
-            private HashSet<Expression> candidates;
+            private readonly HashSet<Expression> candidates;
 
             private Nominator(Func<Expression, bool> fnCanBeColumn)
             {

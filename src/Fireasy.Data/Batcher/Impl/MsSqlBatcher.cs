@@ -87,15 +87,15 @@ namespace Fireasy.Data.Batcher
 
                 //给表名加上前后导符
                 var tableName = DbUtility.FormatByQuote(database.Provider.GetService<ISyntaxProvider>(), dataTable.TableName);
-                using (var bulk = new SqlBulkCopy((SqlConnection)database.Connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
+                using var bulk = new SqlBulkCopy((SqlConnection)database.Connection, 
+                    SqlBulkCopyOptions.KeepIdentity, 
+                    (SqlTransaction)database.Transaction)
                 {
                     DestinationTableName = tableName,
                     BatchSize = batchSize
-                })
-                using (var reader = new DataTableBatchReader(bulk, dataTable))
-                {
-                    await bulk.WriteToServerAsync(reader, cancellationToken);
-                }
+                };
+                using var reader = new DataTableBatchReader(bulk, dataTable);
+                await bulk.WriteToServerAsync(reader, cancellationToken);
             }
             catch (Exception exp)
             {
@@ -119,15 +119,13 @@ namespace Fireasy.Data.Batcher
                 await database.Connection.TryOpenAsync(cancellationToken: cancellationToken);
 
                 //给表名加上前后导符
-                using (var bulk = new SqlBulkCopy((SqlConnection)database.Connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
+                using var bulk = new SqlBulkCopy((SqlConnection)database.Connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
                 {
                     DestinationTableName = tableName,
                     BatchSize = batchSize
-                })
-                using (var reader = new EnumerableBatchReader<T>(bulk, list))
-                {
-                    await bulk.WriteToServerAsync(reader, cancellationToken);
-                }
+                };
+                using var reader = new EnumerableBatchReader<T>(bulk, list);
+                await bulk.WriteToServerAsync(reader, cancellationToken);
             }
             catch (Exception exp)
             {
@@ -150,11 +148,11 @@ namespace Fireasy.Data.Batcher
                 await database.Connection.TryOpenAsync(cancellationToken: cancellationToken);
 
                 //给表名加上前后导符
-                using (var bulk = new SqlBulkCopy((SqlConnection)database.Connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
+                using var bulk = new SqlBulkCopy((SqlConnection)database.Connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
                 {
                     DestinationTableName = tableName,
                     BatchSize = batchSize
-                })
+                };
                 await bulk.WriteToServerAsync((DbDataReader)reader, cancellationToken);
             }
             catch (Exception exp)

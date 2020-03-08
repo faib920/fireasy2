@@ -12,7 +12,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class DeclaredAliasGatherer : DbExpressionVisitor
     {
-        private HashSet<TableAlias> aliases;
+        private readonly HashSet<TableAlias> aliases;
 
         private DeclaredAliasGatherer()
         {

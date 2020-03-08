@@ -27,12 +27,12 @@ namespace Fireasy.Data.Entity
         IRepository CreateRepository(EntityContextOptions options);
 
         /// <summary>
-        /// 获取 <see cref="IQueryable"/> 对象。
+        /// 获取 <see cref="IQueryable"/> 实例。
         /// </summary>
         IQueryable Queryable { get; }
 
         /// <summary>
-        /// 获取 <see cref="IQueryProvider"/> 对象。
+        /// 获取 <see cref="IQueryProvider"/> 实例。
         /// </summary>
         IQueryProvider QueryProvider { get; }
     }
@@ -188,7 +188,7 @@ namespace Fireasy.Data.Entity
         /// <param name="entities"></param>
         /// <param name="fnOperation"></param>
         /// <returns>影响的实体数。</returns>
-        int Batch(IEnumerable<TEntity> entities, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation);
+        int Batch(IEnumerable<TEntity> entities, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation, BatchOperateOptions batchOpt = null);
 
         /// <summary>
         /// 对实体集合进行批量操作。
@@ -197,6 +197,6 @@ namespace Fireasy.Data.Entity
         /// <param name="entities"></param>
         /// <param name="fnOperation"></param>
         /// <returns>影响的实体数。</returns>
-        Task<int> BatchAsync(IEnumerable<TEntity> entities, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation, CancellationToken cancellationToken = default);
+        Task<int> BatchAsync(IEnumerable<TEntity> entities, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation, BatchOperateOptions batchOpt = null, CancellationToken cancellationToken = default);
     }
 }

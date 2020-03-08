@@ -12,7 +12,6 @@ namespace Fireasy.Common.Caching
     /// <summary>
     /// 表示缓存项的有效期只有一次，首次访问后将过期。无法继承此类。
     /// </summary>
-    [Serializable]
     public sealed class OnceTime : ICacheItemExpiration
     {
         /// <summary>

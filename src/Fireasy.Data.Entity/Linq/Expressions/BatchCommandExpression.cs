@@ -12,7 +12,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
 {
     public sealed class BatchCommandExpression : DbExpression
     {
-        public BatchCommandExpression(Expression input, LambdaExpression operation, bool isAsync, List<string> arguments)
+        public BatchCommandExpression(ConstantExpression input, LambdaExpression operation, bool isAsync, List<string> arguments)
             : base(DbExpressionType.Batch, typeof(IEnumerable<>).MakeGenericType(operation.Body.Type))
         {
             Input = input;
@@ -21,7 +21,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
             IsAsync = isAsync;
         }
 
-        public Expression Input { get; private set; }
+        public ConstantExpression Input { get; private set; }
 
         public LambdaExpression Operation { get; private set; }
 
@@ -29,7 +29,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
 
         public bool IsAsync { get; set; }
 
-        public BatchCommandExpression Update(Expression input, LambdaExpression operation, List<string> arguments)
+        public BatchCommandExpression Update(ConstantExpression input, LambdaExpression operation, List<string> arguments)
         {
             if (input != Input || operation != Operation || arguments != Arguments)
             {

@@ -32,3 +32,4 @@ InstallProviderAssembly=必须引用 {0} 中的任意一个文件作为驱动。
 ProviderNoFound={0} 未找到，请下载相关的程序进行安装。
 RestrictionNotSupportedOfMember=不能使用 {0} 限制查询，仅能使用 {1} 进行限制查询。
 RestrictionNotSupportedOfMetadata=不能对 {0} 使用限制查询。
+NoMatchRecordWrapperMethod=IRecordWrapper没有提供与类型 {0} 相匹配的方法。

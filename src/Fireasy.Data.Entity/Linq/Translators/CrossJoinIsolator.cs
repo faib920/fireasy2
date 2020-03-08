@@ -13,7 +13,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
     public class CrossJoinIsolator : DbExpressionVisitor
     {
         private ILookup<TableAlias, ColumnExpression> columns;
-        private Dictionary<ColumnExpression, ColumnExpression> map = new Dictionary<ColumnExpression, ColumnExpression>();
+        private readonly Dictionary<ColumnExpression, ColumnExpression> map = new Dictionary<ColumnExpression, ColumnExpression>();
         private JoinType? lastJoin;
 
         public static Expression Isolate(Expression expression)
@@ -51,8 +51,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private bool IsCrossJoin(Expression expression)
         {
-            var jex = expression as JoinExpression;
-            if (jex != null)
+            if (expression is JoinExpression jex)
             {
                 return jex.JoinType == JoinType.CrossJoin;
             }
@@ -83,8 +82,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitColumn(ColumnExpression column)
         {
-            ColumnExpression mapped;
-            if (map.TryGetValue(column, out mapped))
+            if (map.TryGetValue(column, out ColumnExpression mapped))
             {
                 return mapped;
             }

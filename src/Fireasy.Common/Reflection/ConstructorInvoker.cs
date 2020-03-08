@@ -5,9 +5,11 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Emit;
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Emit;
 
 namespace Fireasy.Common.Reflection
 {
@@ -16,7 +18,7 @@ namespace Fireasy.Common.Reflection
     /// </summary>
     public class ConstructorInvoker
     {
-        private Func<object[], object> invoker;
+        private readonly Func<object[], object> invoker;
 
         /// <summary>
         /// 
@@ -30,18 +32,34 @@ namespace Fireasy.Common.Reflection
         public ConstructorInvoker(ConstructorInfo constructorInfo)
         {
             ConstructorInfo = constructorInfo;
-            invoker = InitializeInvoker(constructorInfo);
+            invoker = GetConstructorDelegate(constructorInfo);
         }
 
-        private Func<object[], object> InitializeInvoker(ConstructorInfo constructorInfo)
+        private Func<object[], object> GetConstructorDelegate(ConstructorInfo constructorInfo)
         {
-            var targetParameterExpression = Expression.Parameter(typeof(object), "s");
-            var argsParameterExpression = Expression.Parameter(typeof(object[]), "args");
+            var targetParExp = Expression.Parameter(typeof(object), "s");
+            var argsParExp = Expression.Parameter(typeof(object[]), "args");
 
-            var callExpression = InvokerBuilder.BuildMethodCall(constructorInfo, typeof(object), targetParameterExpression, argsParameterExpression);
-            var lambdaExpression = Expression.Lambda(typeof(Func<object[], object>), callExpression, argsParameterExpression);
-            var compiled = (Func<object[], object>)lambdaExpression.Compile();
-            return compiled;
+            var callExp = InvokerBuilder.BuildMethodCall(constructorInfo, typeof(object), targetParExp, argsParExp);
+            var lambdaExp = Expression.Lambda(typeof(Func<object[], object>), callExp, argsParExp);
+            return (Func<object[], object>)lambdaExp.Compile();
+
+            /*
+            var dm = new DynamicMethod("CreateInstance", typeof(object),
+                new Type[] { typeof(object[]) }, constructorInfo.DeclaringType, true);
+
+            var parameters = constructorInfo.GetParameters();
+            var emiter = new EmitHelper(dm.GetILGenerator());
+            emiter.nop
+                .For(0, parameters.Length, (e, i) => e.ldarg_1.ldc_i4(i).ldelem_ref
+                    .Assert(parameters[i].ParameterType.IsValueType,
+                        e1 => e1.unbox_any(parameters[i].ParameterType),
+                        e1 => e1.castclass(parameters[i].ParameterType)))
+                .newobj(constructorInfo)
+                .ret();
+
+            return (Func<object[], object>)dm.CreateDelegate(typeof(Func<object[], object>));
+            */
         }
 
         /// <summary>
@@ -51,6 +69,11 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public object Invoke(params object[] parameters)
         {
+            if (invoker == null)
+            {
+                throw new NotSupportedException(SR.GetString(SRKind.UnableCreateCachedDelegate));
+            }
+
             return invoker(parameters);
         }
     }

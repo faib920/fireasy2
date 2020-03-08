@@ -5,19 +5,20 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.MongoDB;
+using Fireasy.Data.Entity;
 
-namespace Fireasy.Data.Entity
+namespace Fireasy.MongoDB
 {
     public static class EntityContextOptionsBuilderExtensions
     {
         /// <summary>
         /// 配置 <see cref="EntityContext"/> 使用 MongoDB 数据库。
         /// </summary>
-        /// <param name="connectionString"></param>
+        /// <param name="connectionString">连接字符串。<para>示例：server=mongodb://localhost;database=test。</para></param>
         public static void UseMongoDB(this EntityContextOptionsBuilder builder, string connectionString)
         {
-            builder.Options.ContextFactory = () => new EntityContextInitializeContext(MongoDBProvider.Instance, connectionString);
+            builder.Options.Provider = MongoDBProvider.Instance;
+            builder.Options.ConnectionString = connectionString;
         }
     }
 }

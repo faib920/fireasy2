@@ -25,8 +25,7 @@ namespace Fireasy.Common.Drawing
         /// <returns></returns>
         public static unsafe Image Invert(Image image)
         {
-            var bitmap = image as Bitmap;
-            if (bitmap == null)
+            if (!(image is Bitmap bitmap))
             {
                 return image;
             }
@@ -62,8 +61,7 @@ namespace Fireasy.Common.Drawing
         /// <returns></returns>
         public static unsafe Image Gray(Image image)
         {
-            var bitmap = image as Bitmap;
-            if (bitmap == null)
+            if (!(image is Bitmap bitmap))
             {
                 return image;
             }
@@ -103,8 +101,7 @@ namespace Fireasy.Common.Drawing
         /// <returns></returns>
         public static unsafe Image Brightness(Image image, byte brightness)
         {
-            var bitmap = image as Bitmap;
-            if (bitmap == null)
+            if (!(image is Bitmap bitmap))
             {
                 return image;
             }
@@ -146,8 +143,7 @@ namespace Fireasy.Common.Drawing
         /// <returns></returns>
         public static unsafe Image Noise(Image image, int level, int step)
         {
-            var bitmap = image as Bitmap;
-            if (bitmap == null)
+            if (!(image is Bitmap bitmap))
             {
                 return image;
             }
@@ -200,8 +196,7 @@ namespace Fireasy.Common.Drawing
         /// <returns></returns>
         public static unsafe Image Mosaic(Image image, int pixelSize)
         {
-            var bitmap = image as Bitmap;
-            if (bitmap == null)
+            if (!(image is Bitmap bitmap))
             {
                 return image;
             }
@@ -258,8 +253,7 @@ namespace Fireasy.Common.Drawing
         /// <returns></returns>
         public static unsafe Image Binaryzation(Image image)
         {
-            var bitmap = image as Bitmap;
-            if (bitmap == null)
+            if (!(image is Bitmap bitmap))
             {
                 return image;
             }
@@ -307,8 +301,7 @@ namespace Fireasy.Common.Drawing
         /// <returns></returns>
         public static unsafe Image Sharpen(Image image, double v)
         {
-            var bitmap = image as Bitmap;
-            if (bitmap == null)
+            if (!(image is Bitmap bitmap))
             {
                 return image;
             }
@@ -436,8 +429,7 @@ namespace Fireasy.Common.Drawing
         /// <returns></returns>
         public static unsafe Image Contrast(Image image, double v)
         {
-            var bitmap = image as Bitmap;
-            if (bitmap == null)
+            if (!(image is Bitmap bitmap))
             {
                 return image;
             }
@@ -476,8 +468,7 @@ namespace Fireasy.Common.Drawing
         /// <returns></returns>
         public static unsafe Image Relief(Image image)
         {
-            var bitmap = image as Bitmap;
-            if (bitmap == null)
+            if (!(image is Bitmap bitmap))
             {
                 return image;
             }

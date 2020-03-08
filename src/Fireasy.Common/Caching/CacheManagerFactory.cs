@@ -20,7 +20,7 @@ namespace Fireasy.Common.Caching
     public static class CacheManagerFactory
     {
 #if NETSTANDARD
-        internal static IServiceCollection AddCaching(this IServiceCollection services)
+        public static IServiceCollection AddCaching(this IServiceCollection services)
         {
             var section = ConfigurationUnity.GetSection<CachingConfigurationSection>();
             if (section == null)
@@ -84,7 +84,8 @@ namespace Fireasy.Common.Caching
                 return null;
             }
 
-            return ConfigurationUnity.Cached<ICacheManager>($"CacheManager_{configName}", () => ConfigurationUnity.CreateInstance<CachingConfigurationSetting, ICacheManager>(setting, s => s.CacheType));
+            return ConfigurationUnity.Cached<ICacheManager>($"CacheManager_{configName}", 
+                () => ConfigurationUnity.CreateInstance<CachingConfigurationSetting, ICacheManager>(setting, s => s.CacheType));
         }
     }
 }

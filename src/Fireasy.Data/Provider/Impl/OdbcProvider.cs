@@ -48,8 +48,7 @@ namespace Fireasy.Data.Provider
         /// </summary>
         /// <param name="connectionString">连接字符串对象。</param>
         /// <param name="parameter"></param>
-        /// <returns></returns>
-        public override string UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter)
+        public override void UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter)
         {
             throw new NotImplementedException();
         }

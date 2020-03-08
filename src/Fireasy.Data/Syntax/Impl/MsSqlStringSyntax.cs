@@ -20,7 +20,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Length(object sourceExp)
         {
-            return string.Format("LEN({0})", sourceExp);
+            return $"LEN({sourceExp})";
         }
     }
 }

@@ -16,7 +16,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class RelationshipIncluder : DbExpressionVisitor
     {
-        private IQueryPolicy policy;
+        private readonly IQueryPolicy policy;
         private ScopedDictionary<IProperty, bool> includeScope = new ScopedDictionary<IProperty, bool>(null);
 
         public static Expression Include(IQueryPolicy policy, Expression expression)

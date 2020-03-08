@@ -31,8 +31,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string New(object yearExp, object monthExp, object dayExp)
         {
-            return string.Format("CAST(CAST({0} AS VARCHAR) + '/' + CAST({1} AS VARCHAR) + '/' + CAST({2} AS VARCHAR) AS DATETIME)",
-                yearExp, monthExp, dayExp);
+            return $"CAST(CAST({yearExp} AS VARCHAR) + '/' + CAST({monthExp} AS VARCHAR) + '/' + CAST({dayExp} AS VARCHAR) AS DATETIME)";
         }
 
         /// <summary>
@@ -47,8 +46,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string New(object yearExp, object monthExp, object dayExp, object hourExp, object minuteExp, object secondExp)
         {
-            return string.Format("CAST(CAST({0} AS VARCHAR) + '/' + CAST({1} AS VARCHAR) + '/' + CAST({2} AS VARCHAR) + ' ' + CAST({3} AS VARCHAR) + ':' + CAST({4} AS VARCHAR) + ':' + CAST({5} AS VARCHAR) AS DATETIME)", 
-                yearExp, monthExp, dayExp, hourExp, minuteExp, secondExp);
+            return $"CAST(CAST({yearExp} AS VARCHAR) + '/' + CAST({monthExp} AS VARCHAR) + '/' + CAST({dayExp} AS VARCHAR) + ' ' + CAST({hourExp} AS VARCHAR) + ':' + CAST({minuteExp} AS VARCHAR) + ':' + CAST({secondExp} AS VARCHAR) AS DATETIME)";
         }
 
         /// <summary>
@@ -58,7 +56,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string Year(object sourceExp)
         {
-            return string.Format("YEAR({0})", sourceExp);
+            return $"YEAR({sourceExp})";
         }
 
         /// <summary>
@@ -68,7 +66,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string Month(object sourceExp)
         {
-            return string.Format("MONTH({0})", sourceExp);
+            return $"MONTH({sourceExp})";
         }
 
         /// <summary>
@@ -78,7 +76,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string Day(object sourceExp)
         {
-            return string.Format("DAY({0})", sourceExp);
+            return $"DAY({sourceExp})";
         }
 
         /// <summary>
@@ -88,7 +86,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string Hour(object sourceExp)
         {
-            return string.Format("DATEPART(HH, {0})", sourceExp);
+            return $"DATEPART(HH, {sourceExp})";
         }
 
         /// <summary>
@@ -98,7 +96,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string Minute(object sourceExp)
         {
-            return string.Format("DATEPART(MI, {0})", sourceExp);
+            return $"DATEPART(MI, {sourceExp})";
         }
 
         /// <summary>
@@ -108,7 +106,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string Second(object sourceExp)
         {
-            return string.Format("DATEPART(SS, {0})", sourceExp);
+            return $"DATEPART(SS, {sourceExp})";
         }
 
         /// <summary>
@@ -118,7 +116,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string Millisecond(object sourceExp)
         {
-            return string.Format("DATEPART(MS, {0})", sourceExp);
+            return $"DATEPART(MS, {sourceExp})";
         }
 
         /// <summary>
@@ -148,7 +146,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string DayOfWeek(object sourceExp)
         {
-            return string.Format("DATEPART(WEEKDAY, {0}) - 1", sourceExp);
+            return $"DATEPART(WEEKDAY, {sourceExp}) - 1";
         }
 
         /// <summary>
@@ -158,7 +156,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string DayOfYear(object sourceExp)
         {
-            return string.Format("DATEPART(DAYOFYEAR, {0})", sourceExp);
+            return $"DATEPART(DAYOFYEAR, {sourceExp})";
         }
 
         /// <summary>
@@ -168,7 +166,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string WeekOfYear(object sourceExp)
         {
-            return string.Format("DATEPART(WW, {0}) - 1", sourceExp);
+            return $"DATEPART(WW, {sourceExp}) - 1";
         }
 
         /// <summary>
@@ -179,7 +177,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string AddYears(object sourceExp, object yearExp)
         {
-            return string.Format("DATEADD(YYYY, {1}, {0})", sourceExp, yearExp);
+            return $"DATEADD(YYYY, {yearExp}, {sourceExp})";
         }
 
         /// <summary>
@@ -190,7 +188,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string AddMonths(object sourceExp, object monthExp)
         {
-            return string.Format("DATEADD(MM, {1}, {0})", sourceExp, monthExp);
+            return $"DATEADD(MM, {monthExp}, {sourceExp})";
         }
 
         /// <summary>
@@ -201,7 +199,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string AddDays(object sourceExp, object dayExp)
         {
-            return string.Format("DATEADD(DD, {1}, {0})", sourceExp, dayExp);
+            return $"DATEADD(DD, {dayExp}, {sourceExp})";
         }
 
         /// <summary>
@@ -212,7 +210,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string AddHours(object sourceExp, object hourExp)
         {
-            return string.Format("DATEADD(HH, {1}, {0})", sourceExp, hourExp);
+            return $"DATEADD(HH, {hourExp}, {sourceExp})";
         }
 
         /// <summary>
@@ -223,7 +221,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string AddMinutes(object sourceExp, object minuteExp)
         {
-            return string.Format("DATEADD(MI, {1}, {0})", sourceExp, minuteExp);
+            return $"DATEADD(MI, {minuteExp}, {sourceExp})";
         }
 
         /// <summary>
@@ -234,7 +232,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string AddSeconds(object sourceExp, object secondExp)
         {
-            return string.Format("DATEADD(SS, {1}, {0})", sourceExp, secondExp);
+            return $"DATEADD(SS, {secondExp}, {sourceExp})";
         }
 
         /// <summary>
@@ -245,7 +243,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string DiffDays(object sourceExp, object otherExp)
         {
-            return string.Format("DATEDIFF(DD, {0}, {1})", sourceExp, otherExp);
+            return $"DATEDIFF(DD, {sourceExp}, {otherExp})";
         }
 
         /// <summary>
@@ -256,7 +254,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string DiffHours(object sourceExp, object otherExp)
         {
-            return string.Format("DATEDIFF(HH, {0}, {1})", sourceExp, otherExp);
+            return $"DATEDIFF(HH, {sourceExp}, {otherExp})";
         }
 
         /// <summary>
@@ -267,7 +265,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string DiffMinutes(object sourceExp, object otherExp)
         {
-            return string.Format("DATEDIFF(MI, {0}, {1})", sourceExp, otherExp);
+            return $"DATEDIFF(MI, {sourceExp}, {otherExp})";
         }
 
         /// <summary>
@@ -278,7 +276,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string DiffSeconds(object sourceExp, object otherExp)
         {
-            return string.Format("DATEDIFF(SS, {0}, {1})", sourceExp, otherExp);
+            return $"DATEDIFF(SS, {sourceExp}, {otherExp})";
         }
     }
 }

@@ -21,13 +21,13 @@ namespace Fireasy.Data.Syntax
     /// </summary>
     public class SQLiteFunctionBuilder
     {
-        private static List<string> cache = new List<string>();
-        private static object locker = new object();
-        private static DynamicAssemblyBuilder assemblyBuilder = new DynamicAssemblyBuilder("SQLiteFunctionAssembly");
-        private static Type funcType = "System.Data.SQLite.SQLiteFunction,System.Data.SQLite".ParseType();
-        private static Type funcAttrType = "System.Data.SQLite.SQLiteFunctionAttribute,System.Data.SQLite".ParseType();
-        private static Type funcTypeType = "System.Data.SQLite.FunctionType,System.Data.SQLite".ParseType();
-        private static MethodInfo registerMethod = funcType.GetMethod("RegisterFunction", BindingFlags.Public | BindingFlags.Static);
+        private static readonly List<string> cache = new List<string>();
+        private static readonly object locker = new object();
+        private static readonly DynamicAssemblyBuilder assemblyBuilder = new DynamicAssemblyBuilder("SQLiteFunctionAssembly");
+        private static readonly Type funcType = "System.Data.SQLite.SQLiteFunction,System.Data.SQLite".ParseType();
+        private static readonly Type funcAttrType = "System.Data.SQLite.SQLiteFunctionAttribute,System.Data.SQLite".ParseType();
+        private static readonly Type funcTypeType = "System.Data.SQLite.FunctionType,System.Data.SQLite".ParseType();
+        private static readonly MethodInfo RegisterMethod = funcType.GetMethod("RegisterFunction", BindingFlags.Public | BindingFlags.Static);
 
         /// <summary>
         /// 注册一个新的自定义函数。
@@ -37,7 +37,7 @@ namespace Fireasy.Data.Syntax
         /// <param name="actionIL">自定义函数的代码IL。</param>
         public void Register(string functionName, int paramsCount, Action<BuildContext> actionIL)
         {
-            var key = string.Format("{0}_{1}", functionName, paramsCount);
+            var key = $"{functionName}_{paramsCount}";
 
             lock (locker)
             {
@@ -54,8 +54,8 @@ namespace Fireasy.Data.Syntax
         /// </summary>
         public void RegisterRegexFunction()
         {
-            var convertMethod = typeof(Convert).GetMethods().FirstOrDefault(s => s.Name == "ToString" && s.GetParameters()[0].ParameterType == typeof(object));
-            var matchMethod = typeof(Regex).GetMethods().FirstOrDefault(s => s.Name == "IsMatch" && s.GetParameters().Length == 3);
+            var convertMethod = typeof(Convert).GetMethods().FirstOrDefault(s => s.Name == nameof(Convert.ToString) && s.GetParameters()[0].ParameterType == typeof(object));
+            var matchMethod = typeof(Regex).GetMethods().FirstOrDefault(s => s.Name == nameof(Regex.IsMatch) && s.GetParameters().Length == 3);
 
             Register("REGEXP", 2, c =>
                 {
@@ -99,7 +99,7 @@ namespace Fireasy.Data.Syntax
 
         private void InternalRegister(Type functionType)
         {
-            registerMethod.Invoke(null, new object[] { functionType });
+            RegisterMethod.FastInvoke(null, new object[] { functionType });
         }
     }
 }

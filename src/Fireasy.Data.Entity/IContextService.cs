@@ -14,29 +14,29 @@ namespace Fireasy.Data.Entity
     /// <summary>
     /// 数据上下文的服务组件。
     /// </summary>
-    public interface IContextService : IDisposable
+    public interface IContextService : IDisposable, IProviderAware
     {
         /// <summary>
-        /// 返回 <see cref="EntityContextInitializeContext"/> 对象。
+        /// 获取 <see cref="EntityContextOptions"/> 实例。
         /// </summary>
-        EntityContextInitializeContext InitializeContext { get; }
+        EntityContextOptions Options { get; }
 
         /// <summary>
-        /// 返回 <see cref="IProvider"/> 对象。
+        /// 获取应用程序服务提供者实例。
         /// </summary>
-        IProvider Provider { get; }
+        IServiceProvider ServiceProvider { get; }
 
         /// <summary>
-        /// 创建仓储提供者对象。
+        /// 创建实体类型所对应的 <see cref="IRepositoryProvider"/> 实例。
         /// </summary>
-        /// <param name="entityType">实体类型。</param>
+        /// <param name="entityType"></param>
         /// <returns></returns>
         IRepositoryProvider CreateRepositoryProvider(Type entityType);
 
         /// <summary>
-        /// 创建仓储提供者对象。
+        /// 创建实体类型所对应的 <see cref="IRepositoryProvider{TEntity}"/> 实例。
         /// </summary>
-        /// <typeparam name="TEntity">实体类型。</typeparam>
+        /// <typeparam name="TEntity"></typeparam>
         /// <returns></returns>
         IRepositoryProvider<TEntity> CreateRepositoryProvider<TEntity>() where TEntity : class, IEntity;
 

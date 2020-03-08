@@ -7,26 +7,26 @@
 // -----------------------------------------------------------------------
 namespace Fireasy.Redis
 {
-    internal struct CheckCache<T>
+    internal class CheckCache<T>
     {
-        public CheckCache(bool hasVaue, T value)
+        internal CheckCache(bool hasVaue, T value)
         {
             HasValue = hasVaue;
             Value = value;
         }
 
-        public static CheckCache<T> Null()
+        internal static CheckCache<T> Null()
         {
-            return new CheckCache<T>(false, default(T));
+            return new CheckCache<T>(false, default);
         }
 
-        public static CheckCache<T> Result(T value)
+        internal static CheckCache<T> Result(T value)
         {
             return new CheckCache<T>(true, value);
         }
 
-        public bool HasValue { get; set; }
+        internal bool HasValue { get; set; }
 
-        public T Value { get; set; }
+        internal T Value { get; set; }
     }
 }

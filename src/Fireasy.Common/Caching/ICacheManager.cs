@@ -137,46 +137,46 @@ namespace Fireasy.Common.Caching
         Task SetExpirationTimeAsync(string cacheKey, Func<ICacheItemExpiration> expiration, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// 尝试获取指定缓存键的对象，如果没有则使用工厂函数添加对象到缓存中。
+        /// 尝试获取指定缓存键的对象，如果没有则使用函数添加对象到缓存中。
         /// </summary>
         /// <typeparam name="T">缓存对象的类型。</typeparam>
         /// <param name="cacheKey">用于引用对象的缓存键。</param>
-        /// <param name="factory">用于添加缓存对象的工厂函数。</param>
+        /// <param name="valueCreator">用于生成缓存对象的函数。</param>
         /// <param name="expiration">判断对象过期的对象。</param>
         /// <returns></returns>
-        T TryGet<T>(string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration = null);
+        T TryGet<T>(string cacheKey, Func<T> valueCreator, Func<ICacheItemExpiration> expiration = null);
 
         /// <summary>
-        /// 异步的，尝试获取指定缓存键的对象，如果没有则使用工厂函数添加对象到缓存中。
+        /// 异步的，尝试获取指定缓存键的对象，如果没有则使用函数添加对象到缓存中。
         /// </summary>
         /// <typeparam name="T">缓存对象的类型。</typeparam>
         /// <param name="cacheKey">用于引用对象的缓存键。</param>
-        /// <param name="factory">用于添加缓存对象的工厂函数。</param>
+        /// <param name="valueCreator">用于生成缓存对象的函数。</param>
         /// <param name="expiration">判断对象过期的对象。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns></returns>
-        Task<T> TryGetAsync<T>(string cacheKey, Func<Task<T>> factory, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default);
+        Task<T> TryGetAsync<T>(string cacheKey, Func<Task<T>> valueCreator, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// 尝试获取指定缓存键的对象，如果没有则使用工厂函数添加对象到缓存中。
+        /// 尝试获取指定缓存键的对象，如果没有则使用函数添加对象到缓存中。
         /// </summary>
         /// <param name="dataType">数据类型。</param>
         /// <param name="cacheKey">用于引用对象的缓存键。</param>
-        /// <param name="factory">用于添加缓存对象的工厂函数。</param>
+        /// <param name="valueCreator">用于生成缓存对象的函数。</param>
         /// <param name="expiration">判断对象过期的对象。</param>
         /// <returns></returns>
-        object TryGet(Type dataType, string cacheKey, Func<object> factory, Func<ICacheItemExpiration> expiration = null);
+        object TryGet(Type dataType, string cacheKey, Func<object> valueCreator, Func<ICacheItemExpiration> expiration = null);
 
         /// <summary>
-        /// 异步的，尝试获取指定缓存键的对象，如果没有则使用工厂函数添加对象到缓存中。
+        /// 异步的，尝试获取指定缓存键的对象，如果没有则使用函数添加对象到缓存中。
         /// </summary>
         /// <param name="dataType">数据类型。</param>
         /// <param name="cacheKey">用于引用对象的缓存键。</param>
-        /// <param name="factory">用于添加缓存对象的工厂函数。</param>
+        /// <param name="valueCreator">用于生成缓存对象的函数。</param>
         /// <param name="expiration">判断对象过期的对象。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns></returns>
-        Task<object> TryGetAsync(Type dataType, string cacheKey, Func<Task<object>> factory, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default);
+        Task<object> TryGetAsync(Type dataType, string cacheKey, Func<Task<object>> valueCreator, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 尝试获取指定缓存键的对象。
@@ -232,7 +232,8 @@ namespace Fireasy.Common.Caching
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
         /// <param name="cacheKey">用于哈希集的缓存键。</param>
+        /// <param name="initializeSet">用于初始化哈希集的函数。</param>
         /// <returns></returns>
-        ICacheHashSet<TKey, TValue> GetHashSet<TKey, TValue>(string cacheKey);
+        ICacheHashSet<TKey, TValue> GetHashSet<TKey, TValue>(string cacheKey, Func<IEnumerable<Tuple<TKey, TValue, ICacheItemExpiration>>> initializeSet = null);
     }
 }

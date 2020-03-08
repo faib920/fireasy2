@@ -73,7 +73,7 @@ namespace Fireasy.Common.ComponentModel
         /// <param name="message">提供给客户端显示的信息。</param>
         /// <param name="data">返回给客户端的数据。</param>
         /// <returns></returns>
-        public static Result<T> Info<T>(string message, T data = default(T))
+        public static Result<T> Info<T>(string message, T data = default)
         {
             return new Result<T> { Succeed = true, Message = message, Data = data };
         }
@@ -96,7 +96,7 @@ namespace Fireasy.Common.ComponentModel
         /// <param name="message">提供给客户端显示的调用成功的信息。</param>
         /// <param name="data">返回给客户端的数据。</param>
         /// <returns></returns>
-        public static Result<T> Success<T>(string message, T data = default(T))
+        public static Result<T> Success<T>(string message, T data = default)
         {
             return new Result<T> { Succeed = true, Message = message, Data = data };
         }
@@ -110,7 +110,7 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public static Result<T> Success<T>(string message, object data = null)
         {
-            T value = default(T);
+            T value = default;
             if (data != null)
             {
                 value = data.To<T>();

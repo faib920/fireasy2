@@ -15,14 +15,9 @@ namespace Fireasy.Common.Caching
     /// <summary>
     /// 提供对缓存的优化。
     /// </summary>
-    internal class CacheOptimizer : IDisposable
+    internal class CacheOptimizer : DisposeableBase
     {
         private readonly Timer timer;
-
-        /// <summary>
-        /// 最大代限制。
-        /// </summary>
-        public const short MAX_GEN_LIMIT = 30000;
 
         /// <summary>
         /// 获取当前最大的代。
@@ -54,7 +49,7 @@ namespace Fireasy.Common.Caching
 
             if (item.Gen != -1)
             {
-                if (item.Gen < MAX_GEN_LIMIT)
+                if (item.Gen < short.MaxValue)
                 {
                     item.Gen++;
                 }
@@ -69,7 +64,7 @@ namespace Fireasy.Common.Caching
             return item;
         }
 
-        public void Dispose()
+        protected override void Dispose(bool disposing)
         {
             timer?.Dispose();
         }

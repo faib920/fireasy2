@@ -20,7 +20,7 @@ namespace Fireasy.Common.Serialization
     /// <typeparam name="T"></typeparam>
     public class CompositeJsonConverter<T> : JsonConverter<T>
     {
-        private Dictionary<PropertyInfo, ITextConverter> converters = new Dictionary<PropertyInfo, ITextConverter>();
+        private readonly Dictionary<PropertyInfo, ITextConverter> converters = new Dictionary<PropertyInfo, ITextConverter>();
 
         /// <summary>
         /// 不支持反序列化。

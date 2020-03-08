@@ -34,5 +34,10 @@ namespace Fireasy.Data.Entity
         /// 获取或设置表的注释。
         /// </summary>
         public string Description { get; set; }
+
+        /// <summary>
+        /// 获取或设置是否只读。
+        /// </summary>
+        public bool IsReadonly { get; set; }
     }
 }

@@ -6,13 +6,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.Configuration;
+using Fireasy.Common.Extensions;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Xml;
 using System.Xml.XPath;
-using Fireasy.Common.Configuration;
-using Fireasy.Common.Extensions;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
@@ -57,8 +56,10 @@ namespace Fireasy.Data.Configuration
                     throw new FileNotFoundException(SR.GetString(SRKind.FileNotFound, fileName), fileName);
                 }
 
-                var setting = new XmlInstanceSetting();
-                setting.FileName = fileName;
+                var setting = new XmlInstanceSetting
+                {
+                    FileName = fileName
+                };
 
                 var xmlDoc = new XmlDocument();
                 xmlDoc.Load(fileName);

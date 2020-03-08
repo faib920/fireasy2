@@ -14,7 +14,7 @@ namespace Fireasy.Common
     /// 为枚举值添加文本说明。
     /// </summary>
     [AttributeUsage(AttributeTargets.Field)]
-    public class EnumDescriptionAttribute : DescriptionAttribute
+    public sealed class EnumDescriptionAttribute : DescriptionAttribute
     {
         /// <summary>
         /// 初始化 <see cref="EnumDescriptionAttribute"/> 类的新实例。

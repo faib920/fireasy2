@@ -16,8 +16,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
     {
         private bool isTopLevel = true;
         private SelectExpression currentSelect;
-        MemberInfo currentMember;
-        bool canJoinOnClient = true;
+        private MemberInfo currentMember;
+        private readonly bool canJoinOnClient = true;
 
         public static Expression Rewrite(Expression expression)
         {
@@ -26,18 +26,18 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override MemberAssignment VisitMemberAssignment(MemberAssignment assignment)
         {
-            var saveMember = this.currentMember;
+            var saveMember = currentMember;
             currentMember = assignment.Member;
-            Expression e = this.Visit(assignment.Expression);
+            Expression e = Visit(assignment.Expression);
             currentMember = saveMember;
             return assignment.Update(e);
         }
 
         protected override Expression VisitMemberAndExpression(MemberInfo member, Expression expression)
         {
-            var saveMember = this.currentMember;
+            var saveMember = currentMember;
             currentMember = member;
-            Expression e = this.Visit(expression);
+            Expression e = Visit(expression);
             currentMember = saveMember;
             return e;
         }
@@ -112,19 +112,16 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private bool GetEquiJoinKeyExpressions(Expression predicate, TableAlias outerAlias, List<Expression> outerExpressions, List<Expression> innerExpressions)
         {
-            var b = predicate as BinaryExpression;
-            if (b != null)
+            if (predicate is BinaryExpression bin)
             {
                 switch (predicate.NodeType)
                 {
                     case ExpressionType.And:
                     case ExpressionType.AndAlso:
-                        return GetEquiJoinKeyExpressions(b.Left, outerAlias, outerExpressions, innerExpressions)
-                            && GetEquiJoinKeyExpressions(b.Right, outerAlias, outerExpressions, innerExpressions);
+                        return GetEquiJoinKeyExpressions(bin.Left, outerAlias, outerExpressions, innerExpressions)
+                            && GetEquiJoinKeyExpressions(bin.Right, outerAlias, outerExpressions, innerExpressions);
                     case ExpressionType.Equal:
-                        var left = b.Left as ColumnExpression;
-                        var right = b.Right as ColumnExpression;
-                        if (left != null && right != null)
+                        if (bin.Left is ColumnExpression left && bin.Right is ColumnExpression right)
                         {
                             if (left.Alias == outerAlias)
                             {

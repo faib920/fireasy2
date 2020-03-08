@@ -20,7 +20,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Truncate(object sourceExp)
         {
-            return string.Format("TRUNCATE({0}, 0)", sourceExp);
+            return $"TRUNCATE({sourceExp}, 0)";
         }
     }
 }

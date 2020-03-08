@@ -14,7 +14,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class UnusedColumnRemover : DbExpressionVisitor
     {
-        private Dictionary<TableAlias, HashSet<string>> allColumnsUsed = new Dictionary<TableAlias,HashSet<string>>();
+        private readonly Dictionary<TableAlias, HashSet<string>> allColumnsUsed = new Dictionary<TableAlias,HashSet<string>>();
         private bool retainAllColumns;
 
         public static Expression Remove(Expression expression)

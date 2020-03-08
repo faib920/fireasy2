@@ -73,7 +73,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static TEntity New(bool applyDefaultValue)
         {
-            var proxyType = EntityProxyManager.GetType(typeof(TEntity));
+            var proxyType = EntityProxyManager.GetType((string)null, typeof(TEntity));
             var entity = proxyType.New<TEntity>();
 
             if (applyDefaultValue)
@@ -103,6 +103,7 @@ namespace Fireasy.Data.Entity
         public static TEntity Wrap(Expression<Func<TEntity>> initExp, bool applyDefaultValue)
         {
             var entity = New(applyDefaultValue);
+
             entity.InitByExpression(initExp);
             return entity;
         }
@@ -114,7 +115,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public override PropertyValue GetValue(IProperty property)
         {
-            var value = property.Info.ReflectionInfo.GetValue(this, null);
+            var value = property.Info.ReflectionInfo.FastGetValue(this);
             return value == null ? PropertyValue.Empty : PropertyValue.NewValue(value, property.Type);
         }
 
@@ -125,7 +126,7 @@ namespace Fireasy.Data.Entity
         /// <param name="value"></param>
         public override void SetValue(IProperty property, PropertyValue value)
         {
-            property.Info.ReflectionInfo.SetValue(this, value.GetValue(), null);
+            property.Info.ReflectionInfo.FastSetValue(this, value.GetValue());
         }
 
         /// <summary>

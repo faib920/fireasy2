@@ -36,7 +36,7 @@ namespace Fireasy.Common
 
     public class SubscribeOptions
     {
-        private string name;
+        private readonly string name;
 
         public SubscribeOptions(string name)
         {

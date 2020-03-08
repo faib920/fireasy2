@@ -380,7 +380,7 @@ namespace Fireasy.Common.Extensions
                 return (T)instance;
             }
 
-            return default(T);
+            return default;
         }
 
         /// <summary>
@@ -401,35 +401,106 @@ namespace Fireasy.Common.Extensions
 
             if (type.IsInterface || type.IsAbstract)
             {
-                type = type.BuildImplementType();
+                type = ReflectionCache.GetMember("ImplementType", type, k => k.BuildImplementType());
             }
 
             return InternalNew(type, args);
         }
 
-        internal static object InternalNew(this Type type, params object[] args)
+        /// <summary>
+        /// 尝试从 <see cref="IServiceProvider"/> 中获取创建指定类型的实例对象所需的参数，并创建实例对象。
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="serviceProvider"></param>
+        /// <returns></returns>
+        public static object New(this Type type, IServiceProvider serviceProvider)
         {
-            //两个方法存在较大的性能问题，所以需要判断args参数
-            if (args == null || args.Length == 0)
+            var constructors = from s in type.GetTypeInfo().DeclaredConstructors
+                               where !s.IsStatic && s.IsPublic
+                               let pars = s.GetParameters()
+                               orderby pars.Length descending
+                               select new { info = s, pars };
+
+            foreach (var cons in constructors)
             {
-                var cons = type.GetConstructor(Type.EmptyTypes);
-
-                //查找有默认值参数的构造函数
-                if (cons == null)
+                var length = cons.pars.Length;
+                var match = 0;
+                var arguments = new object[length];
+                for (var i = 0; i < length; i++)
                 {
-                    cons = type.GetConstructors().FirstOrDefault(s => s.GetParameters().Count(t => t.DefaultValue == DBNull.Value) == 0);
+                    var parType = cons.pars[i].ParameterType;
+                    if (parType == typeof(IServiceProvider))
+                    {
+                        arguments[i] = serviceProvider;
+                        match++;
+                    }
+                    else
+                    {
+                        var svrArg = serviceProvider.TryGetService(parType);
+                        if (svrArg != null)
+                        {
+                            arguments[i] = svrArg;
+                            match++;
+                        }
+                    }
                 }
 
-                if (cons == null)
+                if (match == length)
                 {
-                    throw new MissingMethodException(SR.GetString(SRKind.NoDefaultOrDefaultValueConstructor));
+                    return cons.info.FastInvoke(arguments);
                 }
-
-                args = new object[cons.GetParameters().Length];
-                return ReflectionCache.GetInvoker(cons).Invoke(args);
             }
 
-            return Activator.CreateInstance(type, args);
+            return null;
+        }
+
+
+        internal static object InternalNew(this Type type, params object[] args)
+        {
+            if (args == null || args.Length == 0)
+            {
+                return Activator.CreateInstance(type);
+            }
+            else
+            {
+                var constructors = type.GetConstructors();
+                var cons = constructors.Length == 1 ? constructors[0] :
+                    constructors.FirstOrDefault(c => IsMatchConstructor(c, args));
+
+                if (cons == null)
+                {
+                    throw new MissingMethodException(SR.GetString(SRKind.NoMatchConstructor));
+                }
+
+                return ReflectionCache.GetInvoker(cons).Invoke(args);
+            }
+        }
+
+        /// <summary>
+        /// 判断是否匹配构造器。
+        /// </summary>
+        /// <param name="cons"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        private static bool IsMatchConstructor(ConstructorInfo cons, object[] args)
+        {
+            var parameters = cons.GetParameters();
+            if (args.Length == parameters.Length)
+            {
+                for (var i = 0; i < parameters.Length; i++)
+                {
+                    if (args[i] != null && !parameters[i].ParameterType.IsAssignableFrom(args[i].GetType()))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -506,12 +577,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static Type GetNonNullableType(this Type type)
         {
-            if (type.IsNullableType())
-            {
-                return type.GetGenericArguments()[0];
-            }
-
-            return type;
+            return Nullable.GetUnderlyingType(type) ?? type;
         }
 
         /// <summary>
@@ -691,7 +757,7 @@ namespace Fireasy.Common.Extensions
             }
 
             var ienum = GetEnumerableType(type);
-            return ienum == null ? null : ienum.GetGenericArguments()[0];
+            return ienum?.GetGenericArguments()[0];
         }
 
         /// <summary>
@@ -750,14 +816,18 @@ namespace Fireasy.Common.Extensions
         {
             switch (member.MemberType)
             {
-                case  MemberTypes.Property:
+                case MemberTypes.Property:
                     return (member as PropertyInfo).PropertyType;
-                case  MemberTypes.Field:
+                case MemberTypes.Field:
                     return (member as FieldInfo).FieldType;
-                case  MemberTypes.Event:
+                case MemberTypes.Event:
                     return (member as EventInfo).EventHandlerType;
                 case MemberTypes.Method:
                     return (member as MethodInfo).ReturnType;
+                case MemberTypes.Constructor:
+                    return (member as ConstructorInfo).DeclaringType;
+                default:
+                    break;
             }
 
             return null;
@@ -777,9 +847,9 @@ namespace Fireasy.Common.Extensions
                     return (member as PropertyInfo).GetValue(instance, null);
                 case MemberTypes.Field:
                     return (member as FieldInfo).GetValue(instance);
+                default:
+                    return null;
             }
-
-            return null;
         }
 
         /// <summary>
@@ -877,6 +947,90 @@ namespace Fireasy.Common.Extensions
         {
             Guard.ArgumentNull(property, nameof(property));
             ReflectionCache.GetAccessor(property).SetValue(instance, value);
+        }
+
+        /// <summary>
+        /// 高效地设置指定属性的值。
+        /// </summary>
+        /// <param name="property">要操作的属性。</param>
+        /// <param name="instance">实例对象。</param>
+        /// <param name="value">要设置的值。</param>
+        public static void FastSetValue(this PropertyInfo property, object instance, int value)
+        {
+            Guard.ArgumentNull(property, nameof(property));
+            ReflectionCache.GetAccessor<int>(property).SetValue(instance, value);
+        }
+
+        /// <summary>
+        /// 高效地设置指定属性的值。
+        /// </summary>
+        /// <param name="property">要操作的属性。</param>
+        /// <param name="instance">实例对象。</param>
+        /// <param name="value">要设置的值。</param>
+        public static void FastSetValue(this PropertyInfo property, object instance, short value)
+        {
+            Guard.ArgumentNull(property, nameof(property));
+            ReflectionCache.GetAccessor<short>(property).SetValue(instance, value);
+        }
+
+        /// <summary>
+        /// 高效地设置指定属性的值。
+        /// </summary>
+        /// <param name="property">要操作的属性。</param>
+        /// <param name="instance">实例对象。</param>
+        /// <param name="value">要设置的值。</param>
+        public static void FastSetValue(this PropertyInfo property, object instance, long value)
+        {
+            Guard.ArgumentNull(property, nameof(property));
+            ReflectionCache.GetAccessor<long>(property).SetValue(instance, value);
+        }
+
+        /// <summary>
+        /// 高效地设置指定属性的值。
+        /// </summary>
+        /// <param name="property">要操作的属性。</param>
+        /// <param name="instance">实例对象。</param>
+        /// <param name="value">要设置的值。</param>
+        public static void FastSetValue(this PropertyInfo property, object instance, DateTime value)
+        {
+            Guard.ArgumentNull(property, nameof(property));
+            ReflectionCache.GetAccessor<DateTime>(property).SetValue(instance, value);
+        }
+
+        /// <summary>
+        /// 高效地设置指定属性的值。
+        /// </summary>
+        /// <param name="property">要操作的属性。</param>
+        /// <param name="instance">实例对象。</param>
+        /// <param name="value">要设置的值。</param>
+        public static void FastSetValue(this PropertyInfo property, object instance, float value)
+        {
+            Guard.ArgumentNull(property, nameof(property));
+            ReflectionCache.GetAccessor<float>(property).SetValue(instance, value);
+        }
+
+        /// <summary>
+        /// 高效地设置指定属性的值。
+        /// </summary>
+        /// <param name="property">要操作的属性。</param>
+        /// <param name="instance">实例对象。</param>
+        /// <param name="value">要设置的值。</param>
+        public static void FastSetValue(this PropertyInfo property, object instance, double value)
+        {
+            Guard.ArgumentNull(property, nameof(property));
+            ReflectionCache.GetAccessor<double>(property).SetValue(instance, value);
+        }
+
+        /// <summary>
+        /// 高效地设置指定属性的值。
+        /// </summary>
+        /// <param name="property">要操作的属性。</param>
+        /// <param name="instance">实例对象。</param>
+        /// <param name="value">要设置的值。</param>
+        public static void FastSetValue(this PropertyInfo property, object instance, decimal value)
+        {
+            Guard.ArgumentNull(property, nameof(property));
+            ReflectionCache.GetAccessor<decimal>(property).SetValue(instance, value);
         }
 
         /// <summary>

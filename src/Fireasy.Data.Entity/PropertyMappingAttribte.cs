@@ -72,6 +72,11 @@ namespace Fireasy.Data.Entity
         public object DefaultValue { get; set; }
 
         /// <summary>
+        /// 获取或设置格式。当指定 DefaultValue 且属性类型为 <see cref="String"/> 时，可使用此属性进行格式化。
+        /// </summary>
+        public string DefaultValueFormatter { get; set; }
+
+        /// <summary>
         /// 获取或设置列的最大长度。
         /// </summary>
         public int Length

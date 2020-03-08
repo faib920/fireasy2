@@ -59,15 +59,13 @@ namespace Fireasy.Data.Provider
         /// </summary>
         /// <param name="connectionString">连接字符串对象。</param>
         /// <param name="parameter"></param>
-        /// <returns></returns>
-        public override string UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter)
+        public override void UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter)
         {
             connectionString.Properties.TrySetValue(parameter.Server, "server")
                 .TrySetValue(parameter.Database, "database", "initial catalog")
                 .TrySetValue(parameter.UserId, "userid", "user id")
-                .TrySetValue(parameter.Password, "password", "pwd");
-
-            return connectionString.Update();
+                .TrySetValue(parameter.Password, "password", "pwd")
+                .Update();
         }
     }
 }

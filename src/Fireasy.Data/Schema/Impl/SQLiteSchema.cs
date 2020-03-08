@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Fireasy.Data.Schema
@@ -133,6 +134,7 @@ PRAGMA main.TABLE_INFO('{tb.Name}')";
             return columns;
         }
 
+        [SuppressMessage("Security", "CA2100")]
         private List<Column> GetColumns(IDatabase database, string tableName)
         {
             var columns = ExecuteAndParseMetadata(database, $"PRAGMA main.TABLE_INFO('{tableName}')", null, (wrapper, reader) => new Column
@@ -153,35 +155,31 @@ PRAGMA main.TABLE_INFO('{tb.Name}')";
                 return columns;
             }
 
-            using (var command = database.Provider.DbProviderFactory.CreateCommand())
+            using var command = database.Provider.DbProviderFactory.CreateCommand();
+            if (database.Connection.State != ConnectionState.Open)
             {
-                if (database.Connection.State != ConnectionState.Open)
-                {
-                    database.Connection.Open();
-                }
-
-                command.CommandText = sql;
-                command.Connection = database.Connection;
-                using (var reader = command.ExecuteReader(CommandBehavior.SchemaOnly))
-                {
-                    var table = reader.GetSchemaTable();
-                    foreach (DataRow row in table.Rows)
-                    {
-                        var column = columns.FirstOrDefault(s => s.Name == row["ColumnName"].ToString());
-                        if (column == null)
-                        {
-                            continue;
-                        }
-
-                        column.Autoincrement = (bool)row["IsAutoincrement"];
-                        column.NumericPrecision = row["NumericPrecision"] == DBNull.Value ? 0 : (int)row["NumericPrecision"];
-                        column.NumericScale = row["NumericScale"] == DBNull.Value ? 0 : (int)row["NumericScale"];
-                        column.DataType = row["DataTypeName"].ToString().ToLower();
-                        column.Length = row["ColumnSize"] == DBNull.Value ? 0 : (int)row["ColumnSize"];
-                    }
-                }
+                database.Connection.Open();
             }
 
+            command.CommandText = sql;
+            command.Connection = database.Connection;
+            using var reader = command.ExecuteReader(CommandBehavior.SchemaOnly);
+            var table = reader.GetSchemaTable();
+
+            foreach (DataRow row in table.Rows)
+            {
+                var column = columns.FirstOrDefault(s => s.Name == row["ColumnName"].ToString());
+                if (column == null)
+                {
+                    continue;
+                }
+
+                column.Autoincrement = (bool)row["IsAutoincrement"];
+                column.NumericPrecision = row["NumericPrecision"] == DBNull.Value ? 0 : (int)row["NumericPrecision"];
+                column.NumericScale = row["NumericScale"] == DBNull.Value ? 0 : (int)row["NumericScale"];
+                column.DataType = row["DataTypeName"].ToString().ToLower();
+                column.Length = row["ColumnSize"] == DBNull.Value ? 0 : (int)row["ColumnSize"];
+            }
             return columns;
         }
 

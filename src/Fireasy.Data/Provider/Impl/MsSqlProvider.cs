@@ -54,7 +54,7 @@ namespace Fireasy.Data.Provider
             return new ConnectionParameter
             {
                 Server = connectionString.Properties.TryGetValue("data source", "server"),
-                Database = connectionString.Properties.TryGetValueWithDefaultValue("master", "initial catalog", "database"),
+                Database = connectionString.Properties.TryGetValueWithDefaultValue("initial catalog", "database"),
                 UserId = connectionString.Properties.TryGetValue("user id", "uid"),
                 Password = connectionString.Properties.TryGetValue("password", "pwd"),
             };
@@ -65,15 +65,13 @@ namespace Fireasy.Data.Provider
         /// </summary>
         /// <param name="connectionString">连接字符串对象。</param>
         /// <param name="parameter"></param>
-        /// <returns></returns>
-        public override string UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter)
+        public override void UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter)
         {
             connectionString.Properties.TrySetValue(parameter.Server, "data source", "server")
                 .TrySetValue(parameter.Database, "initial catalog", "database")
                 .TrySetValue(parameter.UserId, "user id", "uid")
-                .TrySetValue(parameter.Password, "password", "pwd");
-
-            return connectionString.Update();
+                .TrySetValue(parameter.Password, "password", "pwd")
+                .Update();
         }
     }
 }

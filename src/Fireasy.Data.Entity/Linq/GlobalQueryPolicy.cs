@@ -6,9 +6,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common;
-using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -25,8 +25,8 @@ namespace Fireasy.Data.Entity.Linq
         /// </summary>
         public static readonly GlobalQueryPolicySession Default = new GlobalQueryPolicySession();
 
-        private static SafetyDictionary<string, GlobalQueryPolicySession> sessions = new SafetyDictionary<string, GlobalQueryPolicySession>();
-        private static SafetyDictionary<string, GlobalQueryPolicySession> caches = new SafetyDictionary<string, GlobalQueryPolicySession>();
+        private static readonly ConcurrentDictionary<string, GlobalQueryPolicySession> sessions = new ConcurrentDictionary<string, GlobalQueryPolicySession>();
+        private static readonly ConcurrentDictionary<string, GlobalQueryPolicySession> caches = new ConcurrentDictionary<string, GlobalQueryPolicySession>();
 
         /// <summary>
         /// 多用户环境下创建一个会话。
@@ -40,7 +40,7 @@ namespace Fireasy.Data.Entity.Linq
 
             var sessionId = sessionIdFactory();
             var lazy = new Lazy<GlobalQueryPolicySession>(() => new GlobalQueryPolicySession() { SessionIdFactory = sessionIdFactory });
-            return sessions.GetOrAdd(sessionId, () => string.IsNullOrEmpty(ident) ? lazy.Value : caches.GetOrAdd(ident, () => lazy.Value));
+            return sessions.GetOrAdd(sessionId, k => string.IsNullOrEmpty(ident) ? lazy.Value : caches.GetOrAdd(ident, k => lazy.Value));
         }
 
         /// <summary>
@@ -80,7 +80,7 @@ namespace Fireasy.Data.Entity.Linq
     /// </summary>
     public class GlobalQueryPolicySession
     {
-        private Dictionary<Type, List<LambdaExpression>> dic = new Dictionary<Type, List<LambdaExpression>>();
+        private readonly Dictionary<Type, List<LambdaExpression>> dict = new Dictionary<Type, List<LambdaExpression>>();
         
         /// <summary>
         /// 获取或设置会话ID的工厂。比如使用 System.Web.HttpContext.Current.Session.SessionID。
@@ -106,7 +106,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="predicate"></param>
         public GlobalQueryPolicySession Register(Type objType, LambdaExpression predicate)
         {
-            var expressions = dic.TryGetValue(objType, () => new List<LambdaExpression>());
+            var expressions = dict.TryGetValue(objType, () => new List<LambdaExpression>());
             expressions.Add(predicate);
 
             return this;
@@ -128,7 +128,7 @@ namespace Fireasy.Data.Entity.Linq
         /// </summary>
         public int Count
         {
-            get { return dic.Count; }
+            get { return dict.Count; }
         }
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace Fireasy.Data.Entity.Linq
         /// </summary>
         public void Clear()
         {
-            dic.Clear();
+            dict.Clear();
         }
 
         /// <summary>
@@ -146,7 +146,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public IEnumerable<LambdaExpression> GetPolicies(Type objType)
         {
-            return dic.Where(s => s.Key.IsAssignableFrom(objType) || s.Key == typeof(AnonymousMember)).SelectMany(s => s.Value);
+            return dict.Where(s => s.Key.IsAssignableFrom(objType) || s.Key == typeof(AnonymousMember)).SelectMany(s => s.Value);
         }
     }
 

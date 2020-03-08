@@ -6,10 +6,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -20,9 +21,9 @@ namespace Fireasy.Common.Caching
     /// <summary>
     /// 基于内存的缓存管理。无法继承此类。
     /// </summary>
-    public sealed class MemoryCacheManager : ICacheManager
+    public sealed class MemoryCacheManager : DisposeableBase, ICacheManager
     {
-        private static SafetyDictionary<string, object> hashSet = new SafetyDictionary<string, object>();
+        private static readonly ConcurrentDictionary<string, object> hashSet = new ConcurrentDictionary<string, object>();
 
         /// <summary>
         /// 获取 <see cref="MemoryCacheManager"/> 的静态实例。
@@ -50,7 +51,8 @@ namespace Fireasy.Common.Caching
         /// <param name="removeCallback">当对象从缓存中移除时，使用该回调方法通知应用程序。</param>
         public T Add<T>(string cacheKey, T value, TimeSpan? expire = null, CacheItemRemovedCallback removeCallback = null)
         {
-            cacheDictionary.AddOrUpdate(cacheKey, () => CreateCacheItem(cacheKey, () => value, () => expire == null ? RelativeTime.Default : new RelativeTime(expire.Value), removeCallback));
+            var func = new Func<CacheItem>(() => CreateCacheItem(cacheKey, () => value, () => expire == null ? RelativeTime.Default : new RelativeTime(expire.Value), removeCallback));
+            cacheDictionary.AddOrUpdate(cacheKey, k => func(), (k, v) => func());
 
             return value;
         }
@@ -65,7 +67,8 @@ namespace Fireasy.Common.Caching
         /// <param name="removeCallback">当对象从缓存中移除时，使用该回调方法通知应用程序。</param>
         public T Add<T>(string cacheKey, T value, ICacheItemExpiration expiration, CacheItemRemovedCallback removeCallback = null)
         {
-            cacheDictionary.AddOrUpdate(cacheKey, () => CreateCacheItem(cacheKey, () => value, () => expiration ?? RelativeTime.Default, removeCallback));
+            var func = new Func<CacheItem>(() => CreateCacheItem(cacheKey, () => value, () => expiration ?? RelativeTime.Default, removeCallback));
+            cacheDictionary.AddOrUpdate(cacheKey, k => func(), (k, v) => func());
 
             return value;
         }
@@ -148,7 +151,7 @@ namespace Fireasy.Common.Caching
                 return (T)value;
             }
 
-            return default(T);
+            return default;
         }
 
         /// <summary>
@@ -156,10 +159,10 @@ namespace Fireasy.Common.Caching
         /// </summary>
         /// <typeparam name="T">缓存对象的类型。</typeparam>
         /// <param name="cacheKey">用于引用对象的缓存键。</param>
-        /// <param name="factory">用于添加缓存对象的工厂函数。</param>
+        /// <param name="valueCreator">用于添加缓存对象的工厂函数。</param>
         /// <param name="expiration">判断对象过期的对象。</param>
         /// <returns></returns>
-        public T TryGet<T>(string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration = null)
+        public T TryGet<T>(string cacheKey, Func<T> valueCreator, Func<ICacheItemExpiration> expiration = null)
         {
             if (cacheDictionary.TryGetValue(cacheKey, out CacheItem entry))
             {
@@ -171,12 +174,12 @@ namespace Fireasy.Common.Caching
                         NotifyCacheRemoved(entry);
                     }
 
-                    entry = cacheDictionary.GetOrAdd(cacheKey, () => CreateCacheItem(cacheKey, factory, expiration, null));
+                    entry = cacheDictionary.GetOrAdd(cacheKey, k => CreateCacheItem(cacheKey, valueCreator, expiration, null));
                 }
             }
             else
             {
-                entry = cacheDictionary.GetOrAdd(cacheKey, () => CreateCacheItem(cacheKey, factory, expiration, null));
+                entry = cacheDictionary.GetOrAdd(cacheKey, k => CreateCacheItem(cacheKey, valueCreator, expiration, null));
             }
 
             return (T)entry.Value;
@@ -187,10 +190,10 @@ namespace Fireasy.Common.Caching
         /// </summary>
         /// <param name="dataType">数据类型。</param>
         /// <param name="cacheKey">用于引用对象的缓存键。</param>
-        /// <param name="factory">用于添加缓存对象的工厂函数。</param>
+        /// <param name="valueCreator">用于添加缓存对象的工厂函数。</param>
         /// <param name="expiration">判断对象过期的对象。</param>
         /// <returns></returns>
-        public object TryGet(Type dataType, string cacheKey, Func<object> factory, Func<ICacheItemExpiration> expiration = null)
+        public object TryGet(Type dataType, string cacheKey, Func<object> valueCreator, Func<ICacheItemExpiration> expiration = null)
         {
             if (cacheDictionary.TryGetValue(cacheKey, out CacheItem entry))
             {
@@ -202,12 +205,12 @@ namespace Fireasy.Common.Caching
                         NotifyCacheRemoved(entry);
                     }
 
-                    entry = cacheDictionary.GetOrAdd(cacheKey, () => CreateCacheItem(cacheKey, factory, expiration, null));
+                    entry = cacheDictionary.GetOrAdd(cacheKey, k => CreateCacheItem(cacheKey, valueCreator, expiration, null));
                 }
             }
             else
             {
-                entry = cacheDictionary.GetOrAdd(cacheKey, () => CreateCacheItem(cacheKey, factory, expiration, null));
+                entry = cacheDictionary.GetOrAdd(cacheKey, k => CreateCacheItem(cacheKey, valueCreator, expiration, null));
             }
 
             return entry.Value;
@@ -230,7 +233,7 @@ namespace Fireasy.Common.Caching
                     if (cacheDictionary.TryRemove(cacheKey, out entry))
                     {
                         NotifyCacheRemoved(entry);
-                        value = default(T);
+                        value = default;
                         return false;
                     }
                 }
@@ -240,7 +243,7 @@ namespace Fireasy.Common.Caching
             }
             else
             {
-                value = default(T);
+                value = default;
                 return false;
             }
         }
@@ -255,6 +258,11 @@ namespace Fireasy.Common.Caching
             if (cacheDictionary.TryRemove(cacheKey, out CacheItem entry))
             {
                 NotifyCacheRemoved(entry);
+            }
+
+            if (hashSet.ContainsKey(cacheKey))
+            {
+                hashSet.TryRemove(cacheKey, out object _);
             }
         }
 
@@ -279,10 +287,11 @@ namespace Fireasy.Common.Caching
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
         /// <param name="cacheKey">用于哈希集的缓存键。</param>
+        /// <param name="initializeSet">用于初始化哈希集的函数。</param>
         /// <returns></returns>
-        public ICacheHashSet<TKey, TValue> GetHashSet<TKey, TValue>(string cacheKey)
+        public ICacheHashSet<TKey, TValue> GetHashSet<TKey, TValue>(string cacheKey, Func<IEnumerable<Tuple<TKey, TValue, ICacheItemExpiration>>> initializeSet = null)
         {
-            return (ICacheHashSet<TKey, TValue>)hashSet.GetOrAdd(cacheKey, () => new MemoryHashSet<TKey, TValue>());
+            return (ICacheHashSet<TKey, TValue>)hashSet.GetOrAdd(cacheKey, k => new MemoryHashSet<TKey, TValue>(initializeSet));
         }
 
         /// <summary>
@@ -291,6 +300,7 @@ namespace Fireasy.Common.Caching
         public void Clear()
         {
             cacheDictionary.Clear();
+            hashSet.Clear();
         }
 
         /// <summary>
@@ -298,13 +308,13 @@ namespace Fireasy.Common.Caching
         /// </summary>
         public int Capacity { get; set; } = 1000;
 
-        private CacheItem CreateCacheItem<T>(string cacheKey, Func<T> factory, Func<ICacheItemExpiration> expiration, CacheItemRemovedCallback removeCallback)
+        private CacheItem CreateCacheItem<T>(string cacheKey, Func<T> valueCreator, Func<ICacheItemExpiration> expiration, CacheItemRemovedCallback removeCallback)
         {
             cacheDictionary.CheckCapacity(cacheKey, Capacity, optimizer.CurrentMaxGen, NotifyCacheRemoved);
 
             return new CacheItem(
                 cacheKey,
-                factory(),
+                valueCreator(),
                 expiration == null ? null : expiration(),
                 removeCallback);
         }
@@ -323,12 +333,14 @@ namespace Fireasy.Common.Caching
         /// </summary>
         private void CheckExpired()
         {
-            foreach (var kvp in cacheDictionary.LazyValues)
+            foreach (var kvp in cacheDictionary)
             {
-                if (kvp.Value.IsValueCreated && kvp.Value.Value.HasExpired())
+                if (kvp.Value != null && kvp.Value.HasExpired())
                 {
                     if (cacheDictionary.TryRemove(kvp.Key, out CacheItem entry))
                     {
+                        Tracer.Debug($"Remove MemoryCache '{kvp.Key}'.");
+
                         NotifyCacheRemoved(entry);
                         entry.TryDispose();
                     }
@@ -371,14 +383,14 @@ namespace Fireasy.Common.Caching
             SetExpirationTime(cacheKey, expiration);
         }
 
-        async Task<T> ICacheManager.TryGetAsync<T>(string cacheKey, Func<Task<T>> factory, Func<ICacheItemExpiration> expiration, CancellationToken cancellationToken)
+        async Task<T> ICacheManager.TryGetAsync<T>(string cacheKey, Func<Task<T>> valueCreator, Func<ICacheItemExpiration> expiration, CancellationToken cancellationToken)
         {
-            return TryGet(cacheKey, () => factory().AsSync(), expiration);
+            return TryGet(cacheKey, () => valueCreator().AsSync(), expiration);
         }
 
-        async Task<object> ICacheManager.TryGetAsync(Type dataType, string cacheKey, Func<Task<object>> factory, Func<ICacheItemExpiration> expiration, CancellationToken cancellationToken)
+        async Task<object> ICacheManager.TryGetAsync(Type dataType, string cacheKey, Func<Task<object>> valueCreator, Func<ICacheItemExpiration> expiration, CancellationToken cancellationToken)
         {
-            return TryGet(dataType, cacheKey, () => factory().AsSync(), expiration);
+            return TryGet(dataType, cacheKey, () => valueCreator().AsSync(), expiration);
         }
 
         async Task<IEnumerable<string>> ICacheManager.GetKeysAsync(string pattern, CancellationToken cancellationToken)
@@ -394,6 +406,13 @@ namespace Fireasy.Common.Caching
         async Task ICacheManager.ClearAsync(CancellationToken cancellationToken)
         {
             Clear();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            hashSet.Clear();
+            cacheDictionary.Clear();
+            optimizer?.Dispose();
         }
     }
 }

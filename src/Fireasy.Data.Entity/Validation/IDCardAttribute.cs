@@ -45,9 +45,9 @@ namespace Fireasy.Data.Entity.Validation
         /// <returns></returns>
         private static bool CheckIDCard18(string idcard)
         {
-            var n = 0L;
-
-            if (long.TryParse(idcard.Remove(17), out n) == false || n < Math.Pow(10, 16) || long.TryParse(idcard.Replace('x', '0').Replace('X', '0'), out n) == false)
+            if (long.TryParse(idcard.Remove(17), out long n) == false || 
+                n < Math.Pow(10, 16) || 
+                long.TryParse(idcard.Replace('x', '0').Replace('X', '0'), out _) == false)
             {
                 return false;//数字验证
             }
@@ -62,7 +62,7 @@ namespace Fireasy.Data.Entity.Validation
             var birth = idcard.Substring(6, 8).Insert(6, "-").Insert(4, "-");
 
             //生日验证
-            if (DateTime.TryParse(birth, out DateTime birthday) == false)
+            if (DateTime.TryParse(birth, out _) == false)
             {
                 return false;
             }
@@ -77,10 +77,7 @@ namespace Fireasy.Data.Entity.Validation
                 sum += int.Parse(Wi[i]) * int.Parse(Ai[i].ToString());
             }
 
-            var sex = int.Parse(idcard.Substring(16, 1)) % 2 == 0 ? 1 : 0;
-
-            var y = -1;
-            Math.DivRem(sum, 11, out y);
+            Math.DivRem(sum, 11, out int y);
 
             if (arrVarifyCode[y] != idcard.Substring(17, 1).ToUpper())
             {

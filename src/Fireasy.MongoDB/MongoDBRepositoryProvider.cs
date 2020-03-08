@@ -22,22 +22,30 @@ using System.Threading.Tasks;
 
 namespace Fireasy.MongoDB
 {
+    /// <summary>
+    /// MongoDB 的仓储服务实现，由程序集 MongoSharpDeiver 提供。
+    /// </summary>
+    /// <typeparam name="TEntity"></typeparam>
     public sealed class MongoDBRepositoryProvider<TEntity> : IRepositoryProvider<TEntity> where TEntity : class, IEntity
     {
-        private static SafetyDictionary<Type, CustomBsonSerializer> cache = new SafetyDictionary<Type, CustomBsonSerializer>();
+        private static readonly SafetyDictionary<Type, CustomBsonSerializer> cache = new SafetyDictionary<Type, CustomBsonSerializer>();
 
-        private MongoCollection<TEntity> collection;
+        private readonly MongoCollection<TEntity> collection;
         private IRepository repository;
 
-        public MongoDBRepositoryProvider(MongoDBContextService service)
+        /// <summary>
+        /// 初始化 <see cref="MongoDBRepositoryProvider{TEntity}"/> 类的新实例。
+        /// </summary>
+        /// <param name="contextService"></param>
+        public MongoDBRepositoryProvider(MongoDBContextService contextService)
         {
             var metadata = EntityMetadataUnity.GetEntityMetadata(typeof(TEntity));
             var collectionSettings = new MongoCollectionSettings { AssignIdOnInsert = false };
-            collection = service.Database.GetCollection<TEntity>(metadata.TableName, collectionSettings);
+            collection = contextService.Database.GetCollection<TEntity>(metadata.TableName, collectionSettings);
 
             cache.GetOrAdd(typeof(TEntity), () =>
                 {
-                    var serializer = new CustomBsonSerializer();
+                    var serializer = new CustomBsonSerializer(contextService.Provider.ProviderName);
                     BsonSerializer.RegisterSerializer(serializer);
                     return serializer;
                 });
@@ -47,46 +55,89 @@ namespace Fireasy.MongoDB
             Queryable = new MongoQueryable<TEntity>(provider);
         }
 
+        /// <summary>
+        /// 获取 <see cref="IQueryable"/> 实例。
+        /// </summary>
         public IQueryable Queryable { get; private set; }
 
+        /// <summary>
+        /// 获取 <see cref="IQueryProvider"/> 实例。
+        /// </summary>
         public IQueryProvider QueryProvider { get; private set; }
 
-        IQueryable IRepositoryProvider.Queryable => Queryable;
-
-        IQueryProvider IRepositoryProvider.QueryProvider => QueryProvider;
-
+        /// <summary>
+        /// 将一个新的实体对象插入到库。
+        /// </summary>
+        /// <param name="entity">要创建的实体对象。</param>
+        /// <returns>影响的实体数。</returns>
         public int Insert(TEntity entity)
         {
             var result = collection.Insert(entity);
             return (int)result.DocumentsAffected;
         }
 
+        /// <summary>
+        /// 将一个新的实体对象插入到库。
+        /// </summary>
+        /// <param name="entity">要创建的实体对象。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>影响的实体数。</returns>
         public async Task<int> InsertAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             return await Task.Run(() => Insert(entity));
         }
 
+        /// <summary>
+        /// 更新一个实体对象。
+        /// </summary>
+        /// <param name="entity">要更新的实体对象。</param>
+        /// <returns>影响的实体数。</returns>
         public int Update(TEntity entity)
         {
             var result = collection.Save(entity);
             return (int)result.DocumentsAffected;
         }
 
+        /// <summary>
+        /// 异步的，更新一个实体对象。
+        /// </summary>
+        /// <param name="entity">要更新的实体对象。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>影响的实体数。</returns>
         public async Task<int> UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             return await Task.Run(() => Update(entity));
         }
 
+        /// <summary>
+        /// 批量将一组实体对象插入到库中。
+        /// </summary>
+        /// <param name="entities">一组要插入实体对象。</param>
+        /// <param name="batchSize">此参数无效。</param>
+        /// <param name="completePercentage">此参数无效。</param>
         public void BatchInsert(IEnumerable<TEntity> entities, int batchSize = 1000, Action<int> completePercentage = null)
         {
             collection.InsertBatch(entities);
         }
 
+        /// <summary>
+        /// 异步的，批量将一组实体对象插入到库中。
+        /// </summary>
+        /// <param name="entities">一组要插入实体对象。</param>
+        /// <param name="batchSize">此参数无效。</param>
+        /// <param name="completePercentage">此参数无效。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task BatchInsertAsync(IEnumerable<TEntity> entities, int batchSize = 1000, Action<int> completePercentage = null, CancellationToken cancellationToken = default)
         {
             await Task.Run(() => BatchInsert(entities, batchSize, completePercentage));
         }
 
+        /// <summary>
+        /// 将指定的实体对象从库中删除。
+        /// </summary>
+        /// <param name="entity">要移除的实体对象。</param>
+        /// <param name="logicalDelete">是否为逻辑删除。</param>
+        /// <returns>影响的实体数。</returns>
         public int Delete(TEntity entity, bool logicalDelete = true)
         {
             var predicate = BuildPrimaryExpression((p, i) => entity.GetValue(p).GetValue());
@@ -95,11 +146,24 @@ namespace Fireasy.MongoDB
             return (int)result.DocumentsAffected;
         }
 
+        /// <summary>
+        /// 异步的，将指定的实体对象从库中删除。
+        /// </summary>
+        /// <param name="entity">要移除的实体对象。</param>
+        /// <param name="logicalDelete">是否为逻辑删除。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>影响的实体数。</returns>
         public async Task<int> DeleteAsync(TEntity entity, bool logicalDelete = true, CancellationToken cancellationToken = default)
         {
             return await Task.Run(() => Delete(entity, logicalDelete));
         }
 
+        /// <summary>
+        /// 将满足条件的一组对象从库中移除。
+        /// </summary>
+        /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <param name="logicalDelete">是否为逻辑删除</param>
+        /// <returns>影响的实体数。</returns>
         public int Delete(Expression<Func<TEntity, bool>> predicate, bool logicalDelete = true)
         {
             var query = Query<TEntity>.Where(predicate);
@@ -107,11 +171,24 @@ namespace Fireasy.MongoDB
             return (int)result.DocumentsAffected;
         }
 
+        /// <summary>
+        /// 异步的，将满足条件的一组对象从库中移除。
+        /// </summary>
+        /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <param name="logicalDelete">是否为逻辑删除</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>影响的实体数。</returns>
         public async Task<int> DeleteAsync(Expression<Func<TEntity, bool>> predicate, bool logicalDelete = true, CancellationToken cancellationToken = default)
         {
             return await Task.Run(() => Delete(predicate, logicalDelete));
         }
 
+        /// <summary>
+        /// 使用一个参照的实体对象更新满足条件的一序列对象。
+        /// </summary>
+        /// <param name="entity">更新的参考对象。</param>
+        /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <returns>影响的实体数。</returns>
         public int Update(TEntity entity, Expression<Func<TEntity, bool>> predicate)
         {
             var query = Query<TEntity>.Where(predicate);
@@ -120,31 +197,72 @@ namespace Fireasy.MongoDB
             return (int)result.DocumentsAffected;
         }
 
+        /// <summary>
+        /// 异步的，使用一个参照的实体对象更新满足条件的一序列对象。
+        /// </summary>
+        /// <param name="entity">更新的参考对象。</param>
+        /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>影响的实体数。</returns>
         public async Task<int> UpdateAsync(TEntity entity, Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         {
             return await Task.Run(() => Update(entity, predicate));
         }
 
+        /// <summary>
+        /// 使用一个累加器更新满足条件的一序列对象。
+        /// </summary>
+        /// <param name="calculator">一个计算器表达式。</param>
+        /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <returns>影响的实体数。</returns>
         public int Update(Expression<Func<TEntity, TEntity>> calculator, Expression<Func<TEntity, bool>> predicate)
         {
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// 异步的，使用一个累加器更新满足条件的一序列对象。
+        /// </summary>
+        /// <param name="calculator">一个计算器表达式。</param>
+        /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>影响的实体数。</returns>
         public async Task<int> UpdateAsync(Expression<Func<TEntity, TEntity>> calculator, Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public int Batch(IEnumerable<TEntity> instances, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation)
+        /// <summary>
+        /// 对实体集合进行批量操作。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="instances"></param>
+        /// <param name="fnOperation"></param>
+        /// <returns>影响的实体数。</returns>
+        public int Batch(IEnumerable<TEntity> instances, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation, BatchOperateOptions batchOpt)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<int> BatchAsync(IEnumerable<TEntity> instances, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// 异步的，对实体集合进行批量操作。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="instances"></param>
+        /// <param name="fnOperation"></param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>影响的实体数。</returns>
+        public async Task<int> BatchAsync(IEnumerable<TEntity> instances, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation, BatchOperateOptions batchOpt, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// 根据主键值将对象从库中删除。
+        /// </summary>
+        /// <param name="primaryValues">一组主键值。</param>
+        /// <param name="logicalDelete">是否为逻辑删除。</param>
+        /// <returns></returns>
         public int Delete(PropertyValue[] primaryValues, bool logicalDelete = true)
         {
             var predicate = BuildPrimaryExpression((p, i) => PropertyValue.IsEmpty(primaryValues[i]) ? null : primaryValues[i].GetValue());
@@ -153,11 +271,23 @@ namespace Fireasy.MongoDB
             return (int)result.DocumentsAffected;
         }
 
+        /// <summary>
+        /// 异步的，根据主键值将对象从库中删除。
+        /// </summary>
+        /// <param name="primaryValues">一组主键值。</param>
+        /// <param name="logicalDelete">是否为逻辑删除。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns></returns>
         public async Task<int> DeleteAsync(PropertyValue[] primaryValues, bool logicalDelete = true, CancellationToken cancellationToken = default)
         {
             return await Task.Run(() => Delete(primaryValues, logicalDelete));
         }
 
+        /// <summary>
+        /// 通过一组主键值返回一个实体对象。
+        /// </summary>
+        /// <param name="primaryValues">一组主键值。</param>
+        /// <returns></returns>
         public TEntity Get(PropertyValue[] primaryValues)
         {
             var predicate = BuildPrimaryExpression((p, i) => PropertyValue.IsEmpty(primaryValues[i]) ? null : primaryValues[i].GetValue());
@@ -165,6 +295,12 @@ namespace Fireasy.MongoDB
             return collection.FindOne(query);
         }
 
+        /// <summary>
+        /// 异步的，通过一组主键值返回一个实体对象。
+        /// </summary>
+        /// <param name="primaryValues">一组主键值。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns></returns>
         public async Task<TEntity> GetAsync(PropertyValue[] primaryValues, CancellationToken cancellationToken = default)
         {
             return await Task.Run(() => Get(primaryValues));
@@ -232,16 +368,22 @@ namespace Fireasy.MongoDB
             return SingletonLocker.Lock(ref repository, () => new EntityRepository<TEntity>(this, options));
         }
 
+        /// <summary>
+        /// 自定义的序列化器。
+        /// </summary>
         private class CustomBsonSerializer : BsonClassMapSerializer<TEntity>
         {
-            public CustomBsonSerializer()
+            private readonly string providerName;
+
+            public CustomBsonSerializer(string providerName)
                 : base(BsonClassMap.RegisterClassMap<TEntity>().Freeze())
             {
+                this.providerName = providerName;
             }
 
             public override TEntity Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
             {
-                var entityType = EntityProxyManager.GetType(args.NominalType);
+                var entityType = EntityProxyManager.GetType(providerName, args.NominalType);
                 var ser = BsonSerializer.SerializerRegistry.GetSerializer(entityType);
                 return (TEntity)ser.Deserialize(context);
             }

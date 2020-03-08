@@ -1,24 +1,22 @@
-﻿using Fireasy.Common;
-using Fireasy.Common.ComponentModel;
-using Fireasy.Common.Extensions;
-using Fireasy.Data.Converter;
-using Fireasy.Data.Provider;
-using Fireasy.Data.RecordWrapper;
-using Fireasy.Data.Syntax;
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright company="Fireasy"
 //      email="faib920@126.com"
 //      qq="55570729">
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common;
+using Fireasy.Common.ComponentModel;
+using Fireasy.Common.Extensions;
+using Fireasy.Data.Converter;
+using Fireasy.Data.Provider;
+using Fireasy.Data.Syntax;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,8 +41,7 @@ namespace Fireasy.Data.Extensions
                 return null;
             }
 
-            var table = data as DataTable;
-            if (table == null)
+            if (!(data is DataTable table))
             {
                 if (data is IEnumerable)
                 {
@@ -711,58 +708,6 @@ namespace Fireasy.Data.Extensions
             return "1 = 1";
         }
 
-        internal static T GetValueByIndex<T>(this IDataReader reader, IRecordWrapper wrapper, int index)
-        {
-            var isNull = reader.IsDBNull(index);
-            var type = typeof(T);
-            if (type.IsArray &&
-                type.GetElementType() == typeof(byte))
-            {
-                return (T)(isNull ? new byte[0] : wrapper.GetValue(reader, index));
-            }
-
-            try
-            {
-                return GetValueFromReader<T>(isNull, reader, wrapper, index);
-            }
-            catch
-            {
-                return wrapper.GetValue(reader, index).To<T>();
-            }
-        }
-
-        private static T GetValueFromReader<T>(bool isNull, IDataReader reader, IRecordWrapper wrapper, int index)
-        {
-            var typeCode = Type.GetTypeCode(typeof(T).GetNonNullableType());
-            switch (typeCode)
-            {
-                case TypeCode.Boolean:
-                    return (T)(object)(isNull ? new bool?() : wrapper.GetBoolean(reader, index));
-                case TypeCode.Char:
-                    return (T)(object)(isNull ? new char?() : wrapper.GetChar(reader, index));
-                case TypeCode.Byte:
-                    return (T)(object)(isNull ? new byte?() : wrapper.GetByte(reader, index));
-                case TypeCode.Int16:
-                    return (T)(object)(isNull ? new short?() : wrapper.GetInt16(reader, index));
-                case TypeCode.Int32:
-                    return (T)(object)(isNull ? new int?() : wrapper.GetInt32(reader, index));
-                case TypeCode.Int64:
-                    return (T)(object)(isNull ? new long?() : wrapper.GetInt64(reader, index));
-                case TypeCode.Decimal:
-                    return (T)(object)(isNull ? new decimal?() : wrapper.GetDecimal(reader, index));
-                case TypeCode.Double:
-                    return (T)(object)(isNull ? new double?() : wrapper.GetDouble(reader, index));
-                case TypeCode.String:
-                    return (T)(object)(isNull ? string.Empty : wrapper.GetString(reader, index));
-                case TypeCode.DateTime:
-                    return (T)(object)(isNull ? new DateTime?() : wrapper.GetDateTime(reader, index));
-                case TypeCode.Single:
-                    return (T)(object)(isNull ? new float?() : wrapper.GetFloat(reader, index));
-                default:
-                    return (T)wrapper.GetValue(reader, index);
-            }
-        }
-
         internal static void TryOpen(this DbConnection connection, bool autoOpen = true)
         {
             if (autoOpen && connection.State != ConnectionState.Open)
@@ -931,7 +876,7 @@ namespace Fireasy.Data.Extensions
                 }
 
                 var data = new object[properties.Count];
-                for (var i = 0; i < data.Length; i++)
+                for (int i = 0, n = data.Length; i < n; i++)
                 {
                     data[i] = properties[i].GetValue(current) ?? DBNull.Value;
                 }

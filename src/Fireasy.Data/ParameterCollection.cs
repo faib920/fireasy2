@@ -393,7 +393,7 @@ namespace Fireasy.Data
         public ParameterCollection AddReturn<T>(string parameterName, string sourceColumn, int? size = null)
         {
             var dbType = typeof(T).GetDbType();
-            Add<T>(parameterName, sourceColumn, default(T), dbType, size, ParameterDirection.ReturnValue);
+            Add<T>(parameterName, sourceColumn, default, dbType, size, ParameterDirection.ReturnValue);
             return this;
         }
 
@@ -418,7 +418,7 @@ namespace Fireasy.Data
         public ParameterCollection AddOut<T>(string parameterName, string sourceColumn, int? size = null)
         {
             var dbType = typeof(T).GetDbType();
-            Add<T>(parameterName, sourceColumn, default(T), dbType, size, ParameterDirection.Output);
+            Add<T>(parameterName, sourceColumn, default, dbType, size, ParameterDirection.Output);
             return this;
         }
 
@@ -628,7 +628,7 @@ namespace Fireasy.Data
             {
                 if (string.IsNullOrEmpty(parameterName))
                 {
-                    throw new ArgumentNullException("parameterName");
+                    throw new ArgumentNullException(nameof(parameterName));
                 }
 
                 for (int i = 0; i < Count; i++)

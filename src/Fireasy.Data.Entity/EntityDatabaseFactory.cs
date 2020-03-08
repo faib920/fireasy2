@@ -18,23 +18,23 @@ namespace Fireasy.Data.Entity
     {
         /// <summary>
         /// 检查当前的 <see cref="EntityTransactionScope"/> 实例，如果存在，则使用该对象所引用的 <see cref="IDatabase"/> 实例；
-        /// 否则由 <see cref="DatabaseFactory"/> 工厂进行创建。
+        /// 否则由 <see cref="DatabaseFactory"/>函数进行创建。
         /// </summary>
         /// <param name="instanceName">配置实例名称。</param>
-        /// <param name="databaseFactory"><see cref="IDatabase"/> 的创建工厂。</param>
+        /// <param name="dbCreator"><see cref="IDatabase"/> 的创建函数。</param>
         /// <returns>一个 <see cref="Database"/> 实例对象。</returns>
-        public static IDatabase CreateDatabase(string instanceName, Func<IDatabase> databaseFactory)
+        public static IDatabase CreateDatabase(string instanceName, Func<IDatabase> dbCreator)
         {
             if (EntityTransactionScope.Current == null)
             {
-                return DatabaseScope.Current != null ? DatabaseScope.Current.Database : (databaseFactory != null ? databaseFactory() : DatabaseFactory.CreateDatabase());
+                return DatabaseScope.Current != null ? DatabaseScope.Current.Database : (dbCreator != null ? dbCreator() : DatabaseFactory.CreateDatabase());
             }
 
             //首次请求不启动数据库事务
             var database = EntityTransactionScope.Current.GetDatabase(instanceName);
             if (database == null)
             {
-                database = new EntityDatabase(databaseFactory());
+                database = new EntityDatabase(dbCreator());
                 EntityTransactionScope.Current.SetDatabase(instanceName, database);
                 StartTransaction(database, EntityTransactionScope.Current.Option);
             }

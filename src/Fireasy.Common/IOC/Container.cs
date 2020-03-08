@@ -25,7 +25,7 @@ namespace Fireasy.Common.Ioc
     public sealed class Container : IServiceProvider
     {
         private ParameterExpression parExp = null;
-        private List<IRegistration> registrations = new List<IRegistration>();
+        private readonly List<IRegistration> registrations = new List<IRegistration>();
         private readonly List<InstanceInitializer> instanceInitializers = new List<InstanceInitializer>();
         private ResolveScope scope = null;
 
@@ -197,14 +197,16 @@ namespace Fireasy.Common.Ioc
         {
             foreach (var type in assembly.GetExportedTypes())
             {
-                if (type.IsInterface || type.IsAbstract || type.IsEnum)
+                if (type.IsInterface || type.IsAbstract || type.IsEnum || type.IsDefined<IgnoreRegisterAttribute>())
                 {
                     continue;
                 }
 
+                Register(type, type);
+
                 foreach (var interfaceType in type.GetInterfaces())
                 {
-                    if (interfaceType.IsDefined<IgnoreRegisterAttribute>())
+                    if (interfaceType.IsDefined<IgnoreRegisterAttribute>() || interfaceType.FullName.StartsWith("System"))
                     {
                         continue;
                     }

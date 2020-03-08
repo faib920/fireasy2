@@ -7,9 +7,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Emit;
 using Fireasy.Common.Extensions;
+using Fireasy.Common.Reflection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,8 +24,6 @@ namespace Fireasy.Common.Aop
     /// </summary>
     public static class InterceptBuilder
     {
-        private static SafetyDictionary<Type, Type> cache = new SafetyDictionary<Type, Type>();
-
         /// <summary>
         /// 成员的前缀
         /// </summary>
@@ -46,7 +44,7 @@ namespace Fireasy.Common.Aop
         /// <returns>代理类。</returns>
         public static Type BuildTypeCached(Type type, InterceptBuildOption option = null)
         {
-            return cache.GetOrAdd(type, key => BuildType(key, option));
+            return ReflectionCache.GetMember("Intercept", type, option, (t, o) => BuildType(t, o));
         }
 
         /// <summary>
@@ -106,7 +104,7 @@ namespace Fireasy.Common.Aop
             var interceptMethod = DefineInterceptMethod(builder);
             var globalIntercepts = type.GetCustomAttributes<InterceptAttribute>(true).ToList();
 
-            DefineConstructors(builder, globalIntercepts);
+            DefineConstructors(builder);
 
             FindAndInjectMethods(builder, members, globalIntercepts, interceptMethod);
             FindAndInjectProperties(builder, members, globalIntercepts, interceptMethod);
@@ -152,17 +150,19 @@ namespace Fireasy.Common.Aop
             return members;
         }
 
+        /// <summary>
+        /// 判断成员是否能够被注入。
+        /// </summary>
+        /// <param name="member"></param>
+        /// <returns></returns>
         private static bool IsCanIntercepte(MemberInfo member)
         {
-            if (member is MethodInfo && (member as MethodInfo).IsVirtual)
+            if (member is MethodInfo method)
             {
-                var method = member as MethodInfo;
                 return method.IsVirtual && !method.IsFinal;
             }
-
-            if (member is PropertyInfo)
+            else if (member is PropertyInfo property)
             {
-                var property = member as PropertyInfo;
                 var gm = property.GetGetMethod();
                 var sm = property.GetSetMethod();
                 if ((gm != null && gm.IsVirtual && !gm.IsFinal) || (sm != null && sm.IsVirtual && !sm.IsFinal))
@@ -177,9 +177,8 @@ namespace Fireasy.Common.Aop
         /// <summary>
         /// 定义构造器重载。
         /// </summary>
-        /// <param name="globalIntercepts"></param>
         /// <param name="builder"></param>
-        private static void DefineConstructors(DynamicTypeBuilder builder, IList<InterceptAttribute> globalIntercepts)
+        private static void DefineConstructors(DynamicTypeBuilder builder)
         {
             var constructors = builder.BaseType.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
 
@@ -221,7 +220,7 @@ namespace Fireasy.Common.Aop
             */
             #endregion
             var callMethod = builder.DefineMethod(
-                string.Concat(AOP_PREFIX, "Intercept"),
+                $"{AOP_PREFIX}Intercept",
                 null,
                 new[] { typeof(List<IInterceptor>), typeof(InterceptCallInfo), typeof(InterceptType) },
                 VisualDecoration.Private, ilCoding: ctx =>
@@ -298,12 +297,12 @@ namespace Fireasy.Common.Aop
              */
             #endregion
             var fieldBuilder = builder.TypeBuilder.DefineField(
-                string.Concat(AOP_PREFIX, methodName, "_Initialized"),
+                $"{AOP_PREFIX}{methodName}_Initialized",
                 typeof(bool),
                 FieldAttributes.Private);
 
             var callMethod = builder.DefineMethod(
-                string.Concat(AOP_PREFIX, methodName, "_Initialize"),
+                $"{AOP_PREFIX}{methodName}_Initialize",
                 null,
                 new[] { typeof(List<IInterceptor>), typeof(InterceptCallInfo) },
                 VisualDecoration.Private,
@@ -322,7 +321,7 @@ namespace Fireasy.Common.Aop
                             .ldc_bool(true)
                             .beq(l3)
                             .ldarg_2
-                            .call(InterceptCache.MethodAllGetAttributes)
+                            .call(InterceptCache.AllGetAttributes)
                             .stloc_1
                             .ldc_i4_0
                             .stloc_0
@@ -394,7 +393,7 @@ namespace Fireasy.Common.Aop
             foreach (PropertyInfo property in members.Where(s => s is PropertyInfo))
             {
                 var propertyBuilder = builder.TypeBuilder.DefineProperty(property.Name, PropertyAttributes.HasDefault, property.PropertyType, Type.EmptyTypes);
-                var field = isInterface ? builder.DefineField(string.Format("<{0}>__bkField", property.Name), property.PropertyType) : null;
+                var field = isInterface ? builder.DefineField($"<{property.Name}>__bkField", property.PropertyType) : null;
                 var method = property.GetGetMethod();
 
                 if (method != null)
@@ -467,7 +466,7 @@ namespace Fireasy.Common.Aop
             var methodBuilder = builder.DefineMethod(
                 method.Name,
                 method.ReturnType,
-                (from s in parameters select s.ParameterType).ToArray(),
+                parameters.Select(s => s.ParameterType).ToArray(),
                 ilCoding: ctx =>
                     {
                         var isReturn = method.ReturnType != typeof(void);
@@ -527,7 +526,7 @@ namespace Fireasy.Common.Aop
             var methodBuilder = builder.DefineMethod(
                 method.Name,
                 method.ReturnType,
-                (from s in parameters select s.ParameterType).ToArray(),
+                parameters.Select(s => s.ParameterType).ToArray(),
                 ilCoding: ctx =>
                     {
                         var lblCancel = ctx.Emitter.DefineLabel();
@@ -584,7 +583,7 @@ namespace Fireasy.Common.Aop
             var methodBuilder = builder.DefineMethod(
                 method.Name,
                 method.ReturnType,
-                (from s in parameters select s.ParameterType).ToArray(),
+                parameters.Select(s => s.ParameterType).ToArray(),
                 ilCoding: ctx =>
                     {
                         var lblCancel = ctx.Emitter.DefineLabel();
@@ -658,9 +657,9 @@ namespace Fireasy.Common.Aop
                 .stloc(STACK_INTERCEPTOR_LIST_INDEX)
                 .Each(
                     attributes,
-                    (e, t, i) =>
+                    (e, a, i) =>
                         e.ldloc(STACK_INTERCEPTOR_LIST_INDEX)
-                        .newobj(t.InterceptorType)
+                        .newobj(a.InterceptorType)
                         .callvirt(InterceptCache.InterceptorsAdd))
                 .newobj(typeof(InterceptCallInfo))
                 .stloc(STACK_CALLINFO_INDEX)
@@ -797,19 +796,19 @@ namespace Fireasy.Common.Aop
                     e1.brtrue_s(lbRetValNotNull)
                         .ldtoken(returnType)
                         .call(InterceptCache.TypeGetTypeFromHandle)
-                        .call(InterceptCache.MethodGetDefaultValue)
+                        .call(InterceptCache.GetDefaultValue)
                         .Assert(returnType.IsValueType, e => e.unbox_any(returnType))
-                        .Assert(taskRetType != null, e => e.call(InterceptCache.MthTaskFromResult.MakeGenericMethod(taskRetType)))
+                        .Assert(taskRetType != null, e => e.call(InterceptCache.TaskFromResult.MakeGenericMethod(taskRetType)))
                         .ret()
                         .MarkLabel(lbRetValNotNull)
                         .ldloc(STACK_CALLINFO_INDEX)
                         .callvirt(InterceptCache.CallInfoGetReturnValue)
                         .Assert(returnType.IsValueType, e => e.unbox_any(returnType))
-                        .Assert(taskRetType != null, e => e.call(InterceptCache.MthTaskFromResult.MakeGenericMethod(taskRetType)))
+                        .Assert(taskRetType != null, e => e.call(InterceptCache.TaskFromResult.MakeGenericMethod(taskRetType)))
                         .ret(),
                     e1 =>
                         e1
-                        .Assert(taskRetType != null, e => e.call(InterceptCache.MthTaskFromResult.MakeGenericMethod(taskRetType)))
+                        .Assert(taskRetType != null, e => e.call(InterceptCache.TaskFromResult.MakeGenericMethod(taskRetType)))
                         .ret()
                     );
         }
@@ -831,7 +830,7 @@ namespace Fireasy.Common.Aop
                 .stloc(STACK_ARGUMENT_INDEX)
                 .Each(
                     parameters,
-                    (e, t, i) =>
+                    (e, p, i) =>
                     {
                         var type = parameters[i].ParameterType;
                         var isByref = type.IsByRef;

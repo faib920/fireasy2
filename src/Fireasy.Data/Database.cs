@@ -19,8 +19,11 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
+#if NETSTANDARD2_1
 using System.Runtime.CompilerServices;
+#endif
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,10 +33,9 @@ namespace Fireasy.Data
     /// <summary>
     /// 提供数据库基本操作的方法。
     /// </summary>
-    public class Database : IDatabase, IDistributedDatabase
+    public class Database : DisposeableBase, IDatabase, IDistributedDatabase
     {
-        private TransactionStack tranStack;
-        private bool isDisposed;
+        private readonly TransactionStack tranStack;
         private readonly DatabaseScope dbScope;
         private DbConnection connMaster;
         private DbConnection connSlave;
@@ -41,11 +43,15 @@ namespace Fireasy.Data
         /// <summary>
         /// 初始化 <see cref="Database"/> 类的新实例。
         /// </summary>
-        protected Database()
+        /// <param name="provider">数据库提供者。</param>
+        /// <param name="serviceProvider">检索服务提供者。</param>
+        protected Database(IProvider provider, IServiceProvider serviceProvider = null)
         {
             tranStack = new TransactionStack();
             dbScope = new DatabaseScope(this);
-            Track = DefaultCommandTracker.Instance;
+
+            Provider = provider;
+            Track = serviceProvider.TryGetService(() => DefaultCommandTracker.Instance);
         }
 
         /// <summary>
@@ -53,11 +59,10 @@ namespace Fireasy.Data
         /// </summary>
         /// <param name="connectionString">数据库连接字符串。</param>
         /// <param name="provider">数据库提供者。</param>
-        public Database(ConnectionString connectionString, IProvider provider)
-            : this()
+        /// <param name="serviceProvider">检索服务提供者。</param>
+        public Database(ConnectionString connectionString, IProvider provider, IServiceProvider serviceProvider = null)
+            : this(provider, serviceProvider)
         {
-            Guard.ArgumentNull(provider, nameof(provider));
-            Provider = provider;
             ConnectionString = connectionString;
         }
 
@@ -66,21 +71,12 @@ namespace Fireasy.Data
         /// </summary>
         /// <param name="connectionStrings">数据库连接字符串组。</param>
         /// <param name="provider">数据库提供者。</param>
-        public Database(List<DistributedConnectionString> connectionStrings, IProvider provider)
-            : this()
+        /// <param name="serviceProvider">检索服务提供者。</param>
+        public Database(List<DistributedConnectionString> connectionStrings, IProvider provider, IServiceProvider serviceProvider = null)
+            : this(provider, serviceProvider)
         {
-            Guard.ArgumentNull(provider, nameof(provider));
-            Provider = provider;
             DistributedConnectionStrings = connectionStrings.ToReadOnly();
             ConnectionString = connectionStrings.Find(s => s.Mode == DistributedMode.Master);
-        }
-
-        /// <summary>
-        /// 析构函数。
-        /// </summary>
-        ~Database()
-        {
-            Dispose(false);
         }
 
         /// <summary>
@@ -222,12 +218,10 @@ namespace Fireasy.Data
 
             rowMapper ??= RowMapperFactory.CreateRowMapper<T>();
             rowMapper.RecordWrapper = Provider.GetService<IRecordWrapper>();
-            using (var reader = ExecuteReader(queryCommand, segment, parameters))
+            using var reader = ExecuteReader(queryCommand, segment, parameters);
+            while (reader.Read())
             {
-                while (reader.Read())
-                {
-                    yield return rowMapper.Map(this, reader);
-                }
+                yield return rowMapper.Map(this, reader);
             }
         }
 
@@ -242,29 +236,27 @@ namespace Fireasy.Data
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
 
-            using (var reader = ExecuteReader(queryCommand, segment, parameters))
+            using var reader = ExecuteReader(queryCommand, segment, parameters);
+            var wrapper = Provider.GetService<IRecordWrapper>();
+            TypeDescriptorUtility.AddDefaultDynamicProvider();
+
+            while (reader.Read())
             {
-                var wrapper = Provider.GetService<IRecordWrapper>();
-                TypeDescriptorUtility.AddDefaultDynamicProvider();
+                var expando = new ExpandoObject();
+                var dictionary = (IDictionary<string, object>)expando;
 
-                while (reader.Read())
+                for (int i = 0, n = reader.FieldCount; i < n; i++)
                 {
-                    var expando = new ExpandoObject();
-                    var dictionary = (IDictionary<string, object>)expando;
-
-                    for (var i = 0; i < reader.FieldCount; i++)
+                    var name = wrapper.GetFieldName(reader, i);
+                    if (name.Equals("ROW_NUM"))
                     {
-                        var name = wrapper.GetFieldName(reader, i);
-                        if (name.Equals("ROW_NUM"))
-                        {
-                            continue;
-                        }
-
-                        dictionary.Add(wrapper.GetFieldName(reader, i), RecordWrapHelper.GetValue(wrapper, reader, i));
+                        continue;
                     }
 
-                    yield return expando;
+                    dictionary.Add(wrapper.GetFieldName(reader, i), RecordWrapHelper.GetValue(wrapper, reader, i));
                 }
+
+                yield return expando;
             }
         }
 
@@ -285,12 +277,10 @@ namespace Fireasy.Data
 
             rowMapper ??= RowMapperFactory.CreateRowMapper<T>();
             rowMapper.RecordWrapper = Provider.GetService<IRecordWrapper>();
-            using (var reader = (DbDataReader)(await ExecuteReaderAsync(queryCommand, segment, parameters, cancellationToken)))
+            using var reader = (DbDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
             {
-                while (await reader.ReadAsync(cancellationToken))
-                {
-                    yield return rowMapper.Map(this, reader);
-                }
+                yield return rowMapper.Map(this, reader);
             }
         }
 
@@ -306,29 +296,27 @@ namespace Fireasy.Data
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
 
-            using (var reader = (DbDataReader)(await ExecuteReaderAsync(queryCommand, segment, parameters, cancellationToken)))
+            using var reader = (DbDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, cancellationToken);
+            var wrapper = Provider.GetService<IRecordWrapper>();
+            TypeDescriptorUtility.AddDefaultDynamicProvider();
+
+            while (await reader.ReadAsync(cancellationToken))
             {
-                var wrapper = Provider.GetService<IRecordWrapper>();
-                TypeDescriptorUtility.AddDefaultDynamicProvider();
+                var expando = new ExpandoObject();
+                var dictionary = (IDictionary<string, object>)expando;
 
-                while (await reader.ReadAsync(cancellationToken))
+                for (var i = 0; i < reader.FieldCount; i++)
                 {
-                    var expando = new ExpandoObject();
-                    var dictionary = (IDictionary<string, object>)expando;
-
-                    for (var i = 0; i < reader.FieldCount; i++)
+                    var name = wrapper.GetFieldName(reader, i);
+                    if (name.Equals("ROW_NUM"))
                     {
-                        var name = wrapper.GetFieldName(reader, i);
-                        if (name.Equals("ROW_NUM"))
-                        {
-                            continue;
-                        }
-
-                        dictionary.Add(wrapper.GetFieldName(reader, i), RecordWrapHelper.GetValue(wrapper, reader, i));
+                        continue;
                     }
 
-                    yield return expando;
+                    dictionary.Add(wrapper.GetFieldName(reader, i), RecordWrapHelper.GetValue(wrapper, reader, i));
                 }
+
+                yield return expando;
             }
         }
 #else
@@ -349,12 +337,11 @@ namespace Fireasy.Data
             var result = new List<T>();
             rowMapper ??= RowMapperFactory.CreateRowMapper<T>();
             rowMapper.RecordWrapper = Provider.GetService<IRecordWrapper>();
-            using (var reader = (DbDataReader)(await ExecuteReaderAsync(queryCommand, segment, parameters, cancellationToken)))
+
+            using var reader = (DbDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
             {
-                while (await reader.ReadAsync(cancellationToken))
-                {
-                    result.Add(rowMapper.Map(this, reader));
-                }
+                result.Add(rowMapper.Map(this, reader));
             }
 
             return result;
@@ -373,29 +360,27 @@ namespace Fireasy.Data
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
 
             var result = new List<dynamic>();
-            using (var reader = await ExecuteReaderAsync(queryCommand, segment, parameters))
+            using var reader = (DbDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters);
+            var wrapper = Provider.GetService<IRecordWrapper>();
+            TypeDescriptorUtility.AddDefaultDynamicProvider();
+
+            while (await reader.ReadAsync(cancellationToken))
             {
-                var wrapper = Provider.GetService<IRecordWrapper>();
-                TypeDescriptorUtility.AddDefaultDynamicProvider();
+                var expando = new ExpandoObject();
+                var dictionary = (IDictionary<string, object>)expando;
 
-                while (await ((DbDataReader)reader).ReadAsync(cancellationToken))
+                for (int i = 0, n = reader.FieldCount; i < n; i++)
                 {
-                    var expando = new ExpandoObject();
-                    var dictionary = (IDictionary<string, object>)expando;
-
-                    for (var i = 0; i < reader.FieldCount; i++)
+                    var name = wrapper.GetFieldName(reader, i);
+                    if (name.Equals("ROW_NUM"))
                     {
-                        var name = wrapper.GetFieldName(reader, i);
-                        if (name.Equals("ROW_NUM"))
-                        {
-                            continue;
-                        }
-
-                        dictionary.Add(wrapper.GetFieldName(reader, i), RecordWrapHelper.GetValue(wrapper, reader, i));
+                        continue;
                     }
 
-                    result.Add(expando);
+                    dictionary.Add(wrapper.GetFieldName(reader, i), RecordWrapHelper.GetValue(wrapper, reader, i));
                 }
+
+                result.Add(expando);
             }
 
             return result;
@@ -413,16 +398,14 @@ namespace Fireasy.Data
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
             return UsingConnection(connection =>
                 {
-                    using (var command = CreateDbCommand(connection, queryCommand, parameters))
+                    using var command = CreateDbCommand(connection, queryCommand, parameters);
+                    try
                     {
-                        try
-                        {
-                            return HandleCommandExecuted(command, parameters, () => command.ExecuteNonQuery());
-                        }
-                        catch (DbException exp)
-                        {
-                            throw HandleException(command, exp);
-                        }
+                        return HandleCommandExecuted(command, parameters, () => command.ExecuteNonQuery());
+                    }
+                    catch (DbException exp)
+                    {
+                        throw HandleException(command, exp);
                     }
                 }, mode: DistributedMode.Master);
         }
@@ -439,16 +422,14 @@ namespace Fireasy.Data
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
             return await UsingConnectionAsync(async connection =>
                 {
-                    using (var command = CreateDbCommand(connection, queryCommand, parameters))
+                    using var command = CreateDbCommand(connection, queryCommand, parameters);
+                    try
                     {
-                        try
-                        {
-                            return await HandleCommandExecutedAsync(command, parameters, () => command.ExecuteNonQueryAsync(cancellationToken), cancellationToken);
-                        }
-                        catch (DbException exp)
-                        {
-                            throw await HandleExceptionAsync(command, exp, cancellationToken);
-                        }
+                        return await HandleCommandExecutedAsync(command, parameters, () => command.ExecuteNonQueryAsync(cancellationToken), cancellationToken);
+                    }
+                    catch (DbException exp)
+                    {
+                        throw await HandleExceptionAsync(command, exp, cancellationToken);
                     }
                 }, mode: DistributedMode.Master, cancellationToken: cancellationToken);
         }
@@ -520,16 +501,14 @@ namespace Fireasy.Data
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
             return UsingConnection(connection =>
                 {
-                    using (var command = CreateDbCommand(connection, queryCommand, parameters))
+                    using var command = CreateDbCommand(connection, queryCommand, parameters);
+                    try
                     {
-                        try
-                        {
-                            return HandleCommandExecuted(command, parameters, () => command.ExecuteScalar());
-                        }
-                        catch (DbException exp)
-                        {
-                            throw HandleException(command, exp);
-                        }
+                        return HandleCommandExecuted(command, parameters, () => command.ExecuteScalar());
+                    }
+                    catch (DbException exp)
+                    {
+                        throw HandleException(command, exp);
                     }
                 }, mode: DistributedMode.Slave);
         }
@@ -548,7 +527,7 @@ namespace Fireasy.Data
                 return result.To<T>();
             }
 
-            return default(T);
+            return default;
         }
 
         /// <summary>
@@ -563,16 +542,14 @@ namespace Fireasy.Data
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
             return await UsingConnectionAsync(async connection =>
                 {
-                    using (var command = CreateDbCommand(connection, queryCommand, parameters))
+                    using var command = CreateDbCommand(connection, queryCommand, parameters);
+                    try
                     {
-                        try
-                        {
-                            return await HandleCommandExecutedAsync(command, parameters, () => command.ExecuteScalarAsync(cancellationToken), cancellationToken);
-                        }
-                        catch (DbException exp)
-                        {
-                            throw await HandleExceptionAsync(command, exp, cancellationToken);
-                        }
+                        return await HandleCommandExecutedAsync(command, parameters, () => command.ExecuteScalarAsync(cancellationToken), cancellationToken);
+                    }
+                    catch (DbException exp)
+                    {
+                        throw await HandleExceptionAsync(command, exp, cancellationToken);
                     }
                 }, mode: DistributedMode.Slave, cancellationToken: cancellationToken);
         }
@@ -588,7 +565,7 @@ namespace Fireasy.Data
         {
             var result = await ExecuteScalarAsync(queryCommand, parameters, cancellationToken);
 
-            return result == DBNull.Value ? default(T) : result.To<T>();
+            return result == DBNull.Value ? default : result.To<T>();
         }
 
         /// <summary>
@@ -610,32 +587,30 @@ namespace Fireasy.Data
 
             UsingConnection(connection =>
                 {
-                    using (var command = CreateDbCommand(connection, queryCommand, parameters))
+                    using var command = CreateDbCommand(connection, queryCommand, parameters);
+                    adapter.SelectCommand = command;
+
+                    //如果要使用Update更新DataSet，则必须指定MissingSchemaAction.AddWithKey，
+                    //但在Oracle使用分页时，却不能设置该属性，否则抛出“应为标识符或带引号的标识符”
+                    //因此，如果要实现Update，只有手动添加DataSet的PrimaryKeys
+                    //adapter.MissingSchemaAction = MissingSchemaAction.AddWithKey;
+                    dataSet.EnforceConstraints = false;
+                    HandleAdapterTableMapping(adapter, tableName);
+
+                    try
                     {
-                        adapter.SelectCommand = command;
+                        var context = new CommandContext(this, command, segment, parameters);
 
-                        //如果要使用Update更新DataSet，则必须指定MissingSchemaAction.AddWithKey，
-                        //但在Oracle使用分页时，却不能设置该属性，否则抛出“应为标识符或带引号的标识符”
-                        //因此，如果要实现Update，只有手动添加DataSet的PrimaryKeys
-                        //adapter.MissingSchemaAction = MissingSchemaAction.AddWithKey;
-                        dataSet.EnforceConstraints = false;
-                        HandleAdapterTableMapping(adapter, tableName);
+                        //无法分页时才采用 adapter.Fill(dataSet, startRecord, maxRecords, "Table")
+                        var handler = !HandleSegmentCommand(context) && segment != null ?
+                            new Func<int>(() => adapter.Fill(dataSet, segment.Start.Value, segment.Length, "Table")) :
+                            new Func<int>(() => adapter.Fill(dataSet));
 
-                        try
-                        {
-                            var context = new CommandContext(this, command, segment, parameters);
-
-                            //无法分页时才采用 adapter.Fill(dataSet, startRecord, maxRecords, "Table")
-                            var handler = !HandleSegmentCommand(context) && segment != null ?
-                                new Func<int>(() => adapter.Fill(dataSet, segment.Start.Value, segment.Length, "Table")) :
-                                new Func<int>(() => adapter.Fill(dataSet));
-
-                            return HandleCommandExecuted(command, parameters, handler);
-                        }
-                        catch (DbException exp)
-                        {
-                            throw HandleException(command, exp);
-                        }
+                        return HandleCommandExecuted(command, parameters, handler);
+                    }
+                    catch (DbException exp)
+                    {
+                        throw HandleException(command, exp);
                     }
                 }, false, DistributedMode.Slave);
         }
@@ -646,21 +621,19 @@ namespace Fireasy.Data
         /// <returns>如果连接成功，则为 null，否则为异常对象。</returns>
         public virtual Exception TryConnect()
         {
-            using (var connection = this.CreateConnection())
+            using var connection = this.CreateConnection();
+            try
             {
-                try
-                {
-                    connection.TryOpen();
-                    return null;
-                }
-                catch (DbException exp)
-                {
-                    return exp;
-                }
-                finally
-                {
-                    connection.TryClose();
-                }
+                connection.TryOpen();
+                return null;
+            }
+            catch (DbException exp)
+            {
+                return exp;
+            }
+            finally
+            {
+                connection.TryClose();
             }
         }
 
@@ -671,21 +644,19 @@ namespace Fireasy.Data
         /// <returns>如果连接成功，则为 null，否则为异常对象。</returns>
         public virtual async Task<Exception> TryConnectAsync(CancellationToken cancellationToken = default)
         {
-            using (var connection = this.CreateConnection())
+            using var connection = this.CreateConnection();
+            try
             {
-                try
-                {
-                    await connection.TryOpenAsync(cancellationToken: cancellationToken);
-                    return null;
-                }
-                catch (DbException exp)
-                {
-                    return exp;
-                }
-                finally
-                {
-                    connection.TryClose();
-                }
+                await connection.TryOpenAsync(cancellationToken: cancellationToken);
+                return null;
+            }
+            catch (DbException exp)
+            {
+                return exp;
+            }
+            finally
+            {
+                connection.TryClose();
             }
         }
 
@@ -777,25 +748,11 @@ namespace Fireasy.Data
         }
 
         /// <summary>
-        /// 释放对象所占用的所有资源。
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
         /// 释放对象所占用的非托管和托管资源。
         /// </summary>
         /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
-        protected virtual void Dispose(bool disposing)
+        protected override void Dispose(bool disposing)
         {
-            if (isDisposed)
-            {
-                return;
-            }
-
             if (Transaction != null)
             {
                 Transaction.Dispose();
@@ -815,7 +772,6 @@ namespace Fireasy.Data
             }
 
             dbScope.Dispose();
-            isDisposed = true;
         }
 
         /// <summary>
@@ -827,6 +783,7 @@ namespace Fireasy.Data
         {
         }
 
+
         /// <summary>
         /// 创建一个 DbCommand 对象。
         /// </summary>
@@ -834,6 +791,7 @@ namespace Fireasy.Data
         /// <param name="queryCommand">查询命令。</param>
         /// <param name="parameters">参数集合。</param>
         /// <returns>一个由 <see cref="IQueryCommand"/> 和参数集合组成的 <see cref="DbCommand"/> 对象。</returns>
+        [SuppressMessage("Security", "CA2100")]
         private DbCommand CreateDbCommand(DbConnection connection, IQueryCommand queryCommand, ParameterCollection parameters)
         {
             var command = connection.CreateCommand();
@@ -878,7 +836,7 @@ namespace Fireasy.Data
                 return await callback(connection);
             }
 
-            return default(T);
+            return default;
         }
 
         private DbConnection GetConnection(DistributedMode mode = DistributedMode.Master)
@@ -1067,28 +1025,26 @@ namespace Fireasy.Data
                 {
                     BeginTransaction();
 
-                    using (var command = CreateDbCommand(connection, sqlCommand, parameters))
+                    using var command = CreateDbCommand(connection, sqlCommand, parameters);
+                    try
                     {
-                        try
+                        var result = 0;
+                        foreach (DataRow row in dataTable.Rows)
                         {
-                            var result = 0;
-                            foreach (DataRow row in dataTable.Rows)
-                            {
-                                UpdateParameters(command.Parameters, row);
+                            UpdateParameters(command.Parameters, row);
 
-                                row[COLUMN_RESULT] = command.ExecuteScalar() ?? 0;
+                            row[COLUMN_RESULT] = command.ExecuteScalar() ?? 0;
 
-                                result++;
-                            }
-
-                            CommitTransaction();
-
-                            return result;
+                            result++;
                         }
-                        catch (DbException exp)
-                        {
-                            throw HandleException(command, exp);
-                        }
+
+                        CommitTransaction();
+
+                        return result;
+                    }
+                    catch (DbException exp)
+                    {
+                        throw HandleException(command, exp);
                     }
                 }, mode: DistributedMode.Master);
         }

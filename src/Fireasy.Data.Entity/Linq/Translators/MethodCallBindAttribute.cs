@@ -13,7 +13,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// 提供方法调用的绑定特性。
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-    public class MethodCallBindAttribute : Attribute
+    public sealed class MethodCallBindAttribute : Attribute
     {
         /// <summary>
         /// 初始化 <see cref="MethodCallBindAttribute"/> 类的新实例。

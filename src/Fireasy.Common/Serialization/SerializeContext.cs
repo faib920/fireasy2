@@ -6,8 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.ComponentModel;
-using Fireasy.Common.Extensions;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -19,7 +19,7 @@ namespace Fireasy.Common.Serialization
     public class SerializeContext : Scope<SerializeContext>
     {
         private readonly List<object> objects = new List<object>();
-        private static SafetyDictionary<Type, List<SerializerPropertyMetadata>> cache = new SafetyDictionary<Type, List<SerializerPropertyMetadata>>();
+        private static readonly ConcurrentDictionary<Type, List<SerializerPropertyMetadata>> cache = new ConcurrentDictionary<Type, List<SerializerPropertyMetadata>>();
 
         /// <summary>
         /// 获取或设置 <see cref="SerializeOption"/>。
@@ -35,11 +35,11 @@ namespace Fireasy.Common.Serialization
         /// 获取指定类型的属性元数据。
         /// </summary>
         /// <param name="type"></param>
-        /// <param name="factory"></param>
+        /// <param name="valueCreator"></param>
         /// <returns></returns>
-        public List<SerializerPropertyMetadata> GetProperties(Type type, Func<List<SerializerPropertyMetadata>> factory)
+        public List<SerializerPropertyMetadata> GetProperties(Type type, Func<List<SerializerPropertyMetadata>> valueCreator)
         {
-            return cache.GetOrAdd(type, factory);
+            return cache.GetOrAdd(type, k => valueCreator());
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace Fireasy.Common.Serialization
         /// <exception cref="SerializationException">该对象被循环引用，即嵌套引用。</exception>
         public void TrySerialize(object obj, Action serializeMethod)
         {
-            if (obj == null)
+            if (obj == null || Option.ReferenceLoopHandling == ReferenceLoopHandling.None)
             {
                 serializeMethod();
                 return;

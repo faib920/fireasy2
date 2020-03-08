@@ -1,5 +1,11 @@
-﻿using Fireasy.Common;
-using System;
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+using Fireasy.Common;
 using System.Data;
 using System.Diagnostics;
 using System.Linq.Expressions;

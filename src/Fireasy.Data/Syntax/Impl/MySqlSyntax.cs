@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using Fireasy.Data.Provider;
 using System.Data;
+using System.Linq;
 using System.Text;
 
 namespace Fireasy.Data.Syntax
@@ -36,74 +37,47 @@ namespace Fireasy.Data.Syntax
         /// <summary>
         /// 获取最近创建的自动编号的查询文本。
         /// </summary>
-        public virtual string IdentitySelect
-        {
-            get { return "SELECT LAST_INSERT_ID()"; }
-        }
+        public virtual string IdentitySelect => "SELECT LAST_INSERT_ID()";
 
         /// <summary>
         /// 获取自增长列的关键词。
         /// </summary>
-        public virtual string IdentityColumn
-        {
-            get { return "AUTO_INCREMENT"; }
-        }
+        public virtual string IdentityColumn => "AUTO_INCREMENT";
 
         /// <summary>
         /// 获取受影响的行数的查询文本。
         /// </summary>
-        public string RowsAffected
-        {
-            get { return "ROW_COUNT()"; }
-        }
+        public string RowsAffected => "ROW_COUNT()";
 
         /// <summary>
         /// 获取伪查询的表名称。
         /// </summary>
-        public string FakeSelect
-        {
-            get { return string.Empty; }
-        }
+        public string FakeSelect => string.Empty;
 
         /// <summary>
         /// 获取存储参数的前缀。
         /// </summary>
-        public virtual string ParameterPrefix
-        {
-            get { return "?"; }
-        }
+        public virtual string ParameterPrefix => "?";
 
         /// <summary>
         /// 获取列引号标识符。
         /// </summary>
-        public virtual string[] Quote
-        {
-            get { return new[] { "`", "`" }; }
-        }
+        public virtual string[] Quote => new[] { "`", "`" };
 
         /// <summary>
         /// 获取换行符。
         /// </summary>
-        public string Linefeed
-        {
-            get { return "\n;\n"; }
-        }
+        public string Linefeed => "\n;\n";
 
         /// <summary>
         /// 获取是否允许在聚合中使用 DISTINCT 关键字。
         /// </summary>
-        public bool SupportDistinctInAggregates
-        {
-            get { return true; }
-        }
+        public bool SupportDistinctInAggregates => true;
 
         /// <summary>
         /// 获取是否允许在没有 FORM 的语句中使用子查询。
         /// </summary>
-        public bool SupportSubqueryInSelectWithoutFrom
-        {
-            get { return true; }
-        }
+        public bool SupportSubqueryInSelectWithoutFrom => true;
 
         /// <summary>
         /// 对命令文本进行分段处理，使之能够返回小范围内的数据。
@@ -125,12 +99,8 @@ namespace Fireasy.Data.Syntax
         /// <exception cref="SegmentNotSupportedException">当前数据库或版本不支持分段时，引发该异常。</exception>
         public virtual string Segment(string commandText, IDataSegment segment)
         {
-            commandText = string.Format(@"{0}
-LIMIT {1}{2}",
-                commandText,
-                segment.Length != 0 ? segment.Length : 1000,
-                segment.Start != null ? " OFFSET " + (segment.Start - 1) : string.Empty);
-            return commandText;
+            return @$"{commandText}
+LIMIT {(segment.Length != 0 ? segment.Length : 1000)}{(segment.Start != null ? $" OFFSET {segment.Start - 1}" : string.Empty)}";
         }
 
         /// <summary>
@@ -148,31 +118,31 @@ LIMIT {1}{2}",
                 case DbType.Guid:
                 case DbType.StringFixedLength:
                 case DbType.AnsiStringFixedLength:
-                    return string.Format("CAST({0} AS CHAR)", sourceExp);
+                    return $"CAST({sourceExp} AS CHAR)";
                 case DbType.Binary:
-                    return string.Format("CAST({0} AS BINARY)", sourceExp);
+                    return $"CAST({sourceExp} AS BINARY)";
                 case DbType.Currency:
                 case DbType.Decimal:
                 case DbType.Double:
                 case DbType.Single:
-                    return string.Format("CAST({0} AS DECIMAL)", sourceExp);
+                    return $"CAST({sourceExp} AS DECIMAL)";
                 case DbType.Boolean:
                 case DbType.SByte:
                 case DbType.Int16:
                 case DbType.Int32:
                 case DbType.Int64:
-                    return string.Format("CAST({0} AS SIGNED)", sourceExp);
+                    return $"CAST({sourceExp} AS SIGNED)";
                 case DbType.Byte:
                 case DbType.UInt16:
                 case DbType.UInt32:
                 case DbType.UInt64:
-                    return string.Format("CAST({0} AS UNSIGNED)", sourceExp);
+                    return $"CAST({sourceExp} AS UNSIGNED)";
                 case DbType.Date:
-                    return string.Format("CAST({0} AS DATE)", sourceExp);
+                    return $"CAST({sourceExp} AS DATE)";
                 case DbType.DateTime:
-                    return string.Format("CAST({0} AS DATETIME)", sourceExp);
+                    return $"CAST({sourceExp} AS DATETIME)";
                 case DbType.Time:
-                    return string.Format("CAST({0} AS TIME)", sourceExp);
+                    return $"CAST({sourceExp} AS TIME)";
             }
             return ExceptionHelper.ThrowSyntaxConvertException(dbType);
         }
@@ -193,7 +163,7 @@ LIMIT {1}{2}",
                 case DbType.AnsiString:
                     if (length == null || length <= 255)
                     {
-                        return string.Format("VARCHAR({0})", length ?? 255);
+                        return $"VARCHAR({length ?? 255})";
                     }
                     if (length > 255 && length <= 65535)
                     {
@@ -205,7 +175,7 @@ LIMIT {1}{2}",
                 case DbType.AnsiStringFixedLength:
                     if (length == null || length <= 255)
                     {
-                        return string.Format("CHAR({0})", length ?? 255);
+                        return $"CHAR({length ?? 255})";
                     }
                     if (length > 255 && length <= 65535)
                     {
@@ -233,13 +203,13 @@ LIMIT {1}{2}",
                     }
                     if (precision == null)
                     {
-                        return string.Format("DECIMAL(19, {0})", scale);
+                        return $"DECIMAL(19, {scale})";
                     }
                     if (scale == null)
                     {
-                        return string.Format("DECIMAL({0}, 5)", precision);
+                        return $"DECIMAL({precision}, 5)";
                     }
-                    return string.Format("DECIMAL({0}, {1})", precision, scale);
+                    return $"DECIMAL({precision}, {scale})";
                 case DbType.Double:
                     return "DOUBLE";
                 case DbType.Single:
@@ -316,9 +286,19 @@ LIMIT {1}{2}",
         /// <returns></returns>
         public string ExistsTable(string tableName)
         {
-            return string.Format("show tables like '{0}'", tableName);
+            return $"show tables like '{tableName}'";
         }
-        
+
+        /// <summary>
+        /// 获取判断多个表是否存在的语句。
+        /// </summary>
+        /// <param name="tableName">要判断的表的名称数组。</param>
+        /// <returns></returns>
+        public virtual string ExistsTables(string[] tableNames)
+        {
+            return "show tables";
+        }
+
         /// <summary>
         /// 修正 <see cref="DbType"/> 值。
         /// </summary>

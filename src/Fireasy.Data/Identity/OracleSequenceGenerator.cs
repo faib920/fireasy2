@@ -35,17 +35,17 @@ namespace Fireasy.Data.Identity
             if (GeneratorCache.IsSequenceCreated(tableName, columnName, () =>
                 {
                     //查找是否存在序列
-                    sql = string.Format("SELECT 1 FROM USER_SEQUENCES WHERE SEQUENCE_NAME = '{0}'", sequenceName);
+                    sql = $"SELECT 1 FROM USER_SEQUENCES WHERE SEQUENCE_NAME = '{sequenceName}'";
                     var result = database.ExecuteScalar(sql);
 
                     //不存在的话先创建序列
                     if (result == DBNull.Value || result == null)
                     {
                         //取表中该列的最大值 + 1
-                        sql = string.Format("SELECT MAX({1}) FROM {0}", tableName, columnName);
+                        sql = $"SELECT MAX({columnName}) FROM {tableName}";
                         value = database.ExecuteScalar<int>(sql) + 1;
 
-                        sql = string.Format("CREATE SEQUENCE {0} START WITH {1}", sequenceName, value);
+                        sql = $"CREATE SEQUENCE {sequenceName} START WITH {value}";
                         try
                         {
                             database.ExecuteNonQuery(sql);
@@ -60,7 +60,7 @@ namespace Fireasy.Data.Identity
                 }))
             {
                 //查询下一个值
-                sql = string.Format("SELECT {0}.NEXTVAL FROM DUAL", sequenceName);
+                sql = $"SELECT {sequenceName}.NEXTVAL FROM DUAL";
                 value = database.ExecuteScalar<int>(sql);
             }
 
@@ -77,10 +77,10 @@ namespace Fireasy.Data.Identity
         {
             if (tableName.Length + columnName.Length >= 25)
             {
-                return string.Format("SQ$_{0}_{1}", tableName.Substring(0, 25 - columnName.Length), columnName);
+                return $"SQ$_{tableName.Substring(0, 25 - columnName.Length)}_{columnName}";
             }
 
-            return string.Format("SQ$_{0}_{1}", tableName, columnName);
+            return $"SQ$_{tableName}_{columnName}";
         }
     }
 }

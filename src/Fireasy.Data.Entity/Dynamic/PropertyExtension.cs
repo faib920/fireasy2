@@ -16,7 +16,7 @@ namespace Fireasy.Data.Entity.Dynamic
     /// </summary>
     public sealed class PropertyExtension : IProperty
     {
-        private List<Expression<Func<Attribute>>> attrExps = new List<Expression<Func<Attribute>>>();
+        private readonly List<Expression<Func<Attribute>>> attrExps = new List<Expression<Func<Attribute>>>();
 
         /// <summary>
         /// 初始化 <see cref="PropertyExtension"/> 类的新实例。

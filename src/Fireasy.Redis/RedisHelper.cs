@@ -7,12 +7,15 @@
 // -----------------------------------------------------------------------
 using System;
 #if NETSTANDARD
+using Fireasy.Common.Configuration;
+using Fireasy.Common.Caching.Configuration;
 using CSRedis;
 #else
 using StackExchange.Redis;
 #endif
 using System.Threading;
 using System.Threading.Tasks;
+using Fireasy.Common.Extensions;
 
 namespace Fireasy.Redis
 {
@@ -58,7 +61,7 @@ namespace Fireasy.Redis
             return result;
         }
 
-        internal static async Task LockAsync(CSRedisClient client, string token, TimeSpan timeout, Task task)
+        internal static async Task LockAsync(CSRedisClient client, string token, TimeSpan timeout, Func<Task> func)
         {
             CSRedisClientLock locker;
             while ((locker = client.Lock(token, (int)timeout.TotalSeconds)) == null)
@@ -68,7 +71,7 @@ namespace Fireasy.Redis
 
             try
             {
-                await task;
+                await func();
             }
             finally
             {
@@ -135,7 +138,7 @@ namespace Fireasy.Redis
             }
         }
 
-        internal static async Task LockAsync(IDatabase db, string token, TimeSpan timeout, Task task)
+        internal static async Task LockAsync(IDatabase db, string token, TimeSpan timeout, Func<Task> task)
         {
             var lockValue = $"{token}:LOCK_TOKEN";
 
@@ -146,7 +149,7 @@ namespace Fireasy.Redis
 
             try
             {
-                await task;
+                await task();
             }
             finally
             {
@@ -174,6 +177,12 @@ namespace Fireasy.Redis
         }
 
 #endif
-
+        internal static void ParseHosts(RedisConfigurationSetting setting, string host)
+        {
+            if (!string.IsNullOrEmpty(host))
+            {
+                host.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries).ForEach(s => setting.Hosts.Add(new RedisHost(s)));
+            }
+        }
     }
 }

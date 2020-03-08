@@ -22,7 +22,7 @@ namespace Fireasy.Data
         /// 解析字符串中的带目录的参数值。
         /// </summary>
         /// <param name="urlExpression">数据库文件名表达式。</param>
-        /// <example>如 |datadirectory|..\data\db1.mdf &lt;br&gt; |system|db1.mdb 等等。</example>
+        /// <example>如 |datadirectory|..\data\db1.mdf、|system|db1.mdb 等等。</example>
         public static string ResolveFullPath(string urlExpression)
         {
             int dirIndex;
@@ -38,8 +38,7 @@ namespace Fireasy.Data
                 else
                 {
                     var folderName = urlExpression.Substring(1, dirIndex - 1);
-                    Environment.SpecialFolder folder;
-                    Enum.TryParse(folderName, out folder);
+                    Enum.TryParse(folderName, out Environment.SpecialFolder folder);
                     directory = Environment.GetFolderPath(folder);
                 }
 

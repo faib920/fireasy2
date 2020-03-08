@@ -5,6 +5,13 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 #if NETCOREAPP
 using Fireasy.Web.EasyUI;
 using Fireasy.Web.EasyUI.Binders;
@@ -18,7 +25,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// 配置 EasyUI 的相关扩展。
         /// </summary>
         /// <param name="builder"></param>
-        /// <param name="action"></param>
+        /// <param name="setupAction"></param>
         /// <returns></returns>
         public static IMvcBuilder ConfigureEasyUI(this IMvcBuilder builder, Action<EasyUIOptions> setupAction = null)
         {

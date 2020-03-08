@@ -74,11 +74,12 @@ namespace Fireasy.Data.Configuration
 
             private IConfigurationSettingItem Parse(string storeType, string providerName, string providerType, string databaseType, string key, string connectionString)
             {
-                var setting = new StringInstanceSetting();
-
-                setting.ProviderName = providerName;
-                setting.ProviderType = providerType;
-                setting.DatabaseType = string.IsNullOrEmpty(databaseType) ? null : Type.GetType(databaseType, false, true);
+                var setting = new StringInstanceSetting
+                {
+                    ProviderName = providerName,
+                    ProviderType = providerType,
+                    DatabaseType = string.IsNullOrEmpty(databaseType) ? null : Type.GetType(databaseType, false, true)
+                };
 
                 switch (string.Concat(string.Empty, storeType).ToLower())
                 {
@@ -114,11 +115,12 @@ namespace Fireasy.Data.Configuration
 
             private IConfigurationSettingItem Parse(string storeType, string providerName, string providerType, string databaseType, string key, XmlNode clusters)
             {
-                var setting = new StringInstanceSetting();
-
-                setting.ProviderName = providerName;
-                setting.ProviderType = providerType;
-                setting.DatabaseType = string.IsNullOrEmpty(databaseType) ? null : Type.GetType(databaseType, false, true);
+                var setting = new StringInstanceSetting
+                {
+                    ProviderName = providerName,
+                    ProviderType = providerType,
+                    DatabaseType = string.IsNullOrEmpty(databaseType) ? null : Type.GetType(databaseType, false, true)
+                };
 
                 var master = clusters.SelectSingleNode("master");
                 var slaves = clusters.SelectSingleNode("slaves");
@@ -155,11 +157,12 @@ namespace Fireasy.Data.Configuration
 #if NETSTANDARD
             private IConfigurationSettingItem Parse(string storeType, string providerName, string providerType, string databaseType, string key, IConfiguration clusters)
             {
-                var setting = new StringInstanceSetting();
-
-                setting.ProviderName = providerName;
-                setting.ProviderType = providerType;
-                setting.DatabaseType = string.IsNullOrEmpty(databaseType) ? null : Type.GetType(databaseType, false, true);
+                var setting = new StringInstanceSetting
+                {
+                    ProviderName = providerName,
+                    ProviderType = providerType,
+                    DatabaseType = string.IsNullOrEmpty(databaseType) ? null : Type.GetType(databaseType, false, true)
+                };
 
                 var master = clusters.GetSection("master");
                 var slaves = clusters.GetSection("slaves");

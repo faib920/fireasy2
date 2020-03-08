@@ -8,8 +8,11 @@
 
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Linq.Translators;
+using Fireasy.Data.Provider;
 using System;
+#if !NETFRAMEWORK && !NETSTANDARD2_0
 using System.Collections.Generic;
+#endif
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -21,18 +24,40 @@ namespace Fireasy.Data.Entity.Linq
     /// <summary>
     /// 提供对象查询的基本方法。无法继承此类。
     /// </summary>
-    public sealed class QueryProvider : IQueryProvider, ITranslateSupport, IAsyncQueryProvider
+    public sealed class QueryProvider : 
+        IQueryProvider, 
+        ITranslateSupport, 
+        IAsyncQueryProvider, 
+        IProviderAware
     {
-        private readonly IEntityQueryProvider entityQueryProvider;
+        private readonly EntityQueryProvider entityQueryProvider;
 
         /// <summary>
         /// 初始化 <see cref="QueryProvider"/> 类的新实例。
         /// </summary>
-        /// <param name="provider"></param>
-        public QueryProvider(IEntityQueryProvider provider)
+        /// <param name="entityQueryProvider"></param>
+        public QueryProvider(EntityQueryProvider entityQueryProvider)
         {
-            entityQueryProvider = provider;
+            this.entityQueryProvider = entityQueryProvider;
+            ServiceProvider = entityQueryProvider.ServiceProvider;
+            Provider = entityQueryProvider.Provider;
+            ContextOptions = entityQueryProvider.ContextOptions;
         }
+
+        /// <summary>
+        /// 获取数据库提供者实例。
+        /// </summary>
+        public IProvider Provider { get; private set; }
+
+        /// <summary>
+        /// 获取应用程序服务提供者实例。
+        /// </summary>
+        public IServiceProvider ServiceProvider { get; private set; }
+
+        /// <summary>
+        /// 获取参数选项。
+        /// </summary>
+        public EntityContextOptions ContextOptions { get; private set; }
 
         /// <summary>
         /// 构造一个 <see cref="IQueryable"/> 对象，该对象可计算指定表达式树所表示的查询。
@@ -41,9 +66,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public IQueryable CreateQuery(Expression expression)
         {
-            Type elementType = null;
-            var lambda = expression as LambdaExpression;
-            if (lambda != null)
+            Type elementType;
+            if (expression is LambdaExpression lambda)
             {
                 elementType = lambda.Type;
             }
@@ -91,25 +115,15 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public TResult Execute<TResult>(Expression expression)
         {
-            if (!ExecuteCache.CanCache(expression))
-            {
-                return entityQueryProvider.Execute<TResult>(expression);
-            }
-
-            return ExecuteCache.TryGet(expression, () => entityQueryProvider.Execute<TResult>(expression));
+            var executeCache = ServiceProvider.TryGetService(() => DefaultCacheExecutionProcessor.Instance);
+            return executeCache.TryGet(expression, GetCacheOptions(), () => entityQueryProvider.Execute<TResult>(expression));
         }
 
 #if !NETFRAMEWORK && !NETSTANDARD2_0
         public IAsyncEnumerable<TResult> ExecuteEnumerableAsync<TResult>(Expression expression, CancellationToken cancellationToken)
         {
-            if (!ExecuteCache.CanCache(expression))
-            {
-                return entityQueryProvider.ExecuteEnumerableAsync<TResult>(expression, cancellationToken);
-            }
-            else
-            {
-                return ExecuteCache.TryGet(expression, () => entityQueryProvider.ExecuteEnumerableAsync<TResult>(expression, cancellationToken));
-            }
+            var executeCache = ServiceProvider.TryGetService(() => DefaultCacheExecutionProcessor.Instance);
+            return executeCache.TryGet(expression, GetCacheOptions(), () => entityQueryProvider.ExecuteEnumerableAsync<TResult>(expression, cancellationToken));
         }
 #endif
 
@@ -122,12 +136,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
         {
-            if (!ExecuteCache.CanCache(expression))
-            {
-                return await entityQueryProvider.ExecuteAsync<TResult>(expression);
-            }
-
-            return await ExecuteCache.TryGetAsync(expression, () => entityQueryProvider.ExecuteAsync<TResult>(expression, cancellationToken));
+            var executeCache = ServiceProvider.TryGetService(() => DefaultCacheExecutionProcessor.Instance);
+            return await executeCache.TryGetAsync(expression, GetCacheOptions(), c => entityQueryProvider.ExecuteAsync<TResult>(expression, c), cancellationToken);
         }
 
         /// <summary>
@@ -139,6 +149,11 @@ namespace Fireasy.Data.Entity.Linq
         TranslateResult ITranslateSupport.Translate(Expression expression, TranslateOptions option)
         {
             return entityQueryProvider.Translate(expression, option);
+        }
+
+        private CacheExecutionOptions GetCacheOptions()
+        {
+            return new CacheExecutionOptions(ContextOptions.CacheExecution, ContextOptions.CacheExecutionTimes, ContextOptions.CachePrefix);
         }
     }
 }

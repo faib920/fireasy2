@@ -21,7 +21,7 @@ namespace Fireasy.Common.Logging
     public class DefaultLogger : ILogger
     {
         protected static readonly string logFilePath;
-        private static ISubscribeManager subscribeMgr = DefaultSubscribeManager.Instance;
+        private static readonly ISubscribeManager subscribeMgr = DefaultSubscribeManager.Instance;
 
         /// <summary>
         /// 获取 <see cref="DefaultLogger"/> 的静态实例。
@@ -36,10 +36,8 @@ namespace Fireasy.Common.Logging
             logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log");
             subscribeMgr.AddSubscriber<DefaultLoggerSubject>(s =>
                {
-                   using (var writer = new StreamWriter(s.FileName, true, Encoding.Default))
-                   {
-                       writer.WriteLine(s.Content);
-                   }
+                   using var writer = new StreamWriter(s.FileName, true, Encoding.Default);
+                   writer.WriteLine(s.Content);
                });
         }
 
@@ -219,7 +217,7 @@ namespace Fireasy.Common.Logging
             var content = GetLogContent(message, exception);
             var fileName = CreateLogFileName(logType);
 
-            await subscribeMgr.PublishAsync(new DefaultLoggerSubject { FileName = fileName, Content = content });
+            await subscribeMgr.PublishAsync(new DefaultLoggerSubject { FileName = fileName, Content = content }, cancellationToken);
         }
 
         private string GetLogContent(object message, Exception exception)

@@ -14,9 +14,9 @@ namespace Fireasy.Common.Configuration
 {
     public class IniManager
     {
-        [DllImport("kernel32")]
+        [DllImport("kernel32", CharSet = CharSet.Unicode)]
         private static extern bool WritePrivateProfileString(string section, string key, string val, string filePath);
-        [DllImport("kernel32")]
+        [DllImport("kernel32", CharSet = CharSet.Unicode)]
         private static extern int GetPrivateProfileString(string section, string key, string def, byte[] retVal, int size, string filePath);
 
         private string fileName;
@@ -28,7 +28,7 @@ namespace Fireasy.Common.Configuration
 
         public T Get<T>(string section, string key)
         {
-            var buffer = new Byte[65535];
+            var buffer = new byte[65535];
             var bufLen = GetPrivateProfileString(section, key, string.Empty, buffer, buffer.GetUpperBound(0), fileName);
             
             //必须设定0（系统默认的代码页）的编码方式，否则无法支持中文
@@ -41,7 +41,7 @@ namespace Fireasy.Common.Configuration
         {
             if (!WritePrivateProfileString(section, key, value.ToStringSafely(), fileName))
             {
-                throw (new ApplicationException("写Ini文件出错"));
+                throw (new ApplicationException());
             }
         }
     }

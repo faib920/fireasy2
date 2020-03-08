@@ -44,6 +44,7 @@ namespace Fireasy.Data
         internal const string ProviderNoFound = "ProviderNoFound";
         internal const string RestrictionNotSupportedOfMember = "RestrictionNotSupportedOfMember";
         internal const string RestrictionNotSupportedOfMetadata = "RestrictionNotSupportedOfMetadata";
+        internal const string NoMatchRecordWrapperMethod = "NoMatchRecordWrapperMethod";
     }
 
     internal class SR

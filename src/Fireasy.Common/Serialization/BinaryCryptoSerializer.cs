@@ -39,24 +39,20 @@ namespace Fireasy.Common.Serialization
         {
             try
             {
-                using (var stream = new MemoryStream())
+                using var stream = new MemoryStream();
+                var bin = new BinaryFormatter();
+                bin.Serialize(stream, obj);
+                var bytes = cryptoProvider.Encrypt(stream.ToArray());
+
+                using var nstream = new MemoryStream();
+                if (Token != null && Token.Data != null && Token.Data.Length > 0)
                 {
-                    var bin = new BinaryFormatter();
-                    bin.Serialize(stream, obj);
-                    var bytes = cryptoProvider.Encrypt(stream.ToArray());
-
-                    using (var nstream = new MemoryStream())
-                    {
-                        if (Token != null && Token.Data != null && Token.Data.Length > 0)
-                        {
-                            nstream.Write(Token.Data, 0, Token.Data.Length);
-                        }
-
-                        nstream.Write(bytes, 0, bytes.Length);
-
-                        return nstream.ToArray();
-                    }
+                    nstream.Write(Token.Data, 0, Token.Data.Length);
                 }
+
+                nstream.Write(bytes, 0, bytes.Length);
+
+                return nstream.ToArray();
             }
             catch (Exception ex)
             {
@@ -92,14 +88,12 @@ namespace Fireasy.Common.Serialization
             T obj;
             try
             {
-                using (var stream = new MemoryStream(cryptoProvider.Decrypt(data)))
+                using var stream = new MemoryStream(cryptoProvider.Decrypt(data));
+                var bin = new BinaryFormatter
                 {
-                    var bin = new BinaryFormatter
-                        {
-                            Binder = new IgnoreSerializationBinder()
-                        };
-                    obj = (T)bin.Deserialize(stream);
-                }
+                    Binder = new IgnoreSerializationBinder()
+                };
+                obj = (T)bin.Deserialize(stream);
             }
             catch (Exception ex)
             {

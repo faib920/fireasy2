@@ -82,7 +82,6 @@ namespace Fireasy.Data.Configuration
         {
             public IConfigurationSettingItem Parse(XmlNode node)
             {
-                var setting = new RegistryInstanceSetting();
                 var rootKey = node.GetAttributeValue("rootKey");
                 var subKey = node.GetAttributeValue("subKey");
                 var valueKey = node.GetAttributeValue("valueKey");
@@ -93,7 +92,6 @@ namespace Fireasy.Data.Configuration
 #if NETSTANDARD
             public IConfigurationSettingItem Parse(IConfiguration configuration)
             {
-                var setting = new RegistryInstanceSetting();
                 var rootKey = configuration.GetSection("rootKey").Value;
                 var subKey = configuration.GetSection("subKey").Value;
                 var valueKey = configuration.GetSection("valueKey").Value;
@@ -104,10 +102,12 @@ namespace Fireasy.Data.Configuration
 
             private IConfigurationSettingItem Parse(string rootKey, string subKey, string valueKey)
             {
-                var setting = new RegistryInstanceSetting();
-                setting.RootKey = rootKey;
-                setting.SubKey = subKey;
-                setting.ValueKey = valueKey;
+                var setting = new RegistryInstanceSetting
+                {
+                    RootKey = rootKey,
+                    SubKey = subKey,
+                    ValueKey = valueKey
+                };
 
                 if (string.IsNullOrEmpty(setting.RootKey) ||
                     string.IsNullOrEmpty(setting.SubKey) ||
@@ -115,6 +115,7 @@ namespace Fireasy.Data.Configuration
                 {
                     ThrowRegistryInvalid();
                 }
+
                 var regRoot = GetRootKey(setting.RootKey);
                 if (regRoot == null)
                 {
@@ -126,6 +127,7 @@ namespace Fireasy.Data.Configuration
                 {
                     ThrowRegistryInvalid();
                 }
+
                 var regData = srKey.GetValue(setting.ValueKey);
                 srKey.Close();
                 Guard.NullReference(regData, "regData");
@@ -134,6 +136,7 @@ namespace Fireasy.Data.Configuration
                 {
                     return setting;
                 }
+
                 return null;
             }
 
@@ -144,13 +147,13 @@ namespace Fireasy.Data.Configuration
 
             private bool ParseRegistryData(RegistryInstanceSetting setting, object data)
             {
-                if (data is byte[])
+                if (data is byte[] bytes)
                 {
                     try
                     {
                         //反序列化
                         //var header = new SerializeHeader { HeaderBytes = Encoding.ASCII.GetBytes(Name) };
-                        var store = new BinaryCompressSerializer().Deserialize<BinaryConnectionStore>(data as byte[]);
+                        var store = new BinaryCompressSerializer().Deserialize<BinaryConnectionStore>(bytes);
                         if (store != null)
                         {
                             if (!string.IsNullOrEmpty(store.DatabaseType))
@@ -176,6 +179,7 @@ namespace Fireasy.Data.Configuration
                     setting.ConnectionString = con.ToString();
                     return true;
                 }
+
                 return false;
             }
         }

@@ -6,9 +6,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common;
-using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -21,10 +21,10 @@ namespace Fireasy.Data.Entity.Validation
     /// </summary>
     public static class ValidationUnity
     {
-        private static readonly SafetyDictionary<Type, Dictionary<string, List<ValidationAttribute>>> propertyValidations =
-            new SafetyDictionary<Type, Dictionary<string, List<ValidationAttribute>>>();
-        private static readonly SafetyDictionary<Type, List<ValidationAttribute>> entityValidations =
-            new SafetyDictionary<Type, List<ValidationAttribute>>();
+        private static readonly ConcurrentDictionary<Type, Dictionary<string, List<ValidationAttribute>>> propertyValidations =
+            new ConcurrentDictionary<Type, Dictionary<string, List<ValidationAttribute>>>();
+        private static readonly ConcurrentDictionary<Type, List<ValidationAttribute>> entityValidations =
+            new ConcurrentDictionary<Type, List<ValidationAttribute>>();
 
         /// <summary>
         /// 对实体指定属性的值进行验证。
@@ -219,16 +219,22 @@ namespace Fireasy.Data.Entity.Validation
         private static Dictionary<string, List<ValidationAttribute>> GetPropertyValidations(Type entityType)
         {
             var dictionary = new Dictionary<string, List<ValidationAttribute>>();
-            var metadataType = entityType.GetCustomAttributes<MetadataTypeAttribute>(true).FirstOrDefault();
-            if (metadataType != null &&
-                typeof(IMetadataContainer).IsAssignableFrom(metadataType.MetadataClassType))
-            {
-                return metadataType.MetadataClassType.New<IMetadataContainer>().InitializeRules();
-            }
 
-            var properties = metadataType == null ?
-                PropertyUnity.GetProperties(entityType).Select(s => s.Info.ReflectionInfo) :
-                metadataType.MetadataClassType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            IEnumerable<PropertyInfo> properties;
+            if (entityType.IsDefined(typeof(MetadataTypeAttribute), true))
+            {
+                var metadataType = entityType.GetCustomAttributes<MetadataTypeAttribute>(true).FirstOrDefault();
+                if (typeof(IMetadataContainer).IsAssignableFrom(metadataType.MetadataClassType))
+                {
+                    return metadataType.MetadataClassType.New<IMetadataContainer>().InitializeRules();
+                }
+
+                properties = metadataType.MetadataClassType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            }
+            else
+            {
+                properties = PropertyUnity.GetProperties(entityType).Select(s => s.Info.ReflectionInfo);
+            }
 
             foreach (var property in properties)
             {
@@ -244,9 +250,9 @@ namespace Fireasy.Data.Entity.Validation
                     continue;
                 }
 
-                var list = dictionary.TryGetValue(property.Name, () => new List<ValidationAttribute>());
+                var attrs = dictionary.TryGetValue(property.Name, () => new List<ValidationAttribute>());
                 MarkValidationProperty(dp, attributes);
-                list.AddRange(attributes);
+                attrs.AddRange(attributes);
             }
 
             return dictionary;

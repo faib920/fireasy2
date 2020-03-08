@@ -32,7 +32,7 @@ namespace Fireasy.Common.Caching
             FilePath = filePath;
             if (!File.Exists(FilePath))
             {
-                throw new ArgumentException(FilePath, "filePath");
+                throw new ArgumentException(FilePath, nameof(filePath));
             }
 
             lastModifiedTime = File.GetLastWriteTime(FilePath);

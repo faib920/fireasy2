@@ -21,6 +21,6 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        IContextService CreateContextService(EntityContextInitializeContext context);
+        IContextService CreateContextService(ContextServiceContext context);
     }
 }

@@ -57,11 +57,12 @@ namespace Fireasy.Data.Configuration
 
                 var content = File.ReadAllText(fileName);
                 var dict = (IDictionary<string, object>)new JsonSerializer().Deserialize<object>(content);
-                var setting = new JsonInstanceSetting();
-
-                setting.FileName = fileName;
-                setting.ProviderName = dict.TryGetValue("providerName", () => string.Empty)?.ToString();
-                setting.ProviderType = dict.TryGetValue("providerType", () => string.Empty)?.ToString();
+                var setting = new JsonInstanceSetting
+                {
+                    FileName = fileName,
+                    ProviderName = dict.TryGetValue("providerName", () => string.Empty)?.ToString(),
+                    ProviderType = dict.TryGetValue("providerType", () => string.Empty)?.ToString()
+                };
 
                 if (dict.TryGetValue("databaseType", out object databaseType))
                 {

@@ -56,22 +56,9 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="propertyName">属性的名称。</param>
         /// <param name="value">要设置的值。</param>
-        /// <param name="addAction">如果在此之前没有设置值，则通过此方法回调。</param>
-        internal void Initializate(string propertyName, PropertyValue value, Action addAction = null)
+        internal void Initializate(string propertyName, PropertyValue value)
         {
-            if (Has(propertyName))
-            {
-                dicEntry[propertyName].Initializate(value);
-            }
-            else
-            {
-                if (addAction != null)
-                {
-                    addAction();
-                }
-
-                dicEntry.Add(propertyName, EntityEntry.InitByOldValue(value));
-            }
+            dicEntry[propertyName] = EntityEntry.InitByOldValue(value);
         }
 
         /// <summary>
@@ -79,8 +66,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="propertyName">属性的名称。</param>
         /// <param name="value">要设置的值。</param>
-        /// <param name="addAction">如果在此之前没有设置值，则通过此方法回调。</param>
-        internal void Modify(string propertyName, PropertyValue value, Action addAction = null)
+        internal void Modify(string propertyName, PropertyValue value)
         {
             if (Has(propertyName))
             {
@@ -88,11 +74,6 @@ namespace Fireasy.Data.Entity
             }
             else
             {
-                if (addAction != null)
-                {
-                    addAction();
-                }
-
                 dicEntry.Add(propertyName, EntityEntry.InitByNewValue(value));
             }
         }

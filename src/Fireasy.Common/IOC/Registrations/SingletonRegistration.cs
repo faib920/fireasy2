@@ -12,9 +12,9 @@ namespace Fireasy.Common.Ioc.Registrations
 {
     internal class SingletonRegistration : AbstractRegistration
     {
-        private static object locker = new object();
+        private static readonly object locker = new object();
         private object instance;
-        private Func<object> instanceCreator;
+        private readonly Func<object> instanceCreator;
 
         internal SingletonRegistration(Type serviceType, object instance) :
             base(serviceType, instance.GetType())

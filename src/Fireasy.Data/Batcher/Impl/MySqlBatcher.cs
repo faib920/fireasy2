@@ -17,6 +17,7 @@ using Fireasy.Data.Syntax;
 using Fireasy.Data.Provider;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Fireasy.Data.Batcher
 {
@@ -136,41 +137,40 @@ namespace Fireasy.Data.Batcher
         /// <param name="valueFunc">取值函数。</param>
         /// <param name="batchSize">每批次写入的数据量。</param>
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
+        [SuppressMessage("Sercurity", "CA2100")]
         private async Task BatchInsertAsync(IDatabase database, ICollection collection, string tableName, IList<PropertyFieldMapping> mapping, Func<IList<PropertyFieldMapping>, DbCommand, int, object, string> valueFunc, int batchSize, Action<int> completePercentage, CancellationToken cancellationToken = default)
         {
             //MySql使用如 insert into table(f1, f2) values ('a1', 'b1'),('a2', 'b2'),('a3', 'b3') 方式批量插入
             try
             {
                 await database.Connection.TryOpenAsync();
-                using (var command = database.Provider.CreateCommand(database.Connection, database.Transaction, null))
-                {
-                    var syntax = database.Provider.GetService<ISyntaxProvider>();
-                    var valueSeg = new List<string>(batchSize);
-                    var count = collection.Count;
+                using var command = database.Provider.CreateCommand(database.Connection, database.Transaction, null);
+                var syntax = database.Provider.GetService<ISyntaxProvider>();
+                var valueSeg = new List<string>(batchSize);
+                var count = collection.Count;
 
-                    await BatchSplitDataAsync(collection, batchSize,
-                        (index, batch, item) => 
+                await BatchSplitDataAsync(collection, batchSize,
+                    (index, batch, item) =>
+                        {
+                            if (mapping == null)
                             {
-                                if (mapping == null)
-                                {
-                                    mapping = GetNameTypeMapping(item);
-                                }
+                                mapping = GetNameTypeMapping(item);
+                            }
 
-                                valueSeg.Add(string.Format("({0})", valueFunc(mapping, command, batch, item)));
-                            },
-                        async (index, batch, surplus, lastBatch) => 
-                            {
-                                var sql = string.Format("INSERT INTO {0}({1}) VALUES {2}",
-                                    DbUtility.FormatByQuote(syntax, tableName),
-                                    string.Join(",", mapping.Select(s => DbUtility.FormatByQuote(syntax, s.FieldName))), string.Join(",", valueSeg));
+                            valueSeg.Add(string.Format("({0})", valueFunc(mapping, command, batch, item)));
+                        },
+                    async (index, batch, surplus, lastBatch) =>
+                        {
+                            var sql = string.Format("INSERT INTO {0}({1}) VALUES {2}",
+                                DbUtility.FormatByQuote(syntax, tableName),
+                                string.Join(",", mapping.Select(s => DbUtility.FormatByQuote(syntax, s.FieldName))), string.Join(",", valueSeg));
 
-                                command.CommandText = sql;
-                                await command.ExecuteNonQueryAsync(cancellationToken);
-                                valueSeg.Clear();
-                                command.Parameters.Clear();
-                                completePercentage?.Invoke((int)(((index + 1.0) / count) * 100));
-                            });
-                }
+                            command.CommandText = sql;
+                            await command.ExecuteNonQueryAsync(cancellationToken);
+                            valueSeg.Clear();
+                            command.Parameters.Clear();
+                            completePercentage?.Invoke((int)(((index + 1.0) / count) * 100));
+                        });
             }
             catch (Exception exp)
             {

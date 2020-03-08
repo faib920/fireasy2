@@ -13,7 +13,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class SelectGatherer : DbExpressionVisitor
     {
-        private List<SelectExpression> selects = new List<SelectExpression>();
+        private readonly List<SelectExpression> selects = new List<SelectExpression>();
 
         private SelectGatherer()
         {

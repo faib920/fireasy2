@@ -11,9 +11,9 @@ namespace Fireasy.Common.Security
 {
     internal class RC4CryptoTransform : ICryptoTransform
     {
-        private byte[] key;
-        private int kenLength;
-        private byte[] permutation;
+        private readonly byte[] key;
+        private readonly int kenLength;
+        private readonly byte[] permutation;
         private byte index1;
         private byte index2;
 

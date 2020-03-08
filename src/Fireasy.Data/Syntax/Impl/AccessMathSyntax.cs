@@ -18,7 +18,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Atan(object sourceExp)
         {
-            return string.Format("ATN({0})", sourceExp);
+            return $"ATN({sourceExp})";
         }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Power(object sourceExp, object powerExp)
         {
-            return string.Format("{0} ^ {1}", sourceExp, powerExp);
+            return $"{sourceExp} ^ {powerExp}";
         }
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Sqrt(object sourceExp)
         {
-            return string.Format("SQR({0})", sourceExp);
+            return $"SQR({sourceExp})";
         }
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Truncate(object sourceExp)
         {
-            return string.Format("FIX({0})", sourceExp);
+            return $"FIX({sourceExp})";
         }
 
         /// <summary>
@@ -70,7 +70,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Modulo(object sourceExp, object otherExp)
         {
-            return string.Format("({0} MOD {1})", sourceExp, otherExp);
+            return $"({sourceExp} MOD {otherExp})";
         }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string LeftShift(object sourceExp, object shiftExp)
         {
-            return string.Format("{0} * (2 ^ {1})", sourceExp, shiftExp);
+            return $"{sourceExp} * (2 ^ {shiftExp})";
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string RightShift(object sourceExp, object shiftExp)
         {
-            return string.Format("{0} / (2 ^ {1})", sourceExp, shiftExp);
+            return $"{sourceExp} / (2 ^ {shiftExp})";
         }
 
         /// <summary>
@@ -103,7 +103,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string And(object sourceExp, object otherExp)
         {
-            return string.Format("{0} BAND {1}", sourceExp, otherExp);
+            return $"{sourceExp} BAND {otherExp}";
         }
 
         /// <summary>
@@ -114,7 +114,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Or(object sourceExp, object otherExp)
         {
-            return string.Format("{0} BOR {1}", sourceExp, otherExp);
+            return $"{sourceExp} BOR {otherExp}";
         }
 
         /// <summary>
@@ -125,7 +125,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string ExclusiveOr(object sourceExp, object otherExp)
         {
-            return string.Format("{0} XOR {1}", sourceExp, otherExp);
+            return $"{sourceExp} XOR {otherExp}";
         }
 
         /// <summary>
@@ -135,7 +135,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Not(object sourceExp)
         {
-            return string.Format("NOT {0}", sourceExp);
+            return $"NOT {sourceExp}";
         }
 
         /// <summary>

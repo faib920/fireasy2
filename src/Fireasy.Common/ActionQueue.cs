@@ -16,8 +16,8 @@ namespace Fireasy.Common
     /// </summary>
     public static class ActionQueue
     {
-        private static ConcurrentQueue<ActionEntry> queue = new ConcurrentQueue<ActionEntry>();
-        private static Thread thread = new Thread(new ThreadStart(ProcessQueue)) { IsBackground = true };
+        private static readonly ConcurrentQueue<ActionEntry> queue = new ConcurrentQueue<ActionEntry>();
+        private static readonly Thread thread = new Thread(new ThreadStart(ProcessQueue)) { IsBackground = true };
 
         /// <summary>
         /// 获取或设置用于处理异常的委托。
@@ -81,7 +81,7 @@ namespace Fireasy.Common
         private class ActionEntry
         {
             private int time = 0;
-            private int tryTimes = 0;
+            private readonly int tryTimes = 0;
 
             public ActionEntry(Action action, int tryTimes)
             {

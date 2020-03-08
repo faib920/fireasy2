@@ -22,7 +22,92 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 空值。
         /// </summary>
-        public readonly static PropertyValue Empty = default(PropertyValue);
+        public readonly static PropertyValue Empty = default;
+
+        /// <summary>
+        /// 当前日期。
+        /// </summary>
+        private readonly static PropertyValue Today = new PropertyValue { _dateTime = new DateTime(1, 1, 1), storageType = StorageType.DateTime, isConstant = true };
+
+        /// <summary>
+        /// 当前时间。
+        /// </summary>
+        private readonly static PropertyValue Now = new PropertyValue { _dateTime = new DateTime(2, 2, 2, 2, 2, 2), storageType = StorageType.DateTime, isConstant = true };
+
+        /// <summary>
+        /// 当前时间。
+        /// </summary>
+        private readonly static PropertyValue NewGuid = new PropertyValue { _guid = Guid.Empty, storageType = StorageType.Guid, isConstant = true };
+
+        /// <summary>
+        /// 默认值常量。
+        /// </summary>
+        public static class Constants
+        {
+            /// <summary>
+            /// 当前系统日期。
+            /// </summary>
+            public const string Today = ":TODAY";
+
+            /// <summary>
+            /// 当前系统时间。
+            /// </summary>
+            public const string Now = ":NOW";
+
+            /// <summary>
+            /// 新的 Guid。
+            /// </summary>
+            public const string Guid = ":GUID";
+        }
+
+        #region 存储
+        internal DbType? dataType;
+
+        private bool isConstant;
+
+        /// <summary>
+        /// 获取存储数据的实际类型。
+        /// </summary>
+        private StorageType storageType;
+
+        private char? _char;
+
+        private bool? _boolean;
+
+        private byte? _byte;
+
+        private sbyte? _sbyte;
+
+        private byte[] _byteArray;
+
+        private DateTime? _dateTime;
+
+        private decimal? _decimal;
+
+        private double? _double;
+
+        private Guid? _guid;
+
+        private short? _int16;
+
+        private int? _int32;
+
+        private long? _int64;
+
+        private ushort? _uint16;
+
+        private uint? _uint32;
+
+        private ulong? _uint64;
+
+        private float? _single;
+
+        private string _string;
+
+        private Enum _enum;
+
+        private object _object;
+        #endregion
 
         #region char
         /// <summary>
@@ -32,17 +117,27 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(char value)
         {
-            return new PropertyValue { StorageType = StorageType.Char, Char = value };
+            return new PropertyValue { storageType = StorageType.Char, _char = value };
         }
 
         /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Char"/> 类型。
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="_char"/> 类型。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
         public static explicit operator char(PropertyValue value)
         {
-            return value == Empty ? '\0' : value.Char.Value;
+            if (IsEmpty(value))
+            {
+                return '\0';
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Byte => (char)value._byte,
+                StorageType.SByte => (char)value._sbyte,
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(bool).FullName)),
+            };
         }
 
         /// <summary>
@@ -52,7 +147,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(char? value)
         {
-            return new PropertyValue { StorageType = StorageType.Char, Char = value };
+            return new PropertyValue { storageType = StorageType.Char, _char = value };
         }
 
         /// <summary>
@@ -62,9 +157,18 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator char?(PropertyValue value)
         {
-            return value == Empty ? null : value.Char;
-        }
+            if (IsEmpty(value))
+            {
+                return null;
+            }
 
+            return value.storageType switch
+            {
+                StorageType.Byte => (char?)value._byte,
+                StorageType.SByte => (char?)value._sbyte,
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(bool).FullName)),
+            };
+        }
         #endregion
 
         #region bool
@@ -75,7 +179,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(bool value)
         {
-            return new PropertyValue { StorageType = StorageType.Boolean, Boolean = value };
+            return new PropertyValue { storageType = StorageType.Boolean, _boolean = value };
         }
 
         /// <summary>
@@ -85,35 +189,27 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator bool(PropertyValue value)
         {
-            if (value == Empty)
+            if (IsEmpty(value))
             {
                 return false;
             }
 
-            if (value.StorageType == StorageType.Boolean)
+            return value.storageType switch
             {
-                return value.Boolean == null ? false : value.Boolean.Value;
-            }
-
-            switch (value.StorageType)
-            {
-                case StorageType.Byte:
-                    return value.Byte == null ? false : value.Byte.Value > 1;
-                case StorageType.Int16:
-                    return value.Int16 == null ? false : value.Int16.Value > 1;
-                case StorageType.Int32:
-                    return value.Int32 == null ? false : value.Int32.Value > 1;
-                case StorageType.Int64:
-                    return value.Int64 == null ? false : value.Int64.Value > 1;
-                case StorageType.Single:
-                    return value.Single == null ? false : value.Single.Value > 1;
-                case StorageType.Decimal:
-                    return value.Decimal == null ? false : value.Decimal.Value > 1;
-                case StorageType.Double:
-                    return value.Double == null ? false : value.Double.Value > 1;
-            }
-
-            return false;
+                StorageType.Byte => value._byte > 0,
+                StorageType.SByte => value._sbyte > 0,
+                StorageType.Boolean => (bool)value._boolean,
+                StorageType.Int16 => value._int16 > 0,
+                StorageType.Int32 => value._int32 > 0,
+                StorageType.Int64 => value._int64 > 0,
+                StorageType.UInt16 => value._uint16 > 0,
+                StorageType.UInt32 => value._uint32 > 0,
+                StorageType.UInt64 => value._uint64 > 0,
+                StorageType.Single => value._single > 0,
+                StorageType.Decimal => value._decimal > 0,
+                StorageType.Double => value._double > 0,
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(bool).FullName)),
+            };
         }
 
         /// <summary>
@@ -123,7 +219,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(bool? value)
         {
-            return new PropertyValue { StorageType = StorageType.Boolean, Boolean = value };
+            return new PropertyValue { storageType = StorageType.Boolean, _boolean = value };
         }
 
         /// <summary>
@@ -133,37 +229,28 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator bool?(PropertyValue value)
         {
-            if (value == Empty)
+            if (IsEmpty(value))
             {
                 return null;
             }
 
-            if (value.StorageType == StorageType.Boolean)
+            return value.storageType switch
             {
-                return value.Boolean;
-            }
-
-            switch (value.StorageType)
-            {
-                case StorageType.Byte:
-                    return value.Byte == null ? (bool?)null : value.Byte.Value > 1;
-                case StorageType.Int16:
-                    return value.Int16 == null ? (bool?)null : value.Int16.Value > 1;
-                case StorageType.Int32:
-                    return value.Int32 == null ? (bool?)null : value.Int32.Value > 1;
-                case StorageType.Int64:
-                    return value.Int64 == null ? (bool?)null : value.Int64.Value > 1;
-                case StorageType.Single:
-                    return value.Single == null ? (bool?)null : value.Single.Value > 1;
-                case StorageType.Decimal:
-                    return value.Decimal == null ? (bool?)null : value.Decimal.Value > 1;
-                case StorageType.Double:
-                    return value.Double == null ? (bool?)null : value.Double.Value > 1;
-            }
-
-            return null;
+                StorageType.Byte => value._byte > 0,
+                StorageType.SByte => value._sbyte > 0,
+                StorageType.Boolean => value._boolean,
+                StorageType.Int16 => value._int16 > 0,
+                StorageType.Int32 => value._int32 > 0,
+                StorageType.Int64 => value._int64 > 0,
+                StorageType.UInt16 => value._uint16 > 0,
+                StorageType.UInt32 => value._uint32 > 0,
+                StorageType.UInt64 => value._uint64 > 0,
+                StorageType.Single => value._single > 0,
+                StorageType.Decimal => value._decimal > 0,
+                StorageType.Double => value._double > 0,
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(bool?).FullName)),
+            };
         }
-
         #endregion
 
         #region byte
@@ -174,7 +261,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(byte value)
         {
-            return new PropertyValue { StorageType = StorageType.Byte, Byte = value };
+            return new PropertyValue { storageType = StorageType.Byte, _byte = value };
         }
 
         /// <summary>
@@ -184,7 +271,28 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator byte(PropertyValue value)
         {
-            return value == Empty ? (byte)0 : value.Byte.Value;
+            if (IsEmpty(value))
+            {
+                return 0;
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Byte => (byte)value._byte,
+                StorageType.SByte => (byte)value._sbyte,
+                StorageType.Boolean => (byte)(value._boolean == true ? 1 : 0),
+                StorageType.Int16 => (byte)value._int16,
+                StorageType.Int32 => (byte)value._int32,
+                StorageType.Int64 => (byte)value._int64,
+                StorageType.UInt16 => (byte)value._uint16,
+                StorageType.UInt32 => (byte)value._uint32,
+                StorageType.UInt64 => (byte)value._uint64,
+                StorageType.Single => (byte)value._single,
+                StorageType.Decimal => (byte)value._decimal,
+                StorageType.Double => (byte)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToByte(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(byte).FullName)),
+            };
         }
 
         /// <summary>
@@ -194,7 +302,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(byte? value)
         {
-            return new PropertyValue { StorageType = StorageType.Byte, Byte = value };
+            return new PropertyValue { storageType = StorageType.Byte, _byte = value };
         }
 
         /// <summary>
@@ -204,9 +312,113 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator byte?(PropertyValue value)
         {
-            return value == Empty ? null : value.Byte;
+            if (IsEmpty(value))
+            {
+                return null;
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Byte => (byte?)value._byte,
+                StorageType.SByte => (byte?)value._sbyte,
+                StorageType.Boolean => (byte?)(value._boolean == true ? 1 : 0),
+                StorageType.Int16 => (byte?)value._int16,
+                StorageType.Int32 => (byte?)value._int32,
+                StorageType.Int64 => (byte?)value._int64,
+                StorageType.UInt16 => (byte?)value._uint16,
+                StorageType.UInt32 => (byte?)value._uint32,
+                StorageType.UInt64 => (byte?)value._uint64,
+                StorageType.Single => (byte?)value._single,
+                StorageType.Decimal => (byte?)value._decimal,
+                StorageType.Double => (byte?)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToByte(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(byte?).FullName)),
+            };
+        }
+        #endregion
+
+        #region sbyte
+        /// <summary>
+        /// 将 <see cref="SByte"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static implicit operator PropertyValue(sbyte value)
+        {
+            return new PropertyValue { storageType = StorageType.SByte, _sbyte = value };
         }
 
+        /// <summary>
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="SByte"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static explicit operator sbyte(PropertyValue value)
+        {
+            if (IsEmpty(value))
+            {
+                return 0;
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Byte => (sbyte)value._byte,
+                StorageType.SByte => (sbyte)value._sbyte,
+                StorageType.Boolean => (sbyte)(value._boolean == true ? 1 : 0),
+                StorageType.Int16 => (sbyte)value._int16,
+                StorageType.Int32 => (sbyte)value._int32,
+                StorageType.Int64 => (sbyte)value._int64,
+                StorageType.UInt16 => (sbyte)value._uint16,
+                StorageType.UInt32 => (sbyte)value._uint32,
+                StorageType.UInt64 => (sbyte)value._uint64,
+                StorageType.Single => (sbyte)value._single,
+                StorageType.Decimal => (sbyte)value._decimal,
+                StorageType.Double => (sbyte)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToSByte(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(sbyte).FullName)),
+            };
+        }
+
+        /// <summary>
+        /// 将 <see cref="Nullable{SByte}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static implicit operator PropertyValue(sbyte? value)
+        {
+            return new PropertyValue { storageType = StorageType.SByte, _sbyte = value };
+        }
+
+        /// <summary>
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{SByte}"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static explicit operator sbyte?(PropertyValue value)
+        {
+            if (IsEmpty(value))
+            {
+                return null;
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Byte => (sbyte?)value._byte,
+                StorageType.SByte => value._sbyte,
+                StorageType.Boolean => (sbyte?)(value._boolean == true ? 1 : 0),
+                StorageType.Int16 => (sbyte?)value._int16,
+                StorageType.Int32 => (sbyte?)value._int32,
+                StorageType.Int64 => (sbyte?)value._int64,
+                StorageType.UInt16 => (sbyte?)value._uint16,
+                StorageType.UInt32 => (sbyte?)value._uint32,
+                StorageType.UInt64 => (sbyte?)value._uint64,
+                StorageType.Single => (sbyte?)value._single,
+                StorageType.Decimal => (sbyte?)value._decimal,
+                StorageType.Double => (sbyte?)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToSByte(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(sbyte).FullName)),
+            };
+        }
         #endregion
 
         #region bytes
@@ -217,7 +429,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(byte[] value)
         {
-            return new PropertyValue { StorageType = StorageType.ByteArray, ByteArray = value };
+            return new PropertyValue { storageType = StorageType.ByteArray, _byteArray = value };
         }
 
         /// <summary>
@@ -231,7 +443,7 @@ namespace Fireasy.Data.Entity
             {
                 return new byte[0];
             }
-            return value.Object != null ? (byte[])value.Object : value.ByteArray == null ? new byte[0] : value.ByteArray;
+            return value._object != null ? (byte[])value._object : value._byteArray == null ? new byte[0] : value._byteArray;
         }
         #endregion
 
@@ -243,7 +455,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(DateTime value)
         {
-            return new PropertyValue { StorageType = StorageType.DateTime, DateTime = value };
+            return new PropertyValue { storageType = StorageType.DateTime, _dateTime = value };
         }
 
         /// <summary>
@@ -253,7 +465,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator DateTime(PropertyValue value)
         {
-            return value == Empty ? System.DateTime.MinValue : value.DateTime.Value;
+            return value == Empty ? DateTime.MinValue : value._dateTime.Value;
         }
 
         /// <summary>
@@ -263,7 +475,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(DateTime? value)
         {
-            return new PropertyValue { StorageType = StorageType.DateTime, DateTime = value };
+            return new PropertyValue { storageType = StorageType.DateTime, _dateTime = value };
         }
 
         /// <summary>
@@ -273,207 +485,8 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator DateTime?(PropertyValue value)
         {
-            return value == Empty ? null : value.DateTime;
+            return value == Empty ? null : value._dateTime;
         }
-
-        #endregion
-
-        #region decimal
-        /// <summary>
-        /// 将 <see cref="Decimal"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static implicit operator PropertyValue(decimal value)
-        {
-            return new PropertyValue { StorageType = StorageType.Decimal, Decimal = value };
-        }
-
-        /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Decimal"/> 类型。
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static explicit operator decimal(PropertyValue value)
-        {
-            if (value == Empty)
-            {
-                return 0m;
-            }
-
-            if (value.StorageType == StorageType.Decimal)
-            {
-                return value.Decimal == null ? 0m : value.Decimal.Value;
-            }
-
-            switch (value.StorageType)
-            {
-                case StorageType.Byte:
-                    return value.Byte == null ? 0m : value.Byte.Value;
-                case StorageType.Boolean:
-                    return value.Boolean == null ? 0m : value.Boolean.Value ? 1m : 0m;
-                case StorageType.Int16:
-                    return value.Int16 == null ? 0m : value.Int16.Value;
-                case StorageType.Int32:
-                    return value.Int32 == null ? 0m : value.Int32.Value;
-                case StorageType.Int64:
-                    return value.Int64 == null ? 0m : (decimal)value.Int64.Value;
-                case StorageType.Single:
-                    return value.Single == null ? 0m : (decimal)value.Single.Value;
-                case StorageType.Double:
-                    return value.Double == null ? 0m : (decimal)value.Double.Value;
-            }
-
-            return 0;
-        }
-
-        /// <summary>
-        /// 将 <see cref="Nullable{Decimal}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static implicit operator PropertyValue(decimal? value)
-        {
-            return new PropertyValue { StorageType = StorageType.Decimal, Decimal = value };
-        }
-
-        /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{Decimal}"/> 类型。
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static explicit operator decimal?(PropertyValue value)
-        {
-            if (value == Empty)
-            {
-                return null;
-            }
-
-            if (value.StorageType == StorageType.Decimal)
-            {
-                return value.Decimal;
-            }
-
-            switch (value.StorageType)
-            {
-                case StorageType.Byte:
-                    return value.Byte;
-                case StorageType.Boolean:
-                    return value.Boolean == null ? null : (decimal?)(value.Boolean.Value ? 1m : 0m);
-                case StorageType.Int16:
-                    return value.Int16;
-                case StorageType.Int32:
-                    return value.Int32;
-                case StorageType.Int64:
-                    return value.Int64;
-                case StorageType.Single:
-                    return (decimal?)value.Single;
-                case StorageType.Double:
-                    return (decimal?)value.Double;
-            }
-
-            return null;
-        }
-
-        #endregion
-
-        #region double
-        /// <summary>
-        /// 将 <see cref="Double"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static implicit operator PropertyValue(double value)
-        {
-            return new PropertyValue { StorageType = StorageType.Double, Double = value };
-        }
-
-        /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Double"/> 类型。
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static explicit operator double(PropertyValue value)
-        {
-            if (value == Empty)
-            {
-                return 0d;
-            }
-
-            if (value.StorageType == StorageType.Double)
-            {
-                return value.Double == null ? 0d : value.Double.Value;
-            }
-
-            switch (value.StorageType)
-            {
-                case StorageType.Byte:
-                    return value.Byte == null ? 0d : value.Byte.Value;
-                case StorageType.Boolean:
-                    return value.Boolean == null ? 0d : value.Boolean.Value ? 1d : 0d;
-                case StorageType.Int16:
-                    return value.Int16 == null ? 0d : value.Int16.Value;
-                case StorageType.Int32:
-                    return value.Int32 == null ? 0d : value.Int32.Value;
-                case StorageType.Int64:
-                    return value.Int64 == null ? 0d : value.Int64.Value;
-                case StorageType.Single:
-                    return value.Single == null ? 0d : value.Single.Value;
-                case StorageType.Decimal:
-                    return value.Decimal == null ? 0d : (double)value.Decimal.Value;
-            }
-
-            return 0;
-        }
-
-        /// <summary>
-        /// 将 <see cref="Nullable{Double}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static implicit operator PropertyValue(double? value)
-        {
-            return new PropertyValue { StorageType = StorageType.Double, Double = value };
-        }
-
-        /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{Double}"/> 类型。
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static explicit operator double?(PropertyValue value)
-        {
-            if (value == Empty)
-            {
-                return null;
-            }
-
-            if (value.StorageType == StorageType.Double)
-            {
-                return value.Double;
-            }
-
-            switch (value.StorageType)
-            {
-                case StorageType.Byte:
-                    return value.Byte;
-                case StorageType.Boolean:
-                    return value.Boolean == null ? null : (double?)(value.Boolean.Value ? 1d : 0d);
-                case StorageType.Int16:
-                    return value.Int16;
-                case StorageType.Int32:
-                    return value.Int32;
-                case StorageType.Int64:
-                    return value.Int64;
-                case StorageType.Single:
-                    return value.Single;
-                case StorageType.Decimal:
-                    return (double?)value.Decimal;
-            }
-
-            return null;
-        }
-
         #endregion
 
         #region Guid
@@ -484,7 +497,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(Guid value)
         {
-            return new PropertyValue { StorageType = StorageType.Guid, Guid = value };
+            return new PropertyValue { storageType = StorageType.Guid, _guid = value };
         }
 
         /// <summary>
@@ -494,27 +507,29 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator Guid(PropertyValue value)
         {
-            if (value == Empty)
+            if (IsEmpty(value))
             {
-                return System.Guid.Empty;
+                return Guid.Empty;
             }
-            if (value.Object != null)
+
+            if (value._object != null)
             {
-                return (Guid)value.Object;
+                return (Guid)value._object;
             }
-            if (value.Guid != null)
+            if (value._guid != null)
             {
-                return value.Guid.Value;
+                return value._guid.Value;
             }
-            if (value.String != null)
+            if (value._string != null)
             {
-                return new Guid(value.String);
+                return new Guid(value._string);
             }
-            if (value.ByteArray != null)
+            if (value._byteArray != null)
             {
-                return new Guid(value.ByteArray);
+                return new Guid(value._byteArray);
             }
-            return System.Guid.Empty;
+
+            throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(Guid).FullName));
         }
 
         /// <summary>
@@ -524,7 +539,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(Guid? value)
         {
-            return new PropertyValue { StorageType = StorageType.Guid, Guid = value };
+            return new PropertyValue { storageType = StorageType.Guid, _guid = value };
         }
 
         /// <summary>
@@ -534,109 +549,29 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator Guid?(PropertyValue value)
         {
-            if (value == Empty)
-            {
-                return null;
-            }
-            return (Guid)value;
-        }
-        #endregion
-
-        #region int
-        /// <summary>
-        /// 将 <see cref="Int32"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static implicit operator PropertyValue(int value)
-        {
-            return new PropertyValue { StorageType = StorageType.Int32, Int32 = value };
-        }
-
-        /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Int32"/> 类型。
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static explicit operator int(PropertyValue value)
-        {
-            if (value == Empty)
-            {
-                return 0;
-            }
-
-            if (value.StorageType == StorageType.Int32)
-            {
-                return value.Int32 == null ? 0 : value.Int32.Value;
-            }
-
-            switch (value.StorageType)
-            {
-                case StorageType.Byte:
-                    return value.Byte == null ? 0 : value.Byte.Value;
-                case StorageType.Boolean:
-                    return value.Boolean == null ? 0 : value.Boolean.Value ? 1 : 0;
-                case StorageType.Int16:
-                    return value.Int16 == null ? 0 : value.Int16.Value;
-                case StorageType.Int64:
-                    return value.Int64 == null ? 0 : (int)value.Int64.Value;
-                case StorageType.Single:
-                    return value.Single == null ? 0 : (int)value.Single.Value;
-                case StorageType.Decimal:
-                    return value.Decimal == null ? 0 : (int)value.Decimal.Value;
-                case StorageType.Double:
-                    return value.Double == null ? 0 : (int)value.Double.Value;
-            }
-
-            return 0;
-        }
-
-        /// <summary>
-        /// 将 <see cref="Nullable{Int32}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static implicit operator PropertyValue(int? value)
-        {
-            return new PropertyValue { StorageType = StorageType.Int32, Int32 = value };
-        }
-
-        /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{Int32}"/> 类型。
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static explicit operator int?(PropertyValue value)
-        {
-            if (value == Empty)
+            if (IsEmpty(value))
             {
                 return null;
             }
 
-            if (value.StorageType == StorageType.Int32)
+            if (value._object != null)
             {
-                return value.Int32;
+                return (Guid)value._object;
+            }
+            if (value._guid != null)
+            {
+                return value._guid.Value;
+            }
+            if (value._string != null)
+            {
+                return new Guid(value._string);
+            }
+            if (value._byteArray != null)
+            {
+                return new Guid(value._byteArray);
             }
 
-            switch (value.StorageType)
-            {
-                case StorageType.Byte:
-                    return value.Byte;
-                case StorageType.Boolean:
-                    return value.Boolean == null ? null : (int?)(value.Boolean.Value ? 1 : 0);
-                case StorageType.Int16:
-                    return value.Int16;
-                case StorageType.Int64:
-                    return (int?)value.Int64;
-                case StorageType.Single:
-                    return (int?)value.Single;
-                case StorageType.Decimal:
-                    return (int?)value.Decimal;
-                case StorageType.Double:
-                    return (int?)value.Double;
-            }
-
-            return null;
+            throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(Guid).FullName));
         }
         #endregion
 
@@ -648,7 +583,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(short value)
         {
-            return new PropertyValue { StorageType = StorageType.Int16, Int16 = value };
+            return new PropertyValue { storageType = StorageType.Int16, _int16 = value };
         }
 
         /// <summary>
@@ -658,35 +593,28 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator short(PropertyValue value)
         {
-            if (value == Empty)
+            if (IsEmpty(value))
             {
                 return 0;
             }
 
-            if (value.StorageType == StorageType.Int16)
+            return value.storageType switch
             {
-                return value.Int16 == null ? (short)0 : value.Int16.Value;
-            }
-
-            switch (value.StorageType)
-            {
-                case StorageType.Byte:
-                    return value.Byte == null ? (short)0 : value.Byte.Value;
-                case StorageType.Boolean:
-                    return value.Boolean == null ? (short)0 : (short)(value.Boolean.Value ? 1 : 0);
-                case StorageType.Int32:
-                    return value.Int32 == null ? (short)0 : (short)value.Int32.Value;
-                case StorageType.Int64:
-                    return value.Int64 == null ? (short)0 : (short)value.Int64.Value;
-                case StorageType.Single:
-                    return value.Single == null ? (short)0 : (short)value.Single.Value;
-                case StorageType.Decimal:
-                    return value.Decimal == null ? (short)0 : (short)value.Decimal.Value;
-                case StorageType.Double:
-                    return value.Double == null ? (short)0 : (short)value.Double.Value;
-            }
-
-            return 0;
+                StorageType.Byte => (short)value._byte,
+                StorageType.SByte => (short)value._sbyte,
+                StorageType.Boolean => (short)(value._boolean == true ? 1 : 0),
+                StorageType.Int16 => (short)value._int16,
+                StorageType.Int32 => (short)value._int32,
+                StorageType.Int64 => (short)value._int64,
+                StorageType.UInt16 => (short)value._uint16,
+                StorageType.UInt32 => (short)value._uint32,
+                StorageType.UInt64 => (short)value._uint64,
+                StorageType.Single => (short)value._single,
+                StorageType.Decimal => (short)value._decimal,
+                StorageType.Double => (short)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToInt16(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(short).FullName)),
+            };
         }
 
         /// <summary>
@@ -696,7 +624,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(short? value)
         {
-            return new PropertyValue { StorageType = StorageType.Int16, Int16 = value };
+            return new PropertyValue { storageType = StorageType.Int16, _int16 = value };
         }
 
         /// <summary>
@@ -706,37 +634,281 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator short?(PropertyValue value)
         {
-            if (value == Empty)
+            if (IsEmpty(value))
             {
                 return null;
             }
 
-            if (value.StorageType == StorageType.Int16)
+            return value.storageType switch
             {
-                return value.Int16;
-            }
+                StorageType.Byte => value._byte,
+                StorageType.SByte => value._sbyte,
+                StorageType.Boolean => (short?)(value._boolean == true ? 1 : 0),
+                StorageType.Int16 => value._int16,
+                StorageType.Int32 => (short?)value._int32,
+                StorageType.Int64 => (short?)value._int64,
+                StorageType.UInt16 => (short?)value._uint16,
+                StorageType.UInt32 => (short?)value._uint32,
+                StorageType.UInt64 => (short?)value._uint64,
+                StorageType.Single => (short?)value._single,
+                StorageType.Decimal => (short?)value._decimal,
+                StorageType.Double => (short?)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToInt16(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(short?).FullName)),
+            };
+        }
+        #endregion
 
-            switch (value.StorageType)
-            {
-                case StorageType.Byte:
-                    return value.Byte;
-                case StorageType.Boolean:
-                    return value.Boolean == null ? null : (short?)(value.Boolean.Value ? 1 : 0);
-                case StorageType.Int32:
-                    return (short?)value.Int32;
-                case StorageType.Int64:
-                    return (short?)value.Int64;
-                case StorageType.Single:
-                    return (short?)value.Single;
-                case StorageType.Decimal:
-                    return (short?)value.Decimal;
-                case StorageType.Double:
-                    return (short?)value.Double;
-            }
-
-            return null;
+        #region ushort
+        /// <summary>
+        /// 将 <see cref="UInt16"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static implicit operator PropertyValue(ushort value)
+        {
+            return new PropertyValue { storageType = StorageType.UInt16, _uint16 = value };
         }
 
+        /// <summary>
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="UInt16"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static explicit operator ushort(PropertyValue value)
+        {
+            if (IsEmpty(value))
+            {
+                return 0;
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Byte => (ushort)value._byte,
+                StorageType.SByte => (ushort)value._sbyte,
+                StorageType.Boolean => (ushort)(value._boolean == true ? 1 : 0),
+                StorageType.Int16 => (ushort)value._int16,
+                StorageType.Int32 => (ushort)value._int32,
+                StorageType.Int64 => (ushort)value._int64,
+                StorageType.UInt16 => (ushort)value._uint16,
+                StorageType.UInt32 => (ushort)value._uint32,
+                StorageType.UInt64 => (ushort)value._uint64,
+                StorageType.Single => (ushort)value._single,
+                StorageType.Decimal => (ushort)value._decimal,
+                StorageType.Double => (ushort)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToUInt16(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(ushort).FullName)),
+            };
+        }
+
+        /// <summary>
+        /// 将 <see cref="Nullable{UInt16}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static implicit operator PropertyValue(ushort? value)
+        {
+            return new PropertyValue { storageType = StorageType.UInt16, _uint16 = value };
+        }
+
+        /// <summary>
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{UInt16}"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static explicit operator ushort?(PropertyValue value)
+        {
+            if (IsEmpty(value))
+            {
+                return null;
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Byte => value._byte,
+                StorageType.SByte => (ushort?)value._sbyte,
+                StorageType.Boolean => (ushort?)(value._boolean == true ? 1 : 0),
+                StorageType.Int16 => (ushort?)value._int16,
+                StorageType.Int32 => (ushort?)value._int32,
+                StorageType.Int64 => (ushort?)value._int64,
+                StorageType.UInt16 => value._uint16,
+                StorageType.UInt32 => (ushort?)value._uint32,
+                StorageType.UInt64 => (ushort?)value._uint64,
+                StorageType.Single => (ushort?)value._single,
+                StorageType.Decimal => (ushort?)value._decimal,
+                StorageType.Double => (ushort?)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToUInt16(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(ushort?).FullName)),
+            };
+        }
+        #endregion
+
+        #region int
+        /// <summary>
+        /// 将 <see cref="Int32"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static implicit operator PropertyValue(int value)
+        {
+            return new PropertyValue { storageType = StorageType.Int32, _int32 = value };
+        }
+
+        /// <summary>
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Int32"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static explicit operator int(PropertyValue value)
+        {
+            if (IsEmpty(value))
+            {
+                return 0;
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Byte => (int)value._byte,
+                StorageType.SByte => (int)value._sbyte,
+                StorageType.Boolean => value._boolean == true ? 1 : 0,
+                StorageType.Int16 => (int)value._int16,
+                StorageType.Int32 => (int)value._int32,
+                StorageType.Int64 => (int)value._int64,
+                StorageType.UInt16 => (int)value._uint16,
+                StorageType.UInt32 => (int)value._uint32,
+                StorageType.UInt64 => (int)value._uint64,
+                StorageType.Single => (int)value._single,
+                StorageType.Decimal => (int)value._decimal,
+                StorageType.Double => (int)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToInt32(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(int).FullName)),
+            };
+        }
+
+        /// <summary>
+        /// 将 <see cref="Nullable{Int32}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static implicit operator PropertyValue(int? value)
+        {
+            return new PropertyValue { storageType = StorageType.Int32, _int32 = value };
+        }
+
+        /// <summary>
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{Int32}"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static explicit operator int?(PropertyValue value)
+        {
+            if (IsEmpty(value))
+            {
+                return null;
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Byte => value._byte,
+                StorageType.SByte => value._sbyte,
+                StorageType.Boolean => value._boolean == true ? 1 : 0,
+                StorageType.Int16 => value._int16,
+                StorageType.Int32 => value._int32,
+                StorageType.Int64 => (int?)value._int64,
+                StorageType.UInt16 => value._uint16,
+                StorageType.UInt32 => (int?)value._uint32,
+                StorageType.UInt64 => (int?)value._uint64,
+                StorageType.Single => (int?)value._single,
+                StorageType.Decimal => (int?)value._decimal,
+                StorageType.Double => (int?)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToInt32(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(int?).FullName)),
+            };
+        }
+        #endregion
+
+        #region uint
+        /// <summary>
+        /// 将 <see cref="UInt32"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static implicit operator PropertyValue(uint value)
+        {
+            return new PropertyValue { storageType = StorageType.UInt32, _uint32 = value };
+        }
+
+        /// <summary>
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="UInt32"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static explicit operator uint(PropertyValue value)
+        {
+            if (IsEmpty(value))
+            {
+                return 0;
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Byte => (uint)value._byte,
+                StorageType.SByte => (uint)value._sbyte,
+                StorageType.Boolean => (uint)(value._boolean == true ? 1 : 0),
+                StorageType.Int16 => (uint)value._int16,
+                StorageType.Int32 => (uint)value._int32,
+                StorageType.Int64 => (uint)value._int64,
+                StorageType.UInt16 => (uint)value._uint16,
+                StorageType.UInt32 => (uint)value._uint32,
+                StorageType.UInt64 => (uint)value._uint64,
+                StorageType.Single => (uint)value._single,
+                StorageType.Decimal => (uint)value._decimal,
+                StorageType.Double => (uint)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToUInt32(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(uint).FullName)),
+            };
+        }
+
+        /// <summary>
+        /// 将 <see cref="Nullable{UInt32}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static implicit operator PropertyValue(uint? value)
+        {
+            return new PropertyValue { storageType = StorageType.UInt32, _uint32 = value };
+        }
+
+        /// <summary>
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{UInt32}"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static explicit operator uint?(PropertyValue value)
+        {
+            if (IsEmpty(value))
+            {
+                return null;
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Byte => value._byte,
+                StorageType.SByte => (uint?)value._sbyte,
+                StorageType.Boolean => (uint?)(value._boolean == true ? 1 : 0),
+                StorageType.Int16 => (uint?)value._int16,
+                StorageType.Int32 => (uint?)value._int32,
+                StorageType.Int64 => (uint?)value._int64,
+                StorageType.UInt16 => value._uint16,
+                StorageType.UInt32 => value._uint32,
+                StorageType.UInt64 => (uint?)value._uint64,
+                StorageType.Single => (uint?)value._single,
+                StorageType.Decimal => (uint?)value._decimal,
+                StorageType.Double => (uint?)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToUInt32(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(uint?).FullName)),
+            };
+        }
         #endregion
 
         #region long
@@ -747,7 +919,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(long value)
         {
-            return new PropertyValue { StorageType = StorageType.Int64, Int64 = value };
+            return new PropertyValue { storageType = StorageType.Int64, _int64 = value };
         }
 
         /// <summary>
@@ -757,35 +929,28 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator long(PropertyValue value)
         {
-            if (value == Empty)
+            if (IsEmpty(value))
             {
                 return 0L;
             }
 
-            if (value.StorageType == StorageType.Int64)
+            return value.storageType switch
             {
-                return value.Int64 == null ? 0L : value.Int64.Value;
-            }
-
-            switch (value.StorageType)
-            {
-                case StorageType.Byte:
-                    return value.Byte == null ? 0L : value.Byte.Value;
-                case StorageType.Boolean:
-                    return value.Boolean == null ? 0L : value.Boolean.Value ? 1 : 0;
-                case StorageType.Int16:
-                    return value.Int16 == null ? 0L : value.Int16.Value;
-                case StorageType.Int32:
-                    return value.Int32 == null ? 0L : value.Int32.Value;
-                case StorageType.Single:
-                    return value.Single == null ? 0L : (long)value.Single.Value;
-                case StorageType.Decimal:
-                    return value.Decimal == null ? 0L : (long)value.Decimal.Value;
-                case StorageType.Double:
-                    return value.Double == null ? 0L : (long)value.Double.Value;
-            }
-
-            return 0;
+                StorageType.Byte => (long)value._byte,
+                StorageType.SByte => (long)value._sbyte,
+                StorageType.Boolean => value._boolean == true ? 1L : 0L,
+                StorageType.Int16 => (long)value._int16,
+                StorageType.Int32 => (long)value._int32,
+                StorageType.Int64 => (long)value._int64,
+                StorageType.UInt16 => (long)value._uint16,
+                StorageType.UInt32 => (long)value._uint32,
+                StorageType.UInt64 => (long)value._uint64,
+                StorageType.Single => (long)value._single,
+                StorageType.Decimal => (long)value._decimal,
+                StorageType.Double => (long)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToInt64(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(long).FullName)),
+            };
         }
 
         /// <summary>
@@ -795,7 +960,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(long? value)
         {
-            return new PropertyValue { StorageType = StorageType.Int64, Int64 = value };
+            return new PropertyValue { storageType = StorageType.Int64, _int64 = value };
         }
 
         /// <summary>
@@ -805,37 +970,197 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator long?(PropertyValue value)
         {
-            if (value == Empty)
+            if (IsEmpty(value))
             {
                 return null;
             }
 
-            if (value.StorageType == StorageType.Int64)
+            return value.storageType switch
             {
-                return value.Int64;
-            }
+                StorageType.Byte => value._byte,
+                StorageType.SByte => value._sbyte,
+                StorageType.Boolean => value._boolean == true ? 1L : 0L,
+                StorageType.Int16 => value._int16,
+                StorageType.Int32 => value._int32,
+                StorageType.Int64 => value._int64,
+                StorageType.UInt16 => value._uint16,
+                StorageType.UInt32 => value._uint32,
+                StorageType.UInt64 => (long?)value._uint64,
+                StorageType.Single => (long?)value._single,
+                StorageType.Decimal => (long?)value._decimal,
+                StorageType.Double => (long?)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToInt64(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(long?).FullName)),
+            };
+        }
+        #endregion
 
-            switch (value.StorageType)
-            {
-                case StorageType.Byte:
-                    return value.Byte;
-                case StorageType.Boolean:
-                    return value.Boolean == null ? null : (long?)(value.Boolean.Value ? 1 : 0);
-                case StorageType.Int16:
-                    return value.Int16;
-                case StorageType.Int32:
-                    return value.Int32;
-                case StorageType.Single:
-                    return (long?)value.Single;
-                case StorageType.Decimal:
-                    return (long?)value.Decimal;
-                case StorageType.Double:
-                    return (long?)value.Double;
-            }
-
-            return null;
+        #region ulong
+        /// <summary>
+        /// 将 <see cref="UInt64"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static implicit operator PropertyValue(ulong value)
+        {
+            return new PropertyValue { storageType = StorageType.UInt64, _uint64 = value };
         }
 
+        /// <summary>
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="UInt64"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static explicit operator ulong(PropertyValue value)
+        {
+            if (IsEmpty(value))
+            {
+                return 0L;
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Byte => (ulong)value._byte,
+                StorageType.SByte => (ulong)value._sbyte,
+                StorageType.Boolean => (ulong)(value._boolean == true ? 1L : 0L),
+                StorageType.Int16 => (ulong)value._int16,
+                StorageType.Int32 => (ulong)value._int32,
+                StorageType.Int64 => (ulong)value._int64,
+                StorageType.UInt16 => (ulong)value._uint16,
+                StorageType.UInt32 => (ulong)value._uint32,
+                StorageType.UInt64 => (ulong)value._uint64,
+                StorageType.Single => (ulong)value._single,
+                StorageType.Decimal => (ulong)value._decimal,
+                StorageType.Double => (ulong)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToUInt64(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(ulong).FullName)),
+            };
+        }
+
+        /// <summary>
+        /// 将 <see cref="Nullable{UInt64}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static implicit operator PropertyValue(ulong? value)
+        {
+            return new PropertyValue { storageType = StorageType.UInt64, _uint64 = value };
+        }
+
+        /// <summary>
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{Int64}"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static explicit operator ulong?(PropertyValue value)
+        {
+            if (IsEmpty(value))
+            {
+                return null;
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Byte => value._byte,
+                StorageType.SByte => (ulong?)value._sbyte,
+                StorageType.Boolean => (ulong?)(value._boolean == true ? 1L : 0L),
+                StorageType.Int16 => (ulong?)value._int16,
+                StorageType.Int32 => (ulong?)value._int32,
+                StorageType.Int64 => (ulong?)value._int64,
+                StorageType.UInt16 => value._uint16,
+                StorageType.UInt32 => value._uint32,
+                StorageType.UInt64 => value._uint64,
+                StorageType.Single => (ulong?)value._single,
+                StorageType.Decimal => (ulong?)value._decimal,
+                StorageType.Double => (ulong?)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToUInt64(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(ulong?).FullName)),
+            };
+        }
+        #endregion
+
+        #region decimal
+        /// <summary>
+        /// 将 <see cref="Decimal"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static implicit operator PropertyValue(decimal value)
+        {
+            return new PropertyValue { storageType = StorageType.Decimal, _decimal = value };
+        }
+
+        /// <summary>
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Decimal"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static explicit operator decimal(PropertyValue value)
+        {
+            if (IsEmpty(value))
+            {
+                return 0m;
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Byte => (decimal)value._byte,
+                StorageType.SByte => (decimal)value._sbyte,
+                StorageType.Boolean => value._boolean == true ? 1 : 0,
+                StorageType.Int16 => (decimal)value._int16,
+                StorageType.Int32 => (decimal)value._int32,
+                StorageType.Int64 => (decimal)value._int64,
+                StorageType.UInt16 => (decimal)value._uint16,
+                StorageType.UInt32 => (decimal)value._uint32,
+                StorageType.UInt64 => (decimal)value._uint64,
+                StorageType.Single => (decimal)value._single,
+                StorageType.Decimal => (decimal)value._decimal,
+                StorageType.Double => (decimal)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToDecimal(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(decimal).FullName)),
+            };
+        }
+
+        /// <summary>
+        /// 将 <see cref="Nullable{Decimal}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static implicit operator PropertyValue(decimal? value)
+        {
+            return new PropertyValue { storageType = StorageType.Decimal, _decimal = value };
+        }
+
+        /// <summary>
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{Decimal}"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static explicit operator decimal?(PropertyValue value)
+        {
+            if (IsEmpty(value))
+            {
+                return null;
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Byte => value._byte,
+                StorageType.SByte => value._sbyte,
+                StorageType.Boolean => value._boolean == true ? 1 : 0,
+                StorageType.Int16 => value._int16,
+                StorageType.Int32 => value._int32,
+                StorageType.Int64 => value._int64,
+                StorageType.UInt16 => value._uint16,
+                StorageType.UInt32 => value._uint32,
+                StorageType.UInt64 => value._uint64,
+                StorageType.Single => (decimal?)value._single,
+                StorageType.Decimal => value._decimal,
+                StorageType.Double => (decimal?)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToDecimal(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(decimal?).FullName)),
+            };
+        }
         #endregion
 
         #region float
@@ -846,7 +1171,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(float value)
         {
-            return new PropertyValue { StorageType = StorageType.Single, Single = value };
+            return new PropertyValue { storageType = StorageType.Single, _single = value };
         }
 
         /// <summary>
@@ -856,7 +1181,28 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator float(PropertyValue value)
         {
-            return value == Empty ? 0 : value.Single.Value;
+            if (IsEmpty(value))
+            {
+                return 0;
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Byte => (float)value._byte,
+                StorageType.SByte => (float)value._sbyte,
+                StorageType.Boolean => value._boolean == true ? 1 : 0,
+                StorageType.Int16 => (float)value._int16,
+                StorageType.Int32 => (float)value._int32,
+                StorageType.Int64 => (float)value._int64,
+                StorageType.UInt16 => (float)value._uint16,
+                StorageType.UInt32 => (float)value._uint32,
+                StorageType.UInt64 => (float)value._uint64,
+                StorageType.Single => (float)value._single,
+                StorageType.Decimal => (float)value._decimal,
+                StorageType.Double => (float)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToSingle(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(float).FullName)),
+            };
         }
 
         /// <summary>
@@ -866,7 +1212,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(float? value)
         {
-            return new PropertyValue { StorageType = StorageType.Single, Single = value };
+            return new PropertyValue { storageType = StorageType.Single, _single = value };
         }
 
         /// <summary>
@@ -876,9 +1222,113 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator float?(PropertyValue value)
         {
-            return value == Empty ? null : value.Single;
+            if (IsEmpty(value))
+            {
+                return null;
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Byte => (float)value._byte,
+                StorageType.SByte => (float)value._sbyte,
+                StorageType.Boolean => value._boolean == true ? 1 : 0,
+                StorageType.Int16 => (float)value._int16,
+                StorageType.Int32 => (float)value._int32,
+                StorageType.Int64 => (float)value._int64,
+                StorageType.UInt16 => (float)value._uint16,
+                StorageType.UInt32 => (float)value._uint32,
+                StorageType.UInt64 => (float)value._uint64,
+                StorageType.Single => (float)value._single,
+                StorageType.Decimal => (float)value._decimal,
+                StorageType.Double => (float?)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToSingle(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(float?).FullName)),
+            };
+        }
+        #endregion
+
+        #region double
+        /// <summary>
+        /// 将 <see cref="Double"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static implicit operator PropertyValue(double value)
+        {
+            return new PropertyValue { storageType = StorageType.Double, _double = value };
         }
 
+        /// <summary>
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Double"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static explicit operator double(PropertyValue value)
+        {
+            if (IsEmpty(value))
+            {
+                return 0d;
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Byte => (double)value._byte,
+                StorageType.SByte => (double)value._sbyte,
+                StorageType.Boolean => value._boolean == true ? 1 : 0,
+                StorageType.Int16 => (double)value._int16,
+                StorageType.Int32 => (double)value._int32,
+                StorageType.Int64 => (double)value._int64,
+                StorageType.UInt16 => (double)value._uint16,
+                StorageType.UInt32 => (double)value._uint32,
+                StorageType.UInt64 => (double)value._uint64,
+                StorageType.Single => (double)value._single,
+                StorageType.Decimal => (double)value._decimal,
+                StorageType.Double => (double)value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToDouble(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(double).FullName)),
+            };
+        }
+
+        /// <summary>
+        /// 将 <see cref="Nullable{Double}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static implicit operator PropertyValue(double? value)
+        {
+            return new PropertyValue { storageType = StorageType.Double, _double = value };
+        }
+
+        /// <summary>
+        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{Double}"/> 类型。
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static explicit operator double?(PropertyValue value)
+        {
+            if (IsEmpty(value))
+            {
+                return null;
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Byte => value._byte,
+                StorageType.SByte => value._sbyte,
+                StorageType.Boolean => value._boolean == true ? 1 : 0,
+                StorageType.Int16 => value._int16,
+                StorageType.Int32 => value._int32,
+                StorageType.Int64 => value._int64,
+                StorageType.UInt16 => value._uint16,
+                StorageType.UInt32 => value._uint32,
+                StorageType.UInt64 => value._uint64,
+                StorageType.Single => value._single,
+                StorageType.Decimal => (double?)value._decimal,
+                StorageType.Double => value._double,
+                StorageType.Enum => ((IConvertible)value._enum).ToDouble(null),
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, typeof(double?).FullName)),
+            };
+        }
         #endregion
 
         #region string
@@ -889,7 +1339,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(string value)
         {
-            return new PropertyValue { StorageType = StorageType.String, String = value };
+            return new PropertyValue { storageType = StorageType.String, _string = value };
         }
 
         /// <summary>
@@ -899,70 +1349,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator string(PropertyValue value)
         {
-            return value == Empty ? null : value.String;
-        }
-
-        #endregion
-
-        #region timespan
-        /// <summary>
-        /// 将 <see cref="TimeSpan"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static implicit operator PropertyValue(TimeSpan value)
-        {
-            return new PropertyValue { StorageType = StorageType.TimeSpan, TimeSpan = value };
-        }
-
-        /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="TimeSpan"/> 类型。
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static explicit operator TimeSpan(PropertyValue value)
-        {
-            if (value == Empty)
-            {
-                return System.TimeSpan.Zero;
-            }
-            if (value.Object != null)
-            {
-                return (TimeSpan)value.Object;
-            }
-            if (value.TimeSpan != null)
-            {
-                return value.TimeSpan.Value;
-            }
-            if (value.Int64 != null)
-            {
-                return System.TimeSpan.FromTicks(value.Int64.Value);
-            }
-            return System.TimeSpan.Zero;
-        }
-
-        /// <summary>
-        /// 将 <see cref="Nullable{TimeSpan}"/> 类型隐式转换为 <see cref="PropertyValue"/> 类型。
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static implicit operator PropertyValue(TimeSpan? value)
-        {
-            return new PropertyValue { StorageType = StorageType.TimeSpan, TimeSpan = value };
-        }
-
-        /// <summary>
-        /// 将 <see cref="PropertyValue"/> 类型显示转换为 <see cref="Nullable{TimeSpan}"/> 类型。
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static explicit operator TimeSpan?(PropertyValue value)
-        {
-            if (value == Empty)
-            {
-                return null;
-            }
-            return (TimeSpan)value;
+            return value == Empty ? null : value._string;
         }
         #endregion
 
@@ -974,7 +1361,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(Enum value)
         {
-            return new PropertyValue { StorageType = StorageType.Enum, Enum = value };
+            return new PropertyValue { storageType = StorageType.Enum, _enum = value };
         }
 
         /// <summary>
@@ -984,37 +1371,50 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static explicit operator Enum(PropertyValue value)
         {
-            return value == Empty ? null : (value.Object != null ? (Enum)value.Object : value.Enum);
+            if (IsEmpty(value))
+            {
+                return null;
+            }
+
+            return value.storageType switch
+            {
+                StorageType.Enum => value._enum,
+                StorageType.Object => (Enum)value._object,
+                _ => throw new InvalidCastException(SR.GetString(SRKind.InvalidCastPropertyValue, "enum")),
+            };
         }
         #endregion
 
         #region ==和!=
         public static bool operator ==(PropertyValue v1, PropertyValue v2)
         {
-            if (v1.StorageType != v2.StorageType)
+            if (v1.storageType != v2.storageType)
             {
                 return false;
             }
 
-            switch (v1.StorageType)
+            return v1.storageType switch
             {
-                case StorageType.Boolean: return v1.Boolean == v2.Boolean;
-                case StorageType.Byte: return v1.Byte == v2.Byte;
-                case StorageType.Char: return v1.Char == v2.Char;
-                case StorageType.DateTime: return v1.DateTime == v2.DateTime;
-                case StorageType.Decimal: return v1.Decimal == v2.Decimal;
-                case StorageType.Double: return v1.Double == v2.Double;
-                case StorageType.Enum: return v1.Enum == v2.Enum;
-                case StorageType.Guid: return v1.Guid == v2.Guid;
-                case StorageType.Int16: return v1.Int16 == v2.Int16;
-                case StorageType.Int32: return v1.Int32 == v2.Int32;
-                case StorageType.Int64: return v1.Int64 == v2.Int64;
-                case StorageType.Single: return v1.Single == v2.Single;
-                case StorageType.String: return v1.String == v2.String;
-                case StorageType.TimeSpan: return v1.TimeSpan == v2.TimeSpan;
-                case StorageType.ByteArray: return ByteEqueals(v1.ByteArray, v2.ByteArray);
-                default: return v1.Object == v2.Object;
-            }
+                StorageType.Boolean => v1._boolean == v2._boolean,
+                StorageType.Byte => v1._byte == v2._byte,
+                StorageType.SByte => v1._sbyte == v2._sbyte,
+                StorageType.Char => v1._char == v2._char,
+                StorageType.DateTime => v1._dateTime == v2._dateTime,
+                StorageType.Decimal => v1._decimal == v2._decimal,
+                StorageType.Double => v1._double == v2._double,
+                StorageType.Enum => v1._enum == v2._enum,
+                StorageType.Guid => v1._guid == v2._guid,
+                StorageType.Int16 => v1._int16 == v2._int16,
+                StorageType.Int32 => v1._int32 == v2._int32,
+                StorageType.Int64 => v1._int64 == v2._int64,
+                StorageType.UInt16 => v1._uint16 == v2._uint16,
+                StorageType.UInt32 => v1._uint32 == v2._uint32,
+                StorageType.UInt64 => v1._uint64 == v2._uint64,
+                StorageType.Single => v1._single == v2._single,
+                StorageType.String => v1._string == v2._string,
+                StorageType.ByteArray => ByteEqueals(v1._byteArray, v2._byteArray),
+                _ => v1._object == v2._object,
+            };
         }
 
         private static bool ByteEqueals(byte[] b1, byte[] b2)
@@ -1039,7 +1439,7 @@ namespace Fireasy.Data.Entity
                 return false;
             }
 
-            for (var i = 0; i < b1.Length; i++)
+            for (int i = 0, n = b1.Length; i < n; i++)
             {
                 if (b1[i] != b2[i])
                 {
@@ -1056,278 +1456,293 @@ namespace Fireasy.Data.Entity
         }
 
         #region int equals
-        public static bool operator == (PropertyValue v1, int v2)
+        public static bool operator ==(PropertyValue v1, int v2)
         {
-            if (v1.StorageType != StorageType.Int32)
+            if (v1.storageType != StorageType.Int32)
             {
                 return false;
             }
 
-            return v1.Int32 == v2;
+            return v1._int32 == v2;
         }
 
         public static bool operator !=(PropertyValue v1, int v2)
         {
-            if (v1.StorageType != StorageType.Int32)
+            if (v1.storageType != StorageType.Int32)
             {
                 return true;
             }
 
-            return v1.Int32 != v2;
+            return v1._int32 != v2;
         }
 
         public static bool operator ==(int v1, PropertyValue v2)
         {
-            if (v2.StorageType != StorageType.Int32)
+            if (v2.storageType != StorageType.Int32)
             {
                 return false;
             }
 
-            return v2.Int32 == v1;
+            return v2._int32 == v1;
         }
 
         public static bool operator !=(int v1, PropertyValue v2)
         {
-            if (v2.StorageType != StorageType.Int32)
+            if (v2.storageType != StorageType.Int32)
             {
                 return true;
             }
 
-            return v2.Int32 != v1;
+            return v2._int32 != v1;
+        }
+        #endregion
+
+        #region uint equals
+        public static bool operator ==(PropertyValue v1, uint v2)
+        {
+            if (v1.storageType != StorageType.UInt32)
+            {
+                return false;
+            }
+
+            return v1._uint32 == v2;
+        }
+
+        public static bool operator !=(PropertyValue v1, uint v2)
+        {
+            if (v1.storageType != StorageType.UInt32)
+            {
+                return true;
+            }
+
+            return v1._uint32 != v2;
+        }
+
+        public static bool operator ==(uint v1, PropertyValue v2)
+        {
+            if (v2.storageType != StorageType.UInt32)
+            {
+                return false;
+            }
+
+            return v2._uint32 == v1;
+        }
+
+        public static bool operator !=(uint v1, PropertyValue v2)
+        {
+            if (v2.storageType != StorageType.UInt32)
+            {
+                return true;
+            }
+
+            return v2._uint32 != v1;
         }
         #endregion
 
         #region long equals
         public static bool operator ==(PropertyValue v1, long v2)
         {
-            if (v1.StorageType != StorageType.Int64)
+            if (v1.storageType != StorageType.Int64)
             {
                 return false;
             }
 
-            return v1.Int64 == v2;
+            return v1._int64 == v2;
         }
 
         public static bool operator !=(PropertyValue v1, long v2)
         {
-            if (v1.StorageType != StorageType.Int64)
+            if (v1.storageType != StorageType.Int64)
             {
                 return true;
             }
 
-            return v1.Int64 != v2;
+            return v1._int64 != v2;
         }
 
         public static bool operator ==(long v1, PropertyValue v2)
         {
-            if (v2.StorageType != StorageType.Int64)
+            if (v2.storageType != StorageType.Int64)
             {
                 return false;
             }
 
-            return v2.Int64 == v1;
+            return v2._int64 == v1;
         }
 
         public static bool operator !=(long v1, PropertyValue v2)
         {
-            if (v2.StorageType != StorageType.Int64)
+            if (v2.storageType != StorageType.Int64)
             {
                 return true;
             }
 
-            return v2.Int64 != v1;
+            return v2._int64 != v1;
+        }
+        #endregion
+
+        #region ulong equals
+        public static bool operator ==(PropertyValue v1, ulong v2)
+        {
+            if (v1.storageType != StorageType.UInt64)
+            {
+                return false;
+            }
+
+            return v1._uint64 == v2;
+        }
+
+        public static bool operator !=(PropertyValue v1, ulong v2)
+        {
+            if (v1.storageType != StorageType.UInt64)
+            {
+                return true;
+            }
+
+            return v1._uint64 != v2;
+        }
+
+        public static bool operator ==(ulong v1, PropertyValue v2)
+        {
+            if (v2.storageType != StorageType.UInt64)
+            {
+                return false;
+            }
+
+            return v2._uint64 == v1;
+        }
+
+        public static bool operator !=(ulong v1, PropertyValue v2)
+        {
+            if (v2.storageType != StorageType.UInt64)
+            {
+                return true;
+            }
+
+            return v2._uint64 != v1;
         }
         #endregion
 
         #region string equals
         public static bool operator ==(PropertyValue v1, string v2)
         {
-            if (v1.StorageType != StorageType.String)
+            if (v1.storageType != StorageType.String)
             {
                 return false;
             }
 
-            return v1.String == v2;
+            return v1._string == v2;
         }
 
         public static bool operator !=(PropertyValue v1, string v2)
         {
-            if (v1.StorageType != StorageType.String)
+            if (v1.storageType != StorageType.String)
             {
                 return true;
             }
 
-            return v1.String != v2;
+            return v1._string != v2;
         }
 
         public static bool operator ==(string v1, PropertyValue v2)
         {
-            if (v2.StorageType != StorageType.String)
+            if (v2.storageType != StorageType.String)
             {
                 return false;
             }
 
-            return v2.String == v1;
+            return v2._string == v1;
         }
 
         public static bool operator !=(string v1, PropertyValue v2)
         {
-            if (v2.StorageType != StorageType.String)
+            if (v2.storageType != StorageType.String)
             {
                 return true;
             }
 
-            return v2.String != v1;
+            return v2._string != v1;
         }
         #endregion
-
         #endregion
-
-        internal DbType? DataType { get; set; }
-
-        /// <summary>
-        /// 获取存储数据的实际类型。
-        /// </summary>
-        private StorageType StorageType { get; set; }
-
-        private char? Char { get; set; }
-
-        private bool? Boolean { get; set; }
-
-        private byte? Byte { get; set; }
-
-        private byte[] ByteArray { get; set; }
-
-        private DateTime? DateTime { get; set; }
-
-        private decimal? Decimal { get; set; }
-
-        private double? Double { get; set; }
-
-        private Guid? Guid { get; set; }
-
-        private short? Int16 { get; set; }
-
-        private int? Int32 { get; set; }
-
-        private long? Int64 { get; set; }
-
-        private float? Single { get; set; }
-
-        private string String { get; set; }
-
-        private Enum Enum { get; set; }
-
-        private TimeSpan? TimeSpan { get; set; }
-
-        private object Object { get; set; }
 
         /// <summary>
         /// 获取该对象是否有效，即数字不为 0、字符串不为空字符时有效。
         /// </summary>
-        public bool IsValid
+        public bool IsValid => storageType switch
         {
-            get
-            {
-                switch (StorageType)
-                {
-                    case StorageType.Byte: return Byte != 0;
-                    case StorageType.Char: return Char != '\0';
-                    case StorageType.Decimal: return Decimal != 0;
-                    case StorageType.Double: return Double != 0;
-                    case StorageType.Int16: return Int16 != 0;
-                    case StorageType.Int32: return Int32 != 0;
-                    case StorageType.Int64: return Int64 != 0;
-                    case StorageType.Single: return Single != 0;
-                    case StorageType.String: return String != "";
-                    default: return true;
-                }
-            }
-        }
+            StorageType.Byte => _byte != 0,
+            StorageType.SByte => _sbyte != 0,
+            StorageType.Char => _char != '\0',
+            StorageType.Decimal => _decimal != 0,
+            StorageType.Double => _double != 0,
+            StorageType.Int16 => _int16 != 0,
+            StorageType.Int32 => _int32 != 0,
+            StorageType.Int64 => _int64 != 0,
+            StorageType.UInt16 => _uint16 != 0,
+            StorageType.UInt32 => _uint32 != 0,
+            StorageType.UInt64 => _uint64 != 0,
+            StorageType.Single => _single != 0,
+            StorageType.String => !string.IsNullOrEmpty(_string),
+            _ => true
+        };
 
         /// <summary>
         /// 纠正存储值的类型。
         /// </summary>
         /// <param name="correctType">要纠正的实际存储的类型。</param>
-        internal void Correct(Type correctType)
+        public void CorrectValue(Type correctType)
         {
-            if (correctType.IsEnum)
+            if (correctType.IsEnum && storageType != StorageType.Enum)
             {
-                if (StorageType != StorageType.Enum)
-                {
-                    CorrectToEnum(correctType);
-                }
+                CorrectEnumValue(correctType);
             }
-            else if (correctType.GetNonNullableType() == typeof(bool))
+            else if (correctType.GetNonNullableType() == typeof(Guid) && storageType != StorageType.Guid)
             {
-                if (StorageType != StorageType.Boolean)
-                {
-                    CorrectToBoolean();
-                }
-            }
-            else if (correctType.GetNonNullableType() == typeof(Guid))
-            {
-                if (StorageType != StorageType.Guid)
-                {
-                    CorrectToGuid();
-                }
+                CorrectGuidValue();
             }
         }
 
-        private void CorrectToEnum(Type correctType)
+        private void CorrectEnumValue(Type correctType)
         {
-            switch (StorageType)
+            switch (storageType)
             {
-                case StorageType.Int32:
-                    Enum = (Enum)Enum.Parse(correctType, Int32.ToString());
-                    Int32 = null;
-                    break;
-                case StorageType.Int16:
-                    Enum = (Enum)Enum.Parse(correctType, Int16.ToString());
-                    Int16 = null;
-                    break;
-                case StorageType.Int64:
-                    Enum = (Enum)Enum.Parse(correctType, Int64.ToString());
-                    Int64 = null;
-                    break;
-            }
-            StorageType = StorageType.Enum;
-        }
-
-        private void CorrectToBoolean()
-        {
-            switch (StorageType)
-            {
-                case StorageType.Int16:
-                    Boolean = Int16 == null ? null : (bool?)(Int16.Value != 0);
-                    Int16 = null;
+                case StorageType.Byte:
+                    _enum = (Enum)Enum.Parse(correctType, _byte.ToString());
+                    _byte = null;
                     break;
                 case StorageType.Int32:
-                    Boolean = Int32 == null ? null : (bool?)(Int32.Value != 0);
-                    Int32 = null;
+                    _enum = (Enum)Enum.Parse(correctType, _int32.ToString());
+                    _int32 = null;
+                    break;
+                case StorageType.Int16:
+                    _enum = (Enum)Enum.Parse(correctType, _int16.ToString());
+                    _int16 = null;
                     break;
                 case StorageType.Int64:
-                    Boolean = Int64 == null ? null : (bool?)(Int64.Value != 0);
-                    Int64 = null;
+                    _enum = (Enum)Enum.Parse(correctType, _int64.ToString());
+                    _int64 = null;
                     break;
             }
-            StorageType = StorageType.Boolean;
+
+            storageType = StorageType.Enum;
         }
 
-        private void CorrectToGuid()
+        private void CorrectGuidValue()
         {
-            switch (StorageType)
+            switch (storageType)
             {
                 case StorageType.String:
-                    Guid = new Guid(String);
-                    String = null;
+                    _guid = new Guid(_string);
+                    _string = null;
                     break;
                 case StorageType.ByteArray:
-                    Guid = new Guid(ByteArray);
-                    ByteArray = null;
+                    _guid = new Guid(_byteArray);
+                    _byteArray = null;
                     break;
             }
-            StorageType = StorageType.Guid;
+
+            storageType = StorageType.Guid;
         }
 
         #region object
@@ -1337,26 +1752,29 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public object GetValue()
         {
-            switch (StorageType)
+            return storageType switch
             {
-                case StorageType.Boolean: return Boolean;
-                case StorageType.Byte: return Byte;
-                case StorageType.ByteArray: return ByteArray;
-                case StorageType.Char: return Char;
-                case StorageType.DateTime: return DateTime;
-                case StorageType.Decimal: return Decimal;
-                case StorageType.Double: return Double;
-                case StorageType.Enum: return Enum;
-                case StorageType.Guid: return Guid;
-                case StorageType.Int16: return Int16;
-                case StorageType.Int32: return Int32;
-                case StorageType.Int64: return Int64;
-                case StorageType.Object: return Object;
-                case StorageType.Single: return Single;
-                case StorageType.String: return String;
-                case StorageType.TimeSpan: return TimeSpan;
-                default: return null;
-            }
+                StorageType.Boolean => _boolean,
+                StorageType.Byte => _byte,
+                StorageType.SByte => _sbyte,
+                StorageType.ByteArray => _byteArray,
+                StorageType.Char => _char,
+                StorageType.DateTime => _dateTime,
+                StorageType.Decimal => _decimal,
+                StorageType.Double => _double,
+                StorageType.Enum => _enum,
+                StorageType.Guid => _guid,
+                StorageType.Int16 => _int16,
+                StorageType.Int32 => _int32,
+                StorageType.Int64 => _int64,
+                StorageType.UInt16 => _uint16,
+                StorageType.UInt32 => _uint32,
+                StorageType.UInt64 => _uint64,
+                StorageType.Object => _object,
+                StorageType.Single => _single,
+                StorageType.String => _string,
+                _ => null,
+            };
         }
 
         /// <summary>
@@ -1377,7 +1795,7 @@ namespace Fireasy.Data.Entity
             //var s = right.As<PropertyValue>();
             //if (StorageType != s.StorageType)
             {
-            //    return false;
+                //    return false;
             }
             return GetHashCode() == right.GetHashCode();
         }
@@ -1388,24 +1806,27 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public override int GetHashCode()
         {
-            switch (StorageType)
+            return storageType switch
             {
-                case StorageType.Boolean: return Boolean == null ? 0 : Boolean.GetHashCode();
-                case StorageType.Byte: return Byte == null ? 0 : Byte.GetHashCode();
-                case StorageType.Char: return Char == null ? 0 : Char.GetHashCode();
-                case StorageType.DateTime: return DateTime == null ? 0 : DateTime.GetHashCode();
-                case StorageType.Decimal: return Decimal == null ? 0 : Decimal.GetHashCode();
-                case StorageType.Double: return Double == null ? 0 : Double.GetHashCode();
-                case StorageType.Enum: return Enum == null ? 0 : Enum.GetHashCode();
-                case StorageType.Guid: return Guid == null ? 0 : Guid.GetHashCode();
-                case StorageType.Int16: return Int16 == null ? 0 : Int16.GetHashCode();
-                case StorageType.Int32: return Int32 == null ? 0 : Int32.GetHashCode();
-                case StorageType.Int64: return Int64 == null ? 0 : Int64.GetHashCode();
-                case StorageType.Single: return Single == null ? 0 : Single.GetHashCode();
-                case StorageType.String: return String == null ? 0 : String.GetHashCode();
-                case StorageType.TimeSpan: return TimeSpan == null ? 0 : TimeSpan.GetHashCode();
-            }
-            return base.GetHashCode();
+                StorageType.Boolean => _boolean == null ? 0 : _boolean.GetHashCode(),
+                StorageType.Byte => _byte == null ? 0 : _byte.GetHashCode(),
+                StorageType.SByte => _sbyte == null ? 0 : _sbyte.GetHashCode(),
+                StorageType.Char => _char == null ? 0 : _char.GetHashCode(),
+                StorageType.DateTime => _dateTime == null ? 0 : _dateTime.GetHashCode(),
+                StorageType.Decimal => _decimal == null ? 0 : _decimal.GetHashCode(),
+                StorageType.Double => _double == null ? 0 : _double.GetHashCode(),
+                StorageType.Enum => _enum == null ? 0 : _enum.GetHashCode(),
+                StorageType.Guid => _guid == null ? 0 : _guid.GetHashCode(),
+                StorageType.Int16 => _int16 == null ? 0 : _int16.GetHashCode(),
+                StorageType.Int32 => _int32 == null ? 0 : _int32.GetHashCode(),
+                StorageType.Int64 => _int64 == null ? 0 : _int64.GetHashCode(),
+                StorageType.UInt16 => _uint16 == null ? 0 : _uint16.GetHashCode(),
+                StorageType.UInt32 => _uint32 == null ? 0 : _uint32.GetHashCode(),
+                StorageType.UInt64 => _uint64 == null ? 0 : _uint64.GetHashCode(),
+                StorageType.Single => _single == null ? 0 : _single.GetHashCode(),
+                StorageType.String => _string == null ? 0 : _string.GetHashCode(),
+                _ => base.GetHashCode(),
+            };
         }
 
         /// <summary>
@@ -1414,34 +1835,37 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public PropertyValue Clone()
         {
-            switch (StorageType)
+            switch (storageType)
             {
-                case StorageType.Boolean: return Boolean;
-                case StorageType.Byte: return Byte;
-                case StorageType.Char: return Char;
-                case StorageType.DateTime: return DateTime;
-                case StorageType.Decimal: return Decimal;
-                case StorageType.Double: return Double;
-                case StorageType.Enum: return Enum;
-                case StorageType.Guid: return Guid;
-                case StorageType.Int16: return Int16;
-                case StorageType.Int32: return Int32;
-                case StorageType.Int64: return Int64;
-                case StorageType.Single: return Single;
-                case StorageType.String: return string.IsNullOrEmpty(String) ? string.Empty : string.Copy(String);
-                case StorageType.TimeSpan: return TimeSpan;
+                case StorageType.Boolean: return _boolean;
+                case StorageType.Byte: return _byte;
+                case StorageType.SByte: return _sbyte;
+                case StorageType.Char: return _char;
+                case StorageType.DateTime: return _dateTime;
+                case StorageType.Decimal: return _decimal;
+                case StorageType.Double: return _double;
+                case StorageType.Enum: return _enum;
+                case StorageType.Guid: return _guid;
+                case StorageType.Int16: return _int16;
+                case StorageType.Int32: return _int32;
+                case StorageType.Int64: return _int64;
+                case StorageType.UInt16: return _uint16;
+                case StorageType.UInt32: return _uint32;
+                case StorageType.UInt64: return _uint64;
+                case StorageType.Single: return _single;
+                case StorageType.String: return string.IsNullOrEmpty(_string) ? string.Empty : string.Copy(_string);
                 default:
-                    if (Object == null)
+                    if (_object == null)
                     {
                         return Empty;
                     }
-                    var staClone = Object.As<IKeepStateCloneable>();
+                    var staClone = _object.As<IKeepStateCloneable>();
                     if (staClone != null)
                     {
-                        return new PropertyValue { StorageType = StorageType.Object, Object = staClone.Clone() };
+                        return new PropertyValue { storageType = StorageType.Object, _object = staClone.Clone() };
                     }
-                    var cloneable = Object.As<ICloneable>();
-                    return new PropertyValue { StorageType = StorageType.Object, Object = cloneable == null ? Object : cloneable.Clone() };
+                    var cloneable = _object.As<ICloneable>();
+                    return new PropertyValue { storageType = StorageType.Object, _object = cloneable == null ? _object : cloneable.Clone() };
             }
         }
 
@@ -1456,7 +1880,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public override string ToString()
         {
-            return StorageType == StorageType.Empty ? string.Empty : GetValue().ToStringSafely();
+            return storageType == StorageType.Empty ? string.Empty : GetValue().ToStringSafely();
         }
 
         #endregion
@@ -1502,45 +1926,24 @@ namespace Fireasy.Data.Entity
         public static bool IsSupportedType(Type type)
         {
             type = type.GetNonNullableType();
-            return (type == typeof(bool) ||
+            return type == typeof(bool) ||
                 type == typeof(char) ||
                 type == typeof(byte) ||
+                type == typeof(sbyte) ||
                 type == typeof(byte[]) ||
                 type == typeof(DateTime) ||
                 type == typeof(decimal) ||
                 type == typeof(double) ||
                 type == typeof(Guid) ||
-                type == typeof(int) ||
                 type == typeof(short) ||
+                type == typeof(int) ||
                 type == typeof(long) ||
+                type == typeof(ushort) ||
+                type == typeof(uint) ||
+                type == typeof(ulong) ||
                 type == typeof(float) ||
                 type == typeof(string) ||
-                type == typeof(TimeSpan) ||
-                type.IsEnum);
-        }
-
-        /// <summary>
-        /// 判断指定的类型是否显式转换为 <see cref="PropertyValue"/> 类型。
-        /// </summary>
-        /// <param name="type">要判断的类型。</param>
-        /// <returns></returns>
-        public static bool IsImplicitType(Type type)
-        {
-            type = type.GetNonNullableType();
-            return (type == typeof(bool) ||
-                type == typeof(char) ||
-                type == typeof(byte) ||
-                type == typeof(byte[]) ||
-                type == typeof(DateTime) ||
-                type == typeof(decimal) ||
-                type == typeof(double) ||
-                type == typeof(Guid) ||
-                type == typeof(int) ||
-                type == typeof(short) ||
-                type == typeof(long) ||
-                type == typeof(float) ||
-                type == typeof(string) ||
-                type == typeof(TimeSpan));
+                type.IsEnum;
         }
 
         /// <summary>
@@ -1553,7 +1956,7 @@ namespace Fireasy.Data.Entity
         {
             if (value == null)
             {
-                return PropertyValue.Empty;
+                return Empty;
             }
 
             if (value != null && valueType == null)
@@ -1576,26 +1979,77 @@ namespace Fireasy.Data.Entity
                 {
                     return value == null ? new byte[0] : (byte[])value;
                 }
+
                 var isNull = value.IsNullOrEmpty();
-                switch (nonNullType.FullName)
+                return Type.GetTypeCode(nonNullType) switch
                 {
-                    case "System.Boolean": return isNull ? new bool?() : Convert.ToBoolean(value);
-                    case "System.Byte": return isNull ? new byte?() : Convert.ToByte(value);
-                    case "System.Char": return isNull ? new char?() : Convert.ToChar(value);
-                    case "System.DateTime": return isNull ? new DateTime?() : Convert.ToDateTime(value);
-                    case "System.Decimal": return isNull ? new decimal?() : Convert.ToDecimal(value);
-                    case "System.Double": return isNull ? new double?() : Convert.ToDouble(value);
-                    case "System.Guid": return isNull ? new Guid?() : new Guid(value.ToString());
-                    case "System.Int16": return isNull ? new short?() : Convert.ToInt16(value);
-                    case "System.Int32": return isNull ? new int?() : Convert.ToInt32(value);
-                    case "System.Int64": return isNull ? new long?() : Convert.ToInt64(value);
-                    case "System.Single": return isNull ? new float?() : Convert.ToSingle(value);
-                    case "System.String": return isNull ? null : Convert.ToString(value);
-                    case "System.Time": return isNull ? new TimeSpan?() : System.TimeSpan.Parse(value.ToString());
-                    default: return Empty;
+                    TypeCode.Boolean => isNull ? new bool?() : Convert.ToBoolean(value),
+                    TypeCode.Byte => isNull ? new byte?() : Convert.ToByte(value),
+                    TypeCode.SByte => isNull ? new sbyte?() : Convert.ToSByte(value),
+                    TypeCode.Char => isNull ? new char?() : Convert.ToChar(value),
+                    TypeCode.DateTime => isNull ? new DateTime?() : ProcessNewDateTime(value),
+                    TypeCode.Decimal => isNull ? new decimal?() : Convert.ToDecimal(value),
+                    TypeCode.Double => isNull ? new double?() : Convert.ToDouble(value),
+                    TypeCode.Int16 => isNull ? new short?() : Convert.ToInt16(value),
+                    TypeCode.Int32 => isNull ? new int?() : Convert.ToInt32(value),
+                    TypeCode.Int64 => isNull ? new long?() : Convert.ToInt64(value),
+                    TypeCode.UInt16 => isNull ? new ushort?() : Convert.ToUInt16(value),
+                    TypeCode.UInt32 => isNull ? new uint?() : Convert.ToUInt32(value),
+                    TypeCode.UInt64 => isNull ? new ulong?() : Convert.ToUInt64(value),
+                    TypeCode.Single => isNull ? new float?() : Convert.ToSingle(value),
+                    TypeCode.String => isNull ? (string)null : ProcessNewString(value),
+                    _ => nonNullType.FullName switch
+                    {
+                        "System.Guid" => isNull ? new Guid?() : ProcessNewGuid(value),
+                        _ => Empty
+                    }
+                };
+            }
+
+            return new PropertyValue { storageType = StorageType.Object, _object = value };
+        }
+
+        private static PropertyValue ProcessNewDateTime(object value)
+        {
+            if (value is string)
+            {
+                if (value.Equals(Constants.Now))
+                {
+                    return Now;
+                }
+                else if (value.Equals(Constants.Today))
+                {
+                    return Today;
                 }
             }
-            return new PropertyValue { StorageType = StorageType.Object, Object = value };
+
+            return Convert.ToDateTime(value);
+        }
+
+        private static PropertyValue ProcessNewString(object value)
+        {
+            if (value is string)
+            {
+                if (value.Equals(Constants.Guid))
+                {
+                    return NewGuid;
+                }
+            }
+
+            return Convert.ToString(value);
+        }
+
+        private static PropertyValue ProcessNewGuid(object value)
+        {
+            if (value is string)
+            {
+                if (value.Equals(Constants.Guid))
+                {
+                    return NewGuid;
+                }
+            }
+
+            return new Guid(value.ToString());
         }
 
         /// <summary>
@@ -1606,74 +2060,86 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static Parameter Parametrization(PropertyValue value, Parameter parameter)
         {
-            switch (value.StorageType)
+            switch (value.storageType)
             {
                 case StorageType.Boolean:
-                    parameter.Value = value.Boolean;
+                    parameter.Value = value._boolean;
                     parameter.DbType = DbType.Boolean;
                     break;
                 case StorageType.Byte:
-                    parameter.Value = value.Byte;
+                    parameter.Value = value._byte;
                     parameter.DbType = DbType.Byte;
                     break;
+                case StorageType.SByte:
+                    parameter.Value = value._sbyte;
+                    parameter.DbType = DbType.SByte;
+                    break;
                 case StorageType.ByteArray:
-                    parameter.Value = value.ByteArray;
+                    parameter.Value = value._byteArray;
                     parameter.DbType = DbType.Binary;
                     break;
                 case StorageType.Char:
-                    parameter.Value = value.Char;
+                    parameter.Value = value._char;
                     parameter.DbType = DbType.AnsiString;
                     break;
                 case StorageType.DateTime:
-                    parameter.Value = value.DateTime;
+                    parameter.Value = value._dateTime;
                     parameter.DbType = DbType.DateTime;
                     break;
                 case StorageType.Decimal:
-                    parameter.Value = value.Decimal;
+                    parameter.Value = value._decimal;
                     parameter.DbType = DbType.Decimal;
                     break;
                 case StorageType.Double:
-                    parameter.Value = value.Double;
+                    parameter.Value = value._double;
                     parameter.DbType = DbType.Double;
                     break;
                 case StorageType.Enum:
-                    parameter.Value = value.Enum.To<int>();
+                    parameter.Value = value._enum.To<int>();
                     parameter.DbType = DbType.Int32;
                     break;
                 case StorageType.Guid:
-                    parameter.Value = value.Guid;
+                    parameter.Value = value._guid;
                     parameter.DbType = DbType.Guid;
                     break;
                 case StorageType.Int16:
-                    parameter.Value = value.Int16;
+                    parameter.Value = value._int16;
                     parameter.DbType = DbType.Int16;
                     break;
                 case StorageType.Int32:
-                    parameter.Value = value.Int32;
+                    parameter.Value = value._int32;
                     parameter.DbType = DbType.Int32;
                     break;
                 case StorageType.Int64:
-                    parameter.Value = value.Int64;
+                    parameter.Value = value._int64;
                     parameter.DbType = DbType.Int64;
                     break;
+                case StorageType.UInt16:
+                    parameter.Value = value._uint16;
+                    parameter.DbType = DbType.UInt16;
+                    break;
+                case StorageType.UInt32:
+                    parameter.Value = value._uint32;
+                    parameter.DbType = DbType.UInt32;
+                    break;
+                case StorageType.UInt64:
+                    parameter.Value = value._uint64;
+                    parameter.DbType = DbType.UInt64;
+                    break;
                 case StorageType.Single:
-                    parameter.Value = value.Single;
+                    parameter.Value = value._single;
                     parameter.DbType = DbType.Single;
                     break;
                 case StorageType.String:
-                    parameter.Value = value.String;
+                    parameter.Value = value._string;
                     parameter.DbType = DbType.AnsiString;
                     break;
-                case StorageType.TimeSpan:
-                    parameter.Value = value.TimeSpan;
-                    parameter.DbType = DbType.Time;
-                    break;
                 case StorageType.Object:
-                    var converter = ConvertManager.GetConverter(value.Object.GetType());
+                    var converter = ConvertManager.GetConverter(value._object.GetType());
                     if (converter != null)
                     {
-                        var dbType = value.DataType ?? DbType.String;
-                        parameter.Value = converter.ConvertTo(value.Object, dbType);
+                        var dbType = value.dataType ?? DbType.String;
+                        parameter.Value = converter.ConvertTo(value._object, dbType);
                         parameter.DbType = dbType;
                     }
                     break;
@@ -1683,13 +2149,42 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
+        /// 尝试给常量分配动态值。
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="formatter"></param>
+        /// <returns></returns>
+        public PropertyValue TryAllotValue(Type type, string formatter)
+        {
+            if (!isConstant)
+            {
+                return this;
+            }
+
+            if (this == Now)
+            {
+                return type == typeof(string) ? DateTime.Now.ToString(formatter) : (PropertyValue)DateTime.Now;
+            }
+            else if (this == Today)
+            {
+                return type == typeof(string) ? DateTime.Today.ToString(formatter) : (PropertyValue)DateTime.Today;
+            }
+            else if (this == NewGuid)
+            {
+                return type == typeof(Guid) ? Guid.NewGuid() : (PropertyValue)Guid.NewGuid().ToString(formatter);
+            }
+
+            return this;
+        }
+
+        /// <summary>
         /// 安全地获取值。
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
         public static object GetValueSafely(PropertyValue value)
         {
-            if (value == Empty || value.StorageType == StorageType.Empty)
+            if (value == Empty || value.storageType == StorageType.Empty)
             {
                 return null;
             }
@@ -1704,7 +2199,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static bool IsEmpty(PropertyValue value)
         {
-            return value == Empty || value.StorageType == StorageType.Empty || value.GetValue() == null;
+            return value == Empty || value.storageType == StorageType.Empty || value.GetValue() == null;
         }
 
         /// <summary>
@@ -1714,27 +2209,23 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static bool IsEmptyOrDefault(PropertyValue value)
         {
-            switch (value.StorageType)
+            return value.storageType switch
             {
-                case StorageType.Int16:
-                    return value.Int16 == 0 || value.Int16 == null;
-                case StorageType.Int32:
-                    return value.Int32 == 0 || value.Int32 == null;
-                case StorageType.Int64:
-                    return value.Int64 == 0 || value.Int64 == null;
-                case StorageType.Decimal:
-                    return value.Decimal == 0 || value.Decimal == null;
-                case StorageType.Single:
-                    return value.Single == 0 || value.Single == null;
-                case StorageType.Double:
-                    return value.Double == 0 || value.Double == null;
-                case StorageType.Boolean:
-                    return value.Boolean == false || value.Boolean == null;
-                case StorageType.String:
-                    return string.IsNullOrEmpty(value.String);
-            }
-
-            return value == Empty || value.StorageType == StorageType.Empty || value.GetValue() == null;
+                StorageType.Byte => value._byte == 0 || value._byte == null,
+                StorageType.SByte => value._sbyte == 0 || value._sbyte == null,
+                StorageType.Int16 => value._int16 == 0 || value._int16 == null,
+                StorageType.Int32 => value._int32 == 0 || value._int32 == null,
+                StorageType.Int64 => value._int64 == 0 || value._int64 == null,
+                StorageType.UInt16 => value._uint16 == 0 || value._uint16 == null,
+                StorageType.UInt32 => value._uint32 == 0 || value._uint32 == null,
+                StorageType.UInt64 => value._uint64 == 0 || value._uint64 == null,
+                StorageType.Decimal => value._decimal == 0 || value._decimal == null,
+                StorageType.Single => value._single == 0 || value._single == null,
+                StorageType.Double => value._double == 0 || value._double == null,
+                StorageType.Boolean => value._boolean == false || value._boolean == null,
+                StorageType.String => string.IsNullOrEmpty(value._string),
+                _ => value == Empty || value.storageType == StorageType.Empty || value.GetValue() == null,
+            };
         }
         #endregion
     }
@@ -1764,6 +2255,10 @@ namespace Fireasy.Data.Entity
         /// System.Byte 类型的数据。
         /// </summary>
         Byte,
+        /// <summary>
+        /// System.SByte 类型的数据。
+        /// </summary>
+        SByte,
         /// <summary>
         /// System.Byte[] 类型的数据。
         /// </summary>
@@ -1797,6 +2292,18 @@ namespace Fireasy.Data.Entity
         /// </summary>
         Int64,
         /// <summary>
+        /// System.UInt16 类型的数据。
+        /// </summary>
+        UInt16,
+        /// <summary>
+        /// System.UInt32 类型的数据。
+        /// </summary>
+        UInt32,
+        /// <summary>
+        /// System.UInt64 类型的数据。
+        /// </summary>
+        UInt64,
+        /// <summary>
         /// System.Single 类型的数据。
         /// </summary>
         Single,
@@ -1804,10 +2311,6 @@ namespace Fireasy.Data.Entity
         /// System.String 类型的数据。
         /// </summary>
         String,
-        /// <summary>
-        /// System.TimeSpan 类型的数据。
-        /// </summary>
-        TimeSpan,
         /// <summary>
         /// System.Object 类型的数据。
         /// </summary>

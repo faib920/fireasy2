@@ -7,7 +7,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
@@ -39,21 +38,18 @@ namespace Fireasy.Common.Serialization
         /// <typeparam name="T"></typeparam>
         /// <param name="value">要序列化的对象。</param>
         /// <returns>表示对象的 Json 文本。</returns>
-        [SuppressMessage("Microsoft.Usage", "CA2202")]
         public string Serialize<T>(T value)
         {
-            using (var sw = new StringWriter(CultureInfo.InvariantCulture))
-            using (var writer = new JsonWriter(sw))
-            using (var ser = new JsonSerialize(this, writer, Option))
+            using var sw = new StringWriter(CultureInfo.InvariantCulture);
+            using var writer = new JsonWriter(sw);
+            using var ser = new JsonSerialize(this, writer, Option);
+            if (Option.Indent)
             {
-                if (Option.Indent)
-                {
-                    writer.Indent = 4;
-                }
-
-                ser.Serialize(value);
-                return sw.ToString();
+                writer.Indent = 4;
             }
+
+            ser.Serialize(value);
+            return sw.ToString();
         }
 
         /// <summary>
@@ -62,7 +58,6 @@ namespace Fireasy.Common.Serialization
         /// <typeparam name="T"></typeparam>
         /// <param name="value">要序列化的对象。</param>
         /// <returns>表示对象的 Json 文本。</returns>
-        [SuppressMessage("Microsoft.Usage", "CA2202")]
         public async Task<string> SerializeAsync<T>(T value)
         {
             return Serialize(value);
@@ -76,10 +71,8 @@ namespace Fireasy.Common.Serialization
         /// <param name="writer"></param>
         public void Serialize<T>(T value, JsonWriter writer)
         {
-            using (var ser = new JsonSerialize(this, writer, Option))
-            {
-                ser.Serialize(value);
-            }
+            using var ser = new JsonSerialize(this, writer, Option);
+            ser.Serialize(value);
         }
 
         /// <summary>
@@ -99,20 +92,17 @@ namespace Fireasy.Common.Serialization
         /// <typeparam name="T">可序列化的对象类型。</typeparam>
         /// <param name="json">表示对象的 Json 文本。</param>
         /// <returns>对象。</returns>
-        [SuppressMessage("Microsoft.Usage", "CA2202")]
         public T Deserialize<T>(string json)
         {
             if (string.IsNullOrEmpty(json))
             {
-                return default(T);
+                return default;
             }
 
-            using (var sr = new StringReader(json))
-            using (var reader = new JsonReader(sr))
-            using (var deser = new JsonDeserialize(this, reader, Option))
-            {
-                return deser.Deserialize<T>();
-            }
+            using var sr = new StringReader(json);
+            using var reader = new JsonReader(sr);
+            using var deser = new JsonDeserialize(this, reader, Option);
+            return deser.Deserialize<T>();
         }
 
         /// <summary>
@@ -121,7 +111,6 @@ namespace Fireasy.Common.Serialization
         /// <typeparam name="T">可序列化的对象类型。</typeparam>
         /// <param name="json">表示对象的 Json 文本。</param>
         /// <returns>对象。</returns>
-        [SuppressMessage("Microsoft.Usage", "CA2202")]
         public async Task<T> DeserializeAsync<T>(string json)
         {
             return Deserialize<T>(json);
@@ -135,10 +124,8 @@ namespace Fireasy.Common.Serialization
         /// <returns></returns>
         public T Deserialize<T>(JsonReader reader)
         {
-            using (var deser = new JsonDeserialize(this, reader, Option))
-            {
-                return deser.Deserialize<T>();
-            }
+            using var deser = new JsonDeserialize(this, reader, Option);
+            return deser.Deserialize<T>();
         }
 
         /// <summary>
@@ -158,7 +145,6 @@ namespace Fireasy.Common.Serialization
         /// <param name="json">表示对象的 Json 文本。</param>
         /// <param name="type">可序列化的对象类型。</param>
         /// <returns>对象。</returns>
-        [SuppressMessage("Microsoft.Usage", "CA2202")]
         public object Deserialize(string json, Type type)
         {
             if (string.IsNullOrEmpty(json))
@@ -166,12 +152,10 @@ namespace Fireasy.Common.Serialization
                 return null;
             }
 
-            using (var sr = new StringReader(json))
-            using (var reader = new JsonReader(sr))
-            using (var deser = new JsonDeserialize(this, reader, Option))
-            {
-                return deser.Deserialize(type);
-            }
+            using var sr = new StringReader(json);
+            using var reader = new JsonReader(sr);
+            using var deser = new JsonDeserialize(this, reader, Option);
+            return deser.Deserialize(type);
         }
 
         /// <summary>
@@ -180,7 +164,6 @@ namespace Fireasy.Common.Serialization
         /// <param name="json">表示对象的 Json 文本。</param>
         /// <param name="type">可序列化的对象类型。</param>
         /// <returns>对象。</returns>
-        [SuppressMessage("Microsoft.Usage", "CA2202")]
         public async Task<object> DeserializeAsync(string json, Type type)
         {
             return Deserialize(json, type);

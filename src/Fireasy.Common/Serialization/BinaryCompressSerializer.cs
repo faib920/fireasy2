@@ -29,21 +29,19 @@ namespace Fireasy.Common.Serialization
         {
             try
             {
-                using (var stream = new MemoryStream())
+                using var stream = new MemoryStream();
+                if (Token != null && Token.Data != null && Token.Data.Length > 0)
                 {
-                    if (Token != null && Token.Data != null && Token.Data.Length > 0)
-                    {
-                        stream.Write(Token.Data, 0, Token.Data.Length);
-                    }
-
-                    using (var zipStream = new DeflateStream(stream, CompressionMode.Compress))
-                    {
-                        var bin = new BinaryFormatter();
-                        bin.Serialize(zipStream, obj);
-                    }
-
-                    return stream.ToArray();
+                    stream.Write(Token.Data, 0, Token.Data.Length);
                 }
+
+                using (var zipStream = new DeflateStream(stream, CompressionMode.Compress))
+                {
+                    var bin = new BinaryFormatter();
+                    bin.Serialize(zipStream, obj);
+                }
+
+                return stream.ToArray();
             }
             catch (Exception ex)
             {
@@ -79,15 +77,13 @@ namespace Fireasy.Common.Serialization
             T obj;
             try
             {
-                using (var stream = new MemoryStream(data))
-                using (var zipStream = new DeflateStream(stream, CompressionMode.Decompress))
+                using var stream = new MemoryStream(data);
+                using var zipStream = new DeflateStream(stream, CompressionMode.Decompress);
+                var bin = new BinaryFormatter
                 {
-                    var bin = new BinaryFormatter
-                        {
-                            Binder = new IgnoreSerializationBinder()
-                        };
-                    obj = (T)bin.Deserialize(zipStream);
-                }
+                    Binder = new IgnoreSerializationBinder()
+                };
+                obj = (T)bin.Deserialize(zipStream);
             }
             catch (Exception ex)
             {

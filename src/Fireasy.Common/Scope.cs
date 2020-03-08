@@ -20,14 +20,13 @@ namespace Fireasy.Common
     /// 一个抽象类，在当前线程内标识一组用户定义的数据，这些数据在此线程块内唯一共享。
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class Scope<T> : IDisposable where T : Scope<T>
+    public abstract class Scope<T> : DisposeableBase where T : Scope<T>
     {
         private readonly Dictionary<string, object> dataCache = new Dictionary<string, object>();
         private readonly bool isSingleton;
-        private bool isDisposed;
 
 #if !NET45
-        private static AsyncLocal<Stack<T>> staticStack = new AsyncLocal<Stack<T>>();
+        private static readonly AsyncLocal<Stack<T>> staticStack = new AsyncLocal<Stack<T>>();
 #else
         [ThreadStatic]
         private static Stack<T> staticStack = new Stack<T>();
@@ -46,7 +45,7 @@ namespace Fireasy.Common
         }
 
         /// <summary>
-        /// 初始化类的新实例。
+        /// 初始化 <see cref="Scope{T}"/> 类的新实例。
         /// </summary>
         /// <param name="singleton">是否为单例模式。</param>
         protected Scope(bool singleton = true)
@@ -93,7 +92,7 @@ namespace Fireasy.Common
                 return (TData)data;
             }
 
-            return default(TData);
+            return default;
         }
 
         /// <summary>
@@ -125,13 +124,8 @@ namespace Fireasy.Common
         /// 释放对象所占用的非托管和托管资源。
         /// </summary>
         /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
-        protected virtual void Dispose(bool disposing)
+        protected override void Dispose(bool disposing)
         {
-            if (isDisposed)
-            {
-                return;
-            }
-
             if (disposing)
             {
                 var stack = GetScopeStack();
@@ -151,16 +145,6 @@ namespace Fireasy.Common
                     }
                 }
             }
-
-            isDisposed = true;
-        }
-
-        /// <summary>
-        /// 释放对象所占用的所有资源。
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
         }
 
         private static Stack<T> GetScopeStack()

@@ -29,13 +29,12 @@ namespace Fireasy.Data.Entity
     /// <typeparam name="TEntity"></typeparam>
     public class EntityTreeRepository<TEntity> : ITreeRepository<TEntity>, IQueryProviderAware where TEntity : class, IEntity
     {
-        private IRepository<TEntity> repository;
-        private EntityMetadata metadata;
-        private EntityTreeMetadata metaTree;
-        private Type entityType;
-        private ISyntaxProvider syntax;
-        private IDatabase database;
-        private EntityContextOptions options;
+        private readonly IRepository<TEntity> repository;
+        private readonly EntityMetadata metadata;
+        private readonly EntityTreeMetadata metaTree;
+        private readonly Type entityType;
+        private readonly ISyntaxProvider syntax;
+        private readonly IDatabase database;
 
         /// <summary>
         /// 初始化 <see cref="EntityTreeRepository{TEntity}"/> 类的新实例。
@@ -49,7 +48,6 @@ namespace Fireasy.Data.Entity
             metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
             metaTree = metadata.EntityTree;
             syntax = service.Provider.GetService<ISyntaxProvider>();
-            options = service.InitializeContext.Options;
 
             if (service is IDatabaseAware aware)
             {
@@ -138,7 +136,7 @@ namespace Fireasy.Data.Entity
         /// <param name="cancellationToken">取消操作的通知。</param>
         public virtual async Task MoveAsync(TEntity entity, TEntity referEntity, EntityTreePosition? position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null, CancellationToken cancellationToken = default)
         {
-            await InternalMove(entity, referEntity, position, isolation, async es => await repository.BatchAsync(es, (u, s) => u.Update(s), cancellationToken), async e => await repository.UpdateAsync(e, cancellationToken));
+            await InternalMove(entity, referEntity, position, isolation, async es => await repository.BatchAsync(es, (u, s) => u.Update(s), null, cancellationToken), async e => await repository.UpdateAsync(e, cancellationToken));
         }
 
         /// <summary>
@@ -150,7 +148,7 @@ namespace Fireasy.Data.Entity
         public virtual bool HasChildren(TEntity entity, Expression<Func<TEntity, bool>> predicate = null)
         {
             var query = (IQueryable)QueryHelper.CreateQuery<TEntity>(repository.Provider, predicate);
-            var mthCount = typeof(Enumerable).GetMethods().FirstOrDefault(s => s.Name == "Count" && s.GetParameters().Length == 2);
+            var mthCount = typeof(Enumerable).GetMethods().FirstOrDefault(s => s.Name == nameof(Enumerable.Count) && s.GetParameters().Length == 2);
             mthCount = mthCount.MakeGenericMethod(typeof(TEntity));
 
             var expression = TreeExpressionBuilder.BuildHasChildrenExpression(metaTree, entity, predicate);
@@ -168,7 +166,7 @@ namespace Fireasy.Data.Entity
         public virtual async Task<bool> HasChildrenAsync(TEntity entity, Expression<Func<TEntity, bool>> predicate = null, CancellationToken cancellationToken = default)
         {
             var query = (IQueryable)QueryHelper.CreateQuery<TEntity>(repository.Provider, predicate);
-            var mthCount = typeof(Enumerable).GetMethods().FirstOrDefault(s => s.Name == "Count" && s.GetParameters().Length == 2);
+            var mthCount = typeof(Enumerable).GetMethods().FirstOrDefault(s => s.Name == nameof(Enumerable.Count) && s.GetParameters().Length == 2);
             mthCount = mthCount.MakeGenericMethod(typeof(TEntity));
 
             var expression = TreeExpressionBuilder.BuildHasChildrenExpression(metaTree, entity, predicate);
@@ -351,7 +349,7 @@ namespace Fireasy.Data.Entity
             {
                 return false;
             }
-
+            
             return true;
         }
 
@@ -525,11 +523,12 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         private string GenerateFullName(EntityTreeUpfydatingArgument arg1, EntityTreeUpfydatingArgument arg2, EntityTreePosition position)
         {
-            var fullName = string.Empty;
             if (metaTree.Name == null || metaTree.FullName == null)
             {
                 return null;
             }
+
+            string fullName;
 
             //没有参考节点，则使用名称
             if (arg2 == null)
@@ -738,9 +737,7 @@ namespace Fireasy.Data.Entity
                 var prevRowInnerId = GetPreviousKey(rowInnerId);
 
                 //找父节点
-                EntityTreeUpfydatingArgument parArg;
-
-                if (dictionary.TryGetValue(prevRowInnerId, out parArg))
+                if (dictionary.TryGetValue(prevRowInnerId, out EntityTreeUpfydatingArgument parArg))
                 {
                     prevRowInnerId = parArg.NewValue.InnerId;
                 }
@@ -1300,7 +1297,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         private class IsolationConditionBuilder : Common.Linq.Expressions.ExpressionVisitor
         {
-            private StringBuilder condition = new StringBuilder();
+            private readonly StringBuilder condition = new StringBuilder();
 
             public static string Build(Expression expression)
             {
@@ -1311,8 +1308,7 @@ namespace Fireasy.Data.Entity
 
             protected override MemberBinding VisitBinding(MemberBinding binding)
             {
-                var assign = binding as MemberAssignment;
-                if (assign == null)
+                if (!(binding is MemberAssignment assign))
                 {
                     return binding;
                 }

@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.ComponentModel;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Reflection;
 using System.Resources;
@@ -17,7 +17,7 @@ namespace Fireasy.Common.Localization
     /// </summary>
     public class DefaultStringLocalizerManager : IStringLocalizerManager
     {
-        private static SafetyDictionary<string, IStringLocalizer> localizers = new SafetyDictionary<string, IStringLocalizer>();
+        private static readonly ConcurrentDictionary<string, IStringLocalizer> localizers = new ConcurrentDictionary<string, IStringLocalizer>();
 
         /// <summary>
         /// <see cref="DefaultStringLocalizerManager"/> 的默认实例。
@@ -62,7 +62,7 @@ namespace Fireasy.Common.Localization
 
             var baseName = string.Concat(assembly.GetName().Name, ".", name);
             var cacheKey = string.Concat(baseName, ".", cultureInfo.Name);
-            return localizers.GetOrAdd(cacheKey, () => new DefaultStringLocalizer(new ResourceManager(baseName, assembly), cultureInfo));
+            return localizers.GetOrAdd(cacheKey, k => new DefaultStringLocalizer(new ResourceManager(baseName, assembly), cultureInfo));
         }
     }
 }

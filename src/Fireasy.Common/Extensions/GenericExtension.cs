@@ -29,8 +29,8 @@ namespace Fireasy.Common.Extensions
     /// </summary>
     public static class GenericExtension
     {
-        private static ReadWriteLocker locker = new ReadWriteLocker();
-        private static MethodInfo MthToType = typeof(GenericExtension).GetMethod(nameof(GenericExtension.ToType));
+        private static readonly ReadWriteLocker locker = new ReadWriteLocker();
+        private static readonly MethodInfo MthToType = typeof(GenericExtension).GetMethod(nameof(GenericExtension.ToType));
 
         /// <summary>
         /// 判断对象是否为空。
@@ -277,7 +277,7 @@ namespace Fireasy.Common.Extensions
 
                 if (conversionType.IsNullableType())
                 {
-                    return conversionType.New(new[] { value.ToType(conversionType.GetGenericArguments()[0]) });
+                    return value.ToType(conversionType.GetGenericArguments()[0]);
                 }
                 if (conversionType == typeof(bool))
                 {

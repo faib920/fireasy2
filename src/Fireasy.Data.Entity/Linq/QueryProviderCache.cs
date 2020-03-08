@@ -6,8 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using Fireasy.Common.ComponentModel;
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Linq.Expressions;
 
@@ -15,7 +15,7 @@ namespace Fireasy.Data.Entity.Linq
 {
     internal class QueryProviderCache
     {
-        private static SafetyDictionary<Type, Func<IQueryProvider, Expression, IQueryable>> cache = new SafetyDictionary<Type, Func<IQueryProvider, Expression, IQueryable>>();
+        private static ConcurrentDictionary<Type, Func<IQueryProvider, Expression, IQueryable>> cache = new ConcurrentDictionary<Type, Func<IQueryProvider, Expression, IQueryable>>();
 
         internal static IQueryable Create(Type type, IQueryProvider queryProvider, Expression expression)
         {

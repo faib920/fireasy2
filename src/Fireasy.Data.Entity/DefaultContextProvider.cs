@@ -16,9 +16,9 @@ namespace Fireasy.Data.Entity
     {
         IProvider IProviderService.Provider { get; set; }
 
-        IContextService IContextProvider.CreateContextService(EntityContextInitializeContext context)
+        IContextService IContextProvider.CreateContextService(ContextServiceContext context)
         {
-            return new DefaultContextService(context, context.DatabaseFactory);
+            return new DefaultContextService(context);
         }
     }
 }

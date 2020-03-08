@@ -61,23 +61,22 @@ namespace Fireasy.Data.Provider
         /// </summary>
         /// <param name="connectionString">连接字符串对象。</param>
         /// <param name="parameter"></param>
-        /// <returns></returns>
-        public override string UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter)
+        public override void UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter)
         {
             connectionString.Properties
-                .TrySetValue(parameter.Database, "data source");
-
-            return connectionString.Update();
+                .TrySetValue(parameter.Database, "data source")
+                .Update();
         }
 
+        /// <summary>
+        /// 调整事务级别。
+        /// </summary>
+        /// <param name="level"></param>
+        /// <returns></returns>
         public override IsolationLevel AmendIsolationLevel(IsolationLevel level)
         {
-            if (level == IsolationLevel.ReadUncommitted)
-            {
-                return IsolationLevel.ReadCommitted;
-            }
-
-            return base.AmendIsolationLevel(level);
+            return level == IsolationLevel.ReadUncommitted ? 
+                IsolationLevel.ReadCommitted : base.AmendIsolationLevel(level);
         }
     }
 }

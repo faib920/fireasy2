@@ -228,17 +228,17 @@ namespace Fireasy.Common.Serialization
     public enum ReferenceLoopHandling
     {
         /// <summary>
+        /// 不做检查。
+        /// </summary>
+        None,
+        /// <summary>
         /// 抛出异常。
         /// </summary>
         Error,
         /// <summary>
         /// 忽略，不再序列化。
         /// </summary>
-        Ignore,
-        /// <summary>
-        /// 继续序列化。
-        /// </summary>
-        Serialize
+        Ignore
     }
 
     /// <summary>

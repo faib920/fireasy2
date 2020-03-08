@@ -49,9 +49,9 @@ namespace Fireasy.Common.Configuration
     /// <typeparam name="T"></typeparam>
     public abstract class ConfigurationSection<T> : ConfigurationSection where T : IConfigurationSettingItem
     {
-        private ConfigurationSettings<IConfigurationSettingItem> innerSettings = new ConfigurationSettings<IConfigurationSettingItem>();
+        private readonly ConfigurationSettings<IConfigurationSettingItem> innerSettings = new ConfigurationSettings<IConfigurationSettingItem>();
         private ConfigurationSettings<T> settings;
-        private static object locker = new object();
+        private static readonly object locker = new object();
 
         /// <summary>
         /// 解析配置节下的所有子节点。
@@ -210,7 +210,7 @@ namespace Fireasy.Common.Configuration
                 return func(node);
             }
 
-            return default(T);
+            return default;
         }
 
         private IConfigurationSettingItem ParseSetting(XmlNode node, Type type)
@@ -304,7 +304,7 @@ namespace Fireasy.Common.Configuration
                 var setting = GetDefault();
                 if (setting == null)
                 {
-                    return default(T);
+                    return default;
                 }
 
                 if (setting is ExtendConfigurationSetting extend)

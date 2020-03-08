@@ -31,7 +31,7 @@ namespace Fireasy.Data.Entity.Validation
     /// <typeparam name="TEntity"></typeparam>
     public sealed class MetadataConverter<TEntity> where TEntity : IEntity
     {
-        private Dictionary<string, List<ValidationAttribute>> dict = new Dictionary<string, List<ValidationAttribute>>();
+        private readonly Dictionary<string, List<ValidationAttribute>> dict = new Dictionary<string, List<ValidationAttribute>>();
 
         /// <summary>
         /// 使用表达式来添加一个规则。
@@ -73,11 +73,9 @@ namespace Fireasy.Data.Entity.Validation
 
             public override Expression Visit(Expression expression)
             {
-                var labda = expression as LambdaExpression;
-                if (labda != null)
+                if (expression is LambdaExpression labda)
                 {
-                    var member = labda.Body as MemberExpression;
-                    if (member != null && member.Member.DeclaringType == typeof(TEntity))
+                    if (labda.Body is MemberExpression member && member.Member.DeclaringType == typeof(TEntity))
                     {
                         memberName = member.Member.Name;
                     }

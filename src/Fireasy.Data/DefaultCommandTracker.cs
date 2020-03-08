@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-
 using Fireasy.Common.Subscribes;
 using Fireasy.Data.Extensions;
 using System;
@@ -23,18 +22,16 @@ namespace Fireasy.Data
     internal class DefaultCommandTracker : ICommandTracker
     {
         private string logPath;
-        private ISubscribeManager subscribeMgr = DefaultSubscribeManager.Instance;
+        private readonly ISubscribeManager subscribeMgr = DefaultSubscribeManager.Instance;
 
-        internal static ICommandTracker Instance = new DefaultCommandTracker();
+        internal readonly static ICommandTracker Instance = new DefaultCommandTracker();
 
         protected DefaultCommandTracker()
         {
             subscribeMgr.AddSubscriber<CommandTrackerSubject>(s =>
                 {
-                    using (var writer = new StreamWriter(s.FileName, true, Encoding.Default))
-                    {
-                        writer.WriteLine(s.Content);
-                    }
+                    using var writer = new StreamWriter(s.FileName, true, Encoding.Default);
+                    writer.WriteLine(s.Content);
                 });
         }
 

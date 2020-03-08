@@ -24,7 +24,7 @@ namespace Fireasy.Common.Linq.Expressions
     /// </summary>
     public class ExpressionWriter : ExpressionVisitor
     {
-        private TextWriter writer;
+        private readonly TextWriter writer;
         private int depth;
         private static readonly char[] splitters = new char[] { '\n', '\r' };
 
@@ -55,11 +55,9 @@ namespace Fireasy.Common.Linq.Expressions
         /// <returns></returns>
         public static string WriteToString(Expression expression)
         {
-            using (var sw = new StringWriter())
-            {
-                Write(sw, expression);
-                return sw.ToString();
-            }
+            using var sw = new StringWriter();
+            Write(sw, expression);
+            return sw.ToString();
         }
 
         /// <summary>
@@ -407,11 +405,9 @@ namespace Fireasy.Common.Linq.Expressions
                 Write($"new {c.Type} ");
                 Write("{ ");
                 var assert = new AssertFlag();
-                var lazyMgr = c.Value as ILazyManager;
                 foreach (var p in c.Type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
                 {
-
-                    if (lazyMgr != null && !lazyMgr.IsValueCreated(p.Name))
+                    if (c.Value is ILazyManager lazyMgr && !lazyMgr.IsValueCreated(p.Name))
                     {
                         continue;
                     }

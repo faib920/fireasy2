@@ -1,4 +1,5 @@
 ﻿using Fireasy.Data.Entity.Linq.Translators;
+using Fireasy.Data.Provider;
 // -----------------------------------------------------------------------
 // <copyright company="Fireasy"
 //      email="faib920@126.com"
@@ -13,7 +14,9 @@ using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+#if !NETFRAMEWORK && !NETSTANDARD2_0
 using System.Threading;
+#endif
 
 namespace Fireasy.Data.Entity.Linq
 {
@@ -32,6 +35,10 @@ namespace Fireasy.Data.Entity.Linq
         {
         }
 
+        /// <summary>
+        /// 初始化 <see cref="QuerySet"/> 类的新实例。
+        /// </summary>
+        /// <param name="provider"></param>
         public QuerySet(IQueryProvider provider)
         {
             Provider = provider ?? throw new ArgumentNullException(nameof(provider));
@@ -39,6 +46,11 @@ namespace Fireasy.Data.Entity.Linq
             Expression = Expression.Constant(instance, typeof(QuerySet<T>));
         }
 
+        /// <summary>
+        /// 初始化 <see cref="QuerySet"/> 类的新实例。
+        /// </summary>
+        /// <param name="provider"></param>
+        /// <param name="expression"></param>
         public QuerySet(IQueryProvider provider, Expression expression)
         {
             Provider = provider ?? throw new ArgumentNullException(nameof(provider));
@@ -52,8 +64,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             get
             {
-                var translator = Provider as ITranslateSupport;
-                if (translator != null)
+                if (Provider is ITranslateSupport translator)
                 {
                     return translator.Translate(Expression).ToString();
                 }

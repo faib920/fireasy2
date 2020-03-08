@@ -5,13 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-
-using Fireasy.Common.Emit;
-using Fireasy.Common.Extensions;
-using System;
-using System.Linq.Expressions;
-using System.Reflection;
-
 namespace Fireasy.Data.Syntax
 {
     /// <summary>
@@ -29,8 +22,8 @@ namespace Fireasy.Data.Syntax
         public override string Substring(object sourceExp, object startExp, object lenExp = null)
         {
             return lenExp == null ?
-                string.Format("SUBSTR({0}, {1})", sourceExp, startExp) :
-                string.Format("SUBSTR({0}, {1}, {2})", sourceExp, startExp, lenExp);
+                $"SUBSTR({sourceExp}, {startExp})" :
+                $"SUBSTR({sourceExp}, {startExp}, {lenExp})";
         }
 
         /// <summary>
@@ -40,7 +33,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Trim(object sourceExp)
         {
-            return string.Format("TRIM({0})", sourceExp);
+            return $"TRIM({sourceExp})";
         }
 
         /// <summary>
@@ -62,7 +55,7 @@ namespace Fireasy.Data.Syntax
         public override string IsMatch(object sourceExp, object regexExp)
         {
             new SQLiteFunctionBuilder().RegisterRegexFunction();
-            return string.Format("REGEXP({0}, {1})", sourceExp, regexExp);
+            return $"REGEXP({sourceExp}, {regexExp})";
         }
     }
 }

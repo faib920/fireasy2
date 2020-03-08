@@ -23,8 +23,8 @@ namespace Fireasy.Data.Entity.Linq
 {
     public class DefaultQueryPolicy : IQueryPolicy
     {
-        private HashSet<MemberInfo> included = new HashSet<MemberInfo>();
-        private Dictionary<MemberInfo, List<LambdaExpression>> operations = new Dictionary<MemberInfo, List<LambdaExpression>>();
+        private readonly HashSet<MemberInfo> included = new HashSet<MemberInfo>();
+        private readonly Dictionary<MemberInfo, List<LambdaExpression>> operations = new Dictionary<MemberInfo, List<LambdaExpression>>();
         private IProvider provider;
 
         public DefaultQueryPolicy(IProvider provider)

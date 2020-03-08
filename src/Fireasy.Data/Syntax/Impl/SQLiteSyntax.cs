@@ -8,6 +8,7 @@
 
 using Fireasy.Data.Provider;
 using System.Data;
+using System.Linq;
 using System.Text;
 
 namespace Fireasy.Data.Syntax
@@ -37,74 +38,47 @@ namespace Fireasy.Data.Syntax
         /// <summary>
         /// 获取最近创建的自动编号的查询文本。
         /// </summary>
-        public virtual string IdentitySelect
-        {
-            get { return "SELECT LAST_INSERT_ROWID()"; }
-        }
+        public virtual string IdentitySelect => "SELECT LAST_INSERT_ROWID()";
 
         /// <summary>
         /// 获取自增长列的关键词。
         /// </summary>
-        public string IdentityColumn
-        {
-            get { return "AUTOINCREMENT"; }
-        }
+        public string IdentityColumn => "AUTOINCREMENT";
 
         /// <summary>
         /// 获取受影响的行数的查询文本。
         /// </summary>
-        public string RowsAffected
-        {
-            get { return "CHANGES()"; }
-        }
+        public string RowsAffected => "CHANGES()";
 
         /// <summary>
         /// 获取伪查询的表名称。
         /// </summary>
-        public string FakeSelect
-        {
-            get { return string.Empty; }
-        }
+        public string FakeSelect => string.Empty;
 
         /// <summary>
         /// 获取存储参数的前缀。
         /// </summary>
-        public virtual string ParameterPrefix
-        {
-            get { return "@"; }
-        }
+        public virtual string ParameterPrefix => "@";
 
         /// <summary>
         /// 获取列引号标识符。
         /// </summary>
-        public string[] Quote
-        {
-            get { return new[] { "[", "]" }; }
-        }
+        public string[] Quote => new[] { "[", "]" };
 
         /// <summary>
         /// 获取换行符。
         /// </summary>
-        public string Linefeed
-        {
-            get { return "\n;\n"; }
-        }
+        public string Linefeed => "\n;\n";
 
         /// <summary>
         /// 获取是否允许在聚合中使用 DISTINCT 关键字。
         /// </summary>
-        public bool SupportDistinctInAggregates
-        {
-            get { return true; }
-        }
+        public bool SupportDistinctInAggregates => true;
 
         /// <summary>
         /// 获取是否允许在没有 FORM 的语句中使用子查询。
         /// </summary>
-        public bool SupportSubqueryInSelectWithoutFrom
-        {
-            get { return true; }
-        }
+        public bool SupportSubqueryInSelectWithoutFrom => true;
 
         /// <summary>
         /// 对命令文本进行分段处理，使之能够返回小范围内的数据。
@@ -126,12 +100,8 @@ namespace Fireasy.Data.Syntax
         /// <exception cref="SegmentNotSupportedException">当前数据库或版本不支持分段时，引发该异常。</exception>
         public virtual string Segment(string commandText, IDataSegment segment)
         {
-            commandText = string.Format(@"{0}
-LIMIT {1}{2}",
-                commandText,
-                segment.Length != 0 ? segment.Length : 1000,
-                segment.Start != null ? " OFFSET " + (segment.Start - 1) : "");
-            return commandText;
+            return  @$"{commandText}
+LIMIT {(segment.Length != 0 ? segment.Length : 1000)}{(segment.Start != null ? $" OFFSET {segment.Start - 1}" : string.Empty)}";
         }
 
         /// <summary>
@@ -148,27 +118,27 @@ LIMIT {1}{2}",
                 case DbType.AnsiStringFixedLength:
                 case DbType.String:
                 case DbType.StringFixedLength:
-                    return string.Format("CAST({0} AS TEXT)", sourceExp);
+                    return $"CAST({sourceExp} AS TEXT)";
                 case DbType.Binary:
-                    return string.Format("CAST({0} AS BLOB)", sourceExp);
+                    return $"CAST({sourceExp} AS BLOB)";
                 case DbType.Boolean:
                 case DbType.Decimal:
                 case DbType.Double:
                 case DbType.Single:
-                    return string.Format("CAST({0} AS NUMERIC)", sourceExp);
+                    return $"CAST({sourceExp} AS NUMERIC)";
                 case DbType.Int16:
                 case DbType.Int32:
                 case DbType.Int64:
                 case DbType.Byte:
-                    return string.Format("CAST({0} AS INTEGER)", sourceExp);
+                    return $"CAST({sourceExp} AS INTEGER)";
                 case DbType.Date:
-                    return string.Format("DATE({0})", sourceExp);
+                    return $"DATE({sourceExp})";
                 case DbType.DateTime:
-                    return string.Format("DATETIME({0})", sourceExp);
+                    return $"DATETIME({sourceExp})";
                 case DbType.Time:
-                    return string.Format("TIME({0})", sourceExp);
+                    return $"TIME({sourceExp})";
                 case DbType.Guid:
-                    return string.Format("CAST({0} AS UNIQUEIDENTIFIER)", sourceExp);
+                    return $"CAST({sourceExp} AS UNIQUEIDENTIFIER)";
             }
             return ExceptionHelper.ThrowSyntaxConvertException(dbType);
         }
@@ -262,9 +232,20 @@ LIMIT {1}{2}",
         /// </summary>
         /// <param name="tableName">要判断的表的名称。</param>
         /// <returns></returns>
-        public string ExistsTable(string tableName)
+        public virtual string ExistsTable(string tableName)
         {
-            return string.Format("SELECT COUNT(1) FROM SQLITE_MASTER WHERE TYPE='table' AND TBL_NAME='{0}'", tableName);
+            return $"SELECT COUNT(1) FROM SQLITE_MASTER WHERE TYPE='table' AND TBL_NAME='{tableName}'";
+        }
+
+        /// <summary>
+        /// 获取判断多个表是否存在的语句。
+        /// </summary>
+        /// <param name="tableName">要判断的表的名称数组。</param>
+        /// <returns></returns>
+        public virtual string ExistsTables(string[] tableNames)
+        {
+            var names = string.Join(",", tableNames.Select(s => $"'{s}'"));
+            return $"SELECT TBL_NAME FROM SQLITE_MASTER WHERE TYPE='table' AND TBL_NAME IN ({names})";
         }
 
         /// <summary>
@@ -272,7 +253,7 @@ LIMIT {1}{2}",
         /// </summary>
         /// <param name="dbType"></param>
         /// <returns></returns>
-        public DbType CorrectDbType(DbType dbType)
+        public virtual DbType CorrectDbType(DbType dbType)
         {
             return dbType;
         }

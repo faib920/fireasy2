@@ -15,12 +15,11 @@ namespace Fireasy.Common.Serialization
     /// <summary>
     /// 表示将对象使用json表示的编写器。
     /// </summary>
-    public sealed class JsonWriter : IDisposable
+    public sealed class JsonWriter : DisposeableBase
     {
         private TextWriter writer;
-        private bool isDisposed;
         private int level;
-        private bool[] flags = new bool[3] { false, false, false };
+        private readonly bool[] flags = new bool[3] { false, false, false };
 
         /// <summary>
         /// 初始化 <see cref="JsonWriter"/> 类的新实例。
@@ -232,7 +231,7 @@ namespace Fireasy.Common.Serialization
         /// <summary>
         /// 写入缩进空格。
         /// </summary>
-        protected void WriteIndent()
+        private void WriteIndent()
         {
             if (Indent != 0)
             {
@@ -243,7 +242,7 @@ namespace Fireasy.Common.Serialization
         /// <summary>
         /// 写入换行符。
         /// </summary>
-        protected void WriteLine()
+        private void WriteLine()
         {
             if (Indent != 0)
             {
@@ -271,13 +270,8 @@ namespace Fireasy.Common.Serialization
         /// 释放对象所占用的非托管和托管资源。
         /// </summary>
         /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
-        private void Dispose(bool disposing)
+        protected override void Dispose(bool disposing)
         {
-            if (isDisposed)
-            {
-                return;
-            }
-
             if (disposing)
             {
                 if (writer != null)
@@ -287,8 +281,6 @@ namespace Fireasy.Common.Serialization
                     writer = null;
                 }
             }
-
-            isDisposed = true;
         }
     }
 }

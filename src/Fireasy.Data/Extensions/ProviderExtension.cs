@@ -8,10 +8,10 @@
 
 using Fireasy.Common;
 using Fireasy.Data.Provider;
-using Fireasy.Data.Syntax;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Fireasy.Data.Extensions
 {
@@ -46,12 +46,11 @@ namespace Fireasy.Data.Extensions
         /// <param name="commandType"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
+        [SuppressMessage("Sercurity", "CA2100")]
         public static DbCommand CreateCommand(this IProvider provider, DbConnection connection, DbTransaction transaction, string commandText, CommandType commandType = CommandType.Text, IEnumerable<Parameter> parameters = null)
         {
             Guard.ArgumentNull(provider, nameof(provider));
             Guard.NullReference(provider.DbProviderFactory);
-
-            var syntax = provider.GetService<ISyntaxProvider>();
 
             var command = provider.DbProviderFactory.CreateCommand();
             command.Connection = connection;

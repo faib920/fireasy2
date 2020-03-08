@@ -23,8 +23,8 @@ namespace Fireasy.Data.Syntax
         public override string Substring(object sourceExp, object startExp, object lenExp = null)
         {
             return lenExp == null ?
-                string.Format("SUBSTRING({0} FROM {1})", sourceExp, startExp) :
-                string.Format("SUBSTRING({0} FROM {1} FOR {2})", sourceExp, startExp, lenExp);
+                $"SUBSTRING({sourceExp} FROM {startExp})" :
+                $"SUBSTRING({sourceExp} FROM {startExp} FOR {lenExp})";
         }
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Length(object sourceExp)
         {
-            return string.Format("CHAR_LENGTH({0})", sourceExp);
+            return $"CHAR_LENGTH({sourceExp})";
         }
 
         /// <summary>
@@ -47,12 +47,9 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string IndexOf(object sourceExp, object searchExp, object startExp = null, object countExp = null)
         {
-            if (startExp != null)
-            {
-                return string.Format("POSITION({0}, {1}, {2})", searchExp, sourceExp, startExp);
-            }
-
-            return string.Format("POSITION({0}, {1})", searchExp, sourceExp);
+            return startExp != null ? 
+                $"POSITION({searchExp}, {sourceExp}, {startExp})" : 
+                $"POSITION({searchExp}, {sourceExp})";
         }
 
         /// <summary>

@@ -27,7 +27,7 @@ namespace Fireasy.Data.Syntax
             {
                 lenExp = Length(sourceExp);
             }
-            return string.Format("SUBSTRING({0}, {1}, {2})", sourceExp, startExp, lenExp);
+            return $"SUBSTRING({sourceExp}, {startExp}, {lenExp})";
         }
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string Length(object sourceExp)
         {
-            return string.Format("LENGTH({0})", sourceExp);
+            return $"LENGTH({sourceExp})";
         }
 
         /// <summary>
@@ -51,8 +51,8 @@ namespace Fireasy.Data.Syntax
         public virtual string IndexOf(object sourceExp, object searchExp, object startExp = null, object countExp = null)
         {
             return startExp == null ?
-                string.Format("CHARINDEX({1}, {0})", sourceExp, searchExp) :
-                string.Format("CHARINDEX({1}, {0}, {2})", sourceExp, searchExp, startExp);
+                $"CHARINDEX({searchExp}, {sourceExp})" :
+                $"CHARINDEX({searchExp}, {sourceExp}, {startExp})";
         }
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string ToLower(object sourceExp)
         {
-            return string.Format("LOWER({0})", sourceExp);
+            return $"LOWER({sourceExp})";
         }
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string ToUpper(object sourceExp)
         {
-            return string.Format("UPPER({0})", sourceExp);
+            return $"UPPER({sourceExp})";
         }
 
         /// <summary>
@@ -82,7 +82,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string TrimStart(object sourceExp)
         {
-            return string.Format("LTRIM({0})", sourceExp);
+            return $"LTRIM({sourceExp})";
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string TrimEnd(object sourceExp)
         {
-            return string.Format("RTRIM({0})", sourceExp);
+            return $"RTRIM({sourceExp})";
         }
 
         /// <summary>
@@ -102,7 +102,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string Trim(object sourceExp)
         {
-            return string.Format("LTRIM(RTRIM({0}))", sourceExp);
+            return $"LTRIM(RTRIM({sourceExp}))";
         }
 
         /// <summary>
@@ -114,7 +114,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string Replace(object sourceExp, object searchExp, object replaceExp)
         {
-            return string.Format("REPLACE({0}, {1}, {2})", sourceExp, searchExp, replaceExp);
+            return $"REPLACE({sourceExp}, {searchExp}, {replaceExp})";
         }
 
         /// <summary>
@@ -134,7 +134,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public virtual string Reverse(object sourceExp)
         {
-            return string.Format("REVERSE({0})", sourceExp);
+            return $"REVERSE({sourceExp})";
         }
 
         /// <summary>

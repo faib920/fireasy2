@@ -33,12 +33,8 @@ namespace Fireasy.Data
                 RecordWrapper.GetValue(reader, 0);
 
             var converter = ConvertManager.GetConverter(typeof(T));
-            if (converter != null)
-            {
-                return (T)converter.ConvertFrom(value, reader.GetFieldType(0).GetDbType());
-            }
-
-            return value.To<object, T>();
+            return converter != null ? (T)converter.ConvertFrom(value, reader.GetFieldType(0).GetDbType()) : 
+                value.To<object, T>();
         }
 
         /// <summary>
@@ -50,12 +46,8 @@ namespace Fireasy.Data
         public virtual T Map(IDatabase database, DataRow row)
         {
             var converter = ConvertManager.GetConverter(typeof(T));
-            if (converter != null)
-            {
-                return (T)converter.ConvertFrom(row[0], row.Table.Columns[0].DataType.GetDbType());
-            }
-
-            return row[0].To<object, T>();
+            return converter != null ? (T)converter.ConvertFrom(row[0], row.Table.Columns[0].DataType.GetDbType()) : 
+                row[0].To<object, T>();
         }
 
         /// <summary>

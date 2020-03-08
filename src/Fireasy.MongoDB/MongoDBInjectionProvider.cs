@@ -5,11 +5,9 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.Emit;
 using Fireasy.Data.Entity;
 using Fireasy.Data.Provider;
 using MongoDB.Bson;
-using System;
 
 namespace Fireasy.MongoDB
 {
@@ -20,10 +18,11 @@ namespace Fireasy.MongoDB
     {
         IProvider IProviderService.Provider { get; set; }
 
-        void IInjectionProvider.Inject(Type entityType, DynamicAssemblyBuilder assemblyBuilder, DynamicTypeBuilder typeBuilder)
+        void IInjectionProvider.Inject(EntityInjectionContext context)
         {
-            var propertyBuilder = typeBuilder.DefineProperty("_id", typeof(ObjectId));
-            propertyBuilder.DefineGetSetMethods();
+            context.TypeBuilder.ImplementInterface(typeof(IMongoDBEntity));
+            var pb = context.TypeBuilder.DefineProperty("_id", typeof(ObjectId));
+            pb.DefineGetSetMethods();
         }
     }
 }

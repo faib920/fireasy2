@@ -22,11 +22,11 @@ namespace Fireasy.Data.Provider
         /// 根据类全名加载 <see cref="DbProviderFactory"/> 对象。
         /// </summary>
         /// <param name="typeName">类的全名。</param>
-        /// <param name="factory"></param>
+        /// <param name="valueCreator"></param>
         /// <returns></returns>
-        public static bool TryLoad(string typeName, out DbProviderFactory factory)
+        public static bool TryLoad(string typeName, out DbProviderFactory valueCreator)
         {
-            factory = null;
+            valueCreator = null;
             try
             {
                 var type = Type.GetType(typeName, false, true);
@@ -37,11 +37,11 @@ namespace Fireasy.Data.Provider
 
                     if (field != null)
                     {
-                        factory = field.GetValue(null) as DbProviderFactory;
+                        valueCreator = field.GetValue(null) as DbProviderFactory;
                     }
                     else
                     {
-                        factory = type.New<DbProviderFactory>();
+                        valueCreator = type.New<DbProviderFactory>();
                     }
                 }
 
@@ -50,7 +50,7 @@ namespace Fireasy.Data.Provider
             {
             }
 
-            return factory != null;
+            return valueCreator != null;
         }
     }
 }

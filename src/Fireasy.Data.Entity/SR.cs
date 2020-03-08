@@ -72,23 +72,26 @@ namespace Fireasy.Data.Entity
         internal const string TreeCodeOutOfRange = "TreeCodeOutOfRange";
         internal const string NotFoundDatabaseAware = "NotFoundDatabaseAware";
         internal const string NotImplementAsyncQueryProvider = "NotImplementAsyncQueryProvider";
+        internal const string InvalidOperationWhenRepositoryIsReadonly = "InvalidOperationWhenRepositoryIsReadonly";
+        internal const string NotSupportDatabase = "NotSupportDatabase";
+        internal const string NotSupportDatabaseFactory = "NotSupportDatabaseFactory";
     }
 
     internal sealed class SR
     {
-        private static StringResource m_resource;
+        private static readonly StringResource resource;
 
         static SR()
         {
-            if (m_resource == null)
+            if (resource == null)
             {
-                m_resource = StringResource.Create("Strings", typeof(SR).Assembly);
+                resource = StringResource.Create("Strings", typeof(SR).Assembly);
             }
         }
 
         internal static string GetString(string kind, params object[] args)
         {
-            return m_resource.GetString(kind, args);
+            return resource.GetString(kind, args);
         }
     }
 }

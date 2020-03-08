@@ -17,8 +17,8 @@ namespace Fireasy.Data.Entity
     /// </summary>
     internal class EntityLzayManager
     {
-        private Type entityType;
-        private List<string> status = new List<string>();
+        private readonly Type entityType;
+        private readonly List<string> status = new List<string>();
 
         /// <summary>
         /// 初始化 <see cref="EntityLzayManager"/> 类的新实例。

@@ -6,7 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
-using Fireasy.Common.Reflection;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,11 +13,10 @@ using System.Linq;
 
 namespace Fireasy.Common.Serialization
 {
-    internal class DeserializeBase : IDisposable
+    internal class DeserializeBase : DisposeableBase
     {
-        private bool isDisposed;
-        private SerializeContext context;
-        private SerializeOption option;
+        private readonly SerializeContext context;
+        private readonly SerializeOption option;
 
         internal DeserializeBase(SerializeOption option)
         {
@@ -103,24 +101,12 @@ namespace Fireasy.Common.Serialization
             return obj;
         }
 
-        protected virtual void Dispose(bool disposing)
+        protected override void Dispose(bool disposing)
         {
-            if (isDisposed)
-            {
-                return;
-            }
-
             if (disposing)
             {
                 context.Dispose();
             }
-
-            isDisposed = true;
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
         }
     }
 }

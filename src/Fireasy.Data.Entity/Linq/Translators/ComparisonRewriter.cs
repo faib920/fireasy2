@@ -25,16 +25,16 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 case ExpressionType.Equal:
                 case ExpressionType.NotEqual:
-                    Expression result = this.Compare(b);
+                    Expression result = Compare(b);
                     if (result == b)
                         goto default;
-                    return this.Visit(result);
+                    return Visit(result);
                 default:
                     return base.VisitBinary(b);
             }
         }
 
-        protected Expression SkipConvert(Expression expression)
+        protected static Expression SkipConvert(Expression expression)
         {
             while (expression.NodeType == ExpressionType.Convert)
             {
@@ -45,10 +45,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected Expression Compare(BinaryExpression bop)
         {
-            var e1 = this.SkipConvert(bop.Left);
-            var e2 = this.SkipConvert(bop.Right);
-            EntityExpression entity1 = e1 as EntityExpression;
-            EntityExpression entity2 = e2 as EntityExpression;
+            var e1 = SkipConvert(bop.Left);
+            var e2 = SkipConvert(bop.Right);
+            var entity1 = e1 as EntityExpression;
+            var entity2 = e2 as EntityExpression;
 
             if (entity1 == null && e1 is OuterJoinedExpression)
             {
@@ -63,15 +63,15 @@ namespace Fireasy.Data.Entity.Linq.Translators
             bool negate = bop.NodeType == ExpressionType.NotEqual;
             if (entity1 != null)
             {
-                return this.MakePredicate(e1, e2, PropertyUnity.GetPrimaryProperties(entity1.Metadata.EntityType).Select(s => (MemberInfo)s.Info.ReflectionInfo), negate);
+                return MakePredicate(e1, e2, PropertyUnity.GetPrimaryProperties(entity1.Metadata.EntityType).Select(s => (MemberInfo)s.Info.ReflectionInfo), negate);
             }
             else if (entity2 != null)
             {
-                return this.MakePredicate(e1, e2, PropertyUnity.GetPrimaryProperties(entity2.Metadata.EntityType).Select(s => (MemberInfo)s.Info.ReflectionInfo), negate);
+                return MakePredicate(e1, e2, PropertyUnity.GetPrimaryProperties(entity2.Metadata.EntityType).Select(s => (MemberInfo)s.Info.ReflectionInfo), negate);
             }
 
-            var dm1 = this.GetDefinedMembers(e1);
-            var dm2 = this.GetDefinedMembers(e2);
+            var dm1 = GetDefinedMembers(e1);
+            var dm2 = GetDefinedMembers(e2);
 
             if (dm1 == null && dm2 == null)
             {
@@ -82,8 +82,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
             if (dm1 != null && dm2 != null)
             {
                 // both are constructed types, so they'd better have the same members declared
-                HashSet<string> names1 = new HashSet<string>(dm1.Select(m => m.Name), StringComparer.Ordinal);
-                HashSet<string> names2 = new HashSet<string>(dm2.Select(m => m.Name), StringComparer.Ordinal);
+                var names1 = new HashSet<string>(dm1.Select(m => m.Name), StringComparer.Ordinal);
+                var names2 = new HashSet<string>(dm2.Select(m => m.Name), StringComparer.Ordinal);
                 if (names1.IsSubsetOf(names2) && names2.IsSubsetOf(names1))
                 {
                     return MakePredicate(e1, e2, dm1, negate);
@@ -98,10 +98,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 return MakePredicate(e1, e2, dm2, negate);
             }
 
-            throw new InvalidOperationException("");
+            throw new InvalidOperationException(string.Empty);
         }
 
-        protected Expression MakePredicate(Expression e1, Expression e2, IEnumerable<MemberInfo> members, bool negate)
+        protected static Expression MakePredicate(Expression e1, Expression e2, IEnumerable<MemberInfo> members, bool negate)
         {
             var pred = members.Select(m =>
                 QueryBinder.BindMember(e1, m).Equal(QueryBinder.BindMember(e2, m))
@@ -113,8 +113,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private IEnumerable<MemberInfo> GetDefinedMembers(Expression expr)
         {
-            MemberInitExpression mini = expr as MemberInitExpression;
-            if (mini != null)
+            if (expr is MemberInitExpression mini)
             {
                 var members = mini.Bindings.Select(b => FixMember(b.Member));
                 if (mini.NewExpression.Members != null)
@@ -125,8 +124,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
             else
             {
-                NewExpression nex = expr as NewExpression;
-                if (nex != null && nex.Members != null)
+                if (expr is NewExpression nex && nex.Members != null)
                 {
                     return nex.Members.Select(m => FixMember(m));
                 }

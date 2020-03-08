@@ -21,8 +21,8 @@ namespace Fireasy.Common.Caching
         /// <param name="absoluteTime">绝对时间。</param>
         public AbsoluteTime(DateTime absoluteTime)
         {
-            ExpirationTime = absoluteTime.ToUniversalTime();
-            Expiration = absoluteTime - DateTime.Now;
+            ExpirationTime = absoluteTime;
+            Expiration = (TimeSpan)GetExpirationTime();
         }
 
         /// <summary>
@@ -50,8 +50,12 @@ namespace Fireasy.Common.Caching
         /// <returns>过期为 true，有效为 false。</returns>
         public bool HasExpired()
         {
-            var nowDateTime = DateTime.Now.ToUniversalTime();
-            return nowDateTime.Ticks >= ExpirationTime.Ticks;
+            return ExpirationTime.Kind switch
+            {
+                DateTimeKind.Utc => DateTime.UtcNow > ExpirationTime,
+                DateTimeKind.Unspecified => DateTime.Now > ExpirationTime.ToLocalTime(),
+                _ => DateTime.Now > ExpirationTime
+            };
         }
 
         /// <summary>
@@ -60,7 +64,12 @@ namespace Fireasy.Common.Caching
         /// <returns></returns>
         public TimeSpan? GetExpirationTime()
         {
-            return ExpirationTime - DateTime.Now;
+            return ExpirationTime.Kind switch
+            {
+                DateTimeKind.Utc => ExpirationTime - DateTime.UtcNow,
+                DateTimeKind.Unspecified => ExpirationTime.ToLocalTime() - DateTime.Now,
+                _ => ExpirationTime - DateTime.Now
+            };
         }
     }
 }

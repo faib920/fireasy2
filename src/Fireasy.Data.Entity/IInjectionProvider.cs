@@ -19,9 +19,15 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 注入代码。
         /// </summary>
-        /// <param name="entityType">实体类型。</param>
-        /// <param name="assemblyBuilder"></param>
-        /// <param name="typeBuilder"></param>
-        void Inject(Type entityType, DynamicAssemblyBuilder assemblyBuilder, DynamicTypeBuilder typeBuilder);
+        void Inject(EntityInjectionContext context);
+    }
+
+    public class EntityInjectionContext
+    {
+        public Type EntityType { get; set; }
+
+        public DynamicAssemblyBuilder AssemblyBuilder { get; set; }
+
+        public DynamicTypeBuilder TypeBuilder { get; set; }
     }
 }

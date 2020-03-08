@@ -22,7 +22,7 @@ namespace Fireasy.Common.Linq.Expressions
     {
         protected override Expression VisitLambda<T>(Expression<T> node)
         {
-            return VisitLambda((LambdaExpression)node);
+            return VisitLambda(node);
         }
 
         protected override MemberListBinding VisitMemberListBinding(MemberListBinding node)
@@ -139,17 +139,13 @@ namespace Fireasy.Common.Linq.Expressions
         /// <returns></returns>
         protected virtual MemberBinding VisitBinding(MemberBinding binding)
         {
-            switch (binding.BindingType)
+            return binding.BindingType switch
             {
-                case MemberBindingType.Assignment:
-                    return VisitMemberAssignment((MemberAssignment)binding);
-                case MemberBindingType.MemberBinding:
-                    return VisitMemberMemberBinding((MemberMemberBinding)binding);
-                case MemberBindingType.ListBinding:
-                    return VisitMemberListBinding((MemberListBinding)binding);
-                default:
-                    throw new Exception(SR.GetString(SRKind.UnableProcessExpression, binding.BindingType));
-            }
+                MemberBindingType.Assignment => VisitMemberAssignment((MemberAssignment)binding),
+                MemberBindingType.MemberBinding => VisitMemberMemberBinding((MemberMemberBinding)binding),
+                MemberBindingType.ListBinding => VisitMemberListBinding((MemberListBinding)binding),
+                _ => throw new Exception(SR.GetString(SRKind.UnableProcessExpression, binding.BindingType)),
+            };
         }
 
         protected virtual ReadOnlyCollection<Expression> VisitExpressionList(ReadOnlyCollection<Expression> original)
@@ -196,7 +192,7 @@ namespace Fireasy.Common.Linq.Expressions
                 var count = original.Count;
                 for (int i = 0, n = count; i < n; i++)
                 {
-                    var p = VisitMemberAndExpression(members != null ? members[i] : null, original[i]);
+                    var p = VisitMemberAndExpression(members?[i], original[i]);
                     if (list != null)
                     {
                         list.Add(p);

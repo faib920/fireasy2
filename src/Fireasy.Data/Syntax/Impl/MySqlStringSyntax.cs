@@ -24,8 +24,8 @@ namespace Fireasy.Data.Syntax
         public override string Substring(object sourceExp, object startExp, object lenExp = null)
         {
             return lenExp == null ?
-                string.Format("SUBSTRING({0}, {1})", sourceExp, startExp) :
-                string.Format("SUBSTRING({0}, {1}, {2})", sourceExp, startExp, lenExp);
+                $"SUBSTRING({sourceExp}, {startExp})" :
+                $"SUBSTRING({sourceExp}, {startExp}, {lenExp})";
         }
 
         /// <summary>
@@ -38,12 +38,9 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string IndexOf(object sourceExp, object searchExp, object startExp = null, object countExp = null)
         {
-            if (startExp != null)
-            {
-                return string.Format("LOCATE({0}, {1}, {2})", searchExp, sourceExp, startExp);
-            }
-
-            return string.Format("INSTR({0}, {1})", searchExp, sourceExp);
+            return startExp != null ? 
+                $"LOCATE({searchExp}, {sourceExp}, {startExp})" : 
+                $"INSTR({searchExp}, {sourceExp})";
         }
 
         /// <summary>
@@ -53,7 +50,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string ToLower(object sourceExp)
         {
-            return string.Format("LCASE({0})", sourceExp);
+            return $"LCASE({sourceExp})";
         }
 
         /// <summary>
@@ -63,7 +60,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string ToUpper(object sourceExp)
         {
-            return string.Format("UCASE({0})", sourceExp);
+            return $"UCASE({sourceExp})";
         }
 
         /// <summary>
@@ -73,7 +70,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Trim(object sourceExp)
         {
-            return string.Format("TRIM({0})", sourceExp);
+            return $"TRIM({sourceExp})";
         }
 
         /// <summary>
@@ -83,7 +80,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Concat(params object[] strExps)
         {
-            return "CONCAT(" + string.Join(", ", strExps) + ")";
+            return $"CONCAT({string.Join(", ", strExps)})";
         }
 
         /// <summary>
@@ -94,7 +91,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string IsMatch(object sourceExp, object regexExp)
         {
-            return string.Format("{0} REGEXP {1}", sourceExp, regexExp);
+            return $"{sourceExp} REGEXP {regexExp}";
         }
     }
 }

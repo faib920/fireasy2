@@ -22,7 +22,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string ExclusiveOr(object sourceExp, object otherExp)
         {
-            return string.Format("({0} + {1}) - ({0} & {1}) * 2", sourceExp, otherExp);
+            return $"({sourceExp} + {otherExp}) - ({sourceExp} & {otherExp}) * 2";
         }
 
         /// <summary>

@@ -19,13 +19,14 @@ namespace Fireasy.Common.Subscribes
         /// <summary>
         /// 初始化 <see cref="SubscribeDelegate"/> 类的新实例。
         /// </summary>
+        /// <param name="dataType"></param>
         /// <param name="handler"></param>
-        public SubscribeDelegate(Delegate handler)
+        protected SubscribeDelegate(Type dataType, Delegate handler)
         {
             Guard.ArgumentNull(handler, nameof(handler));
 
             Handler = handler;
-            DataType = handler.Method.GetParameters()[0].ParameterType;
+            DataType = dataType ?? handler.Method.GetParameters()[0].ParameterType;
         }
 
         /// <summary>
@@ -53,9 +54,10 @@ namespace Fireasy.Common.Subscribes
         /// <summary>
         /// 初始化 <see cref="SyncSubscribeDelegate"/> 类的新实例。
         /// </summary>
+        /// <param name="dataType"></param>
         /// <param name="handler"></param>
-        public SyncSubscribeDelegate(Delegate handler)
-            : base (handler)
+        public SyncSubscribeDelegate(Type dataType, Delegate handler)
+            : base (dataType, handler)
         {
         }
 
@@ -77,9 +79,10 @@ namespace Fireasy.Common.Subscribes
         /// <summary>
         /// 初始化 <see cref="AsyncSubscribeDelegate"/> 类的新实例。
         /// </summary>
+        /// <param name="dataType"></param>
         /// <param name="handler"></param>
-        public AsyncSubscribeDelegate(Delegate handler)
-            : base(handler)
+        public AsyncSubscribeDelegate(Type dataType, Delegate handler)
+            : base(dataType, handler)
         {
         }
 

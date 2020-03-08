@@ -60,7 +60,7 @@ namespace Fireasy.Data.Entity.Validation
             {
                 foreach (var v in error.Value)
                 {
-                    sb.AppendLine(" " + v.ErrorMessage);
+                    sb.AppendLine($" {v.ErrorMessage}");
                 }
             }
 

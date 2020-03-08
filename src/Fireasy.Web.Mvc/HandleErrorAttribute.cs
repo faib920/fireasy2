@@ -94,7 +94,7 @@ namespace Fireasy.Web.Mvc
 #if !NETCOREAPP
             var logger = LoggerFactory.CreateLogger();
 #else
-            var logger = filterContext.HttpContext.RequestServices.GetService<ILogger>();
+            var logger = ServiceProviderServiceExtensions.GetService<ILogger>(filterContext.HttpContext.RequestServices);
 #endif
             if (logger != null)
             {

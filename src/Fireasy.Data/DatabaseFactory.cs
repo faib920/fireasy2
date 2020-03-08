@@ -29,30 +29,30 @@ namespace Fireasy.Data
         /// 使用配置实例名创建一个 <see cref="Database"/> 实例对象。
         /// </summary>
         /// <param name="instanceName">配置实例名称。</param>
+        /// <param name="serviceProvider">检索服务提供者。</param>
         /// <returns>一个 <see cref="Database"/> 实例对象。</returns>
-        public static IDatabase CreateDatabase(string instanceName = null)
+        public static IDatabase CreateDatabase(string instanceName = null, IServiceProvider serviceProvider = null)
         {
             var section = ConfigurationUnity.GetSection<InstanceConfigurationSection>();
             Guard.NullReference(section, SR.GetString(SRKind.NonInstanceConfigurationSection));
 
             var setting = string.IsNullOrEmpty(instanceName) ? section.Default : section.Settings[instanceName];
             Guard.NullReference(setting, SR.GetString(SRKind.InstanceConfigurationInvalid, instanceName));
-            IDatabase database = null;
-
+            IDatabase database;
             if (setting.DatabaseType != null)
             {
                 if (setting.Clusters.Count > 0)
                 {
-                    database = setting.DatabaseType.New<IDatabase>(GetDistributedConnections(setting));
+                    database = setting.DatabaseType.New<IDatabase>(GetDistributedConnections(setting), null, serviceProvider);
                 }
                 else
                 {
-                    database = setting.DatabaseType.New<IDatabase>((ConnectionString)setting.ConnectionString);
+                    database = setting.DatabaseType.New<IDatabase>((ConnectionString)setting.ConnectionString, null, serviceProvider);
                 }
             }
             else
             {
-                database = CreateDatabase(setting);
+                database = CreateDatabase(setting, serviceProvider);
             }
 
             if (DatabaseScope.Current != null)
@@ -67,8 +67,9 @@ namespace Fireasy.Data
         /// 使用数据库配置实例创建一个 <see cref="Database"/> 实例对象。
         /// </summary>
         /// <param name="setting">实例配置对象。</param>
+        /// <param name="serviceProvider">检索服务提供者。</param>
         /// <returns>一个 <see cref="Database"/> 实例对象。</returns>
-        public static IDatabase CreateDatabase(IInstanceConfigurationSetting setting)
+        public static IDatabase CreateDatabase(IInstanceConfigurationSetting setting, IServiceProvider serviceProvider = null)
         {
             Guard.ArgumentNull(setting, nameof(setting));
 
@@ -80,16 +81,15 @@ namespace Fireasy.Data
 
             if (setting.Clusters.Count > 0)
             {
-                return new Database(GetDistributedConnections(setting), provider);
+                return new Database(GetDistributedConnections(setting), provider, serviceProvider);
             }
 
-            return new Database(setting.ConnectionString, provider);
+            return new Database(setting.ConnectionString, provider, serviceProvider);
         }
 
         /// <summary>
         /// 从 <see cref="DatabaseScope"/> 中获取 <see cref="IDatabase"/> 对象。
         /// </summary>
-        /// <exception cref="UnableGetDatabaseScopeException">DatabaseScope.Current 为 null 时，抛出该异常。</exception>
         /// <returns>当前线程环境中 <see cref="Database"/> 实例对象。</returns>
         public static IDatabase GetDatabaseFromScope()
         {
@@ -135,8 +135,9 @@ namespace Fireasy.Data
             {
                 var encryptStr = connectionStr.Substring(2);
 
-                var bytes = new byte[encryptStr.Length / 2];
-                for (var i = 0; i < encryptStr.Length; i += 2)
+                var len = encryptStr.Length;
+                var bytes = new byte[len / 2];
+                for (var i = 0; i < len; i += 2)
                 {
                     bytes[i / 2] = byte.Parse(encryptStr.Substring(i, 2), NumberStyles.HexNumber);
                 }

@@ -16,7 +16,7 @@ namespace Fireasy.Common.Serialization
     /// </summary>
     public class ContainerJsonConverter : JsonConverter
     {
-        private Container container;
+        private readonly Container container;
 
         /// <summary>
         /// 初始化 <see cref="ContainerJsonConverter"/> 类的新实例。

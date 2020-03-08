@@ -20,9 +20,9 @@ namespace Fireasy.Common.Extensions
         /// </summary>
         /// <param name="nodes">当前的节点集合。</param>
         /// <param name="parents">父节点ID集合。</param>
-        /// <param name="factory">生成节点的函数。</param>
+        /// <param name="nodesCreator">生成节点的函数。</param>
         /// <param name="index">控制从后向前推进的索引值。</param>
-        public static void Expand<TSource, TValue>(this List<TSource> nodes, List<TValue> parents, Func<TValue, IEnumerable<TSource>> factory, int index)
+        public static void Expand<TSource, TValue>(this List<TSource> nodes, List<TValue> parents, Func<TValue, IEnumerable<TSource>> nodesCreator, int index)
             where TSource : ITreeNode<TSource>
             where TValue : IEquatable<TValue>
         {
@@ -44,9 +44,9 @@ namespace Fireasy.Common.Extensions
                 {
                     if (parents[index].Equals((TValue)node.Id))
                     {
-                        node.Children = factory((TValue)node.Id).ToList();
+                        node.Children = nodesCreator((TValue)node.Id).ToList();
                         node.IsLoaded = true;
-                        Expand(node.Children, parents, factory, index - 1);
+                        Expand(node.Children, parents, nodesCreator, index - 1);
                     }
                 }
             }
@@ -64,9 +64,9 @@ namespace Fireasy.Common.Extensions
         /// </summary>
         /// <param name="nodes">当前的节点集合。</param>
         /// <param name="parents">父节点ID集合。</param>
-        /// <param name="factory">生成节点的函数。</param>
+        /// <param name="nodesCreator">生成节点的函数。</param>
         /// <param name="index">控制从后向前推进的索引值。</param>
-        public static async Task ExpandAsync<TSource, TValue>(this List<TSource> nodes, List<TValue> parents, Func<TValue, Task<IEnumerable<TSource>>> factory, int index)
+        public static async Task ExpandAsync<TSource, TValue>(this List<TSource> nodes, List<TValue> parents, Func<TValue, Task<IEnumerable<TSource>>> nodesCreator, int index)
             where TSource : ITreeNode<TSource>
             where TValue : IEquatable<TValue>
         {
@@ -88,9 +88,9 @@ namespace Fireasy.Common.Extensions
                 {
                     if (parents[index].Equals((TValue)node.Id))
                     {
-                        node.Children = (await factory((TValue)node.Id)).ToList();
+                        node.Children = (await nodesCreator((TValue)node.Id)).ToList();
                         node.IsLoaded = true;
-                        await ExpandAsync(node.Children, parents, factory, index - 1);
+                        await ExpandAsync(node.Children, parents, nodesCreator, index - 1);
                     }
                 }
             }

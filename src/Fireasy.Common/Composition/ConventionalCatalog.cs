@@ -142,8 +142,10 @@ namespace Fireasy.Common.Composition
             var contracName = AttributedModelServices.GetContractName(contractType);
             var metadata = new Lazy<IDictionary<string, object>>(() =>
                 {
-                    var md = new Dictionary<string, object>();
-                    md.Add(CompositionConstants.ExportTypeIdentityMetadataName, AttributedModelServices.GetTypeIdentity(contractType));
+                    var md = new Dictionary<string, object>
+                    {
+                        { CompositionConstants.ExportTypeIdentityMetadataName, AttributedModelServices.GetTypeIdentity(contractType) }
+                    };
                     return md;
                 });
             return new []
@@ -154,9 +156,9 @@ namespace Fireasy.Common.Composition
 
         private class ConventionalPartPartDefinition : ComposablePartDefinition
         {
-            private ConventionalPart part;
-            private Lazy<IEnumerable<ImportDefinition>> imports;
-            private Lazy<IEnumerable<ExportDefinition>> exports;
+            private readonly ConventionalPart part;
+            private readonly Lazy<IEnumerable<ImportDefinition>> imports;
+            private readonly Lazy<IEnumerable<ExportDefinition>> exports;
 
             public ConventionalPartPartDefinition(object exportValue, Lazy<IEnumerable<ImportDefinition>> imports, Lazy<IEnumerable<ExportDefinition>> exports)
             {
@@ -172,20 +174,20 @@ namespace Fireasy.Common.Composition
 
             public override IEnumerable<ExportDefinition> ExportDefinitions
             {
-                get { return exports == null ? null : exports.Value; }
+                get { return exports?.Value; }
             }
 
             public override IEnumerable<ImportDefinition> ImportDefinitions
             {
-                get { return imports == null ? null : imports.Value; }
+                get { return imports?.Value; }
             }
         }
 
         private class ConventionalPart : ComposablePart
         {
-            private object exportValue;
-            private Lazy<IEnumerable<ImportDefinition>> imports;
-            private Lazy<IEnumerable<ExportDefinition>> exports;
+            private readonly object exportValue;
+            private readonly Lazy<IEnumerable<ImportDefinition>> imports;
+            private readonly Lazy<IEnumerable<ExportDefinition>> exports;
 
             public ConventionalPart(object exportValue, Lazy<IEnumerable<ImportDefinition>> imports, Lazy<IEnumerable<ExportDefinition>> exports)
             {
@@ -205,12 +207,12 @@ namespace Fireasy.Common.Composition
 
             public override IEnumerable<ExportDefinition> ExportDefinitions
             {
-                get { return exports == null ? null : exports.Value; }
+                get { return exports?.Value; }
             }
 
             public override IEnumerable<ImportDefinition> ImportDefinitions
             {
-                get { return imports == null ? null : imports.Value; }
+                get { return imports?.Value; }
             }
         }
 

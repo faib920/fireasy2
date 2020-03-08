@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
+using Fireasy.Data.Entity.Linq;
 using System;
 using System.Linq;
 using System.Linq.Expressions;
@@ -80,32 +81,30 @@ namespace Fireasy.Data.Entity.Properties
             var instanceName = entity.GetInstanceName();
             var environment = entity.GetEnvironment();
 
-            var initContext = ContextInstanceManager.Get(instanceName);
-            if (initContext == null)
+            var identification = ContextInstanceManager.TryGet(instanceName);
+            if (identification == null)
             {
                 return PropertyValue.Empty;
             }
 
-            var provider = initContext.Provider.GetService<IContextProvider>();
-            using (var service = provider.CreateContextService(initContext))
-            {
-                service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
+            var contextProvider = identification.GetProviderService<IContextProvider>();
+            using var service = contextProvider.CreateContextService(new ContextServiceContext(identification));
+            service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
 
-                var repProvider = service.CreateRepositoryProvider(entityProperty.RelationalType);
-                var expression = BuidRelationExpression(entity, entityProperty);
-                if (expression != null)
+            var repProvider = service.CreateRepositoryProvider(entityProperty.RelationalType);
+            var expression = BuidRelationExpression(entity, entityProperty);
+            if (expression != null)
+            {
+                var value = Execute(repProvider.Queryable, expression);
+
+                if (value != null)
                 {
-                    var value = Execute(repProvider.Queryable, expression);
-
-                    if (value != null)
-                    {
-                        value.As<IEntityRelation>(e => e.Owner = new EntityOwner(entity, property));
-                        return PropertyValue.NewValue(value, property.Type);
-                    }
+                    value.As<IEntityRelation>(e => e.Owner = new EntityOwner(entity, property));
+                    return PropertyValue.NewValue(value, property.Type);
                 }
-
-                return PropertyValue.Empty;
             }
+
+            return PropertyValue.Empty;
         }
 
         /// <summary>
@@ -125,19 +124,12 @@ namespace Fireasy.Data.Entity.Properties
         /// 执行查询返回结果。
         /// </summary>
         /// <param name="queryable"></param>
-        /// <param name="expression"></param>
+        /// <param name="predicate"></param>
         /// <returns></returns>
-        private object Execute(IQueryable queryable, Expression expression)
+        private object Execute(IQueryable queryable, Expression predicate)
         {
-            var method = typeof(Queryable).GetMethods(BindingFlags.Public | BindingFlags.Static)
-                .Where(s => s.Name == "FirstOrDefault" && s.GetParameters().Length == 2).FirstOrDefault();
-
-            if (method != null)
-            {
-                method = method.MakeGenericMethod(queryable.ElementType);
-                expression = Expression.Call(null, method,
-                    new[] { queryable.Expression, expression });
-            }
+            var expression = Expression.Call(typeof(Queryable), nameof(Queryable.FirstOrDefault), 
+                new[] { queryable.ElementType }, queryable.Expression, predicate);
 
             return queryable.Provider.Execute(expression);
         }
@@ -151,34 +143,32 @@ namespace Fireasy.Data.Entity.Properties
             var instanceName = entity.GetInstanceName();
             var environment = entity.GetEnvironment();
 
-            var initContext = ContextInstanceManager.Get(instanceName);
-            if (initContext == null)
+            var identification = ContextInstanceManager.TryGet(instanceName);
+            if (identification == null)
             {
                 return PropertyValue.Empty;
             }
 
-            var provider = initContext.Provider.GetService<IContextProvider>();
-            using (var service = provider.CreateContextService(initContext))
+            var contextProvider = identification.GetProviderService<IContextProvider>();
+            using var service = contextProvider.CreateContextService(new ContextServiceContext(identification));
+            service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
+
+            var repProvider = service.CreateRepositoryProvider(entityProperty.RelationalType);
+            var expression = BuidRelationExpression(entity, entityProperty);
+            object result = null;
+            if (expression != null)
             {
-                service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
+                result = Execute(repProvider.Queryable, expression);
+                var querySetType = typeof(EntitySet<>).MakeGenericType(entityProperty.RelationalType);
+                var list = querySetType.New(new[] { result });
 
-                var repProvider = service.CreateRepositoryProvider(entityProperty.RelationalType);
-                var expression = BuidRelationExpression(entity, entityProperty);
-                object result = null;
-                if (expression != null)
-                {
-                    result = Execute(repProvider.Queryable, expression);
-                    var querySetType = typeof(EntitySet<>).MakeGenericType(entityProperty.RelationalType);
-                    var list = querySetType.New(new[] { result });
+                //设置实体集所属的实体Owner
+                list.As<IEntityRelation>(e => e.Owner = new EntityOwner(entity, property));
 
-                    //设置实体集所属的实体Owner
-                    list.As<IEntityRelation>(e => e.Owner = new EntityOwner(entity, property));
-
-                    return PropertyValue.NewValue(list);
-                }
-
-                return PropertyValue.Empty;
+                return PropertyValue.NewValue(list);
             }
+
+            return PropertyValue.Empty;
         }
 
         /// <summary>
@@ -198,19 +188,12 @@ namespace Fireasy.Data.Entity.Properties
         /// 执行查询返回结果。
         /// </summary>
         /// <param name="queryable"></param>
-        /// <param name="expression"></param>
+        /// <param name="predicate"></param>
         /// <returns></returns>
-        private object Execute(IQueryable queryable, Expression expression)
+        private object Execute(IQueryable queryable, Expression predicate)
         {
-            var method = typeof(Queryable).GetMethods(BindingFlags.Public | BindingFlags.Static)
-                .FirstOrDefault(s => s.Name == "Where");
-
-            if (method != null)
-            {
-                method = method.MakeGenericMethod(queryable.ElementType);
-                expression = Expression.Call(null, method,
-                    new[] { queryable.Expression, expression });
-            }
+            var expression = Expression.Call(typeof(Queryable), nameof(Queryable.Where), 
+                new[] { queryable.ElementType }, queryable.Expression, predicate);
 
             return queryable.Provider.Execute(expression);
         }
@@ -224,27 +207,25 @@ namespace Fireasy.Data.Entity.Properties
             var instanceName = entity.GetInstanceName();
             var environment = entity.GetEnvironment();
 
-            var initContext = ContextInstanceManager.Get(instanceName);
-            if (initContext == null)
+            var identification = ContextInstanceManager.TryGet(instanceName);
+            if (identification == null)
             {
                 return PropertyValue.Empty;
             }
 
-            var provider = initContext.Provider.GetService<IContextProvider>();
-            using (var service = provider.CreateContextService(initContext))
+            var contextProvider = identification.GetProviderService<IContextProvider>();
+            using var service = contextProvider.CreateContextService(new ContextServiceContext(identification));
+            service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
+
+            var repProvider = service.CreateRepositoryProvider(referenceProperty.RelationalType);
+            var expression = BuidRelationExpression(entity, referenceProperty);
+            if (expression != null)
             {
-                service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
-
-                var repProvider = service.CreateRepositoryProvider(referenceProperty.RelationalType);
-                var expression = BuidRelationExpression(entity, referenceProperty);
-                if (expression != null)
-                {
-                    var value = Execute(repProvider.Queryable, expression);
-                    return value == null ? PropertyValue.Empty : PropertyValue.NewValue(value);
-                }
-
-                return PropertyValue.Empty;
+                var value = Execute(repProvider.Queryable, expression);
+                return value == null ? PropertyValue.Empty : PropertyValue.NewValue(value);
             }
+
+            return PropertyValue.Empty;
         }
 
         /// <summary>

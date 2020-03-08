@@ -5,29 +5,43 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 #if NETSTANDARD
 using CSRedis;
-using System.Collections.Generic;
 using System.Text;
 #else
 using StackExchange.Redis;
 #endif
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using Fireasy.Common.ComponentModel;
+using System.Text.RegularExpressions;
 
 namespace Fireasy.Redis
 {
-    public class RedisComponent : IConfigurationSettingHostService
+    /// <summary>
+    /// Redis 组件抽象类。
+    /// </summary>
+    public abstract class RedisComponent : DisposeableBase, IConfigurationSettingHostService
     {
+        private List<int> dbRanage;
+        private Func<string, string> captureRule;
+
 #if NETSTANDARD
-        private Lazy<CSRedisClient> connectionLazy;
+        private readonly List<string> connectionStrs = new List<string>();
+        private readonly SafetyDictionary<int, CSRedisClient> clients = new SafetyDictionary<int, CSRedisClient>();
 #else
         private Lazy<ConnectionMultiplexer> connectionLazy;
 
         protected ConfigurationOptions Options { get; private set; }
 #endif
 
+        /// <summary>
+        /// 获取 Redis 的相关配置。
+        /// </summary>
         protected RedisConfigurationSetting Setting { get; private set; }
 
         /// <summary>
@@ -81,37 +95,63 @@ namespace Fireasy.Redis
         }
 
 #if NETSTANDARD
-        protected CSRedisClient GetConnection()
+        protected CSRedisClient GetConnection(string key = null)
         {
-            return connectionLazy.Value;
+            if (string.IsNullOrEmpty(key) || dbRanage == null)
+            {
+                return clients[0] ?? throw new InvalidOperationException("不能初始化 Redis 的连接。");
+            }
+
+            var ckey = captureRule == null ? key : captureRule(key);
+            var index = GetModulus(ckey, dbRanage.Count);
+            return clients.GetOrAdd(index, k =>
+            {
+                return new CSRedisClient(null, connectionStrs.Select(s => string.Concat(s, $",defaultDatabase={dbRanage[k]}")).ToArray());
+            });
+        }
+
+        protected IEnumerable<CSRedisClient> GetConnections()
+        {
+            return clients.Values;
         }
 
 #else
-        protected ConnectionMultiplexer GetConnection()
+        protected IConnectionMultiplexer GetConnection()
         {
-            return connectionLazy.Value;
+            return connectionLazy.Value ?? throw new InvalidOperationException("不能初始化 Redis 的连接。");
         }
 
-        protected IDatabase GetDb(IConnectionMultiplexer conn)
+        protected IDatabase GetDatabase(string key)
         {
-            return conn.GetDatabase(Options.DefaultDatabase ?? 0);
+            var client = connectionLazy.Value;
+            var ckey = captureRule == null ? key : captureRule(key);
+            var index = dbRanage != null ? GetModulus(ckey, dbRanage.Count) : (Options.DefaultDatabase ?? 0);
+
+            return client.GetDatabase(index);
+        }
+
+        protected IEnumerable<IDatabase> GetDatabases()
+        {
+            var client = connectionLazy.Value;
+            foreach (var index in dbRanage)
+            {
+                yield return client.GetDatabase(index);
+            }
         }
 #endif
 
         void IConfigurationSettingHostService.Attach(IConfigurationSettingItem setting)
         {
-            this.Setting = (RedisConfigurationSetting)setting;
+            Setting = (RedisConfigurationSetting)setting;
 
 #if NETSTANDARD
-            var connectionStrs = new List<string>();
-            if (!string.IsNullOrEmpty(this.Setting.ConnectionString))
+            if (!string.IsNullOrEmpty(Setting.ConnectionString))
             {
-                connectionStrs.Add(this.Setting.ConnectionString);
+                connectionStrs.Add(Setting.ConnectionString);
             }
             else
             {
-
-                foreach (var host in this.Setting.Hosts)
+                foreach (var host in Setting.Hosts)
                 {
                     var connStr = new StringBuilder($"{host.Server}");
 
@@ -121,39 +161,39 @@ namespace Fireasy.Redis
                         connStr.Append($":{host.Port}");
                     }
 
-                    if (!string.IsNullOrEmpty(this.Setting.Password))
+                    if (!string.IsNullOrEmpty(Setting.Password))
                     {
-                        connStr.Append($",password={this.Setting.Password}");
+                        connStr.Append($",password={Setting.Password}");
                     }
 
-                    if (this.Setting.DefaultDb != 0)
+                    if (Setting.DefaultDb != 0 && string.IsNullOrEmpty(Setting.DbRange))
                     {
-                        connStr.Append($",defaultDatabase={this.Setting.DefaultDb}");
+                        connStr.Append($",defaultDatabase={Setting.DefaultDb}");
                     }
 
-                    if (this.Setting.Ssl)
+                    if (Setting.Ssl)
                     {
                         connStr.Append($",ssl=true");
                     }
 
-                    if (this.Setting.WriteBuffer != null)
+                    if (Setting.WriteBuffer != null)
                     {
-                        connStr.Append($",writeBuffer={this.Setting.WriteBuffer}");
+                        connStr.Append($",writeBuffer={Setting.WriteBuffer}");
                     }
 
-                    if (this.Setting.PoolSize != null)
+                    if (Setting.PoolSize != null)
                     {
-                        connStr.Append($",poolsize={this.Setting.PoolSize}");
+                        connStr.Append($",poolsize={Setting.PoolSize}");
                     }
 
-                    if (this.Setting.ConnectTimeout != 5000)
+                    if (Setting.ConnectTimeout != 5000)
                     {
-                        connStr.Append($",connectTimeout={this.Setting.ConnectTimeout}");
+                        connStr.Append($",connectTimeout={Setting.ConnectTimeout}");
                     }
 
-                    if (this.Setting.SyncTimeout != 10000)
+                    if (Setting.SyncTimeout != 10000)
                     {
-                        connStr.Append($",syncTimeout={this.Setting.SyncTimeout}");
+                        connStr.Append($",syncTimeout={Setting.SyncTimeout}");
                     }
 
                     connStr.Append(",allowAdmin=true");
@@ -163,43 +203,51 @@ namespace Fireasy.Redis
                 }
             }
 
-            if (connectionLazy == null)
+            if (string.IsNullOrEmpty(Setting.DbRange))
             {
-                connectionLazy = new Lazy<CSRedisClient>(() => new CSRedisClient(null, connectionStrs.ToArray()));
+                clients.GetOrAdd(0, () => new CSRedisClient(null, connectionStrs.ToArray()));
+            }
+            else
+            {
+                ParseDbRange(Setting.DbRange);
+                if (!string.IsNullOrEmpty(Setting.KeyRule))
+                {
+                    ParseKeyCapture(Setting.KeyRule);
+                }
             }
 #else
-            if (!string.IsNullOrEmpty(this.Setting.ConnectionString))
+            if (!string.IsNullOrEmpty(Setting.ConnectionString))
             {
-                Options = ConfigurationOptions.Parse(this.Setting.ConnectionString);
+                Options = ConfigurationOptions.Parse(Setting.ConnectionString);
             }
             else
             {
                 Options = new ConfigurationOptions
                 {
-                    DefaultDatabase = this.Setting.DefaultDb,
-                    Password = this.Setting.Password,
+                    DefaultDatabase = Setting.DefaultDb == 0 || !string.IsNullOrEmpty(Setting.DbRange) ? (int?)null : Setting.DefaultDb,
+                    Password = Setting.Password,
                     AllowAdmin = true,
-                    Ssl = this.Setting.Ssl,
-                    Proxy = this.Setting.Twemproxy ? Proxy.Twemproxy : Proxy.None,
+                    Ssl = Setting.Ssl,
+                    Proxy = Setting.Twemproxy ? Proxy.Twemproxy : Proxy.None,
                     AbortOnConnectFail = false,
                 };
 
-                if (this.Setting.WriteBuffer != null)
+                if (Setting.WriteBuffer != null)
                 {
-                    Options.WriteBuffer = (int)this.Setting.WriteBuffer;
+                    Options.WriteBuffer = (int)Setting.WriteBuffer;
                 }
 
-                if (this.Setting.ConnectTimeout != 5000)
+                if (Setting.ConnectTimeout != 5000)
                 {
-                    Options.ConnectTimeout = this.Setting.ConnectTimeout;
+                    Options.ConnectTimeout = Setting.ConnectTimeout;
                 }
 
-                if (this.Setting.SyncTimeout != 10000)
+                if (Setting.SyncTimeout != 10000)
                 {
-                    Options.SyncTimeout = this.Setting.SyncTimeout;
+                    Options.SyncTimeout = Setting.SyncTimeout;
                 }
 
-                foreach (var host in this.Setting.Hosts)
+                foreach (var host in Setting.Hosts)
                 {
                     if (host.Port == 0)
                     {
@@ -209,6 +257,15 @@ namespace Fireasy.Redis
                     {
                         Options.EndPoints.Add(host.Server, host.Port);
                     }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(Setting.DbRange))
+            {
+                ParseDbRange(Setting.DbRange);
+                if (!string.IsNullOrEmpty(Setting.KeyRule))
+                {
+                    ParseKeyCapture(Setting.KeyRule);
                 }
             }
 
@@ -222,6 +279,80 @@ namespace Fireasy.Redis
         IConfigurationSettingItem IConfigurationSettingHostService.GetSetting()
         {
             return Setting;
+        }
+
+        private int GetModulus(string str, int mod)
+        {
+            var hash = 0;
+            foreach (var c in str)
+            {
+                hash = (128 * hash % (mod * 8)) + c;
+            }
+
+            return hash % mod;
+        }
+
+        private void ParseDbRange(string range)
+        {
+            dbRanage = new List<int>();
+            foreach (var s1 in range.Split(','))
+            {
+                int p;
+                if ((p = s1.IndexOf('-')) != -1)
+                {
+                    var start = s1.Substring(0, p).To<int>();
+                    var end = s1.Substring(p + 1).To<int>();
+                    for (var i = start; i <= end; i++)
+                    {
+                        dbRanage.Add(i);
+                    }
+                }
+                else
+                {
+                    dbRanage.Add(s1.To<int>());
+                }
+            }
+        }
+
+        private void ParseKeyCapture(string rule)
+        {
+            if (rule.StartsWith("left", StringComparison.CurrentCultureIgnoreCase))
+            {
+                var match = Regex.Match(rule, @"(\d+)");
+                var length = match.Groups[1].Value.To<int>();
+                captureRule = new Func<string, string>(k => k.Left(length));
+            }
+            if (rule.StartsWith("right", StringComparison.CurrentCultureIgnoreCase))
+            {
+                var match = Regex.Match(rule, @"(\d+)");
+                var length = match.Groups[1].Value.To<int>();
+                captureRule = new Func<string, string>(k => k.Right(length));
+            }
+            else if (rule.StartsWith("substr", StringComparison.CurrentCultureIgnoreCase))
+            {
+                var match = Regex.Match(rule, @"(\d+),\s*(\d+)");
+                var start = match.Groups[1].Value.To<int>();
+                var length = match.Groups[2].Value.To<int>();
+                captureRule = new Func<string, string>(k => k.Substring(start, start + length > k.Length ? k.Length - start : length));
+            }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+#if NETSTANDARD
+            foreach (var client in clients)
+            {
+                client.Value.Dispose();
+            }
+
+            clients.Clear();
+#else
+            if (connectionLazy.IsValueCreated)
+            {
+                connectionLazy.Value.Dispose();
+            }
+#endif
+            base.Dispose(disposing);
         }
     }
 }

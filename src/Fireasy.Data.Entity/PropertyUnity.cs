@@ -369,10 +369,7 @@ namespace Fireasy.Data.Entity
                 property.Info.DataType = property.Type.GetDbType();
             }
 
-            if (IsNeedCorrectDefaultValue(property))
-            {
-                property.Info.DefaultValue.Correct(property.Type);
-            }
+            property.Info.DefaultValue.CorrectValue(property.Type);
 
             return property;
         }
@@ -385,17 +382,6 @@ namespace Fireasy.Data.Entity
         private static PropertyMapInfo InitRelatedPropertyInfo(PropertyInfo propertyInfo)
         {
             return new PropertyMapInfo { FieldName = NullFieldName, ReflectionInfo = propertyInfo };
-        }
-
-        /// <summary>
-        /// 判断属性是否需要纠正默认值的类型。
-        /// </summary>
-        /// <param name="property"></param>
-        /// <returns></returns>
-        private static bool IsNeedCorrectDefaultValue(IProperty property)
-        {
-            return !PropertyValue.IsEmpty(property.Info.DefaultValue) &&
-                (property.Type.IsEnum || property.Type == typeof(bool) || property.Type == typeof(bool?));
         }
 
         private static void RegisterProperty(Type entityType, PropertyInfo property)
@@ -459,6 +445,7 @@ namespace Fireasy.Data.Entity
             if (mapping.DefaultValue != null)
             {
                 mapInfo.DefaultValue = PropertyValue.NewValue(mapping.DefaultValue, mapInfo.ReflectionInfo.PropertyType);
+                mapInfo.DefaultValueFormatter = mapping.DefaultValueFormatter;
             }
 
             if (mapping.GetFlag(PropertyMappingAttribute.SetMark.Length))
@@ -487,8 +474,7 @@ namespace Fireasy.Data.Entity
 
             internal static PropertyInfo FindProperty(Expression expression)
             {
-                var lambda = expression as LambdaExpression;
-                if (lambda == null)
+                if (!(expression is LambdaExpression lambda))
                 {
                     return null;
                 }
@@ -501,9 +487,9 @@ namespace Fireasy.Data.Entity
             protected override Expression VisitMember(MemberExpression node)
             {
                 if (node.Member.DeclaringType == entityType &&
-                    node.Member is PropertyInfo)
+                    node.Member is PropertyInfo property)
                 {
-                    propertyInfo = node.Member.As<PropertyInfo>();
+                    propertyInfo = property;
                     return node;
                 }
 

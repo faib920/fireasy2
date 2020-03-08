@@ -13,7 +13,6 @@ namespace Fireasy.Common.Caching
     /// <summary>
     /// 表示缓存项永不过期。无法继承此类。
     /// </summary>
-    [Serializable]
     public sealed class NeverExpired : ICacheItemExpiration
     {
         /// <summary>

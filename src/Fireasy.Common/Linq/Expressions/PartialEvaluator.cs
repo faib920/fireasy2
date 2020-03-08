@@ -10,14 +10,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 
 namespace Fireasy.Common.Linq.Expressions
 {
     /// <summary>
     /// 用于计算表达式中的常量表达式。
     /// </summary>
-    public class PartialEvaluator
+    public static class PartialEvaluator
     {
         /// <summary>
         /// 计算表达式中的常量表达式。
@@ -34,7 +33,7 @@ namespace Fireasy.Common.Linq.Expressions
         /// </remarks>
         public static Expression Eval(Expression expression, Func<Expression, bool> canBeEvaluatedLocally = null)
         {
-            canBeEvaluatedLocally = canBeEvaluatedLocally ?? CanBeEvaluatedLocally;
+            canBeEvaluatedLocally ??= CanBeEvaluatedLocally;
             return InternalPartialEvaluator.Eval(expression, canBeEvaluatedLocally);
         }
 
@@ -45,8 +44,7 @@ namespace Fireasy.Common.Linq.Expressions
         /// <returns></returns>
         private static bool CanBeEvaluatedLocally(Expression expression)
         {
-            var mc = expression as MethodCallExpression;
-            if (mc != null &&
+            if (expression is MethodCallExpression mc &&
                 (mc.Method.DeclaringType == typeof(Enumerable) ||
                  mc.Method.DeclaringType == typeof(Queryable)))
             {
@@ -80,9 +78,9 @@ namespace Fireasy.Common.Linq.Expressions
                 return expression.NodeType != ExpressionType.Parameter;
             }
 
-            private class SubtreeEvaluator : Common.Linq.Expressions.ExpressionVisitor
+            private class SubtreeEvaluator : ExpressionVisitor
             {
-                HashSet<Expression> candidates;
+                private readonly HashSet<Expression> candidates;
 
                 private SubtreeEvaluator(HashSet<Expression> candidates)
                 {
@@ -136,25 +134,23 @@ namespace Fireasy.Common.Linq.Expressions
                         // if we've lost our nullable typeness add it back
                         if (e.Type != type && e.Type.GetNonNullableType() == type.GetNonNullableType())
                         {
-                            e = ce = Expression.Constant(ce.Value, type);
+                            e = Expression.Constant(ce.Value, type);
                         }
 
                         return e;
                     }
 
-                    var me = e as MemberExpression;
-                    if (me != null)
+                    if (e is MemberExpression me)
                     {
                         // member accesses off of constant's are common, and yet since these partial evals
                         // are never re-used, using reflection to access the member is faster than compiling  
                         // and invoking a lambda
-                        var ce = me.Expression as ConstantExpression;
-                        if (ce != null)
+                        if (me.Expression is ConstantExpression ce)
                         {
                             var value = me.Member.GetMemberValue(ce.Value);
                             if (value is IQueryable queryable)
                             {
-                                var exp1 = Visit(queryable.Expression);
+                                _ = Visit(queryable.Expression);
                             }
                             else
                             {
@@ -174,7 +170,7 @@ namespace Fireasy.Common.Linq.Expressions
                 }
             }
 
-            class Nominator : Common.Linq.Expressions.ExpressionVisitor
+            class Nominator : ExpressionVisitor
             {
                 private readonly Func<Expression, bool> fnCanBeEvaluated;
                 private readonly HashSet<Expression> candidates;

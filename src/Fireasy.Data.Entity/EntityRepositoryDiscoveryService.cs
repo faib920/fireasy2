@@ -5,15 +5,14 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Initializers;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Threading;
 
 namespace Fireasy.Data.Entity
 {
@@ -22,24 +21,24 @@ namespace Fireasy.Data.Entity
         #region Fields and constructors
 
         // AppDomain cache collection initializers for a known type.
-        private static readonly SafetyDictionary<Type, EntityContextTypesInitializersPair> _objectSetInitializers =
-            new SafetyDictionary<Type, EntityContextTypesInitializersPair>();
+        private static readonly ConcurrentDictionary<Type, EntityContextTypesInitializersPair> objectSetInitializers =
+            new ConcurrentDictionary<Type, EntityContextTypesInitializersPair>();
 
         // Used by the code below to create DbSet instances
-        public static readonly MethodInfo MthSetRep = typeof(EntityContext).GetMethods().FirstOrDefault(s => s.Name == nameof(EntityContext.Set) && s.IsGenericMethod);
+        private static readonly MethodInfo SetRepositoryMethod = typeof(EntityContext).GetMethods().FirstOrDefault(s => s.Name == nameof(EntityContext.Set) && s.IsGenericMethod);
 
-        private readonly EntityContext _context;
-        private readonly EntityContextOptions _options;
-        private readonly IContextService _service;
+        private readonly EntityContext context;
+        private readonly EntityContextOptions options;
+        private readonly IContextService service;
 
         // <summary>
         // Creates a set discovery service for the given derived context.
         // </summary>
         public EntityRepositoryDiscoveryService(EntityContext context, EntityContextOptions options)
         {
-            _context = context;
-            _options = options;
-            _service = context.GetService<IContextService>();
+            this.context = context;
+            this.options = options;
+            service = context.GetService<IContextService>();
         }
 
         #endregion
@@ -56,8 +55,8 @@ namespace Fireasy.Data.Entity
         // <returns> A dictionary of potential entity type to the list of the names of the properties that used the type. </returns>
         private EntityContextTypesInitializersPair GetSets()
         {
-            var contextType = _context.GetType();
-            return _objectSetInitializers.GetOrAdd(contextType, key =>
+            var contextType = context.GetType();
+            return objectSetInitializers.GetOrAdd(contextType, key =>
             {
                 // It is possible that multiple threads will enter this code and create the list
                 // and the delegates.  However, the result will always be the same so we may, in
@@ -75,9 +74,9 @@ namespace Fireasy.Data.Entity
                         && p.DeclaringType != typeof(EntityContext))
                                  let entityType = GetSetType(s.PropertyType)
                                  where entityType != null
-                                 select new EntityRepositoryMapper { Property = s, EntityType = entityType }).ToList();
+                                 select new EntityRepositoryTypeMapper(s, entityType)).ToList();
 
-                _options.Initializers?.PreInitialize(new EntityContextPreInitializeContext(_context, _service, reposMaps));
+                options.Initializers?.PreInitialize(new EntityContextPreInitializeContext(context, service, reposMaps));
 
                 // Properties declared directly on DbContext such as Database are skipped
                 foreach (var m in reposMaps)
@@ -100,7 +99,7 @@ namespace Fireasy.Data.Entity
                     var setter = m.Property.GetSetMethod();
                     if (setter != null && setter.IsPublic)
                     {
-                        var setMethod = MthSetRep.MakeGenericMethod(m.EntityType);
+                        var setMethod = SetRepositoryMethod.MakeGenericMethod(m.EntityType);
 
                         Expression expression = Expression.Call(dbContextParam, setMethod);
                         var pType = setter.GetParameters()[0].ParameterType;
@@ -134,7 +133,7 @@ namespace Fireasy.Data.Entity
         // </summary>
         public void InitializeSets()
         {
-            GetSets()?.SetsInitializer(_context); // Ensures sets have been discovered
+            GetSets()?.SetsInitializer(context); // Ensures sets have been discovered
         }
 
         #endregion
@@ -164,12 +163,6 @@ namespace Fireasy.Data.Entity
             return null;
         }
         #endregion
-    }
 
-    public class EntityRepositoryMapper
-    {
-        public PropertyInfo Property { get; set; }
-
-        public Type EntityType { get; set; }
     }
 }

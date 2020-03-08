@@ -16,7 +16,7 @@ namespace Fireasy.Data.Entity.Metadata
     /// </summary>
     public static class EntityMetadataUnity
     {
-        private static SafetyDictionary<Type, EntityMetadata> cache = new SafetyDictionary<Type, EntityMetadata>();
+        private static readonly SafetyDictionary<Type, EntityMetadata> cache = new SafetyDictionary<Type, EntityMetadata>();
 
         /// <summary>
         /// 获取指定类型的实体元数据。

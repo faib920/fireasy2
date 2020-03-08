@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Data;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Fireasy.Data.Extensions;
@@ -38,74 +39,47 @@ namespace Fireasy.Data.Syntax
         /// <summary>
         /// 获取最近创建的自动编号的查询文本。
         /// </summary>
-        public virtual string IdentitySelect
-        {
-            get { return "SELECT SCOPE_IDENTITY()"; }
-        }
+        public virtual string IdentitySelect => "SELECT SCOPE_IDENTITY()";
 
         /// <summary>
         /// 获取自增长列的关键词。
         /// </summary>
-        public string IdentityColumn
-        {
-            get { return "IDENTITY(1, 1)"; }
-        }
+        public string IdentityColumn => "IDENTITY(1, 1)";
 
         /// <summary>
         /// 获取受影响的行数的查询文本。
         /// </summary>
-        public string RowsAffected
-        {
-            get { return "@@ROWCOUNT"; }
-        }
+        public string RowsAffected => "@@ROWCOUNT";
 
         /// <summary>
         /// 获取伪查询的表名称。
         /// </summary>
-        public string FakeSelect
-        {
-            get { return string.Empty; }
-        }
+        public string FakeSelect => string.Empty;
 
         /// <summary>
         /// 获取存储参数的前缀。
         /// </summary>
-        public virtual string ParameterPrefix
-        {
-            get { return "@"; }
-        }
+        public virtual string ParameterPrefix => "@";
 
         /// <summary>
         /// 获取列引号标识符。
         /// </summary>
-        public string[] Quote
-        {
-            get { return new [] { "[", "]" }; }
-        }
+        public string[] Quote => new[] { "[", "]" };
 
         /// <summary>
         /// 获取换行符。
         /// </summary>
-        public string Linefeed
-        {
-            get { return "\nGO\n"; }
-        }
+        public string Linefeed => "\nGO\n";
 
         /// <summary>
         /// 获取是否允许在聚合中使用 DISTINCT 关键字。
         /// </summary>
-        public bool SupportDistinctInAggregates
-        {
-            get { return true; }
-        }
+        public bool SupportDistinctInAggregates => true;
 
         /// <summary>
         /// 获取是否允许在没有 FORM 的语句中使用子查询。
         /// </summary>
-        public bool SupportSubqueryInSelectWithoutFrom
-        {
-            get { return true; }
-        }
+        public bool SupportSubqueryInSelectWithoutFrom => true;
 
         /// <summary>
         /// 对命令文本进行分段处理，使之能够返回小范围内的数据。
@@ -139,13 +113,8 @@ namespace Fireasy.Data.Syntax
         {
             var orderBy = DbUtility.FindOrderBy(commandText);
 
-            commandText = string.Format(@"{0}
-{1}{2} FETCH NEXT {3} ROWS ONLY",
-                commandText,
-                string.IsNullOrEmpty(orderBy) ? "ORDER BY 1" : string.Empty,
-                segment.Start != null ? string.Format(" OFFSET {0} ROW", (segment.Start - 1)) : string.Empty,
-                segment.Length != 0 ? segment.Length : 1000);
-            return commandText;
+            return @$"{commandText}
+{(string.IsNullOrEmpty(orderBy) ? "ORDER BY 1" : string.Empty)}{(segment.Start != null ? $" OFFSET {segment.Start - 1} ROW" : string.Empty)} FETCH NEXT {(segment.Length != 0 ? segment.Length : 1000)} ROWS ONLY";
         }
 
         /// <summary>
@@ -159,33 +128,29 @@ namespace Fireasy.Data.Syntax
         {
             var orderBy = DbUtility.FindOrderBy(commandText);
             var regAlias = new Regex(@"(\w+)?\.");
+
             //如果有排序
             if (!string.IsNullOrEmpty(orderBy))
             {
                 //去除子句中的Order并移到OVER后
-                commandText = string.Format(@"
+                return @$"
                     SELECT T.* FROM 
                     (
-                        SELECT T.*, ROW_NUMBER() OVER ({2}) AS ROW_NUM 
-                        FROM ({0}) T
+                        SELECT T.*, ROW_NUMBER() OVER ({regAlias.Replace(orderBy, string.Empty)}) AS ROW_NUM 
+                        FROM ({commandText.Replace(orderBy, string.Empty).Trim()}) T
                     ) T 
-                    WHERE {1}",
-                    commandText.Replace(orderBy, string.Empty).Trim(),
-                    segment.Condition("ROW_NUM"),
-                    regAlias.Replace(orderBy, string.Empty));
+                    WHERE {segment.Condition("ROW_NUM")}";
             }
             else
             {
-                commandText = string.Format(@"
+                return @$"
                     SELECT T.* FROM 
                     (
                         SELECT T.*, ROW_NUMBER() OVER (ORDER BY (SELECT 1)) AS ROW_NUM 
-                        FROM ({0}) T
+                        FROM ({commandText}) T
                     ) T 
-                    WHERE {1}",
-                    commandText, segment.Condition("ROW_NUM"));
+                    WHERE {segment.Condition("ROW_NUM")}";
             }
-            return commandText;
         }
 
         /// <summary>
@@ -199,45 +164,45 @@ namespace Fireasy.Data.Syntax
             switch (dbType)
             {
                 case DbType.AnsiString:
-                    return string.Format("CAST({0} AS VARCHAR)", sourceExp);
+                    return $"CAST({sourceExp} AS VARCHAR)";
                 case DbType.AnsiStringFixedLength:
-                    return string.Format("CAST({0} AS CHAR)", sourceExp);
+                    return $"CAST({sourceExp} AS CHAR)";
                 case DbType.Binary:
-                    return string.Format("CAST({0} AS VARBINARY)", sourceExp);
+                    return $"CAST({sourceExp} AS VARBINARY)";
                 case DbType.Boolean:
-                    return string.Format("CAST({0} AS BIT)", sourceExp);
+                    return $"CAST({sourceExp} AS BIT)";
                 case DbType.Byte:
-                    return string.Format("CAST({0} AS TINYINT)", sourceExp);
+                    return $"CAST({sourceExp} AS TINYINT)";
                 case DbType.Currency:
-                    return string.Format("CAST({0} AS MONEY)", sourceExp);
+                    return $"CAST({sourceExp} AS MONEY)";
                 case DbType.Date:
-                    return string.Format("CAST({0} AS DATETIME)", sourceExp);
+                    return $"CAST({sourceExp} AS DATETIME)";
                 case DbType.DateTime:
-                    return string.Format("CAST({0} AS DATETIME)", sourceExp);
+                    return $"CAST({sourceExp} AS DATETIME)";
                 case DbType.DateTime2:
-                    return string.Format("CAST({0} AS DATETIME2)", sourceExp);
+                    return $"CAST({sourceExp} AS DATETIME2)";
                 case DbType.DateTimeOffset:
-                    return string.Format("CAST({0} AS DATETIMEOFFSET)", sourceExp);
+                    return $"CAST({sourceExp} AS DATETIMEOFFSET)";
                 case DbType.Decimal:
-                    return string.Format("CAST({0} AS DECIMAL)", sourceExp);
+                    return $"CAST({sourceExp} AS DECIMAL)";
                 case DbType.Double:
-                    return string.Format("CAST({0} AS DOUBLE PRECISION)", sourceExp);
+                    return $"CAST({sourceExp} AS DOUBLE PRECISION)";
                 case DbType.Guid:
-                    return string.Format("CAST({0} AS UNIQUEIDENTIFIER)", sourceExp);
+                    return $"CAST({sourceExp} AS UNIQUEIDENTIFIER)";
                 case DbType.Int16:
-                    return string.Format("CAST({0} AS SMALLINT)", sourceExp);
+                    return $"CAST({sourceExp} AS SMALLINT)";
                 case DbType.Int32:
-                    return string.Format("CAST({0} AS INT)", sourceExp);
+                    return $"CAST({sourceExp} AS INT)";
                 case DbType.Int64:
-                    return string.Format("CAST({0} AS BIGINT)", sourceExp);
+                    return $"CAST({sourceExp} AS BIGINT)";
                 case DbType.SByte:
                     break;
                 case DbType.Single:
-                    return string.Format("CAST({0} AS REAL)", sourceExp);
+                    return $"CAST({sourceExp} AS REAL)";
                 case DbType.String:
-                    return string.Format("CAST({0} AS NVARCHAR)", sourceExp);
+                    return $"CAST({sourceExp} AS NVARCHAR)";
                 case DbType.StringFixedLength:
-                    return string.Format("CAST({0} AS NCHAR)", sourceExp);
+                    return $"CAST({sourceExp} AS NCHAR)";
                 case DbType.Time:
                     break;
                 case DbType.UInt16:
@@ -249,7 +214,7 @@ namespace Fireasy.Data.Syntax
                 case DbType.VarNumeric:
                     break;
                 case DbType.Xml:
-                    return string.Format("CAST({0} AS XML)", sourceExp);
+                    return $"CAST({sourceExp} AS XML)";
             }
             return ExceptionHelper.ThrowSyntaxConvertException(dbType);
         }
@@ -275,9 +240,9 @@ namespace Fireasy.Data.Syntax
                     {
                         return "NTEXT";
                     }
-                    return string.Format("VARCHAR({0})", length);
+                    return $"VARCHAR({length})";
                 case DbType.AnsiStringFixedLength:
-                    return length == null ? "CHAR(255)" : string.Format("CHAR({0})", length);
+                    return length == null ? "CHAR(255)" : $"CHAR({length})";
                 case DbType.Binary:
                     if (length == null)
                     {
@@ -287,7 +252,7 @@ namespace Fireasy.Data.Syntax
                     {
                         return "IMAGE";
                     }
-                    return string.Format("VARBINARY({0})", length);
+                    return $"VARBINARY({length})";
                 case DbType.Boolean:
                     return "BIT";
                 case DbType.Byte:
@@ -309,13 +274,13 @@ namespace Fireasy.Data.Syntax
                     }
                     if (precision == null)
                     {
-                        return string.Format("DECIMAL(19, {0})", scale);
+                        return $"DECIMAL(19, {scale})";
                     }
                     if (scale == null)
                     {
-                        return string.Format("DECIMAL({0}, 5)", precision);
+                        return $"DECIMAL({precision}, 5)";
                     }
-                    return string.Format("DECIMAL({0}, {1})", precision, scale);
+                    return $"DECIMAL({precision}, {scale})";
                 case DbType.Double:
                     return "DOUBLE PRECISION";
                 case DbType.Guid:
@@ -339,13 +304,13 @@ namespace Fireasy.Data.Syntax
                     {
                         return "NTEXT";
                     }
-                    return string.Format("VARCHAR({0})", length);
+                    return $"VARCHAR({length})";
                 case DbType.StringFixedLength:
                     if (length == null)
                     {
                         return "NCHAR(255)";
                     }
-                    return string.Format("NCHAR({0})", length);
+                    return $"NCHAR({length})";
                 case DbType.Time:
                     return "DATETIME";
                 case DbType.UInt16:
@@ -404,7 +369,18 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public string ExistsTable(string tableName)
         {
-            return string.Format("SELECT COUNT(1) FROM SYS.OBJECTS WHERE NAME = '{0}' AND TYPE = 'U'", tableName);
+            return $"SELECT COUNT(1) FROM SYS.OBJECTS WHERE NAME = '{tableName}' AND TYPE = 'U'";
+        }
+
+        /// <summary>
+        /// 获取判断多个表是否存在的语句。
+        /// </summary>
+        /// <param name="tableName">要判断的表的名称数组。</param>
+        /// <returns></returns>
+        public virtual string ExistsTables(string[] tableNames)
+        {
+            var names = string.Join(",", tableNames.Select(s => $"'{s}'"));
+            return $"SELECT NAME FROM SYS.OBJECTS WHERE NAME IN ({names}) AND TYPE = 'U'";
         }
 
         /// <summary>

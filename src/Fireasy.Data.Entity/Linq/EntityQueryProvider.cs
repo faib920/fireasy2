@@ -7,9 +7,12 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common;
 using Fireasy.Common.Configuration;
+using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Linq.Translators.Configuration;
+using Fireasy.Data.Provider;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -22,21 +25,21 @@ namespace Fireasy.Data.Entity.Linq
     /// <summary>
     /// 为实体提供 LINQ 查询的支持。无法继承此类。
     /// </summary>
-    public sealed class EntityQueryProvider : IEntityQueryProvider
+    public sealed class EntityQueryProvider : IEntityQueryProvider, IProviderAware
     {
-        private IContextService service;
-        private IDatabase database;
+        private readonly IDatabase database;
+        private readonly IContextService contextService;
+        private static readonly ConcurrentDictionary<ParameterInfo[], Tuple<bool, bool>> attrCache = new ConcurrentDictionary<ParameterInfo[], Tuple<bool, bool>>(new ParametersComparer());
 
         /// <summary>
         /// 使用一个 <see cref="IDatabase"/> 对象初始化 <see cref="EntityQueryProvider"/> 类的新实例。
         /// </summary>
-        /// <param name="service">一个 <see cref="IContextService"/> 对象。</param>
-        public EntityQueryProvider(IContextService service)
+        /// <param name="contextService">一个 <see cref="IContextService"/> 对象。</param>
+        public EntityQueryProvider(IContextService contextService)
         {
-            Guard.ArgumentNull(service, nameof(service));
+            Guard.ArgumentNull(contextService, nameof(contextService));
 
-
-            if (service is IDatabaseAware aware)
+            if (contextService is IDatabaseAware aware)
             {
                 database = aware.Database;
             }
@@ -45,8 +48,26 @@ namespace Fireasy.Data.Entity.Linq
                 throw new InvalidOperationException(SR.GetString(SRKind.NotFoundDatabaseAware));
             }
 
-            this.service = service;
+            this.contextService = contextService;
+            Provider = contextService.Provider;
+            ServiceProvider = contextService.ServiceProvider;
+            ContextOptions = contextService.Options;
         }
+
+        /// <summary>
+        /// 获取数据库提供者实例。
+        /// </summary>
+        public IProvider Provider { get; private set; }
+
+        /// <summary>
+        /// 获取应用程序服务提供者实例。
+        /// </summary>
+        public IServiceProvider ServiceProvider { get; private set; }
+
+        /// <summary>
+        /// 获取参数选项。
+        /// </summary>
+        public EntityContextOptions ContextOptions { get; private set; }
 
         /// <summary>
         /// 执行 <see cref="Expression"/> 的查询，返回查询结果。
@@ -56,7 +77,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <exception cref="TranslateException">对 LINQ 表达式解析失败时抛出此异常。</exception>
         public object Execute(Expression expression)
         {
-            var efn = TranslateCache.TryGetDelegate(expression, () => (LambdaExpression)GetExecutionPlan(expression));
+            var translateCache = ServiceProvider.TryGetService(() => DefaultCacheParsingProcessor.Instance);
+            var efn = translateCache.TryGetDelegate(expression, GetCacheOptions(), () => (LambdaExpression)GetExecutionPlan(expression));
 
             var attrs = GetMethodAttributes(efn.Method);
 
@@ -90,7 +112,8 @@ namespace Fireasy.Data.Entity.Linq
         /// <exception cref="TranslateException">对 LINQ 表达式解析失败时抛出此异常。</exception>
         public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
         {
-            var efn = TranslateCache.TryGetDelegate(expression, () => (LambdaExpression)GetExecutionPlan(expression));
+            var translateCache = ServiceProvider.TryGetService(() => DefaultCacheParsingProcessor.Instance);
+            var efn = translateCache.TryGetDelegate(expression, GetCacheOptions(), () => (LambdaExpression)GetExecutionPlan(expression));
 
             var attrs = GetMethodAttributes(efn.Method);
 
@@ -126,7 +149,8 @@ namespace Fireasy.Data.Entity.Linq
 #if !NETFRAMEWORK && !NETSTANDARD2_0
         public IAsyncEnumerable<TResult> ExecuteEnumerableAsync<TResult>(Expression expression, CancellationToken cancellationToken)
         {
-            var efn = TranslateCache.TryGetDelegate(expression, () => (LambdaExpression)GetExecutionPlan(expression, true));
+            var translateCache = ServiceProvider.TryGetService(() => DefaultCacheParsingProcessor.Instance);
+            var efn = translateCache.TryGetDelegate(expression, GetCacheOptions(), () => (LambdaExpression)GetExecutionPlan(expression, true));
 
             var attrs = GetMethodAttributes(efn.Method);
 
@@ -177,14 +201,12 @@ namespace Fireasy.Data.Entity.Linq
                 var section = ConfigurationUnity.GetSection<TranslatorConfigurationSection>();
                 var options = GetTranslateOptions();
 
-                using (var scope = new TranslateScope(service, options))
-                {
-                    var translation = scope.TranslateProvider.Translate(expression);
-                    var translator = scope.TranslateProvider.CreateTranslator();
+                using var scope = new TranslateScope(contextService, options);
+                var translation = scope.TranslateProvider.Translate(expression);
+                var translator = scope.TranslateProvider.CreateTranslator();
 
-                    var buildOptions = new ExecutionBuilder.BuildOptions { IsAsync = isAsync, IsNoTracking = !options.TraceEntityState };
-                    return ExecutionBuilder.Build(translation, e => translator.Translate(e), buildOptions);
-                }
+                var buildOptions = new ExecutionBuilder.BuildOptions { IsAsync = isAsync, IsNoTracking = !options.TraceEntityState };
+                return ExecutionBuilder.Build(translation, e => translator.Translate(e), buildOptions);
             }
             catch (Exception ex)
             {
@@ -208,36 +230,34 @@ namespace Fireasy.Data.Entity.Linq
                     expression = lambda.Body;
                 }
 
-                options = options ?? GetTranslateOptions();
+                options ??= GetTranslateOptions();
 
-                using (var scope = new TranslateScope(service, options))
+                using var scope = new TranslateScope(contextService, options);
+                var translation = scope.TranslateProvider.Translate(expression);
+                var translator = scope.TranslateProvider.CreateTranslator();
+
+                TranslateResult result;
+                var selects = SelectGatherer.Gather(translation).ToList();
+                if (selects.Count > 0)
                 {
-                    var translation = scope.TranslateProvider.Translate(expression);
-                    var translator = scope.TranslateProvider.CreateTranslator();
-
-                    TranslateResult result;
-                    var selects = SelectGatherer.Gather(translation).ToList();
-                    if (selects.Count > 0)
+                    result = translator.Translate(selects[0]);
+                    if (selects.Count > 1)
                     {
-                        result = translator.Translate(selects[0]);
-                        if (selects.Count > 1)
+                        var list = new List<TranslateResult>();
+                        for (var i = 1; i < selects.Count; i++)
                         {
-                            var list = new List<TranslateResult>();
-                            for (var i = 1; i < selects.Count; i++)
-                            {
-                                list.Add(translator.Translate((selects[i])));
-                            }
-
-                            result.NestedResults = list.AsReadOnly();
+                            list.Add(translator.Translate((selects[i])));
                         }
-                    }
-                    else
-                    {
-                        result = translator.Translate(expression);
-                    }
 
-                    return result;
+                        result.NestedResults = list.AsReadOnly();
+                    }
                 }
+                else
+                {
+                    result = translator.Translate(expression);
+                }
+
+                return result;
             }
             catch (Exception ex)
             {
@@ -248,7 +268,12 @@ namespace Fireasy.Data.Entity.Linq
         private TranslateOptions GetTranslateOptions()
         {
             var section = ConfigurationUnity.GetSection<TranslatorConfigurationSection>();
-            return (section != null ? section.Options : Translators.TranslateOptions.Default).Clone();
+            return (section != null ? section.Options : TranslateOptions.Default).Clone();
+        }
+
+        private CacheParsingOptions GetCacheOptions()
+        {
+            return new CacheParsingOptions(ContextOptions.CacheParsing, ContextOptions.CacheParsingTimes, ContextOptions.CachePrefix);
         }
 
         /// <summary>
@@ -258,26 +283,71 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         private Tuple<bool, bool> GetMethodAttributes(MethodInfo method)
         {
-            var isAsync = false;
-            var isSegment = false;
-            foreach (var par in method.GetParameters())
-            {
-                if (isAsync && isSegment)
+            return attrCache.GetOrAdd(method.GetParameters(), ps =>
                 {
-                    break;
+                    var isAsync = false;
+                    var isSegment = false;
+                    foreach (var p in ps)
+                    {
+                        if (isAsync && isSegment)
+                        {
+                            break;
+                        }
+
+                        if (p.ParameterType == typeof(CancellationToken))
+                        {
+                            isAsync = true;
+                        }
+                        else if (typeof(IDataSegment).IsAssignableFrom(p.ParameterType))
+                        {
+                            isSegment = true;
+                        }
+                    }
+
+                    return Tuple.Create(isAsync, isSegment);
+                });
+        }
+
+        private class ParametersComparer : IEqualityComparer<ParameterInfo[]>
+        {
+            bool IEqualityComparer<ParameterInfo[]>.Equals(ParameterInfo[] x, ParameterInfo[] y)
+            {
+                if (x.Length != y.Length)
+                {
+                    return false;
                 }
 
-                if (par.ParameterType == typeof(CancellationToken))
+                for (int i = 0, n = x.Length; i < n; i++)
                 {
-                    isAsync = true;
+                    if (x[i].ParameterType != y[i].ParameterType)
+                    {
+                        return false;
+                    }
                 }
-                else if (typeof(IDataSegment).IsAssignableFrom(par.ParameterType))
-                {
-                    isSegment = true;
-                }
+
+                return true;
             }
 
-            return Tuple.Create(isAsync, isSegment);
+            int IEqualityComparer<ParameterInfo[]>.GetHashCode(ParameterInfo[] obj)
+            {
+                if (obj.Length == 0)
+                {
+                    return 0;
+                }
+
+                var hash = obj[0].ParameterType.GetHashCode();
+                if (obj.Length == 1)
+                {
+                    return hash;
+                }
+
+                for (int i = 1, n = obj.Length; i < n; i++)
+                {
+                    hash ^= obj[i].ParameterType.GetHashCode();
+                }
+
+                return hash;
+            }
         }
     }
 }

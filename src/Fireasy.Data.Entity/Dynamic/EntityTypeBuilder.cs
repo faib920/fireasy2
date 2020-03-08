@@ -28,12 +28,15 @@ namespace Fireasy.Data.Entity.Dynamic
     /// </summary>
     public sealed class EntityTypeBuilder
     {
-        private static readonly MethodInfo GetValueMethod = typeof(EntityObject).GetMethods().FirstOrDefault(s => s.Name == nameof(IEntity.GetValue));
-        private static readonly MethodInfo SetValueMethod = typeof(EntityObject).GetMethods().FirstOrDefault(s => s.Name == nameof(IEntity.SetValue));
-        private static readonly MethodInfo SGetValueMethod = typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == nameof(PropertyValue.GetValue) && s.IsGenericMethod);
-        private static readonly MethodInfo SNewValueMethod = typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == nameof(PropertyValue.NewValue));
-        private static readonly MethodInfo RegisterMethod = typeof(PropertyUnity).GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(s => s.Name == nameof(PropertyUnity.RegisterProperty) && !s.IsGenericMethod && s.GetParameters().Length == 2);
-        private static readonly MethodInfo TypeGetTypeFromHandle = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Public | BindingFlags.Static);
+        private class MethodCache
+        {
+            internal static readonly MethodInfo EntityGetValue = typeof(EntityObject).GetMethods().FirstOrDefault(s => s.Name == nameof(IEntity.GetValue));
+            internal static readonly MethodInfo EntitySetValue = typeof(EntityObject).GetMethods().FirstOrDefault(s => s.Name == nameof(IEntity.SetValue));
+            internal static readonly MethodInfo PropertyValueGetValue = typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == nameof(PropertyValue.GetValue) && s.IsGenericMethod);
+            internal static readonly MethodInfo PropertyValueSNewValue = typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == nameof(PropertyValue.NewValue));
+            internal static readonly MethodInfo RegisterProperty = typeof(PropertyUnity).GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(s => s.Name == nameof(PropertyUnity.RegisterProperty) && !s.IsGenericMethod && s.GetParameters().Length == 2);
+            internal static readonly MethodInfo TypeGetTypeFromHandle = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Public | BindingFlags.Static);
+        }
 
         private readonly DynamicAssemblyBuilder assemblyBuilder;
         private List<DynamicFieldBuilder> fields;
@@ -49,7 +52,7 @@ namespace Fireasy.Data.Entity.Dynamic
         public EntityTypeBuilder(string typeName, DynamicAssemblyBuilder assemblyBuilder = null, Type baseType = null)
         {
             TypeName = typeName;
-            this.assemblyBuilder = assemblyBuilder ?? new DynamicAssemblyBuilder("<DynamicType>_" + typeName);
+            this.assemblyBuilder = assemblyBuilder ?? new DynamicAssemblyBuilder($"<DynamicType>_{typeName}");
             InnerBuilder = this.assemblyBuilder.DefineType(TypeName, baseType: baseType ?? typeof(EntityObject));
             EntityType = InnerBuilder.UnderlyingSystemType;
             Properties = new List<IProperty>();
@@ -195,9 +198,9 @@ namespace Fireasy.Data.Entity.Dynamic
                         bc.Emitter
                             .ldarg_0
                             .ldsfld(fieldBuilder.FieldBuilder)
-                            .callvirt(GetValueMethod)
+                            .callvirt(MethodCache.EntityGetValue)
                             .Assert(op_Explicit != null, e1 => e1.call(op_Explicit),
-                                e1 => e1.call(SGetValueMethod.MakeGenericMethod(_property.Type)))
+                                e1 => e1.call(MethodCache.PropertyValueGetValue.MakeGenericMethod(_property.Type)))
                             .Assert(isEnum, e1 => e1.unbox_any(opType))
                             .stloc_0
                             .ldloc_0
@@ -212,8 +215,8 @@ namespace Fireasy.Data.Entity.Dynamic
                             .ldarg_1
                             .Assert(isEnum, e1 => e1.box(_property.Type))
                             .Assert(op_Implicit != null, e1 => e1.call(op_Implicit),
-                                e1 => e1.ldtoken(_property.Type).call(TypeGetTypeFromHandle).call(SNewValueMethod))
-                            .callvirt(SetValueMethod)
+                                e1 => e1.ldtoken(_property.Type).call(MethodCache.TypeGetTypeFromHandle).call(MethodCache.PropertyValueSNewValue))
+                            .callvirt(MethodCache.EntitySetValue)
                             .ret();
                     });
 
@@ -271,7 +274,7 @@ namespace Fireasy.Data.Entity.Dynamic
             var mapType = typeof(PropertyMapInfo);
 
             emiter = emiter
-                .ldtoken(EntityType).call(TypeGetTypeFromHandle)
+                .ldtoken(EntityType).call(MethodCache.TypeGetTypeFromHandle)
                 .newobj(propertyType)
                 .stloc(local)
                 .ldloc(local)
@@ -280,7 +283,7 @@ namespace Fireasy.Data.Entity.Dynamic
                 .nop
                 .ldloc(local)
                 .ldtoken(property.Type)
-                .call(TypeGetTypeFromHandle)
+                .call(MethodCache.TypeGetTypeFromHandle)
                 .call(propertyType.GetProperty(nameof(GeneralProperty.Type)).GetSetMethod())
                 .nop
                 .ldloc(local)
@@ -342,7 +345,7 @@ namespace Fireasy.Data.Entity.Dynamic
 
             return emiter.call(propertyType.GetProperty(nameof(GeneralProperty.Info)).GetSetMethod())
                 .ldloc(local)
-                .call(RegisterMethod);
+                .call(MethodCache.RegisterProperty);
         }
 
         private EmitHelper InitRelationProperty(EmitHelper emiter, LocalBuilder local, IProperty property)
@@ -350,7 +353,7 @@ namespace Fireasy.Data.Entity.Dynamic
             var propertyType = property.GetType();
 
             return emiter
-                .ldtoken(EntityType).call(TypeGetTypeFromHandle)
+                .ldtoken(EntityType).call(MethodCache.TypeGetTypeFromHandle)
                 .newobj(propertyType)
                 .stloc(local)
                 .ldloc(local)
@@ -359,19 +362,19 @@ namespace Fireasy.Data.Entity.Dynamic
                 .nop
                 .ldloc(local)
                 .ldtoken(property.Type)
-                .call(TypeGetTypeFromHandle)
+                .call(MethodCache.TypeGetTypeFromHandle)
                 .call(propertyType.GetProperty(nameof(GeneralProperty.Type)).GetSetMethod())
                 .nop
                 .ldloc(local)
                 .ldtoken(property.Type)
-                .call(TypeGetTypeFromHandle)
+                .call(MethodCache.TypeGetTypeFromHandle)
                 .call(propertyType.GetProperty(nameof(RelationProperty.RelationalType)).GetSetMethod())
                 .nop
                 .ldloc(local)
                 .ldsfld(typeof(RelationOptions).GetField(nameof(RelationOptions.Default), BindingFlags.Public | BindingFlags.Static))
                 .call(propertyType.GetProperty(nameof(RelationProperty.Options)).GetSetMethod())
                 .nop
-                .ldloc(local).call(RegisterMethod);
+                .ldloc(local).call(MethodCache.RegisterProperty);
         }
 
         /// <summary>

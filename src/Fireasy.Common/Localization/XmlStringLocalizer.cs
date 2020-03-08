@@ -15,7 +15,7 @@ namespace Fireasy.Common.Localization
     /// </summary>
     public class XmlStringLocalizer : IStringLocalizer
     {
-        private XmlDocument doc;
+        private readonly XmlDocument doc;
 
         public XmlStringLocalizer(XmlDocument doc, CultureInfo cultureInfo)
         {

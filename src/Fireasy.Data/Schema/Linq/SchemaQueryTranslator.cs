@@ -54,16 +54,13 @@ namespace Fireasy.Data.Schema.Linq
         /// <returns></returns>
         public override Expression Visit(Expression expression)
         {
-            switch (expression.NodeType)
+            return expression.NodeType switch
             {
-                case ExpressionType.MemberAccess:
-                    return VisitMember((MemberExpression)expression);
-                case ExpressionType.Equal:
-                    return VisitBinary((BinaryExpression)expression);
-                case ExpressionType.Constant:
-                    return VisitConstant((ConstantExpression)expression);
-            }
-            return base.Visit(expression);
+                ExpressionType.MemberAccess => VisitMember((MemberExpression)expression),
+                ExpressionType.Equal => VisitBinary((BinaryExpression)expression),
+                ExpressionType.Constant => VisitConstant((ConstantExpression)expression),
+                _ => base.Visit(expression),
+            };
         }
 
         /// <summary>

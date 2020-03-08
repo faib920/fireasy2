@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Logging;
 using System;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,12 +18,13 @@ namespace Fireasy.NLog
     /// </summary>
     public class Logger : ILogger
     {
-        private global::NLog.ILogger log;
+        private readonly global::NLog.ILogger log;
+        private readonly NLogOptions options;
+        private static readonly ConcurrentDictionary<Type, ILogger> loggers = new ConcurrentDictionary<Type, ILogger>();
 
         protected Logger(Type type)
+            : this (type, null)
         {
-            log = type == null ? global::NLog.LogManager.GetLogger("fireasy") : 
-                global::NLog.LogManager.GetLogger("fireasy", type);
         }
 
         public Logger()
@@ -30,9 +32,22 @@ namespace Fireasy.NLog
         {
         }
 
+        public Logger(Type type, NLogOptions options)
+        {
+            this.options = options;
+
+            if (options != null && !string.IsNullOrEmpty(options.XmlFile))
+            {
+                global::NLog.LogManager.Configuration = new global::NLog.Config.XmlLoggingConfiguration(options.XmlFile, true);
+            }
+
+            log = type == null ? global::NLog.LogManager.GetLogger("fireasy") :
+                global::NLog.LogManager.GetLogger("fireasy", type);
+        }
+
         public ILogger GetLogger<T>() where T : class
         {
-            return new Logger(typeof(T));
+            return loggers.GetOrAdd(typeof(T), k =>new Logger(k, options));
         }
 
         /// <summary>

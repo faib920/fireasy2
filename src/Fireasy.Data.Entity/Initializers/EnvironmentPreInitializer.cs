@@ -10,13 +10,13 @@ namespace Fireasy.Data.Entity.Initializers
     /// <summary>
     /// 此初始化器为当前的上下文附加一个 <see cref="EntityPersistentEnvironment"/> 对象。
     /// </summary>
-    public class EnvironmentPreInitializer : IEntityContextPreInitializer
+    public sealed class EnvironmentPreInitializer : IEntityContextPreInitializer
     {
         public EntityPersistentEnvironment Environment { get; set; }
 
         void IEntityContextPreInitializer.PreInitialize(EntityContextPreInitializeContext context)
         {
-            context.Service.InitializeEnvironment(Environment);
+            context.ContextService.InitializeEnvironment(Environment);
         }
     }
 }

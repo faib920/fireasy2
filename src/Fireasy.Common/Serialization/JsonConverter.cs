@@ -16,7 +16,7 @@ namespace Fireasy.Common.Serialization
         {
             get
             {
-                return SerializeContext.Current != null ? SerializeContext.Current.SerializeInfo : null;
+                return SerializeContext.Current?.SerializeInfo;
             }
         }
 
@@ -55,12 +55,10 @@ namespace Fireasy.Common.Serialization
 
         string ITextConverter.WriteObject(ITextSerializer serializer, object obj)
         {
-            using (var sw = new StringWriter(CultureInfo.InvariantCulture))
-            using (var writer = new JsonWriter(sw))
-            {
-                WriteJson((JsonSerializer)serializer, writer, obj);
-                return sw.ToString();
-            }
+            using var sw = new StringWriter(CultureInfo.InvariantCulture);
+            using var writer = new JsonWriter(sw);
+            WriteJson((JsonSerializer)serializer, writer, obj);
+            return sw.ToString();
         }
 
         /// <summary>
@@ -77,11 +75,9 @@ namespace Fireasy.Common.Serialization
 
         object ITextConverter.ReadObject(ITextSerializer serializer, Type dataType, string text)
         {
-            using (var sr = new StringReader(text))
-            using (var reader = new JsonReader(sr))
-            {
-                return ReadJson((JsonSerializer)serializer, reader, dataType);
-            }
+            using var sr = new StringReader(text);
+            using var reader = new JsonReader(sr);
+            return ReadJson((JsonSerializer)serializer, reader, dataType);
         }
     }
 

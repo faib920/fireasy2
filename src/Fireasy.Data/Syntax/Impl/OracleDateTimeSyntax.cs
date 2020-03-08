@@ -32,8 +32,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string New(object yearExp, object monthExp, object dayExp)
         {
-            return string.Format("TO_DATE({0} || '-' || {1} || '-' || {2},'YYYY-MM-DD')",
-                yearExp, monthExp, dayExp);
+            return $"TO_DATE({yearExp} || '-' || {monthExp} || '-' || {dayExp},'YYYY-MM-DD')";
         }
 
         /// <summary>
@@ -48,8 +47,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string New(object yearExp, object monthExp, object dayExp, object hourExp, object minuteExp, object secondExp)
         {
-            return string.Format("TO_DATE({0} || '-' || {1} || '-' || {2} || ' ' || {3} || ':' || {4} || ':' || {5},'YYYY-MM-DD HH24:MI:SS')",
-                yearExp, monthExp, dayExp, hourExp, minuteExp, secondExp);
+            return $"TO_DATE({yearExp} || '-' || {monthExp} || '-' || {dayExp} || ' ' || {hourExp} || ':' || {minuteExp} || ':' || {secondExp},'YYYY-MM-DD HH24:MI:SS')";
         }
 
         /// <summary>
@@ -59,7 +57,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Year(object sourceExp)
         {
-            return string.Format("TO_NUMBER(TO_CHAR({0},'YYYY'))", sourceExp);
+            return $"TO_NUMBER(TO_CHAR({sourceExp},'YYYY'))";
         }
 
         /// <summary>
@@ -69,7 +67,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Month(object sourceExp)
         {
-            return string.Format("TO_NUMBER(TO_CHAR({0},'MM'))", sourceExp);
+            return $"TO_NUMBER(TO_CHAR({sourceExp},'MM'))";
         }
 
         /// <summary>
@@ -79,7 +77,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Day(object sourceExp)
         {
-            return string.Format("TO_NUMBER(TO_CHAR({0},'DD'))", sourceExp);
+            return $"TO_NUMBER(TO_CHAR({sourceExp},'DD'))";
         }
 
         /// <summary>
@@ -89,7 +87,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Hour(object sourceExp)
         {
-            return string.Format("TO_NUMBER(TO_CHAR({0},'HH24'))", sourceExp);
+            return $"TO_NUMBER(TO_CHAR({sourceExp},'HH24'))";
         }
 
         /// <summary>
@@ -99,7 +97,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Minute(object sourceExp)
         {
-            return string.Format("TO_NUMBER(TO_CHAR({0},'MI'))", sourceExp);
+            return $"TO_NUMBER(TO_CHAR({sourceExp},'MI'))";
         }
 
         /// <summary>
@@ -109,7 +107,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Second(object sourceExp)
         {
-            return string.Format("TO_NUMBER(TO_CHAR({0},'SS'))", sourceExp);
+            return $"TO_NUMBER(TO_CHAR({sourceExp},'SS'))";
         }
 
         /// <summary>
@@ -127,9 +125,9 @@ namespace Fireasy.Data.Syntax
         /// </summary>
         /// <param name="sourceExp"></param>
         /// <returns></returns>
-        public virtual string ShortTime(object sourceExp)
+        public override string ShortTime(object sourceExp)
         {
-            return string.Format("TO_CHAR({0},'HH24:MI:SS')", sourceExp);
+            return $"TO_CHAR({sourceExp},'HH24:MI:SS')";
         }
 
         /// <summary>
@@ -137,9 +135,9 @@ namespace Fireasy.Data.Syntax
         /// </summary>
         /// <param name="sourceExp"></param>
         /// <returns></returns>
-        public virtual string ShortDate(object sourceExp)
+        public override string ShortDate(object sourceExp)
         {
-            return string.Format("TO_CHAR({0},'YYYY-MM-DD')", sourceExp);
+            return $"TO_CHAR({sourceExp},'YYYY-MM-DD')";
         }
 
         /// <summary>
@@ -149,7 +147,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string DayOfWeek(object sourceExp)
         {
-            return string.Format("TO_NUMBER(TO_CHAR({0},'D')) - 1", sourceExp);
+            return $"TO_NUMBER(TO_CHAR({sourceExp},'D')) - 1";
         }
 
         /// <summary>
@@ -159,7 +157,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string DayOfYear(object sourceExp)
         {
-            return string.Format("TO_NUMBER(TO_CHAR({0},'DDD'))", sourceExp);
+            return $"TO_NUMBER(TO_CHAR({sourceExp},'DDD'))";
         }
 
         /// <summary>
@@ -169,7 +167,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string WeekOfYear(object sourceExp)
         {
-            return string.Format("TO_NUMBER(TO_CHAR({0},'WW'))", sourceExp);
+            return $"TO_NUMBER(TO_CHAR({sourceExp},'WW'))";
         }
 
         /// <summary>
@@ -180,7 +178,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string AddYears(object sourceExp, object yearExp)
         {
-            return string.Format("ADD_MONTHS({0}, 12 * {1})", sourceExp, yearExp);
+            return $"ADD_MONTHS({sourceExp}, 12 * {yearExp})";
         }
 
         /// <summary>
@@ -191,7 +189,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string AddMonths(object sourceExp, object monthExp)
         {
-            return string.Format("ADD_MONTHS({0}, {1})", sourceExp, monthExp);
+            return $"ADD_MONTHS({sourceExp}, {monthExp})";
         }
 
         /// <summary>
@@ -202,7 +200,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string AddDays(object sourceExp, object dayExp)
         {
-            return string.Format("{0} + {1}", sourceExp, dayExp);
+            return $"{sourceExp} + {dayExp}";
         }
 
         /// <summary>
@@ -213,7 +211,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string AddHours(object sourceExp, object hourExp)
         {
-            return string.Format("{0} + (1 / 24) * {1}", sourceExp, hourExp);
+            return $"{sourceExp} + (1 / 24) * {hourExp}";
         }
 
         /// <summary>
@@ -224,7 +222,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string AddMinutes(object sourceExp, object minuteExp)
         {
-            return string.Format("{0} + (1 / 24 / 60) * {1}", sourceExp, minuteExp);
+            return $"{sourceExp} + (1 / 24 / 60) * {minuteExp}";
         }
 
         /// <summary>
@@ -235,7 +233,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string AddSeconds(object sourceExp, object secondExp)
         {
-            return string.Format("{0} + (1 / 24 / 60 / 60) * {1}", sourceExp, secondExp);
+            return $"{sourceExp} + (1 / 24 / 60 / 60) * {secondExp}";
         }
 
         /// <summary>
@@ -246,7 +244,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string DiffDays(object sourceExp, object otherExp)
         {
-            return string.Format("ROUND({1} - {0})", sourceExp, otherExp);
+            return $"ROUND({otherExp} - {sourceExp})";
         }
 
         /// <summary>

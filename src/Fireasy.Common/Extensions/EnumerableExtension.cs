@@ -42,8 +42,7 @@ namespace Fireasy.Common.Extensions
             {
                 return true;
             }
-            var collection = source as ICollection;
-            if (collection != null)
+            if (source is ICollection collection)
             {
                 return collection.Count == 0;
             }
@@ -67,6 +66,24 @@ namespace Fireasy.Common.Extensions
             foreach (var item in source)
             {
                 action(item);
+            }
+        }
+
+        /// <summary>
+        /// 枚举序列中的所有元素，并执行指定的方法（方法中带索引参数）。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="action"></param>
+        public static void ForEach<T>(this IEnumerable<T> source, Action<T, int> action)
+        {
+            Guard.ArgumentNull(source, nameof(source));
+            Guard.ArgumentNull(action, nameof(action));
+
+            var index = 0;
+            foreach (var item in source)
+            {
+                action(item, index++);
             }
         }
 

@@ -17,6 +17,9 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 using Fireasy.Common.Extensions;
+using Fireasy.Common.Tasks;
+using System.Diagnostics;
+using Fireasy.Common;
 
 namespace Fireasy.Redis
 {
@@ -27,51 +30,77 @@ namespace Fireasy.Redis
     /// <typeparam name="TValue"></typeparam>
     internal class RedisHashSet<TKey, TValue> : ICacheHashSet<TKey, TValue>
     {
-        private RedisConfigurationSetting setting;
-        private string cacheKey;
-        private Func<RedisCacheItem<TValue>, string> serialize;
-        private Func<string, RedisCacheItem<TValue>> deserialize;
+        private readonly RedisConfigurationSetting setting;
+        private readonly string cacheKey;
+        private readonly Func<RedisCacheItem<TValue>, string> serialize;
+        private readonly Func<string, RedisCacheItem<TValue>> deserialize;
 
 #if NETSTANDARD
-        private Func<CSRedisClient> clientFunc;
+        private readonly CSRedisClient client;
 
-        internal RedisHashSet(RedisConfigurationSetting setting, string cacheKey, Func<CSRedisClient> clientFunc, Func<RedisCacheItem<TValue>, string> serialize, Func<string, RedisCacheItem<TValue>> deserialize)
+        internal RedisHashSet(
+            RedisConfigurationSetting setting, 
+            string cacheKey, 
+            Func<IEnumerable<Tuple<TKey, TValue, ICacheItemExpiration>>> initializeSet, 
+            CSRedisClient client, 
+            Func<RedisCacheItem<TValue>, string> serialize, 
+            Func<string, RedisCacheItem<TValue>> deserialize)
         {
             this.setting = setting;
             this.cacheKey = cacheKey;
-            this.clientFunc = clientFunc;
+            this.client = client;
             this.serialize = serialize;
             this.deserialize = deserialize;
+
+            if (initializeSet != null)
+            {
+                Initialize(initializeSet);
+            }
+
+            StartExpireTask();
         }
 #else
-        private Func<IDatabase> dbFunc;
+        private IDatabase database;
 
-        internal RedisHashSet(RedisConfigurationSetting setting, string cacheKey, Func<IDatabase> dbFunc, Func<RedisCacheItem<TValue>, string> serialize, Func<string, RedisCacheItem<TValue>> deserialize)
+        internal RedisHashSet(
+            RedisConfigurationSetting setting,
+            string cacheKey,
+            Func<IEnumerable<Tuple<TKey, TValue, ICacheItemExpiration>>> initializeSet,
+            IDatabase database,
+            Func<RedisCacheItem<TValue>, string> serialize,
+            Func<string, RedisCacheItem<TValue>> deserialize)
         {
             this.setting = setting;
             this.cacheKey = cacheKey;
-            this.dbFunc = dbFunc;
+            this.database = database;
             this.serialize = serialize;
             this.deserialize = deserialize;
+
+            if (initializeSet != null)
+            {
+                Initialize(initializeSet);
+            }
+
+            StartExpireTask();
         }
 #endif
 
         /// <summary>
-        /// 尝试从集合中获取指定 <paramref name="key"/> 的数据，如果没有则使用工厂函数添加对象到集合中。
+        /// 尝试从集合中获取指定 <paramref name="key"/> 的数据，如果没有则使用函数添加对象到集合中。
         /// </summary>
         /// <param name="key">标识数据的 key。</param>
-        /// <param name="factory">用于添加缓存对象的工厂函数。</param>
+        /// <param name="valueCreator">用于添加缓存对象的函数。</param>
         /// <param name="expiration">判断对象过期的对象。</param>
         /// <returns></returns>
-        public TValue TryGet(TKey key, Func<TValue> factory, Func<ICacheItemExpiration> expiration = null)
+        public TValue TryGet(TKey key, Func<TValue> valueCreator, Func<ICacheItemExpiration> expiration = null)
         {
             var sKey = key.ToString();
 #if NETSTANDARD
             CheckCache<TValue> GetCacheValue()
             {
-                if (clientFunc().HExists(cacheKey, sKey))
+                if (client.HExists(cacheKey, sKey))
                 {
-                    var content = clientFunc().HGet(cacheKey, sKey);
+                    var content = client.HGet(cacheKey, sKey);
                     var item = deserialize(content);
                     if (!item.HasExpired())
                     {
@@ -88,7 +117,7 @@ namespace Fireasy.Redis
                 return ck.Value;
             }
 
-            return RedisHelper.Lock(clientFunc(), cacheKey, TimeSpan.FromSeconds(setting.LockTimeout), () =>
+            return RedisHelper.Lock(client, string.Concat(cacheKey, ":", sKey), TimeSpan.FromSeconds(setting.LockTimeout), () =>
                 {
                     var ck1 = GetCacheValue();
                     if (ck1.HasValue)
@@ -96,17 +125,17 @@ namespace Fireasy.Redis
                         return ck1.Value;
                     }
 
-                    var value = factory();
-                    var json = serialize(new RedisCacheItem<TValue>(value, expiration == null ? NeverExpired.Instance : expiration()));
-                    clientFunc().HSet(cacheKey, sKey, json);
+                    var value = valueCreator();
+                    var content = serialize(new RedisCacheItem<TValue>(value, expiration == null ? NeverExpired.Instance : expiration()));
+                    client.HSet(cacheKey, sKey, content);
                     return value;
                 });
 #else
             CheckCache<TValue> GetCacheValue()
             {
-                if (dbFunc().HashExists(cacheKey, sKey))
+                if (database.HashExists(cacheKey, sKey))
                 {
-                    var content = dbFunc().HashGet(cacheKey, sKey);
+                    var content = database.HashGet(cacheKey, sKey);
                     var item = deserialize(content);
                     if (!item.HasExpired())
                     {
@@ -123,7 +152,7 @@ namespace Fireasy.Redis
                 return ck.Value;
             }
 
-            return RedisHelper.Lock(dbFunc(), cacheKey, TimeSpan.FromSeconds(setting.LockTimeout), () =>
+            return RedisHelper.Lock(database, string.Concat(cacheKey, ":", sKey), TimeSpan.FromSeconds(setting.LockTimeout), () =>
                 {
                     var ck1 = GetCacheValue();
                     if (ck1.HasValue)
@@ -131,31 +160,31 @@ namespace Fireasy.Redis
                         return ck1.Value;
                     }
 
-                    var value = factory();
-                    var json = serialize(new RedisCacheItem<TValue>(value, expiration == null ? NeverExpired.Instance : expiration()));
-                    dbFunc().HashSet(cacheKey, sKey, json);
+                    var value = valueCreator();
+                    var content = serialize(new RedisCacheItem<TValue>(value, expiration == null ? NeverExpired.Instance : expiration()));
+                    database.HashSet(cacheKey, sKey, content);
                     return value;
                 });
 #endif
         }
 
         /// <summary>
-        /// 异步的，尝试从集合中获取指定 <paramref name="key"/> 的数据，如果没有则使用工厂函数添加对象到集合中。
+        /// 异步的，尝试从集合中获取指定 <paramref name="key"/> 的数据，如果没有则使用函数添加对象到集合中。
         /// </summary>
         /// <param name="key">标识数据的 key。</param>
-        /// <param name="factory">用于添加缓存对象的工厂函数。</param>
+        /// <param name="valueCreator">用于添加缓存对象的函数。</param>
         /// <param name="expiration">判断对象过期的对象。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns></returns>
-        public async Task<TValue> TryGetAsync(TKey key, Func<Task<TValue>> factory, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default)
+        public async Task<TValue> TryGetAsync(TKey key, Func<Task<TValue>> valueCreator, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default)
         {
             var sKey = key.ToString();
 #if NETSTANDARD
             async Task<CheckCache<TValue>> GetCacheValue()
             {
-                if (await clientFunc().HExistsAsync(cacheKey, sKey))
+                if (await client.HExistsAsync(cacheKey, sKey))
                 {
-                    var content = await clientFunc().HGetAsync(cacheKey, sKey);
+                    var content = await client.HGetAsync(cacheKey, sKey);
                     var item = deserialize(content);
                     if (!item.HasExpired())
                     {
@@ -172,7 +201,7 @@ namespace Fireasy.Redis
                 return ck.Value;
             }
 
-            return await RedisHelper.LockAsync(clientFunc(), cacheKey, TimeSpan.FromSeconds(setting.LockTimeout), async () =>
+            return await RedisHelper.LockAsync(client, string.Concat(cacheKey, ":", sKey), TimeSpan.FromSeconds(setting.LockTimeout), async () =>
                 {
                     var ck1 = await GetCacheValue();
                     if (ck1.HasValue)
@@ -180,17 +209,17 @@ namespace Fireasy.Redis
                         return ck1.Value;
                     }
 
-                    var value = await factory();
-                    var json = serialize(new RedisCacheItem<TValue>(value, expiration == null ? NeverExpired.Instance : expiration()));
-                    await clientFunc().HSetAsync(cacheKey, sKey, json);
+                    var value = await valueCreator();
+                    var content = serialize(new RedisCacheItem<TValue>(value, expiration == null ? NeverExpired.Instance : expiration()));
+                    await client.HSetAsync(cacheKey, sKey, content);
                     return value;
                 });
 #else
             async Task<CheckCache<TValue>> GetCacheValue()
             {
-                if (await dbFunc().HashExistsAsync(cacheKey, sKey))
+                if (await database.HashExistsAsync(cacheKey, sKey))
                 {
-                    var content = await dbFunc().HashGetAsync(cacheKey, sKey);
+                    var content = await database.HashGetAsync(cacheKey, sKey);
                     var item = deserialize(content);
                     if (!item.HasExpired())
                     {
@@ -207,7 +236,7 @@ namespace Fireasy.Redis
                 return ck.Value;
             }
 
-            return await RedisHelper.LockAsync(dbFunc(), cacheKey, TimeSpan.FromSeconds(setting.LockTimeout), async () =>
+            return await RedisHelper.LockAsync(database, string.Concat(cacheKey, ":", sKey), TimeSpan.FromSeconds(setting.LockTimeout), async () =>
                 {
                     var ck1 = await GetCacheValue();
                     if (ck1.HasValue)
@@ -215,9 +244,9 @@ namespace Fireasy.Redis
                         return ck1.Value;
                     }
 
-                    var value = await factory();
-                    var json = serialize(new RedisCacheItem<TValue>(value, expiration == null ? NeverExpired.Instance : expiration()));
-                    await dbFunc().HashSetAsync(cacheKey, sKey, json);
+                    var value = await valueCreator();
+                    var content = serialize(new RedisCacheItem<TValue>(value, expiration == null ? NeverExpired.Instance : expiration()));
+                    await database.HashSetAsync(cacheKey, sKey, content);
                     return value;
                 });
 #endif
@@ -232,11 +261,11 @@ namespace Fireasy.Redis
         public void Add(TKey key, TValue value, ICacheItemExpiration expiration = null)
         {
             var sKey = key.ToString();
-            var json = serialize(new RedisCacheItem<TValue>(value, expiration ?? NeverExpired.Instance));
+            var content = serialize(new RedisCacheItem<TValue>(value, expiration ?? NeverExpired.Instance));
 #if NETSTANDARD
-            clientFunc().HSet(cacheKey, sKey, json);
+            client.HSet(cacheKey, sKey, content);
 #else
-            dbFunc().HashSet(cacheKey, sKey, json);
+            database.HashSet(cacheKey, sKey, content);
 #endif
         }
 
@@ -249,11 +278,11 @@ namespace Fireasy.Redis
         public async Task AddAsync(TKey key, TValue value, ICacheItemExpiration expiration = null)
         {
             var sKey = key.ToString();
-            var json = serialize(new RedisCacheItem<TValue>(value, expiration ?? NeverExpired.Instance));
+            var content = serialize(new RedisCacheItem<TValue>(value, expiration ?? NeverExpired.Instance));
 #if NETSTANDARD
-            await clientFunc().HSetAsync(cacheKey, sKey, json);
+            await client.HSetAsync(cacheKey, sKey, content);
 #else
-            await dbFunc().HashSetAsync(cacheKey, sKey, json);
+            await database.HashSetAsync(cacheKey, sKey, content);
 #endif
         }
 
@@ -267,9 +296,9 @@ namespace Fireasy.Redis
         {
             var sKey = key.ToString();
 #if NETSTANDARD
-            if (clientFunc().HExists(cacheKey, sKey))
+            if (client.HExists(cacheKey, sKey))
             {
-                var content = clientFunc().HGet(cacheKey, sKey);
+                var content = client.HGet(cacheKey, sKey);
                 var item = deserialize(content);
                 if (!item.HasExpired())
                 {
@@ -277,12 +306,12 @@ namespace Fireasy.Redis
                     return true;
                 }
 
-                clientFunc().HDel(cacheKey, sKey);
+                client.HDel(cacheKey, sKey);
             }
 #else
-            if (dbFunc().HashExists(cacheKey, sKey))
+            if (database.HashExists(cacheKey, sKey))
             {
-                var content = dbFunc().HashGet(cacheKey, sKey);
+                var content = database.HashGet(cacheKey, sKey);
                 var item = deserialize(content);
                 if (!item.HasExpired())
                 {
@@ -290,7 +319,7 @@ namespace Fireasy.Redis
                     return true;
                 }
 
-                dbFunc().HashDelete(cacheKey, sKey);
+                database.HashDelete(cacheKey, sKey);
             }
 #endif
             value = default;
@@ -304,10 +333,34 @@ namespace Fireasy.Redis
         public IEnumerable<TKey> GetKeys()
         {
 #if NETSTANDARD
-            return clientFunc().HKeys(cacheKey).Select(s => s.To<TKey>());
+            return client.HKeys(cacheKey).Select(s => s.To<TKey>());
 #else
-            return dbFunc().HashKeys(cacheKey).Select(s => s.To<TKey>());
+            return database.HashKeys(cacheKey).Select(s => s.To<TKey>());
 #endif
+        }
+
+        /// <summary>
+        /// 获取所有的 value。
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<TValue> GetValues()
+        {
+#if NETSTANDARD
+            var set = client.HGetAll(cacheKey);
+#else
+            var set = database.HashGetAll(cacheKey);
+#endif
+            foreach (var kvp in set)
+            {
+                if (!string.IsNullOrEmpty(kvp.Value))
+                {
+                    var value = deserialize(kvp.Value);
+                    if (value != null && !value.HasExpired())
+                    {
+                        yield return value.Value;
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -318,9 +371,9 @@ namespace Fireasy.Redis
         public async Task<IEnumerable<TKey>> GetKeysAsync(CancellationToken cancellationToken = default)
         {
 #if NETSTANDARD
-            return (await clientFunc().HKeysAsync(cacheKey)).Select(s => s.To<TKey>());
+            return (await client.HKeysAsync(cacheKey)).Select(s => s.To<TKey>());
 #else
-            return (await dbFunc().HashKeysAsync(cacheKey)).Select(s => s.To<TKey>());
+            return (await database.HashKeysAsync(cacheKey)).Select(s => s.To<TKey>());
 #endif
         }
 
@@ -332,9 +385,9 @@ namespace Fireasy.Redis
         {
             var sKey = key.ToString();
 #if NETSTANDARD
-            clientFunc().HDel(cacheKey, sKey);
+            client.HDel(cacheKey, sKey);
 #else
-            dbFunc().HashDelete(cacheKey, sKey);
+            database.HashDelete(cacheKey, sKey);
 #endif
         }
 
@@ -347,9 +400,9 @@ namespace Fireasy.Redis
         {
             var sKey = key.ToString();
 #if NETSTANDARD
-            await clientFunc().HDelAsync(cacheKey, sKey);
+            await client.HDelAsync(cacheKey, sKey);
 #else
-            await dbFunc().HashDeleteAsync(cacheKey, sKey);
+            await database.HashDeleteAsync(cacheKey, sKey);
 #endif
         }
 
@@ -362,9 +415,9 @@ namespace Fireasy.Redis
         {
             var sKey = key.ToString();
 #if NETSTANDARD
-            return clientFunc().HExists(cacheKey, sKey);
+            return client.HExists(cacheKey, sKey);
 #else
-            return dbFunc().HashExists(cacheKey, sKey);
+            return database.HashExists(cacheKey, sKey);
 #endif
         }
 
@@ -377,9 +430,9 @@ namespace Fireasy.Redis
         {
             var sKey = key.ToString();
 #if NETSTANDARD
-            return await clientFunc().HExistsAsync(cacheKey, sKey);
+            return await client.HExistsAsync(cacheKey, sKey);
 #else
-            return await dbFunc().HashExistsAsync(cacheKey, sKey);
+            return await database.HashExistsAsync(cacheKey, sKey);
 #endif
         }
 
@@ -391,9 +444,9 @@ namespace Fireasy.Redis
             get
             {
 #if NETSTANDARD
-                return clientFunc().HLen(cacheKey);
+                return client.HLen(cacheKey);
 #else
-                return dbFunc().HashLength(cacheKey);
+                return database.HashLength(cacheKey);
 #endif
             }
         }
@@ -404,10 +457,123 @@ namespace Fireasy.Redis
         public void Clear()
         {
 #if NETSTANDARD
-            clientFunc().Del(cacheKey);
+            client.Del(cacheKey);
 #else
-            dbFunc().KeyDelete(cacheKey);
+            database.KeyDelete(cacheKey);
 #endif
+        }
+
+        private void Initialize(Func<IEnumerable<Tuple<TKey, TValue, ICacheItemExpiration>>> initializeSet)
+        {
+            try
+            {
+                var initValues = initializeSet();
+                if (initValues == null)
+                {
+                    return;
+                }
+
+#if NETSTANDARD
+                var array = initValues.ToArray();
+                var keyValues = new object[array.Length * 2];
+                for (var i = 0; i < array.Length; i++)
+                {
+                    var content = serialize(new RedisCacheItem<TValue>(array[i].Item2, array[i].Item3 ?? NeverExpired.Instance));
+                    keyValues[i * 2] = array[i].Item1.ToString();
+                    keyValues[i * 2 + 1] = content;
+                }
+
+                client.HMSet(cacheKey, keyValues);
+#else
+                var array = initValues.ToArray();
+                var entries = new HashEntry[array.Length];
+                for (var i = 0; i < array.Length; i++)
+                {
+                    var content = serialize(new RedisCacheItem<TValue>(array[i].Item2, array[i].Item3 ?? NeverExpired.Instance));
+                    entries[i] = new HashEntry(array[i].Item1.ToString(), content);
+                }
+
+                database.HashSet(cacheKey, entries);
+#endif
+            }
+            catch
+            { }
+        }
+
+        private void StartExpireTask()
+        {
+            var scheduler = TaskSchedulerFactory.CreateScheduler();
+            if (scheduler != null)
+            {
+                var startOption = new StartOptions<ExpireTaskExecutor>(TimeSpan.FromSeconds(10), TimeSpan.FromMinutes(1))
+                {
+                    Initializer = s =>
+                    {
+                        s.CacheKey = cacheKey;
+                        s.Deserialize = deserialize;
+#if NETSTANDARD
+                        s.Client = client;
+#else
+                        s.Database = database;
+#endif
+                    }
+                };
+
+                scheduler.StartAsync(startOption);
+            }
+        }
+
+        private class ExpireTaskExecutor : IAsyncTaskExecutor
+        {
+            public string CacheKey { get; set; }
+
+#if NETSTANDARD
+            public CSRedisClient Client { get; set; }
+#else
+            public IDatabase Database { get; set; }
+#endif
+
+            public Func<string, RedisCacheItem<TValue>> Deserialize { get; set; }
+
+            public async Task ExecuteAsync(TaskExecuteContext context, CancellationToken cancellationToken = default)
+            {
+#if NETSTANDARD
+                var set = Client.HGetAll(CacheKey);
+#else
+                var set = Database.HashGetAll(CacheKey);
+#endif
+                set.ForEachParallel(async s =>
+                {
+                    if (!string.IsNullOrEmpty(s.Value))
+                    {
+                        await RedisHelper.LockAsync(
+#if NETSTANDARD
+                            Client, string.Concat(CacheKey, ":", s.Key), 
+#else
+                            Database, string.Concat(CacheKey, ":", s.Name),
+#endif
+                            TimeSpan.FromSeconds(10), async () =>
+                            {
+                                try
+                                {
+                                    var value = Deserialize(s.Value);
+                                    if (value != null && value.HasExpired())
+                                    {
+#if NETSTANDARD
+                                        await Client.HDelAsync(CacheKey, s.Key);
+#else
+                                        await Database.HashDeleteAsync(CacheKey, s.Name);
+#endif
+                                    }
+                                }
+                                catch(Exception exp)
+                                {
+                                    Tracer.Error($"RedisHashSet ExpireTaskExecutor Execute Error:\n{exp.Output()}");
+                                }
+                            });
+                    }
+                });
+            }
         }
     }
 }

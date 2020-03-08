@@ -15,7 +15,7 @@ namespace Fireasy.Data.Entity.Initializers
     /// <summary>
     /// 此初始化器为 Oracle 数据库主键的生成提供一种方案，定义触发器通过获取序列值来进行替代。
     /// </summary>
-    public class OracleTriggerPreInitializer : IEntityContextPreInitializer
+    public sealed class OracleTriggerPreInitializer : IEntityContextPreInitializer
     {
         private List<Type> entityTypes = null;
 

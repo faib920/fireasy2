@@ -2,6 +2,7 @@
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
 using Fireasy.Common.Extensions;
+using Fireasy.Common.Reflection;
 using Fireasy.Data.Converter;
 using Fireasy.Data.Entity.Linq.Expressions;
 using Fireasy.Data.Entity.Metadata;
@@ -24,10 +25,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         internal static LambdaExpression GetAggregator(Type expectedType, Type actualType)
         {
-            var actualElementType = actualType.GetEnumerableElementType();
+            var actualElementType = ReflectionCache.GetMember("EnumerableElementType", actualType, k => k.GetEnumerableElementType());
             if (!expectedType.IsAssignableFrom(actualType))
             {
-                var expectedElementType = expectedType.GetEnumerableElementType();
+                var expectedElementType = ReflectionCache.GetMember("EnumerableElementType", expectedType, k => k.GetEnumerableElementType());
                 var p = Expression.Parameter(actualType, "p");
                 Expression body = null;
 
@@ -96,7 +97,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private static Expression CastElementExpression(Type expectedElementType, Expression expression)
         {
-            var elementType = expression.Type.GetEnumerableElementType();
+            var elementType = ReflectionCache.GetMember("EnumerableElementType", expression.Type, k => k.GetEnumerableElementType());
             if (expectedElementType != elementType &&
                 (expectedElementType.IsAssignableFrom(elementType) ||
                   elementType.IsAssignableFrom(expectedElementType)))
@@ -128,18 +129,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
         internal static Expression GetTypeProjection(Expression root, EntityMetadata entity)
         {
             var entityType = entity.EntityType;
-            var bindings = new List<MemberBinding>();
 
             //获取实体中定义的所有依赖属性
             var properties = PropertyUnity.GetLoadedProperties(entityType);
-            foreach (var property in properties)
-            {
-                var mbrExpression = GetMemberExpression(root, property);
-                if (mbrExpression != null)
-                {
-                    bindings.Add(Expression.Bind(property.Info.ReflectionInfo, mbrExpression));
-                }
-            }
+
+            var bindings = from p in properties
+             let mbrExp = GetMemberExpression(root, p)
+             where mbrExp != null
+             select Expression.Bind(p.Info.ReflectionInfo, mbrExp);
 
             return new EntityExpression(entity, Expression.MemberInit(Expression.New(entityType), bindings));
         }
@@ -166,13 +163,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     childExp = projection.Projector;
                 }
 
-                Expression where = null;
-                for (int i = 0, n = ship.Keys.Count; i < n; i++)
-                {
-                    var equal = GetMemberExpression(parentExp, ship.Keys[i].ThisProperty)
-                        .Equal(GetMemberExpression(childExp, ship.Keys[i].OtherProperty));
-                    where = (where != null) ? Expression.And(where, equal) : equal;
-                }
+                var where = ship.Keys.Select(r =>
+                        GetMemberExpression(parentExp, r.ThisProperty).Equal(GetMemberExpression(childExp, r.OtherProperty)))
+                    .Aggregate(Expression.And);
 
                 var newAlias = new TableAlias();
                 var pc = ColumnProjector.ProjectColumns(CanBeColumnExpression, projection.Projector, null, newAlias, projection.Select.Alias);
@@ -272,13 +265,15 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var metadata = EntityMetadataUnity.GetEntityMetadata(parExp.Type);
             var table = new TableExpression(new TableAlias(), metadata.TableName, parExp.Type);
             var primaryKeys = PropertyUnity.GetPrimaryProperties(parExp.Type);
-            Expression where = null;
 
-            foreach (var pk in primaryKeys)
+            if (!primaryKeys.Any())
             {
-                var eq = GetMemberExpression(table, pk).Equal(Expression.MakeMemberAccess(parExp, pk.Info.ReflectionInfo));
-                where = where == null ? eq : Expression.And(where, eq);
+                throw new NotSupportedException(SR.GetString(SRKind.NotDefinedPrimaryKey));
             }
+
+            var where = primaryKeys.Select(p =>
+                   GetMemberExpression(table, p).Equal(Expression.MakeMemberAccess(parExp, p.Info.ReflectionInfo)))
+                .Aggregate(Expression.Add);
 
             return Expression.Lambda(where, parExp);
         }
@@ -315,6 +310,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
             var table = new TableExpression(new TableAlias(), metadata.TableName, metadata.EntityType);
             Expression where = null;
+
             var row = GetTypeProjection(table, metadata);
 
             if (predicate != null)
@@ -322,40 +318,38 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 where = DbExpressionReplacer.Replace(predicate.Body, predicate.Parameters[0], row);
             }
 
-            var list = new List<MemberAssignment>();
-            foreach (MemberAssignment ass in initExp.Bindings)
-            {
-                list.Add(Expression.Bind(ass.Member, DbExpressionReplacer.Replace(ass.Expression, lambda.Parameters[0], row)));
-            }
+            var bindings = initExp.Bindings.Cast<MemberAssignment>().Select(m =>
+                    Expression.Bind(m.Member, DbExpressionReplacer.Replace(m.Expression, lambda.Parameters[0], row)));
 
-            return new UpdateCommandExpression(table, where, GetUpdateArguments(table, list), isAsync);
+            return new UpdateCommandExpression(table, where, GetUpdateArguments(table, bindings), isAsync);
         }
 
         internal static Expression GetInsertExpression(ISyntaxProvider syntax, Expression instance, bool isAsync)
         {
-            InsertCommandExpression insertExp;
             var entityType = instance.Type;
-            Func<TableExpression, IEnumerable<ColumnAssignment>> func;
+            Func<TableExpression, Expression, IEnumerable<ColumnAssignment>> func;
 
-            if (instance is ParameterExpression parExp)
+            if (instance is ParameterExpression)
             {
-                func = new Func<TableExpression, IEnumerable<ColumnAssignment>>(t => GetInsertArguments(syntax, t, parExp));
+                func = new Func<TableExpression, Expression, IEnumerable<ColumnAssignment>>((t, exp) => GetInsertArguments(syntax, t, exp.As<ParameterExpression>()));
+            }
+            else if (instance is ConstantExpression)
+            {
+                func = new Func<TableExpression, Expression, IEnumerable<ColumnAssignment>>((t, exp) => GetInsertArguments(syntax, t, exp.As<ConstantExpression>().Value as IEntity));
             }
             else
             {
-                var entity = instance.As<ConstantExpression>().Value as IEntity;
-                func = new Func<TableExpression, IEnumerable<ColumnAssignment>>(t => GetInsertArguments(syntax, t, entity));
+                throw new ArgumentException("instance");
             }
 
             var metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
             var table = new TableExpression(new TableAlias(), metadata.TableName, entityType);
-            insertExp = new InsertCommandExpression(table, func(table), isAsync)
-            {
-                WithAutoIncrement = !string.IsNullOrEmpty(syntax.IdentitySelect) && HasAutoIncrement(instance.Type),
-                WithGenerateValue = HasGenerateValue(instance.Type)
-            };
 
-            return insertExp;
+            return new InsertCommandExpression(table, func(table, instance), isAsync)
+                {
+                    WithAutoIncrement = !string.IsNullOrEmpty(syntax.IdentitySelect) && HasAutoIncrement(instance.Type),
+                    WithGenerateValue = HasGenerateValue(instance.Type)
+                };
         }
 
         internal static NamedValueExpression GetNamedValueExpression(string name, Expression value, DbType dbType)
@@ -385,9 +379,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// 将被修改的属性集附加到 <see cref="TranslateScope"/> 对象中。
         /// </summary>
         /// <param name="instances"></param>
-        internal static List<string> AttachModifiedProperties(Expression instances)
+        /// <param name="batchOpt"></param>
+        internal static List<string> AttachModifiedProperties(Expression instances, BatchOperateOptions batchOpt)
         {
-            var properties = GetModifiedProperties(instances);
+            var properties = GetModifiedProperties(instances, batchOpt);
 
             //在序列中查找被修改的属性列表
             TranslateScope.Current.SetData(REFERENCE_MPROS_KEY, properties);
@@ -419,9 +414,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var properties = GetModifiedProperties(entity).ToArray();
 
             return properties
-                .Select(m => new ColumnAssignment(
-                       (ColumnExpression)GetMemberExpression(table, m),
-                       Expression.Constant(GetConvertableValue(entity, m))
+                .Select(p => new ColumnAssignment(
+                       (ColumnExpression)GetMemberExpression(table, p),
+                       Expression.Constant(GetConvertableValue(entity, p))
                        )).ToList();
         }
 
@@ -429,26 +424,26 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             IEnumerable<IProperty> properties = null;
             List<string> modifiedNames = null;
+
             if ((modifiedNames = GetReferenceModifiedProperties()) != null)
             {
                 properties = GetModifiedProperties(table.Type, modifiedNames);
             }
 
-            return properties
-                .Select(m => new ColumnAssignment(
-                       (ColumnExpression)GetMemberExpression(table, m),
-                       Expression.MakeMemberAccess(parExp, m.Info.ReflectionInfo)
-                       ));
+            return from p in properties
+                   select new ColumnAssignment(
+                       (ColumnExpression)GetMemberExpression(table, p),
+                       Expression.MakeMemberAccess(parExp, p.Info.ReflectionInfo));
         }
 
         private static IEnumerable<ColumnAssignment> GetUpdateArguments(TableExpression table, IEnumerable<MemberAssignment> bindings)
         {
             return from m in bindings
                    let property = PropertyUnity.GetProperty(table.Type, m.Member.Name)
+                   where property != null
                    select new ColumnAssignment(
                        (ColumnExpression)GetMemberExpression(table, property),
-                       m.Expression
-                       );
+                       m.Expression);
         }
 
         /// <summary>
@@ -463,9 +458,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var properties = GetModifiedProperties(entity);
 
             var assignments = properties
-                .Select(m => new ColumnAssignment(
-                       (ColumnExpression)GetMemberExpression(table, m),
-                       Expression.Constant(GetConvertableValue(entity, m))
+                .Select(p => new ColumnAssignment(
+                       (ColumnExpression)GetMemberExpression(table, p),
+                       Expression.Constant(GetConvertableValue(entity, p))
                        )).ToList();
 
             assignments.AddRange(GetAssignmentsForPrimaryKeys(syntax, table, null, entity));
@@ -491,9 +486,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
 
             var assignments = properties
-                .Select(m => new ColumnAssignment(
-                       (ColumnExpression)GetMemberExpression(table, m),
-                       Expression.MakeMemberAccess(parExp, m.Info.ReflectionInfo)
+                .Select(p => new ColumnAssignment(
+                       (ColumnExpression)GetMemberExpression(table, p),
+                       Expression.MakeMemberAccess(parExp, p.Info.ReflectionInfo)
                        )).ToList();
 
             assignments.AddRange(GetAssignmentsForPrimaryKeys(syntax, table, parExp, null));
@@ -538,14 +533,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
         private static IEnumerable<IProperty> GetModifiedProperties(IEntity entity)
         {
             var properties = PropertyUnity.GetPersistentProperties(entity.EntityType)
-                .Where(m => !m.Info.IsPrimaryKey ||
-                    (m.Info.IsPrimaryKey && m.Info.GenerateType == IdentityGenerateType.None));
+                .Where(p => !p.Info.IsPrimaryKey ||
+                    (p.Info.IsPrimaryKey && p.Info.GenerateType == IdentityGenerateType.None));
 
             //判断实体类型有是不是编译的代理类型，如果不是，取非null的属性，否则使用IsModified判断
             var isNotCompiled = entity.GetType().IsNotCompiled();
-            return properties.Where(m => isNotCompiled ?
-                    !PropertyValue.IsEmpty(entity.GetValue(m)) :
-                    entity.IsModified(m.Name));
+            return properties.Where(p => isNotCompiled ?
+                    !PropertyValue.IsEmpty(entity.GetValue(p)) :
+                    entity.IsModified(p.Name));
         }
 
         /// <summary>
@@ -557,7 +552,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         private static IEnumerable<IProperty> GetModifiedProperties(Type entityType, List<string> names)
         {
             return PropertyUnity.GetPersistentProperties(entityType)
-                .Where(s => names.Contains(s.Name));
+                .Where(p => names.Contains(p.Name));
         }
 
         /// <summary>
@@ -613,9 +608,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         private static List<string> GetReferenceModifiedProperties()
         {
-            List<string> names;
             if (TranslateScope.Current != null &&
-                (names = TranslateScope.Current.GetData<object>(REFERENCE_MPROS_KEY) as List<string>) != null)
+                TranslateScope.Current.GetData<object>(REFERENCE_MPROS_KEY) is List<string> names)
             {
                 return names;
             }
@@ -627,17 +621,16 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// 获取插入或更新所参照的实体。
         /// </summary>
         /// <param name="instances"></param>
+        /// <param name="batchOpt"></param>
         /// <returns></returns>
-        private static List<string> GetModifiedProperties(Expression instances)
+        private static List<string> GetModifiedProperties(Expression instances, BatchOperateOptions batchOpt)
         {
-            var entities = ((ConstantExpression)instances).Value as IEnumerable;
-            if (entities == null)
+            if (!(instances is ConstantExpression consExp) || !(consExp.Value is IEnumerable entities))
             {
                 return null;
             }
 
             var maxProperties = new List<string>();
-            IEntity retEntity = null;
             Type entityType = null;
             IEnumerable<IProperty> properties = null;
 
@@ -648,20 +641,22 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 {
                     entityType = entity.GetType();
                     properties = PropertyUnity.GetPersistentProperties(entityType)
-                        .Where(m => !m.Info.IsPrimaryKey ||
-                            (m.Info.IsPrimaryKey && m.Info.GenerateType == IdentityGenerateType.None));
+                        .Where(p => !p.Info.IsPrimaryKey ||
+                            (p.Info.IsPrimaryKey && p.Info.GenerateType == IdentityGenerateType.None))
+                        .ToList();
                 }
 
                 //判断实体类型有是不是编译的代理类型，如果不是，取非null的属性，否则使用IsModified判断
                 var isNotCompiled = entityType.IsNotCompiled();
                 var modified = isNotCompiled ?
-                    properties.Where(s => !PropertyValue.IsEmpty(entity.GetValue(s))).Select(s => s.Name).ToArray() :
+                    properties.Where(p => !PropertyValue.IsEmpty(entity.GetValue(p))).Select(p => p.Name).ToArray() :
                     entity.GetModifiedProperties();
 
-                if (!modified.All(s => maxProperties.Contains(s)))
+                modified.Where(s => !maxProperties.Contains(s)).ForEach(s => maxProperties.Add(s));
+
+                if (batchOpt == null || batchOpt.CheckModifiedKinds == BatchCheckModifiedKinds.First)
                 {
-                    retEntity = entity;
-                    maxProperties.AddRange(modified.Except(maxProperties));
+                    break;
                 }
             }
 

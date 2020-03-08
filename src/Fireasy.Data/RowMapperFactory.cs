@@ -6,26 +6,33 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
+using Fireasy.Common.Reflection;
 using System;
 
 namespace Fireasy.Data
 {
-    internal static class RowMapperFactory
+    public static class RowMapperFactory
     {
-        internal static IDataRowMapper<T> CreateRowMapper<T>()
+        public static IDataRowMapper<T> CreateRowMapper<T>()
         {
             var elementType = typeof(T);
-            Type generalType;
-            if (elementType.IsPrimitive || elementType == typeof(string))
-            {
-                generalType = typeof(SingleValueRowMapper<>);
-            }
-            else
-            {
-                generalType = typeof(DefaultRowMapper<>);
-            }
 
-            return generalType.MakeGenericType(elementType).New<IDataRowMapper<T>>();
+            var mapperType = ReflectionCache.GetMember("RowMapper", elementType, k =>
+                {
+                    Type generalType;
+                    if (k.IsPrimitive || k == typeof(string))
+                    {
+                        generalType = typeof(SingleValueRowMapper<>);
+                    }
+                    else
+                    {
+                        generalType = typeof(DefaultRowMapper<>);
+                    }
+
+                    return generalType.MakeGenericType(k);
+                });
+
+            return mapperType.New<IDataRowMapper<T>>();
         }
     }
 }

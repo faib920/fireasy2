@@ -24,8 +24,13 @@ namespace Fireasy.Data
     {
         private Func<IDataReader, T> funcDataRecd;
         private Func<DataRow, T> funcDataRow;
-        private static MethodInfo isNullMethod = typeof(IDataRecord).GetMethod(nameof(IDataReader.IsDBNull), new[] { typeof(int) });
-        private static MethodInfo convertMethod = typeof(Extensions.DataExtension).GetMethod(nameof(Extensions.DataExtension.ToTypeEx), BindingFlags.NonPublic | BindingFlags.Static);
+
+        private class MethodCache
+        {
+            internal static readonly MethodInfo IsDBNull = typeof(IDataRecord).GetMethod(nameof(IDataReader.IsDBNull), new[] { typeof(int) });
+            internal static readonly MethodInfo ToType = typeof(DataExtension).GetMethod(nameof(DataExtension.ToTypeEx), BindingFlags.NonPublic | BindingFlags.Static);
+            internal static readonly PropertyInfo DataRowIndex = typeof(DataRow).GetProperty("Item", new[] { typeof(int) });
+        }
 
         /// <summary>
         /// 将一个 <see cref="IDataReader"/> 转换为一个 <typeparamref name="T"/> 的对象。
@@ -84,15 +89,15 @@ namespace Fireasy.Data
             var newExp = Expression.New(typeof(T));
             var mapping = GetMapping(GetDataReaderFields(reader));
 
-            var rowMapExp = Expression.Constant(this.RecordWrapper);
+            var rowMapExp = Expression.Constant(RecordWrapper);
             var parExp = Expression.Parameter(typeof(IDataRecord), "s");
 
             var bindings =
                 mapping.Select(s => {
                     var dbType = reader.GetFieldType(s.Index);
-                    var getValueMethod = Fireasy.Data.RecordWrapper.RecordWrapHelper.GetMethodByOrdinal(dbType.GetDbType());
+                    var getValueMethod = Data.RecordWrapper.RecordWrapHelper.GetMethodByOrdinal(dbType.GetDbType());
                     //ToTypeEx<TS, TC>()
-                    var convertMT = convertMethod.MakeGenericMethod(dbType, s.Info.PropertyType);
+                    var convertMT = MethodCache.ToType.MakeGenericMethod(dbType, s.Info.PropertyType);
 
                     var expression = (Expression)Expression.Call(rowMapExp, getValueMethod, new Expression[] { parExp, Expression.Constant(s.Index) });
                     var convertExp = Expression.Call(convertMT, new Expression[] { expression });
@@ -100,7 +105,7 @@ namespace Fireasy.Data
                     if (s.Info.PropertyType.IsNullableType())
                     {
                         expression = Expression.Condition(
-                            Expression.Call(parExp, isNullMethod, Expression.Constant(s.Index, typeof(int))),
+                            Expression.Call(parExp, MethodCache.IsDBNull, Expression.Constant(s.Index, typeof(int))),
                             Expression.Convert(Expression.Constant(null), s.Info.PropertyType),
                         convertExp);
                     }
@@ -128,16 +133,14 @@ namespace Fireasy.Data
             var mapping = GetMapping(GetDataRowFields(row));
 
             var parExp = Expression.Parameter(typeof(DataRow), "s");
-            var convertMethod = typeof(Extensions.DataExtension).GetMethod("ToTypeEx", BindingFlags.NonPublic | BindingFlags.Static);
-            var itemProperty = typeof(DataRow).GetProperty("Item", new[] { typeof(int) });
             var bindings =
                 mapping.Select(s => (MemberBinding)
                     Expression.Bind(
                         s.Info,
                         Expression.Convert(
-                            Expression.Call(convertMethod, new Expression[] 
+                            Expression.Call(MethodCache.ToType, new Expression[] 
                                 { 
-                                    Expression.MakeIndex(parExp, itemProperty, new List<Expression> { Expression.Constant(s.Index) }),
+                                    Expression.MakeIndex(parExp, MethodCache.DataRowIndex, new List<Expression> { Expression.Constant(s.Index) }),
                                     Expression.Constant(s.Info.PropertyType),
                                     Expression.Constant(null)
                                 }

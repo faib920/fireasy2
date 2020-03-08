@@ -10,9 +10,9 @@ using System;
 namespace Fireasy.Common.Ioc
 {
     /// <summary>
-    /// 表示忽略该接口类型被发现并注册到容器中。
+    /// 表示忽略该接口或类型被发现并注册到容器中。
     /// </summary>
-    [AttributeUsage(AttributeTargets.Interface)]
+    [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class)]
     public class IgnoreRegisterAttribute : Attribute
     {
     }

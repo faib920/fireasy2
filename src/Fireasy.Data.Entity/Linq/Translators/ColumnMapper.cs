@@ -12,8 +12,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class ColumnMapper : DbExpressionVisitor
     {
-        private HashSet<TableAlias> oldAliases;
-        private TableAlias newAlias;
+        private readonly HashSet<TableAlias> oldAliases;
+        private readonly TableAlias newAlias;
 
         private ColumnMapper(IEnumerable<TableAlias> oldAliases, TableAlias newAlias)
         {

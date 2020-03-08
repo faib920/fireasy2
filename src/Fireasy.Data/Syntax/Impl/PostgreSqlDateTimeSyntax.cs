@@ -1,4 +1,11 @@
-﻿
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 using System.Reflection;
 namespace Fireasy.Data.Syntax
 {
@@ -22,8 +29,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string New(object yearExp, object monthExp, object dayExp)
         {
-            return string.Format("CAST(CAST({0} AS VARCHAR) || '-' || CAST({1} AS VARCHAR) || '-' || CAST({2} AS VARCHAR) AS DATE)",
-                yearExp, monthExp, dayExp);
+            return $"CAST(CAST({yearExp} AS VARCHAR) || '-' || CAST({monthExp} AS VARCHAR) || '-' || CAST({dayExp} AS VARCHAR) AS DATE)";
         }
 
         /// <summary>
@@ -38,8 +44,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string New(object yearExp, object monthExp, object dayExp, object hourExp, object minuteExp, object secondExp)
         {
-            return string.Format("CAST(CAST({0} AS VARCHAR) || '-' || CAST({1} AS VARCHAR) || '-' || CAST({2} AS VARCHAR) || ' ' || CAST({3} AS VARCHAR) || ':' || CAST({4} AS VARCHAR) || ':' || CAST({5} AS VARCHAR) AS TIMESTAMP)",
-                yearExp, monthExp, dayExp, hourExp, minuteExp, secondExp);
+            return $"CAST(CAST({yearExp} AS VARCHAR) || '-' || CAST({monthExp} AS VARCHAR) || '-' || CAST({dayExp} AS VARCHAR) || ' ' || CAST({hourExp} AS VARCHAR) || ':' || CAST({minuteExp} AS VARCHAR) || ':' || CAST({secondExp} AS VARCHAR) AS TIMESTAMP)";
         }
 
         /// <summary>
@@ -49,7 +54,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Year(object sourceExp)
         {
-            return string.Format("DATE_PART('YEAR', {0})", sourceExp);
+            return $"DATE_PART('YEAR', {sourceExp})";
         }
 
         /// <summary>
@@ -59,7 +64,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Month(object sourceExp)
         {
-            return string.Format("DATE_PART('MONTH', {0})", sourceExp);
+            return $"DATE_PART('MONTH', {sourceExp})";
         }
 
         /// <summary>
@@ -69,7 +74,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Day(object sourceExp)
         {
-            return string.Format("DATE_PART('DAY', {0})", sourceExp);
+            return $"DATE_PART('DAY', {sourceExp})";
         }
 
         /// <summary>
@@ -79,7 +84,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Hour(object sourceExp)
         {
-            return string.Format("DATE_PART('HOUR', {0})", sourceExp);
+            return $"DATE_PART('HOUR', {sourceExp})";
         }
 
         /// <summary>
@@ -89,7 +94,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Minute(object sourceExp)
         {
-            return string.Format("DATE_PART('MINUTE', {0})", sourceExp);
+            return $"DATE_PART('MINUTE', {sourceExp})";
         }
 
         /// <summary>
@@ -99,7 +104,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Second(object sourceExp)
         {
-            return string.Format("DATE_PART('SECOND', {0})", sourceExp);
+            return $"DATE_PART('SECOND', {sourceExp})";
         }
 
         /// <summary>
@@ -109,7 +114,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Millisecond(object sourceExp)
         {
-            return string.Format("DATE_PART('MILLISECONDS', {0})", sourceExp);
+            return $"DATE_PART('MILLISECONDS', {sourceExp})";
         }
 
         /// <summary>
@@ -119,7 +124,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string WeekOfYear(object sourceExp)
         {
-            return string.Format("DATE_PART('WW', {0})", sourceExp);
+            return $"DATE_PART('WW', {sourceExp})";
         }
 
         /// <summary>
@@ -139,7 +144,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string AddYears(object sourceExp, object yearExp)
         {
-            return string.Format("{0} + INTERVAL '{1} YEARS'", sourceExp, yearExp);
+            return $"{sourceExp} + INTERVAL '{yearExp} YEARS'";
         }
 
         /// <summary>
@@ -150,7 +155,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string AddMonths(object sourceExp, object monthExp)
         {
-            return string.Format("{0} + INTERVAL '{1} MONTHS'", sourceExp, monthExp);
+            return $"{sourceExp} + INTERVAL '{monthExp} MONTHS'";
         }
 
         /// <summary>
@@ -161,7 +166,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string AddDays(object sourceExp, object dayExp)
         {
-            return string.Format("{0} + INTERVAL '{1} DAYS'", sourceExp, dayExp);
+            return $"{sourceExp} + INTERVAL '{dayExp} DAYS'";
         }
         /// <summary>
         /// 源表达式增加小时。
@@ -171,7 +176,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string AddHours(object sourceExp, object hourExp)
         {
-            return string.Format("{0} + INTERVAL '{1} HOURS'", sourceExp, hourExp);
+            return $"{sourceExp} + INTERVAL '{hourExp} HOURS'";
         }
 
         /// <summary>
@@ -182,7 +187,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string AddMinutes(object sourceExp, object minuteExp)
         {
-            return string.Format("{0} + INTERVAL '{1} MINUTES'", sourceExp, minuteExp);
+            return $"{sourceExp} + INTERVAL '{minuteExp} MINUTES'";
         }
 
         /// <summary>
@@ -193,7 +198,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string AddSeconds(object sourceExp, object secondExp)
         {
-            return string.Format("{0} + INTERVAL '{1} SECONDS'", sourceExp, secondExp);
+            return $"{sourceExp} + INTERVAL '{secondExp} SECONDS'";
         }
     }
 }

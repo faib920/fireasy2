@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.ComponentModel;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Resources;
 
@@ -17,7 +17,7 @@ namespace Fireasy.Common.Localization
     public class DefaultStringLocalizer : IStringLocalizer
     {
         private readonly ResourceManager resourceMgr;
-        private SafetyDictionary<string, ResourceSet> sets = new SafetyDictionary<string, ResourceSet>();
+        private readonly ConcurrentDictionary<string, ResourceSet> sets = new ConcurrentDictionary<string, ResourceSet>();
 
         public DefaultStringLocalizer(ResourceManager resourceMgr, CultureInfo cultureInfo)
         {
@@ -62,7 +62,7 @@ namespace Fireasy.Common.Localization
 
         private string GetResourceString(string name)
         {
-            var set = sets.GetOrAdd(CultureInfo.Name, () => resourceMgr.GetResourceSet(CultureInfo, true, false));
+            var set = sets.GetOrAdd(CultureInfo.Name, k => resourceMgr.GetResourceSet(CultureInfo, true, false));
             if (set == null)
             {
                 return name;

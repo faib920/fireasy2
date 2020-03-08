@@ -59,3 +59,6 @@ MustAssignEntityContextInitializeContext=必须指定 EntityContextInitializeCon
 TreeCodeOutOfRange=末级编码超出预设的{0}位编码。
 NotFoundDatabaseAware=没有发现 IDatabase 实例。
 NotImplementAsyncQueryProvider=没有实现 IAsyncQueryProvider 接口。
+InvalidOperationWhenRepositoryIsReadonly=此仓储为只读仓储，因此不支持增加、修改和删除操作。
+NotSupportDatabase=未提供 IDatabase 实例。
+NotSupportDatabaseFactory=未提供创建 IDatabase 的方法。

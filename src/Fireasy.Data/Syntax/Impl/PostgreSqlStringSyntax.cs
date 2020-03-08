@@ -18,7 +18,7 @@ namespace Fireasy.Data.Syntax
                 throw new SyntaxParseException(MethodInfo.GetCurrentMethod().Name);
             }
 
-            return string.Format("POSITION({1} IN {0})", sourceExp, searchExp);
+            return $"POSITION({searchExp} IN {sourceExp})";
         }
 
         public override string Concat(params object[] strExps)

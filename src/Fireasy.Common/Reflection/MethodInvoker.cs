@@ -41,18 +41,23 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public object Invoke(object instance, params object[] parameters)
         {
+            if (invoker == null)
+            {
+                throw new NotSupportedException(SR.GetString(SRKind.UnableCreateCachedDelegate));
+            }
+
             return invoker(instance, parameters);
         }
 
         private static Func<object, object[], object> CreateInvokeDelegate(MethodInfo methodInfo)
         {
-            var targetParameterExpression = Expression.Parameter(typeof(object), "s");
-            var argsParameterExpression = Expression.Parameter(typeof(object[]), "args");
+            var targetParExp = Expression.Parameter(typeof(object), "s");
+            var argsParExp = Expression.Parameter(typeof(object[]), "args");
 
-            var callExpression = InvokerBuilder.BuildMethodCall(methodInfo, typeof(object), targetParameterExpression, argsParameterExpression);
-            var lambdaExpression = Expression.Lambda(typeof(Func<object, object[], object>), callExpression, targetParameterExpression, argsParameterExpression);
-            var compiled = (Func<object, object[], object>)lambdaExpression.Compile();
-            return compiled;
+            var callExp = InvokerBuilder.BuildMethodCall(methodInfo, typeof(object), targetParExp, argsParExp);
+            var lambdaExp = Expression.Lambda(typeof(Func<object, object[], object>), callExp, targetParExp, argsParExp);
+
+            return (Func<object, object[], object>)lambdaExp.Compile();
         }
     }
 }

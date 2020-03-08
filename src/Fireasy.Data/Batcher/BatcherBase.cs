@@ -58,8 +58,7 @@ namespace Fireasy.Data.Batcher
         {
             var result = new List<PropertyFieldMapping>();
             TypeDescriptorUtility.AddDefaultDynamicProvider();
-            var resolver = item as IPropertyFieldMappingResolver;
-            if (resolver != null)
+            if (item is IPropertyFieldMappingResolver resolver)
             {
                 return resolver.GetDbMapping().ToList();
             }

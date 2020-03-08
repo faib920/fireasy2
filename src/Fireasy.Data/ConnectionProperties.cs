@@ -15,16 +15,50 @@ namespace Fireasy.Data
     /// </summary>
     public sealed class ConnectionProperties
     {
-        private Dictionary<string, string> dictionary = new Dictionary<string, string>();
+        private readonly Dictionary<string, PropertyValue> properties = new Dictionary<string, PropertyValue>();
+        private readonly ConnectionString connectionString;
+
+        /// <summary>
+        /// 属性值。
+        /// </summary>
+        private sealed class PropertyValue
+        {
+            public PropertyValue(bool isCustomized, string value)
+            {
+                IsCustomized = isCustomized;
+                Value = value;
+            }
+
+            /// <summary>
+            /// 获取或设置是否自定的属性。
+            /// </summary>
+            public bool IsCustomized { get; set; }
+
+            /// <summary>
+            /// 获取或设置属性的值。
+            /// </summary>
+            public string Value { get; set; }
+
+            public override string ToString()
+            {
+                return Value;
+            }
+        }
+
+        public ConnectionProperties(ConnectionString connectionString)
+        {
+            this.connectionString = connectionString;
+        }
 
         /// <summary>
         /// 添加属性。
         /// </summary>
         /// <param name="name">属性名称。</param>
         /// <param name="value">属性值。</param>
-        public void Add(string name, string value)
+        /// <param name="isCustomized">是否自定的属性。</param>
+        public void Add(string name, string value, bool isCustomized = false)
         {
-            dictionary.AddOrReplace(name, value);
+            properties.AddOrReplace(name, new PropertyValue(isCustomized, value));
         }
 
         /// <summary>
@@ -34,7 +68,7 @@ namespace Fireasy.Data
         {
             get
             {
-                return dictionary.Keys;
+                return properties.Keys;
             }
         }
 
@@ -47,7 +81,12 @@ namespace Fireasy.Data
         {
             get
             {
-                return dictionary.TryGetValue(name, () => string.Empty);
+                if (properties.TryGetValue(name, out PropertyValue value))
+                {
+                    return value.Value;
+                }
+
+                return string.Empty;
             }
         }
 
@@ -60,9 +99,9 @@ namespace Fireasy.Data
         {
             foreach (var name in names)
             {
-                if (dictionary.ContainsKey(name))
+                if (properties.ContainsKey(name))
                 {
-                    return dictionary[name];
+                    return properties[name].Value;
                 }
             }
 
@@ -79,13 +118,28 @@ namespace Fireasy.Data
         {
             foreach (var name in names)
             {
-                if (dictionary.ContainsKey(name))
+                if (properties.ContainsKey(name))
                 {
-                    return dictionary[name];
+                    return properties[name].Value;
                 }
             }
 
             return defaultValue;
+        }
+
+        /// <summary>
+        /// 尝试设置属性的值。
+        /// </summary>
+        /// <param name="value">设置的属性值。</param>
+        /// <param name="name">属性名称。</param>
+        public ConnectionProperties TrySetValue(string value, string name)
+        {
+            if (properties.ContainsKey(name))
+            {
+                properties[name].Value = value;
+            }
+
+            return this;
         }
 
         /// <summary>
@@ -97,13 +151,36 @@ namespace Fireasy.Data
         {
             foreach (var name in names)
             {
-                if (dictionary.ContainsKey(name))
+                if (properties.ContainsKey(name))
                 {
-                    dictionary[name] = value;
+                    properties[name].Value = value;
                 }
             }
 
             return this;
+        }
+
+        /// <summary>
+        /// 返回属性是否为自定的。
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public bool IsCustomized(string name)
+        {
+            if (properties.TryGetValue(name, out PropertyValue value))
+            {
+                return value.IsCustomized;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 更新所有属性到 <see cref="ConnectionString"/> 实例中。
+        /// </summary>
+        public void Update()
+        {
+            connectionString.Update();
         }
 
         /// <summary>
@@ -113,7 +190,7 @@ namespace Fireasy.Data
         /// <returns></returns>
         public bool ContainsKey(string name)
         {
-            return dictionary.ContainsKey(name);
+            return properties.ContainsKey(name);
         }
     }
 }

@@ -11,7 +11,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 {
     public class NamedValueGatherer : DbExpressionVisitor
     {
-        HashSet<NamedValueExpression> namedValues = new HashSet<NamedValueExpression>(new NamedValueComparer());
+        private readonly HashSet<NamedValueExpression> namedValues = new HashSet<NamedValueExpression>(new NamedValueComparer());
 
         private NamedValueGatherer()
         {
@@ -19,14 +19,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         public static ReadOnlyCollection<NamedValueExpression> Gather(Expression expr)
         {
-            NamedValueGatherer gatherer = new NamedValueGatherer();
+            var gatherer = new NamedValueGatherer();
             gatherer.Visit(expr);
             return gatherer.namedValues.ToList().AsReadOnly();
         }
 
         protected override Expression VisitNamedValue(NamedValueExpression value)
         {
-            this.namedValues.Add(value);
+            namedValues.Add(value);
             return value;
         }
 

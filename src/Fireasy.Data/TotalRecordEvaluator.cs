@@ -8,11 +8,9 @@
 
 using Fireasy.Common.Caching;
 using Fireasy.Common.ComponentModel;
-using Fireasy.Common.Extensions;
 using Fireasy.Data.Extensions;
 using System;
 using System.Data;
-using System.Text.RegularExpressions;
 
 namespace Fireasy.Data
 {
@@ -55,34 +53,27 @@ namespace Fireasy.Data
             var cullingOrderBy = DbUtility.CullingOrderBy(context.Command.CommandText);
             var sqlCount = $"SELECT COUNT(1) FROM ({cullingOrderBy}) TEMP";
 
-            using (var connection = context.Database.CreateConnection(DistributedMode.Slave))
-            {
-                connection.OpenClose(() =>
+            using var connection = context.Database.CreateConnection(DistributedMode.Slave);
+            connection.OpenClose(() =>
+                {
+                    using var command = context.Database.Provider.CreateCommand(connection, null, sqlCount, parameters: context.Parameters);
+                    using var reader = command.ExecuteReader();
+                    if (reader.Read())
                     {
-                        using (var command = context.Database.Provider.CreateCommand(connection, null, sqlCount, parameters: context.Parameters))
+                        switch (reader.GetFieldType(0).GetDbType())
                         {
-                            using (var reader = command.ExecuteReader())
-                            {
-                                if (reader.Read())
-                                {
-                                    switch (reader.GetFieldType(0).GetDbType())
-                                    {
-                                        case DbType.Decimal:
-                                            count = (int)reader.GetDecimal(0);
-                                            break;
-                                        case DbType.Int32:
-                                            count = reader.GetInt32(0);
-                                            break;
-                                        case DbType.Int64:
-                                            count = (int)reader.GetInt64(0);
-                                            break;
-                                    }
-                                }
-                            }
+                            case DbType.Decimal:
+                                count = (int)reader.GetDecimal(0);
+                                break;
+                            case DbType.Int32:
+                                count = reader.GetInt32(0);
+                                break;
+                            case DbType.Int64:
+                                count = (int)reader.GetInt64(0);
+                                break;
                         }
-                    });
-            }
-
+                    }
+                });
             return count;
         }
     }

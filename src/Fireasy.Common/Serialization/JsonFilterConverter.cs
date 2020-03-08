@@ -16,7 +16,7 @@ namespace Fireasy.Common.Serialization
     /// </summary>
     public class JsonFilterConverter<T> : JsonConverter<T>
     {
-        private string[] exclusiveNames = null;
+        private readonly string[] exclusiveNames = null;
 
         /// <summary>
         /// 初始化 <see cref="JsonFilterConverter"/> 类的新实例。

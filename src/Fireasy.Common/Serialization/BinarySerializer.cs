@@ -33,11 +33,9 @@ namespace Fireasy.Common.Serialization
         /// <param name="filePath">保存的文件路径。</param>
         public void Serialize<T>(T obj, string filePath)
         {
-            using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
-            {
-                var bytes = Serialize(obj);
-                stream.Write(bytes, 0, bytes.Length);
-            }
+            using var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
+            var bytes = Serialize(obj);
+            stream.Write(bytes, 0, bytes.Length);
         }
 
         /// <summary>
@@ -54,21 +52,17 @@ namespace Fireasy.Common.Serialization
         /// <returns>反序列化后的对象。</returns>
         public T Deserialize<T>(string filePath)
         {
-            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            using var mstream = new MemoryStream();
+            const int bufferSize = 102400;
+            var bytes = new byte[bufferSize];
+            int length;
+            while ((length = stream.Read(bytes, 0, bufferSize)) > 0)
             {
-                using (var mstream = new MemoryStream())
-                {
-                    const int bufferSize = 102400;
-                    var bytes = new byte[bufferSize];
-                    int length;
-                    while ((length = stream.Read(bytes, 0, bufferSize)) > 0)
-                    {
-                        mstream.Write(bytes, 0, length);
-                    }
-
-                    return Deserialize<T>(mstream.ToArray());
-                }
+                mstream.Write(bytes, 0, length);
             }
+
+            return Deserialize<T>(mstream.ToArray());
         }
     }
 }

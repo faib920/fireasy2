@@ -19,7 +19,7 @@ namespace Fireasy.Common.Subscribes
     public static class SubscribeManagerFactory
     {
 #if NETSTANDARD
-        internal static IServiceCollection AddSubscriber(this IServiceCollection services)
+        public static IServiceCollection AddSubscriber(this IServiceCollection services)
         {
             var section = ConfigurationUnity.GetSection<SubscribeConfigurationSection>();
             if (section == null)
@@ -83,7 +83,8 @@ namespace Fireasy.Common.Subscribes
                 return null;
             }
 
-            return ConfigurationUnity.Cached<ISubscribeManager>($"Subscribe_{configName}", () => ConfigurationUnity.CreateInstance<SubscribeConfigurationSetting, ISubscribeManager>(setting, s => s.SubscriberType));
+            return ConfigurationUnity.Cached<ISubscribeManager>($"Subscribe_{configName}", 
+                () => ConfigurationUnity.CreateInstance<SubscribeConfigurationSetting, ISubscribeManager>(setting, s => s.SubscriberType));
         }
     }
 }

@@ -16,6 +16,8 @@ namespace Fireasy.Common
     /// </summary>
     public static class ServiceUnity
     {
+        private static readonly object locker = new object();
+
         /// <summary>
         /// 获取当前的 <see cref="IServiceProvider"/> 实例。
         /// </summary>
@@ -27,7 +29,10 @@ namespace Fireasy.Common
         /// <param name="services"></param>
         public static IServiceProvider AddUnity(this IServiceCollection services)
         {
-            return (Provider = services.BuildServiceProvider());
+            lock (locker)
+            {
+                return (Provider = services.BuildServiceProvider());
+            }
         }
     }
 }

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
-    <Version>2.1.2-beta3</Version>
+    <Version>2.1.2-preview2</Version>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
     <Product>Fireasy MongoDB Provider</Product>
@@ -18,6 +18,17 @@
     <AssemblyVersion>2.1.2.02</AssemblyVersion>
     <FileVersion>2.1.2.02</FileVersion>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net452|AnyCPU'">
+    <DocumentationFile>..\..\Release\net452\Fireasy.MongoDB.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
+    <DocumentationFile>..\..\Release\netstandard2.0\Fireasy.MongoDB.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="mongocsharpdriver" Version="2.7.3" />
   </ItemGroup>

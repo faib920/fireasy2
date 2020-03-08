@@ -18,7 +18,7 @@ namespace Fireasy.Common.Ioc.Registrations
         where TImplementation : class, TService
         where TService : class
     {
-        private static MethodInfo MthResolve = typeof(Container).GetMethod(nameof(Container.Resolve), new[] { typeof(Type) });
+        private static readonly MethodInfo MthResolve = typeof(Container).GetMethod(nameof(Container.Resolve), new[] { typeof(Type) });
 
         public TransientRegistration()
             : base(typeof(TService), typeof(TImplementation))

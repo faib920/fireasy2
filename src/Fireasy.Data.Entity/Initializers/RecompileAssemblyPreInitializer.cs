@@ -13,17 +13,18 @@ namespace Fireasy.Data.Entity.Initializers
     /// <summary>
     /// 此初始化器用于对实体程序集进行代理编译。
     /// </summary>
-    public class RecompileAssemblyPreInitializer : IEntityContextPreInitializer
+    public sealed class RecompileAssemblyPreInitializer : IEntityContextPreInitializer
     {
         void IEntityContextPreInitializer.PreInitialize(EntityContextPreInitializeContext context)
         {
             if (context.Mappers.Count > 0)
             {
-                var injection = context.Service.Provider.GetService<IInjectionProvider>();
+                var providerName = context.ContextService.Provider.ProviderName;
+                var injection = context.ContextService.Provider.GetService<IInjectionProvider>();
 
                 context.Mappers.GroupBy(s => s.EntityType.Assembly)
-                    .Select(s => s.Key)
-                    .ForEachParallel(s => EntityProxyManager.CompileAll(s, injection));
+                    .Select(s => new { assembly = s.Key, types = s.Select(t => t.EntityType).Distinct().ToArray() })
+                    .ForEach(s => EntityProxyManager.CompileAll(providerName, s.assembly, s.types, injection));
             }
         }
     }

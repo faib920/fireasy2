@@ -5,8 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-
-
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -16,6 +14,9 @@ using System.Threading.Tasks;
 
 namespace Fireasy.Common.Aop
 {
+    /// <summary>
+    /// 方法的缓存。
+    /// </summary>
     internal sealed class InterceptCache
     {
         internal static MethodInfo TypeGetMethod = typeof(Type).GetMethod(nameof(Type.GetMethod), new[] { typeof(string) });
@@ -45,19 +46,26 @@ namespace Fireasy.Common.Aop
         internal static MethodInfo InterceptContextSetTarget = typeof(InterceptContext).GetMethod($"set_{nameof(InterceptContext.Target)}");
         internal static MethodInfo AttributesAdd = typeof(List<InterceptAttribute>).GetMethod(nameof(List<InterceptAttribute>.Add));
         internal static MethodInfo AttributesGetItem = typeof(List<InterceptAttribute>).GetMethod($"get_Item");
-        internal static MethodInfo MethodGetDefaultValue = typeof(ReflectionExtension).GetMethod(nameof(ReflectionExtension.GetDefaultValue));
-        internal static MethodInfo MethodAllGetAttributes = typeof(AspectUtil).GetMethod(nameof(AspectUtil.GetInterceptAttributes));
-        internal static MethodInfo MthTaskFromResult = typeof(Task).GetMethod(nameof(Task.FromResult));
+        internal static MethodInfo GetDefaultValue = typeof(ReflectionExtension).GetMethod(nameof(ReflectionExtension.GetDefaultValue));
+        internal static MethodInfo AllGetAttributes = typeof(AspectUtil).GetMethod(nameof(AspectUtil.GetInterceptAttributes));
+        internal static MethodInfo TaskFromResult = typeof(Task).GetMethod(nameof(Task.FromResult));
     }
 
-    public class AspectUtil
+    /// <summary>
+    /// 辅助类。
+    /// </summary>
+    public static class AspectUtil
     {
+        /// <summary>
+        /// 获取所有拦截特性。
+        /// </summary>
+        /// <param name="callInfo"></param>
+        /// <returns></returns>
         public static InterceptAttribute[] GetInterceptAttributes(InterceptCallInfo callInfo)
         {
-            var list = callInfo.Member.GetCustomAttributes<InterceptAttribute>(true)
+            return callInfo.Member.GetCustomAttributes<InterceptAttribute>(true)
                 .Union(callInfo.DefinedType.GetCustomAttributes<InterceptAttribute>(true))
                 .ToArray();
-            return list;
         }
     }
 }

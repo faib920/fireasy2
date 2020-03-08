@@ -5,8 +5,8 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.ComponentModel;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -15,7 +15,7 @@ namespace Fireasy.Data.Entity
 {
     internal class EntityPropertyFieldMappingResolver
     {
-        private static SafetyDictionary<Type, List<PropertyFieldMapping>> cache = new SafetyDictionary<Type, List<PropertyFieldMapping>>();
+        private static ConcurrentDictionary<Type, List<PropertyFieldMapping>> cache = new ConcurrentDictionary<Type, List<PropertyFieldMapping>>();
 
         internal static IEnumerable<PropertyFieldMapping> GetDbMapping(Type entityType)
         {

@@ -5,9 +5,10 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common;
 using Fireasy.Common.ComponentModel;
 using Fireasy.Data.Extensions;
-using System.Collections.Concurrent;
+using System;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Transactions;
@@ -21,7 +22,6 @@ namespace Fireasy.Data
     {
         private static readonly SafetyDictionary<Transaction, SafetyDictionary<string, DbConnection>> transConns =
             new SafetyDictionary<Transaction, SafetyDictionary<string, DbConnection>>();
-
 
         /// <summary>
         /// 从分布式事务环境中获取数据库链接对象。
@@ -42,7 +42,7 @@ namespace Fireasy.Data
                 connDictionary = new SafetyDictionary<string, DbConnection>();
                 transConns.TryAdd(curTrans, connDictionary);
 
-                Debug.WriteLine("Transaction registered.");
+                Tracer.Debug($"Transaction registered.");
                 curTrans.TransactionCompleted += OnTransactionCompleted;
             }
 
@@ -57,12 +57,12 @@ namespace Fireasy.Data
                     connection.EnlistTransaction(curTrans);
                     connDictionary.TryAdd(connStr, connection);
 
-                    Debug.WriteLine("DbConnection of '" + connStr + "' registered.");
+                    Tracer.Debug($"DbConnection of '{connStr}' registered.");
                 }
             }
             else
             {
-                Debug.WriteLine("DbConnection get from cache.");
+                Tracer.Debug($"DbConnection get from cache.");
             }
 
             return connection;
@@ -80,14 +80,14 @@ namespace Fireasy.Data
                 return;
             }
 
-            Debug.WriteLine("Transaction completed.");
+            Tracer.Debug($"Transaction completed.");
             foreach (var connection in connDictionary.Values)
             {
                 connection.TryClose();
                 connection.Dispose();
             }
 
-            transConns.TryRemove(e.Transaction, out connDictionary);
+            transConns.TryRemove(e.Transaction, out _);
         }
     }
 }

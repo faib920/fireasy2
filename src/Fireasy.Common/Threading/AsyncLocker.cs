@@ -70,10 +70,8 @@ namespace Fireasy.Common.Threading
         /// <returns></returns>
         public async Task LockAsync(Task task)
         {
-            using (var releaser = LockAsync())
-            {
-                await task;
-            }
+            using var releaser = LockAsync();
+            await task;
         }
     }
 
@@ -92,7 +90,7 @@ namespace Fireasy.Common.Threading
         {
             if (initialCount < 0)
             {
-                throw new ArgumentOutOfRangeException("initialCount");
+                throw new ArgumentOutOfRangeException(nameof(initialCount));
             }
 
             currentCount = initialCount;

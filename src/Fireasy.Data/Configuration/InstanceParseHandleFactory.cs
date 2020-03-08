@@ -18,21 +18,15 @@ namespace Fireasy.Data.Configuration
                 return new StringInstanceSetting.SettingParseHandler();
             }
 
-            switch (storeType.ToLower())
+            return (storeType.ToLower()) switch
             {
-                case "registry":
-                    return new RegistryInstanceSetting.SettingParseHandler();
-                case "xml":
-                    return new XmlInstanceSetting.SettingParseHandler();
-                case "json":
-                    return new JsonInstanceSetting.SettingParseHandler();
-                case "binary":
-                    return new BinaryInstanceSetting.SettingParseHandler();
-                case "route":
-                    return new RouteInstanceSetting.SettingParseHandler();
-                default:
-                    return new StringInstanceSetting.SettingParseHandler();
-            }
+                "registry" => new RegistryInstanceSetting.SettingParseHandler(),
+                "xml" => new XmlInstanceSetting.SettingParseHandler(),
+                "json" => new JsonInstanceSetting.SettingParseHandler(),
+                "binary" => new BinaryInstanceSetting.SettingParseHandler(),
+                "route" => new RouteInstanceSetting.SettingParseHandler(),
+                _ => new StringInstanceSetting.SettingParseHandler(),
+            };
         }
     }
 }

@@ -20,7 +20,7 @@ namespace Fireasy.Data.Entity.Providers
         /// <summary>
         /// 获取 <see cref="ITranslateProvider"/> 对象。
         /// </summary>
-        /// <param name="provider"></param>
+        /// <param name="provider">数据库提供者实例。</param>
         /// <returns></returns>
         public static ITranslateProvider GetTranslateProvider(this IProvider provider)
         {
@@ -61,7 +61,7 @@ namespace Fireasy.Data.Entity.Providers
         /// <summary>
         /// 获取 <see cref="ITableGenerateProvider"/> 对象。
         /// </summary>
-        /// <param name="provider"></param>
+        /// <param name="provider">数据库提供者实例。</param>
         /// <returns></returns>
         public static ITableGenerateProvider GetTableGenerateProvider(this IProvider provider)
         {

@@ -95,7 +95,7 @@ namespace Fireasy.Data
         /// <returns>如果列存在于数组中，则为大于或等于 0 的值，否则为 -1。</returns>
         protected int IndexOf(string[] fields, string fieldName)
         {
-            for (var i = 0; i < fields.Length; i++)
+            for (int i = 0, n = fields.Length; i < n; i++)
             {
                 var fieldName1 = fields[i];
                 var p = fieldName1.IndexOf('.');

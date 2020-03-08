@@ -6,23 +6,52 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.ComponentModel;
+using Fireasy.Common.Extensions;
 using Fireasy.Common.Security;
+#if NETSTANDARD
+using Microsoft.Extensions.DependencyInjection;
+#endif
+using System;
 using System.Linq;
 
 namespace Fireasy.Data.Entity
 {
-    internal static class ContextInstanceManager
+    /// <summary>
+    /// 用于管理上下文实例。
+    /// </summary>
+    public class ContextInstanceManager
     {
-        private static SafetyDictionary<string, EntityContextInitializeContext> instances = new SafetyDictionary<string, EntityContextInitializeContext>();
+        private static readonly SafetyDictionary<string, IInstanceIdentification> instances = new SafetyDictionary<string, IInstanceIdentification>();
 
-        internal static EntityContextInitializeContext Get(string instanceName)
+        /// <summary>
+        /// 析构函数。
+        /// </summary>
+        ~ContextInstanceManager()
+        {
+            foreach (var key in instances)
+            {
+                if (key.Value.ServiceProvider != null)
+                {
+                    key.Value.ServiceProvider.TryDispose();
+                }
+            }
+
+            instances.Clear();
+        }
+
+        /// <summary>
+        /// 尝试从管理器里获取与实例名对应的 <see cref="IInstanceIdentification"/> 实例。
+        /// </summary>
+        /// <param name="instanceName"></param>
+        /// <returns></returns>
+        public static IInstanceIdentification TryGet(string instanceName)
         {
             if (string.IsNullOrEmpty(instanceName))
             {
                 return null;
             }
 
-            if (instances.TryGetValue(instanceName, out EntityContextInitializeContext value))
+            if (instances.TryGetValue(instanceName, out IInstanceIdentification value))
             {
                 return value;
             }
@@ -30,18 +59,31 @@ namespace Fireasy.Data.Entity
             return null;
         }
 
-        internal static string TryAdd(EntityContextInitializeContext context)
+        /// <summary>
+        /// 尝试将 <see cref="IInstanceIdentification"/> 实例添加到管理器，并返回一个实例名。如果管理器中已有该实例，则返回原有的实例名。
+        /// </summary>
+        /// <param name="identification"></param>
+        /// <returns></returns>
+        public static string TryAdd(IInstanceIdentification identification)
         {
             lock (instances)
             {
-                var item = instances.FirstOrDefault(s => s.Value == context);
+                var item = instances.FirstOrDefault(s => s.Value.Equals(identification));
                 if (!string.IsNullOrEmpty(item.Key))
                 {
                     return item.Key;
                 }
 
                 var key = RandomGenerator.Create();
-                instances.TryAdd(key, context);
+
+#if NETSTANDARD
+                if (identification.ServiceProvider != null)
+                {
+                    identification.ServiceProvider = identification.ServiceProvider.CreateScope() as IServiceProvider;
+                }
+#endif
+
+                instances.TryAdd(key, identification);
                 return key;
             }
         }

@@ -6,7 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
@@ -36,28 +35,25 @@ namespace Fireasy.Common.Serialization
         /// <typeparam name="T"></typeparam>
         /// <param name="value">要序列化的对象。</param>
         /// <returns>表示对象的 Json 文本。</returns>
-        [SuppressMessage("Microsoft.Usage", "CA2202")]
         public string Serialize<T>(T value)
         {
             var formatting = Option.Indent ? Formatting.Indented : Formatting.None;
-            using (var sw = new StringWriter(CultureInfo.InvariantCulture))
-            using (var writer = new XmlTextWriter(sw) { Formatting = formatting })
-            using (var ser = new XmlSerialize(this, writer, Option))
+            using var sw = new StringWriter(CultureInfo.InvariantCulture);
+            using var writer = new XmlTextWriter(sw) { Formatting = formatting };
+            using var ser = new XmlSerialize(this, writer, Option);
+            if (Option.Declaration)
             {
-                if (Option.Declaration)
-                {
-                    writer.WriteStartDocument();
-                }
-
-                ser.Serialize(value, Option.StartElement);
-
-                if (Option.Declaration)
-                {
-                    writer.WriteEndDocument();
-                }
-
-                return sw.ToString();
+                writer.WriteStartDocument();
             }
+
+            ser.Serialize(value, Option.StartElement);
+
+            if (Option.Declaration)
+            {
+                writer.WriteEndDocument();
+            }
+
+            return sw.ToString();
         }
 
         /// <summary>
@@ -66,7 +62,6 @@ namespace Fireasy.Common.Serialization
         /// <typeparam name="T"></typeparam>
         /// <param name="value">要序列化的对象。</param>
         /// <returns>表示对象的 Json 文本。</returns>
-        [SuppressMessage("Microsoft.Usage", "CA2202")]
         public async Task<string> SerializeAsync<T>(T value)
         {
             return Serialize(value);
@@ -80,19 +75,17 @@ namespace Fireasy.Common.Serialization
         /// <param name="writer"></param>
         public void Serialize<T>(T value, XmlTextWriter writer)
         {
-            using (var ser = new XmlSerialize(this, writer, Option))
+            using var ser = new XmlSerialize(this, writer, Option);
+            if (Option.Declaration)
             {
-                if (Option.Declaration)
-                {
-                    writer.WriteStartDocument();
-                }
+                writer.WriteStartDocument();
+            }
 
-                ser.Serialize(value, Option.StartElement);
+            ser.Serialize(value, Option.StartElement);
 
-                if (Option.Declaration)
-                {
-                    writer.WriteEndDocument();
-                }
+            if (Option.Declaration)
+            {
+                writer.WriteEndDocument();
             }
         }
 
@@ -113,20 +106,17 @@ namespace Fireasy.Common.Serialization
         /// <typeparam name="T">可序列化的对象类型。</typeparam>
         /// <param name="xml">表示对象的 Xml 文本。</param>
         /// <returns>对象。</returns>
-        [SuppressMessage("Microsoft.Usage", "CA2202")]
         public T Deserialize<T>(string xml)
         {
             if (string.IsNullOrEmpty(xml))
             {
-                return default(T);
+                return default;
             }
 
-            using (var sr = new StringReader(xml))
-            using (var reader = XmlReader.Create(sr))
-            using (var deser = new XmlDeserialize(this, reader, Option))
-            {
-                return deser.Deserialize<T>();
-            }
+            using var sr = new StringReader(xml);
+            using var reader = XmlReader.Create(sr);
+            using var deser = new XmlDeserialize(this, reader, Option);
+            return deser.Deserialize<T>();
         }
 
         /// <summary>
@@ -135,7 +125,6 @@ namespace Fireasy.Common.Serialization
         /// <typeparam name="T">可序列化的对象类型。</typeparam>
         /// <param name="json">表示对象的 Json 文本。</param>
         /// <returns>对象。</returns>
-        [SuppressMessage("Microsoft.Usage", "CA2202")]
         public async Task<T> DeserializeAsync<T>(string json)
         {
             return Deserialize<T>(json);
@@ -149,10 +138,8 @@ namespace Fireasy.Common.Serialization
         /// <returns></returns>
         public T Deserialize<T>(XmlTextReader reader)
         {
-            using (var deser = new XmlDeserialize(this, reader, Option))
-            {
-                return deser.Deserialize<T>();
-            }
+            using var deser = new XmlDeserialize(this, reader, Option);
+            return deser.Deserialize<T>();
         }
 
         /// <summary>
@@ -172,7 +159,6 @@ namespace Fireasy.Common.Serialization
         /// <param name="xml">表示对象的 Xml 文本。</param>
         /// <param name="type">可序列化的对象类型。</param>
         /// <returns>对象。</returns>
-        [SuppressMessage("Microsoft.Usage", "CA2202")]
         public object Deserialize(string xml, Type type)
         {
             if (string.IsNullOrEmpty(xml))
@@ -180,12 +166,10 @@ namespace Fireasy.Common.Serialization
                 return null;
             }
 
-            using (var sr = new StringReader(xml))
-            using (var reader = XmlReader.Create(sr))
-            using (var deser = new XmlDeserialize(this, reader, Option))
-            {
-                return deser.Deserialize(type);
-            }
+            using var sr = new StringReader(xml);
+            using var reader = XmlReader.Create(sr);
+            using var deser = new XmlDeserialize(this, reader, Option);
+            return deser.Deserialize(type);
         }
 
         /// <summary>
@@ -194,7 +178,6 @@ namespace Fireasy.Common.Serialization
         /// <param name="json">表示对象的 Json 文本。</param>
         /// <param name="type">可序列化的对象类型。</param>
         /// <returns>对象。</returns>
-        [SuppressMessage("Microsoft.Usage", "CA2202")]
         public async Task<object> DeserializeAsync(string json, Type type)
         {
             return Deserialize(json, type);

@@ -10,7 +10,7 @@ using System.Collections.ObjectModel;
 
 namespace Fireasy.Data.Entity.Initializers
 {
-    public class RespositoryChangedEventArgs
+    public sealed class RespositoryChangedEventArgs
     {
         /// <summary>
         /// 获取或设置实体类型。

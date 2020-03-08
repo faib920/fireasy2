@@ -15,22 +15,16 @@ namespace Fireasy.Common.Dynamic
 {
     public static class BinderWrapper
     {
-        private static object getCSharpArgumentInfoArray;
-        private static object setCSharpArgumentInfoArray;
+        private static readonly object getCSharpArgumentInfoArray;
+        private static readonly object setCSharpArgumentInfoArray;
         private static MethodInvoker getMemberCall;
         private static MethodInvoker setMemberCall;
-        private static bool initialized;
 
-        private static void Init()
+        static BinderWrapper()
         {
-            if (!initialized)
-            {
-                getCSharpArgumentInfoArray = CreateSharpArgumentInfoArray(0);
-                setCSharpArgumentInfoArray = CreateSharpArgumentInfoArray(0, 3);
-                CreateMemberCalls();
-
-                initialized = true;
-            }
+            getCSharpArgumentInfoArray = CreateSharpArgumentInfoArray(0);
+            setCSharpArgumentInfoArray = CreateSharpArgumentInfoArray(0, 3);
+            CreateMemberCalls();
         }
 
         private static object CreateSharpArgumentInfoArray(params int[] values)
@@ -60,13 +54,11 @@ namespace Fireasy.Common.Dynamic
 
         public static CallSiteBinder GetMember(string name)
         {
-            Init();
             return (CallSiteBinder)getMemberCall.Invoke(null, 0, name, typeof(BinderWrapper), getCSharpArgumentInfoArray);
         }
 
         public static CallSiteBinder SetMember(string name)
         {
-            Init();
             return (CallSiteBinder)setMemberCall.Invoke(null, 0, name, typeof(BinderWrapper), setCSharpArgumentInfoArray);
         }
     }

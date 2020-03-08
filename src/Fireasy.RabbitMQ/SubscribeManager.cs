@@ -10,10 +10,15 @@ using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Subscribes;
+#if NETSTANDARD
+using Fireasy.Common.Subscribes.Configuration;
+#endif
+using Fireasy.Common.Threading;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,12 +26,54 @@ using System.Threading.Tasks;
 namespace Fireasy.RabbitMQ
 {
     [ConfigurationSetting(typeof(RabbitConfigurationSetting))]
-    public class SubscribeManager : ISubscribeManager, IConfigurationSettingHostService
+    public class SubscribeManager : DisposeableBase, ISubscribeManager, IConfigurationSettingHostService
     {
         private RabbitConfigurationSetting setting;
 
         private static Lazy<IConnection> connectionLazy;
-        private static SafetyDictionary<string, RabbitChannelCollection> subscribers = new SafetyDictionary<string, RabbitChannelCollection>();
+        private static readonly SafetyDictionary<string, RabbitChannelCollection> subscribers = new SafetyDictionary<string, RabbitChannelCollection>();
+
+        /// <summary>
+        /// 初始化 <see cref="SubscribeManager"/> 类的新实例。
+        /// </summary>
+        public SubscribeManager()
+        {
+        }
+
+#if NETSTANDARD
+        internal SubscribeManager(RabbitOptions options)
+        {
+            RabbitConfigurationSetting setting = null;
+            if (!string.IsNullOrEmpty(options.ConfigName))
+            {
+                var section = ConfigurationUnity.GetSection<SubscribeConfigurationSection>();
+                if (section != null && section.GetSetting(options.ConfigName) is ExtendConfigurationSetting extSetting)
+                {
+                    setting = (RabbitConfigurationSetting)extSetting.Extend;
+                }
+            }
+            else
+            {
+                setting = new RabbitConfigurationSetting
+                {
+                    Server = options.Server,
+                    Port = options.Port ?? -1,
+                    Password = options.Password,
+                    UserName = options.UserName,
+                    ExchangeType = options.ExchangeType,
+                    VirtualHost = options.VirtualHost,
+                    RequeueDelayTime = options.RequeueDelayTime
+                };
+            }
+
+            if (setting != null)
+            {
+                (this as IConfigurationSettingHostService).Attach(setting);
+            }
+
+            options.Initializer?.Invoke(this);
+        }
+#endif
 
         /// <summary>
         /// 向 Rabbit 服务器发送消息主题。
@@ -153,7 +200,7 @@ namespace Fireasy.RabbitMQ
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
             var list = subscribers.GetOrAdd(name, () => new RabbitChannelCollection());
-            list.Add(new RabbitChannel(new SyncSubscribeDelegate(subscriber), StartQueue(name)));
+            list.Add(new RabbitChannel(new SyncSubscribeDelegate(typeof(TSubject), subscriber), StartQueue(name)));
         }
 
         /// <summary>
@@ -167,7 +214,7 @@ namespace Fireasy.RabbitMQ
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
             var list = subscribers.GetOrAdd(name, () => new RabbitChannelCollection());
-            list.Add(new RabbitChannel(new AsyncSubscribeDelegate(subscriber), StartQueue(name)));
+            list.Add(new RabbitChannel(new AsyncSubscribeDelegate(typeof(TSubject), subscriber), StartQueue(name)));
         }
 
         /// <summary>
@@ -182,7 +229,7 @@ namespace Fireasy.RabbitMQ
 
             var name = TopicHelper.GetTopicName(subjectType);
             var list = subscribers.GetOrAdd(name, () => new RabbitChannelCollection());
-            list.Add(new RabbitChannel(new SyncSubscribeDelegate(subscriber), StartQueue(name)));
+            list.Add(new RabbitChannel(new SyncSubscribeDelegate(subjectType, subscriber), StartQueue(name)));
         }
 
         /// <summary>
@@ -196,7 +243,7 @@ namespace Fireasy.RabbitMQ
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
             var list = subscribers.GetOrAdd(name, () => new RabbitChannelCollection());
-            list.Add(new RabbitChannel(new SyncSubscribeDelegate(subscriber), StartQueue(name)));
+            list.Add(new RabbitChannel(new SyncSubscribeDelegate(null, subscriber), StartQueue(name)));
         }
 
         /// <summary>
@@ -286,19 +333,19 @@ namespace Fireasy.RabbitMQ
 
         private IConnection GetConnection()
         {
-            if (connectionLazy == null)
-            {
-                connectionLazy = new Lazy<IConnection>(() => new ConnectionFactory
+            connectionLazy = SingletonLocker.Lock(ref connectionLazy, () =>
                 {
-                    UserName = setting.UserName,
-                    Password = setting.Password,
-                    Endpoint = new AmqpTcpEndpoint(new Uri(setting.Server)),
-                    Port = setting.Port,
-                    RequestedHeartbeat = 12,
-                    AutomaticRecoveryEnabled = true,
-                    VirtualHost = string.IsNullOrEmpty(setting.VirtualHost) ? "/" : setting.VirtualHost
-                }.CreateConnection());
-            }
+                    return new Lazy<IConnection>(() => new ConnectionFactory
+                    {
+                        UserName = setting.UserName,
+                        Password = setting.Password,
+                        Endpoint = new AmqpTcpEndpoint(new Uri(setting.Server)),
+                        Port = setting.Port,
+                        RequestedHeartbeat = 12,
+                        AutomaticRecoveryEnabled = true,
+                        VirtualHost = string.IsNullOrEmpty(setting.VirtualHost) ? "/" : setting.VirtualHost
+                    }.CreateConnection());
+                });
 
             return connectionLazy.Value;
         }
@@ -326,12 +373,15 @@ namespace Fireasy.RabbitMQ
                 channel.QueueBind(queueName, exchangeName, channelName);
             }
 
-            var consumer = new EventingBasicConsumer(channel);
+            var consumer = new CustomEventingBasicConsumer(channel, channelName);
             consumer.Received += (sender, args) =>
                 {
-                    if (subscribers.TryGetValue(channelName, out RabbitChannelCollection channels))
+                    Tracer.Debug($"RabbitMQSubscribeManager accept message of '{channelName}'.");
+
+                    var _consumer = sender as CustomEventingBasicConsumer;
+                    if (subscribers.TryGetValue(_consumer.ChannelName, out RabbitChannelCollection channels))
                     {
-                        var found = channels.Find(channel);
+                        var found = channels.Find(_consumer.Model);
                         if (found == null)
                         {
                             return;
@@ -341,6 +391,7 @@ namespace Fireasy.RabbitMQ
 
                         try
                         {
+                           
                             if (found.Handler.DataType == typeof(byte[]))
                             {
                                 body = args.Body;
@@ -351,18 +402,20 @@ namespace Fireasy.RabbitMQ
                             }
 
                             found.Handler.Invoke(body);
-                            channel.BasicAck(args.DeliveryTag, false);
+                            _consumer.Model.BasicAck(args.DeliveryTag, false);
                         }
-                        catch
+                        catch (Exception exp)
                         {
-                            channel.BasicNack(args.DeliveryTag, false, false);
+                            Tracer.Error($"RabbitMQSubscribeManager Consume the Topic of '{channelName}':\n{exp.Output()}");
+                            
+                            _consumer.Model.BasicNack(args.DeliveryTag, false, false);
 
                             if (setting.RequeueDelayTime != null)
                             {
                                 Task.Run(() =>
                                     {
-                                        Thread.Sleep(setting.RequeueDelayTime.Value);
-                                        Publish(channelName, args.Body);
+                                        Thread.SpinWait(setting.RequeueDelayTime.Value);
+                                        Publish(_consumer.ChannelName, args.Body);
                                     });
                             }
                         }
@@ -395,15 +448,47 @@ namespace Fireasy.RabbitMQ
             return setting;
         }
 
-        private class RabbitChannelCollection : List<RabbitChannel>
+        protected override void Dispose(bool disposing)
         {
+            if (connectionLazy != null && connectionLazy.IsValueCreated)
+            {
+                connectionLazy.Value.Dispose();
+            }
+
+            subscribers?.ForEach(s => s.Value.Dispose());
+
+            base.Dispose(disposing);
+        }
+
+        private class RabbitChannelCollection : DisposeableBase
+        {
+            private readonly List<RabbitChannel> channels = new List<RabbitChannel>();
+
             public RabbitChannel Find(IModel model)
             {
-                return this.FirstOrDefault(s => s.Model.Equals(model));
+                return channels.FirstOrDefault(s => s.Model.Equals(model));
+            }
+
+            public void Add(RabbitChannel channel)
+            {
+                channels.Add(channel);
+            }
+
+            public void ForEach(Action<RabbitChannel> action)
+            {
+                channels.ForEach(action);
+            }
+
+            protected override void Dispose(bool disposing)
+            {
+                channels.ForEach(s => s.Dispose());
+                channels.Clear();
+
+                base.Dispose(disposing);
             }
         }
 
-        private class RabbitChannel
+        private class RabbitChannel : DisposeableBase
         {
             public RabbitChannel(SubscribeDelegate handler, IModel model)
             {
@@ -411,9 +496,15 @@ namespace Fireasy.RabbitMQ
                 Model = model;
             }
 
-            public SubscribeDelegate Handler { get; set; }
+            public SubscribeDelegate Handler { get; private set; }
 
-            public IModel Model { get; set; }
+            public IModel Model { get; private set; }
+
+            protected override void Dispose(bool disposing)
+            {
+                Model?.Dispose();
+                base.Dispose(disposing);
+            }
         }
 
         private struct RequeueData
@@ -421,6 +512,17 @@ namespace Fireasy.RabbitMQ
             public string Name { get; set; }
 
             public byte[] Data { get; set; }
+        }
+
+        private class CustomEventingBasicConsumer : EventingBasicConsumer
+        {
+            public CustomEventingBasicConsumer(IModel model, string channelName)
+                : base (model)
+            {
+                ChannelName = channelName;
+            }
+
+            public string ChannelName { get; private set; }
         }
     }
 }

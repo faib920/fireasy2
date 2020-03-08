@@ -31,13 +31,10 @@ namespace Fireasy.Data.RecordWrapper
         public virtual string GetFieldName(IDataReader reader, int i)
         {
             var fieldName = reader.GetName(i).Trim();
-            var index = fieldName.IndexOf('.');
-            if (index != -1)
-            {
-                return fieldName.Substring(index + 1);
-            }
 
-            return fieldName;
+            //处理有别名的情况
+            var index = fieldName.IndexOf('.');
+            return index != -1 ? fieldName.Substring(index + 1) : fieldName;
         }
 
         /// <summary>
@@ -76,12 +73,8 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            if (type == typeof(bool))
-            {
-                return reader.GetBoolean(i);
-            }
-
-            return Convert.ToBoolean(GetValue(reader, i));
+            return type == typeof(bool) ? reader.GetBoolean(i) : 
+                Convert.ToBoolean(GetValue(reader, i));
         }
 
         /// <summary>
@@ -93,12 +86,7 @@ namespace Fireasy.Data.RecordWrapper
         public bool GetBoolean(IDataRecord reader, string name)
         {
             var index = reader.GetOrdinal(name);
-            if (index != -1)
-            {
-                return GetBoolean(reader, index);
-            }
-
-            return false;
+            return index != -1 ? GetBoolean(reader, index) : false;
         }
 
         /// <summary>
@@ -115,12 +103,8 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            if (type == typeof(byte))
-            {
-                return reader.GetByte(i);
-            }
-
-            return Convert.ToByte(GetValue(reader, i));
+            return type == typeof(byte) ? reader.GetByte(i) : 
+                Convert.ToByte(GetValue(reader, i));
         }
 
         /// <summary>
@@ -132,12 +116,7 @@ namespace Fireasy.Data.RecordWrapper
         public byte GetByte(IDataRecord reader, string name)
         {
             var index = reader.GetOrdinal(name);
-            if (index != -1)
-            {
-                return GetByte(reader, index);
-            }
-
-            return 0;
+            return index != -1 ? GetByte(reader, index) : (byte)0;
         }
 
         /// <summary>
@@ -155,24 +134,21 @@ namespace Fireasy.Data.RecordWrapper
 
             var bufferSize = 1024;
             var outbyte = new byte[bufferSize];
-            long retval = 0;
             long startIndex = 0;
-            using (var stream = new MemoryStream())
+            using var stream = new MemoryStream();
+            while (true)
             {
-                while (true)
+                var retval = reader.GetBytes(i, startIndex, outbyte, 0, bufferSize);
+                stream.Write(outbyte, 0, (int)retval);
+                if (retval < bufferSize)
                 {
-                    retval = reader.GetBytes(i, startIndex, outbyte, 0, bufferSize);
-                    stream.Write(outbyte, 0, (int)retval);
-                    if (retval < bufferSize)
-                    {
-                        break;
-                    }
-
-                    startIndex += bufferSize;
+                    break;
                 }
 
-                return stream.ToArray();
+                startIndex += bufferSize;
             }
+
+            return stream.ToArray();
         }
 
         /// <summary>
@@ -184,12 +160,7 @@ namespace Fireasy.Data.RecordWrapper
         public byte[] GetBytes(IDataRecord reader, string name)
         {
             var index = reader.GetOrdinal(name);
-            if (index != -1)
-            {
-                return GetBytes(reader, index);
-            }
-
-            return null;
+            return index != -1 ? GetBytes(reader, index) : null;
         }
 
         /// <summary>
@@ -206,12 +177,8 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            if (type == typeof(char))
-            {
-                return reader.GetChar(i);
-            }
-
-            return Convert.ToChar(GetValue(reader, i));
+            return type == typeof(char) ? reader.GetChar(i) : 
+                Convert.ToChar(GetValue(reader, i));
         }
 
         /// <summary>
@@ -223,12 +190,7 @@ namespace Fireasy.Data.RecordWrapper
         public char GetChar(IDataRecord reader, string name)
         {
             var index = reader.GetOrdinal(name);
-            if (index != -1)
-            {
-                return GetChar(reader, index);
-            }
-
-            return '\0';
+            return index != -1 ? GetChar(reader, index) : '\0';
         }
 
         /// <summary>
@@ -267,12 +229,8 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            if (type == typeof(short))
-            {
-                return reader.GetInt16(i);
-            }
-
-            return Convert.ToInt16(GetValue(reader, i));
+            return type == typeof(short) ? reader.GetInt16(i) : 
+                Convert.ToInt16(GetValue(reader, i));
         }
 
         /// <summary>
@@ -284,12 +242,7 @@ namespace Fireasy.Data.RecordWrapper
         public short GetInt16(IDataRecord reader, string name)
         {
             var index = reader.GetOrdinal(name);
-            if (index != -1)
-            {
-                return GetInt16(reader, index);
-            }
-
-            return 0;
+            return index != -1 ? GetInt16(reader, index) : (short)0;
         }
 
         /// <summary>
@@ -306,12 +259,8 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            if (type == typeof(int))
-            {
-                return reader.GetInt32(i);
-            }
-
-            return Convert.ToInt32(GetValue(reader, i));
+            return type == typeof(int) ? reader.GetInt32(i) :
+                Convert.ToInt32(GetValue(reader, i));
         }
 
         /// <summary>
@@ -323,12 +272,7 @@ namespace Fireasy.Data.RecordWrapper
         public int GetInt32(IDataRecord reader, string name)
         {
             var index = reader.GetOrdinal(name);
-            if (index != -1)
-            {
-                return GetInt32(reader, index);
-            }
-
-            return 0;
+            return index != -1 ? GetInt32(reader, index) : 0;
         }
 
         /// <summary>
@@ -345,12 +289,8 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            if (type == typeof(long))
-            {
-                return reader.GetInt64(i);
-            }
-
-            return Convert.ToInt64(GetValue(reader, i));
+            return type == typeof(long) ? reader.GetInt64(i) :
+                Convert.ToInt64(GetValue(reader, i));
         }
 
         /// <summary>
@@ -362,12 +302,7 @@ namespace Fireasy.Data.RecordWrapper
         public long GetInt64(IDataRecord reader, string name)
         {
             var index = reader.GetOrdinal(name);
-            if (index != -1)
-            {
-                return GetInt64(reader, index);
-            }
-
-            return 0;
+            return index != -1 ? GetInt64(reader, index) : 0;
         }
 
         /// <summary>
@@ -384,12 +319,8 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            if (type == typeof(float))
-            {
-                return reader.GetFloat(i);
-            }
-
-            return Convert.ToSingle(GetValue(reader, i));
+            return type == typeof(float) ? reader.GetFloat(i) : 
+                Convert.ToSingle(GetValue(reader, i));
         }
 
         /// <summary>
@@ -401,12 +332,7 @@ namespace Fireasy.Data.RecordWrapper
         public float GetFloat(IDataRecord reader, string name)
         {
             var index = reader.GetOrdinal(name);
-            if (index != -1)
-            {
-                return GetFloat(reader, index);
-            }
-
-            return 0;
+            return index != -1 ? GetFloat(reader, index) : 0;
         }
 
         /// <summary>
@@ -423,12 +349,8 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            if (type == typeof(double))
-            {
-                return reader.GetDouble(i);
-            }
-
-            return Convert.ToDouble(GetValue(reader, i));
+            return type == typeof(double) ? reader.GetDouble(i) : 
+                Convert.ToDouble(GetValue(reader, i));
         }
 
         /// <summary>
@@ -440,12 +362,7 @@ namespace Fireasy.Data.RecordWrapper
         public double GetDouble(IDataRecord reader, string name)
         {
             var index = reader.GetOrdinal(name);
-            if (index != -1)
-            {
-                return GetDouble(reader, index);
-            }
-
-            return 0;
+            return index != -1 ? GetDouble(reader, index) : 0;
         }
 
         /// <summary>
@@ -462,12 +379,8 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            if (type == typeof(string))
-            {
-                return reader.GetString(i);
-            }
-
-            return Convert.ToString(GetValue(reader, i));
+            return type == typeof(string) ? reader.GetString(i) : 
+                Convert.ToString(GetValue(reader, i));
         }
 
         /// <summary>
@@ -479,12 +392,7 @@ namespace Fireasy.Data.RecordWrapper
         public string GetString(IDataRecord reader, string name)
         {
             var index = reader.GetOrdinal(name);
-            if (index != -1)
-            {
-                return GetString(reader, index);
-            }
-
-            return string.Empty;
+            return index != -1 ? GetString(reader, index) : string.Empty;
         }
 
         /// <summary>
@@ -501,12 +409,8 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            if (type == typeof(decimal))
-            {
-                return reader.GetDecimal(i);
-            }
-
-            return Convert.ToDecimal(GetValue(reader, i));
+            return type == typeof(decimal) ? reader.GetDecimal(i) :
+                Convert.ToDecimal(GetValue(reader, i));
         }
 
         /// <summary>
@@ -518,12 +422,7 @@ namespace Fireasy.Data.RecordWrapper
         public decimal GetDecimal(IDataRecord reader, string name)
         {
             var index = reader.GetOrdinal(name);
-            if (index != -1)
-            {
-                return GetDecimal(reader, index);
-            }
-
-            return 0;
+            return index != -1 ? GetDecimal(reader, index) : 0;
         }
 
         /// <summary>
@@ -571,12 +470,7 @@ namespace Fireasy.Data.RecordWrapper
         public DateTime GetDateTime(IDataRecord reader, string name)
         {
             var index = reader.GetOrdinal(name);
-            if (index != -1)
-            {
-                return GetDateTime(reader, index);
-            }
-
-            return DateTime.MinValue;
+            return index != -1 ? GetDateTime(reader, index) : DateTime.MinValue;
         }
 
         /// <summary>

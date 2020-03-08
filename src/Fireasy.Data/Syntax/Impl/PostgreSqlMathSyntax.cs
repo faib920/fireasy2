@@ -1,21 +1,28 @@
-﻿
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 namespace Fireasy.Data.Syntax
 {
     public class PostgreSqlMathSyntax : MathSyntax
     {
         public override string ExclusiveOr(object sourceExp, object otherExp)
         {
-            return string.Format("({0} # {1})", sourceExp, otherExp);
+            return $"({sourceExp} # {otherExp})";
         }
 
         public override string Log10(object sourceExp)
         {
-            return string.Format("LOG({0}, 10)", sourceExp);
+            return $"LOG({sourceExp}, 10)";
         }
 
         public override string Truncate(object sourceExp)
         {
-            return string.Format("TRUNC({0}, 0)", sourceExp);
+            return $"TRUNC({sourceExp}, 0)";
         }
     }
 }

@@ -8,6 +8,7 @@
 
 using Fireasy.Common.ComponentModel;
 using System;
+using System.Diagnostics;
 
 namespace Fireasy.Data
 {

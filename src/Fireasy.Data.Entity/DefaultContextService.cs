@@ -6,8 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
+using Fireasy.Common.Threading;
 using Fireasy.Data.Entity.Linq;
-using Fireasy.Data.Provider;
 using System;
 using System.Data;
 
@@ -31,40 +31,29 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="context"></param>
         /// <param name="databaseFactory">一个用于创建 <see cref="IDatabase"/> 的工厂函数。</param>
-        public DefaultContextService(EntityContextInitializeContext context, Func<IProvider, ConnectionString, IDatabase> databaseFactory)
+        public DefaultContextService(ContextServiceContext context)
             : base(context)
         {
-            var options = context.Options;
-
-            Func<IDatabase> factory = null;
-            if (DatabaseScope.Current != null)
+            Func<IDatabase> dbCreator;
+            if (context.Options.Provider != null && context.Options.ConnectionString != null)
             {
-                factory = () => DatabaseScope.Current.Database;
+                dbCreator = () => new Database(context.Options.ConnectionString, context.Options.Provider, context.ServiceProvider);
             }
-            else if (databaseFactory != null)
+            else if (context.Options != null)
             {
-                factory = () => databaseFactory(context.Provider, context.ConnectionString);
+                dbCreator = () => DatabaseFactory.CreateDatabase(context.Options.ConfigName, context.ServiceProvider);
             }
-            else if (context.Provider != null && context.ConnectionString != null)
+            else
             {
-                factory = () => new Database(context.ConnectionString, context.Provider);
-            }
-            else if (options != null)
-            {
-                factory = () => DatabaseFactory.CreateDatabase(options.ConfigName);
+                throw new InvalidOperationException(SR.GetString(SRKind.NotSupportDatabaseFactory));
             }
 
-            if (factory != null)
-            {
-                Database = EntityDatabaseFactory.CreateDatabase(InstanceName, factory);
-                Provider = Database.Provider;
-            }
-
+            Database = EntityDatabaseFactory.CreateDatabase(InstanceName, dbCreator);
             QueryPolicy = new DefaultQueryPolicy(Provider);
         }
 
         /// <summary>
-        /// 获取 <see cref="IDatabase"/> 实例。
+        /// 获取数据库实例。
         /// </summary>
         public IDatabase Database { get; private set; }
 
@@ -99,7 +88,8 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 释放资源。
         /// </summary>
-        public override void Dispose()
+        /// <param name="disposing"></param>
+        protected override void Dispose(bool disposing)
         {
             Database?.Dispose();
         }

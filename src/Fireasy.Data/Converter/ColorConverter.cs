@@ -99,15 +99,12 @@ namespace Fireasy.Data.Converter
                 return Color.Empty;
             }
 
-            switch (bytes.Length)
+            return bytes.Length switch
             {
-                case 4:
-                    return Color.FromArgb(bytes[0], bytes[1], bytes[2], bytes[3]);
-                case 3:
-                    return Color.FromArgb(bytes[0], bytes[1], bytes[2]);
-                default:
-                    return Color.Empty;
-            }
+                4 => Color.FromArgb(bytes[0], bytes[1], bytes[2], bytes[3]),
+                3 => Color.FromArgb(bytes[0], bytes[1], bytes[2]),
+                _ => Color.Empty,
+            };
         }
 
         /// <summary>

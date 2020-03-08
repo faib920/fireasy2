@@ -24,7 +24,7 @@ namespace Fireasy.Data.Entity.Dynamic
         /// <param name="assemblyBuilder">一个 <see cref="DynamicAssemblyBuilder"/> 容器。</param>
         public RelationshipBuilder(DynamicAssemblyBuilder assemblyBuilder = null)
         {
-            this.assemblyBuilder = assemblyBuilder ?? new DynamicAssemblyBuilder("<DynamicRelationship>_" + Guid.NewGuid().ToString("N"));
+            this.assemblyBuilder = assemblyBuilder ?? new DynamicAssemblyBuilder($"<DynamicRelationship>_{Guid.NewGuid():N}");
         }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace Fireasy.Data.Entity.Dynamic
         /// <param name="keyExpression"></param>
         public void DefineRelation(Type thisType, Type otherType, string keyExpression)
         {
-            var relationName = string.Format("{0}_{1}:{2}", thisType.Name, otherType.Name, keyExpression);
+            var relationName = $"{thisType.Name}_{otherType.Name}:{keyExpression}";
             assemblyBuilder.SetCustomAttribute(() => new RelationshipAttribute(relationName, thisType, otherType, keyExpression));
         }
 
@@ -49,19 +49,19 @@ namespace Fireasy.Data.Entity.Dynamic
         /// <param name="style"></param>
         public void DefineRelation(Type thisType, Type otherType, IProperty thisProperty, IProperty otherProperty, RelationshipStyle style)
         {
-            var relationName = thisType.Name + ":" + otherType.Name;
+            var relationName = $"{thisType.Name}:{otherType.Name}";
             assemblyBuilder.SetCustomAttribute(() => new RelationshipAttribute(relationName, thisType, otherType, GetRelationshipExpression(thisProperty, otherProperty, style)));
         }
 
         private string GetRelationshipExpression(IProperty thisProperty, IProperty otherProperty, RelationshipStyle style)
         {
-            switch (style)
+            return style switch
             {
-                case RelationshipStyle.One2One: return string.Format("{0}=={1}", thisProperty, otherProperty);
-                case RelationshipStyle.One2Many: return string.Format("{0}=>{1}", thisProperty, otherProperty);
-                case RelationshipStyle.Many2One: return string.Format("{0}<={1}", thisProperty, otherProperty);
-                default: return string.Empty;
-            }
+                RelationshipStyle.One2One => $"{thisProperty}=={otherProperty}",
+                RelationshipStyle.One2Many => $"{thisProperty}=>{otherProperty}",
+                RelationshipStyle.Many2One => $"{thisProperty}<={otherProperty}",
+                _ => string.Empty,
+            };
         }
     }
 }

@@ -18,14 +18,15 @@ namespace Fireasy.Data.Entity.Generation
         protected override SqlCommand[] BuildCreateTableCommands(ISyntaxProvider syntax, string tableName, IList<IProperty> properties)
         {
             var sb = new StringBuilder();
-            sb.AppendFormat("create table {0}\n(\n", Quote(syntax, tableName));
+            sb.Append($"create table {Quote(syntax, tableName)}\n(\n");
 
             var count = properties.Count;
+            var last = count - 1;
             for (var i = 0; i < count; i++)
             {
                 AppendFieldToBuilder(sb, syntax, properties[i]);
 
-                if (i != count - 1)
+                if (i != last)
                 {
                     sb.Append(",");
                 }
@@ -41,14 +42,15 @@ namespace Fireasy.Data.Entity.Generation
         protected override SqlCommand[] BuildAddFieldCommands(ISyntaxProvider syntax, string tableName, IList<IProperty> properties)
         {
             var sb = new StringBuilder();
-            sb.AppendFormat("alter table {0} add (", Quote(syntax, tableName));
+            sb.Append($"alter table {Quote(syntax, tableName)} add (");
 
             var count = properties.Count;
+            var last = count - 1;
             for (var i = 0; i < count; i++)
             {
                 AppendFieldToBuilder(sb, syntax, properties[i]);
 
-                if (i != count - 1)
+                if (i != last)
                 {
                     sb.Append(",");
                 }

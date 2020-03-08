@@ -22,11 +22,11 @@ namespace Fireasy.Common.Emit
     /// </summary>
     public abstract class DynamicBuilder
     {
-        public DynamicBuilder()
+        protected DynamicBuilder()
         {
         }
 
-        public DynamicBuilder(VisualDecoration visual, CallingDecoration calling)
+        protected DynamicBuilder(VisualDecoration visual, CallingDecoration calling)
         {
             Visual = visual;
             Calling = calling;
@@ -137,8 +137,8 @@ namespace Fireasy.Common.Emit
                     switch (memberInitExp.Bindings[i].BindingType)
                     {
                         case MemberBindingType.Assignment:
-                            var assign = memberInitExp.Bindings[i] as MemberAssignment;
-                            if (assign != null && CheckArgumentExpression(assign.Expression))
+                            if (memberInitExp.Bindings[i] is MemberAssignment assign && 
+                                CheckArgumentExpression(assign.Expression))
                             {
                                 Visit(assign.Expression);
                             }

@@ -13,7 +13,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// 提供自定义函数的绑定特性。
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-    public class FunctionBindAttribute : Attribute
+    public sealed class FunctionBindAttribute : Attribute
     {
         /// <summary>
         /// 初始化 <see cref="FunctionBindAttribute"/> 类的新实例。

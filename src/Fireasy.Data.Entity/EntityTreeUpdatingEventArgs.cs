@@ -99,16 +99,14 @@ namespace Fireasy.Data.Entity
 
             var instanceName = Current.GetInstanceName();
             var environment = Current.GetEnvironment();
-            var initContext = ContextInstanceManager.Get(instanceName);
-            var provider = initContext.Provider.GetService<IContextProvider>();
-            using (var service = provider.CreateContextService(initContext))
-            {
-                service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
+            var identification = ContextInstanceManager.TryGet(instanceName);
+            var contextProvider = identification.GetProviderService<IContextProvider>();
+            using var service = contextProvider.CreateContextService(new ContextServiceContext(identification));
+            service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
 
-                var queryProvider = new EntityQueryProvider(service);
-                return new QuerySet<T>(new QueryProvider(queryProvider), null)
-                    .UpdateWhere(entity, predicate);
-            }
+            var queryProvider = new EntityQueryProvider(service);
+            return new QuerySet<T>(new QueryProvider(queryProvider), null)
+                .UpdateWhere(entity, predicate);
         }
 
         /// <summary>
@@ -127,16 +125,14 @@ namespace Fireasy.Data.Entity
 
             var instanceName = Current.GetInstanceName();
             var environment = Current.GetEnvironment();
-            var initContext = ContextInstanceManager.Get(instanceName);
-            var provider = initContext.Provider.GetService<IContextProvider>();
-            using (var service = provider.CreateContextService(initContext))
-            {
-                service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
+            var identification = ContextInstanceManager.TryGet(instanceName);
+            var contextProvider = identification.GetProviderService<IContextProvider>();
+            using var service = contextProvider.CreateContextService(new ContextServiceContext(identification));
+            service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
 
-                var queryProvider = new EntityQueryProvider(service);
-                return new QuerySet<T>(new QueryProvider(queryProvider), null)
-                    .RemoveWhere(predicate, fake);
-            }
+            var queryProvider = new EntityQueryProvider(service);
+            return new QuerySet<T>(new QueryProvider(queryProvider), null)
+                .RemoveWhere(predicate, fake);
         }
     }
 }

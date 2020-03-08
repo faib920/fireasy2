@@ -11,38 +11,64 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Fireasy.Common.ComponentModel
 {
     /// <summary>
-    /// 对 <see cref="ConcurrentDictionary"/> 线程安全字典的扩展，使之真正意义上的安全。
+    /// 对 <see cref="ConcurrentDictionary{TKey, TValue}"/> 线程安全字典的扩展，使之真正意义上的安全。
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TValue"></typeparam>
     public class SafetyDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
     {
-        private readonly ConcurrentDictionary<TKey, Lazy<TValue>> dic = new ConcurrentDictionary<TKey, Lazy<TValue>>();
-        private LazyThreadSafetyMode mode = LazyThreadSafetyMode.ExecutionAndPublication;
+        private readonly LazyThreadSafetyMode mode = LazyThreadSafetyMode.ExecutionAndPublication;
 
         /// <summary>
-        /// 实例化 <see cref="SafetyDictionary"/> 类的新实例。 
+        /// 实例化 <see cref="SafetyDictionary{TKey, TValue}"/> 类的新实例。 
         /// </summary>
         public SafetyDictionary()
         {
+            LazyValues = new ConcurrentDictionary<TKey, Lazy<TValue>>();
         }
 
         /// <summary>
-        /// 实例化 <see cref="SafetyDictionary"/> 类的新实例。 
+        /// 实例化 <see cref="SafetyDictionary{TKey, TValue}"/> 类的新实例。 
+        /// </summary>
+        /// <param name="comparer"></param>
+        public SafetyDictionary(IEqualityComparer<TKey> comparer)
+        {
+            LazyValues = new ConcurrentDictionary<TKey, Lazy<TValue>>(comparer);
+        }
+
+        /// <summary>
+        /// 实例化 <see cref="SafetyDictionary{TKey, TValue}"/> 类的新实例。 
         /// </summary>
         /// <param name="collection"></param>
-        public SafetyDictionary(IEnumerable<KeyValuePair<TKey, TValue>> collection)
+        /// <param name="comparer"></param>
+        public SafetyDictionary(IEnumerable<KeyValuePair<TKey, TValue>> collection, IEqualityComparer<TKey> comparer)
+            : this(comparer)
         {
             if (collection != null)
             {
                 foreach (var kvp in collection)
                 {
-                    dic.TryAdd(kvp.Key, new Lazy<TValue>(() => kvp.Value, mode));
+                    LazyValues.TryAdd(kvp.Key, new Lazy<TValue>(() => kvp.Value, mode));
+                }
+            }
+        }
+
+        /// <summary>
+        /// 实例化 <see cref="SafetyDictionary{TKey, TValue}"/> 类的新实例。 
+        /// </summary>
+        /// <param name="collection"></param>
+        public SafetyDictionary(IEnumerable<KeyValuePair<TKey, TValue>> collection)
+            : this()
+        {
+            if (collection != null)
+            {
+                foreach (var kvp in collection)
+                {
+                    LazyValues.TryAdd(kvp.Key, new Lazy<TValue>(() => kvp.Value, mode));
                 }
             }
         }
@@ -55,8 +81,8 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public TValue GetOrAdd(TKey key, Func<TValue> valueFactory)
         {
-            var lazy = dic.GetOrAdd(key, k => new Lazy<TValue>(valueFactory, mode));
-            return lazy != null && lazy.Value != null ? lazy.Value : default(TValue);
+            var lazy = LazyValues.GetOrAdd(key, k => new Lazy<TValue>(valueFactory, mode));
+            return lazy != null && lazy.Value != null ? lazy.Value : default;
         }
 
         /// <summary>
@@ -67,8 +93,8 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public TValue GetOrAdd(TKey key, Func<TKey, TValue> valueFactory)
         {
-            var lazy = dic.GetOrAdd(key, k => new Lazy<TValue>(() => valueFactory(key), mode));
-            return lazy != null && lazy.Value != null ? lazy.Value : default(TValue);
+            var lazy = LazyValues.GetOrAdd(key, k => new Lazy<TValue>(() => valueFactory(key), mode));
+            return lazy != null && lazy.Value != null ? lazy.Value : default;
         }
 
         /// <summary>
@@ -79,7 +105,7 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public bool TryAdd(TKey key, TValue value)
         {
-            return dic.TryAdd(key, new Lazy<TValue>(() => value, mode));
+            return LazyValues.TryAdd(key, new Lazy<TValue>(() => value, mode));
         }
 
         /// <summary>
@@ -90,7 +116,7 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public bool TryAdd(TKey key, Func<TValue> valueFactory)
         {
-            return dic.TryAdd(key, new Lazy<TValue>(valueFactory, mode));
+            return LazyValues.TryAdd(key, new Lazy<TValue>(valueFactory, mode));
         }
 
         /// <summary>
@@ -101,7 +127,7 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public bool TryGetValue(TKey key, out TValue value)
         {
-            if (dic.TryGetValue(key, out Lazy<TValue> lazy))
+            if (LazyValues.TryGetValue(key, out Lazy<TValue> lazy))
             {
                 if (lazy != null)
                 {
@@ -110,7 +136,7 @@ namespace Fireasy.Common.ComponentModel
                 }
             }
 
-            value = default(TValue);
+            value = default;
             return false;
         }
 
@@ -122,7 +148,7 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public TValue AddOrUpdate(TKey key, Func<TValue> addOrUpdateFactory)
         {
-            var lazy = dic.AddOrUpdate(key,
+            var lazy = LazyValues.AddOrUpdate(key,
                 k => new Lazy<TValue>(addOrUpdateFactory, mode),
                 (k, v) => new Lazy<TValue>(addOrUpdateFactory, mode));
 
@@ -131,7 +157,7 @@ namespace Fireasy.Common.ComponentModel
                 return lazy.Value;
             }
 
-            return default(TValue);
+            return default;
         }
 
         /// <summary>
@@ -142,7 +168,7 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public bool TryRemove(TKey key, out TValue value)
         {
-            if (dic.TryRemove(key, out Lazy<TValue> lazy))
+            if (LazyValues.TryRemove(key, out Lazy<TValue> lazy))
             {
                 if (lazy.IsValueCreated && lazy.Value != null)
                 {
@@ -151,7 +177,7 @@ namespace Fireasy.Common.ComponentModel
                 }
             }
 
-            value = default(TValue);
+            value = default;
             return false;
         }
 
@@ -162,7 +188,7 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public bool ContainsKey(TKey key)
         {
-            return dic.ContainsKey(key);
+            return LazyValues.ContainsKey(key);
         }
 
         /// <summary>
@@ -170,22 +196,23 @@ namespace Fireasy.Common.ComponentModel
         /// </summary>
         public void Clear()
         {
-            dic.Clear();
+            LazyValues.Clear();
         }
 
         /// <summary>
         /// 获取内部的字典。
         /// </summary>
-        public ConcurrentDictionary<TKey, Lazy<TValue>> LazyValues
-        {
-            get { return dic; }
-        }
+        public ConcurrentDictionary<TKey, Lazy<TValue>> LazyValues { get; private set; }
 
+        /// <summary>
+        /// 尝试移除没有创建值的项。
+        /// </summary>
+        /// <returns></returns>
         public SafetyDictionary<TKey, TValue> TryRemoveDiscreated()
         {
-            foreach (var item in dic.Skip(1).Where(s => !s.Value.IsValueCreated))
+            foreach (var item in LazyValues.Skip(1).Where(s => !s.Value.IsValueCreated))
             {
-                dic.TryRemove(item.Key, out Lazy<TValue> value);
+                LazyValues.TryRemove(item.Key, out Lazy<TValue> value);
             }
 
             return this;
@@ -194,17 +221,17 @@ namespace Fireasy.Common.ComponentModel
         /// <summary>
         /// 返回值的个数。
         /// </summary>
-        public int Count => dic.Count;
+        public int Count => LazyValues.Count;
 
-        public TValue this[TKey key] => dic.ContainsKey(key) && dic[key] != null ? dic[key].Value : default(TValue);
+        public TValue this[TKey key] => LazyValues.ContainsKey(key) && LazyValues[key] != null ? LazyValues[key].Value : default;
 
-        public IEnumerable<TKey> Keys => dic.Keys;
+        public IEnumerable<TKey> Keys => LazyValues.Keys;
 
-        public IEnumerable<TValue> Values => dic.Select(s => s.Value.Value);
+        public IEnumerable<TValue> Values => LazyValues.Select(s => s.Value.Value);
 
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
-            return new SafetyDictionaryEnumerator(dic.GetEnumerator());
+            return new SafetyDictionaryEnumerator(LazyValues.GetEnumerator());
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -220,11 +247,9 @@ namespace Fireasy.Common.ComponentModel
         /// <summary>
         /// 枚举器。
         /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <typeparam name="TValue"></typeparam>
         private class SafetyDictionaryEnumerator : IEnumerator<KeyValuePair<TKey, TValue>>
         {
-            private IEnumerator<KeyValuePair<TKey, Lazy<TValue>>> enumerator;
+            private readonly IEnumerator<KeyValuePair<TKey, Lazy<TValue>>> enumerator;
 
             public SafetyDictionaryEnumerator(IEnumerator<KeyValuePair<TKey, Lazy<TValue>>> enumerator)
             {

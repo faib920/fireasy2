@@ -40,11 +40,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns>表示表达式的字符串。</returns>
         public new static string WriteToString(Expression expression)
         {
-            using (var sw = new StringWriter())
-            {
-                Write(sw, expression);
-                return sw.ToString();
-            }
+            using var sw = new StringWriter();
+            Write(sw, expression);
+            return sw.ToString();
         }
 
         protected override Expression VisitConstant(ConstantExpression c)

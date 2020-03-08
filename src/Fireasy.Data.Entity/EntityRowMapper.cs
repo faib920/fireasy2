@@ -58,11 +58,11 @@ namespace Fireasy.Data.Entity
 
         private T MapInternal(Func<PropertyMapping, PropertyValue> func)
         {
-            var proxyType = EntityProxyManager.GetType(typeof(T));
+            var proxyType = EntityProxyManager.GetType((string)null, typeof(T));
             var entity = proxyType.New<IEntity>();
             if (entity == null)
             {
-                return default(T);
+                return default;
             }
 
             Initializer?.Invoke(entity);
@@ -147,33 +147,21 @@ namespace Fireasy.Data.Entity
                 }
 
                 var typeCode = Type.GetTypeCode(mapper.Property.Type.GetNonNullableType());
-                switch (typeCode)
+                return typeCode switch
                 {
-                    case TypeCode.Boolean:
-                        return isNull ? new bool?() : RecordWrapper.GetBoolean(reader, mapper.Index);
-                    case TypeCode.Char:
-                        return isNull ? new char?() : RecordWrapper.GetChar(reader, mapper.Index);
-                    case TypeCode.Byte:
-                        return isNull ? new byte?() : RecordWrapper.GetByte(reader, mapper.Index);
-                    case TypeCode.Int16:
-                        return isNull ? new short?() : RecordWrapper.GetInt16(reader, mapper.Index);
-                    case TypeCode.Int32:
-                        return isNull ? new int?() : RecordWrapper.GetInt32(reader, mapper.Index);
-                    case TypeCode.Int64:
-                        return isNull ? new long?() : RecordWrapper.GetInt64(reader, mapper.Index);
-                    case TypeCode.Decimal:
-                        return isNull ? new decimal?() : RecordWrapper.GetDecimal(reader, mapper.Index);
-                    case TypeCode.Double:
-                        return isNull ? new double?() : RecordWrapper.GetDouble(reader, mapper.Index);
-                    case TypeCode.String:
-                        return isNull ? string.Empty : RecordWrapper.GetString(reader, mapper.Index);
-                    case TypeCode.DateTime:
-                        return isNull ? new DateTime?() : RecordWrapper.GetDateTime(reader, mapper.Index);
-                    case TypeCode.Single:
-                        return isNull ? new float?() : RecordWrapper.GetFloat(reader, mapper.Index);
-                    default:
-                        return PropertyValue.NewValue(RecordWrapper.GetValue(reader, mapper.Index));
-                }
+                    TypeCode.Boolean => isNull ? new bool?() : RecordWrapper.GetBoolean(reader, mapper.Index),
+                    TypeCode.Char => isNull ? new char?() : RecordWrapper.GetChar(reader, mapper.Index),
+                    TypeCode.Byte => isNull ? new byte?() : RecordWrapper.GetByte(reader, mapper.Index),
+                    TypeCode.Int16 => isNull ? new short?() : RecordWrapper.GetInt16(reader, mapper.Index),
+                    TypeCode.Int32 => isNull ? new int?() : RecordWrapper.GetInt32(reader, mapper.Index),
+                    TypeCode.Int64 => isNull ? new long?() : RecordWrapper.GetInt64(reader, mapper.Index),
+                    TypeCode.Decimal => isNull ? new decimal?() : RecordWrapper.GetDecimal(reader, mapper.Index),
+                    TypeCode.Double => isNull ? new double?() : RecordWrapper.GetDouble(reader, mapper.Index),
+                    TypeCode.String => isNull ? string.Empty : RecordWrapper.GetString(reader, mapper.Index),
+                    TypeCode.DateTime => isNull ? new DateTime?() : RecordWrapper.GetDateTime(reader, mapper.Index),
+                    TypeCode.Single => isNull ? new float?() : RecordWrapper.GetFloat(reader, mapper.Index),
+                    _ => PropertyValue.NewValue(RecordWrapper.GetValue(reader, mapper.Index)),
+                };
             }
             catch (Exception ex)
             {
@@ -189,33 +177,21 @@ namespace Fireasy.Data.Entity
             }
 
             var typeCode = Type.GetTypeCode(mapper.Property.Type.GetNonNullableType());
-            switch (typeCode)
+            return typeCode switch
             {
-                case TypeCode.Boolean:
-                    return isNull ? new bool?() : Convert.ToBoolean(row[mapper.Index]);
-                case TypeCode.Char:
-                    return isNull ? new char?() : Convert.ToChar(row[mapper.Index]);
-                case TypeCode.Byte:
-                    return isNull ? new byte?() : Convert.ToByte(row[mapper.Index]);
-                case TypeCode.Int16:
-                    return isNull ? new short?() : Convert.ToInt16(row[mapper.Index]);
-                case TypeCode.Int32:
-                    return isNull ? new int?() : Convert.ToInt32(row[mapper.Index]);
-                case TypeCode.Int64:
-                    return isNull ? new long?() : Convert.ToInt64(row[mapper.Index]);
-                case TypeCode.Decimal:
-                    return isNull ? new decimal?() : Convert.ToDecimal(row[mapper.Index]);
-                case TypeCode.Double:
-                    return isNull ? new double?() : Convert.ToDouble(row[mapper.Index]);
-                case TypeCode.String:
-                    return isNull ? string.Empty : Convert.ToString(row[mapper.Index]);
-                case TypeCode.DateTime:
-                    return isNull ? new DateTime?() : Convert.ToDateTime(row[mapper.Index]);
-                case TypeCode.Single:
-                    return isNull ? new float?() : Convert.ToSingle(row[mapper.Index]);
-                default:
-                    return PropertyValue.NewValue(row[mapper.Index], null);
-            }
+                TypeCode.Boolean => isNull ? new bool?() : Convert.ToBoolean(row[mapper.Index]),
+                TypeCode.Char => isNull ? new char?() : Convert.ToChar(row[mapper.Index]),
+                TypeCode.Byte => isNull ? new byte?() : Convert.ToByte(row[mapper.Index]),
+                TypeCode.Int16 => isNull ? new short?() : Convert.ToInt16(row[mapper.Index]),
+                TypeCode.Int32 => isNull ? new int?() : Convert.ToInt32(row[mapper.Index]),
+                TypeCode.Int64 => isNull ? new long?() : Convert.ToInt64(row[mapper.Index]),
+                TypeCode.Decimal => isNull ? new decimal?() : Convert.ToDecimal(row[mapper.Index]),
+                TypeCode.Double => isNull ? new double?() : Convert.ToDouble(row[mapper.Index]),
+                TypeCode.String => isNull ? string.Empty : Convert.ToString(row[mapper.Index]),
+                TypeCode.DateTime => isNull ? new DateTime?() : Convert.ToDateTime(row[mapper.Index]),
+                TypeCode.Single => isNull ? new float?() : Convert.ToSingle(row[mapper.Index]),
+                _ => PropertyValue.NewValue(row[mapper.Index], null),
+            };
         }
 
         private void InitMapping(string[] fields)

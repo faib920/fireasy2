@@ -49,7 +49,7 @@ namespace Fireasy.Common.Emit
                 }
             }
 
-            this.action = ilCoding;
+            action = ilCoding;
             attributes = GetMethodAttributes(visual, calling);
             InitBuilder();
         }
@@ -66,10 +66,7 @@ namespace Fireasy.Common.Emit
         /// <returns></returns>
         public DynamicConstructorBuilder AppendCode(Action<EmitHelper> ilCoding)
         {
-            if (ilCoding != null)
-            {
-                ilCoding(Context.Emitter);
-            }
+            ilCoding?.Invoke(Context.Emitter);
 
             return this;
         }
@@ -152,10 +149,7 @@ namespace Fireasy.Common.Emit
                 Context.Emitter = new EmitHelper(constrBuilder.GetILGenerator());
             }
 
-            if (action != null)
-            {
-                action(Context);
-            }
+            action?.Invoke(Context);
         }
 
         private MethodAttributes GetMethodAttributes(VisualDecoration visual = VisualDecoration.Public, CallingDecoration calling = CallingDecoration.Standard)

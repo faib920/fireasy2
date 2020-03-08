@@ -7,9 +7,13 @@
 // -----------------------------------------------------------------------
 #if NETSTANDARD
 using Fireasy.Common.Configuration;
+using Fireasy.Common.Extensions;
+using Fireasy.Common.Reflection;
 using Fireasy.Data.Entity;
+using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Linq.Translators.Configuration;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
 using System.Linq;
 
@@ -22,35 +26,27 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <summary>
         /// 从现有的 <see cref="IServiceCollection"/> 里添加 <see cref="EntityContext"/> 对象。
         /// </summary>
+        /// <param name="services"></param>
         /// <param name="setupAction"></param>
         /// <returns></returns>
-        public static EntityContextOptionsBuilder AddEntityContext(this IServiceCollection services, Action<EntityContextOptions> setupAction = null)
+        public static IServiceCollection AddEntityContext(this IServiceCollection services, Action<EntityContextOptionsBuilder> setupAction = null)
         {
-            var options = new EntityContextOptions();
-            setupAction?.Invoke(options);
-
-            var builder = new EntityContextOptionsBuilder(options);
+            services.RegisterBase();
 
             if (services is ServiceCollection coll)
             {
-                var desc = coll.FirstOrDefault(s => typeof(EntityContext).IsAssignableFrom(s.ServiceType));
-                if (desc != null)
+                foreach (var desc in coll.Where(s => typeof(EntityContext).IsAssignableFrom(s.ServiceType)).ToArray())
                 {
                     services.Remove(desc);
 
-                    if (setupAction != null)
-                    {
-                        services.Configure(setupAction);
-                    }
-
-                    services.AddScoped(s => options);
-                    services.AddScoped(desc.ServiceType);
-
-                    return builder;
+                    var optionsType = ReflectionCache.GetMember("EntityOptionsType", desc.ServiceType, k => typeof(EntityContextOptions<>).MakeGenericType(k));
+                    services.AddScoped(optionsType, sp => ContextOptionsFactory(optionsType, sp, setupAction));
+                    services.AddScoped(typeof(EntityContextOptions), sp => sp.GetRequiredService(optionsType));
+                    services.AddScoped(desc.ServiceType, desc.ServiceType);
                 }
             }
 
-            return builder;
+            return services;
         }
 
         /// <summary>
@@ -59,22 +55,56 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services"></param>
         /// <param name="setupAction"></param>
         /// <returns></returns>
-        public static EntityContextOptionsBuilder AddEntityContext<TContext>(this IServiceCollection services, Action<EntityContextOptions> setupAction = null) where TContext : EntityContext
+        public static IServiceCollection AddEntityContext<TContext>(this IServiceCollection services, Action<EntityContextOptionsBuilder> setupAction = null) where TContext : EntityContext
         {
-            var options = new EntityContextOptions();
-            setupAction?.Invoke(options);
+            services.RegisterBase();
 
-            var builder = new EntityContextOptionsBuilder(options);
+            services.AddScoped(typeof(EntityContextOptions<TContext>), sp => ContextOptionsFactory<TContext>(sp, setupAction));
+            services.AddScoped(typeof(EntityContextOptions), sp => sp.GetRequiredService<EntityContextOptions<TContext>>());
+            services.AddScoped(typeof(TContext), typeof(TContext));
 
-            if (setupAction != null)
-            {
-                services.Configure(setupAction);
-            }
+            return services;
+        }
 
-            services.AddScoped(s => options);
-            services.AddScoped<TContext>();
+        /// <summary>
+        /// 使 <see cref="IServiceCollection"/> 能够使用 Fireasy 缓冲池中的 <see cref="EntityContext"/> 对象。
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="setupAction"></param>
+        /// <param name="maxSize">缓冲池的最大数量。</param>
+        /// <returns></returns>
+        public static IServiceCollection AddEntityContextPool<TContext>(this IServiceCollection services, Action<EntityContextOptionsBuilder> setupAction = null, int maxSize = 64) where TContext : EntityContext
+        {
+            services.RegisterBase();
 
-            return builder;
+            services.AddSingleton(typeof(EntityContextOptions<TContext>), sp => ContextOptionsFactory<TContext>(sp, setupAction));
+            services.AddSingleton(typeof(EntityContextOptions), sp => sp.GetRequiredService<EntityContextOptions<TContext>>());
+            services.AddSingleton(sp => new EntityContextPool<TContext>(sp, sp.GetRequiredService<EntityContextOptions<TContext>>(), maxSize));
+            services.AddScoped<EntityContextPool<TContext>.Lease>();
+            services.AddScoped(sp => sp.GetService<EntityContextPool<TContext>.Lease>().Context);
+
+            return services;
+        }
+
+        private static EntityContextOptions ContextOptionsFactory(Type optionsType, IServiceProvider serviceProvider, Action<EntityContextOptionsBuilder> setupAction)
+        {
+            var builder = new EntityContextOptionsBuilder(optionsType.New<EntityContextOptions>(serviceProvider));
+            setupAction?.Invoke(builder);
+            return builder.Options;
+        }
+
+        private static EntityContextOptions ContextOptionsFactory<TContext>(IServiceProvider serviceProvider, Action<EntityContextOptionsBuilder> setupAction) where TContext : EntityContext
+        {
+            var builder = new EntityContextOptionsBuilder(new EntityContextOptions<TContext>(serviceProvider));
+            setupAction?.Invoke(builder);
+            return builder.Options;
+        }
+
+        private static IServiceCollection RegisterBase(this IServiceCollection services)
+        {
+            services.AddSingleton<ICacheParsingProcessor, DefaultCacheParsingProcessor>();
+            services.AddSingleton<ICacheExecutionProcessor, DefaultCacheExecutionProcessor>();
+            return services;
         }
     }
 

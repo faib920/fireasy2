@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Configuration;
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 
@@ -17,11 +18,6 @@ namespace Fireasy.Redis
     [ConfigurationSettingParseType(typeof(RedisConfigurationSettingParser))]
     public class RedisConfigurationSetting : IConfigurationSettingItem
     {
-        public RedisConfigurationSetting()
-        {
-            Hosts = new List<RedisHost>();
-        }
-
         /// <summary>
         /// 获取或设置连接串。
         /// </summary>
@@ -30,7 +26,7 @@ namespace Fireasy.Redis
         /// <summary>
         /// 获取 Redis 主机群。
         /// </summary>
-        public List<RedisHost> Hosts { get; private set; }
+        public List<RedisHost> Hosts { get; private set; } = new List<RedisHost>();
 
         /// <summary>
         /// 获取或设置连接池大小。
@@ -46,6 +42,16 @@ namespace Fireasy.Redis
         /// 获取或设置缺省的数据库编号。
         /// </summary>
         public int DefaultDb { get; set; }
+
+        /// <summary>
+        /// 获取或设置数据库范围，格式如 1,2,3、1-5 或 1,2,4-7,9,10。
+        /// </summary>
+        public string DbRange { get; set; }
+
+        /// <summary>
+        /// 获取或设置对 Key 截取的规则，如 left(4)、right(5)、substr(1, 3)。
+        /// </summary>
+        public string KeyRule { get; set; }
 
         /// <summary>
         /// 获取或设置写入缓冲区大小。
@@ -98,6 +104,25 @@ namespace Fireasy.Redis
     /// </summary>
     public class RedisHost
     {
+        public RedisHost(string server, int port)
+        {
+            Server = server;
+            Port = port;
+        }
+        public RedisHost(string host)
+        {
+            int index;
+            if ((index = host.IndexOf(':')) != -1)
+            {
+                Server = host.Substring(0, index);
+                Port = host.Substring(index + 1).To<int>();
+            }
+            else
+            {
+                Server = host;
+            }
+        }
+
         /// <summary>
         /// 获取或设置主机IP。
         /// </summary>

@@ -9,6 +9,7 @@
 using System;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Fireasy.Common;
 using Fireasy.Data.Extensions;
@@ -49,6 +50,7 @@ namespace Fireasy.Data
             InsertCommand = provider.DbProviderFactory.CreateCommand();
             UpdateCommand = provider.DbProviderFactory.CreateCommand();
             DeleteCommand = provider.DbProviderFactory.CreateCommand();
+
             if (SelectCommand == null || InsertCommand == null || UpdateCommand == null || DeleteCommand == null)
             {
                 throw new NullReferenceException(SR.GetString(SRKind.UnableInitCommand));
@@ -74,17 +76,19 @@ namespace Fireasy.Data
     /// </summary>
     internal class CommandBuildProxyWithPrimaryKey : CommandBuildProxy
     {
+        [SuppressMessage("Security", "CA2100")]
         internal override void BuildCommands(IProvider provider, DataTable table, DbConnection connection, DbTransaction transaction)
         {
             var syntax = provider.GetService<ISyntaxProvider>();
             Initializate(provider, connection, transaction);
 
             var tableName = DbUtility.FormatByQuote(syntax, table.TableName);
-            var sbSelect = new StringBuilder(string.Format("SELECT {{0}} FROM {0}", tableName));
-            var sbInsert = new StringBuilder(string.Format("INSERT INTO {0}({{0}}) VALUES({{1}})", tableName));
-            var sbUpdate = new StringBuilder(string.Format("UPDATE {0} SET {{0}} WHERE", tableName));
-            var sbDelete = new StringBuilder(string.Format("DELETE FROM {0} WHERE", tableName));
+            var sbSelect = new StringBuilder($"SELECT {{0}} FROM {tableName}");
+            var sbInsert = new StringBuilder($"INSERT INTO {tableName}({{0}}) VALUES({{1}})");
+            var sbUpdate = new StringBuilder($"UPDATE {tableName} SET {{0}} WHERE");
+            var sbDelete = new StringBuilder($"DELETE FROM {tableName} WHERE");
             var flag = new AssertFlag();
+
             foreach (var column in table.PrimaryKey)
             {
                 if (!flag.AssertTrue())
@@ -93,9 +97,9 @@ namespace Fireasy.Data
                     sbDelete.Append(" AND");
                 }
 
-                var s = string.Format(" {0} = {1}p_{2}", DbUtility.FormatByQuote(syntax, column.ColumnName), syntax.ParameterPrefix, column.Ordinal + 1);
-                sbUpdate.Append(s);
-                sbDelete.Append(s);
+                var set = $" {DbUtility.FormatByQuote(syntax, column.ColumnName)} = {syntax.ParameterPrefix}p_{column.Ordinal + 1}";
+                sbUpdate.Append(set);
+                sbDelete.Append(set);
                 UpdateCommand.Parameters.Add(CreateCommandParameter(provider, "p_", column));
                 DeleteCommand.Parameters.Add(CreateCommandParameter(provider, "p_", column));
             }
@@ -104,6 +108,7 @@ namespace Fireasy.Data
             var sbInsertFields = new StringBuilder();
             var sbInsertValues = new StringBuilder();
             var sbUpdateSets = new StringBuilder();
+
             foreach (DataColumn column in table.Columns)
             {
                 if (column.AutoIncrement)
@@ -145,21 +150,23 @@ namespace Fireasy.Data
     /// </summary>
     internal class CommandBuildProxyWithoutPrimaryKey : CommandBuildProxy
     {
+        [SuppressMessage("Security", "CA2100")]
         internal override void BuildCommands(IProvider provider, DataTable table, DbConnection connection, DbTransaction transaction)
         {
             var syntax = provider.GetService<ISyntaxProvider>();
             Initializate(provider, connection, transaction);
 
             var tableName = DbUtility.FormatByQuote(syntax, table.TableName);
-            var sbSelect = new StringBuilder(string.Format("SELECT {{0}} FROM {0}", tableName));
-            var sbInsert = new StringBuilder(string.Format("INSERT INTO {0}({{0}}) VALUES({{1}})", tableName));
-            var sbUpdate = new StringBuilder(string.Format("UPDATE {0} SET {{0}} WHERE {{1}}", tableName));
-            var sbDelete = new StringBuilder(string.Format("DELETE FROM {0} WHERE {{0}}", tableName));
+            var sbSelect = new StringBuilder($"SELECT {{0}} FROM {tableName}");
+            var sbInsert = new StringBuilder($"INSERT INTO {tableName}({{0}}) VALUES({{1}})");
+            var sbUpdate = new StringBuilder($"UPDATE {tableName} SET {{0}} WHERE {{1}}");
+            var sbDelete = new StringBuilder($"DELETE FROM {tableName} WHERE {{0}}");
 
             var sbFields = new StringBuilder();
             var sbInsertValues = new StringBuilder();
             var sbUpdateSets = new StringBuilder();
             var sbWhere = new StringBuilder();
+
             foreach (DataColumn column in table.Columns)
             {
                 var columnName = DbUtility.FormatByQuote(syntax, column.ColumnName);

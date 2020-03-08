@@ -12,9 +12,9 @@ using System.Linq;
 
 namespace Fireasy.Data.Entity.Initializers
 {
-    public class EntityContextPreInitializerCollection
+    public sealed class EntityContextPreInitializerCollection
     {
-        private List<IEntityContextPreInitializer> initializers = new List<IEntityContextPreInitializer>();
+        private readonly List<IEntityContextPreInitializer> initializers = new List<IEntityContextPreInitializer>();
 
         public EntityContextPreInitializerCollection Add<T>(Action<T> setupAction = null) where T : IEntityContextPreInitializer
         {
@@ -43,7 +43,7 @@ namespace Fireasy.Data.Entity.Initializers
 
         public void PreInitialize(EntityContextPreInitializeContext context)
         {
-            initializers.ForEachParallel(s => s.PreInitialize(context));
+            initializers.ForEach(s => s.PreInitialize(context));
         }
     }
 }

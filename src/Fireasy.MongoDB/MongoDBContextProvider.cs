@@ -14,7 +14,7 @@ namespace Fireasy.MongoDB
     {
         IProvider IProviderService.Provider { get; set; }
 
-        IContextService IContextProvider.CreateContextService(EntityContextInitializeContext context)
+        IContextService IContextProvider.CreateContextService(ContextServiceContext context)
         {
             return new MongoDBContextService(context);
         }

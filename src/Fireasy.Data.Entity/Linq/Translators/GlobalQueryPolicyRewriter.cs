@@ -40,7 +40,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
                 foreach (var exp in expressions)
                 {
-                    where = PolicyConditionReplacer.Replace(where, exp, table, columns);
+                    where = PolicyConditionReplacer.Replace(where, exp, columns);
                 }
 
                 return select.Update(select.From, where, select.OrderBy, select.GroupBy, select.Skip, select.Take,
@@ -61,7 +61,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             private Expression where;
             private IEnumerable<ColumnDeclaration> columns;
 
-            public static Expression Replace(Expression where, Expression expression, TableExpression table, IEnumerable<ColumnDeclaration> columns)
+            public static Expression Replace(Expression where, Expression expression, IEnumerable<ColumnDeclaration> columns)
             {
                 var visitor = new PolicyConditionReplacer { where = where, columns = columns };
                 visitor.Visit(PartialEvaluator.Eval(expression));

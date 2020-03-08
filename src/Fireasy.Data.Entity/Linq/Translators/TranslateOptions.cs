@@ -6,6 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+
 namespace Fireasy.Data.Entity.Linq.Translators
 {
     /// <summary>
@@ -44,9 +46,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
         public bool CacheParsing { get; set; } = true;
 
         /// <summary>
-        /// 获取或设置解析缓存过期时间(秒)。默认为600。
+        /// 获取或设置解析缓存过期时间。默认为 10 分钟。
         /// </summary>
-        public int CacheParsingTimes { get; set; } = 600;
+        public TimeSpan CacheParsingTimes { get; set; } = TimeSpan.FromMinutes(10);
 
         /// <summary>
         /// 获取或设置是否开启数据缓存。默认为 false。
@@ -54,9 +56,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
         public bool CacheExecution { get; set; }
 
         /// <summary>
-        /// 获取或设置数据缓存过期时间(秒)。默认为300。
+        /// 获取或设置数据缓存过期时间。默认为 5 分钟。
         /// </summary>
-        public int CacheExecutionTimes { get; set; } = 300;
+        public TimeSpan CacheExecutionTimes { get; set; } = TimeSpan.FromMinutes(5);
 
         /// <summary>
         /// 获取或设置是否跟踪返回的实体的状态。默认为 true。

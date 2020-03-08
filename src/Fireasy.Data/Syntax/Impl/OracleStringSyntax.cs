@@ -23,8 +23,8 @@ namespace Fireasy.Data.Syntax
         public override string Substring(object sourceExp, object startExp, object lenExp = null)
         {
             return lenExp == null ? 
-                string.Format("SUBSTR({0}, {1})", sourceExp, startExp) :
-                string.Format("SUBSTR({0}, {1}, {2})", sourceExp, startExp, lenExp);
+                $"SUBSTR({sourceExp}, {startExp})" :
+                $"SUBSTR({sourceExp}, {startExp}, {lenExp})";
         }
 
         /// <summary>
@@ -40,10 +40,11 @@ namespace Fireasy.Data.Syntax
             if (startExp != null)
             {
                 return countExp == null ?
-                    string.Format("INSTR({0}, {1}, {2})", sourceExp, searchExp, startExp) :
-                    string.Format("INSTR({0}, {1}, {2}, {3})", sourceExp, searchExp, startExp, countExp);
+                    $"INSTR({sourceExp}, {searchExp}, {startExp})" :
+                    $"INSTR({sourceExp}, {searchExp}, {startExp}, {countExp})";
             }
-            return string.Format("INSTR({0}, {1})", sourceExp, searchExp);
+
+            return $"INSTR({sourceExp}, {searchExp})";
         }
 
         /// <summary>
@@ -53,7 +54,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Trim(object sourceExp)
         {
-            return string.Format("TRIM({0})", sourceExp);
+            return $"TRIM({sourceExp})";
         }
 
         /// <summary>
@@ -74,7 +75,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string IsMatch(object sourceExp, object regexExp)
         {
-            return string.Format("NOT REGEXP_SUBSTR({0}, {1}) IS NULL", sourceExp, regexExp);
+            return $"NOT REGEXP_SUBSTR({sourceExp}, {regexExp}) IS NULL";
         }
     }
 }

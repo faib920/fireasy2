@@ -23,7 +23,7 @@ namespace Fireasy.Common.Logging
     public class ComplexLogger : ILogger, IConfigurationSettingHostService
     {
         private ComplexLoggingSetting setting;
-        private List<ComplexLoggerPair> logPairs = new List<ComplexLoggerPair>();
+        private readonly List<ComplexLoggerPair> logPairs = new List<ComplexLoggerPair>();
 
         public ILogger GetLogger<T>() where T : class
         {

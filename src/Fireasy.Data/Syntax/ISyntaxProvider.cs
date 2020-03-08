@@ -135,6 +135,13 @@ namespace Fireasy.Data.Syntax
         string ExistsTable(string tableName);
 
         /// <summary>
+        /// 获取判断多个表是否存在的语句。
+        /// </summary>
+        /// <param name="tableName">要判断的表的名称数组。</param>
+        /// <returns></returns>
+        string ExistsTables(string[] tableNames);
+
+        /// <summary>
         /// 修正 <see cref="DbType"/> 值。
         /// </summary>
         /// <param name="dbType"></param>

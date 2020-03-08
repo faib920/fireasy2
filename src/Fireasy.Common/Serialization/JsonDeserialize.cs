@@ -6,19 +6,17 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.Extensions;
+using Fireasy.Common.Reflection;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
-using System.Text.RegularExpressions;
-using System.Linq;
-using System.Globalization;
-using System.Reflection;
-using Fireasy.Common.Extensions;
-using System.Collections.ObjectModel;
 using System.Dynamic;
-using Fireasy.Common.Reflection;
+using System.Linq;
+using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace Fireasy.Common.Serialization
 {
@@ -26,10 +24,9 @@ namespace Fireasy.Common.Serialization
     {
         private readonly JsonSerializeOption option;
         private readonly JsonSerializer serializer;
-        private JsonReader jsonReader;
-        private bool isDisposed;
-        private static MethodInfo mthToArray = typeof(Enumerable).GetMethod(nameof(Enumerable.ToArray), BindingFlags.Public | BindingFlags.Static);
-        private TypeConverterCache<JsonConverter> cacheConverter = new TypeConverterCache<JsonConverter>();
+        private readonly JsonReader jsonReader;
+        private static readonly MethodInfo MthToArray = typeof(Enumerable).GetMethod(nameof(Enumerable.ToArray), BindingFlags.Public | BindingFlags.Static);
+        private readonly TypeConverterCache<JsonConverter> cacheConverter = new TypeConverterCache<JsonConverter>();
 
         internal JsonDeserialize(JsonSerializer serializer, JsonReader reader, JsonSerializeOption option)
             : base(option)
@@ -103,7 +100,7 @@ namespace Fireasy.Common.Serialization
                 return DeserializeDataTable();
             }
 
-            if (type.IsGenericType && type.GetGenericTypeDefinition().FullName.StartsWith("System.Tuple`"))
+            if (type.IsGenericType && type.GetGenericTypeDefinition().FullName.StartsWith("System.Tuple`", StringComparison.InvariantCulture))
             {
                 return DeserializeTuple(type);
             }
@@ -273,7 +270,7 @@ namespace Fireasy.Common.Serialization
 
                 if (tb.Columns.Contains(name))
                 {
-                    row[name] = obj == null ? DBNull.Value : obj;
+                    row[name] = obj ?? DBNull.Value;
                 }
 
                 if (jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndObjectLiteralCharacter))
@@ -287,8 +284,7 @@ namespace Fireasy.Common.Serialization
 
         private object ParseValue(object value)
         {
-            var s = value as string;
-            if (s != null)
+            if (value is string s)
             {
                 if (Regex.IsMatch(s, @"Date\((\d+)\+(\d+)\)"))
                 {
@@ -303,11 +299,9 @@ namespace Fireasy.Common.Serialization
 
         private object DeserializeList(Type listType)
         {
-            IList container = null;
-            Type elementType = null;
             var isReadonly = listType.IsGenericType && listType.GetGenericTypeDefinition() == typeof(IReadOnlyCollection<>);
 
-            CreateListContainer(listType, out elementType, out container);
+            CreateListContainer(listType, out Type elementType, out IList container);
 
             jsonReader.SkipWhiteSpaces();
             if (jsonReader.IsNull())
@@ -341,7 +335,7 @@ namespace Fireasy.Common.Serialization
 
             if (listType.IsArray)
             {
-                var invoker = ReflectionCache.GetInvoker(mthToArray.MakeGenericMethod(elementType));
+                var invoker = ReflectionCache.GetInvoker(MthToArray.MakeGenericMethod(elementType));
                 return invoker.Invoke(null, container);
             }
 
@@ -355,10 +349,7 @@ namespace Fireasy.Common.Serialization
 
         private IDictionary DeserializeDictionary(Type dictType)
         {
-            IDictionary container = null;
-            Type[] keyValueTypes = null;
-
-            CreateDictionaryContainer(dictType, out keyValueTypes, out container);
+            CreateDictionaryContainer(dictType, out Type[] keyValueTypes, out IDictionary container);
 
             jsonReader.SkipWhiteSpaces();
             jsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
@@ -426,7 +417,7 @@ namespace Fireasy.Common.Serialization
                 jsonReader.AssertAndConsume(JsonTokens.PairSeparator);
                 jsonReader.SkipWhiteSpaces();
 
-                object value = null;
+                object value;
                 if (jsonReader.IsNextCharacter(JsonTokens.StartArrayCharacter))
                 {
                     value = DeserializeList(typeof(List<dynamic>));
@@ -493,7 +484,7 @@ namespace Fireasy.Common.Serialization
             return type.New(arguments);
         }
 
-        private int GetTupleItemIndex(string name)
+        private static int GetTupleItemIndex(string name)
         {
             var match = Regex.Match(name, @"Item(\d)");
             if (match.Success && match.Groups.Count > 0)
@@ -508,15 +499,15 @@ namespace Fireasy.Common.Serialization
 
         private object DeserializeEnum(Type enumType)
         {
-            var evalue = string.Empty;
             jsonReader.SkipWhiteSpaces();
+            string evalue;
             if (jsonReader.IsNextCharacter('"'))
             {
                 evalue = jsonReader.ReadAsString();
             }
             else
             {
-                evalue = jsonReader.ReadAsInt32().ToString();
+                evalue = jsonReader.ReadAsInt32().ToString(option.Culture);
             }
 
             return Enum.Parse(enumType, evalue);
@@ -580,7 +571,7 @@ namespace Fireasy.Common.Serialization
             return SerializerUtil.ParseDateTime(value, null, option.DateTimeZoneHandling);
         }
 
-        private string DeserializeString(string value)
+        private static string DeserializeString(string value)
         {
             if (Regex.IsMatch(value, "(?<code>\\\\u[0-9a-fA-F]{4})", RegexOptions.IgnoreCase))
             {
@@ -726,32 +717,14 @@ namespace Fireasy.Common.Serialization
             return dic;
         }
 
-        /// <summary>
-        /// 释放对象所占用的非托管和托管资源。
-        /// </summary>
-        /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
-        private void Dispose(bool disposing)
+        protected override void Dispose(bool disposing)
         {
-            if (isDisposed)
-            {
-                return;
-            }
-
             if (disposing)
             {
                 jsonReader.Dispose();
-                jsonReader = null;
             }
 
-            isDisposed = true;
-        }
-
-        /// <summary>
-        /// 释放对象所占用的所有资源。
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
+            base.Dispose(disposing);
         }
     }
 }

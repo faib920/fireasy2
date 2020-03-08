@@ -14,7 +14,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class RedundantColumnRemover : DbExpressionVisitor
     {
-        private Dictionary<ColumnExpression, ColumnExpression> map = new Dictionary<ColumnExpression,ColumnExpression>();
+        private readonly Dictionary<ColumnExpression, ColumnExpression> map = new Dictionary<ColumnExpression, ColumnExpression>();
 
         public static Expression Remove(Expression expression)
         {
@@ -38,8 +38,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             for (int i = 0, n = cols.Count; i < n - 1; i++)
             {
                 var ci = cols[i];
-                var cix = ci.Expression as ColumnExpression;
-                var cxi = new ColumnExpression(ci.Expression.Type, select.Alias, ci.Name, cix != null ? cix.MapInfo : null);
+                var cxi = new ColumnExpression(ci.Expression.Type, select.Alias, ci.Name, ci.Expression is ColumnExpression cix ? cix.MapInfo : null);
 
                 for (int j = i + 1; j < n; j++)
                 {
@@ -49,8 +48,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         if (SameExpression(ci.Expression, cj.Expression))
                         {
                             // any reference to 'j' should now just be a reference to 'i'
-                            var cj1 = cj.Expression as ColumnExpression;
-                            var cxj = new ColumnExpression(cj.Expression.Type, select.Alias, cj.Name, cj1 != null ? cj1.MapInfo : null);
+                            var cxj = new ColumnExpression(cj.Expression.Type, select.Alias, cj.Name, cj.Expression is ColumnExpression cj1 ? cj1.MapInfo : null);
                             this.map.Add(cxj, cxi);
                             removed.Set(j, true);
                             anyRemoved = true;
@@ -83,10 +81,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 return true;
             }
 
-            var ca = a as ColumnExpression;
-            var cb = b as ColumnExpression;
 
-            return (ca != null && cb != null && ca.Alias == cb.Alias && ca.Name == cb.Name);
+            return (a is ColumnExpression ca && b is ColumnExpression cb && ca.Alias == cb.Alias && ca.Name == cb.Name);
         }
     }
 }

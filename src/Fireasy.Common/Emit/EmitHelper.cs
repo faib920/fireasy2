@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.SymbolStore;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -17,9 +18,10 @@ namespace Fireasy.Common.Emit
     /// <summary>
     /// 对 MSIL 的指令进行包装，使其支持链式语法。
     /// </summary>
+    [SuppressMessage("Style", "IDE1006")]
     public sealed class EmitHelper
     {
-        private MethodBuilder methodBuilder;
+        private readonly MethodBuilder methodBuilder;
 
         /// <summary>
         /// 初始化 <see cref="EmitHelper"/> 类的新实例。
@@ -272,6 +274,7 @@ namespace Fireasy.Common.Emit
                 return this;
             }
         }
+
 
         /// <summary>
         /// 计算两个值的按位“与”并将结果推送到计算堆栈上。
@@ -1548,7 +1551,7 @@ namespace Fireasy.Common.Emit
                     }
                     else
                     {
-                        throw new ArgumentOutOfRangeException("index");
+                        throw new ArgumentOutOfRangeException(nameof(index));
                     }
 
                     break;
@@ -1596,7 +1599,7 @@ namespace Fireasy.Common.Emit
             }
             else
             {
-                throw new ArgumentOutOfRangeException("index");
+                throw new ArgumentOutOfRangeException(nameof(index));
             }
 
             return this;
@@ -2286,7 +2289,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldind(Type type)
         {
-            if (type == null) throw new ArgumentNullException("type");
+            if (type == null) throw new ArgumentNullException(nameof(type));
 
             switch (Type.GetTypeCode(type))
             {
@@ -2924,7 +2927,7 @@ namespace Fireasy.Common.Emit
             }
             else
             {
-                throw new ArgumentOutOfRangeException("index");
+                throw new ArgumentOutOfRangeException(nameof(index));
             }
 
             return this;
@@ -3522,11 +3525,11 @@ namespace Fireasy.Common.Emit
         {
             if (predicate)
             {
-                trueAction(this);
+                trueAction?.Invoke(this);
             }
-            else if (falseAction != null)
+            else
             {
-                falseAction(this);
+                falseAction?.Invoke(this);
             }
 
             return this;

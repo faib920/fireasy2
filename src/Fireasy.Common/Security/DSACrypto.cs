@@ -15,7 +15,7 @@ namespace Fireasy.Common.Security
 {
     internal class DSACrypto : AsymmetricCrypto
     {
-        private DSACryptoServiceProvider dsa = null;
+        private readonly DSACryptoServiceProvider dsa = null;
 
         public DSACrypto()
             : base("DSA")

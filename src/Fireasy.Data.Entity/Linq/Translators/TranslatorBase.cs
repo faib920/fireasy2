@@ -28,11 +28,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public abstract class TranslatorBase : DbExpressionVisitor
     {
-        private Stack<string> stack = new Stack<string>();
+        private readonly Stack<string> stack = new Stack<string>();
         private StringBuilder builder;
         private const int Indent = 2;
         private int dept;
-        private Dictionary<TableAlias, string> aliases;
+        private readonly Dictionary<TableAlias, string> aliases;
         private IDataSegment dataSegment;
 
         /// <summary>
@@ -279,7 +279,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 return VisitDateTimeMethod(m);
             }
-            else if (m.Method.DeclaringType == typeof(Decimal))
+            else if (m.Method.DeclaringType == typeof(decimal))
             {
                 return VisitDecimalMethod(m);
             }
@@ -634,11 +634,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         }
                         else
                         {
-                            Write("'" + value + "'");
+                            Write($"'{value}'");
                         }
                         break;
                     case TypeCode.DateTime:
-                        Write(Options.AttachParameter ? value : Syntax.Convert("'" + value + "'", DbType.DateTime));
+                        Write(Options.AttachParameter ? value : Syntax.Convert($"'{value}'", DbType.DateTime));
                         break;
                     case TypeCode.Object:
                         throw new TranslateException(null, new NotSupportedException(SR.GetString(SRKind.ValueTranslateNotSupported, value)));
@@ -651,8 +651,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitColumn(ColumnExpression column)
         {
-            var sqc = column as SubqueryColumnExpression;
-            if (sqc == null)
+            if (!(column is SubqueryColumnExpression sqc))
             {
                 if (column.Alias != null && !Options.HideColumnAliases)
                 {
@@ -670,7 +669,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     alias = GetAliasName(column.Alias) + ".";
                 }
 
-                Write("(" + sqc.Subquery.Replace("$", alias) + ")");
+                Write($"({sqc.Subquery.Replace("$", alias)})");
             }
             return column;
         }
@@ -1109,23 +1108,16 @@ namespace Fireasy.Data.Entity.Linq.Translators
         #region 私有方法
         protected virtual string GetOperator(string methodName)
         {
-            switch (methodName)
+            return methodName switch
             {
-                case nameof(decimal.Add):
-                    return " +";
-                case nameof(decimal.Subtract):
-                    return "-";
-                case nameof(decimal.Multiply):
-                    return "*";
-                case nameof(decimal.Divide):
-                    return "/";
-                case nameof(decimal.Negate):
-                    return "-";
-                case nameof(decimal.Remainder):
-                    return "%";
-                default:
-                    return null;
-            }
+                nameof(decimal.Add) => " +",
+                nameof(decimal.Subtract) => "-",
+                nameof(decimal.Multiply) => "*",
+                nameof(decimal.Divide) => "/",
+                nameof(decimal.Negate) => "-",
+                nameof(decimal.Remainder) => "%",
+                _ => null,
+            };
         }
 
         protected virtual string GetOperator(UnaryExpression u)
@@ -1186,19 +1178,19 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
         }
 
-        protected bool IsBoolean(Type type)
+        protected static bool IsBoolean(Type type)
         {
             return type == typeof(bool) || type == typeof(bool?);
         }
 
-        protected bool IsString(Expression exp)
+        protected static bool IsString(Expression exp)
         {
             return exp.Type == typeof(string) ||
                 exp.Type == typeof(char) || exp.Type == typeof(char?) ||
                 exp.Type == typeof(Guid);
         }
 
-        protected bool IsStringOrDate(Expression exp)
+        protected static bool IsStringOrDate(Expression exp)
         {
             return (IsString(exp) ||
                 exp.Type == typeof(DateTime) ||
@@ -1257,21 +1249,15 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         protected string GetAggregateName(AggregateType aggregateType)
         {
-            switch (aggregateType)
+            return aggregateType switch
             {
-                case AggregateType.Count:
-                    return "COUNT";
-                case AggregateType.Min:
-                    return "MIN";
-                case AggregateType.Max:
-                    return "MAX";
-                case AggregateType.Sum:
-                    return "SUM";
-                case AggregateType.Average:
-                    return "AVG";
-                default:
-                    throw new TranslateException(null, new Exception(SR.GetString(SRKind.UnknowAggregateType, aggregateType)));
-            }
+                AggregateType.Count => "COUNT",
+                AggregateType.Min => "MIN",
+                AggregateType.Max => "MAX",
+                AggregateType.Sum => "SUM",
+                AggregateType.Average => "AVG",
+                _ => throw new TranslateException(null, new Exception(SR.GetString(SRKind.UnknowAggregateType, aggregateType))),
+            };
         }
 
         protected virtual Expression VisitCompareMethod(MethodCallExpression m)
@@ -1581,8 +1567,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             switch (m.Method.Name)
             {
                 case nameof(Convert.ChangeType):
-                    var consExp = m.Arguments[1] as ConstantExpression;
-                    if (consExp != null)
+                    if (m.Arguments[1] is ConstantExpression consExp)
                     {
                         var typeCode = DbType.String;
                         if (consExp.Value is Type)
@@ -2063,8 +2048,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         class CompoundKey : IEquatable<CompoundKey>, IEnumerable<object>, IEnumerable
         {
-            object[] values;
-            int hc;
+            readonly object[] values;
+            readonly int hc;
 
             public CompoundKey(params object[] values)
             {

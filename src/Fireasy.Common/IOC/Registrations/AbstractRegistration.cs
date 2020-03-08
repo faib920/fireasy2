@@ -13,7 +13,7 @@ namespace Fireasy.Common.Ioc.Registrations
 {
     internal abstract class AbstractRegistration : IRegistration
     {
-        private static object locker = new object();
+        private static readonly object locker = new object();
         private Func<Container, object> instanceCreator;
 
         protected AbstractRegistration(Type serviceType, Type implementationType)

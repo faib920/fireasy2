@@ -49,11 +49,13 @@ namespace Fireasy.Data.Configuration
                 var setting = new BinaryInstanceSetting();
 
                 fileName = DbUtility.ResolveFullPath(fileName);
-                setting.FileName = fileName;
-                if (!File.Exists(setting.FileName))
+
+                if (!File.Exists(fileName))
                 {
                     throw new FileNotFoundException(SR.GetString(SRKind.FileNotFound, setting.FileName), setting.FileName);
                 }
+
+                setting.FileName = fileName;
 
                 FileStream stream = null;
                 try

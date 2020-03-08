@@ -24,8 +24,8 @@ namespace Fireasy.Data.Provider
     public abstract class ProviderBase : IProvider
     {
         private DbProviderFactory factory;
-        private IProviderFactoryResolver[] resolvers;
-        private SafetyDictionary<string, IProviderService> services = new SafetyDictionary<string, IProviderService>();
+        private readonly IProviderFactoryResolver[] resolvers;
+        private readonly SafetyDictionary<string, IProviderService> services = new SafetyDictionary<string, IProviderService>();
 
         /// <summary>
         /// 初始化 <see cref="ProviderBase"/> 类的新实例。
@@ -68,28 +68,34 @@ namespace Fireasy.Data.Provider
         /// </summary>
         /// <param name="connectionString">连接字符串对象。</param>
         /// <param name="parameter"></param>
-        /// <returns></returns>
-        public abstract string UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter);
+        public abstract void UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter);
 
         /// <summary>
         /// 获取注册到数据库提供者的插件服务实例。
         /// </summary>
-        /// <typeparam name="TProvider">插件服务的类型。</typeparam>
+        /// <typeparam name="TService">插件服务的类型。</typeparam>
         /// <returns></returns>
-        public virtual TProvider GetService<TProvider>() where TProvider : class, IProviderService
+        public virtual TService GetService<TService>() where TService : class, IProviderService
         {
-            if (services.TryGetValue(typeof(TProvider).Name, out IProviderService service))
+            if (services.TryGetValue(typeof(TService).Name, out IProviderService service))
             {
-                return (TProvider)service;
+                return (TService)service;
             }
 
-            var attr = typeof(TProvider).GetCustomAttributes<DefaultProviderServiceAttribute>().FirstOrDefault();
-            if (attr != null && typeof(TProvider).IsAssignableFrom(attr.DefaultType))
+            var attr = typeof(TService).GetCustomAttributes<DefaultProviderServiceAttribute>().FirstOrDefault();
+            if (attr != null && typeof(TService).IsAssignableFrom(attr.ServiceType))
             {
-                return attr.DefaultType.New<TProvider>();
+                service = attr.ServiceType.New<TService>();
+                if (service == null)
+                {
+                    return default;
+                }
+
+                service.Provider = this;
+                return (TService)service;
             }
 
-            return null;
+            return default;
         }
 
         /// <summary>
@@ -104,13 +110,14 @@ namespace Fireasy.Data.Provider
         /// <summary>
         /// 注册指定类型的插件服务。
         /// </summary>
-        /// <typeparam name="TDefined"></typeparam>
+        /// <typeparam name="TDefinition"></typeparam>
         /// <typeparam name="TImplement"></typeparam>
-        public virtual void RegisterService<TDefined, TImplement>() where TDefined : class, IProviderService where TImplement : class, TDefined, new()
+        public virtual void RegisterService<TDefinition, TImplement>() where TDefinition : class, IProviderService where TImplement : class, TDefinition, new()
         {
-            var instance = new TImplement();
-            instance.Provider = this;
-            RegisterService<TDefined>(instance);
+            RegisterService<TDefinition>(new TImplement
+            {
+                Provider = this
+            });
         }
 
         /// <summary>

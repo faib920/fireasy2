@@ -13,7 +13,7 @@ namespace Fireasy.Data.Entity
     /// 标识程序集能够发现实体定义。
     /// </summary>
     [AttributeUsage(AttributeTargets.Assembly)]
-    public class EntityDiscoverAssemblyAttribute : Attribute
+    public sealed class EntityDiscoverAssemblyAttribute : Attribute
     {
     }
 }

@@ -14,10 +14,9 @@ namespace Fireasy.Common.Threading
     /// <summary>
     /// 提供在多线程环境中进行数据读取和写入的锁。无法继承此类。
     /// </summary>
-    public sealed class ReadWriteLocker : IDisposable
+    public sealed class ReadWriteLocker : DisposeableBase
     {
         private readonly ReaderWriterLockSlim locker = new ReaderWriterLockSlim();
-        private bool isDisposed;
 
         /// <summary>
         /// 静态实例。
@@ -114,7 +113,7 @@ namespace Fireasy.Common.Threading
             {
                 method();
             }
-            catch (Exception ex)
+            catch
             {
             }
             finally
@@ -139,28 +138,12 @@ namespace Fireasy.Common.Threading
         /// 释放对象所占用的非托管和托管资源。
         /// </summary>
         /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
-        private void Dispose(bool disposing)
+        protected override void Dispose(bool disposing)
         {
-            if (isDisposed)
-            {
-                return;
-            }
-
             if (disposing)
             {
                 locker.Dispose();
-                Debug.WriteLine("The instance of ReaderWriterLockSlim is disposed.");
             }
-
-            isDisposed = true;
-        }
-
-        /// <summary>
-        /// 释放对象所占用的所有资源。
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
         }
     }
 }

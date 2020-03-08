@@ -21,7 +21,7 @@ namespace Fireasy.Common.Serialization
     public class ExpressionJsonWriter
     {
         private Expression expression;
-        private JsonSerializer serializer;
+        private readonly JsonSerializer serializer;
 
         /// <summary>
         /// 获取类型与参数名称的字典。
@@ -156,9 +156,8 @@ namespace Fireasy.Common.Serialization
         /// <param name="node"></param>
         protected virtual void WriteParameterExpression(ParameterExpression node)
         {
-            var parName = string.Empty;
             var keyExists = true;
-            if (!TypeDictionary.TryGetValue(node.Type, out parName))
+            if (!TypeDictionary.TryGetValue(node.Type, out string parName))
             {
                 parName = string.IsNullOrEmpty(node.Name) ? node.ToString() : node.Name;
                 TypeDictionary.Add(node.Type, parName);

@@ -17,7 +17,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Length(object sourceExp)
         {
-            return string.Format("LEN({0})", sourceExp);
+            return $"LEN({sourceExp})";
         }
 
         /// <summary>
@@ -30,8 +30,8 @@ namespace Fireasy.Data.Syntax
         public override string Substring(object sourceExp, object startExp, object lenExp = null)
         {
             return lenExp == null ?
-                string.Format("MID({0}, {1})", sourceExp, startExp) :
-                string.Format("MID({0}, {1}, {2})", sourceExp, startExp, lenExp);
+                $"MID({sourceExp}, {startExp})" :
+                $"MID({sourceExp}, {startExp}, {lenExp})";
         }
 
         /// <summary>
@@ -44,12 +44,9 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string IndexOf(object sourceExp, object searchExp, object startExp = null, object countExp = null)
         {
-            if (startExp == null)
-            {
-                return string.Format("INSTR({0}, {1})", sourceExp, searchExp);
-            }
-
-            return string.Format("INSTR({0}, {1}, {2})", sourceExp, searchExp, startExp);
+                return startExp == null ? 
+                    $"INSTR({sourceExp}, {searchExp})" :
+                    $"INSTR({sourceExp}, {searchExp}, {startExp})";
         }
 
         /// <summary>
@@ -59,7 +56,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string ToLower(object sourceExp)
         {
-            return string.Format("LCASE({0})", sourceExp);
+            return $"LCASE({sourceExp})";
         }
 
         /// <summary>
@@ -69,7 +66,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string ToUpper(object sourceExp)
         {
-            return string.Format("UCASE({0})", sourceExp);
+            return $"UCASE({sourceExp})";
         }
 
         /// <summary>
@@ -77,7 +74,7 @@ namespace Fireasy.Data.Syntax
         /// </summary>
         /// <param name="strExps">要连接的字符串数组。</param>
         /// <returns></returns>
-        public virtual string Concat(params object[] strExps)
+        public override string Concat(params object[] strExps)
         {
             return string.Join(" & ", strExps);
         }

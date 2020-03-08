@@ -21,7 +21,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string And(object sourceExp, object otherExp)
         {
-            return string.Format("BITAND({0}, {1})", sourceExp, otherExp);
+            return $"BITAND({sourceExp}, {otherExp})";
         }
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Or(object sourceExp, object otherExp)
         {
-            return string.Format("({0} + {1}) - BITAND({0}, {1})", sourceExp, otherExp);
+            return $"({sourceExp} + {otherExp}) - BITAND({sourceExp}, {otherExp})";
         }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Not(object sourceExp)
         {
-            return string.Format("(-1 - {0})", sourceExp);
+            return $"(-1 - {sourceExp})";
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Modulo(object sourceExp, object otherExp)
         {
-            return string.Format("MOD({0}, {1})", sourceExp, otherExp);
+            return $"MOD({sourceExp}, {otherExp})";
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string ExclusiveOr(object sourceExp, object otherExp)
         {
-            return string.Format("({0} + {1}) - BITAND({0}, {1}) * 2", sourceExp, otherExp);
+            return $"({sourceExp} + {otherExp}) - BITAND({sourceExp}, {otherExp}) * 2";
         }
 
         /// <summary>
@@ -74,7 +74,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Ceiling(object sourceExp)
         {
-            return string.Format("CEIL({0})", sourceExp);
+            return $"CEIL({sourceExp})";
         }
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Truncate(object sourceExp)
         {
-            return string.Format("TRUNC({0})", sourceExp);
+            return $"TRUNC({sourceExp})";
         }
 
         /// <summary>
@@ -94,7 +94,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Log(object sourceExp)
         {
-            return string.Format("ROUND(LN({0}), 9)", sourceExp);
+            return $"ROUND(LN({sourceExp}), 9)";
         }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Log10(object sourceExp)
         {
-            return string.Format("ROUND(LOG(10, {0}), 9)", sourceExp);
+            return $"ROUND(LOG(10, {sourceExp}), 9)";
         }
 
         /// <summary>
@@ -114,7 +114,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Negate(object sourceExp)
         {
-            return string.Format("(0 - {0})", sourceExp);
+            return $"(0 - {sourceExp})";
         }
 
         /// <summary>

@@ -50,9 +50,7 @@ namespace Fireasy.Common.Serialization
         /// <returns>与名称对应的属性。</returns>
         public PropertyDescriptor GetProperty(string name)
         {
-            PropertyDescriptor result;
-
-            if (properties.TryGetValue(name, out result))
+            if (properties.TryGetValue(name, out PropertyDescriptor result))
             {
                 return result;
             }

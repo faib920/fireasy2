@@ -5,8 +5,8 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.ComponentModel;
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 
 namespace Fireasy.Web.EasyUI.Binders
@@ -16,7 +16,7 @@ namespace Fireasy.Web.EasyUI.Binders
     /// </summary>
     public class SettingsBindManager
     {
-        private static SafetyDictionary<string, ISettingsBinder> binders = new SafetyDictionary<string, ISettingsBinder>();
+        private static ConcurrentDictionary<string, ISettingsBinder> binders = new ConcurrentDictionary<string, ISettingsBinder>();
 
         /// <summary>
         /// 注册一个 <see cref="ISettingsBinder"/> 对象。
@@ -26,7 +26,7 @@ namespace Fireasy.Web.EasyUI.Binders
         /// <param name="binder"><see cref="SettingsBase"/> 绑定者。</param>
         public static void RegisterBinder<T>(string name, T binder) where T : ISettingsBinder
         {
-            binders.TryAdd(name, () => binder);
+            binders.TryAdd(name, binder);
         }
 
         /// <summary>

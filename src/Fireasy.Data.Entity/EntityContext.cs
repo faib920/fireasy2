@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common;
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Configuration;
 using Fireasy.Data.Configuration;
 using Fireasy.Data.Entity.Linq;
@@ -15,24 +16,41 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
 
 namespace Fireasy.Data.Entity
 {
     /// <summary>
     /// 提供以对象形式查询和使用实体数据的功能。
     /// </summary>
-    public abstract class EntityContext : IDisposable, IServiceProvider
+    public abstract class EntityContext : DisposeableBase, IServiceProvider, IObjectPoolable
     {
-        private EntityContextOptions options;
-        private bool isDisposed;
+        private readonly EntityContextOptions options;
         private IContextService service;
+        private IServiceProvider serviceProvider;
+        private IObjectPool pool;
 
         /// <summary>
         /// 初始化 <see cref="EntityContext"/> 类的新实例。
         /// </summary>
-        public EntityContext()
-            : this(string.Empty)
+        protected EntityContext()
+            : this((string)null)
+        {
+        }
+
+        /// <summary>
+        /// 初始化 <see cref="EntityContext"/> 类的新实例。
+        /// </summary>
+        protected EntityContext(EntityContextOptions options)
+            : this(null, options)
+        {
+        }
+
+        /// <summary>
+        /// 初始化 <see cref="EntityContext"/> 类的新实例。
+        /// </summary>
+        /// <param name="serviceProvider"></param>
+        protected EntityContext(IServiceProvider serviceProvider)
+            : this(serviceProvider, new EntityContextOptions())
         {
         }
 
@@ -40,35 +58,28 @@ namespace Fireasy.Data.Entity
         /// 使用一个配置名称来初始化 <see cref="EntityContext"/> 类的新实例。
         /// </summary>
         /// <param name="instanceName">实例名称。</param>
-        public EntityContext(string instanceName)
-            : this(new EntityContextOptions(instanceName))
+        protected EntityContext(string instanceName)
+            : this(null, new EntityContextOptions(instanceName))
         {
         }
 
         /// <summary>
         /// 初始化 <see cref="EntityContext"/> 类的新实例。
         /// </summary>
+        /// <param name="serviceProvider"></param>
         /// <param name="options">选项参数。</param>
-        public EntityContext(EntityContextOptions options)
+        protected EntityContext(IServiceProvider serviceProvider, EntityContextOptions options)
         {
             this.options = options;
+            this.serviceProvider = serviceProvider;
 
-            OnConfiguring(new EntityContextOptionsBuilder(options));
             Initialize(options);
 
             new EntityRepositoryDiscoveryService(this, options).InitializeSets();
         }
 
         /// <summary>
-        /// 析构函数。
-        /// </summary>
-        ~EntityContext()
-        {
-            Dispose(false);
-        }
-
-        /// <summary>
-        /// 获取关联的 <see cref="IDatabase"/> 对象。
+        /// 获取关联的 <see cref="IDatabase"/> 实例。
         /// </summary>
         public IDatabase Database
         {
@@ -79,29 +90,19 @@ namespace Fireasy.Data.Entity
                     return aware.Database;
                 }
 
-                return null;
+                throw new NotSupportedException(SR.GetString(SRKind.NotSupportDatabase));
             }
         }
 
         /// <summary>
         /// 销毁资源。
         /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
-        /// 销毁资源。
-        /// </summary>
         /// <param name="disposing">如果为 true，则同时释放托管资源和非托管资源；如果为 false，则仅释放非托管资源。</param>
-        protected virtual void Dispose(bool disposing)
+        protected override void Dispose(bool disposing)
         {
-            if (!isDisposed)
+            if (pool == null)
             {
                 service?.Dispose();
-                isDisposed = true;
             }
         }
 
@@ -233,65 +234,50 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 清除指定实体类型相关联的数据缓存。
-        /// </summary>
-        /// <param name="types">要清除的关联的缓存。</param>
-        /// <returns></returns>
-        public void RemoveCache(params Type[] types)
-        {
-            if (types != null)
-            {
-                ExecuteCache.ClearKeys(types);
-            }
-        }
-
-        /// <summary>
-        /// 异步的，清除指定实体类型相关联的数据缓存。
-        /// </summary>
-        /// <param name="types">要清除的关联的缓存。</param>
-        /// <returns></returns>
-        public async Task RemoveCacheAsync(params Type[] types)
-        {
-            if (types != null)
-            {
-                await Task.Run(() => ExecuteCache.ClearKeys(types));
-            }
-        }
-
-        /// <summary>
-        /// 清除指定实体类型相关联的数据缓存。
-        /// </summary>
-        /// <typeparam name="TEntity">要清除的关联的缓存</typeparam>
-        /// <returns></returns>
-        public void RemoveCache<TEntity>()
-        {
-            ExecuteCache.ClearKeys(typeof(TEntity));
-        }
-
-        /// <summary>
-        /// 异步的，清除指定实体类型相关联的数据缓存。
-        /// </summary>
-        /// <typeparam name="TEntity">要清除的关联的缓存</typeparam>
-        /// <returns></returns>
-        public async Task RemoveCacheAsync<TEntity>()
-        {
-            await Task.Run(() => ExecuteCache.ClearKeys(typeof(TEntity)));
-        }
-
-        /// <summary>
         /// 初始化。
         /// </summary>
         private void Initialize(EntityContextOptions options)
         {
             Guard.ArgumentNull(options, nameof(options));
 
-            EntityContextInitializeContext initContext = null;
+            TrySetServiceProvider(options);
+            TryPaserInstanceSetting(options);
 
-            if (options.ContextFactory != null)
+            var builder = new EntityContextOptionsBuilder(options);
+            OnConfiguring(builder);
+
+            Guard.NullReference(options.Provider, "The IProvider is required for initialization.");
+
+            var contextProvider = options.GetProviderService<IContextProvider>();
+            service = contextProvider.CreateContextService(new ContextServiceContext(options));
+        }
+
+        /// <summary>
+        /// 尝试初始化 <see cref="IServiceProvider"/> 实例。
+        /// </summary>
+        /// <param name="options"></param>
+        private void TrySetServiceProvider(EntityContextOptions options)
+        {
+            if (options is IInstanceIdentification identification)
             {
-                initContext = options.ContextFactory();
+                if (identification.ServiceProvider == null && serviceProvider != null)
+                {
+                    identification.ServiceProvider = serviceProvider;
+                }
+                else if (serviceProvider == null && identification.ServiceProvider != null)
+                {
+                    serviceProvider = identification.ServiceProvider;
+                }
             }
-            else
+        }
+
+        /// <summary>
+        /// 尝试从配置文件中配置 <see cref="EntityContextOptions"/> 实例。
+        /// </summary>
+        /// <param name="options"></param>
+        private void TryPaserInstanceSetting(EntityContextOptions options)
+        {
+            if (options.Provider == null && options.ConnectionString == null)
             {
                 var section = ConfigurationUnity.GetSection<InstanceConfigurationSection>();
                 if (section != null)
@@ -307,19 +293,13 @@ namespace Fireasy.Data.Entity
                         setting = section.Default;
                     }
 
-                    initContext = new EntityContextInitializeContext(options, ProviderHelper.GetDefinedProviderInstance(setting), setting.ConnectionString);
+                    if (setting != null)
+                    {
+                        options.Provider = ProviderHelper.GetDefinedProviderInstance(setting);
+                        options.ConnectionString = setting.ConnectionString;
+                    }
                 }
             }
-
-            if (initContext == null || initContext.Provider == null)
-            {
-                throw new InvalidOperationException(SR.GetString(SRKind.MustAssignEntityContextInitializeContext));
-            }
-
-            initContext.Options = options;
-
-            var provider = initContext.Provider.GetService<IContextProvider>();
-            service = provider.CreateContextService(initContext);
         }
 
         /// <summary>
@@ -336,13 +316,17 @@ namespace Fireasy.Data.Entity
             {
                 return service;
             }
+            else if (serviceType == typeof(IServiceProvider))
+            {
+                return serviceProvider;
+            }
             else if (serviceType == typeof(IDatabase) && service is IDatabaseAware aware)
             {
                 return aware.Database;
             }
             else if (serviceType == typeof(IProvider))
             {
-                return service.InitializeContext.Provider;
+                return service.Provider;
             }
 
             return null;
@@ -369,6 +353,11 @@ namespace Fireasy.Data.Entity
             {
                 action(aware.QueryPolicy);
             }
+        }
+
+        void IObjectPoolable.SetPool(IObjectPool pool)
+        {
+            this.pool = pool;
         }
     }
 }

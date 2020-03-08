@@ -48,13 +48,22 @@ Install-Package Fireasy.MongoDB
 }
 ```
 
+另外，也可以重写 DbContext 的 OnConfiguring 方法进行手动指定
+
+```C#
+protected override void OnConfiguring(EntityContextOptionsBuilder builder)
+{
+    builder.UseMongoDB("server=mongodb://localhost;database=test");
+    base.OnConfiguring(builder);
+}
+```
+
 在 asp.net core 中，可在 Startup.cs 中配置使用 MongoDB
 
 ```C#
 public void ConfigureServices(IServiceCollection services)
 {
     services.AddFireasy()
-		.AddEntityContext<DbContext>()
-		.UseMongoDB("server=mongodb://localhost;database=test");
+		.AddEntityContext<DbContext>(builder => builder.UseMongoDB("server=mongodb://localhost;database=test"));
 }
 ```

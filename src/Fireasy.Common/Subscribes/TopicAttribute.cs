@@ -15,7 +15,7 @@ namespace Fireasy.Common.Subscribes
     /// 用于标识主题类型的名称。
     /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]
-    public class TopicAttribute : Attribute
+    public sealed class TopicAttribute : Attribute
     {
         /// <summary>
         /// 初始化 <see cref="TopicAttribute"/> 类的新实例。
@@ -32,7 +32,7 @@ namespace Fireasy.Common.Subscribes
         public string Name { get; set; }
     }
 
-    public class TopicHelper
+    public static class TopicHelper
     {
         /// <summary>
         /// 获取主题类型的主题名称。
@@ -41,8 +41,13 @@ namespace Fireasy.Common.Subscribes
         /// <returns></returns>
         public static string GetTopicName(Type subjectType)
         {
-            var attr = subjectType.GetCustomAttributes<TopicAttribute>().FirstOrDefault();
-            return attr == null ? subjectType.FullName : attr.Name;
+            if (subjectType.IsDefined<TopicAttribute>())
+            {
+                var attr = subjectType.GetCustomAttributes<TopicAttribute>().FirstOrDefault();
+                return attr?.Name;
+            }
+
+            return subjectType.FullName;
         }
     }
 }

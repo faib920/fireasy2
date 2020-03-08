@@ -18,6 +18,7 @@ using Fireasy.Data.Syntax;
 using Fireasy.Data.Converter;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Fireasy.Data.Batcher
 {
@@ -142,53 +143,52 @@ namespace Fireasy.Data.Batcher
         /// <param name="mapping">名称和类型的映射字典。</param>
         /// <param name="batchSize">每批次写入的数据量。</param>
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
+        [SuppressMessage("Sercurity", "CA2100")]
         private async Task BatchInsertAsync(IDatabase database, ICollection collection, string tableName, IList<PropertyFieldMapping> mapping, int batchSize, Action<int> completePercentage, CancellationToken cancellationToken = default)
         {
             //Oracle.DataAccess将每一列的数据构造成一个数组，然后使用参数进行插入
             try
             {
                 await database.Connection.TryOpenAsync();
-                using (var command = database.Provider.CreateCommand(database.Connection, database.Transaction, null))
-                {
-                    var syntax = database.Provider.GetService<ISyntaxProvider>();
+                using var command = database.Provider.CreateCommand(database.Connection, database.Transaction, null);
+                var syntax = database.Provider.GetService<ISyntaxProvider>();
 
-                    var sql = string.Format("INSERT INTO {0}({1}) VALUES({2})",
-                        DbUtility.FormatByQuote(syntax, tableName),
-                        string.Join(",", mapping.Select(s => DbUtility.FormatByQuote(syntax, s.FieldName))), string.Join(",", mapping.Select(s => syntax.ParameterPrefix + s.FieldName)));
+                var sql = string.Format("INSERT INTO {0}({1}) VALUES({2})",
+                    DbUtility.FormatByQuote(syntax, tableName),
+                    string.Join(",", mapping.Select(s => DbUtility.FormatByQuote(syntax, s.FieldName))), string.Join(",", mapping.Select(s => syntax.ParameterPrefix + s.FieldName)));
 
-                    command.CommandText = sql;
+                command.CommandText = sql;
 
-                    var length = Math.Min(batchSize, collection.Count);
-                    var count = collection.Count;
-                    var data = InitArrayData(mapping.Count, length);
-                    SetArrayBindCount(command, length);
+                var length = Math.Min(batchSize, collection.Count);
+                var count = collection.Count;
+                var data = InitArrayData(mapping.Count, length);
+                SetArrayBindCount(command, length);
 
-                    await BatchSplitDataAsync(collection, batchSize,
-                        (index, batch, item) =>
+                await BatchSplitDataAsync(collection, batchSize,
+                    (index, batch, item) =>
+                        {
+                            if (mapping == null)
                             {
-                                if (mapping == null)
-                                {
-                                    mapping = GetNameTypeMapping(item);
-                                }
+                                mapping = GetNameTypeMapping(item);
+                            }
 
-                                FillArrayData(mapping, item, data, batch);
-                            },
-                        async (index, batch, surplus, lastBatch) =>
+                            FillArrayData(mapping, item, data, batch);
+                        },
+                    async (index, batch, surplus, lastBatch) =>
+                        {
+                            AddOrReplayParameters(syntax, mapping, command.Parameters, data,
+                                () => database.Provider.DbProviderFactory.CreateParameter());
+
+                            await command.ExecuteNonQueryAsync(cancellationToken);
+                            completePercentage?.Invoke((int)(((index + 1.0) / count) * 100));
+
+                            if (!lastBatch)
                             {
-                                AddOrReplayParameters(syntax, mapping, command.Parameters, data,
-                                    () => database.Provider.DbProviderFactory.CreateParameter());
-
-                                await command.ExecuteNonQueryAsync(cancellationToken);
-                                completePercentage?.Invoke((int)(((index + 1.0) / count) * 100));
-
-                                if (!lastBatch)
-                                {
-                                    length = Math.Min(batchSize, surplus);
-                                    data = InitArrayData(mapping.Count, length);
-                                    SetArrayBindCount(command, length);
-                                }
-                            });
-                }
+                                length = Math.Min(batchSize, surplus);
+                                data = InitArrayData(mapping.Count, length);
+                                SetArrayBindCount(command, length);
+                            }
+                        });
             }
             catch (Exception exp)
             {
@@ -217,25 +217,23 @@ namespace Fireasy.Data.Batcher
         /// <returns></returns>
         private bool BulkCopy(IDatabase database, Type bulkType, DataTable table, int batchSize)
         {
-            using (var connection = database.CreateConnection())
-            using (var bulk = bulkType.New<IDisposable>(connection))
+            using var connection = database.CreateConnection();
+            using var bulk = bulkType.New<IDisposable>(connection);
+            bulkType.GetProperty("DestinationTableName").AssertNotNull(s => s.SetValue(bulk, table.TableName, null));
+            bulkType.GetProperty("BatchSize").AssertNotNull(s => s.SetValue(bulk, batchSize, null));
+
+            try
             {
-                bulkType.GetProperty("DestinationTableName").AssertNotNull(s => s.SetValue(bulk, table.TableName, null));
-                bulkType.GetProperty("BatchSize").AssertNotNull(s => s.SetValue(bulk, batchSize, null));
+                connection.OpenClose(() =>
+                    {
+                        bulkType.GetMethod("WriteToServer").AssertNotNull(s => s.Invoke(bulk, new object[] { table }));
+                    });
 
-                try
-                {
-                    connection.OpenClose(() =>
-                        {
-                            bulkType.GetMethod("WriteToServer").AssertNotNull(s => s.Invoke(bulk, new object[] { table }));
-                        });
-
-                    return true;
-                }
-                catch
-                {
-                	return false;
-                }
+                return true;
+            }
+            catch
+            {
+                return false;
             }
         }
 
@@ -275,21 +273,20 @@ namespace Fireasy.Data.Batcher
         /// <param name="batch">当前批次中的索引。</param>
         private void FillArrayData(IEnumerable<PropertyFieldMapping> mappings, object item, object[][] data, int batch)
         {
-            var i = 0;
-            foreach (var map in mappings)
+            mappings.ForEach((m, i) =>
             {
-                var value = map.ValueFunc(item);
+                var value = m.ValueFunc(item);
                 if (value != null)
                 {
-                    var converter = ConvertManager.GetConverter(map.PropertyType);
+                    var converter = ConvertManager.GetConverter(m.PropertyType);
                     if (converter != null)
                     {
-                        value = converter.ConvertTo(value, map.FieldType);
+                        value = converter.ConvertTo(value, m.FieldType);
                     }
                 }
 
-                data[i++][batch] = value;
-            }
+                data[i][batch] = value;
+            });
         }
 
         /// <summary>
@@ -302,25 +299,22 @@ namespace Fireasy.Data.Batcher
         /// <param name="parFunc">创建 <see cref="DbParameter"/> 对象的函数。</param>
         private void AddOrReplayParameters(ISyntaxProvider syntax, IEnumerable<PropertyFieldMapping> mapping, DbParameterCollection parameters, object[][] data, Func<DbParameter> parFunc)
         {
-            var i = 0;
-            foreach (var kvp in mapping)
+            mapping.ForEach((m, i) =>
             {
-                if (parameters.Contains(kvp.FieldName))
+                if (parameters.Contains(m.FieldName))
                 {
-                    parameters[kvp.FieldName].Value = data[i];
+                    parameters[m.FieldName].Value = data[i];
                 }
                 else
                 {
                     var parameter = parFunc();
-                    parameter.ParameterName = kvp.FieldName;
+                    parameter.ParameterName = m.FieldName;
                     parameter.Direction = ParameterDirection.Input;
-                    parameter.DbType = kvp.FieldType;
+                    parameter.DbType = m.FieldType;
                     parameter.Value = data[i];
                     parameters.Add(parameter);
                 }
-
-                i++;
-            }
+            });
         }
     }
 }

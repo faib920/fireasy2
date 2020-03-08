@@ -14,9 +14,9 @@ namespace Fireasy.Common.Dynamic
 {
     public sealed class DynamicManager
     {
-        private Dictionary<string, CallSite<Func<CallSite, object, object>>> getCallSites = new Dictionary<string, CallSite<Func<CallSite, object, object>>>();
-        private Dictionary<string, CallSite<Func<CallSite, object, object, object>>> setCallSites = new Dictionary<string, CallSite<Func<CallSite, object, object, object>>>();
-        private object ErrorResult = new object();
+        private readonly Dictionary<string, CallSite<Func<CallSite, object, object>>> getCallSites = new Dictionary<string, CallSite<Func<CallSite, object, object>>>();
+        private readonly Dictionary<string, CallSite<Func<CallSite, object, object, object>>> setCallSites = new Dictionary<string, CallSite<Func<CallSite, object, object, object>>>();
+        private readonly object errorResult = new object();
 
         /// <summary>
         /// 获取动态对象中指定名称的属性值。
@@ -61,7 +61,7 @@ namespace Fireasy.Common.Dynamic
 
             var result = callSite.Target(callSite, dynamicProvider);
 
-            if (!ReferenceEquals(result, ErrorResult))
+            if (!ReferenceEquals(result, errorResult))
             {
                 value = result;
                 return true;
@@ -89,7 +89,7 @@ namespace Fireasy.Common.Dynamic
 
             var result = callSite.Target(callSite, dynamicProvider, value);
 
-            return !ReferenceEquals(result, ErrorResult);
+            return !ReferenceEquals(result, errorResult);
         }
     }
 }

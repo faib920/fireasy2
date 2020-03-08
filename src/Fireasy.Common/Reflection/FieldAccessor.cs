@@ -12,11 +12,24 @@ using System.Reflection;
 namespace Fireasy.Common.Reflection
 {
     /// <summary>
+    /// 字段的读写器。
+    /// </summary>
+    public interface IFieldAccessor
+    {
+        /// <summary>
+        /// 获取给定对象的属性的值。
+        /// </summary>
+        /// <param name="instance"></param>
+        /// <returns></returns>
+        object GetValue(object instance);
+    }
+
+    /// <summary>
     /// 包装 <see cref="FieldInfo"/> 对象，创建一个委托来提升字段的读写。
     /// </summary>
-    public class FieldAccessor
+    public class FieldAccessor : IFieldAccessor
     {
-        private Func<object, object> getter;
+        private readonly Func<object, object> getter;
 
         /// <summary>
         /// 获取要包装的 <see cref="FieldInfo"/> 对象。
@@ -54,6 +67,11 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public object GetValue(object instance)
         {
+            if (getter == null)
+            {
+                throw new NotSupportedException(SR.GetString(SRKind.UnableCreateCachedDelegate));
+            }
+
             return getter(instance);
         }
     }

@@ -41,8 +41,13 @@ namespace Fireasy.Data
             return connectionString != null ? connectionString.ToString() : string.Empty;
         }
 
-        public static bool operator == (ConnectionString connStr1, ConnectionString connStr2)
+        public static bool operator ==(ConnectionString connStr1, ConnectionString connStr2)
         {
+            if (Equals(connStr1, null) && Equals(connStr2, null))
+            {
+                return true;
+            }
+
             if ((Equals(connStr1, null) && !Equals(connStr2, null)) || (!Equals(connStr1, null) && Equals(connStr2, null)))
             {
                 return false;
@@ -53,6 +58,11 @@ namespace Fireasy.Data
 
         public static bool operator !=(ConnectionString connStr1, ConnectionString connStr2)
         {
+            if (Equals(connStr1, null) && Equals(connStr2, null))
+            {
+                return false;
+            }
+
             if ((Equals(connStr1, null) && !Equals(connStr2, null)) || (!Equals(connStr1, null) && Equals(connStr2, null)))
             {
                 return true;
@@ -69,7 +79,8 @@ namespace Fireasy.Data
         public ConnectionString(string connectionString)
         {
             Guard.ArgumentNull(connectionString, nameof(connectionString));
-            Properties = new ConnectionProperties();
+
+            Properties = new ConnectionProperties(this);
             this.connectionString = ParseConnectionString(connectionString);
         }
 
@@ -106,17 +117,22 @@ namespace Fireasy.Data
         /// 更新连接字符串。
         /// </summary>
         /// <returns></returns>
-        internal string Update()
+        internal void Update()
         {
             var builder = new StringBuilder();
 
             foreach (var name in Properties.Names)
             {
+                if (Properties.IsCustomized(name))
+                {
+                    continue;
+                }
+
                 var value = Properties[name];
                 builder.AppendFormat("{0}={1};", name, value);
             }
 
-            return builder.ToString();
+            connectionString = builder.ToString();
         }
 
         /// <summary>
@@ -129,11 +145,11 @@ namespace Fireasy.Data
             var builder = new StringBuilder();
             var index = 0;
             var name = string.Empty;
-            var value = string.Empty;
             var last = false;
             var quote = false;
 
-            for (var i = 0; i < constr.Length; i++)
+            string value;
+            for (int i = 0, n = constr.Length; i < n; i++)
             {
                 if (constr[i] == '"' || constr[i] == '\'')
                 {
@@ -148,13 +164,14 @@ namespace Fireasy.Data
                 {
                     value = constr.Substring(index, i - index);
 
-                    if (!ParseParameter(name, value))
+                    var isCustomized = ParseParameter(name, value);
+                    if (!isCustomized)
                     {
                         value = DbUtility.ResolveFullPath(value);
                         builder.AppendFormat("{0}={1};", name, value);
                     }
 
-                    Properties.Add(name.ToLower(), value);
+                    Properties.Add(name.ToLower(), value, isCustomized);
 
                     index = i + 1;
                     last = true;
@@ -168,18 +185,19 @@ namespace Fireasy.Data
             if (!last)
             {
                 value = constr.Substring(index);
+                var isCustomized = false;
 
                 if (string.IsNullOrEmpty(name))
                 {
                     builder.Append(value);
                 }
-                else if (!ParseParameter(name, value))
+                else if (!(isCustomized = ParseParameter(name, value)))
                 {
                     value = DbUtility.ResolveFullPath(value);
                     builder.AppendFormat("{0}={1};", name, value);
                 }
 
-                Properties.Add(name.ToLower(), value);
+                Properties.Add(name.ToLower(), value, isCustomized);
             }
 
             return builder.ToString();

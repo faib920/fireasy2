@@ -44,16 +44,14 @@ namespace Fireasy.Data.Converter
                 return null;
             }
 
-            using (var stream = new MemoryStream(bytes))
+            using var stream = new MemoryStream(bytes);
+            try
             {
-                try
-                {
-                    return Image.FromStream(stream);
-                }
-                catch
-                {
-                    return null;
-                }
+                return Image.FromStream(stream);
+            }
+            catch
+            {
+                return null;
             }
         }
 
@@ -71,17 +69,14 @@ namespace Fireasy.Data.Converter
                 throw new ConverterNotSupportedException(typeof(Image), dbType);
             }
 
-            var image = value as Image;
-            if (image == null)
+            if (!(value is Image image))
             {
                 return new byte[0];
             }
 
-            using (var stream = new MemoryStream())
-            {
-                image.Save(stream, ImageFormat.Png);
-                return stream.ToArray();
-            }
+            using var stream = new MemoryStream();
+            image.Save(stream, ImageFormat.Png);
+            return stream.ToArray();
         }
     }
 }

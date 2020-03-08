@@ -11,7 +11,7 @@ namespace Fireasy.Common.Configuration
     /// <summary>
     /// 表示受扩展的配置，包括一个基本配置及扩展配置。
     /// </summary>
-    internal class ExtendConfigurationSetting : IConfigurationSettingItem
+    public class ExtendConfigurationSetting : IConfigurationSettingItem
     {
         /// <summary>
         /// 获取或设置基本的配置对象。

@@ -16,7 +16,7 @@ namespace Fireasy.Common
     /// </summary>
     public sealed class PriorityActionQueue
     {
-        private SortedDictionary<int, List<Action>> queue = new SortedDictionary<int, List<Action>>();
+        private readonly SortedDictionary<int, List<Action>> queue = new SortedDictionary<int, List<Action>>();
 
         /// <summary>
         /// 向队列里添加要执行的方法。

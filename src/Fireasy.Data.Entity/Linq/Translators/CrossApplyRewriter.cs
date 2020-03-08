@@ -33,13 +33,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 }
                 else
                 {
-                    var select = join.Right as SelectExpression;
                     // Only consider rewriting cross apply if 
                     //   1) right side is a select
                     //   2) other than in the where clause in the right-side select, no left-side declared aliases are referenced
                     //   3) and has no behavior that would change semantics if the where clause is removed (like groups, aggregates, take, skip, etc).
                     // Note: it is best to attempt this after redundant subqueries have been removed.
-                    if (select != null
+                    if (join.Right is SelectExpression select
                         && select.Take == null
                         && select.Skip == null
                         && !AggregateChecker.HasAggregates(select)

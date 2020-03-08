@@ -14,7 +14,6 @@ using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
-using System.Linq;
 
 namespace Fireasy.Data.Batcher
 {
@@ -23,7 +22,7 @@ namespace Fireasy.Data.Batcher
     /// </summary>
     public class DataTableBatchReader : DbDataReader
     {
-        private DataTable table;
+        private readonly DataTable table;
         private DataRow current;
         private int index;
 
@@ -202,7 +201,7 @@ namespace Fireasy.Data.Batcher
         private IEnumerator<T> enumerator;
         private T current;
         private bool hasRows;
-        private List<Func<object, object>> values = new List<Func<object, object>>();
+        private readonly List<Func<object, object>> values = new List<Func<object, object>>();
 
         /// <summary>
         /// 初始化 <see cref="EnumerableBatchReader"/> 类的新实例。

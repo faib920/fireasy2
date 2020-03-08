@@ -8,7 +8,6 @@
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Localization.Configuration;
 using System.Globalization;
-using Fireasy.Common.Extensions;
 #if NETSTANDARD
 using Microsoft.Extensions.DependencyInjection;
 #endif
@@ -22,7 +21,7 @@ namespace Fireasy.Common.Localization
     public static class StringLocalizerFactory
     {
 #if NETSTANDARD
-        internal static IServiceCollection AddStringLocalizer(this IServiceCollection services)
+        public static IServiceCollection AddStringLocalizer(this IServiceCollection services)
         {
             var section = ConfigurationUnity.GetSection<StringLocalizerConfigurationSection>();
             if (section == null)
@@ -43,7 +42,7 @@ namespace Fireasy.Common.Localization
                     setting = extend.Base;
                 }
 
-                services.AddSingleton(typeof(IStringLocalizerManager), WithCulture(((StringLocalizerConfigurationSetting)setting).LocalizerType.New<IStringLocalizerManager>(), section));
+                services.AddSingleton(typeof(IStringLocalizerManager), ((StringLocalizerConfigurationSetting)setting).LocalizerType);
             }
 
             return services;
@@ -62,7 +61,8 @@ namespace Fireasy.Common.Localization
             var section = ConfigurationUnity.GetSection<StringLocalizerConfigurationSection>();
             if (section != null && section.Factory != null)
             {
-                manager = ConfigurationUnity.Cached<IStringLocalizerManager>($"LocalizerManager_{configName}", () => section.Factory.CreateInstance(configName) as IStringLocalizerManager);
+                manager = ConfigurationUnity.Cached<IStringLocalizerManager>($"LocalizerManager_{configName}", 
+                    () => section.Factory.CreateInstance(configName) as IStringLocalizerManager);
                 if (manager != null)
                 {
                     return WithCulture(manager, section);
@@ -86,7 +86,8 @@ namespace Fireasy.Common.Localization
                 return null;
             }
 
-            return WithCulture(ConfigurationUnity.Cached<IStringLocalizerManager>($"LocalizerManager_{configName}", () => ConfigurationUnity.CreateInstance<StringLocalizerConfigurationSetting, IStringLocalizerManager>(setting, s => s.LocalizerType)), section);
+            return WithCulture(ConfigurationUnity.Cached<IStringLocalizerManager>($"LocalizerManager_{configName}", 
+                () => ConfigurationUnity.CreateInstance<StringLocalizerConfigurationSetting, IStringLocalizerManager>(setting, s => s.LocalizerType)), section);
         }
 
         private static IStringLocalizerManager WithCulture(IStringLocalizerManager manager, StringLocalizerConfigurationSection section)

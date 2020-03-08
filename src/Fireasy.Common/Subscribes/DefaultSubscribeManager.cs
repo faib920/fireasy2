@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,9 +18,9 @@ namespace Fireasy.Common.Subscribes
     /// </summary>
     public class DefaultSubscribeManager : ISubscribeManager
     {
-        private static SubscriberCollection subscribers = new SubscriberCollection();
-        private ConcurrentQueue<SubjectData> queue = new ConcurrentQueue<SubjectData>();
-        private Thread thread = null;
+        private static readonly SubscriberCollection subscribers = new SubscriberCollection();
+        private readonly ConcurrentQueue<SubjectData> queue = new ConcurrentQueue<SubjectData>();
+        private readonly Thread thread = null;
 
         private class SubjectData
         {
@@ -62,6 +63,7 @@ namespace Fireasy.Common.Subscribes
 
                 while (queue.TryDequeue(out SubjectData obj) && obj != null)
                 {
+                    Tracer.Debug($"DefaultSubscribeManager accept message of '{obj.Name}'.");
                     subscribers.Accept(obj.Name, obj.Data);
                 }
             }
@@ -120,7 +122,7 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            subscribers.AddSyncSubscriber(TopicHelper.GetTopicName(typeof(TSubject)), subscriber);
+            subscribers.AddSyncSubscriber(typeof(TSubject), TopicHelper.GetTopicName(typeof(TSubject)), subscriber);
         }
 
         /// <summary>
@@ -132,7 +134,7 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            subscribers.AddAsyncSubscriber(TopicHelper.GetTopicName(typeof(TSubject)), subscriber);
+            subscribers.AddAsyncSubscriber(typeof(TSubject), TopicHelper.GetTopicName(typeof(TSubject)), subscriber);
         }
 
         /// <summary>
@@ -145,7 +147,7 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            subscribers.AddSyncSubscriber(name, subscriber);
+            subscribers.AddSyncSubscriber(typeof(TSubject), name, subscriber);
         }
 
         /// <summary>
@@ -158,7 +160,7 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            subscribers.AddAsyncSubscriber(name, subscriber);
+            subscribers.AddAsyncSubscriber(typeof(TSubject), name, subscriber);
         }
 
         /// <summary>
@@ -170,7 +172,7 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            subscribers.AddSyncSubscriber(TopicHelper.GetTopicName(subjectType), subscriber);
+            subscribers.AddSyncSubscriber(subjectType, TopicHelper.GetTopicName(subjectType), subscriber);
         }
 
         /// <summary>

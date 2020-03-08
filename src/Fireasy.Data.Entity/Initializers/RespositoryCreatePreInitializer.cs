@@ -22,7 +22,7 @@ namespace Fireasy.Data.Entity.Initializers
     public class RespositoryCreatePreInitializer : IEntityContextPreInitializer
     {
         //存放实体类型对应的表有没有创建
-        private static SafetyDictionary<string, bool> cache = new SafetyDictionary<string, bool>();
+        private static readonly SafetyDictionary<string, bool> cache = new SafetyDictionary<string, bool>();
 
         /// <summary>
         /// 获取或设置事件通知。
@@ -31,16 +31,15 @@ namespace Fireasy.Data.Entity.Initializers
 
         void IEntityContextPreInitializer.PreInitialize(EntityContextPreInitializeContext context)
         {
-            var aware = context.Service as IDatabaseAware;
-            if (aware == null)
+            if (!(context.ContextService is IDatabaseAware aware))
             {
                 return;
             }
 
-            var tbGen = context.Service.Provider.GetTableGenerateProvider();
+            var tbGen = context.ContextService.Provider.GetTableGenerateProvider();
             if (tbGen != null)
             {
-                context.Mappers.ForEach(s => TryCreate(context.Service, aware.Database, tbGen, s.EntityType));
+                context.Mappers.ForEach(s => TryCreate(context.ContextService, aware.Database, tbGen, s.EntityType));
             }
         }
 
@@ -58,7 +57,7 @@ namespace Fireasy.Data.Entity.Initializers
                 tableName = metadata.TableName;
             }
 
-            var instanceName = ContextInstanceManager.TryAdd(service.InitializeContext);
+            var instanceName = ContextInstanceManager.TryAdd(service.Options);
 
             var cacheKey = string.Concat(instanceName, ":", entityType.FullName);
             return cache.GetOrAdd(cacheKey, () =>

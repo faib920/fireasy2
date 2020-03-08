@@ -110,7 +110,12 @@ namespace Fireasy.Data.Entity
                             callvirt(MthInitValue).ret();
                     });
 
-            injection?.Inject(entityType, assemblyBuilder, typeBuilder);
+            injection?.Inject(new EntityInjectionContext 
+                { 
+                    EntityType = entityType, 
+                    AssemblyBuilder = assemblyBuilder, 
+                    TypeBuilder = typeBuilder 
+                });
 
             return typeBuilder.CreateType();
         }

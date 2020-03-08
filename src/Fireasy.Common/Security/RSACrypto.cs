@@ -16,7 +16,7 @@ namespace Fireasy.Common.Security
 {
     internal class RSACrypto : AsymmetricCrypto
     {
-        private RSACryptoServiceProvider rsa = null;
+        private readonly RSACryptoServiceProvider rsa = null;
 
         public RSACrypto()
             : base("RSA")

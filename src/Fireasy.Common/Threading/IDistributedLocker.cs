@@ -38,9 +38,9 @@ namespace Fireasy.Common.Threading
         /// </summary>
         /// <param name="token">锁的令牌。</param>
         /// <param name="timeout">锁的过期时间。</param>
-        /// <param name="task"></param>
+        /// <param name="func"></param>
         /// <returns></returns>
-        Task LockAsync(string token, TimeSpan timeout, Task task);
+        Task LockAsync(string token, TimeSpan timeout, Func<Task> func);
 
         /// <summary>
         /// 异步的，提供一个令牌对某执行期间进行上锁。

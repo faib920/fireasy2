@@ -106,7 +106,7 @@ namespace Fireasy.Data
                     sb.Append("$");
                 }
 
-                sb.Append(reader.GetName(i) + ":" + Type.GetTypeCode(reader.GetFieldType(i)).ToString("D"));
+                sb.Append($"{reader.GetName(i)}:{Type.GetTypeCode(reader.GetFieldType(i)).ToString("D")}");
             }
 
             return sb.ToString();

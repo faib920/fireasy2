@@ -11,6 +11,7 @@ using Fireasy.Common.Caching;
 using Fireasy.Common.Caching.Configuration;
 using Fireasy.Common.Composition.Configuration;
 using Fireasy.Common.Configuration;
+using Fireasy.Common.Extensions;
 using Fireasy.Common.Ioc;
 using Fireasy.Common.Ioc.Configuration;
 using Fireasy.Common.Ioc.Registrations;
@@ -20,6 +21,8 @@ using Fireasy.Common.Logging;
 using Fireasy.Common.Logging.Configuration;
 using Fireasy.Common.Subscribes;
 using Fireasy.Common.Subscribes.Configuration;
+using Fireasy.Common.Tasks;
+using Fireasy.Common.Tasks.Configuration;
 using Fireasy.Common.Threading;
 using Fireasy.Common.Threading.Configuration;
 using Microsoft.Extensions.Configuration;
@@ -27,14 +30,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 
 [assembly: ConfigurationBinder(typeof(Microsoft.Extensions.DependencyInjection.ConfigurationBinder))]
 
 namespace Microsoft.Extensions.DependencyInjection
 {
-    public static class ServiceCollectionExtensions
+    public static partial class ServiceCollectionExtensions
     {
         /// <summary>
         /// 使 <see cref="IServiceCollection"/> 能够使用 Fireasy 框架中的配置。
@@ -60,7 +61,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IServiceCollection AddIoc(this IServiceCollection services, Container container = null)
         {
-            container = container ?? ContainerUnity.GetContainer();
+            container ??= ContainerUnity.GetContainer();
             foreach (AbstractRegistration reg in container.GetRegistrations())
             {
                 if (reg is SingletonRegistration singReg)
@@ -107,7 +108,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             FindReferenceAssemblies(callAssembly, assemblies);
 
-            assemblies.AsParallel().ForAll(assembly =>
+            assemblies.ForEach(assembly =>
                 {
                     var binderAttr = assembly.GetCustomAttributes<ConfigurationBinderAttribute>().FirstOrDefault();
                     var type = binderAttr != null ? binderAttr.BinderType : assembly.GetType("Microsoft.Extensions.DependencyInjection.ConfigurationBinder");
@@ -141,7 +142,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 return null;
             }
         }
-
         private static void FindReferenceAssemblies(Assembly assembly, List<Assembly> assemblies)
         {
             foreach (var asb in assembly.GetReferencedAssemblies()
@@ -164,17 +164,29 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         internal static void Bind(IServiceCollection services, IConfiguration configuration)
         {
-            ConfigurationUnity.Bind<LoggingConfigurationSection>(configuration);
-            ConfigurationUnity.Bind<CachingConfigurationSection>(configuration);
-            ConfigurationUnity.Bind<ContainerConfigurationSection>(configuration);
-            ConfigurationUnity.Bind<LockerConfigurationSection>(configuration);
-            ConfigurationUnity.Bind<SubscribeConfigurationSection>(configuration);
-            ConfigurationUnity.Bind<ImportConfigurationSection>(configuration);
-            ConfigurationUnity.Bind<StringLocalizerConfigurationSection>(configuration);
+            try
+            {
+                ConfigurationUnity.Bind<LoggingConfigurationSection>(configuration);
+                ConfigurationUnity.Bind<CachingConfigurationSection>(configuration);
+                ConfigurationUnity.Bind<ContainerConfigurationSection>(configuration);
+                ConfigurationUnity.Bind<LockerConfigurationSection>(configuration);
+                ConfigurationUnity.Bind<SubscribeConfigurationSection>(configuration);
+                ConfigurationUnity.Bind<ImportConfigurationSection>(configuration);
+                ConfigurationUnity.Bind<StringLocalizerConfigurationSection>(configuration);
+                ConfigurationUnity.Bind<TaskScheduleConfigurationSection>(configuration);
+            }
+            catch (Exception)
+            {
+            }
 
             if (services != null)
             {
-                services.AddLogger().AddCaching().AddSubscriber().AddLocker().AddStringLocalizer();
+                services.AddLogger()
+                    .AddCaching()
+                    .AddSubscriber()
+                    .AddLocker()
+                    .AddStringLocalizer()
+                    .AddTaskScheduler();
             }
         }
     }

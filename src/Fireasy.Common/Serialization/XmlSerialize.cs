@@ -21,14 +21,13 @@ using System.Xml;
 
 namespace Fireasy.Common.Serialization
 {
-    internal sealed class XmlSerialize : IDisposable
+    internal sealed class XmlSerialize : DisposeableBase
     {
         private readonly XmlSerializeOption option;
         private readonly XmlSerializer serializer;
         private XmlTextWriter xmlWriter;
         private readonly SerializeContext context;
-        private bool isDisposed;
-        private TypeConverterCache<XmlConverter> cacheConverter = new TypeConverterCache<XmlConverter>();
+        private readonly TypeConverterCache<XmlConverter> cacheConverter = new TypeConverterCache<XmlConverter>();
 
         internal XmlSerialize(XmlSerializer serializer, XmlTextWriter writer, XmlSerializeOption option)
         {
@@ -183,8 +182,7 @@ namespace Fireasy.Common.Serialization
 
             foreach (var name in dynamicObject.GetDynamicMemberNames())
             {
-                object value;
-                dymgr.TryGetMember(dynamicObject, name, out value);
+                dymgr.TryGetMember(dynamicObject, name, out object value);
                 if (value == null)
                 {
                     continue;
@@ -222,21 +220,14 @@ namespace Fireasy.Common.Serialization
         /// 释放对象所占用的非托管和托管资源。
         /// </summary>
         /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
-        private void Dispose(bool disposing)
+        protected override void Dispose(bool disposing)
         {
-            if (isDisposed)
-            {
-                return;
-            }
-
             if (disposing)
             {
                 context.Dispose();
                 xmlWriter.TryDispose();
                 xmlWriter = null;
             }
-
-            isDisposed = true;
         }
 
         private void SerializeEnumerable(IEnumerable enumerable, Type type, bool startEle)
@@ -491,49 +482,25 @@ namespace Fireasy.Common.Serialization
 
         private string GetSimpleTypeName(Type type)
         {
-            switch (Type.GetTypeCode(type))
+            return (Type.GetTypeCode(type)) switch
             {
-                case TypeCode.Boolean:
-                    return "boolean";
-                case TypeCode.String:
-                    return "string";
-                case TypeCode.DateTime:
-                    return "dateTime";
-                case TypeCode.Char:
-                    return "char";
-                case TypeCode.SByte:
-                    return "sbyte";
-                case TypeCode.Byte:
-                    return "byte";
-                case TypeCode.Int16:
-                    return "short";
-                case TypeCode.UInt16:
-                    return "ushort";
-                case TypeCode.Int32:
-                    return "int";
-                case TypeCode.UInt32:
-                    return "uint";
-                case TypeCode.Int64:
-                    return "long";
-                case TypeCode.UInt64:
-                    return "ulong";
-                case TypeCode.Single:
-                    return "float";
-                case TypeCode.Decimal:
-                    return "decimal";
-                case TypeCode.Double:
-                    return "double";
-                default:
-                    return option.ContractResolver.ResolvePropertyName(type.Name);
-            }
-        }
-
-        /// <summary>
-        /// 释放对象所占用的所有资源。
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
+                TypeCode.Boolean => "boolean",
+                TypeCode.String => "string",
+                TypeCode.DateTime => "dateTime",
+                TypeCode.Char => "char",
+                TypeCode.SByte => "sbyte",
+                TypeCode.Byte => "byte",
+                TypeCode.Int16 => "short",
+                TypeCode.UInt16 => "ushort",
+                TypeCode.Int32 => "int",
+                TypeCode.UInt32 => "uint",
+                TypeCode.Int64 => "long",
+                TypeCode.UInt64 => "ulong",
+                TypeCode.Single => "float",
+                TypeCode.Decimal => "decimal",
+                TypeCode.Double => "double",
+                _ => option.ContractResolver.ResolvePropertyName(type.Name),
+            };
         }
     }
 }

@@ -16,7 +16,7 @@ namespace Fireasy.Common.Subscribes
     /// </summary>
     public class SubscriberCollection
     {
-        private SafetyDictionary<string, List<SubscribeDelegate>> subscribers = new SafetyDictionary<string, List<SubscribeDelegate>>();
+        private readonly SafetyDictionary<string, List<SubscribeDelegate>> subscribers = new SafetyDictionary<string, List<SubscribeDelegate>>();
 
         /// <summary>
         /// 接收订阅的数据。
@@ -34,28 +34,30 @@ namespace Fireasy.Common.Subscribes
         /// <summary>
         /// 添加同步的订阅者。
         /// </summary>
+        /// <param name="type"></param>
         /// <param name="name">名称。</param>
         /// <param name="subscriber"></param>
-        public void AddSyncSubscriber(string name, Delegate subscriber)
+        public void AddSyncSubscriber(Type type, string name, Delegate subscriber)
         {
             var list = subscribers.GetOrAdd(name, () => new List<SubscribeDelegate>());
             if (list != null)
             {
-                list.Add(new SyncSubscribeDelegate(subscriber));
+                list.Add(new SyncSubscribeDelegate(type, subscriber));
             }
         }
 
         /// <summary>
         /// 添加异步的订阅者。
         /// </summary>
+        /// <param name="type"></param>
         /// <param name="name">名称。</param>
         /// <param name="subscriber"></param>
-        public void AddAsyncSubscriber(string name, Delegate subscriber)
+        public void AddAsyncSubscriber(Type type, string name, Delegate subscriber)
         {
             var list = subscribers.GetOrAdd(name, () => new List<SubscribeDelegate>());
             if (list != null)
             {
-                list.Add(new AsyncSubscribeDelegate(subscriber));
+                list.Add(new AsyncSubscribeDelegate(type, subscriber));
             }
         }
 
@@ -65,7 +67,15 @@ namespace Fireasy.Common.Subscribes
         /// <param name="name">名称。</param>
         public void Remove(string name)
         {
-            subscribers.TryRemove(name, out List<SubscribeDelegate> delegates);
+            subscribers.TryRemove(name, out _);
+        }
+
+        /// <summary>
+        /// 清空所有订阅者。
+        /// </summary>
+        public void Clear()
+        {
+            subscribers.Clear();
         }
     }
 }

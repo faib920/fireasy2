@@ -17,7 +17,7 @@ namespace Fireasy.Common.Mapper
     /// </summary>
     public class ConvertMapper
     {
-        private Dictionary<MemberInfo, Expression> cache = new Dictionary<MemberInfo, Expression>();
+        private readonly Dictionary<MemberInfo, Expression> cache = new Dictionary<MemberInfo, Expression>();
 
         /// <summary>
         /// 获取或设置来源类型。

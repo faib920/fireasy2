@@ -38,16 +38,12 @@ namespace Fireasy.Common.Security
         {
 #if NETSTANDARD
             var algorithm = new HashAlgorithmName(algorithmName);
-            using (var hasher = IncrementalHash.CreateHash(algorithm))
-            {
-                hasher.AppendData(array);
-                return hasher.GetHashAndReset();
-            }
+            using var hasher = IncrementalHash.CreateHash(algorithm);
+            hasher.AppendData(array);
+            return hasher.GetHashAndReset();
 #else
-            using (var algorithm = HashAlgorithm.Create(algorithmName))
-            {
-                return algorithm.ComputeHash(array, 0, array.Length);
-            }
+            using var algorithm = HashAlgorithm.Create(algorithmName);
+            return algorithm.ComputeHash(array, 0, array.Length);
 #endif
         }
 
@@ -63,19 +59,17 @@ namespace Fireasy.Common.Security
                 throw new Exception(SR.GetString(SRKind.SourceCanotReadDestCanotWrite));
             }
 
-            using (var algorithm = HashAlgorithm.Create(algorithmName))
-            using (var memoryStream = new MemoryStream())
+            using var algorithm = HashAlgorithm.Create(algorithmName);
+            using var memoryStream = new MemoryStream();
+            var buffer = new byte[4096];
+            int count;
+            while ((count = sourceStream.Read(buffer, 0, 4096)) > 0)
             {
-                var buffer = new byte[4096];
-                int count;
-                while ((count = sourceStream.Read(buffer, 0, 4096)) > 0)
-                {
-                    memoryStream.Write(buffer, 0, count);
-                }
-
-                buffer = algorithm.ComputeHash(memoryStream.ToArray());
-                destStream.Write(buffer, 0, buffer.Length);
+                memoryStream.Write(buffer, 0, count);
             }
+
+            buffer = algorithm.ComputeHash(memoryStream.ToArray());
+            destStream.Write(buffer, 0, buffer.Length);
         }
 
         /// <summary>

@@ -7,7 +7,6 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 
 namespace Fireasy.Common.Configuration
 {
@@ -42,7 +41,7 @@ namespace Fireasy.Common.Configuration
             {
                 if (!ContainsKey(key))
                 {
-                    return default(T);
+                    return default;
                 }
 
                 if (errors.ContainsKey(key))

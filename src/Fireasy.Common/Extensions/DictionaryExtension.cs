@@ -72,8 +72,7 @@ namespace Fireasy.Common.Extensions
         /// <returns>如果字典内查找到键，则为键对应的元素的值，否则为函数返回的值。</returns>
         public static TValue TryGetValue<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, Func<TValue> func)
         {
-            TValue value;
-            if (!dictionary.TryGetValue(key, out value))
+            if (!dictionary.TryGetValue(key, out TValue value))
             {
                 Guard.ArgumentNull(func, nameof(func));
                 value = func();
@@ -109,7 +108,7 @@ namespace Fireasy.Common.Extensions
         /// <param name="key"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        public static TValue GetValue<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue = default(TValue))
+        public static TValue GetValue<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue = default)
         {
             Guard.ArgumentNull(dictionary, nameof(dictionary));
             return dictionary.ContainsKey(key) ? dictionary[key] : defaultValue;

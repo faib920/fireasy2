@@ -8,6 +8,7 @@
 
 using Fireasy.Data.Provider;
 using System.Data;
+using System.Linq;
 using System.Text;
 
 namespace Fireasy.Data.Syntax
@@ -37,74 +38,47 @@ namespace Fireasy.Data.Syntax
         /// <summary>
         /// 获取最近创建的自动编号的查询文本。
         /// </summary>
-        public virtual string IdentitySelect
-        {
-            get { return string.Empty; }
-        }
+        public virtual string IdentitySelect => string.Empty;
 
         /// <summary>
         /// 获取自增长列的关键词。
         /// </summary>
-        public string IdentityColumn
-        {
-            get { return string.Empty; }
-        }
+        public string IdentityColumn => string.Empty;
 
         /// <summary>
         /// 获取受影响的行数的查询文本。
         /// </summary>
-        public string RowsAffected
-        {
-            get { return string.Empty; }
-        }
+        public string RowsAffected => string.Empty;
 
         /// <summary>
         /// 获取伪查询的表名称。
         /// </summary>
-        public string FakeSelect
-        {
-            get { return " FROM DUAL"; }
-        }
+        public string FakeSelect => " FROM DUAL";
 
         /// <summary>
         /// 获取存储参数的前缀。
         /// </summary>
-        public virtual string ParameterPrefix
-        {
-            get { return ":"; }
-        }
+        public virtual string ParameterPrefix => ":";
 
         /// <summary>
         /// 获取列引号标识符。
         /// </summary>
-        public string[] Quote
-        {
-            get { return new[] { "\"", "\"" }; }
-        }
+        public string[] Quote => new[] { "\"", "\"" };
 
         /// <summary>
         /// 获取换行符。
         /// </summary>
-        public string Linefeed
-        {
-            get { return "\n;\n"; }
-        }
+        public string Linefeed => "\n;\n";
 
         /// <summary>
         /// 获取是否允许在聚合中使用 DISTINCT 关键字。
         /// </summary>
-        public bool SupportDistinctInAggregates
-        {
-            get { return true; }
-        }
+        public bool SupportDistinctInAggregates => true;
 
         /// <summary>
         /// 获取是否允许在没有 FORM 的语句中使用子查询。
         /// </summary>
-        public bool SupportSubqueryInSelectWithoutFrom
-        {
-            get { return true; }
-        }
+        public bool SupportSubqueryInSelectWithoutFrom => true;
 
         /// <summary>
         /// 对命令文本进行分段处理，使之能够返回小范围内的数据。
@@ -127,15 +101,12 @@ namespace Fireasy.Data.Syntax
         public virtual string Segment(string commandText, IDataSegment segment)
         {
             //** rownnum <= n 放在内层能够提高10倍的速度!
-            commandText = string.Format(@"
+            return @$"
                 SELECT T.* FROM
                 (
                     SELECT T.*, ROWNUM ROW_NUM
-                    FROM ({0}) T {1}
-                ) T {2}", 
-                    commandText, segment.End != null ? "WHERE ROWNUM <= " + segment.End : string.Empty,
-                    segment.Start != null ? "WHERE ROW_NUM >= " + segment.Start: string.Empty);
-            return commandText;
+                    FROM ({commandText}) T {(segment.End != null ? $"WHERE ROWNUM <= {segment.End}" : string.Empty)}
+                ) T {(segment.Start != null ? $"WHERE ROW_NUM >= {segment.Start}" : string.Empty)}";
         }
 
         /// <summary>
@@ -149,53 +120,43 @@ namespace Fireasy.Data.Syntax
             switch (dbType)
             {
                 case DbType.AnsiString:
-                    return string.Format("TO_CHAR({0})", sourceExp);
                 case DbType.AnsiStringFixedLength:
-                    return string.Format("TO_CHAR({0})", sourceExp);
+                case DbType.String:
+                case DbType.StringFixedLength:
+                    return $"TO_CHAR({sourceExp})";
                 case DbType.Binary:
-                    return string.Format("CAST({0} AS BLOB)", sourceExp);
+                    return $"CAST({sourceExp} AS BLOB)";
                 case DbType.Boolean:
-                    return string.Format("CAST({0} AS NUMBER)", sourceExp);
+                    return $"CAST({sourceExp} AS NUMBER)";
                 case DbType.Byte:
-                    return string.Format("CAST({0} AS NUMBER)", sourceExp);
+                    return $"CAST({sourceExp} AS NUMBER)";
                 case DbType.Currency:
-                    return string.Format("CAST({0} AS NUMBER)", sourceExp);
+                    return $"CAST({sourceExp} AS NUMBER)";
                 case DbType.Date:
-                    return string.Format("TO_DATE({0}, 'YYYY-MM-DD')", sourceExp);
+                    return $"TO_DATE({sourceExp}, 'YYYY-MM-DD')";
+                case DbType.Time:
+                    return $"TO_DATE({sourceExp}, 'HH24:MI:SS')";
                 case DbType.DateTime:
-                    return string.Format("TO_DATE({0}, 'YYYY-MM-DD HH24:MI:SS')", sourceExp);
                 case DbType.DateTime2:
-                    return string.Format("TO_DATE({0}, 'YYYY-MM-DD HH24:MI:SS')", sourceExp);
                 case DbType.DateTimeOffset:
-                    return string.Format("TO_DATE({0}, 'YYYY-MM-DD HH24:MI:SS')", sourceExp);
+                    return $"TO_DATE({sourceExp}, 'YYYY-MM-DD HH24:MI:SS')";
                 case DbType.Decimal:
-                    return string.Format("CAST({0} AS NUMBER)", sourceExp);
+                    return $"CAST({sourceExp} AS NUMBER)";
                 case DbType.Double:
-                    return string.Format("CAST({0} AS NUMBER)", sourceExp);
+                    return $"CAST({sourceExp} AS NUMBER)";
                 case DbType.Guid:
                     break;
                 case DbType.Int16:
-                    return string.Format("CAST({0} AS NUMBER)", sourceExp);
                 case DbType.Int32:
-                    return string.Format("CAST({0} AS NUMBER)", sourceExp);
                 case DbType.Int64:
-                    return string.Format("CAST({0} AS NUMBER)", sourceExp);
-                case DbType.SByte:
-                    return string.Format("CAST({0} AS NUMBER)", sourceExp);
-                case DbType.Single:
-                    return string.Format("CAST({0} AS FLOAT)", sourceExp);
-                case DbType.String:
-                    return string.Format("TO_CHAR({0})", sourceExp);
-                case DbType.StringFixedLength:
-                    return string.Format("TO_CHAR({0})", sourceExp);
-                case DbType.Time:
-                    return string.Format("TO_DATE({0}, 'HH24:MI:SS')", sourceExp);
                 case DbType.UInt16:
-                    return string.Format("CAST({0} AS NUMBER)", sourceExp);
                 case DbType.UInt32:
-                    return string.Format("CAST({0} AS NUMBER)", sourceExp);
                 case DbType.UInt64:
-                    return string.Format("CAST({0} AS NUMBER)", sourceExp);
+                    return $"CAST({sourceExp} AS NUMBER)";
+                case DbType.SByte:
+                    return $"CAST({sourceExp} AS NUMBER)";
+                case DbType.Single:
+                    return $"CAST({sourceExp} AS FLOAT)";
                 case DbType.VarNumeric:
                     break;
                 case DbType.Xml:
@@ -225,17 +186,17 @@ namespace Fireasy.Data.Syntax
                     {
                         return "CLOB";
                     }
-                    return string.Format("VARCHAR2({0})", length);
+                    return $"VARCHAR2({length})";
                 case DbType.AnsiStringFixedLength:
-                    return length == null ? "NCHAR(255)" : string.Format("NCHAR({0})", length);
+                    return length == null ? "NCHAR(255)" : $"NCHAR({length})";
                 case DbType.Binary:
                     return "BLOB";
                 case DbType.Boolean:
-                    return "NUMBER(1,0)";
+                    return "NUMBER(1, 0)";
                 case DbType.Byte:
-                    return "NUMBER(3,0)";
+                    return "NUMBER(3, 0)";
                 case DbType.Currency:
-                    return "NUMBER(20,0)";
+                    return "NUMBER(20, 0)";
                 case DbType.Date:
                 case DbType.DateTime:
                 case DbType.DateTime2:
@@ -245,29 +206,29 @@ namespace Fireasy.Data.Syntax
                 case DbType.Decimal:
                     if (precision == null && scale == null)
                     {
-                        return "NUMBER(19, 5)";
+                        return "NUMBER";
                     }
-                    if (precision == null)
+                    else if (precision == null)
                     {
-                        return string.Format("NUMBER(19, {0})", scale);
+                        return $"NUMBER(19, {scale})";
                     }
-                    if (scale == null)
+                    else if (scale == null)
                     {
-                        return string.Format("NUMBER({0}, 5)", precision);
+                        return $"NUMBER({precision})";
                     }
-                    return string.Format("NUMBER({0}, {1})", precision, scale);
+                    return $"NUMBER({precision}, {scale})";
                 case DbType.Double:
                     return "DOUBLE PRECISION";
                 case DbType.Guid:
                     return "CHAR(38)";
                 case DbType.Int16:
-                    return "NUMBER(5,0)";
+                    return "NUMBER(5, 0)";
                 case DbType.Int32:
-                    return "NUMBER(10,0)";
+                    return "NUMBER(10, 0)";
                 case DbType.Int64:
-                    return "NUMBER(20,0)";
+                    return "NUMBER(20, 0)";
                 case DbType.SByte:
-                    return "NUMBER(5,0)";
+                    return "NUMBER(5, 0)";
                 case DbType.Single:
                     return "FLOAT(24)";
                 case DbType.String:
@@ -279,21 +240,21 @@ namespace Fireasy.Data.Syntax
                     {
                         return "NCLOB";
                     }
-                    return string.Format("NVARCHAR2({0})", length);
+                    return $"NVARCHAR2({length})";
                 case DbType.StringFixedLength:
                     if (length == null)
                     {
                         return "NCHAR(255)";
                     }
-                    return string.Format("NCHAR({0})", length);
+                    return $"NCHAR({length})";
                 case DbType.Time:
                     return "TIMESTAMP(4)";
                 case DbType.UInt16:
-                    return "NUMBER(5,0)";
+                    return "NUMBER(5, 0)";
                 case DbType.UInt32:
-                    return "NUMBER(10,0)";
+                    return "NUMBER(10, 0)";
                 case DbType.UInt64:
-                    return "NUMBER(20,0)";
+                    return "NUMBER(20, 0)";
                 case DbType.VarNumeric:
                     break;
                 case DbType.Xml:
@@ -314,18 +275,25 @@ namespace Fireasy.Data.Syntax
             {
                 return sourceExp.ToString();
             }
+
             var sb = new StringBuilder();
+
             sb.AppendFormat("NVL({0}", sourceExp);
-            for (var i = 0; i < argExps.Length - 1; i++)
+
+            for (int i = 0, n = argExps.Length - 1; i < n; i++)
             {
                 sb.AppendFormat(", NVL({0}", argExps[i]);
             }
+
             sb.AppendFormat(", {0}", argExps[argExps.Length - 1]);
-            for (var i = 0; i < argExps.Length - 1; i++)
+
+            for (int i = 0, n = argExps.Length - 1; i < n; i++)
             {
                 sb.Append(")");
             }
+
             sb.Append(")");
+
             return sb.ToString();
         }
 
@@ -346,7 +314,18 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public string ExistsTable(string tableName)
         {
-            return string.Format("SELECT COUNT(1) FROM USER_TABLES WHERE TABLE_NAME = '{0}'", tableName);
+            return $"SELECT COUNT(1) FROM USER_TABLES WHERE TABLE_NAME = '{tableName}'";
+        }
+
+        /// <summary>
+        /// 获取判断多个表是否存在的语句。
+        /// </summary>
+        /// <param name="tableName">要判断的表的名称数组。</param>
+        /// <returns></returns>
+        public virtual string ExistsTables(string[] tableNames)
+        {
+            var names = string.Join(",", tableNames.Select(s => $"'{s}'"));
+            return $"SELECT TABLE_NAME FROM USER_TABLES WHERE TABLE_NAME IN ({names})";
         }
 
         /// <summary>
@@ -356,12 +335,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public DbType CorrectDbType(DbType dbType)
         {
-            if (dbType == DbType.Boolean)
-            {
-                return DbType.Decimal;
-            }
-
-            return dbType;
+            return dbType == DbType.Boolean ? DbType.Decimal : dbType;
         }
     }
 }

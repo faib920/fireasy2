@@ -47,11 +47,6 @@ namespace Fireasy.Web.Sockets
         public int HeartbeatTryTimes { get; set; } = 3;
 
         /// <summary>
-        /// 获取或设置是否分布式部署。
-        /// </summary>
-        public bool Distributed { get; set; }
-
-        /// <summary>
         /// 获取或设置字符编码。
         /// </summary>
         public Encoding Encoding { get; set; } = Encoding.UTF8;

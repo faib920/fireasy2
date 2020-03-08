@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Syntax;
 using System.Collections.Generic;
 using System.Data;
@@ -19,14 +18,15 @@ namespace Fireasy.Data.Entity.Generation
         protected override SqlCommand[] BuildCreateTableCommands(ISyntaxProvider syntax, string tableName, IList<IProperty> properties)
         {
             var sb = new StringBuilder();
-            sb.AppendFormat("create table {0}\n(\n", Quote(syntax, tableName));
+            sb.Append($"create table {Quote(syntax, tableName)}\n(\n");
 
             var count = properties.Count;
+            var last = count - 1;
             for (var i = 0; i < count; i++)
             {
                 AppendFieldToBuilder(sb, syntax, properties[i]);
 
-                if (i != count - 1)
+                if (i != last)
                 {
                     sb.Append(",");
                 }
@@ -41,7 +41,7 @@ namespace Fireasy.Data.Entity.Generation
                 sb.AppendLine(",");
                 sb.Append("primary key (");
 
-                for (var i = 0; i < primaryPeoperties.Length; i++)
+                for (int i = 0, n = primaryPeoperties.Length; i < n; i++)
                 {
                     if (i != 0)
                     {
@@ -62,16 +62,17 @@ namespace Fireasy.Data.Entity.Generation
         protected override SqlCommand[] BuildAddFieldCommands(ISyntaxProvider syntax, string tableName, IList<IProperty> properties)
         {
             var sb = new StringBuilder();
-            sb.AppendFormat("alter table {0}", Quote(syntax, tableName));
+            sb.Append($"alter table {Quote(syntax, tableName)}");
 
             var count = properties.Count;
+            var last = count - 1;
             for (var i = 0; i < count; i++)
             {
                 sb.Append(" add column ");
 
                 AppendFieldToBuilder(sb, syntax, properties[i]);
 
-                if (i != count - 1)
+                if (i != last)
                 {
                     sb.Append(",");
                 }

@@ -20,8 +20,8 @@ namespace Fireasy.Common.Serialization
     /// </summary>
     public class ExpressionJsonReader
     {
-        private JsonSerializer serializer;
-        private string json;
+        private readonly JsonSerializer serializer;
+        private readonly string json;
 
         /// <summary>
         /// 获取参数名称与类型的字典。
@@ -230,8 +230,6 @@ namespace Fireasy.Common.Serialization
         /// <returns></returns>
         protected virtual ParameterExpression ReadParameterExpression()
         {
-            Type type = null;
-
             JsonReader.SkipWhiteSpaces();
             JsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
             JsonReader.SkipWhiteSpaces();
@@ -245,6 +243,7 @@ namespace Fireasy.Common.Serialization
             var name = JsonReader.ReadAsString();
             JsonReader.SkipWhiteSpaces();
 
+            Type type;
             if (JsonReader.Peek() != JsonTokens.EndObjectLiteralCharacter)
             {
                 //Type
@@ -279,14 +278,13 @@ namespace Fireasy.Common.Serialization
         /// <returns></returns>
         protected virtual ParameterExpression MakeParameterExpression(Type type, string name)
         {
-            ParameterExpression parameterExp;
-            if (!ParameterDictionary.TryGetValue(type, out parameterExp))
+            if (!ParameterDictionary.TryGetValue(type, out ParameterExpression parExp))
             {
-                parameterExp = Expression.Parameter(type, name);
-                ParameterDictionary.Add(type, parameterExp);
+                parExp = Expression.Parameter(type, name);
+                ParameterDictionary.Add(type, parExp);
             }
 
-            return parameterExp;
+            return parExp;
         }
 
         /// <summary>

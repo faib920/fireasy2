@@ -7,7 +7,6 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections;
-using System.Data;
 
 namespace Fireasy.Data.Batcher
 {

@@ -10,19 +10,19 @@ using System.Collections.ObjectModel;
 
 namespace Fireasy.Data.Entity.Initializers
 {
-    public class EntityContextPreInitializeContext
+    public sealed class EntityContextPreInitializeContext
     {
-        internal EntityContextPreInitializeContext(EntityContext context, IContextService service, List<EntityRepositoryMapper> mappers)
+        internal EntityContextPreInitializeContext(EntityContext context, IContextService service, List<EntityRepositoryTypeMapper> mappers)
         {
             EntityContext = context;
-            Service = service;
-            Mappers = new ReadOnlyCollection<EntityRepositoryMapper>(mappers);
+            ContextService = service;
+            Mappers = new ReadOnlyCollection<EntityRepositoryTypeMapper>(mappers);
         }
 
         public EntityContext EntityContext { get; private set; }
 
-        public IContextService Service { get; private set; }
+        public IContextService ContextService { get; private set; }
 
-        public ReadOnlyCollection<EntityRepositoryMapper> Mappers { get; private set; }
+        public ReadOnlyCollection<EntityRepositoryTypeMapper> Mappers { get; private set; }
     }
 }

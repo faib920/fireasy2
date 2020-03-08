@@ -40,8 +40,7 @@ namespace Fireasy.Data.Provider
         /// </summary>
         /// <param name="connectionString">连接字符串对象。</param>
         /// <param name="parameter"></param>
-        /// <returns></returns>
-        string UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter);
+        void UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter);
 
         /// <summary>
         /// 获取注册到数据库提供者的插件服务实例。

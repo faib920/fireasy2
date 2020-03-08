@@ -42,9 +42,7 @@ namespace Fireasy.Data.Converter
 
             var array = value.ToString().Split(',');
             var style = FontStyle.Regular;
-            float size;
-            GraphicsUnit unit;
-            ParseFontSizeAndUnit(array[1], out size, out unit);
+            ParseFontSizeAndUnit(array[1], out float size, out GraphicsUnit unit);
 
             if (array.Length == 3)
             {
@@ -74,8 +72,7 @@ namespace Fireasy.Data.Converter
                 return string.Empty;
             }
 
-            var font = value as Font;
-            if (font == null)
+            if (!(value is Font font))
             {
                 return string.Empty;
             }
@@ -100,18 +97,14 @@ namespace Fireasy.Data.Converter
 
         private string GetUnitFlag(GraphicsUnit unit)
         {
-            switch (unit)
+            return unit switch
             {
-                case GraphicsUnit.Inch:
-                    return "in";
-                case GraphicsUnit.Pixel:
-                    return "px";
-                case GraphicsUnit.Point:
-                    return "pt";
-                case GraphicsUnit.Millimeter:
-                    return "mm";
-                default: return string.Empty;
-            }
+                GraphicsUnit.Inch => "in",
+                GraphicsUnit.Pixel => "px",
+                GraphicsUnit.Point => "pt",
+                GraphicsUnit.Millimeter => "mm",
+                _ => string.Empty,
+            };
         }
 
         private void ParseFontSizeAndUnit(string flag, out float size, out GraphicsUnit unit)
@@ -125,24 +118,14 @@ namespace Fireasy.Data.Converter
             }
 
             float.TryParse(matches[0].Groups[1].Value, out size);
-            switch (matches[0].Groups[2].Value)
+            unit = matches[0].Groups[2].Value switch
             {
-                case "px":
-                    unit = GraphicsUnit.Pixel;
-                    break;
-                case "pt":
-                    unit = GraphicsUnit.Point;
-                    break;
-                case "in":
-                    unit = GraphicsUnit.Inch;
-                    break;
-                case "mm":
-                    unit = GraphicsUnit.Millimeter;
-                    break;
-                default:
-                    unit = GraphicsUnit.Pixel;
-                    break;
-            }
+                "px" => GraphicsUnit.Pixel,
+                "pt" => GraphicsUnit.Point,
+                "in" => GraphicsUnit.Inch,
+                "mm" => GraphicsUnit.Millimeter,
+                _ => GraphicsUnit.Pixel,
+            };
         }
 
         private string GetStyleFlag(FontStyle style)

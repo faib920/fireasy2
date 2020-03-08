@@ -20,7 +20,7 @@ namespace Fireasy.Common.Threading
     public static class LockerFactory
     {
 #if NETSTANDARD
-        internal static IServiceCollection AddLocker(this IServiceCollection services)
+        public static IServiceCollection AddLocker(this IServiceCollection services)
         {
             var section = ConfigurationUnity.GetSection<LockerConfigurationSection>();
             if (section == null)
@@ -84,7 +84,8 @@ namespace Fireasy.Common.Threading
                 return null;
             }
 
-            return ConfigurationUnity.Cached<IDistributedLocker>($"Locker_{configName}", () => ConfigurationUnity.CreateInstance<LockerConfigurationSetting, IDistributedLocker>(setting, s => s.LockerType));
+            return ConfigurationUnity.Cached<IDistributedLocker>($"Locker_{configName}", 
+                () => ConfigurationUnity.CreateInstance<LockerConfigurationSetting, IDistributedLocker>(setting, s => s.LockerType));
         }
     }
 }

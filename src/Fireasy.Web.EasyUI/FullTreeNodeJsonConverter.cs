@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.ComponentModel;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -19,7 +20,7 @@ namespace Fireasy.Web.EasyUI
     /// <typeparam name="T"></typeparam>
     public class FullTreeNodeJsonConverter<T> : TreeNodeJsonConverter<T> where T : ITreeNode
     {
-        private static SafetyDictionary<Type, Dictionary<string, Func<T, object>>> cache = new SafetyDictionary<Type, Dictionary<string, Func<T, object>>>();
+        private static ConcurrentDictionary<Type, Dictionary<string, Func<T, object>>> cache = new ConcurrentDictionary<Type, Dictionary<string, Func<T, object>>>();
 
         /// <summary>
         /// 初始化 <see cref="FullTreeNodeJsonConverter"/> 类的新实例。

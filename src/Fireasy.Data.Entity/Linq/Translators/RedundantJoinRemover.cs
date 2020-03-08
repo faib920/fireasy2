@@ -12,7 +12,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class RedundantJoinRemover : DbExpressionVisitor
     {
-        private Dictionary<TableAlias, TableAlias> map = new Dictionary<TableAlias,TableAlias>();
+        private readonly Dictionary<TableAlias, TableAlias> map = new Dictionary<TableAlias,TableAlias>();
 
         public static Expression Remove(Expression expression)
         {
@@ -26,8 +26,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             if (join != null)
             {
-                var right = join.Right as AliasedExpression;
-                if (right != null)
+                if (join.Right is AliasedExpression right)
                 {
                     var similarRight = (AliasedExpression)FindSimilarRight(join.Left as JoinExpression, join);
                     if (similarRight != null)

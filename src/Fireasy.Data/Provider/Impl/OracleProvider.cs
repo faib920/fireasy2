@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 
 using Fireasy.Common.Extensions;
+using Fireasy.Common.Reflection;
 using Fireasy.Data.Batcher;
 using Fireasy.Data.Identity;
 using Fireasy.Data.RecordWrapper;
@@ -65,14 +66,12 @@ namespace Fireasy.Data.Provider
         /// </summary>
         /// <param name="connectionString">连接字符串对象。</param>
         /// <param name="parameter"></param>
-        /// <returns></returns>
-        public override string UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter)
+        public override void UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter)
         {
             connectionString.Properties.TrySetValue(parameter.Server, "data source")
                 .TrySetValue(parameter.UserId, "user id")
-                .TrySetValue(parameter.Password, "password");
-
-            return connectionString.Update();
+                .TrySetValue(parameter.Password, "password")
+                .Update();
         }
 
         /// <summary>
@@ -83,7 +82,7 @@ namespace Fireasy.Data.Provider
         public override DbCommand PrepareCommand(DbCommand command)
         {
             //处理 ORA-01008: 并非所有变量都已绑定 ，将 BindByName 设为 true
-            var property = command.GetType().GetProperty("BindByName");
+            var property = ReflectionCache.GetMember("OracleCommand_BindByName", command.GetType(), k => k.GetProperty("BindByName"));
             if (property != null)
             {
                 property.FastSetValue(command, true);

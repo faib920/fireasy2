@@ -13,12 +13,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     internal class DbExpressionComparer : ExpressionComparer
     {
-        ScopedDictionary<TableAlias, TableAlias> m_aliasScope;
+        private ScopedDictionary<TableAlias, TableAlias> aliasScope;
 
         protected DbExpressionComparer(ScopedDictionary<ParameterExpression, ParameterExpression> parameterScope, ScopedDictionary<TableAlias, TableAlias> aliasScope)
             : base(parameterScope)
         {
-            m_aliasScope = aliasScope;
+            this.aliasScope = aliasScope;
         }
 
         public new static bool AreEqual(Expression a, Expression b)
@@ -94,10 +94,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected virtual bool CompareAlias(TableAlias a, TableAlias b)
         {
-            if (m_aliasScope != null)
+            if (aliasScope != null)
             {
-                TableAlias mapped;
-                if (m_aliasScope.TryGetValue(a, out mapped))
+                if (aliasScope.TryGetValue(a, out TableAlias mapped))
                 {
                     return mapped == b;
                 }
@@ -108,7 +107,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected virtual bool CompareSelect(SelectExpression a, SelectExpression b)
         {
-            var save = m_aliasScope;
+            var save = aliasScope;
             try
             {
                 if (!Compare(a.From, b.From))
@@ -116,7 +115,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     return false; 
                 }
 
-                m_aliasScope = new ScopedDictionary<TableAlias, TableAlias>(save);
+                aliasScope = new ScopedDictionary<TableAlias, TableAlias>(save);
                 MapAliases(a.From, b.From);
 
                 return Compare(a.Where, b.Where)
@@ -129,7 +128,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
             finally
             {
-                m_aliasScope = save;
+                aliasScope = save;
             }
         }
 
@@ -139,7 +138,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             TableAlias[] prodB = DeclaredAliasGatherer.Gather(b).ToArray();
             for (int i = 0, n = prodA.Length; i < n; i++)
             {
-                m_aliasScope.Add(prodA[i], prodB[i]);
+                aliasScope.Add(prodA[i], prodB[i]);
             }
         }
 
@@ -206,10 +205,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             if (a.JoinType == JoinType.CrossApply || a.JoinType == JoinType.OuterApply)
             {
-                var save = m_aliasScope;
+                var save = aliasScope;
                 try
                 {
-                    m_aliasScope = new ScopedDictionary<TableAlias, TableAlias>(m_aliasScope);
+                    aliasScope = new ScopedDictionary<TableAlias, TableAlias>(aliasScope);
                     MapAliases(a.Left, b.Left);
 
                     return Compare(a.Right, b.Right)
@@ -217,7 +216,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 }
                 finally
                 {
-                    m_aliasScope = save;
+                    aliasScope = save;
                 }
             }
             else
@@ -263,17 +262,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 return false;
             }
 
-            switch (a.NodeType)
+            return a.NodeType switch
             {
-                case DbExpressionType.Scalar:
-                    return CompareScalar((ScalarExpression)a, (ScalarExpression)b);
-                case DbExpressionType.Exists:
-                    return CompareExists((ExistsExpression)a, (ExistsExpression)b);
-                case DbExpressionType.In:
-                    return CompareIn((InExpression)a, (InExpression)b);
-            }
-
-            return false;
+                DbExpressionType.Scalar => CompareScalar((ScalarExpression)a, (ScalarExpression)b),
+                DbExpressionType.Exists => CompareExists((ExistsExpression)a, (ExistsExpression)b),
+                DbExpressionType.In => CompareIn((InExpression)a, (InExpression)b),
+                _ => false,
+            };
         }
 
         protected virtual bool CompareScalar(ScalarExpression a, ScalarExpression b)
@@ -307,11 +302,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 return false;
             }
 
-            var save = m_aliasScope;
+            var save = aliasScope;
             try
             {
-                m_aliasScope = new ScopedDictionary<TableAlias, TableAlias>(m_aliasScope);
-                m_aliasScope.Add(a.Select.Alias, b.Select.Alias);
+                aliasScope = new ScopedDictionary<TableAlias, TableAlias>(aliasScope);
+                aliasScope.Add(a.Select.Alias, b.Select.Alias);
 
                 return Compare(a.Projector, b.Projector)
                     && Compare(a.Aggregator, b.Aggregator)
@@ -319,7 +314,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
             finally
             {
-                m_aliasScope = save;
+                aliasScope = save;
             }
         }
 
