@@ -14,6 +14,9 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+#if NETSTANDARD
+using Microsoft.Extensions.Options;
+#endif
 
 namespace Fireasy.Log4net
 {
@@ -23,17 +26,22 @@ namespace Fireasy.Log4net
     public class Logger : ILogger
     {
         private readonly ILog log;
-        private readonly Log4netOptions options;
-        private static readonly ConcurrentDictionary<Type, ILogger> loggers = new ConcurrentDictionary<Type, ILogger>();
 
-        protected Logger(Type type)
-            : this(type, null)
+        public Logger()
+            : this(null, null)
         {
         }
 
+#if NETSTANDARD
+        public Logger(IOptions<Log4netOptions> options)
+            : this(null, options.Value)
+        {
+        }
+#endif
+
+
         public Logger(Type type, Log4netOptions options)
         {
-            this.options = options;
             var repository = LogManager.GetAllRepositories().FirstOrDefault(s => s.Name == "fireasy") ?? LogManager.CreateRepository("fireasy");
             
             XmlConfigurator.Configure(repository, 
@@ -41,16 +49,6 @@ namespace Fireasy.Log4net
             
             log = type == null ? LogManager.GetLogger("fireasy", string.Empty) :
                 LogManager.GetLogger("fireasy", type);
-        }
-
-        public Logger()
-            : this (null)
-        {
-        }
-
-        public ILogger GetLogger<T>() where T : class
-        {
-            return loggers.GetOrAdd(typeof(T), k => new Logger(k, options));
         }
 
         /// <summary>
@@ -127,7 +125,7 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Error))
             {
-                await Task.Run(() => log.Error(message, exception));
+                log.Error(message, exception);
             }
         }
 
@@ -140,7 +138,7 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Info))
             {
-                await Task.Run(() => log.Info(message, exception));
+                log.Info(message, exception);
             }
         }
 
@@ -153,7 +151,7 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Warn))
             {
-                await Task.Run(() => log.Warn(message, exception));
+                log.Warn(message, exception);
             }
         }
 
@@ -166,7 +164,7 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Debug))
             {
-                await Task.Run(() => log.Debug(message, exception));
+                log.Debug(message, exception);
             }
         }
 
@@ -179,8 +177,19 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Fatal))
             {
-                await Task.Run(() => log.Fatal(message, exception));
+                log.Fatal(message, exception);
             }
         }
     }
+
+#if NETSTANDARD
+    public class Logger<T> : Logger, ILogger<T>
+    {
+        public Logger(IOptions<Log4netOptions> options)
+            : base(typeof(T), options.Value)
+        {
+        }
+    }
+#endif
+
 }

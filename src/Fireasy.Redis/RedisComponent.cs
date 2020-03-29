@@ -258,14 +258,14 @@ namespace Fireasy.Redis
                     Options.WriteBuffer = (int)Setting.WriteBuffer;
                 }
 
-                if (Setting.ConnectTimeout.Milliseconds != 5000)
+                if (Setting.ConnectTimeout.TotalMilliseconds != 5000)
                 {
-                    Options.ConnectTimeout = Setting.ConnectTimeout.Milliseconds;
+                    Options.ConnectTimeout = (int)Setting.ConnectTimeout.TotalMilliseconds;
                 }
 
-                if (Setting.SyncTimeout.Milliseconds != 10000)
+                if (Setting.SyncTimeout.TotalMilliseconds != 10000)
                 {
-                    Options.SyncTimeout = Setting.SyncTimeout.Milliseconds;
+                    Options.SyncTimeout = (int)Setting.SyncTimeout.TotalMilliseconds;
                 }
 
                 foreach (var host in Setting.Hosts)

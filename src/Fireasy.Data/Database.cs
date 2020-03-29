@@ -698,7 +698,7 @@ namespace Fireasy.Data
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task UpdateAsync(DataTable dataTable, CancellationToken cancellationToken = default)
         {
-            await Task.Run(() => Update(dataTable));
+            Update(dataTable);
         }
 
         /// <summary>
@@ -750,7 +750,7 @@ namespace Fireasy.Data
         /// <returns></returns>
         public async Task<int> UpdateAsync(DataTable dataTable, SqlCommand insertCommand, SqlCommand updateCommand, SqlCommand deleteCommand, CancellationToken cancellationToken = default)
         {
-            return await Task.Run(() => Update(dataTable, insertCommand, updateCommand, deleteCommand));
+            return Update(dataTable, insertCommand, updateCommand, deleteCommand);
         }
 
         /// <summary>

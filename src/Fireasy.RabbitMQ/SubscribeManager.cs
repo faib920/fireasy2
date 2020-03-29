@@ -136,7 +136,7 @@ namespace Fireasy.RabbitMQ
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task PublishAsync<TSubject>(TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
         {
-            await Task.Run(() => Publish(subject));
+            Publish(subject);
         }
 
         /// <summary>
@@ -148,7 +148,7 @@ namespace Fireasy.RabbitMQ
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task PublishAsync<TSubject>(string name, TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
         {
-            await Task.Run(() => Publish(name, subject));
+            Publish(name, subject);
         }
 
         /// <summary>
@@ -188,7 +188,7 @@ namespace Fireasy.RabbitMQ
         /// <returns></returns>
         public async Task PublishAsync(string name, byte[] data, CancellationToken cancellationToken = default)
         {
-            await Task.Run(() => Publish(name, data));
+            Publish(name, data);
         }
 
         /// <summary>

@@ -42,16 +42,6 @@ namespace Fireasy.Common.Logging
         }
 
         /// <summary>
-        /// 获取一个 <see cref="ILogger"/> 的子实例。
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        public ILogger GetLogger<T>() where T : class
-        {
-            return TypificationDefaultLogger<T>.Instance;
-        }
-
-        /// <summary>
         /// 记录错误信息到日志。
         /// </summary>
         /// <param name="message">要记录的信息。</param>
@@ -287,26 +277,6 @@ namespace Fireasy.Common.Logging
             public string FileName { get; set; }
 
             public string Content { get; set; }
-        }
-    }
-
-    /// <summary>
-    /// 类型化的默认日志记录器。
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public class TypificationDefaultLogger<T> : DefaultLogger where T : class
-    {
-        public static TypificationDefaultLogger<T> Instance = new TypificationDefaultLogger<T>();
-
-        protected override string CreateLogFileName(string logType)
-        {
-            var path = Path.Combine(logFilePath, logType, DateTime.Today.ToString("yyyy-MM-dd"));
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-            }
-
-            return Path.Combine(path, typeof(T).Name + ".log");
         }
     }
 }

@@ -88,7 +88,7 @@ namespace Fireasy.MongoDB
         /// <returns>影响的实体数。</returns>
         public async Task<int> InsertAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
-            return await Task.Run(() => Insert(entity));
+            return Insert(entity);
         }
 
         /// <summary>
@@ -110,7 +110,7 @@ namespace Fireasy.MongoDB
         /// <returns>影响的实体数。</returns>
         public async Task<int> UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
-            return await Task.Run(() => Update(entity));
+            return Update(entity);
         }
 
         /// <summary>
@@ -133,7 +133,7 @@ namespace Fireasy.MongoDB
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task BatchInsertAsync(IEnumerable<TEntity> entities, int batchSize = 1000, Action<int> completePercentage = null, CancellationToken cancellationToken = default)
         {
-            await Task.Run(() => BatchInsert(entities, batchSize, completePercentage));
+            BatchInsert(entities, batchSize, completePercentage);
         }
 
         /// <summary>
@@ -159,7 +159,7 @@ namespace Fireasy.MongoDB
         /// <returns>影响的实体数。</returns>
         public async Task<int> DeleteAsync(TEntity entity, bool logicalDelete = true, CancellationToken cancellationToken = default)
         {
-            return await Task.Run(() => Delete(entity, logicalDelete));
+            return Delete(entity, logicalDelete);
         }
 
         /// <summary>
@@ -184,7 +184,7 @@ namespace Fireasy.MongoDB
         /// <returns>影响的实体数。</returns>
         public async Task<int> DeleteAsync(Expression<Func<TEntity, bool>> predicate, bool logicalDelete = true, CancellationToken cancellationToken = default)
         {
-            return await Task.Run(() => Delete(predicate, logicalDelete));
+            return Delete(predicate, logicalDelete);
         }
 
         /// <summary>
@@ -210,7 +210,7 @@ namespace Fireasy.MongoDB
         /// <returns>影响的实体数。</returns>
         public async Task<int> UpdateAsync(TEntity entity, Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         {
-            return await Task.Run(() => Update(entity, predicate));
+            return Update(entity, predicate);
         }
 
         /// <summary>
@@ -284,7 +284,7 @@ namespace Fireasy.MongoDB
         /// <returns></returns>
         public async Task<int> DeleteAsync(PropertyValue[] primaryValues, bool logicalDelete = true, CancellationToken cancellationToken = default)
         {
-            return await Task.Run(() => Delete(primaryValues, logicalDelete));
+            return Delete(primaryValues, logicalDelete);
         }
 
         /// <summary>
@@ -307,7 +307,7 @@ namespace Fireasy.MongoDB
         /// <returns></returns>
         public async Task<TEntity> GetAsync(PropertyValue[] primaryValues, CancellationToken cancellationToken = default)
         {
-            return await Task.Run(() => Get(primaryValues));
+            return Get(primaryValues);
         }
 
         /// <summary>

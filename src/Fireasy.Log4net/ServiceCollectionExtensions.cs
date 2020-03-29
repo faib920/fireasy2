@@ -22,9 +22,13 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IServiceCollection AddLog4netLogger(this IServiceCollection services, Action<Log4netOptions> setupAction = null)
         {
-            var options = new Log4netOptions();
-            setupAction?.Invoke(options);
-            services.AddSingleton(typeof(ILogger), p => new Logger(null, options));
+            if (setupAction != null)
+            {
+                services.Configure(setupAction);
+            }
+
+            services.AddSingleton(typeof(ILogger), typeof(Logger));
+            services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
             return services;
         }
     }

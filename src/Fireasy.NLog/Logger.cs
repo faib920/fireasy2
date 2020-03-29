@@ -7,9 +7,11 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Logging;
 using System;
-using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+#if NETSTANDARD
+using Microsoft.Extensions.Options;
+#endif
 
 namespace Fireasy.NLog
 {
@@ -19,23 +21,21 @@ namespace Fireasy.NLog
     public class Logger : ILogger
     {
         private readonly global::NLog.ILogger log;
-        private readonly NLogOptions options;
-        private static readonly ConcurrentDictionary<Type, ILogger> loggers = new ConcurrentDictionary<Type, ILogger>();
-
-        protected Logger(Type type)
-            : this (type, null)
-        {
-        }
 
         public Logger()
-            : this(null)
+            : this(null, null)
         {
         }
+
+#if NETSTANDARD
+        public Logger(IOptions<NLogOptions> options)
+            : this (null, options.Value)
+        {
+        }
+#endif
 
         public Logger(Type type, NLogOptions options)
         {
-            this.options = options;
-
             if (options != null && !string.IsNullOrEmpty(options.XmlFile))
             {
                 global::NLog.LogManager.Configuration = new global::NLog.Config.XmlLoggingConfiguration(options.XmlFile, true);
@@ -43,11 +43,6 @@ namespace Fireasy.NLog
 
             log = type == null ? global::NLog.LogManager.GetLogger("fireasy") :
                 global::NLog.LogManager.GetLogger("fireasy", type);
-        }
-
-        public ILogger GetLogger<T>() where T : class
-        {
-            return loggers.GetOrAdd(typeof(T), k =>new Logger(k, options));
         }
 
         /// <summary>
@@ -180,4 +175,14 @@ namespace Fireasy.NLog
             }
         }
     }
+
+#if NETSTANDARD
+    public class Logger<T> : Logger, ILogger<T>
+    {
+        public Logger(IOptions<NLogOptions> options)
+            : base (typeof(T), options.Value)
+        {
+        }
+    }
+#endif
 }

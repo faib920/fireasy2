@@ -100,7 +100,7 @@ namespace Fireasy.Common.Caching
         /// <param name="expiration">判断对象过期的对象。</param>
         public async Task AddAsync(TKey key, TValue value, ICacheItemExpiration expiration = null)
         {
-            await Task.Run(() => Add(key, value, expiration));
+            Add(key, value, expiration);
         }
 
         /// <summary>
@@ -176,7 +176,7 @@ namespace Fireasy.Common.Caching
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task RemoveAsync(TKey key, CancellationToken cancellationToken = default)
         {
-            await Task.Run(() => Remove(key));
+            Remove(key);
         }
 
         /// <summary>

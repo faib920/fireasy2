@@ -12,7 +12,7 @@
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Quartz.Net Provider</Product>
-    <Version>2.1.2</Version>
+    <Version>2.1.2.1</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>
       Quartz.Net 任务调度组件的实现。
