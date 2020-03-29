@@ -24,14 +24,16 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IServiceCollection AddQuartzScheduler(this IServiceCollection services, Action<QuartzScheduleOptions> setupAction = null)
         {
-            var options = new QuartzScheduleOptions();
-            setupAction?.Invoke(options);
+            if (setupAction != null)
+            {
+                services.Configure(setupAction);
+            }
 
-            services.AddSingleton(typeof(ITaskScheduler), p => new TaskScheduler(p, options));
+            services.AddSingleton<ITaskScheduler, TaskScheduler>();
 
             services.TryAddEnumerable(
                     ServiceDescriptor.Singleton<IHostedService, ITaskScheduler>(p => p.GetService<ITaskScheduler>()));
-            
+
             return services;
         }
     }

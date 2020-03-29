@@ -79,6 +79,17 @@ namespace Fireasy.Data.Syntax
         /// <summary>
         /// 对命令文本进行分段处理，使之能够返回小范围内的数据。
         /// </summary>
+        /// <param name="context">命令上下文对象。</param>
+        /// <exception cref="SegmentNotSupportedException">当前数据库或版本不支持分段时，引发该异常。</exception>
+        public virtual bool Segment(CommandContext context)
+        {
+            context.Command.CommandText = Segment(context.Command.CommandText, context.Segment);
+            return true;
+        }
+
+        /// <summary>
+        /// 对命令文本进行分段处理，使之能够返回小范围内的数据。
+        /// </summary>
         /// <param name="commandText">命令文本。</param>
         /// <param name="segment">数据分段对象。</param>
         /// <returns>处理后的分段命令文本。</returns>
@@ -87,16 +98,6 @@ namespace Fireasy.Data.Syntax
             return segment.Start != null ? 
                 $"{commandText} ROWS {segment.Start} TO {segment.End - 1}" : 
                 $"{commandText} ROWS {segment.Length}";
-        }
-
-        /// <summary>
-        /// 对命令文本进行分段处理，使之能够返回小范围内的数据。
-        /// </summary>
-        /// <param name="context">命令上下文对象。</param>
-        /// <returns>处理后的分段命令文本。</returns>
-        public virtual string Segment(CommandContext context)
-        {
-            return Segment(context.Command.CommandText, context.Segment);
         }
 
         /// <summary>

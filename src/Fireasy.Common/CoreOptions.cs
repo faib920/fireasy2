@@ -8,11 +8,17 @@
 #if NETSTANDARD
 using Fireasy.Common.Subscribes;
 using System;
+using System.Reflection;
 
 namespace Fireasy.Common
 {
     public class CoreOptions
     {
+        /// <summary>
+        /// 获取或设置用于过滤程序集的函数。
+        /// </summary>
+        public Func<AssemblyName, bool> AssemblyFilter { get; set; }
+
         /// <summary>
         /// 注册消息订阅器。
         /// </summary>

@@ -88,6 +88,9 @@ namespace Fireasy.Common.Configuration
                 {
                     var section = new T();
                     section.Bind(configuration.GetSection(key.Replace("/", ":")));
+
+                    Tracer.Debug($"The {typeof(T).Name} was bound.");
+
                     return section;
                 });
         }
@@ -156,11 +159,12 @@ namespace Fireasy.Common.Configuration
         /// </summary>
         /// <typeparam name="TSetting"></typeparam>
         /// <typeparam name="TInstance"></typeparam>
+        /// <param name="serviceProvider"></param>
         /// <param name="setting"></param>
-        /// <param name="valueCreator"></param>
+        /// <param name="typeGetter"></param>
         /// <param name="initializer"></param>
         /// <returns></returns>
-        public static TInstance CreateInstance<TSetting, TInstance>(IConfigurationSettingItem setting, Func<TSetting, Type> valueCreator, Action<TSetting, TInstance> initializer = null) where TSetting : class, IConfigurationSettingItem
+        public static TInstance CreateInstance<TSetting, TInstance>(IServiceProvider serviceProvider, IConfigurationSettingItem setting, Func<TSetting, Type> typeGetter, Action<TSetting, TInstance> initializer = null) where TSetting : class, IConfigurationSettingItem
         {
             var relSetting = setting as TSetting;
             IConfigurationSettingItem extendSetting = null;
@@ -170,12 +174,15 @@ namespace Fireasy.Common.Configuration
                 extendSetting = wsetting.Extend;
             }
 
-            if (relSetting == null || valueCreator(relSetting) == null)
+            Type type;
+            if (relSetting == null || (type = typeGetter(relSetting)) == null)
             {
                 return default;
             }
 
-            var instance = valueCreator(relSetting).New<TInstance>();
+            var instance = serviceProvider != null ? 
+                (TInstance)type.New(serviceProvider) : type.New<TInstance>().TryUseContainer();
+
             if (instance == null)
             {
                 return default;

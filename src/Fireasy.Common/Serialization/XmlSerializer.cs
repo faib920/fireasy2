@@ -8,7 +8,7 @@
 using System;
 using System.Globalization;
 using System.IO;
-using System.Threading.Tasks;
+using System.Text;
 using System.Xml;
 
 namespace Fireasy.Common.Serialization
@@ -56,15 +56,9 @@ namespace Fireasy.Common.Serialization
             return sw.ToString();
         }
 
-        /// <summary>
-        /// 异步方式将对象转换为使用文本表示。
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="value">要序列化的对象。</param>
-        /// <returns>表示对象的 Json 文本。</returns>
-        public async Task<string> SerializeAsync<T>(T value)
+        byte[] ISerializer.Serialize<T>(T value)
         {
-            return Serialize(value);
+            return Encoding.UTF8.GetBytes(Serialize(value));
         }
 
         /// <summary>
@@ -90,17 +84,6 @@ namespace Fireasy.Common.Serialization
         }
 
         /// <summary>
-        /// 异步方式将对象转换为使用文本并写入到流中。
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="value"></param>
-        /// <param name="writer"></param>
-        public async Task SerializeAsync<T>(T value, XmlTextWriter writer)
-        {
-            Serialize(value, writer);
-        }
-
-        /// <summary>
         /// 从 Xml 文本中解析出类型 <typeparamref name="T"/> 的对象。
         /// </summary>
         /// <typeparam name="T">可序列化的对象类型。</typeparam>
@@ -119,15 +102,14 @@ namespace Fireasy.Common.Serialization
             return deser.Deserialize<T>();
         }
 
-        /// <summary>
-        /// 异步方式从 Json 文本中解析出类型 <typeparamref name="T"/> 的对象。
-        /// </summary>
-        /// <typeparam name="T">可序列化的对象类型。</typeparam>
-        /// <param name="json">表示对象的 Json 文本。</param>
-        /// <returns>对象。</returns>
-        public async Task<T> DeserializeAsync<T>(string json)
+        T ISerializer.Deserialize<T>(byte[] bytes)
         {
-            return Deserialize<T>(json);
+            return Deserialize<T>(Encoding.UTF8.GetString(bytes));
+        }
+
+        object ISerializer.Deserialize(byte[] bytes, Type type)
+        {
+            return Deserialize(Encoding.UTF8.GetString(bytes), type);
         }
 
         /// <summary>
@@ -140,17 +122,6 @@ namespace Fireasy.Common.Serialization
         {
             using var deser = new XmlDeserialize(this, reader, Option);
             return deser.Deserialize<T>();
-        }
-
-        /// <summary>
-        /// 异步方式从流中读取文本，解析出类型 <paramref name="type"/> 的对象。
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="reader"></param>
-        /// <returns></returns>
-        public async Task<T> DeserializeAsync<T>(XmlTextReader reader)
-        {
-            return Deserialize<T>(reader);
         }
 
         /// <summary>
@@ -173,17 +144,6 @@ namespace Fireasy.Common.Serialization
         }
 
         /// <summary>
-        /// 异步方式从 Xml 文本中解析出类型 <paramref name="type"/> 的对象。
-        /// </summary>
-        /// <param name="json">表示对象的 Json 文本。</param>
-        /// <param name="type">可序列化的对象类型。</param>
-        /// <returns>对象。</returns>
-        public async Task<object> DeserializeAsync(string json, Type type)
-        {
-            return Deserialize(json, type);
-        }
-
-        /// <summary>
         /// 从 Xml 文本中解析出类型 <typeparamref name="T"/> 的对象，<typeparamref name="T"/> 可以是匿名类型。
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -193,18 +153,6 @@ namespace Fireasy.Common.Serialization
         public T Deserialize<T>(string xml, T anyObj)
         {
             return Deserialize<T>(xml);
-        }
-
-        /// <summary>
-        /// 异步方式从 Xml 文本中解析出类型 <typeparamref name="T"/> 的对象，<typeparamref name="T"/> 可以是匿名类型。
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="json">表示对象的 Json 文本</param>
-        /// <param name="anyObj">可序列化的匿名类型。</param>
-        /// <returns>对象。</returns>
-        public async Task<T> DeserializeAsync<T>(string json, T anyObj)
-        {
-            return Deserialize<T>(json);
         }
     }
 }

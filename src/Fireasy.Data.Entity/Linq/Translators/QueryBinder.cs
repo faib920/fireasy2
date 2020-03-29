@@ -3,11 +3,11 @@
 
 using Fireasy.Common.Dynamic;
 using Fireasy.Common.Extensions;
-using Fireasy.Common.Linq.Expressions;
 using Fireasy.Common.Reflection;
 using Fireasy.Data.Entity.Linq.Expressions;
 using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Entity.Properties;
+using Fireasy.Data.Entity.Query;
 using Fireasy.Data.Syntax;
 using System;
 using System.Collections;
@@ -1589,7 +1589,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 return null;
             }
 
-            if (projection.NodeType != DbExpressionType.Projection)
+            if ((DbExpressionType)projection.NodeType != DbExpressionType.Projection)
             {
                 return null;
             }

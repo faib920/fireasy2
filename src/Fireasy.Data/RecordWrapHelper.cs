@@ -1,4 +1,5 @@
-﻿using Fireasy.Data.RecordWrapper;
+﻿using Fireasy.Common.Extensions;
+using Fireasy.Data.RecordWrapper;
 using System;
 using System.Data;
 using System.Reflection;
@@ -68,7 +69,7 @@ namespace Fireasy.Data
             var method = GetGetValueMethod(reader.GetFieldType(index));
             if (method != null)
             {
-                return method.Invoke(wrapper, new object[] { reader, index });
+                return method.FastInvoke(wrapper, new object[] { reader, index });
             }
 
             return null;

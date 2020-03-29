@@ -79,7 +79,7 @@ namespace Fireasy.Common.Configuration
                             var typeName = node.GetAttributeValue(typeNodeName);
                             if (!string.IsNullOrEmpty(typeName))
                             {
-                                var type = Type.GetType(typeName, false, true);
+                                var type = Type.GetType(typeName, true, true);
 
                                 var extend = ParseSetting(node, type);
                                 if (extend != null)
@@ -96,6 +96,7 @@ namespace Fireasy.Common.Configuration
                     }
                     catch (Exception ex)
                     {
+                        Tracer.Error($"Read configuration section of '{nodeName}-{name}' throw exception:{ex.Output()}");
                         innerSettings.AddInvalidSetting(name, ex);
                     }
                 });
@@ -127,7 +128,7 @@ namespace Fireasy.Common.Configuration
                         var typeName = child.GetSection(typeNodeName).Value;
                         if (!string.IsNullOrEmpty(typeName))
                         {
-                            var type = Type.GetType(typeName, false, true);
+                            var type = Type.GetType(typeName, true, true);
 
                             var extend = ParseSetting(child, type);
                             if (extend != null)
@@ -144,6 +145,7 @@ namespace Fireasy.Common.Configuration
                 }
                 catch (Exception ex)
                 {
+                    Tracer.Error($"Read configuration section of '{nodeName}-{name}' throw exception:{ex.Output()}");
                     innerSettings.AddInvalidSetting(name, ex);
                 }
             }
@@ -161,6 +163,11 @@ namespace Fireasy.Common.Configuration
                 {
                     lock (locker)
                     {
+                        if (settings != null)
+                        {
+                            return settings;
+                        }
+
                         settings = new ConfigurationSettings<T>();
 
                         foreach (var kvp in innerSettings)
@@ -194,23 +201,6 @@ namespace Fireasy.Common.Configuration
             }
 
             return null;
-        }
-
-        /// <summary>
-        /// 根据是否忽略配置节处理接口来进行构造。
-        /// </summary>
-        /// <param name="node"></param>
-        /// <param name="type"></param>
-        /// <param name="func"></param>
-        /// <returns></returns>
-        private T GetSettingIgnore(XmlNode node, Type type, Func<XmlNode, T> func)
-        {
-            if (func != null && type.IsDefined<ConfigurationSettingIgnoreAttribute>())
-            {
-                return func(node);
-            }
-
-            return default;
         }
 
         private IConfigurationSettingItem ParseSetting(XmlNode node, Type type)

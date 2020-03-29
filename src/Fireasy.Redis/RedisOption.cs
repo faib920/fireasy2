@@ -6,12 +6,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if NETSTANDARD
+using Fireasy.Common.Options;
 using Fireasy.Common.Subscribes;
 using System;
 
 namespace Fireasy.Redis
 {
-    public class RedisOptionBase
+    public class RedisOptionsBase : IConfiguredOptions
     {
         /// <summary>
         /// 获取或设置配置中的实例名称。
@@ -66,23 +67,25 @@ namespace Fireasy.Redis
         /// <summary>
         /// 获取或设置上锁时间（秒）。默认为 10 秒钟。
         /// </summary>
-        public int LockTimeout { get; set; }
+        public TimeSpan LockTimeout { get; set; } = TimeSpan.FromSeconds(10);
 
         /// <summary>
         /// 获取或设置连接超时时间（毫秒）。默认为 5000 毫秒。
         /// </summary>
-        public int ConnectTimeout { get; set; } = 5000;
+        public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromMilliseconds(5000);
 
         /// <summary>
         /// 获取或设置发送/接收超时时间（毫秒）。默认为 10000 毫秒。
         /// </summary>
-        public int SyncTimeout { get; set; } = 10000;
+        public TimeSpan SyncTimeout { get; set; } = TimeSpan.FromMilliseconds(10000);
+
+        bool IConfiguredOptions.IsConfigured { get; set; }
     }
 
     /// <summary>
     /// Redis 缓存参数。
     /// </summary>
-    public class RedisCachingOptions : RedisOptionBase
+    public class RedisCachingOptions : RedisOptionsBase
     {
         /// <summary>
         /// 获取或设置数据库范围，格式如 1,2,3、1-5 或 1,2,4-7,9,10。
@@ -95,20 +98,20 @@ namespace Fireasy.Redis
         public string KeyRule { get; set; }
 
         /// <summary>
-        /// 获取或设置提前延期的时间比例。
+        /// 获取或设置滑行的时间。
         /// </summary>
-        public double? AdvanceDelay { get; set; }
+        public TimeSpan SlidingTime { get; set; }
     }
 
     /// <summary>
     /// Redis 消息发布与订阅参数。
     /// </summary>
-    public class RedisSubscribeOptions : RedisOptionBase
+    public class RedisSubscribeOptions : RedisOptionsBase
     {
         /// <summary>
         /// 获取或设置异常时重入队列的延迟时间（毫秒）。未指定表示不重入队列。
         /// </summary>
-        public int? RequeueDelayTime { get; set; }
+        public TimeSpan? RequeueDelayTime { get; set; }
 
         /// <summary>
         /// 获取或设置初始化方法。
@@ -119,7 +122,7 @@ namespace Fireasy.Redis
     /// <summary>
     /// Redis 分布式事务锁参数。
     /// </summary>
-    public class RedisDistributedLockerOptions : RedisOptionBase
+    public class RedisDistributedLockerOptions : RedisOptionsBase
     {
 
     }

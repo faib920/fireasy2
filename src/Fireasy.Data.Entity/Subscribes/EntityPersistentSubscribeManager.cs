@@ -6,6 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common;
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Subscribes;
 using System;
 using System.Collections.Generic;
@@ -18,13 +20,62 @@ namespace Fireasy.Data.Entity.Subscribes
     /// </summary>
     public class EntityPersistentSubscribeManager
     {
+        public static readonly InnerPersistentSubscribeManager Default = new InnerPersistentSubscribeManager();
+
+        private readonly static SafetyDictionary<Type, InnerPersistentSubscribeManager> managers = new SafetyDictionary<Type, InnerPersistentSubscribeManager>();
+
+        /// <summary>
+        /// 获取上下文的持久化订阅管理器，如果没有注册过，则注册与之对应的管理器。
+        /// </summary>
+        /// <typeparam name="TContext"></typeparam>
+        /// <returns></returns>
+        public static InnerPersistentSubscribeManager Get<TContext>() where TContext : EntityContext
+        {
+            return managers.GetOrAdd(typeof(TContext), k => new InnerPersistentSubscribeManager(k));
+        }
+
+        /// <summary>
+        /// 获取上下文的持久化订阅管理器，如果没有注册过，则注册与之对应的管理器。
+        /// </summary>
+        /// <param name="contextType"></param>
+        /// <returns></returns>
+        public static InnerPersistentSubscribeManager GetManager(Type contextType)
+        {
+            if (contextType == null)
+            {
+                return Default;
+            }
+
+            return managers.GetOrAdd(contextType, k => new InnerPersistentSubscribeManager(k));
+        }
+
+        /// <summary>
+        /// 获取上下文的持久化订阅管理器，如果没有注册与类型相对应的管理器，则返回默认的管理器。
+        /// </summary>
+        /// <param name="contextType"></param>
+        /// <returns></returns>
+        public static InnerPersistentSubscribeManager GetRequiredManager(Type contextType)
+        {
+            if (contextType == null)
+            {
+                return Default;
+            }
+
+            if (managers.TryGetValue(contextType, out InnerPersistentSubscribeManager mgr))
+            {
+                return mgr;
+            }
+
+            return Default;
+        }
+
         /// <summary>
         /// 添加一个读取实体持久化消息的方法。
         /// </summary>
         /// <param name="subscriber"></param>
         public static void AddSubscriber(Action<EntityPersistentSubject> subscriber)
         {
-            SynchronizedSubscribeManager.Instance.AddSubscriber<EntityPersistentSubject>(subscriber);
+            GetManager(null).AddSubscriber(subscriber);
         }
 
         /// <summary>
@@ -33,7 +84,7 @@ namespace Fireasy.Data.Entity.Subscribes
         /// <param name="subscriber"></param>
         public static void AddAsyncSubscriber(Func<EntityPersistentSubject, Task> subscriber)
         {
-            SynchronizedSubscribeManager.Instance.AddAsyncSubscriber<EntityPersistentSubject>(subscriber);
+            GetManager(null).AddAsyncSubscriber(subscriber);
         }
 
         /// <summary>
@@ -43,9 +94,57 @@ namespace Fireasy.Data.Entity.Subscribes
         /// <param name="entityTypes">一个数组，指定需要接收订阅消息的实体类型。</param>
         public static void AddSubscriber(Action<EntityPersistentSubject> subscriber, params Type[] entityTypes)
         {
+            GetManager(null).AddSubscriber(subscriber, entityTypes);
+        }
+
+        /// <summary>
+        /// 添加一个读取实体持久化消息的方法。
+        /// </summary>
+        /// <param name="subscriber"></param>
+        /// <param name="filter">一个函数，对接收的订阅消息进行过滤。</param>
+        public static void AddSubscriber(Action<EntityPersistentSubject> subscriber, Func<EntityPersistentSubject, bool> filter)
+        {
+            GetManager(null).AddSubscriber(subscriber, filter);
+        }
+    }
+
+    public class InnerPersistentSubscribeManager
+    {
+        private readonly ISubscribeManager subMgr;
+
+        internal protected InnerPersistentSubscribeManager(Type contextType = null)
+        {
+            subMgr = contextType != null ? new SynchronizedSubscribeManager() : SynchronizedSubscribeManager.Instance;
+        }
+
+        /// <summary>
+        /// 添加一个读取实体持久化消息的方法。
+        /// </summary>
+        /// <param name="subscriber"></param>
+        public void AddSubscriber(Action<EntityPersistentSubject> subscriber)
+        {
+            subMgr.AddSubscriber(subscriber);
+        }
+
+        /// <summary>
+        /// 添加一个异步的读取实体持久化消息的方法。
+        /// </summary>
+        /// <param name="subscriber"></param>
+        public void AddAsyncSubscriber(Func<EntityPersistentSubject, Task> subscriber)
+        {
+            subMgr.AddAsyncSubscriber(subscriber);
+        }
+
+        /// <summary>
+        /// 添加一个读取实体持久化消息的方法。
+        /// </summary>
+        /// <param name="subscriber"></param>
+        /// <param name="entityTypes">一个数组，指定需要接收订阅消息的实体类型。</param>
+        public void AddSubscriber(Action<EntityPersistentSubject> subscriber, params Type[] entityTypes)
+        {
             if (entityTypes == null || entityTypes.Length == 0)
             {
-                SynchronizedSubscribeManager.Instance.AddSubscriber(typeof(EntityPersistentSubject), subscriber);
+                subMgr.AddSubscriber(typeof(EntityPersistentSubject), subscriber);
                 return;
             }
 
@@ -60,7 +159,7 @@ namespace Fireasy.Data.Entity.Subscribes
                 }
             });
 
-            SynchronizedSubscribeManager.Instance.AddSubscriber(typeof(EntityPersistentSubject), action);
+            subMgr.AddSubscriber(typeof(EntityPersistentSubject), action);
         }
 
         /// <summary>
@@ -68,11 +167,11 @@ namespace Fireasy.Data.Entity.Subscribes
         /// </summary>
         /// <param name="subscriber"></param>
         /// <param name="filter">一个函数，对接收的订阅消息进行过滤。</param>
-        public static void AddSubscriber(Action<EntityPersistentSubject> subscriber, Func<EntityPersistentSubject, bool> filter)
+        public void AddSubscriber(Action<EntityPersistentSubject> subscriber, Func<EntityPersistentSubject, bool> filter)
         {
             if (filter == null)
             {
-                SynchronizedSubscribeManager.Instance.AddSubscriber(typeof(EntityPersistentSubject), subscriber);
+                subMgr.AddSubscriber(typeof(EntityPersistentSubject), subscriber);
                 return;
             }
 
@@ -84,10 +183,10 @@ namespace Fireasy.Data.Entity.Subscribes
                 }
             });
 
-            SynchronizedSubscribeManager.Instance.AddSubscriber(typeof(EntityPersistentSubject), action);
+            subMgr.AddSubscriber(typeof(EntityPersistentSubject), action);
         }
 
-        public static TResult OnCreate<TEntity, TResult>(bool notification, IEntity entity, Func<TResult> func)
+        public TResult OnCreate<TEntity, TResult>(bool notification, IEntity entity, Func<TResult> func)
         {
             if (!notification)
             {
@@ -104,7 +203,7 @@ namespace Fireasy.Data.Entity.Subscribes
             return ret;
         }
 
-        public static async Task<TResult> OnCreateAsync<TEntity, TResult>(bool notification, IEntity entity, Func<Task<TResult>> func)
+        public async Task<TResult> OnCreateAsync<TEntity, TResult>(bool notification, IEntity entity, Func<Task<TResult>> func)
         {
             if (!notification)
             {
@@ -121,7 +220,7 @@ namespace Fireasy.Data.Entity.Subscribes
             return ret;
         }
 
-        public static TResult OnUpdate<TEntity, TResult>(bool notification, IEntity entity, Func<TResult> func)
+        public TResult OnUpdate<TEntity, TResult>(bool notification, IEntity entity, Func<TResult> func)
         {
             if (!notification)
             {
@@ -138,7 +237,7 @@ namespace Fireasy.Data.Entity.Subscribes
             return ret;
         }
 
-        public static async Task<TResult> OnUpdateAsync<TEntity, TResult>(bool notification, IEntity entity, Func<Task<TResult>> func)
+        public async Task<TResult> OnUpdateAsync<TEntity, TResult>(bool notification, IEntity entity, Func<Task<TResult>> func)
         {
             if (!notification)
             {
@@ -155,7 +254,7 @@ namespace Fireasy.Data.Entity.Subscribes
             return ret;
         }
 
-        public static TResult OnRemove<TEntity, TResult>(bool notification, IEntity entity, Func<TResult> func)
+        public TResult OnRemove<TEntity, TResult>(bool notification, IEntity entity, Func<TResult> func)
         {
             if (!notification)
             {
@@ -172,7 +271,7 @@ namespace Fireasy.Data.Entity.Subscribes
             return ret;
         }
 
-        public static async Task<TResult> OnRemoveAsync<TEntity, TResult>(bool notification, IEntity entity, Func<Task<TResult>> func)
+        public async Task<TResult> OnRemoveAsync<TEntity, TResult>(bool notification, IEntity entity, Func<Task<TResult>> func)
         {
             if (!notification)
             {
@@ -189,7 +288,7 @@ namespace Fireasy.Data.Entity.Subscribes
             return ret;
         }
 
-        public static TResult OnBatch<TEntity, TResult>(bool notification, IEnumerable<IEntity> entities, EntityPersistentOperater operater, Func<TResult> func)
+        public TResult OnBatch<TEntity, TResult>(bool notification, IEnumerable<IEntity> entities, EntityPersistentOperater operater, Func<TResult> func)
         {
             if (!notification)
             {
@@ -206,7 +305,7 @@ namespace Fireasy.Data.Entity.Subscribes
             return ret;
         }
 
-        public static async Task<TResult> OnBatchAsync<TEntity, TResult>(bool notification, IEnumerable<IEntity> entities, EntityPersistentOperater operater, Func<Task<TResult>> func)
+        public async Task<TResult> OnBatchAsync<TEntity, TResult>(bool notification, IEnumerable<IEntity> entities, EntityPersistentOperater operater, Func<Task<TResult>> func)
         {
             if (!notification)
             {
@@ -223,32 +322,34 @@ namespace Fireasy.Data.Entity.Subscribes
             return ret;
         }
 
-        public static bool Publish<TEntity>(IEnumerable<IEntity> entities, EntityPersistentOperater operType, EntityPersistentEventType eventType)
+        public bool Publish<TEntity>(IEnumerable<IEntity> entities, EntityPersistentOperater operType, EntityPersistentEventType eventType)
         {
             var _event = new EntitiesArgs(entities, operType, eventType);
             var subject = new EntityPersistentSubject(typeof(TEntity), eventType, _event);
 
-            SynchronizedSubscribeManager.Instance.Publish(subject);
+            subMgr.Publish(subject);
 
             return !_event.Cancel;
         }
 
-        public static bool Publish<TEntity>(EntityPersistentEventType eventType)
+        public bool Publish<TEntity>(EntityPersistentEventType eventType)
         {
             var _event = new EntityEventTypeArgs(eventType);
             var subject = new EntityPersistentSubject(typeof(TEntity), eventType, _event);
 
-            SynchronizedSubscribeManager.Instance.Publish(subject);
+            subMgr.Publish(subject);
 
             return !_event.Cancel;
         }
 
-        public static bool Publish(IEntity entity, EntityPersistentEventType eventType)
+        public bool Publish(IEntity entity, EntityPersistentEventType eventType)
         {
+            Guard.ArgumentNull(entity, nameof(entity));
+
             var _event = new EntityEventArgs(entity, eventType);
             var subject = new EntityPersistentSubject(entity.EntityType, eventType, _event);
 
-            SynchronizedSubscribeManager.Instance.Publish(subject);
+            subMgr.Publish(subject);
 
             return !_event.Cancel;
         }

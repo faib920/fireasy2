@@ -31,7 +31,7 @@ namespace Fireasy.Common
         {
             lock (locker)
             {
-                return (Provider = services.BuildServiceProvider());
+                return Provider = services.BuildServiceProvider();
             }
         }
     }

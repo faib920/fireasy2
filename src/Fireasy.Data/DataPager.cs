@@ -149,6 +149,11 @@ namespace Fireasy.Data
         {
             get { return PageSize; }
         }
+
+        public override int GetHashCode()
+        {
+            return CurrentPageIndex * 388 ^ PageSize;
+        }
         #endregion
     }
 }

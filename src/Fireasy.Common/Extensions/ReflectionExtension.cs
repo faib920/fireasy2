@@ -447,7 +447,7 @@ namespace Fireasy.Common.Extensions
 
                 if (match == length)
                 {
-                    return cons.info.FastInvoke(arguments);
+                    return cons.info.FastInvoke(arguments).TrySetServiceProvider(serviceProvider);
                 }
             }
 

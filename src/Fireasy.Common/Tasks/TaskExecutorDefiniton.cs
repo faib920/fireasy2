@@ -5,12 +5,11 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if NETSTANDARD
 using System;
 
 namespace Fireasy.Common.Tasks
 {
-    public abstract class TaskExecutorDefiniton
+    public sealed class TaskExecutorDefiniton
     {
         /// <summary>
         /// 获取或设置延迟时间，默认为 0 毫秒。
@@ -27,15 +26,4 @@ namespace Fireasy.Common.Tasks
         /// </summary>
         public Type ExecutorType { get; set; }
     }
-
-    public class TaskExecutorDefiniton<T> : TaskExecutorDefiniton
-    {
-        public TaskExecutorDefiniton(TimeSpan delay, TimeSpan period)
-        {
-            Delay = delay;
-            Period = period;
-            ExecutorType = typeof(T);
-        }
-    }
 }
-#endif

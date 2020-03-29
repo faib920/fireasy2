@@ -8,8 +8,8 @@
 using Fireasy.Common;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Linq.Expressions;
-using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Metadata;
+using Fireasy.Data.Entity.Query;
 using Fireasy.Data.Syntax;
 using System;
 using System.Collections;

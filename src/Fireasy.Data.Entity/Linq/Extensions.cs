@@ -13,6 +13,7 @@ using Fireasy.Common.Linq.Expressions;
 using Fireasy.Common.Reflection;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Metadata;
+using Fireasy.Data.Entity.Query;
 using Fireasy.Data.Provider;
 using System;
 using System.Collections.Generic;
@@ -29,33 +30,36 @@ namespace Fireasy.Data.Entity.Linq
     /// </summary>
     public static class Extensions
     {
-        private static readonly MethodInfo MthCreateEntityAsync = typeof(Extensions).GetMethod(nameof(Extensions.CreateEntityAsync), BindingFlags.NonPublic | BindingFlags.Static);
-        private static readonly MethodInfo MthRemoveWhereAsync = typeof(Extensions).GetMethod(nameof(Extensions.RemoveWhereAsync), BindingFlags.NonPublic | BindingFlags.Static);
-        private static readonly MethodInfo MthUpdateWhereAsync = typeof(Extensions).GetMethod(nameof(Extensions.UpdateWhereAsync), BindingFlags.NonPublic | BindingFlags.Static);
-        private static readonly MethodInfo MthUpdateWhereByCalculatorAsync = typeof(Extensions).GetMethod(nameof(Extensions.UpdateWhereByCalculatorAsync), BindingFlags.NonPublic | BindingFlags.Static);
-        private static readonly MethodInfo MthBatchOperateAsync = typeof(Extensions).GetMethod(nameof(Extensions.BatchOperateAsync), BindingFlags.NonPublic | BindingFlags.Static);
-        private static readonly MethodInfo MthFirstOrDefaultAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.FirstOrDefaultAsync) && s.GetParameters().Length == 2);
-        private static readonly MethodInfo MthFirstOrDefaultAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.FirstOrDefaultAsync) && s.GetParameters().Length == 3);
-        private static readonly MethodInfo MthLastOrDefaultAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.LastOrDefaultAsync) && s.GetParameters().Length == 2);
-        private static readonly MethodInfo MthLastOrDefaultAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.LastOrDefaultAsync) && s.GetParameters().Length == 3);
-        private static readonly MethodInfo MthSingleOrDefaultAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.SingleOrDefaultAsync) && s.GetParameters().Length == 2);
-        private static readonly MethodInfo MthSingleOrDefaultAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.SingleOrDefaultAsync) && s.GetParameters().Length == 3);
-        private static readonly MethodInfo MthAnyAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.AnyAsync) && s.GetParameters().Length == 2);
-        private static readonly MethodInfo MthAnyAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.AnyAsync) && s.GetParameters().Length == 3);
-        private static readonly MethodInfo MthAllAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.AllAsync) && s.GetParameters().Length == 2);
-        private static readonly MethodInfo MthAllAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.AllAsync) && s.GetParameters().Length == 3);
-        private static readonly MethodInfo MthCountAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.CountAsync) && s.GetParameters().Length == 2);
-        private static readonly MethodInfo MthCountAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.CountAsync) && s.GetParameters().Length == 3);
-        private static readonly MethodInfo MthAverageAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.AverageAsync) && s.GetParameters().Length == 2);
-        private static readonly MethodInfo MthAverageAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.AverageAsync) && s.GetParameters().Length == 3);
-        private static readonly MethodInfo MthSumAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.SumAsync) && s.GetParameters().Length == 2);
-        private static readonly MethodInfo MthSumAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.SumAsync) && s.GetParameters().Length == 3);
-        private static readonly MethodInfo MthMinAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.MinAsync) && s.GetParameters().Length == 2);
-        private static readonly MethodInfo MthMinAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.MinAsync) && s.GetParameters().Length == 3);
-        private static readonly MethodInfo MthMaxAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.MaxAsync) && s.GetParameters().Length == 2);
-        private static readonly MethodInfo MthMaxAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.MaxAsync) && s.GetParameters().Length == 3);
-        private static readonly MethodInfo MthToListAsync = typeof(Extensions).GetMethod(nameof(Extensions.ToListAsync), BindingFlags.Public | BindingFlags.Static);
-        private static readonly MethodInfo MthExtendGenericAs = typeof(Extensions).GetMethod(nameof(Extensions.ExtendGenericAs), BindingFlags.NonPublic | BindingFlags.Static);
+        private class MethodCache
+        {
+            internal protected static readonly MethodInfo CreateEntityAsync = typeof(Extensions).GetMethod(nameof(Extensions.CreateEntityAsync), BindingFlags.NonPublic | BindingFlags.Static);
+            internal protected static readonly MethodInfo RemoveWhereAsync = typeof(Extensions).GetMethod(nameof(Extensions.RemoveWhereAsync), BindingFlags.NonPublic | BindingFlags.Static);
+            internal protected static readonly MethodInfo UpdateWhereAsync = typeof(Extensions).GetMethod(nameof(Extensions.UpdateWhereAsync), BindingFlags.NonPublic | BindingFlags.Static);
+            internal protected static readonly MethodInfo UpdateWhereByCalculatorAsync = typeof(Extensions).GetMethod(nameof(Extensions.UpdateWhereByCalculatorAsync), BindingFlags.NonPublic | BindingFlags.Static);
+            internal protected static readonly MethodInfo BatchOperateAsync = typeof(Extensions).GetMethod(nameof(Extensions.BatchOperateAsync), BindingFlags.NonPublic | BindingFlags.Static);
+            internal protected static readonly MethodInfo FirstOrDefaultAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.FirstOrDefaultAsync) && s.GetParameters().Length == 2);
+            internal protected static readonly MethodInfo FirstOrDefaultAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.FirstOrDefaultAsync) && s.GetParameters().Length == 3);
+            internal protected static readonly MethodInfo LastOrDefaultAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.LastOrDefaultAsync) && s.GetParameters().Length == 2);
+            internal protected static readonly MethodInfo LastOrDefaultAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.LastOrDefaultAsync) && s.GetParameters().Length == 3);
+            internal protected static readonly MethodInfo SingleOrDefaultAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.SingleOrDefaultAsync) && s.GetParameters().Length == 2);
+            internal protected static readonly MethodInfo SingleOrDefaultAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.SingleOrDefaultAsync) && s.GetParameters().Length == 3);
+            internal protected static readonly MethodInfo AnyAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.AnyAsync) && s.GetParameters().Length == 2);
+            internal protected static readonly MethodInfo AnyAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.AnyAsync) && s.GetParameters().Length == 3);
+            internal protected static readonly MethodInfo AllAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.AllAsync) && s.GetParameters().Length == 2);
+            internal protected static readonly MethodInfo AllAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.AllAsync) && s.GetParameters().Length == 3);
+            internal protected static readonly MethodInfo CountAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.CountAsync) && s.GetParameters().Length == 2);
+            internal protected static readonly MethodInfo CountAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.CountAsync) && s.GetParameters().Length == 3);
+            internal protected static readonly MethodInfo AverageAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.AverageAsync) && s.GetParameters().Length == 2);
+            internal protected static readonly MethodInfo AverageAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.AverageAsync) && s.GetParameters().Length == 3);
+            internal protected static readonly MethodInfo SumAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.SumAsync) && s.GetParameters().Length == 2);
+            internal protected static readonly MethodInfo SumAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.SumAsync) && s.GetParameters().Length == 3);
+            internal protected static readonly MethodInfo MinAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.MinAsync) && s.GetParameters().Length == 2);
+            internal protected static readonly MethodInfo MinAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.MinAsync) && s.GetParameters().Length == 3);
+            internal protected static readonly MethodInfo MaxAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.MaxAsync) && s.GetParameters().Length == 2);
+            internal protected static readonly MethodInfo MaxAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.MaxAsync) && s.GetParameters().Length == 3);
+            internal protected static readonly MethodInfo ToListAsync = typeof(Extensions).GetMethod(nameof(Extensions.ToListAsync), BindingFlags.Public | BindingFlags.Static);
+            internal protected static readonly MethodInfo ExtendGenericAs = typeof(Extensions).GetMethod(nameof(Extensions.ExtendGenericAs), BindingFlags.NonPublic | BindingFlags.Static);
+        }
 
         /// <summary>
         /// 使用 <see cref="IDataSegment"/> 对象对序列进行分段筛选，如果使用 <see cref="DataPager"/>，则可返回详细的分页信息(数据行数和页码总数)。
@@ -195,9 +199,7 @@ namespace Fireasy.Data.Entity.Linq
                 return source;
             }
 
-            var expression = Expression.Call(typeof(Queryable), nameof(Queryable.Where), new[] { typeof(TSource) }, source.Expression, isTruePredicate);
-
-            return source.Provider.CreateQuery<TSource>(expression);
+            return source.Where(isTruePredicate);
         }
 
         /// <summary>
@@ -216,9 +218,7 @@ namespace Fireasy.Data.Entity.Linq
                 return source;
             }
 
-            var expression = Expression.Call(typeof(Queryable), nameof(Queryable.Where), new[] { typeof(TSource) }, source.Expression, isTrue ? isTruePredicate : isFalsePredicate);
-
-            return source.Provider.CreateQuery<TSource>(expression);
+            return isTrue ? source.Where(isTruePredicate) : source.Where(isFalsePredicate);
         }
 
         /// <summary>
@@ -242,9 +242,7 @@ namespace Fireasy.Data.Entity.Linq
                 return source;
             }
 
-            var expression = Expression.Call(typeof(Queryable), nameof(Queryable.Where), new[] { typeof(TSource) }, source.Expression, isTruePredicate);
-
-            return source.Provider.CreateQuery<TSource>(expression);
+            return source.Where(isTruePredicate);
         }
 
         /// <summary>
@@ -266,14 +264,7 @@ namespace Fireasy.Data.Entity.Linq
             var builder = new SwitchBuilder<TSource, TValue>(value);
             buildAction(builder);
 
-            if (builder.Expression == null)
-            {
-                return source;
-            }
-
-            var expression = Expression.Call(typeof(Queryable), nameof(Queryable.Where), new[] { typeof(TSource) }, source.Expression, builder.Expression);
-
-            return source.Provider.CreateQuery<TSource>(expression);
+            return builder.Expression == null ? source : source.Where(builder.Expression);
         }
 
         /// <summary>
@@ -288,7 +279,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             var parExp = Expression.Parameter(typeof(TSource), "t");
 
-            var method = MthExtendGenericAs.MakeGenericMethod(typeof(TSource), typeof(TResult));
+            var method = MethodCache.ExtendGenericAs.MakeGenericMethod(typeof(TSource), typeof(TResult));
 
             var newExp = ExpressionReplacer.Replace(selector.Body, parExp);
             var newSelector = Expression.Lambda<Func<TResult>>(newExp);
@@ -326,9 +317,7 @@ namespace Fireasy.Data.Entity.Linq
             }
 
             var lambda = Expression.Lambda<Func<TSource, bool>>(expression, parExp);
-            expression = Expression.Call(typeof(Queryable), nameof(Queryable.Where), new[] { typeof(TSource) }, source.Expression, lambda);
-
-            return source.Provider.CreateQuery<TSource>(expression);
+            return source.Where(lambda);
         }
 
         /// <summary>
@@ -356,9 +345,7 @@ namespace Fireasy.Data.Entity.Linq
             }
 
             var lambda = Expression.Lambda<Func<TSource, bool>>(expression, parExp);
-            expression = Expression.Call(typeof(Queryable), nameof(Queryable.Where), new[] { typeof(TSource) }, source.Expression, lambda);
-
-            return source.Provider.CreateQuery<TSource>(expression);
+            return source.Where(lambda);
         }
 
         /// <summary>
@@ -682,7 +669,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthToListAsync.MakeGenericMethod(typeof(TSource));
+            var method = MethodCache.ToListAsync.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -717,7 +704,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthFirstOrDefaultAsync2.MakeGenericMethod(typeof(TSource));
+            var method = MethodCache.FirstOrDefaultAsync2.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -736,7 +723,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthFirstOrDefaultAsync3.MakeGenericMethod(typeof(TSource));
+            var method = MethodCache.FirstOrDefaultAsync3.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -754,7 +741,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthLastOrDefaultAsync2.MakeGenericMethod(typeof(TSource));
+            var method = MethodCache.LastOrDefaultAsync2.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -773,7 +760,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthLastOrDefaultAsync3.MakeGenericMethod(typeof(TSource));
+            var method = MethodCache.LastOrDefaultAsync3.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -791,7 +778,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthSingleOrDefaultAsync2.MakeGenericMethod(typeof(TSource));
+            var method = MethodCache.SingleOrDefaultAsync2.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -810,7 +797,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthSingleOrDefaultAsync3.MakeGenericMethod(typeof(TSource));
+            var method = MethodCache.SingleOrDefaultAsync3.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -828,7 +815,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthAnyAsync2.MakeGenericMethod(typeof(TSource));
+            var method = MethodCache.AnyAsync2.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -847,7 +834,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthAnyAsync3.MakeGenericMethod(typeof(TSource));
+            var method = MethodCache.AnyAsync3.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -865,7 +852,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthAllAsync2.MakeGenericMethod(typeof(TSource));
+            var method = MethodCache.AllAsync2.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -884,7 +871,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthAllAsync3.MakeGenericMethod(typeof(TSource));
+            var method = MethodCache.AllAsync3.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -902,7 +889,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthCountAsync2.MakeGenericMethod(typeof(TSource));
+            var method = MethodCache.CountAsync2.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -921,7 +908,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthCountAsync3.MakeGenericMethod(typeof(TSource));
+            var method = MethodCache.CountAsync3.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -939,7 +926,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthAverageAsync2.MakeGenericMethod(typeof(TResult));
+            var method = MethodCache.AverageAsync2.MakeGenericMethod(typeof(TResult));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -959,7 +946,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthAverageAsync3.MakeGenericMethod(typeof(TSource), typeof(TResult));
+            var method = MethodCache.AverageAsync3.MakeGenericMethod(typeof(TSource), typeof(TResult));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), selector, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -977,7 +964,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthSumAsync2.MakeGenericMethod(typeof(TResult));
+            var method = MethodCache.SumAsync2.MakeGenericMethod(typeof(TResult));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -997,7 +984,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthSumAsync3.MakeGenericMethod(typeof(TSource), typeof(TResult));
+            var method = MethodCache.SumAsync3.MakeGenericMethod(typeof(TSource), typeof(TResult));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), selector, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -1015,7 +1002,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthMaxAsync2.MakeGenericMethod(typeof(TResult));
+            var method = MethodCache.MaxAsync2.MakeGenericMethod(typeof(TResult));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -1035,7 +1022,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthMaxAsync3.MakeGenericMethod(typeof(TSource), typeof(TResult));
+            var method = MethodCache.MaxAsync3.MakeGenericMethod(typeof(TSource), typeof(TResult));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), selector, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -1053,7 +1040,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthMinAsync2.MakeGenericMethod(typeof(TResult));
+            var method = MethodCache.MinAsync2.MakeGenericMethod(typeof(TResult));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -1073,7 +1060,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             CheckAsyncImplementd(source.Provider);
 
-            var method = MthMinAsync3.MakeGenericMethod(typeof(TSource), typeof(TResult));
+            var method = MethodCache.MinAsync3.MakeGenericMethod(typeof(TSource), typeof(TResult));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), selector, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -1132,7 +1119,7 @@ namespace Fireasy.Data.Entity.Linq
                 return default;
             }
 
-            var method = MthFirstOrDefaultAsync3.MakeGenericMethod(typeof(T));
+            var method = MethodCache.FirstOrDefaultAsync3.MakeGenericMethod(typeof(T));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -1206,7 +1193,7 @@ namespace Fireasy.Data.Entity.Linq
             CheckRepositoryIsReadonly(source.ElementType);
             CheckAsyncImplementd(source.Provider);
 
-            var expression = Expression.Call(null, MthCreateEntityAsync,
+            var expression = Expression.Call(null, MethodCache.CreateEntityAsync,
                 new[] { Expression.Constant(source), (Expression)Expression.Constant(entity), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
             var primary = PropertyUnity.GetPrimaryProperties(entity.EntityType).FirstOrDefault(s => s.Info.GenerateType != IdentityGenerateType.None);
@@ -1370,7 +1357,7 @@ namespace Fireasy.Data.Entity.Linq
             CheckAsyncImplementd(source.Provider);
 
             predicate ??= Expression.Lambda(Expression.Equal(Expression.Constant(1), Expression.Constant(1)), Expression.Parameter(source.ElementType, "s"));
-            var expression = Expression.Call(null, MthRemoveWhereAsync,
+            var expression = Expression.Call(null, MethodCache.RemoveWhereAsync,
                 new[] { Expression.Constant(source), predicate, (Expression)Expression.Constant(logicalDelete), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
             return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<int>(expression, cancellationToken);
@@ -1408,7 +1395,7 @@ namespace Fireasy.Data.Entity.Linq
             CheckAsyncImplementd(source.Provider);
 
             predicate ??= Expression.Lambda(Expression.Equal(Expression.Constant(1), Expression.Constant(1)), Expression.Parameter(entity.EntityType, "s"));
-            var expression = Expression.Call(null, MthUpdateWhereAsync,
+            var expression = Expression.Call(null, MethodCache.UpdateWhereAsync,
                 new[] { Expression.Constant(source), (Expression)Expression.Constant(entity), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
             return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<int>(expression, cancellationToken);
@@ -1446,7 +1433,7 @@ namespace Fireasy.Data.Entity.Linq
             CheckAsyncImplementd(source.Provider);
 
             predicate ??= Expression.Lambda(Expression.Equal(Expression.Constant(1), Expression.Constant(1)), Expression.Parameter(source.ElementType, "s"));
-            var expression = Expression.Call(null, MthUpdateWhereByCalculatorAsync,
+            var expression = Expression.Call(null, MethodCache.UpdateWhereByCalculatorAsync,
                 new[] { Expression.Constant(source), (Expression)calculator, predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
             return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<int>(expression, cancellationToken);
@@ -1478,7 +1465,7 @@ namespace Fireasy.Data.Entity.Linq
                 return 0;
             }
 
-            var expression = Expression.Call(null, MthBatchOperateAsync,
+            var expression = Expression.Call(null, MethodCache.BatchOperateAsync,
                 new[] { Expression.Constant(source), (Expression)Expression.Constant(entitites), fnOperation, Expression.Constant(batchOpt, typeof(BatchOperateOptions)), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
             return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<int>(expression, cancellationToken);

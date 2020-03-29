@@ -41,11 +41,11 @@ namespace Fireasy.Redis
                 setting.Password = configNode.GetAttributeValue("password");
                 setting.Ssl = configNode.GetAttributeValue<bool>("ssl");
                 setting.WriteBuffer = configNode.GetAttributeValue<int?>("writeBuffer");
-                setting.AdvanceDelay = configNode.GetAttributeValue<double?>("advanceDelay");
-                setting.LockTimeout = configNode.GetAttributeValue("lockTimeout", 10);
-                setting.ConnectTimeout = configNode.GetAttributeValue("connectTimeout", 5000);
-                setting.SyncTimeout = configNode.GetAttributeValue("syncTimeout", 10000);
-                setting.RequeueDelayTime = configNode.GetAttributeValue("requeueDelayTime").To<int?>();
+                setting.LockTimeout = configNode.GetAttributeValue("lockTimeout").ToTimeSpan(TimeSpan.FromSeconds(10));
+                setting.ConnectTimeout = configNode.GetAttributeValue("connectTimeout").ToTimeSpan(TimeSpan.FromMilliseconds(5000));
+                setting.SyncTimeout = configNode.GetAttributeValue("syncTimeout").ToTimeSpan(TimeSpan.FromMilliseconds(10000));
+                setting.RequeueDelayTime = configNode.GetAttributeValue("requeueDelayTime").ToTimeSpan();
+                setting.SlidingTime = configNode.GetAttributeValue("slidingTime").ToTimeSpan();
 
                 foreach (XmlNode nd in configNode.SelectNodes("host"))
                 {
@@ -83,11 +83,11 @@ namespace Fireasy.Redis
                 setting.Password = configNode["password"];
                 setting.Ssl = configNode["ssl"].To<bool>();
                 setting.WriteBuffer = configNode["writeBuffer"].To<int?>();
-                setting.AdvanceDelay = configNode["advanceDelay"].To<double?>();
-                setting.LockTimeout = configNode["lockTimeout"].To(10);
-                setting.ConnectTimeout = configNode["connectTimeout"].To(5000);
-                setting.SyncTimeout = configNode["syncTimeout"].To(10000);
-                setting.RequeueDelayTime = configNode["requeueDelayTime"].To<int?>();
+                setting.LockTimeout = configNode["lockTimeout"].ToTimeSpan(TimeSpan.FromSeconds(10));
+                setting.ConnectTimeout = configNode["connectTimeout"].ToTimeSpan(TimeSpan.FromMilliseconds(5000));
+                setting.SyncTimeout = configNode["syncTimeout"].ToTimeSpan(TimeSpan.FromMilliseconds(10000));
+                setting.RequeueDelayTime = configNode["requeueDelayTime"].ToTimeSpan();
+                setting.SlidingTime = configNode["slidingTime"].ToTimeSpan();
 
                 foreach (var nd in configNode.GetSection("host").GetChildren())
                 {

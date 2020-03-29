@@ -46,52 +46,46 @@ namespace Fireasy.Data.Schema
         {
             var restrictionValues = SchemaQueryTranslator.GetRestrictions<T>(predicate, dicRestrMbrs);
 
-            using (var connection = database.CreateConnection())
+            using var connection = database.CreateConnection();
+            try
             {
-                try
+                switch (GetCategory<T>())
                 {
-                    switch (GetCategory<T>())
-                    {
-                        case SchemaCategory.Database:
-                            return (IEnumerable<T>)GetDatabases(database, restrictionValues);
-                        case SchemaCategory.DataType:
-                            return (IEnumerable<T>)GetDataTypes(database, restrictionValues);
-                        case SchemaCategory.MetadataCollection:
-                            return (IEnumerable<T>)GetMetadataCollections(database, restrictionValues);
-                        case SchemaCategory.ReservedWord:
-                            return (IEnumerable<T>)GetReservedWords(database, restrictionValues);
-                        case SchemaCategory.Table:
-                            return (IEnumerable<T>)GetTables(database, restrictionValues);
-                        case SchemaCategory.Column:
-                            return (IEnumerable<T>)GetColumns(database, restrictionValues);
-                        case SchemaCategory.View:
-                            return (IEnumerable<T>)GetViews(database, restrictionValues);
-                        case SchemaCategory.ViewColumn:
-                            return (IEnumerable<T>)GetViewColumns(database, restrictionValues);
-                        case SchemaCategory.Index:
-                            return (IEnumerable<T>)GetIndexs(database, restrictionValues);
-                        case SchemaCategory.IndexColumn:
-                            return (IEnumerable<T>)GetIndexColumns(database, restrictionValues);
-                        case SchemaCategory.Procedure:
-                            return (IEnumerable<T>)GetProcedures(database, restrictionValues);
-                        case SchemaCategory.ProcedureParameter:
-                            return (IEnumerable<T>)GetProcedureParameters(database, restrictionValues);
-                        case SchemaCategory.ForeignKey:
-                            return (IEnumerable<T>)GetForeignKeys(database, restrictionValues);
-                        case SchemaCategory.User:
-                            return (IEnumerable<T>)GetUsers(database, restrictionValues);
-                        default:
-                            return Enumerable.Empty<T>();
-                    }
+                    case SchemaCategory.Database:
+                        return (IEnumerable<T>)GetDatabases(database, restrictionValues);
+                    case SchemaCategory.DataType:
+                        return (IEnumerable<T>)GetDataTypes(database, restrictionValues);
+                    case SchemaCategory.MetadataCollection:
+                        return (IEnumerable<T>)GetMetadataCollections(database, restrictionValues);
+                    case SchemaCategory.ReservedWord:
+                        return (IEnumerable<T>)GetReservedWords(database, restrictionValues);
+                    case SchemaCategory.Table:
+                        return (IEnumerable<T>)GetTables(database, restrictionValues);
+                    case SchemaCategory.Column:
+                        return (IEnumerable<T>)GetColumns(database, restrictionValues);
+                    case SchemaCategory.View:
+                        return (IEnumerable<T>)GetViews(database, restrictionValues);
+                    case SchemaCategory.ViewColumn:
+                        return (IEnumerable<T>)GetViewColumns(database, restrictionValues);
+                    case SchemaCategory.Index:
+                        return (IEnumerable<T>)GetIndexs(database, restrictionValues);
+                    case SchemaCategory.IndexColumn:
+                        return (IEnumerable<T>)GetIndexColumns(database, restrictionValues);
+                    case SchemaCategory.Procedure:
+                        return (IEnumerable<T>)GetProcedures(database, restrictionValues);
+                    case SchemaCategory.ProcedureParameter:
+                        return (IEnumerable<T>)GetProcedureParameters(database, restrictionValues);
+                    case SchemaCategory.ForeignKey:
+                        return (IEnumerable<T>)GetForeignKeys(database, restrictionValues);
+                    case SchemaCategory.User:
+                        return (IEnumerable<T>)GetUsers(database, restrictionValues);
+                    default:
+                        return Enumerable.Empty<T>();
                 }
-                catch (Exception ex)
-                {
-                    throw new SchemaException(typeof(T).Name, ex);
-                }
-                finally
-                {
-                    connection.TryClose();
-                }
+            }
+            catch (Exception ex)
+            {
+                throw new SchemaException(typeof(T).Name, ex);
             }
         }
 

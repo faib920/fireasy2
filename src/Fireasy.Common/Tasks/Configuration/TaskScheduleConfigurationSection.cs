@@ -76,8 +76,8 @@ namespace Fireasy.Common.Tasks.Configuration
             foreach (XmlNode child in root.SelectNodes("executors"))
             {
                 var executorType = child.GetAttributeValue("type");
-                var delay = child.GetAttributeValue("delay").GetTimeSpan();
-                var period = child.GetAttributeValue("period").GetTimeSpan(TimeSpan.FromMinutes(10));
+                var delay = child.GetAttributeValue("delay").ToTimeSpan();
+                var period = child.GetAttributeValue("period").ToTimeSpan(TimeSpan.FromMinutes(10));
 
                 setting.ExecutorSettings.Add(new TaskExecutorSetting
                 {
@@ -96,8 +96,8 @@ namespace Fireasy.Common.Tasks.Configuration
             foreach (var child in config.GetSection("executors").GetChildren())
             {
                 var executorType = child.GetSection("type").Value;
-                var delay = child.GetSection("delay").Value.GetTimeSpan();
-                var period = child.GetSection("period").Value.GetTimeSpan(TimeSpan.FromMinutes(10));
+                var delay = child.GetSection("delay").Value.ToTimeSpan();
+                var period = child.GetSection("period").Value.ToTimeSpan(TimeSpan.FromMinutes(10));
 
                 setting.ExecutorSettings.Add(new TaskExecutorSetting
                 {

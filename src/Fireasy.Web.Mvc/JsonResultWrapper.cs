@@ -5,10 +5,13 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
+using Fireasy.Common.Ioc;
 using Fireasy.Common.Serialization;
 #if !NETCOREAPP
 using System;
 using System.Linq;
+using System.Text;
 using System.Web.Mvc;
 #else
 using Microsoft.AspNetCore.Mvc;
@@ -118,8 +121,16 @@ namespace Fireasy.Web.Mvc
             //jsonp的处理
             var jsoncallback = context.HttpContext.Request.Form["callback"];
 
-            var serializer = new JsonSerializer(option);
-            var json = serializer.Serialize(data);
+            var serializer = ContainerUnity.GetContainer().TryGetService<ISerializer>(() => new JsonSerializer(option));
+            string json;
+            if (serializer is ITextSerializer txtSerializer)
+            {
+                json = txtSerializer.Serialize(data);
+            }
+            else
+            {
+                json = Encoding.UTF8.GetString(serializer.Serialize(data));
+            }
 
             if (!string.IsNullOrEmpty(jsoncallback))
             {

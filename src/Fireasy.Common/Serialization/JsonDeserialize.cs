@@ -716,15 +716,5 @@ namespace Fireasy.Common.Serialization
 
             return dic;
         }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                jsonReader.Dispose();
-            }
-
-            base.Dispose(disposing);
-        }
     }
 }

@@ -64,9 +64,11 @@ namespace Fireasy.Common.Caching
             return item;
         }
 
-        protected override void Dispose(bool disposing)
+        protected override bool Dispose(bool disposing)
         {
             timer?.Dispose();
+
+            return base.Dispose(disposing);
         }
     }
 }

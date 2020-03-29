@@ -85,22 +85,25 @@ namespace Fireasy.Data.Syntax
         /// 对命令文本进行分段处理，使之能够返回小范围内的数据。
         /// </summary>
         /// <param name="context">命令上下文对象。</param>
-        /// <returns>处理后的分段命令文本。</returns>
         /// <exception cref="SegmentNotSupportedException">当前数据库或版本不支持分段时，引发该异常。</exception>
-        public virtual string Segment(CommandContext context)
+        public virtual bool Segment(CommandContext context)
         {
             //取版本号，sql server 2005(9.0)以下不支持分页
             var version = GetServerVersion(context.Database);
             if (version < 9)
             {
-                throw new SegmentNotSupportedException();
+                return false;
             }
             else if (version >= 11)
             {
-                return SegmentWith2012(context.Command.CommandText, context.Segment);
+                context.Command.CommandText = SegmentWith2012(context.Command.CommandText, context.Segment);
+            }
+            else
+            {
+                context.Command.CommandText = Segment(context.Command.CommandText, context.Segment);
             }
 
-            return Segment(context.Command.CommandText, context.Segment);
+            return true;
         }
 
         /// <summary>

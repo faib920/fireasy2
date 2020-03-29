@@ -34,6 +34,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
         private int dept;
         private readonly Dictionary<TableAlias, string> aliases;
         private IDataSegment dataSegment;
+        private bool hideTableAliases;
+        private bool hideColumnAliases;
 
         /// <summary>
         /// 获取或设置是否嵌套查询。
@@ -52,6 +54,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
             if (TranslateScope.Current != null)
             {
                 Options = TranslateScope.Current.Options;
+                hideTableAliases = Options.HideTableAliases;
+                hideColumnAliases = Options.HideColumnAliases;
                 Syntax = TranslateScope.Current.SyntaxProvider;
                 Environment = TranslateScope.Current.PersistentEnvironment;
             }
@@ -653,7 +657,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             if (!(column is SubqueryColumnExpression sqc))
             {
-                if (column.Alias != null && !Options.HideColumnAliases)
+                if (column.Alias != null && !hideColumnAliases)
                 {
                     Write(GetAliasName(column.Alias));
                     Write(".");
@@ -664,7 +668,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             else
             {
                 var alias = string.Empty;
-                if (column.Alias != null && !Options.HideColumnAliases)
+                if (column.Alias != null && !hideColumnAliases)
                 {
                     alias = GetAliasName(column.Alias) + ".";
                 }
@@ -759,7 +763,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     var tableName = GetTableName(table);
                     Write(DbUtility.FormatByQuote(Syntax, tableName));
 
-                    if (!Options.HideTableAliases)
+                    if (!hideTableAliases)
                     {
                         WriteAs();
                         Write(GetAliasName(table.Alias));
@@ -2019,14 +2023,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <param name="func"></param>
         protected Expression HideAliases(Func<Expression> func)
         {
-            var hideTableAliases = Options.HideTableAliases;
-            var hideColumnAliases = Options.HideColumnAliases;
-            Options.HideTableAliases = Options.HideColumnAliases = true;
+            var _hideTableAliases = hideTableAliases;
+            var _hideColumnAliases = hideColumnAliases;
+            hideTableAliases = hideColumnAliases = true;
 
             var exp = func?.Invoke();
 
-            Options.HideColumnAliases = hideColumnAliases;
-            Options.HideTableAliases = hideTableAliases;
+            hideTableAliases = _hideColumnAliases;
+            hideColumnAliases = _hideTableAliases;
 
             return exp;
         }

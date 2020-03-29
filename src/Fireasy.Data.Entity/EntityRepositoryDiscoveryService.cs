@@ -5,11 +5,14 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common;
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Initializers;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -21,8 +24,8 @@ namespace Fireasy.Data.Entity
         #region Fields and constructors
 
         // AppDomain cache collection initializers for a known type.
-        private static readonly ConcurrentDictionary<Type, EntityContextTypesInitializersPair> objectSetInitializers =
-            new ConcurrentDictionary<Type, EntityContextTypesInitializersPair>();
+        private static readonly SafetyDictionary<Type, EntityContextTypesInitializersPair> objectSetInitializers =
+            new SafetyDictionary<Type, EntityContextTypesInitializersPair>();
 
         // Used by the code below to create DbSet instances
         private static readonly MethodInfo SetRepositoryMethod = typeof(EntityContext).GetMethods().FirstOrDefault(s => s.Name == nameof(EntityContext.Set) && s.IsGenericMethod);
@@ -56,8 +59,10 @@ namespace Fireasy.Data.Entity
         private EntityContextTypesInitializersPair GetSets()
         {
             var contextType = context.GetType();
-            return objectSetInitializers.GetOrAdd(contextType, key =>
+            return objectSetInitializers.GetOrAdd(contextType, k =>
             {
+                var watch = Stopwatch.StartNew();
+
                 // It is possible that multiple threads will enter this code and create the list
                 // and the delegates.  However, the result will always be the same so we may, in
                 // the rare cases in which this happens, do some work twice, but functionally the
@@ -69,7 +74,7 @@ namespace Fireasy.Data.Entity
                 var typeMap = new Dictionary<Type, List<string>>();
 
                 var reposMaps = (from s in
-                    key.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    k.GetProperties(BindingFlags.Public | BindingFlags.Instance)
                     .Where(p => p.GetIndexParameters().Length == 0
                         && p.DeclaringType != typeof(EntityContext))
                                  let entityType = GetSetType(s.PropertyType)
@@ -116,13 +121,15 @@ namespace Fireasy.Data.Entity
                     }
                 }
 
-                Action<EntityContext> initializer = dbContext =>
+                void initializer(EntityContext dbContext)
                 {
                     foreach (var initer in initDelegates)
                     {
                         initer(dbContext);
                     }
-                };
+                }
+
+                Tracer.Debug($"The repositories of {contextType.Name} was initialized ({watch.ElapsedMilliseconds}ms).");
 
                 return new EntityContextTypesInitializersPair(typeMap, initializer);
             });

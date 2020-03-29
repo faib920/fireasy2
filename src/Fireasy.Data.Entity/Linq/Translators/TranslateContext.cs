@@ -8,6 +8,7 @@
 using Fireasy.Common;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Providers;
+using Fireasy.Data.Entity.Query;
 using Fireasy.Data.Provider;
 using Fireasy.Data.Syntax;
 using System;

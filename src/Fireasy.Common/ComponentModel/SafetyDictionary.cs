@@ -161,6 +161,26 @@ namespace Fireasy.Common.ComponentModel
         }
 
         /// <summary>
+        /// 添加或修改指定 key 的值。
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="addOrUpdateFactory"></param>
+        /// <returns></returns>
+        public TValue AddOrUpdate(TKey key, Func<TKey, TValue> addOrUpdateFactory)
+        {
+            var lazy = LazyValues.AddOrUpdate(key,
+                k => new Lazy<TValue>(() => addOrUpdateFactory(key), mode),
+                (k, v) => new Lazy<TValue>(() => addOrUpdateFactory(key), mode));
+
+            if (lazy != null)
+            {
+                return lazy.Value;
+            }
+
+            return default;
+        }
+
+        /// <summary>
         /// 尝试从字典里移除指定 key 的值。
         /// </summary>
         /// <param name="key"></param>

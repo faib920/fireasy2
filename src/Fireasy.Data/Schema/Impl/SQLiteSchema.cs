@@ -134,6 +134,58 @@ PRAGMA main.TABLE_INFO('{tb.Name}')";
             return columns;
         }
 
+        protected override IEnumerable<View> GetViews(IDatabase database, RestrictionDictionary restrictionValues)
+        {
+            var parameters = new ParameterCollection();
+
+            SqlCommand sql = $@"
+SELECT name, type FROM main.sqlite_master
+WHERE type LIKE 'view'
+AND (name = @NAME OR @NAME IS NULL)";
+
+            restrictionValues.Parameterize(parameters, "NAME", nameof(View.Name));
+
+            return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new View
+            {
+                Catalog = "main",
+                Name = wrapper.GetString(reader, 0)
+            });
+        }
+        protected override IEnumerable<ViewColumn> GetViewColumns(IDatabase database, RestrictionDictionary restrictionValues)
+        {
+            var parameters = new ParameterCollection();
+
+            var columns = new List<ViewColumn>();
+
+            //如果指定使用表名查询
+            if (restrictionValues.TryGetValue(nameof(ViewColumn.ViewName), out string tableName))
+            {
+                SqlCommand sql = $@"
+PRAGMA main.TABLE_INFO('{tableName}')";
+
+                columns.AddRange(GetViewColumns(database, tableName));
+            }
+            else
+            {
+                //循环所有表，对每个表进行查询
+                foreach (var tb in GetViews(database, RestrictionDictionary.Empty))
+                {
+                    SqlCommand sql = $@"
+PRAGMA main.TABLE_INFO('{tb.Name}')";
+
+                    columns.AddRange(GetViewColumns(database, tb.Name));
+                }
+            }
+
+            //如果使用列名进行查询
+            if (restrictionValues.TryGetValue(nameof(ViewColumn.Name), out string columnName))
+            {
+                columns = columns.Where(s => s.Name == columnName).ToList();
+            }
+
+            return columns;
+        }
+
         [SuppressMessage("Security", "CA2100")]
         private List<Column> GetColumns(IDatabase database, string tableName)
         {
@@ -148,12 +200,61 @@ PRAGMA main.TABLE_INFO('{tb.Name}')";
                 IsPrimaryKey = wrapper.GetInt32(reader, 5) == 1
             }).ToList();
 
+            if (database.Provider.DbProviderFactory.GetType().Assembly.GetName().Name != "System.Data.SQLite")
+            {
+                return columns;
+            }
+
             var sql = $"select * from main.[{tableName}]";
+
+            using var command = database.Provider.DbProviderFactory.CreateCommand();
+            if (database.Connection.State != ConnectionState.Open)
+            {
+                database.Connection.Open();
+            }
+
+            command.CommandText = sql;
+            command.Connection = database.Connection;
+            using var reader = command.ExecuteReader(CommandBehavior.SchemaOnly);
+            var table = reader.GetSchemaTable();
+
+            foreach (DataRow row in table.Rows)
+            {
+                var column = columns.FirstOrDefault(s => s.Name == row["ColumnName"].ToString());
+                if (column == null)
+                {
+                    continue;
+                }
+
+                column.Autoincrement = (bool)row["IsAutoincrement"];
+                column.NumericPrecision = row["NumericPrecision"] == DBNull.Value ? 0 : (int)row["NumericPrecision"];
+                column.NumericScale = row["NumericScale"] == DBNull.Value ? 0 : (int)row["NumericScale"];
+                column.DataType = row["DataTypeName"].ToString().ToLower();
+                column.Length = row["ColumnSize"] == DBNull.Value ? 0 : (int)row["ColumnSize"];
+            }
+            return columns;
+        }
+
+        [SuppressMessage("Security", "CA2100")]
+        private List<ViewColumn> GetViewColumns(IDatabase database, string tableName)
+        {
+            var columns = ExecuteAndParseMetadata(database, $"PRAGMA main.TABLE_INFO('{tableName}')", null, (wrapper, reader) => new ViewColumn
+            {
+                Catalog = "main",
+                ViewName = tableName,
+                Name = wrapper.GetString(reader, 1),
+                DataType = wrapper.GetString(reader, 2),
+                IsNullable = wrapper.GetInt32(reader, 3) == 1,
+                Default = wrapper.GetString(reader, 4),
+                IsPrimaryKey = wrapper.GetInt32(reader, 5) == 1
+            }).ToList();
 
             if (database.Provider.DbProviderFactory.GetType().Assembly.GetName().Name != "System.Data.SQLite")
             {
                 return columns;
             }
+
+            var sql = $"select * from main.[{tableName}]";
 
             using var command = database.Provider.DbProviderFactory.CreateCommand();
             if (database.Connection.State != ConnectionState.Open)

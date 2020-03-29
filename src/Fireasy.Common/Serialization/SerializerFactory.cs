@@ -7,24 +7,67 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Serialization.Configuration;
+#if NETSTANDARD
+using Microsoft.Extensions.DependencyInjection;
+#endif
+using System;
 
 namespace Fireasy.Common.Serialization
 {
     public static class SerializerFactory
     {
+#if NETSTANDARD
+        public static IServiceCollection AddSerializer(this IServiceCollection services)
+        {
+            var section = ConfigurationUnity.GetSection<SerializerConfigurationSection>();
+            if (section == null)
+            {
+                return services;
+            }
+
+            var setting = section.GetDefault();
+
+            if (setting == null)
+            {
+                return services;
+            }
+            else
+            {
+                if (setting is ExtendConfigurationSetting extend)
+                {
+                    setting = extend.Base;
+                }
+
+                services.AddSingleton(typeof(ISerializer), sp => CreateSerializer(sp, ((SerializerConfigurationSetting)setting).Name));
+            }
+
+            return services;
+        }
+#endif
         /// <summary>
         /// 根据应用程序配置，创建文本序列化器。
         /// </summary>
         /// <param name="configName">应用程序配置项的名称。</param>
         /// <returns><paramref name="configName"/>缺省时，如果应用程序未配置，则为 <see cref="MemoryCacheManager"/>，否则为配置项对应的 <see cref="ICacheManager"/> 实例。</returns>
-        public static ITextSerializer CreateSerializer(string configName = null)
+        public static ISerializer CreateSerializer(string configName = null)
         {
-            ITextSerializer serializer;
+            return CreateSerializer(null, configName);
+        }
+
+        /// <summary>
+        /// 根据应用程序配置，创建文本序列化器。
+        /// </summary>
+        /// <param name="serviceProvider">应用程序服务提供者实例。</param>
+        /// <param name="configName">应用程序配置项的名称。</param>
+        /// <returns><paramref name="configName"/>缺省时，如果应用程序未配置，则为 <see cref="MemoryCacheManager"/>，否则为配置项对应的 <see cref="ICacheManager"/> 实例。</returns>
+        private static ISerializer CreateSerializer(IServiceProvider serviceProvider, string configName = null)
+        {
+            ISerializer serializer;
             IConfigurationSettingItem setting = null;
             var section = ConfigurationUnity.GetSection<SerializerConfigurationSection>();
             if (section != null && section.Factory != null)
             {
-                serializer = section.Factory.CreateInstance(configName) as ITextSerializer;
+                serializer = ConfigurationUnity.Cached<ISerializer>($"Serializer_{configName}", () => section.Factory.CreateInstance(configName) as ISerializer);
                 if (serializer != null)
                 {
                     return serializer;
@@ -48,7 +91,8 @@ namespace Fireasy.Common.Serialization
                 return null;
             }
 
-            return ConfigurationUnity.CreateInstance<SerializerConfigurationSetting, ITextSerializer>(setting, s => s.SerializerType);
+            return ConfigurationUnity.Cached<ISerializer>($"Serializer_{configName}",
+                () => ConfigurationUnity.CreateInstance<SerializerConfigurationSetting, ISerializer>(serviceProvider, setting, s => s.SerializerType));
         }
     }
 }

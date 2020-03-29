@@ -8,10 +8,10 @@
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Localization.Configuration;
 using System.Globalization;
+using System;
 #if NETSTANDARD
 using Microsoft.Extensions.DependencyInjection;
 #endif
-
 
 namespace Fireasy.Common.Localization
 {
@@ -33,7 +33,7 @@ namespace Fireasy.Common.Localization
 
             if (setting == null)
             {
-                services.AddSingleton(typeof(IStringLocalizerManager), WithCulture(DefaultStringLocalizerManager.Instance, section));
+                services.AddSingleton(typeof(IStringLocalizerManager), sp => CreateManager(sp));
             }
             else
             {
@@ -42,19 +42,29 @@ namespace Fireasy.Common.Localization
                     setting = extend.Base;
                 }
 
-                services.AddSingleton(typeof(IStringLocalizerManager), ((StringLocalizerConfigurationSetting)setting).LocalizerType);
+                services.AddSingleton(typeof(IStringLocalizerManager), sp => CreateManager(sp, ((StringLocalizerConfigurationSetting)setting).Name));
             }
 
             return services;
         }
 #endif
-
         /// <summary>
         /// 根据应用程序配置，创建字符串本地化管理器。
         /// </summary>
         /// <param name="configName">应用程序配置项的名称。</param>
         /// <returns><paramref name="configName"/>缺省时，如果应用程序未配置，则为 <see cref="DefaultStringLocalizerManager"/>，否则为配置项对应的 <see cref="IStringLocalizerManager"/> 实例。</returns>
         public static IStringLocalizerManager CreateManager(string configName = null)
+        {
+            return CreateManager(null, configName);
+        }
+
+        /// <summary>
+        /// 根据应用程序配置，创建字符串本地化管理器。
+        /// </summary>
+        /// <param name="serviceProvider">应用程序服务提供者实例。</param>
+        /// <param name="configName">应用程序配置项的名称。</param>
+        /// <returns><paramref name="configName"/>缺省时，如果应用程序未配置，则为 <see cref="DefaultStringLocalizerManager"/>，否则为配置项对应的 <see cref="IStringLocalizerManager"/> 实例。</returns>
+        private static IStringLocalizerManager CreateManager(IServiceProvider serviceProvider, string configName = null)
         {
             IStringLocalizerManager manager;
             IConfigurationSettingItem setting = null;
@@ -87,7 +97,7 @@ namespace Fireasy.Common.Localization
             }
 
             return WithCulture(ConfigurationUnity.Cached<IStringLocalizerManager>($"LocalizerManager_{configName}", 
-                () => ConfigurationUnity.CreateInstance<StringLocalizerConfigurationSetting, IStringLocalizerManager>(setting, s => s.LocalizerType)), section);
+                () => ConfigurationUnity.CreateInstance<StringLocalizerConfigurationSetting, IStringLocalizerManager>(serviceProvider, setting, s => s.LocalizerType)), section);
         }
 
         private static IStringLocalizerManager WithCulture(IStringLocalizerManager manager, StringLocalizerConfigurationSection section)

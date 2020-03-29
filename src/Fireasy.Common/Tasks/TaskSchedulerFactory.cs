@@ -6,16 +6,15 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Configuration;
+using Fireasy.Common.Extensions;
 using Fireasy.Common.Tasks.Configuration;
 #if NETSTANDARD
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using System;
 #endif
+using System;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 
 namespace Fireasy.Common.Tasks
 {
@@ -24,9 +23,6 @@ namespace Fireasy.Common.Tasks
     /// </summary>
     public static class TaskSchedulerFactory
     {
-        private static readonly MethodInfo StartMethod = typeof(ITaskScheduler).GetMethod(nameof(ITaskScheduler.Start));
-        private static readonly MethodInfo StartAsyncMethod = typeof(ITaskScheduler).GetMethod(nameof(ITaskScheduler.StartAsync));
-
 #if NETSTANDARD
         public static IServiceCollection AddTaskScheduler(this IServiceCollection services)
         {
@@ -40,7 +36,7 @@ namespace Fireasy.Common.Tasks
 
             if (setting == null)
             {
-                services.AddSingleton(typeof(ITaskScheduler), DefaultTaskScheduler.Instance);
+                services.AddSingleton(typeof(ITaskScheduler), sp => CreateScheduler(sp));
             }
             else
             {
@@ -49,13 +45,10 @@ namespace Fireasy.Common.Tasks
                     setting = extend.Base;
                 }
 
-                var scset = (TaskScheduleConfigurationSetting)setting;
-                var schedulerType = scset.SchedulerType;
-                services.AddSingleton(typeof(ITaskScheduler), schedulerType);
-                InitializeExecutors(scset, services);
+                var tsset = (TaskScheduleConfigurationSetting)setting;
+                services.AddSingleton(typeof(ITaskScheduler), sp => CreateScheduler(sp, tsset.Name));
                 services.TryAddEnumerable(
-                    ServiceDescriptor.Singleton<IHostedService, ITaskScheduler>(p =>
-                        ConfigurationUnity.Cached<ITaskScheduler>($"TaskScheduler_{scset.Name}", () => p.GetService<ITaskScheduler>())));
+                    ServiceDescriptor.Singleton<IHostedService, ITaskScheduler>(sp => sp.GetService<ITaskScheduler>()));
             }
 
             return services;
@@ -68,6 +61,17 @@ namespace Fireasy.Common.Tasks
         /// <param name="configName">应用程序配置项的名称。</param>
         /// <returns><paramref name="configName"/>缺省时，如果应用程序未配置，则为 <see cref="DefaultTaskScheduler"/>，否则为配置项对应的 <see cref="ITaskScheduler"/> 实例。</returns>
         public static ITaskScheduler CreateScheduler(string configName = null)
+        {
+            return CreateScheduler(null, configName);
+        }
+
+        /// <summary>
+        /// 根据应用程序配置，创建任务调度管理器。
+        /// </summary>
+        /// <param name="serviceProvider">应用程序服务提供者实例。</param>
+        /// <param name="configName">应用程序配置项的名称。</param>
+        /// <returns><paramref name="configName"/>缺省时，如果应用程序未配置，则为 <see cref="DefaultTaskScheduler"/>，否则为配置项对应的 <see cref="ITaskScheduler"/> 实例。</returns>
+        private static ITaskScheduler CreateScheduler(IServiceProvider serviceProvider, string configName = null)
         {
             ITaskScheduler manager;
             IConfigurationSettingItem setting = null;
@@ -85,7 +89,7 @@ namespace Fireasy.Common.Tasks
             {
                 if (section == null || (setting = section.GetDefault()) == null)
                 {
-                    return DefaultTaskScheduler.Instance;
+                    return DefaultTaskScheduler.Instance.TrySetServiceProvider(serviceProvider);
                 }
             }
             else if (section != null)
@@ -98,58 +102,22 @@ namespace Fireasy.Common.Tasks
                 return null;
             }
 
-            return ConfigurationUnity.Cached<ITaskScheduler>($"TaskScheduler_{configName ?? "default"}", () => ConfigurationUnity.CreateInstance<TaskScheduleConfigurationSetting, ITaskScheduler>(setting, s => s.SchedulerType, (s, t) => InitializeExecutors(s, t)));
+            return ConfigurationUnity.Cached<ITaskScheduler>($"TaskScheduler_{configName ?? "default"}",
+                () => ConfigurationUnity.CreateInstance<TaskScheduleConfigurationSetting, ITaskScheduler>(serviceProvider, setting, s => s.SchedulerType, (s, t) => InitializeDefinitions(s, t)));
         }
 
-        private static ITaskScheduler InitializeExecutors(TaskScheduleConfigurationSetting setting, ITaskScheduler scheduler)
+        private static ITaskScheduler InitializeDefinitions(TaskScheduleConfigurationSetting setting, ITaskScheduler scheduler)
         {
-            foreach (var exsetting in setting.ExecutorSettings)
-            {
-                if (exsetting.ExecutorType == null)
-                {
-                    continue;
-                }
-
-                if (typeof(IAsyncTaskExecutor).IsAssignableFrom(exsetting.ExecutorType))
-                {
-                    StartAsyncMethod.MakeGenericMethod(exsetting.ExecutorType).Invoke(scheduler, new object[] { exsetting.Delay, exsetting.Period, null });
-                }
-                else if (typeof(ITaskExecutor).IsAssignableFrom(exsetting.ExecutorType))
-                {
-                    StartMethod.MakeGenericMethod(exsetting.ExecutorType).Invoke(scheduler, new object[] { exsetting.Delay, exsetting.Period, null });
-                }
-            }
+            setting.ExecutorSettings.ForEach(s =>
+                scheduler.PreTasks.Enqueue(
+                    new TaskExecutorDefiniton
+                    {
+                        Delay = s.Delay,
+                        Period = s.Period,
+                        ExecutorType = s.ExecutorType
+                    }));
 
             return scheduler;
         }
-
-#if NETSTANDARD
-        private static void InitializeExecutors(TaskScheduleConfigurationSetting setting, IServiceCollection services)
-        {
-            foreach (var exsetting in setting.ExecutorSettings)
-            {
-                if (exsetting.ExecutorType == null)
-                {
-                    continue;
-                }
-
-                if (typeof(IAsyncTaskExecutor).IsAssignableFrom(exsetting.ExecutorType) ||
-                    typeof(ITaskExecutor).IsAssignableFrom(exsetting.ExecutorType))
-                {
-                    services.AddSingleton(exsetting.ExecutorType);
-
-                    var sd = ServiceDescriptorHelper.CreateSingleton(typeof(TaskExecutorDefiniton), typeof(TaskExecutorDefiniton<>).MakeGenericType(exsetting.ExecutorType), () =>
-                    {
-                        var parExp = Expression.Parameter(typeof(IServiceProvider), "p");
-                        var cons = typeof(TaskExecutorDefiniton<>).MakeGenericType(exsetting.ExecutorType).GetConstructors()[0];
-                        var newExp = Expression.New(cons, Expression.Constant(exsetting.Delay), Expression.Constant(exsetting.Period));
-                        return Expression.Lambda(newExp, parExp).Compile();
-                    });
-
-                    services.TryAddEnumerable(sd);
-                }
-            }
-        }
-#endif
     }
 }

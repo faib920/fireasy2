@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Data.Entity.Linq.Expressions;
+using Fireasy.Data.Entity.Query;
 using System.Linq.Expressions;
 using System.Reflection;
 

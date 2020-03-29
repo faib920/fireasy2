@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if NETSTANDARD
+using Fireasy.Common;
 using Fireasy.Common.Aop;
 using Fireasy.Common.Caching;
 using Fireasy.Common.Caching.Configuration;
@@ -14,11 +15,13 @@ using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Ioc;
 using Fireasy.Common.Ioc.Configuration;
-using Fireasy.Common.Ioc.Registrations;
 using Fireasy.Common.Localization;
 using Fireasy.Common.Localization.Configuration;
 using Fireasy.Common.Logging;
 using Fireasy.Common.Logging.Configuration;
+using Fireasy.Common.Options;
+using Fireasy.Common.Serialization;
+using Fireasy.Common.Serialization.Configuration;
 using Fireasy.Common.Subscribes;
 using Fireasy.Common.Subscribes.Configuration;
 using Fireasy.Common.Tasks;
@@ -26,6 +29,8 @@ using Fireasy.Common.Tasks.Configuration;
 using Fireasy.Common.Threading;
 using Fireasy.Common.Threading.Configuration;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,12 +48,16 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services"></param>
         /// <param name="configuration"></param>
         /// <returns></returns>
-        public static IServiceCollection AddFireasy(this IServiceCollection services, IConfiguration configuration, Action<Fireasy.Common.CoreOptions> setupAction = null)
+        public static IServiceCollection AddFireasy(this IServiceCollection services, IConfiguration configuration, Action<CoreOptions> setupAction = null)
         {
-            configuration.Initialize(Assembly.GetCallingAssembly(), services);
-
-            var options = new Fireasy.Common.CoreOptions();
+            var options = new CoreOptions();
             setupAction?.Invoke(options);
+
+            Tracer.Disabled = configuration.GetSection("appSettings:DisableTracer").Value.To<bool>();
+
+            configuration.Initialize(Assembly.GetCallingAssembly(), services, options.AssemblyFilter);
+
+            services.AddTransient(typeof(IOptionsFactory<>), typeof(ConfiguredOptionsFactory<>));
 
             return services;
         }
@@ -57,24 +66,47 @@ namespace Microsoft.Extensions.DependencyInjection
         /// 在 <see cref="IServiceCollection"/> 上注册 Fireasy 容器里的定义。
         /// </summary>
         /// <param name="services"></param>
-        /// <param name="container"></param>
+        /// <param name="containerName">容器名称。</param>
         /// <returns></returns>
-        public static IServiceCollection AddIoc(this IServiceCollection services, Container container = null)
+        public static IServiceCollection AddIoc(this IServiceCollection services, string containerName = null)
         {
-            container ??= ContainerUnity.GetContainer();
-            foreach (AbstractRegistration reg in container.GetRegistrations())
+            var section = ConfigurationUnity.GetSection<ContainerConfigurationSection>();
+            var setting = string.IsNullOrEmpty(containerName) ? section.Default : section.Settings[containerName];
+            if (setting == null)
             {
-                if (reg is SingletonRegistration singReg)
+                return services;
+            }
+
+            foreach (var reg in setting.Registrations)
+            {
+                var lifetime = reg.Lifetime switch
                 {
-                    services.AddSingleton(singReg.ServiceType, CheckAopProxyType(singReg.ImplementationType));
+                    Lifetime.Transient => ServiceLifetime.Transient,
+                    Lifetime.Singleton => ServiceLifetime.Singleton,
+                    Lifetime.Scoped => ServiceLifetime.Scoped,
+                    _ => ServiceLifetime.Transient
+                };
+
+                void register(IServiceCollection services, Type svrType, Type implType)
+                {
+                    if (implType == null)
+                    {
+                        Tracer.Debug($"Couldn't find the implementation of '{svrType}'.");
+                    }
+                    else if (svrType != null)
+                    {
+                        Tracer.Debug($"{lifetime}-Descriptor has been registered: {svrType} --> {implType}.");
+                        services.Add(ServiceDescriptor.Describe(svrType, CheckAopProxyType(implType), lifetime));
+                    }
                 }
-                else if (reg.GetType().IsGenericType && reg.GetType().GetGenericTypeDefinition() == typeof(FuncRegistration<>))
+
+                if (reg.Assembly != null)
                 {
-                    services.AddTransient(reg.ServiceType, s => reg.Resolve());
+                    Helpers.DiscoverAssembly(reg.Assembly, (svrType, implType) => register(services, svrType, implType));
                 }
                 else
                 {
-                    services.AddTransient(reg.ServiceType, CheckAopProxyType(reg.ImplementationType));
+                    register(services, reg.ServiceType, reg.ImplementationType);
                 }
             }
 
@@ -102,11 +134,11 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="callAssembly"></param>
         /// <param name="configuration"></param>
         /// <param name="services"></param>
-        public static void Initialize(this IConfiguration configuration, Assembly callAssembly, IServiceCollection services = null)
+        public static void Initialize(this IConfiguration configuration, Assembly callAssembly, IServiceCollection services = null, Func<AssemblyName, bool> filter = null)
         {
             var assemblies = new List<Assembly>();
 
-            FindReferenceAssemblies(callAssembly, assemblies);
+            FindReferenceAssemblies(callAssembly, assemblies, filter);
 
             assemblies.ForEach(assembly =>
                 {
@@ -125,10 +157,10 @@ namespace Microsoft.Extensions.DependencyInjection
             assemblies.Clear();
         }
 
-        private static bool ExcludeAssembly(string assemblyName)
+        private static bool ExcludeAssembly(AssemblyName assemblyName)
         {
-            return !assemblyName.StartsWith("system.", StringComparison.OrdinalIgnoreCase) &&
-                    !assemblyName.StartsWith("microsoft.", StringComparison.OrdinalIgnoreCase);
+            return !assemblyName.Name.StartsWith("system.", StringComparison.OrdinalIgnoreCase) &&
+                    !assemblyName.Name.StartsWith("microsoft.", StringComparison.OrdinalIgnoreCase);
         }
 
         private static Assembly LoadAssembly(AssemblyName assemblyName)
@@ -142,10 +174,10 @@ namespace Microsoft.Extensions.DependencyInjection
                 return null;
             }
         }
-        private static void FindReferenceAssemblies(Assembly assembly, List<Assembly> assemblies)
+        private static void FindReferenceAssemblies(Assembly assembly, List<Assembly> assemblies, Func<AssemblyName, bool> filter)
         {
             foreach (var asb in assembly.GetReferencedAssemblies()
-                .Where(s => ExcludeAssembly(s.Name))
+                .Where(filter ?? ExcludeAssembly)
                 .Select(s => LoadAssembly(s))
                 .Where(s => s != null))
             {
@@ -154,7 +186,7 @@ namespace Microsoft.Extensions.DependencyInjection
                     assemblies.Add(asb);
                 }
 
-                FindReferenceAssemblies(asb, assemblies);
+                FindReferenceAssemblies(asb, assemblies, filter);
             }
         }
 
@@ -172,11 +204,13 @@ namespace Microsoft.Extensions.DependencyInjection
                 ConfigurationUnity.Bind<LockerConfigurationSection>(configuration);
                 ConfigurationUnity.Bind<SubscribeConfigurationSection>(configuration);
                 ConfigurationUnity.Bind<ImportConfigurationSection>(configuration);
+                ConfigurationUnity.Bind<SerializerConfigurationSection>(configuration);
                 ConfigurationUnity.Bind<StringLocalizerConfigurationSection>(configuration);
                 ConfigurationUnity.Bind<TaskScheduleConfigurationSection>(configuration);
             }
-            catch (Exception)
+            catch (Exception exp)
             {
+                Tracer.Error($"{typeof(ConfigurationBinder).FullName} throw exception when binding:{exp.Output()}");
             }
 
             if (services != null)
@@ -185,6 +219,7 @@ namespace Microsoft.Extensions.DependencyInjection
                     .AddCaching()
                     .AddSubscriber()
                     .AddLocker()
+                    .AddSerializer()
                     .AddStringLocalizer()
                     .AddTaskScheduler();
             }

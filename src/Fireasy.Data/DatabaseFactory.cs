@@ -31,7 +31,7 @@ namespace Fireasy.Data
         /// <param name="instanceName">配置实例名称。</param>
         /// <param name="serviceProvider">检索服务提供者。</param>
         /// <returns>一个 <see cref="Database"/> 实例对象。</returns>
-        public static IDatabase CreateDatabase(string instanceName = null, IServiceProvider serviceProvider = null)
+        public static IDatabase CreateDatabase(string instanceName = null)
         {
             var section = ConfigurationUnity.GetSection<InstanceConfigurationSection>();
             Guard.NullReference(section, SR.GetString(SRKind.NonInstanceConfigurationSection));
@@ -43,16 +43,16 @@ namespace Fireasy.Data
             {
                 if (setting.Clusters.Count > 0)
                 {
-                    database = setting.DatabaseType.New<IDatabase>(GetDistributedConnections(setting), null, serviceProvider);
+                    database = setting.DatabaseType.New<IDatabase>(GetDistributedConnections(setting), null);
                 }
                 else
                 {
-                    database = setting.DatabaseType.New<IDatabase>((ConnectionString)setting.ConnectionString, null, serviceProvider);
+                    database = setting.DatabaseType.New<IDatabase>((ConnectionString)setting.ConnectionString, null);
                 }
             }
             else
             {
-                database = CreateDatabase(setting, serviceProvider);
+                database = CreateDatabase(setting);
             }
 
             if (DatabaseScope.Current != null)
@@ -81,10 +81,10 @@ namespace Fireasy.Data
 
             if (setting.Clusters.Count > 0)
             {
-                return new Database(GetDistributedConnections(setting), provider, serviceProvider);
+                return new Database(GetDistributedConnections(setting), provider);
             }
 
-            return new Database(setting.ConnectionString, provider, serviceProvider);
+            return new Database(setting.ConnectionString, provider);
         }
 
         /// <summary>

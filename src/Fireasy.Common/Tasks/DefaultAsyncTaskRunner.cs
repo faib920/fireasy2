@@ -6,21 +6,17 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Diagnostics;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Fireasy.Common.Tasks
 {
     /// <summary>
     /// 缺省的异步任务运行器。
     /// </summary>
-    /// <typeparam name="T"></typeparam>
     public class DefaultAsyncTaskRunner : DisposeableBase, ITaskRunner
     {
         private readonly IAsyncTaskExecutor executor;
         private Timer timer;
-        private readonly CancellationTokenSource stopToken;
         private readonly TimeSpan delay;
         private readonly TimeSpan period;
         private readonly TaskExecuteContext context;
@@ -38,7 +34,6 @@ namespace Fireasy.Common.Tasks
             this.period = period;
             this.executor = executor;
             this.context = context;
-            stopToken = new CancellationTokenSource();
         }
 
         /// <summary>
@@ -50,9 +45,7 @@ namespace Fireasy.Common.Tasks
             {
                 timer = new Timer(o =>
                 {
-                    Tracer.Debug($"The Task '{executor.GetType()}' Executing.");
-                    Task.WaitAll(executor.ExecuteAsync(context, stopToken.Token));
-                    Tracer.Debug($"The Task '{executor.GetType()}' Completed.");
+                    executor.ExecuteAsync(context);
                 }, null, delay, period);
             }
         }
@@ -68,11 +61,12 @@ namespace Fireasy.Common.Tasks
             }
         }
 
-        protected override void Dispose(bool disposing)
+        protected override bool Dispose(bool disposing)
         {
             timer?.Dispose();
             timer = null;
-            stopToken.Cancel();
+
+            return base.Dispose(disposing);
         }
     }
 }

@@ -5,9 +5,11 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common;
 using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Fireasy.Data.Entity.Initializers
@@ -43,7 +45,12 @@ namespace Fireasy.Data.Entity.Initializers
 
         public void PreInitialize(EntityContextPreInitializeContext context)
         {
-            initializers.ForEach(s => s.PreInitialize(context));
+            initializers.ForEach(s =>
+            {
+                var watch = Stopwatch.StartNew();
+                s.PreInitialize(context);
+                Tracer.Debug($"The {s.GetType().Name} was initialized ({watch.ElapsedMilliseconds}ms).");
+            });
         }
     }
 }

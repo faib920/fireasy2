@@ -2,6 +2,7 @@
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
 using Fireasy.Data.Entity.Linq.Expressions;
+using Fireasy.Data.Entity.Query;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -88,7 +89,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 if (!map.TryGetValue(tv, out NamedValueExpression nv))
                 {
                     // re-use same name-value if same type & value
-                    var name = "p" + (iParam++);
+                    var name = string.Intern("p" + iParam++);
                     nv = new NamedValueExpression(name, c);
                     map.Add(tv, nv);
                 }

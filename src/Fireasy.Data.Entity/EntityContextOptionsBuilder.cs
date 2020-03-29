@@ -16,6 +16,8 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public class EntityContextOptionsBuilder
     {
+        private readonly Type contextType;
+
         /// <summary>
         /// 初始化 <see cref="EntityContextOptionsBuilder"/> 类的新实例。
         /// </summary>
@@ -23,6 +25,22 @@ namespace Fireasy.Data.Entity
         public EntityContextOptionsBuilder(EntityContextOptions options)
         {
             Options = options;
+
+            if (Options is IInstanceIdentifier identifier && identifier.ContextType != null)
+            {
+                contextType = identifier.ContextType;
+            }
+        }
+
+        /// <summary>
+        /// 初始化 <see cref="EntityContextOptionsBuilder"/> 类的新实例。
+        /// </summary>
+        /// <param name="contextType"></param>
+        /// <param name="options"></param>
+        public EntityContextOptionsBuilder(Type contextType, EntityContextOptions options)
+            : this(options)
+        {
+            this.contextType = contextType;
         }
 
         /// <summary>

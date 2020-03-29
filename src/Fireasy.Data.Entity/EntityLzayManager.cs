@@ -8,7 +8,6 @@
 using Fireasy.Data.Entity.Properties;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 
 namespace Fireasy.Data.Entity
 {

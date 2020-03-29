@@ -48,11 +48,11 @@ namespace Fireasy.Common.Serialization
         /// <param name="obj">要锁定的对象。</param>
         /// <param name="serializeMethod">被锁定的方法。</param>
         /// <exception cref="SerializationException">该对象被循环引用，即嵌套引用。</exception>
-        public void TrySerialize(object obj, Action serializeMethod)
+        public void TrySerialize(object obj, Action<object> serializeMethod)
         {
             if (obj == null || Option.ReferenceLoopHandling == ReferenceLoopHandling.None)
             {
-                serializeMethod();
+                serializeMethod(obj);
                 return;
             }
 
@@ -71,7 +71,7 @@ namespace Fireasy.Common.Serialization
             try
             {
                 objects.Add(obj);
-                serializeMethod();
+                serializeMethod(obj);
             }
             finally
             {
@@ -83,11 +83,11 @@ namespace Fireasy.Common.Serialization
         /// 释放对象所占用的所有资源。
         /// </summary>
         /// <param name="disposing"></param>
-        protected override void Dispose(bool disposing)
+        protected override bool Dispose(bool disposing)
         {
-            cache.Clear();
             objects.Clear();
-            base.Dispose(disposing);
+
+            return base.Dispose(disposing);
         }
     }
 

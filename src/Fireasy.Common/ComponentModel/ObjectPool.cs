@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
+using Fireasy.Common.Ioc;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
@@ -15,6 +16,7 @@ namespace Fireasy.Common.ComponentModel
     /// <summary>
     /// 表示可缓冲的对象。
     /// </summary>
+    [IgnoreRegister]
     public interface IObjectPoolable
     {
         /// <summary>
@@ -54,6 +56,9 @@ namespace Fireasy.Common.ComponentModel
 
         private readonly int maxSize;
         private int count;
+        private Timer timer = null;
+        private DateTime? lastRetTime = null;
+        private TimeSpan? idleTime = TimeSpan.FromMinutes(1);
 
         /// <summary>
         /// 初始化 <see cref="ObjectPool{T}"/> 类的新实例。
@@ -64,6 +69,32 @@ namespace Fireasy.Common.ComponentModel
         {
             this.creator = creator;
             this.maxSize = maxSize;
+
+            StartIdleCheckThread();
+        }
+
+        /// <summary>
+        /// 获取或设置空闲清理时间，默认为 1 分钟。
+        /// </summary>
+        public virtual TimeSpan? IdleTime
+        {
+            get
+            {
+                return idleTime;
+            }
+            set
+            {
+                idleTime = value;
+
+                if (idleTime == null)
+                {
+                    timer.Change(TimeSpan.MaxValue, TimeSpan.MaxValue);
+                }
+                else
+                {
+                    timer.Change(idleTime.Value, idleTime.Value);
+                }
+            }
         }
 
         /// <summary>
@@ -72,15 +103,18 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public virtual T Rent()
         {
-            if (queue.TryDequeue(out var obj))
+            if (queue.TryDequeue(out T obj))
             {
                 Interlocked.Decrement(ref count);
+                Tracer.Debug($"Rent {typeof(T).Name} from the pool (count:{count}).");
                 OnRent(obj);
                 return obj;
             }
 
-            obj = creator();
-            return obj;
+            var obj1 = creator();
+            obj1.SetPool(this);
+            Tracer.Debug($"Generate a new object of {typeof(T).Name}.");
+            return obj1;
         }
 
         /// <summary>
@@ -91,11 +125,15 @@ namespace Fireasy.Common.ComponentModel
         public virtual bool Return(T obj)
         {
             Guard.ArgumentNull(obj, nameof(obj));
+            lastRetTime = DateTime.Now;
 
             if (Interlocked.Increment(ref count) <= maxSize)
             {
+                Tracer.Debug($"Return {typeof(T).Name} back to the pool (count:{count}).");
+
                 obj.SetPool(this);
                 OnReturn(obj);
+
                 queue.Enqueue(obj);
                 return true;
             }
@@ -120,13 +158,42 @@ namespace Fireasy.Common.ComponentModel
         {
         }
 
-        protected override void Dispose(bool disposing)
+        protected override bool Dispose(bool disposing)
         {
-            while (queue.TryDequeue(out var obj))
+            while (queue.TryDequeue(out T obj))
             {
                 obj.SetPool(null);
                 obj.TryDispose();
             }
+
+            return base.Dispose(disposing);
+        }
+
+        private void StartIdleCheckThread()
+        {
+            timer = new Timer(o =>
+            {
+                if (IdleTime == null || lastRetTime == null || DateTime.Now - lastRetTime.Value <= IdleTime.Value)
+                {
+                    return;
+                }
+
+                var _lastRetTime = lastRetTime.Value;
+
+                while (queue.TryDequeue(out T obj))
+                {
+                    Interlocked.Decrement(ref count);
+                    Tracer.Debug($"Take back the idle {typeof(T).Name} from the pool (count:{count}).");
+
+                    obj.SetPool(null);
+                    obj.TryDispose();
+
+                    if (_lastRetTime != lastRetTime.Value)
+                    {
+                        break;
+                    }
+                }
+            }, null, IdleTime.Value, IdleTime.Value);
         }
 
         object IObjectPool.Rent()

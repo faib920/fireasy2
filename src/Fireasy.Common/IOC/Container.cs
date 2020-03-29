@@ -29,6 +29,11 @@ namespace Fireasy.Common.Ioc
         private readonly List<InstanceInitializer> instanceInitializers = new List<InstanceInitializer>();
         private ResolveScope scope = null;
 
+        public Container()
+        {
+            RegisterSingleton<IServiceProvider>(this);
+        }
+
         /// <summary>
         /// 注册服务类型及实现类型，<typeparamref name="TImplementation"/> 是 <typeparamref name="TService"/> 的实现类。
         /// </summary>
@@ -195,25 +200,7 @@ namespace Fireasy.Common.Ioc
         /// <returns></returns>
         public Container RegisterAssembly(Assembly assembly, Lifetime lifetime = Lifetime.Transient)
         {
-            foreach (var type in assembly.GetExportedTypes())
-            {
-                if (type.IsInterface || type.IsAbstract || type.IsEnum || type.IsDefined<IgnoreRegisterAttribute>())
-                {
-                    continue;
-                }
-
-                Register(type, type);
-
-                foreach (var interfaceType in type.GetInterfaces())
-                {
-                    if (interfaceType.IsDefined<IgnoreRegisterAttribute>() || interfaceType.FullName.StartsWith("System"))
-                    {
-                        continue;
-                    }
-
-                    Register(interfaceType, type, lifetime);
-                }
-            }
+            Helpers.DiscoverAssembly(assembly, (svrType, implType) => Register(svrType, implType, lifetime));
 
             return this;
         }

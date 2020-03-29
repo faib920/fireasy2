@@ -54,6 +54,11 @@ namespace Fireasy.Redis
         public string KeyRule { get; set; }
 
         /// <summary>
+        /// 获取或设置滑行的时间。
+        /// </summary>
+        public TimeSpan SlidingTime { get; set; }
+
+        /// <summary>
         /// 获取或设置写入缓冲区大小。
         /// </summary>
         public int? WriteBuffer { get; set; }
@@ -74,29 +79,24 @@ namespace Fireasy.Redis
         public bool Twemproxy { get; set; }
 
         /// <summary>
-        /// 获取或设置提前延期的时间比例。
-        /// </summary>
-        public double? AdvanceDelay { get; set; }
-
-        /// <summary>
         /// 获取或设置上锁时间（秒）。默认为 10 秒钟。
         /// </summary>
-        public int LockTimeout { get; set; }
+        public TimeSpan LockTimeout { get; set; } = TimeSpan.FromSeconds(10);
 
         /// <summary>
         /// 获取或设置连接超时时间（毫秒）。默认为 5000 毫秒。
         /// </summary>
-        public int ConnectTimeout { get; set; } = 5000;
+        public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromMilliseconds(5000);
 
         /// <summary>
         /// 获取或设置发送/接收超时时间（毫秒）。默认为 10000 毫秒。
         /// </summary>
-        public int SyncTimeout { get; set; } = 10000;
+        public TimeSpan SyncTimeout { get; set; } = TimeSpan.FromMilliseconds(10000);
 
         /// <summary>
         /// 获取或设置异常时重入队列的延迟时间（毫秒）。未指定表示不重入队列。
         /// </summary>
-        public int? RequeueDelayTime { get; set; }
+        public TimeSpan? RequeueDelayTime { get; set; }
     }
 
     /// <summary>

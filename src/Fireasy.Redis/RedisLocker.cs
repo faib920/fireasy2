@@ -9,6 +9,7 @@ using Fireasy.Common.Configuration;
 using Fireasy.Common.Threading;
 #if NETSTANDARD
 using Fireasy.Common.Threading.Configuration;
+using Microsoft.Extensions.Options;
 #endif
 using System;
 using System.Threading.Tasks;
@@ -29,39 +30,44 @@ namespace Fireasy.Redis
         }
 
 #if NETSTANDARD
-        internal RedisLocker(RedisDistributedLockerOptions options)
+        /// <summary>
+        /// 初始化 <see cref="RedisLocker"/> 类的新实例。
+        /// </summary>
+        /// <param name="options"></param>
+        public RedisLocker(IOptions<RedisDistributedLockerOptions> options)
         {
+            var _options = options.Value;
             RedisConfigurationSetting setting;
-            if (!string.IsNullOrEmpty(options.ConfigName))
+            if (!string.IsNullOrEmpty(_options.ConfigName))
             {
                 var section = ConfigurationUnity.GetSection<LockerConfigurationSection>();
-                if (section != null && section.GetSetting(options.ConfigName) is ExtendConfigurationSetting extSetting)
+                if (section != null && section.GetSetting(_options.ConfigName) is ExtendConfigurationSetting extSetting)
                 {
                     setting = (RedisConfigurationSetting)extSetting.Extend;
                 }
                 else
                 {
-                    throw new InvalidOperationException($"无效的配置节: {options.ConfigName}。");
+                    throw new InvalidOperationException($"无效的配置节: {_options.ConfigName}。");
                 }
             }
             else
             {
                 setting = new RedisConfigurationSetting
                 {
-                    Password = options.Password,
-                    ConnectionString = options.ConnectionString,
-                    DefaultDb = options.DefaultDb,
-                    ConnectTimeout = options.ConnectTimeout,
-                    LockTimeout = options.LockTimeout,
-                    SyncTimeout = options.SyncTimeout,
-                    WriteBuffer = options.WriteBuffer,
-                    PoolSize = options.PoolSize,
-                    SerializerType = options.SerializerType,
-                    Ssl = options.Ssl,
-                    Twemproxy = options.Twemproxy
+                    Password = _options.Password,
+                    ConnectionString = _options.ConnectionString,
+                    DefaultDb = _options.DefaultDb,
+                    ConnectTimeout = _options.ConnectTimeout,
+                    LockTimeout = _options.LockTimeout,
+                    SyncTimeout = _options.SyncTimeout,
+                    WriteBuffer = _options.WriteBuffer,
+                    PoolSize = _options.PoolSize,
+                    SerializerType = _options.SerializerType,
+                    Ssl = _options.Ssl,
+                    Twemproxy = _options.Twemproxy
                 };
 
-                RedisHelper.ParseHosts(setting, options.Hosts);
+                RedisHelper.ParseHosts(setting, _options.Hosts);
             }
 
             if (setting != null)

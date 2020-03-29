@@ -5,9 +5,9 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common;
 using Quartz;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Fireasy.QuartzNet
@@ -24,12 +24,12 @@ namespace Fireasy.QuartzNet
         /// <returns></returns>
         public async Task Execute(IJobExecutionContext context)
         {
-            if (context.MergedJobDataMap["executor"] is Action<IServiceProvider> executor)
+            if (context.MergedJobDataMap["executor"] is Action<IServiceProvider, CancellationToken> executor)
             {
                 var serviceProvider = context.MergedJobDataMap["serviceProvider"] as IServiceProvider;
-                Tracer.Debug($"The Task '{executor.GetType()}' Executing.");
-                executor(serviceProvider);
-                Tracer.Debug($"The Task '{executor.GetType()}' Completed.");
+                var cancellationToken = (CancellationToken)context.MergedJobDataMap["cancellationToken"];
+
+                executor(serviceProvider, cancellationToken);
             }
         }
     }

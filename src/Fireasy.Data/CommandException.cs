@@ -5,9 +5,10 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
-using System.Data.Common;
 using Fireasy.Data.Extensions;
+using System;
+using System.Data;
+using System.Data.Common;
 
 namespace Fireasy.Data
 {
@@ -22,7 +23,7 @@ namespace Fireasy.Data
         /// </summary>
         /// <param name="command">执行查询的命令。</param>
         /// <param name="innerException">所引发的异常源。</param>
-        public CommandException(DbCommand command, Exception innerException)
+        public CommandException(IDbCommand command, Exception innerException)
             : base(SR.GetString(SRKind.FailInExecute, command.Output()), innerException)
         {
             Command = command;
@@ -32,7 +33,7 @@ namespace Fireasy.Data
         /// 实例化一个 <see cref="CommandException"/> 对象。
         /// </summary>
         /// <param name="command">执行查询的命令。</param>
-        public CommandException(DbCommand command)
+        public CommandException(IDbCommand command)
             : this(command, null)
         {
         }
@@ -40,6 +41,6 @@ namespace Fireasy.Data
         /// <summary>
         /// 获取命令对象。
         /// </summary>
-        public DbCommand Command { get; private set; }
+        public IDbCommand Command { get; private set; }
     }
 }

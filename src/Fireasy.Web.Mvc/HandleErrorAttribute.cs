@@ -8,6 +8,7 @@
 using Fireasy.Common;
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
+using Fireasy.Common.Ioc;
 using Fireasy.Common.Logging;
 using System;
 using System.Linq;
@@ -90,6 +91,11 @@ namespace Fireasy.Web.Mvc
         /// <param name="filterContext"></param>
         protected virtual void LogException(ExceptionContext filterContext)
         {
+            var controllerName = (string)filterContext.RouteData.Values["controller"];
+            var actionName = (string)filterContext.RouteData.Values["action"];
+
+            Tracer.Error($"Throw exception when '{controllerName}.{actionName}' is executed:\n{filterContext.Exception.Output()}");
+
             //记录日志
 #if !NETCOREAPP
             var logger = LoggerFactory.CreateLogger();
@@ -98,8 +104,6 @@ namespace Fireasy.Web.Mvc
 #endif
             if (logger != null)
             {
-                var controllerName = (string)filterContext.RouteData.Values["controller"];
-                var actionName = (string)filterContext.RouteData.Values["action"];
 
                 logger.Error(string.Format("执行控制器 {0} 的方法 {1} 时发生错误。",
                     controllerName, actionName), filterContext.Exception);
@@ -115,6 +119,7 @@ namespace Fireasy.Web.Mvc
         {
             EmptyArrayResultAttribute attr = null;
 #if !NETCOREAPP
+            var serviceProvider = ContainerUnity.GetContainer();
             if (ActionContext.Current != null)
             {
                 attr = ActionContext.Current.ActionDescriptor
@@ -122,6 +127,7 @@ namespace Fireasy.Web.Mvc
 
             }
 #else
+            var serviceProvider = filterContext.HttpContext.RequestServices;
             var descriptor = filterContext.ActionDescriptor as ControllerActionDescriptor;
             if (descriptor != null)
             {
@@ -142,6 +148,12 @@ namespace Fireasy.Web.Mvc
                 {
                     return new JsonResultWrapper(Result.Fail(attr.Message));
                 }
+            }
+
+            var handler = serviceProvider.TryGetService<IExceptionHandler>();
+            if (handler != null)
+            {
+                return handler.GetResult(filterContext.Exception);
             }
 
             return new JsonResultWrapper(Result.Fail("发生错误，请查阅相关日志或联系管理员。"));

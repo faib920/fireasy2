@@ -83,7 +83,6 @@ namespace Fireasy.Data
             Tracer.Debug($"Transaction completed.");
             foreach (var connection in connDictionary.Values)
             {
-                connection.TryClose();
                 connection.Dispose();
             }
 

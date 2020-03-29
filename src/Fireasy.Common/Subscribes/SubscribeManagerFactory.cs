@@ -6,10 +6,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Configuration;
+using Fireasy.Common.Extensions;
 using Fireasy.Common.Subscribes.Configuration;
 #if NETSTANDARD
 using Microsoft.Extensions.DependencyInjection;
 #endif
+using System;
 
 namespace Fireasy.Common.Subscribes
 {
@@ -31,7 +33,7 @@ namespace Fireasy.Common.Subscribes
 
             if (setting == null)
             {
-                services.AddSingleton(typeof(ISubscribeManager), DefaultSubscribeManager.Instance);
+                services.AddSingleton(typeof(ISubscribeManager), sp => CreateManager(sp));
             }
             else
             {
@@ -40,19 +42,29 @@ namespace Fireasy.Common.Subscribes
                     setting = extend.Base;
                 }
 
-                services.AddSingleton(typeof(ISubscribeManager), ((SubscribeConfigurationSetting)setting).SubscriberType);
+                services.AddSingleton(typeof(ISubscribeManager), sp => CreateManager(sp, ((SubscribeConfigurationSetting)setting).Name));
             }
 
             return services;
         }
 #endif
-
         /// <summary>
         /// 根据应用程序配置，创建订阅管理器。
         /// </summary>
         /// <param name="configName">应用程序配置项的名称。</param>
         /// <returns><paramref name="configName"/>缺省时，如果应用程序未配置，则为 <see cref="DefaultSubscribeManager"/>，否则为配置项对应的 <see cref="ISubscribeManager"/> 实例。</returns>
         public static ISubscribeManager CreateManager(string configName = null)
+        {
+            return CreateManager(null, configName);
+        }
+
+        /// <summary>
+        /// 根据应用程序配置，创建订阅管理器。
+        /// </summary>
+        /// <param name="serviceProvider">应用程序服务提供者实例。</param>
+        /// <param name="configName">应用程序配置项的名称。</param>
+        /// <returns><paramref name="configName"/>缺省时，如果应用程序未配置，则为 <see cref="DefaultSubscribeManager"/>，否则为配置项对应的 <see cref="ISubscribeManager"/> 实例。</returns>
+        private static ISubscribeManager CreateManager(IServiceProvider serviceProvider, string configName = null)
         {
             ISubscribeManager manager;
             IConfigurationSettingItem setting = null;
@@ -70,7 +82,7 @@ namespace Fireasy.Common.Subscribes
             {
                 if (section == null || (setting = section.GetDefault()) == null)
                 {
-                    return DefaultSubscribeManager.Instance;
+                    return DefaultSubscribeManager.Instance.TrySetServiceProvider(serviceProvider);
                 }
             }
             else if (section != null)
@@ -83,8 +95,8 @@ namespace Fireasy.Common.Subscribes
                 return null;
             }
 
-            return ConfigurationUnity.Cached<ISubscribeManager>($"Subscribe_{configName}", 
-                () => ConfigurationUnity.CreateInstance<SubscribeConfigurationSetting, ISubscribeManager>(setting, s => s.SubscriberType));
+            return ConfigurationUnity.Cached<ISubscribeManager>($"Subscribe_{configName}",
+                () => ConfigurationUnity.CreateInstance<SubscribeConfigurationSetting, ISubscribeManager>(serviceProvider, setting, s => s.SubscriberType));
         }
     }
 }

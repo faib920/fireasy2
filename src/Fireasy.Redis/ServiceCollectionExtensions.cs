@@ -8,6 +8,7 @@
 #if NETSTANDARD
 using Fireasy.Common.Caching;
 using Fireasy.Common.Subscribes;
+using Fireasy.Common.Threading;
 using Fireasy.Redis;
 using System;
 
@@ -23,9 +24,12 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IServiceCollection AddRedisCaching(this IServiceCollection services, Action<RedisCachingOptions> setupAction)
         {
-            var options = new RedisCachingOptions();
-            setupAction?.Invoke(options);
-            services.AddSingleton(typeof(ICacheManager), p => new CacheManager(options));
+            if (setupAction != null)
+            {
+                services.Configure(setupAction);
+            }
+
+            services.AddSingleton<ICacheManager, CacheManager>();
             return services;
         }
 
@@ -37,9 +41,12 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IServiceCollection AddRedisSubscriber(this IServiceCollection services, Action<RedisSubscribeOptions> setupAction)
         {
-            var options = new RedisSubscribeOptions();
-            setupAction?.Invoke(options);
-            services.AddSingleton(typeof(ISubscribeManager), p => new SubscribeManager(options));
+            if (setupAction != null)
+            {
+                services.Configure(setupAction);
+            }
+
+            services.AddSingleton<ISubscribeManager, SubscribeManager>();
             return services;
         }
 
@@ -51,9 +58,12 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IServiceCollection AddRedisDistributedLocker(this IServiceCollection services, Action<RedisDistributedLockerOptions> setupAction)
         {
-            var options = new RedisDistributedLockerOptions();
-            setupAction?.Invoke(options);
-            services.AddSingleton(typeof(ISubscribeManager), p => new RedisLocker(options));
+            if (setupAction != null)
+            {
+                services.Configure(setupAction);
+            }
+
+            services.AddSingleton<IDistributedLocker, RedisLocker>();
             return services;
         }
     }

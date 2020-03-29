@@ -224,10 +224,8 @@ namespace Fireasy.Data.Batcher
 
             try
             {
-                connection.OpenClose(() =>
-                    {
-                        bulkType.GetMethod("WriteToServer").AssertNotNull(s => s.Invoke(bulk, new object[] { table }));
-                    });
+                connection.TryOpen();
+                bulkType.GetMethod("WriteToServer").AssertNotNull(s => s.Invoke(bulk, new object[] { table }));
 
                 return true;
             }

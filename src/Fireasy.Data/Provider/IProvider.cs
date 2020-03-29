@@ -59,8 +59,8 @@ namespace Fireasy.Data.Provider
         /// 注册指定类型的插件服务。
         /// </summary>
         /// <param name="definedType"></param>
-        /// <param name="service"></param>
-        void RegisterService(Type definedType, IProviderService service);
+        /// <param name="factory"></param>
+        void RegisterService(Type definedType, Func<IProviderService> factory);
 
         /// <summary>
         /// 获取注册到数据库提供者的所有插件服务。

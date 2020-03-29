@@ -57,6 +57,17 @@ namespace Fireasy.Common.Serialization
         [SuppressMessage("Microsoft.Usage", "CA2202")]
         public override T Deserialize<T>(byte[] bytes)
         {
+            return (T)Deserialize(bytes, typeof(T));
+        }
+
+        /// <summary>
+        /// 从一个字节数组中反序列化对象。
+        /// </summary>
+        /// <param name="bytes">字节数组。</param>
+        /// <param name="type"></param>
+        /// <returns>反序列化后的对象。</returns>
+        public override object Deserialize(byte[] bytes, Type type)
+        {
             byte[] data;
 
             if (Token != null && Token.Data != null && Token.Data.Length > 0)
@@ -74,7 +85,6 @@ namespace Fireasy.Common.Serialization
                 data = bytes;
             }
 
-            T obj;
             try
             {
                 using var stream = new MemoryStream(data);
@@ -83,14 +93,12 @@ namespace Fireasy.Common.Serialization
                 {
                     Binder = new IgnoreSerializationBinder()
                 };
-                obj = (T)bin.Deserialize(zipStream);
+                return bin.Deserialize(zipStream);
             }
             catch (Exception ex)
             {
                 throw new SerializationException(SR.GetString(SRKind.DeserializationError), ex);
             }
-
-            return obj;
         }
     }
 }

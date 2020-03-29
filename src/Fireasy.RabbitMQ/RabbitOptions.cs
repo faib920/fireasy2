@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if NETSTANDARD
+using Fireasy.Common.Options;
 using Fireasy.Common.Subscribes;
 using System;
 
@@ -14,7 +15,7 @@ namespace Fireasy.RabbitMQ
     /// <summary>
     /// RabbitMQ 参数。
     /// </summary>
-    public class RabbitOptions
+    public class RabbitOptions : IConfiguredOptions
     {
         /// <summary>
         /// 获取或设置配置中的实例名称。
@@ -65,6 +66,8 @@ namespace Fireasy.RabbitMQ
         /// 获取或设置初始化方法。
         /// </summary>
         public Action<ISubscribeManager> Initializer { get; set; }
+
+        bool IConfiguredOptions.IsConfigured { get; set; }
     }
 }
 #endif

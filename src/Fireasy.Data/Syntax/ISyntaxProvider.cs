@@ -90,9 +90,8 @@ namespace Fireasy.Data.Syntax
         /// 对命令文本进行分段处理，使之能够返回小范围内的数据。
         /// </summary>
         /// <param name="context">命令上下文对象。</param>
-        /// <returns>处理后的分段命令文本。</returns>
         /// <exception cref="SegmentNotSupportedException">当前数据库或版本不支持分段时，引发该异常。</exception>
-        string Segment(CommandContext context);
+        bool Segment(CommandContext context);
 
         /// <summary>
         /// 转换源表达式的数据类型。

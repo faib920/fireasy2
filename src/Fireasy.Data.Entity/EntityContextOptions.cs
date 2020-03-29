@@ -15,7 +15,7 @@ namespace Fireasy.Data.Entity
     /// <summary>
     /// <see cref="EntityContext"/> 的参数。
     /// </summary>
-    public class EntityContextOptions : IInstanceIdentification
+    public class EntityContextOptions : IInstanceIdentifier
     {
         private IServiceProvider serviceProvider;
 
@@ -74,11 +74,6 @@ namespace Fireasy.Data.Entity
         public string ConfigName { get; set; }
 
         /// <summary>
-        /// 获取或设置缓存键的前缀。
-        /// </summary>
-        public string CachePrefix { get; set; }
-
-        /// <summary>
         /// 获取或设置是否开启解析缓存。
         /// </summary>
         public bool? CacheParsing { get; set; }
@@ -99,6 +94,11 @@ namespace Fireasy.Data.Entity
         public TimeSpan? CacheExecutionTimes { get; set; }
 
         /// <summary>
+        /// 获取或设置关联加载的行为。默认为 <see cref="Lazy"/>。
+        /// </summary>
+        public LoadBehavior LoadBehavior { get; set; } = LoadBehavior.Lazy;
+
+        /// <summary>
         /// 获取初始化方法。
         /// </summary>
         public EntityContextPreInitializerCollection Initializers { get; private set; }
@@ -108,11 +108,13 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public IProvider Provider { get; set; }
 
-        IServiceProvider IInstanceIdentification.ServiceProvider
+        IServiceProvider IInstanceIdentifier.ServiceProvider
         {
             get { return serviceProvider; }
             set { serviceProvider = value; }
         }
+
+        Type IInstanceIdentifier.ContextType { get; set; }
 
         /// <summary>
         /// 获取或设置数据库连接串。
@@ -121,22 +123,21 @@ namespace Fireasy.Data.Entity
 
         public override bool Equals(object obj)
         {
-            if (obj == null)
+            if (obj == null || !(obj is EntityContextOptions op))
             {
                 return false;
             }
 
-            var op = (EntityContextOptions)obj;
             return NotifyEvents == op.NotifyEvents &&
                 ValidateEntity == op.ValidateEntity &&
                 IsolationLevel == op.IsolationLevel &&
                 AllowDefaultValue == op.AllowDefaultValue &&
                 ConfigName == op.ConfigName &&
-                CachePrefix == op.CachePrefix &&
                 CacheParsing == op.CacheParsing &&
                 CacheParsingTimes == op.CacheParsingTimes &&
                 CacheExecution == op.CacheExecution &&
                 CacheExecutionTimes == op.CacheExecutionTimes &&
+                LoadBehavior == op.LoadBehavior &&
                 Provider == op.Provider &&
                 ConnectionString == op.ConnectionString;
         }
@@ -155,6 +156,7 @@ namespace Fireasy.Data.Entity
         internal EntityContextOptions(IServiceProvider serviceProvider)
             : base (serviceProvider)
         {
+            (this as IInstanceIdentifier).ContextType = typeof(TContext);
         }
     }
 }

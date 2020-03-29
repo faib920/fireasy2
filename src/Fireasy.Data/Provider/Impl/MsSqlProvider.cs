@@ -54,9 +54,9 @@ namespace Fireasy.Data.Provider
             return new ConnectionParameter
             {
                 Server = connectionString.Properties.TryGetValue("data source", "server"),
-                Database = connectionString.Properties.TryGetValueWithDefaultValue("initial catalog", "database"),
+                Database = connectionString.Properties.TryGetValue("initial catalog", "database"),
                 UserId = connectionString.Properties.TryGetValue("user id", "uid"),
-                Password = connectionString.Properties.TryGetValue("password", "pwd"),
+                Password = connectionString.Properties.TryGetValue("password", "pwd")
             };
         }
 

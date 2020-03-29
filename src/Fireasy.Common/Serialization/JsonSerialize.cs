@@ -374,7 +374,7 @@ namespace Fireasy.Common.Serialization
                     SerializeString(value);
                     break;
                 default:
-                    context.TrySerialize(value, () => SerializeObject(value));
+                    context.TrySerialize(value, value => SerializeObject(value));
                     break;
             }
         }
@@ -479,14 +479,11 @@ namespace Fireasy.Common.Serialization
         /// 释放对象所占用的非托管和托管资源。
         /// </summary>
         /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
-        protected override void Dispose(bool disposing)
+        protected override bool Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                context.Dispose();
-                jsonWriter.Dispose();
-                jsonWriter = null;
-            }
+            context.Dispose();
+
+            return base.Dispose(disposing);
         }
 
         private IEnumerable<DataColumn> GetDataColumns(DataTable table)

@@ -1,8 +1,10 @@
 ﻿#if NETCOREAPP
+using Fireasy.Common.Extensions;
 using Fireasy.Common.Logging;
 using Fireasy.Common.Serialization;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Fireasy.Web.Mvc
@@ -27,15 +29,26 @@ namespace Fireasy.Web.Mvc
                 return Task.CompletedTask;
             }
 
+            var serviceProvider = bindingContext.HttpContext.RequestServices;
+
             var modelState = bindingContext.ModelState;
             modelState.SetModelValue(bindingContext.ModelName, value);
 
             var option = mvcOptions.JsonSerializeOption;
-            var serializer = new JsonSerializer(option);
+            var serializer = serviceProvider.TryGetService<ISerializer>(() => new JsonSerializer(option));
 
             try
             {
-                var obj = serializer.Deserialize(value.FirstValue, bindingContext.ModelType);
+                object obj;
+                if (serializer is ITextSerializer txtSerializer)
+                {
+                    obj = txtSerializer.Deserialize(value.FirstValue, bindingContext.ModelType);
+                }
+                else
+                {
+                    obj = serializer.Deserialize(Encoding.UTF8.GetBytes(value.FirstValue), bindingContext.ModelType);
+                }
+
                 bindingContext.Result = ModelBindingResult.Success(obj);
             }
             catch (Exception exp)

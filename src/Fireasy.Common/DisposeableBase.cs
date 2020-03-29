@@ -35,8 +35,10 @@ namespace Fireasy.Common
         /// 释放对象所占用的非托管和托管资源。
         /// </summary>
         /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
-        protected virtual void Dispose(bool disposing)
+        /// <returns></returns>
+        protected virtual bool Dispose(bool disposing)
         {
+            return true;
         }
 
         private void DoDispose(bool disposing)
@@ -48,9 +50,10 @@ namespace Fireasy.Common
 
             if (!isDisposed)
             {
-                Dispose(disposing);
-
-                isDisposed = true;
+                if (Dispose(disposing))
+                {
+                    isDisposed = true;
+                }
             }
         }
 
@@ -69,8 +72,10 @@ namespace Fireasy.Common
         /// 异步的，释放对象所占用的非托管和托管资源。
         /// </summary>
         /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
-        protected virtual async ValueTask DisposeAsync(bool disposing)
+        /// <returns></returns>
+        protected virtual ValueTask<bool> DisposeAsync(bool disposing)
         {
+            return new ValueTask<bool>(true);
         }
 
         private async ValueTask DoDisposeAsync(bool disposing)
@@ -82,9 +87,10 @@ namespace Fireasy.Common
 
             if (!isDisposed)
             {
-                await DisposeAsync(disposing);
-
-                isDisposed = true;
+                if (await DisposeAsync(disposing))
+                {
+                    isDisposed = true;
+                }
             }
         }
 

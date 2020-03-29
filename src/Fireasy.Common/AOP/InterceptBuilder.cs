@@ -16,6 +16,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Fireasy.Common.Aop
 {
@@ -35,6 +36,40 @@ namespace Fireasy.Common.Aop
         private const short STACK_CALLINFO_INDEX = 2;
         private const short STACK_ARGUMENT_INDEX = 3;
         private const short STACK_RETURNVALUE_INDEX = 4;
+
+        private class MethodCache
+        {
+            internal protected static MethodInfo TypeGetMethod = typeof(Type).GetMethod(nameof(Type.GetMethod), new[] { typeof(string) });
+            internal protected static MethodInfo MethodGetCurrent = typeof(MethodBase).GetMethod(nameof(MethodBase.GetCurrentMethod), BindingFlags.Public | BindingFlags.Static);
+            internal protected static MethodInfo MethodGetBaseDefinition = typeof(MethodInfo).GetMethod(nameof(MethodInfo.GetBaseDefinition));
+            internal protected static MethodInfo TypeGetProperty = typeof(Type).GetMethod(nameof(Type.GetProperty), new[] { typeof(string) });
+            internal protected static MethodInfo MemberGetCustomAttributes = typeof(MemberInfo).GetMethod(nameof(MemberInfo.GetCustomAttributes), new[] { typeof(Type), typeof(bool) });
+            internal protected static MethodInfo TypeGetTypeFromHandle = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Public | BindingFlags.Static);
+            internal protected static MethodInfo CallInfoGetMember = typeof(InterceptCallInfo).GetMethod($"get_{nameof(InterceptCallInfo.Member)}");
+            internal protected static MethodInfo CallInfoSetMember = typeof(InterceptCallInfo).GetMethod($"set_{nameof(InterceptCallInfo.Member)}");
+            internal protected static MethodInfo CallInfoSetTarget = typeof(InterceptCallInfo).GetMethod($"set_" + nameof(InterceptCallInfo.Target));
+            internal protected static MethodInfo CallInfoSetReturnType = typeof(InterceptCallInfo).GetMethod($"set_" + nameof(InterceptCallInfo.ReturnType));
+            internal protected static MethodInfo CallInfoSetDefinedType = typeof(InterceptCallInfo).GetMethod($"set_{nameof(InterceptCallInfo.DefinedType)}");
+            internal protected static MethodInfo CallInfoSetArguments = typeof(InterceptCallInfo).GetMethod($"set_{nameof(InterceptCallInfo.Arguments)}");
+            internal protected static MethodInfo CallInfoGetArguments = typeof(InterceptCallInfo).GetMethod($"get_{nameof(InterceptCallInfo.Arguments)}");
+            internal protected static MethodInfo CallInfoGetCancel = typeof(InterceptCallInfo).GetMethod($"get_{nameof(InterceptCallInfo.Cancel)}");
+            internal protected static MethodInfo CallInfoSetReturnValue = typeof(InterceptCallInfo).GetMethod($"set_{nameof(InterceptCallInfo.ReturnValue)}");
+            internal protected static MethodInfo CallInfoGetReturnValue = typeof(InterceptCallInfo).GetMethod($"get_{nameof(InterceptCallInfo.ReturnValue)}");
+            internal protected static MethodInfo CallInfoSetException = typeof(InterceptCallInfo).GetMethod($"set_{nameof(InterceptCallInfo.Exception)}");
+            internal protected static MethodInfo CallInfoSetInterceptType = typeof(InterceptCallInfo).GetMethod($"set_{nameof(InterceptCallInfo.InterceptType)}");
+            internal protected static MethodInfo InterceptorsAdd = typeof(List<IInterceptor>).GetMethod(nameof(List<IInterceptor>.Add));
+            internal protected static MethodInfo InterceptorsGetItem = typeof(List<IInterceptor>).GetMethod($"get_Item");
+            internal protected static MethodInfo InterceptorsGetCount = typeof(List<IInterceptor>).GetMethod($"get_Count");
+            internal protected static MethodInfo InterceptorIntercept = typeof(IInterceptor).GetMethod(nameof(IInterceptor.Intercept));
+            internal protected static MethodInfo InterceptorInitialize = typeof(IInterceptor).GetMethod(nameof(IInterceptor.Initialize));
+            internal protected static MethodInfo InterceptContextSetAttribute = typeof(InterceptContext).GetMethod($"set_{nameof(InterceptContext.Attribute)}");
+            internal protected static MethodInfo InterceptContextSetTarget = typeof(InterceptContext).GetMethod($"set_{nameof(InterceptContext.Target)}");
+            internal protected static MethodInfo AttributesAdd = typeof(List<InterceptAttribute>).GetMethod(nameof(List<InterceptAttribute>.Add));
+            internal protected static MethodInfo AttributesGetItem = typeof(List<InterceptAttribute>).GetMethod($"get_Item");
+            internal protected static MethodInfo GetDefaultValue = typeof(ReflectionExtension).GetMethod(nameof(ReflectionExtension.GetDefaultValue));
+            internal protected static MethodInfo AllGetAttributes = typeof(AspectUtil).GetMethod(nameof(AspectUtil.GetInterceptAttributes));
+            internal protected static MethodInfo TaskFromResult = typeof(Task).GetMethod(nameof(Task.FromResult));
+        }
 
         /// <summary>
         /// 创建一个代理类型，并将代理类放入缓存中。
@@ -231,16 +266,16 @@ namespace Fireasy.Common.Aop
                         ctx.Emitter
                             .ldarg_2
                             .ldarg_3
-                            .call(InterceptCache.CallInfoSetInterceptType)
+                            .call(MethodCache.CallInfoSetInterceptType)
                             .ldc_i4_0
                             .stloc_0
                             .br_s(l2)
                             .MarkLabel(l1)
                             .ldarg_1
                             .ldloc_0
-                            .call(InterceptCache.InterceptorsGetItem)
+                            .call(MethodCache.InterceptorsGetItem)
                             .ldarg_2
-                            .call(InterceptCache.InterceptorIntercept)
+                            .call(MethodCache.InterceptorIntercept)
                             .ldloc_0
                             .ldc_i4_1
                             .add
@@ -248,7 +283,7 @@ namespace Fireasy.Common.Aop
                             .MarkLabel(l2)
                             .ldloc_0
                             .ldarg_1
-                            .call(InterceptCache.InterceptorsGetCount)
+                            .call(MethodCache.InterceptorsGetCount)
                             .blt_s(l1)
                             .ret();
                     });
@@ -321,7 +356,7 @@ namespace Fireasy.Common.Aop
                             .ldc_bool(true)
                             .beq(l3)
                             .ldarg_2
-                            .call(InterceptCache.AllGetAttributes)
+                            .call(MethodCache.AllGetAttributes)
                             .stloc_1
                             .ldc_i4_0
                             .stloc_0
@@ -334,15 +369,15 @@ namespace Fireasy.Common.Aop
                             .ldloc_0
                             .ldelem_ref
                             .castType(typeof(InterceptAttribute))
-                            .callvirt(InterceptCache.InterceptContextSetAttribute)
+                            .callvirt(MethodCache.InterceptContextSetAttribute)
                             .ldloc_2
                             .ldarg_0
-                            .callvirt(InterceptCache.CallInfoSetTarget)
+                            .callvirt(MethodCache.CallInfoSetTarget)
                             .ldarg_1
                             .ldloc_0
-                            .call(InterceptCache.InterceptorsGetItem)
+                            .call(MethodCache.InterceptorsGetItem)
                             .ldloc_2
-                            .callvirt(InterceptCache.InterceptorInitialize)
+                            .callvirt(MethodCache.InterceptorInitialize)
                             .ldloc_0
                             .ldc_i4_1
                             .add
@@ -350,7 +385,7 @@ namespace Fireasy.Common.Aop
                             .MarkLabel(l2)
                             .ldloc_0
                             .ldarg_1
-                            .call(InterceptCache.InterceptorsGetCount)
+                            .call(MethodCache.InterceptorsGetCount)
                             .blt_s(l1)
                             .ldarg_0
                             .ldc_bool(true)
@@ -481,7 +516,7 @@ namespace Fireasy.Common.Aop
                         .SetReturnType(method)
                         .CallInterceptors(interceptMethod, InterceptType.BeforeMethodCall)
                         .ldloc(STACK_CALLINFO_INDEX)
-                        .callvirt(InterceptCache.CallInfoGetCancel).brtrue_s(lblCancel)
+                        .callvirt(MethodCache.CallInfoGetCancel).brtrue_s(lblCancel)
                         .Assert(!isInterface, c => c.CallBaseMethod(method)
                             .Assert(isReturn, e => e.SetReturnValue(method.ReturnType)))
                         .MarkLabel(lblCancel)
@@ -539,7 +574,7 @@ namespace Fireasy.Common.Aop
                         ctx.Emitter.CallInitialize(initMethod)
                         .CallInterceptors(interceptMethod, InterceptType.BeforeGetValue)
                         .ldloc(STACK_CALLINFO_INDEX)
-                        .callvirt(InterceptCache.CallInfoGetCancel).brtrue_s(lblCancel)
+                        .callvirt(MethodCache.CallInfoGetCancel).brtrue_s(lblCancel)
                         .Assert(isInterface, c => c.ldarg_0.ldfld(field.FieldBuilder), c => c.ldarg_0.call(method))
                         .SetReturnValue(method.ReturnType)
                         .MarkLabel(lblCancel)
@@ -594,7 +629,7 @@ namespace Fireasy.Common.Aop
                         ctx.Emitter.CallInitialize(initMethod)
                         .CallInterceptors(interceptMethod, InterceptType.BeforeSetValue)
                         .ldloc(STACK_CALLINFO_INDEX)
-                        .callvirt(InterceptCache.CallInfoGetCancel).brtrue_s(lblCancel)
+                        .callvirt(MethodCache.CallInfoGetCancel).brtrue_s(lblCancel)
                         .Assert(isInterface, c => c.ldarg_0.ldarg_1.stfld(field.FieldBuilder), c => c.ldarg_0.GetArguments(property.PropertyType, 0).call(method))
                         .MarkLabel(lblCancel)
                         .CallInterceptors(interceptMethod, InterceptType.AfterSetValue)
@@ -660,7 +695,7 @@ namespace Fireasy.Common.Aop
                     (e, a, i) =>
                         e.ldloc(STACK_INTERCEPTOR_LIST_INDEX)
                         .newobj(a.InterceptorType)
-                        .callvirt(InterceptCache.InterceptorsAdd))
+                        .callvirt(MethodCache.InterceptorsAdd))
                 .newobj(typeof(InterceptCallInfo))
                 .stloc(STACK_CALLINFO_INDEX)
                 .end();
@@ -739,7 +774,7 @@ namespace Fireasy.Common.Aop
             return emitter
                 .ldloc(STACK_CALLINFO_INDEX)
                 .ldarg_0
-                .callvirt(InterceptCache.CallInfoSetTarget);
+                .callvirt(MethodCache.CallInfoSetTarget);
         }
 
         /// <summary>
@@ -753,7 +788,7 @@ namespace Fireasy.Common.Aop
                 .stloc(STACK_EXCEPTION_INDEX)
                 .ldloc(STACK_CALLINFO_INDEX)
                 .ldloc(STACK_EXCEPTION_INDEX)
-                .callvirt(InterceptCache.CallInfoSetException);
+                .callvirt(MethodCache.CallInfoSetException);
         }
 
         /// <summary>
@@ -771,7 +806,7 @@ namespace Fireasy.Common.Aop
                 .ldloc(STACK_CALLINFO_INDEX)
                 .ldloc(STACK_RETURNVALUE_INDEX)
                 .Assert(taskRetType != null, e => e.callvirt(returnType.GetProperty("Result").GetMethod).box(taskRetType), e => e.box(returnType))
-                .call(InterceptCache.CallInfoSetReturnValue);
+                .call(MethodCache.CallInfoSetReturnValue);
         }
 
         /// <summary>
@@ -791,24 +826,24 @@ namespace Fireasy.Common.Aop
 
             return emitter
                 .ldloc(STACK_CALLINFO_INDEX)
-                .callvirt(InterceptCache.CallInfoGetReturnValue)
+                .callvirt(MethodCache.CallInfoGetReturnValue)
                 .Assert(returnType.IsValueType, e1 =>
                     e1.brtrue_s(lbRetValNotNull)
                         .ldtoken(returnType)
-                        .call(InterceptCache.TypeGetTypeFromHandle)
-                        .call(InterceptCache.GetDefaultValue)
+                        .call(MethodCache.TypeGetTypeFromHandle)
+                        .call(MethodCache.GetDefaultValue)
                         .Assert(returnType.IsValueType, e => e.unbox_any(returnType))
-                        .Assert(taskRetType != null, e => e.call(InterceptCache.TaskFromResult.MakeGenericMethod(taskRetType)))
+                        .Assert(taskRetType != null, e => e.call(MethodCache.TaskFromResult.MakeGenericMethod(taskRetType)))
                         .ret()
                         .MarkLabel(lbRetValNotNull)
                         .ldloc(STACK_CALLINFO_INDEX)
-                        .callvirt(InterceptCache.CallInfoGetReturnValue)
+                        .callvirt(MethodCache.CallInfoGetReturnValue)
                         .Assert(returnType.IsValueType, e => e.unbox_any(returnType))
-                        .Assert(taskRetType != null, e => e.call(InterceptCache.TaskFromResult.MakeGenericMethod(taskRetType)))
+                        .Assert(taskRetType != null, e => e.call(MethodCache.TaskFromResult.MakeGenericMethod(taskRetType)))
                         .ret(),
                     e1 =>
                         e1
-                        .Assert(taskRetType != null, e => e.call(InterceptCache.TaskFromResult.MakeGenericMethod(taskRetType)))
+                        .Assert(taskRetType != null, e => e.call(MethodCache.TaskFromResult.MakeGenericMethod(taskRetType)))
                         .ret()
                     );
         }
@@ -851,7 +886,7 @@ namespace Fireasy.Common.Aop
                             .end();
                     })
                 .ldloc(STACK_ARGUMENT_INDEX)
-                .callvirt(InterceptCache.CallInfoSetArguments);
+                .callvirt(MethodCache.CallInfoSetArguments);
         }
 
         public static EmitHelper SetReturnType(this EmitHelper emitter, MethodInfo method)
@@ -860,14 +895,14 @@ namespace Fireasy.Common.Aop
             return emitter
                 .ldloc(STACK_CALLINFO_INDEX)
                 .ldtoken(returnType)
-                .call(InterceptCache.TypeGetTypeFromHandle)
-                .callvirt(InterceptCache.CallInfoSetReturnType);
+                .call(MethodCache.TypeGetTypeFromHandle)
+                .callvirt(MethodCache.CallInfoSetReturnType);
         }
 
         private static EmitHelper GetArguments(this EmitHelper emitter, Type argumentType, int index)
         {
             return emitter.ldloc(2)
-                .callvirt(InterceptCache.CallInfoGetArguments)
+                .callvirt(MethodCache.CallInfoGetArguments)
                 .ldc_i4(index)
                 .ldelem_ref
                 .Assert(argumentType.IsValueType, e => e.unbox_any(argumentType));
@@ -886,21 +921,21 @@ namespace Fireasy.Common.Aop
             if (member is MethodInfo)
             {
                 //使用 MethodInfo.GetCurrentMethod().GetBaseDefinition() 方法获得父类里的定义
-                emitter.call(InterceptCache.MethodGetCurrent)
+                emitter.call(MethodCache.MethodGetCurrent)
                     .castclass(typeof(MethodInfo))
-                    .callvirt(InterceptCache.MethodGetBaseDefinition);
+                    .callvirt(MethodCache.MethodGetBaseDefinition);
             }
             else if (member is PropertyInfo)
             {
                 //使用 Type.GetProperty(propertyName) 获得属性
                 emitter.ldtoken(member.DeclaringType)
-                    .call(InterceptCache.TypeGetTypeFromHandle)
+                    .call(MethodCache.TypeGetTypeFromHandle)
                     .ldstr(member.Name)
-                    .call(InterceptCache.TypeGetProperty);
+                    .call(MethodCache.TypeGetProperty);
             }
 
             return emitter
-                .callvirt(InterceptCache.CallInfoSetMember);
+                .callvirt(MethodCache.CallInfoSetMember);
         }
 
         private static EmitHelper SetCurrentDefinedType(this EmitHelper emitter, MemberInfo member)
@@ -908,8 +943,8 @@ namespace Fireasy.Common.Aop
             return emitter
                 .ldloc(STACK_CALLINFO_INDEX)
                 .ldtoken(member.DeclaringType)
-                .call(InterceptCache.TypeGetTypeFromHandle)
-                .callvirt(InterceptCache.CallInfoSetDefinedType);
+                .call(MethodCache.TypeGetTypeFromHandle)
+                .callvirt(MethodCache.CallInfoSetDefinedType);
         }
 
         /// <summary>

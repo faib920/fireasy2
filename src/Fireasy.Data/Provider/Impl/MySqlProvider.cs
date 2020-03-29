@@ -47,10 +47,10 @@ namespace Fireasy.Data.Provider
         {
             return new ConnectionParameter
             {
-                Server = connectionString.Properties["data source"],
-                Database = connectionString.Properties["database"],
-                UserId = connectionString.Properties["user id"],
-                Password = connectionString.Properties["password"]
+                Server = connectionString.Properties.TryGetValue("data source", "server", "host"),
+                Database = connectionString.Properties.TryGetValue("database", "initial catalog"),
+                UserId = connectionString.Properties.TryGetValue("user id", "userid", "uid", "user name", "username", "user"),
+                Password = connectionString.Properties.TryGetValue("password", "pwd")
             };
         }
 
@@ -61,10 +61,10 @@ namespace Fireasy.Data.Provider
         /// <param name="parameter"></param>
         public override void UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter)
         {
-            connectionString.Properties.TrySetValue(parameter.Server, "data source")
-                .TrySetValue(parameter.Database, "database")
-                .TrySetValue(parameter.UserId, "user id")
-                .TrySetValue(parameter.Password, "password")
+            connectionString.Properties.TrySetValue(parameter.Server, "data source", "server", "host")
+                .TrySetValue(parameter.Database, "database", "initial catalog")
+                .TrySetValue(parameter.UserId, "user id", "userid", "uid", "user name", "username", "user")
+                .TrySetValue(parameter.Password, "password", "pwd")
                 .Update();
         }
     }

@@ -111,9 +111,10 @@ namespace Fireasy.Data.Entity.Metadata
         /// <returns></returns>
         public IDictionary<string, IProperty> Filter(Type entityType)
         {
-            return Properties.GetDictionary()
-                .Where(s => s.Value.Info != null && s.Value.Info.ReflectionInfo != null && s.Value.Info.ReflectionInfo.DeclaringType.IsAssignableFrom(entityType))
-                .ToDictionary(s => s.Key, s => s.Value);
+            //return Properties.GetDictionary()
+            //    .Where(s => s.Value.Info != null && s.Value.Info.ReflectionInfo != null && s.Value.Info.ReflectionInfo.DeclaringType.IsAssignableFrom(entityType))
+            //    .ToDictionary(s => s.Key, s => s.Value);
+            return Properties.GetDictionary();
         }
 
         internal EntityMetadata Attach(Type entityType)

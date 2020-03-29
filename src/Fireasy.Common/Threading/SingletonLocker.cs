@@ -62,5 +62,31 @@ namespace Fireasy.Common.Threading
 
             return instance;
         }
+
+        /// <summary>
+        /// 使用一个对象来锁定 <paramref name="instance"/> 单例变量。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="instance">要锁定的单例变量。</param>
+        /// <param name="locker">用来上锁的对象。</param>
+        /// <param name="valueCreator">当变量为 null 时，使用此函数进行实例化。</param>
+        /// <returns></returns>
+        public static T Lock<T>(ref T instance, object locker, Func<T> valueCreator)
+        {
+            if (instance != null)
+            {
+                return instance;
+            }
+
+            lock (locker)
+            {
+                if (instance == null)
+                {
+                    instance = valueCreator();
+                }
+            }
+
+            return instance;
+        }
     }
 }

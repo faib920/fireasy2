@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if NETCOREAPP && !NETCOREAPP3_0
+using Fireasy.Common.Extensions;
 using Fireasy.Common.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -51,6 +52,7 @@ namespace Fireasy.Web.Mvc
                 throw new ArgumentNullException(nameof(result));
             }
 
+            var serviceProvider = context.HttpContext.RequestServices;
             var response = context.HttpContext.Response;
 
             ResponseContentTypeHelper.ResolveContentTypeAndEncoding(
@@ -71,7 +73,7 @@ namespace Fireasy.Web.Mvc
                 }
                 else
                 {
-                    var hosting = context.HttpContext.RequestServices.GetService<JsonSerializeOptionHosting>();
+                    var hosting = serviceProvider.GetService<JsonSerializeOptionHosting>();
                     if (hosting != null)
                     {
                         option = hosting.Option;
@@ -87,10 +89,17 @@ namespace Fireasy.Web.Mvc
                     option.Reference(mvcOptions.JsonSerializeOption);
                 }
 
-                var serializer = new JsonSerializer(option);
+                var serializer = serviceProvider.TryGetService<ISerializer>(() => new JsonSerializer(option));
 
-                var content = serializer.Serialize(result.Value);
-                response.Body.WriteAsync(resolvedContentTypeEncoding.GetBytes(content));
+                if (serializer is ITextSerializer txtSerializer)
+                {
+                    var content = txtSerializer.Serialize(result.Value);
+                    response.Body.WriteAsync(resolvedContentTypeEncoding.GetBytes(content));
+                }
+                else
+                {
+                    response.Body.WriteAsync(serializer.Serialize(result.Value));
+                }
             }
 
             return Task.CompletedTask;
@@ -98,6 +107,7 @@ namespace Fireasy.Web.Mvc
     }
 }
 #elif NETCOREAPP3_0
+using Fireasy.Common.Extensions;
 using Fireasy.Common.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
@@ -135,6 +145,7 @@ namespace Fireasy.Web.Mvc
                 throw new ArgumentNullException(nameof(result));
             }
 
+            var serviceProvider = context.HttpContext.RequestServices;
             var response = context.HttpContext.Response;
 
             ResolveContentTypeAndEncoding(
@@ -155,8 +166,7 @@ namespace Fireasy.Web.Mvc
                 }
                 else
                 {
-                    var hosting = context.HttpContext.RequestServices.GetService(typeof(JsonSerializeOptionHosting)) as JsonSerializeOptionHosting;
-                    if (hosting != null)
+                    if (context.HttpContext.RequestServices.GetService(typeof(JsonSerializeOptionHosting)) is JsonSerializeOptionHosting hosting)
                     {
                         option = hosting.Option;
                     }
@@ -171,10 +181,17 @@ namespace Fireasy.Web.Mvc
                     option.Reference(mvcOptions.JsonSerializeOption);
                 }
 
-                var serializer = new JsonSerializer(option);
+                var serializer = serviceProvider.TryGetService<ISerializer>(() => new JsonSerializer(option));
 
-                var content = serializer.Serialize(result.Value);
-                response.Body.WriteAsync(resolvedContentTypeEncoding.GetBytes(content));
+                if (serializer is ITextSerializer txtSerializer)
+                {
+                    var content = txtSerializer.Serialize(result.Value);
+                    response.Body.WriteAsync(resolvedContentTypeEncoding.GetBytes(content));
+                }
+                else
+                {
+                    response.Body.WriteAsync(serializer.Serialize(result.Value));
+                }
             }
 
             return Task.CompletedTask;

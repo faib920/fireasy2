@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Emit;
 using Fireasy.Common.Extensions;
+using Fireasy.Common.Reflection;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -18,13 +19,16 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public class EntityProxyBuilder
     {
-        private static MethodInfo MthTypeGetTypeFromHandle = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Public | BindingFlags.Static);
-        private static MethodInfo MthGetProperty = typeof(PropertyUnity).GetMethod(nameof(PropertyUnity.GetProperty));
-        private static MethodInfo MthGetValue = typeof(ProtectedEntity).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(s => s.Name == "ProtectGetValue");
-        private static MethodInfo MthSetValue = typeof(ProtectedEntity).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(s => s.Name == "ProtectSetValue");
-        private static MethodInfo MthInitValue = typeof(ProtectedEntity).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(s => s.Name == "ProtectInitializeValue");
-        private static MethodInfo MthPVNewValue = typeof(PropertyValue).GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(s => s.Name == "NewValue");
-        private static MethodInfo MthPVGetValue = typeof(PropertyValue).GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(s => s.Name == "GetValue" && s.IsGenericMethod);
+        private class MethodCache
+        {
+            internal protected static MethodInfo TypeGetTypeFromHandle = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Public | BindingFlags.Static);
+            internal protected static MethodInfo GetProperty = typeof(PropertyUnity).GetMethod(nameof(PropertyUnity.GetProperty));
+            internal protected static MethodInfo GetValue = typeof(ProtectedEntity).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(s => s.Name == "ProtectGetValue");
+            internal protected static MethodInfo SetValue = typeof(ProtectedEntity).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(s => s.Name == "ProtectSetValue");
+            internal protected static MethodInfo InitValue = typeof(ProtectedEntity).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault(s => s.Name == "ProtectInitializeValue");
+            internal protected static MethodInfo PVNewValue = typeof(PropertyValue).GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(s => s.Name == "NewValue");
+            internal protected static MethodInfo PVGetValue = typeof(PropertyValue).GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(s => s.Name == "GetValue" && s.IsGenericMethod);
+        }
 
         /// <summary>
         /// 构造实体类 <paramref name="entityType"/> 的代理类。
@@ -56,7 +60,7 @@ namespace Fireasy.Data.Entity
 
                 if (get != null)
                 {
-                    var op_Explicit = typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == "op_Explicit" && s.ReturnType == opType);
+                    var op_Explicit = ReflectionCache.GetMember("PropertyValue_Explicit", opType, "op_Explicit", (k, n) => typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == n && s.ReturnType == k));
                     propertyBuilder.DefineGetMethod(ilCoding: code =>
                         {
                             code.Emitter.DeclareLocal(typeof(PropertyValue));
@@ -65,12 +69,12 @@ namespace Fireasy.Data.Entity
                             .nop
                             .ldarg_0
                             .ldtoken(entityType)
-                            .call(MthTypeGetTypeFromHandle)
+                            .call(MethodCache.TypeGetTypeFromHandle)
                             .ldstr(property.Name)
-                            .call(MthGetProperty)
-                            .call(MthGetValue)
+                            .call(MethodCache.GetProperty)
+                            .call(MethodCache.GetValue)
                             .Assert(op_Explicit != null, e1 => e1.call(op_Explicit), 
-                                e1 => e1.call(MthPVGetValue.MakeGenericMethod(property.PropertyType)))
+                                e1 => e1.call(MethodCache.PVGetValue.MakeGenericMethod(property.PropertyType)))
                             .Assert(isEnum, e1 => e1.unbox_any(property.PropertyType))
                             .stloc_1
                             .ldloc_1
@@ -80,21 +84,21 @@ namespace Fireasy.Data.Entity
 
                 if (set != null)
                 {
-                    var op_Implicit = typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == "op_Implicit" && s.GetParameters()[0].ParameterType == opType);
+                    var op_Implicit = ReflectionCache.GetMember("PropertyValue_Implicit", opType, "op_Implicit", (k, n) => typeof(PropertyValue).GetMethods().FirstOrDefault(s => s.Name == n && s.GetParameters()[0].ParameterType == k));
                     propertyBuilder.DefineSetMethod(ilCoding: code =>
                         {
                             code.Emitter
                             .nop
                             .ldarg_0
                             .ldtoken(entityType)
-                            .call(MthTypeGetTypeFromHandle)
+                            .call(MethodCache.TypeGetTypeFromHandle)
                             .ldstr(property.Name)
-                            .call(MthGetProperty)
+                            .call(MethodCache.GetProperty)
                             .ldarg_1
                             .Assert(isEnum, e1 => e1.box(property.PropertyType))
                             .Assert(op_Implicit != null, e1 => e1.call(op_Implicit), 
-                                e1 => e1.ldtoken(property.PropertyType).call(MthTypeGetTypeFromHandle).call(MthPVNewValue))
-                            .call(MthSetValue)
+                                e1 => e1.ldtoken(property.PropertyType).call(MethodCache.TypeGetTypeFromHandle).call(MethodCache.PVNewValue))
+                            .call(MethodCache.SetValue)
                             .nop
                             .ret();
                         });
@@ -107,7 +111,7 @@ namespace Fireasy.Data.Entity
                     {
                         code.Emitter.
                             ldarg_0.ldarg_1.ldarg_2.
-                            callvirt(MthInitValue).ret();
+                            callvirt(MethodCache.InitValue).ret();
                     });
 
             injection?.Inject(new EntityInjectionContext 

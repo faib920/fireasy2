@@ -14,7 +14,7 @@ namespace Fireasy.Web.Mvc
     public class MvcOptions
     {
         /// <summary>
-        /// 获取或设置是否 Fireasy 提供的 Json 序列化来格式化返回值。默认为 true。
+        /// 获取或设置是否使用 <see cref="ISerializer"/> 来序列化反序列化。默认为 true。
         /// </summary>
         public bool UseTypicalJsonSerializer { get; set; } = true;
 

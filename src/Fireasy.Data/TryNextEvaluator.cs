@@ -30,29 +30,27 @@ namespace Fireasy.Data
             var syntax = context.Database.Provider.GetService<ISyntaxProvider>();
             var nextPage = new DataPager(dataPager.PageSize, dataPager.CurrentPageIndex + 1);
             var sql = $"select count(*) from ({syntax.Segment(context.Command.CommandText, nextPage)}) t";
-            using var connection = context.Database.CreateConnection();
-            connection.OpenClose(() =>
-                {
-                    using var command = context.Database.Provider.CreateCommand(connection, null, sql, parameters: context.Parameters);
-                    //查询下一页是否有数据
-                    var result = command.ExecuteScalar().To<int>();
-                    if (result == 0)
-                    {
-                        //查询当前页剩余的记录
-                        nextPage.CurrentPageIndex--;
-                        sql = $"select count(*) from ({syntax.Segment(context.Command.CommandText, nextPage)}) t";
-                        command.CommandText = sql;
-                        result = command.ExecuteScalar().To<int>();
+            using var connection = context.Database.CreateConnection().TryOpen();
+            using var command = context.Database.Provider.CreateCommand(connection, null, sql, parameters: context.Parameters);
+            
+            //查询下一页是否有数据
+            var result = command.ExecuteScalar().To<int>();
+            if (result == 0)
+            {
+                //查询当前页剩余的记录
+                nextPage.CurrentPageIndex--;
+                sql = $"select count(*) from ({syntax.Segment(context.Command.CommandText, nextPage)}) t";
+                command.CommandText = sql;
+                result = command.ExecuteScalar().To<int>();
 
-                        dataPager.RecordCount = dataPager.PageSize * dataPager.CurrentPageIndex + result;
-                        HasNextPage = false;
-                    }
-                    else
-                    {
-                        dataPager.RecordCount = dataPager.PageSize * (dataPager.CurrentPageIndex + 1) + 1;
-                        HasNextPage = true;
-                    }
-                });
+                dataPager.RecordCount = dataPager.PageSize * dataPager.CurrentPageIndex + result;
+                HasNextPage = false;
+            }
+            else
+            {
+                dataPager.RecordCount = dataPager.PageSize * (dataPager.CurrentPageIndex + 1) + 1;
+                HasNextPage = true;
+            }
         }
 
         /// <summary>

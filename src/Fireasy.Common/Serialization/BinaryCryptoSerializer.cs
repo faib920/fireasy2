@@ -6,11 +6,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.Security;
 using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
-using Fireasy.Common.Security;
 
 namespace Fireasy.Common.Serialization
 {
@@ -59,6 +59,15 @@ namespace Fireasy.Common.Serialization
                 throw new SerializationException(SR.GetString(SRKind.SerializationError), ex);
             }
         }
+        /// <summary>
+        /// 从一个字节数组反序列化对象。
+        /// </summary>
+        /// <param name="bytes">字节数组。</param>
+        /// <returns>反序列化后的对象。</returns>
+        public override T Deserialize<T>(byte[] bytes)
+        {
+            return (T)Deserialize(bytes, typeof(T));
+        }
 
         /// <summary>
         /// 从一个字节数组中反序列化对象。
@@ -66,7 +75,7 @@ namespace Fireasy.Common.Serialization
         /// <typeparam name="T"></typeparam>
         /// <param name="bytes">字节数组。</param>
         /// <returns>反序列化后的对象。</returns>
-        public override T Deserialize<T>(byte[] bytes)
+        public override object Deserialize(byte[] bytes, Type type)
         {
             byte[] data;
 
@@ -85,7 +94,6 @@ namespace Fireasy.Common.Serialization
                 data = bytes;
             }
 
-            T obj;
             try
             {
                 using var stream = new MemoryStream(cryptoProvider.Decrypt(data));
@@ -93,14 +101,12 @@ namespace Fireasy.Common.Serialization
                 {
                     Binder = new IgnoreSerializationBinder()
                 };
-                obj = (T)bin.Deserialize(stream);
+                return bin.Deserialize(stream);
             }
             catch (Exception ex)
             {
                 throw new SerializationException(SR.GetString(SRKind.DeserializationError), ex);
             }
-
-            return obj;
         }
     }
 }

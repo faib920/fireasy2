@@ -19,7 +19,7 @@ namespace Fireasy.Common.Extensions
         /// </param>
         /// <param name="defaultValue">如果 <paramref name="source"/> 为空时，返回些毫秒值。</param>
         /// <returns></returns>
-        public static TimeSpan GetTimeSpan(this string source, TimeSpan? defaultValue = null)
+        public static TimeSpan ToTimeSpan(this string source, TimeSpan? defaultValue = null)
         {
             if (string.IsNullOrEmpty(source))
             {

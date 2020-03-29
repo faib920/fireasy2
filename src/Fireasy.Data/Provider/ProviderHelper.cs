@@ -54,7 +54,7 @@ namespace Fireasy.Data.Provider
             var wapper = providerWappers.FirstOrDefault(s => s.Contains(providerName));
             if (wapper != null)
             {
-                return wapper.Provider;
+                return wapper.LazyValue.Value;
             }
 
             return null;
@@ -68,7 +68,7 @@ namespace Fireasy.Data.Provider
         /// <returns></returns>
         public static bool RegisterProvider(string providerName, IProvider provider)
         {
-            return AddProvider(providerName, provider);
+            return AddProvider(providerName, provider.GetType(), () => provider);
         }
 
         /// <summary>
@@ -80,17 +80,52 @@ namespace Fireasy.Data.Provider
             return providerWappers.Select(s => s.Alias.FirstOrDefault()).ToArray();
         }
 
-        private static bool AddProvider(string providerName, IProvider provider)
+        private static bool AddProvider<T>(string providerName, Func<IProvider> factory) where T : IProvider
+        {
+            return AddProvider(providerName, typeof(T), factory);
+        }
+
+        private static bool AddProvider<T>(string[] providerNames, Func<IProvider> factory) where T : IProvider
+        {
+            return AddProvider(providerNames, typeof(T), factory);
+        }
+
+        private static bool AddProvider(string providerName, Type providerType, Func<IProvider> factory)
         {
             ProviderWapper wapper = null;
-            if ((wapper = providerWappers.FirstOrDefault(s => s.Provider == provider)) != null)
+            if ((wapper = providerWappers.FirstOrDefault(s => s.ProviderType == providerType)) != null)
             {
                 wapper.Alias.Add(providerName);
                 return false;
             }
             else
             {
-                providerWappers.Add(new ProviderWapper { Alias = new List<string> { providerName }, Provider = provider });
+                providerWappers.Add(new ProviderWapper
+                {
+                    Alias = new List<string> { providerName },
+                    ProviderType = providerType,
+                    LazyValue = new Lazy<IProvider>(factory)
+                });
+                return true;
+            }
+        }
+
+        private static bool AddProvider(string[] providerNames, Type providerType, Func<IProvider> factory)
+        {
+            ProviderWapper wapper = null;
+            if ((wapper = providerWappers.FirstOrDefault(s => s.ProviderType == providerType)) != null)
+            {
+                wapper.Alias.AddRange(providerNames);
+                return false;
+            }
+            else
+            {
+                providerWappers.Add(new ProviderWapper
+                {
+                    Alias = new List<string>(providerNames),
+                    ProviderType = providerType,
+                    LazyValue = new Lazy<IProvider>(factory)
+                });
                 return true;
             }
         }
@@ -100,26 +135,22 @@ namespace Fireasy.Data.Provider
         /// </summary>
         private static void InitializeProviders()
         {
-            lock (providerWappers)
-            {
-                //内置的提供者
-                AddProvider("OleDb", OleDbProvider.Instance);
-                AddProvider("Odbc", OdbcProvider.Instance);
-                AddProvider("SqlServer", MsSqlProvider.Instance);
-                AddProvider("MsSql", MsSqlProvider.Instance);
-                AddProvider("Oracle", OracleProvider.Instance);
-                AddProvider("SQLite", SQLiteProvider.Instance);
-                AddProvider("MySql", MySqlProvider.Instance);
-                AddProvider("PostgreSql", PostgreSqlProvider.Instance);
-                AddProvider("Firebird", FirebirdProvider.Instance);
-                AddProvider("DB2", DB2Provider.Instance);
+            //内置的提供者
+            AddProvider<OleDbProvider>("OleDb", () => OleDbProvider.Instance);
+            AddProvider<OdbcProvider>("Odbc", () => OdbcProvider.Instance);
+            AddProvider<MsSqlProvider>(new string[] { "SqlServer", "MsSql" }, () => MsSqlProvider.Instance);
+            AddProvider<OracleProvider>("Oracle", () => OracleProvider.Instance);
+            AddProvider<SQLiteProvider>("SQLite", () => SQLiteProvider.Instance);
+            AddProvider<MySqlProvider>("MySql", () => MySqlProvider.Instance);
+            AddProvider<PostgreSqlProvider>("PostgreSql", () => PostgreSqlProvider.Instance);
+            AddProvider<FirebirdProvider>("Firebird", () => FirebirdProvider.Instance);
+            AddProvider<DB2Provider>("DB2", () => DB2Provider.Instance);
 
-                //取配置，注册自定义提供者
-                var section = ConfigurationUnity.GetSection<ProviderConfigurationSection>();
-                if (section != null)
-                {
-                    RegisterCustomProviders(section);
-                }
+            //取配置，注册自定义提供者
+            var section = ConfigurationUnity.GetSection<ProviderConfigurationSection>();
+            if (section != null)
+            {
+                RegisterCustomProviders(section);
             }
         }
 
@@ -137,23 +168,24 @@ namespace Fireasy.Data.Provider
                     continue;
                 }
 
-                var provider = setting.Type.New<IProvider>();
-                if (provider == null)
+                AddProvider(setting.Name, setting.Type, () =>
                 {
-                    continue;
-                }
+                    var provider = setting.Type.New<IProvider>();
+                    if (provider == null)
+                    {
+                        return null;
+                    }
 
-                IProvider inherProvider = null;
-                if (!string.IsNullOrEmpty(setting.InheritedProvider) &&
-                    (inherProvider = GetDefinedProviderInstance(setting.InheritedProvider)) != null)
-                {
-                    inherProvider.GetServices().ForEach(s => provider.RegisterService(s.GetType()));
-                }
+                    setting.ServiceTypes.ForEach(s => provider.RegisterService(s));
 
-                //为提供者注册插件服务
-                setting.ServiceTypes.ForEach(s => provider.RegisterService(s));
-
-                RegisterProvider(setting.Name, provider);
+                    IProvider inherProvider = null;
+                    if (!string.IsNullOrEmpty(setting.InheritedProvider) &&
+                        (inherProvider = GetDefinedProviderInstance(setting.InheritedProvider)) != null)
+                    {
+                        inherProvider.GetServices().ForEach(s => provider.RegisterService(s.GetType()));
+                    }
+                    return provider;
+                });
             }
         }
     }
@@ -162,7 +194,9 @@ namespace Fireasy.Data.Provider
     {
         internal List<string> Alias { get; set; } = new List<string>();
 
-        internal IProvider Provider { get; set; }
+        internal Type ProviderType { get; set; }
+
+        internal Lazy<IProvider> LazyValue { get; set; }
 
         internal bool Contains(string name)
         {

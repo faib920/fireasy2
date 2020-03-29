@@ -56,8 +56,7 @@ namespace Fireasy.Data.Schema
             }
 
             var restrictions = new[] { connpar?.Database, null, restrictionValues.GetValue(nameof(Table.Name)), tableType };
-            var conn = (OleDbConnection)database.Connection;
-            conn.TryOpen(true);
+            var conn = (OleDbConnection)database.Connection.TryOpen();
 
             foreach (DataRow row in conn.GetOleDbSchemaTable(OleDbSchemaGuid.Tables, restrictions).Rows)
             {
@@ -75,8 +74,7 @@ namespace Fireasy.Data.Schema
         protected override IEnumerable<Column> GetColumns(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var restrictions = new[] { null, null, restrictionValues.GetValue(nameof(Column.TableName)), restrictionValues.GetValue(nameof(Column.Name)) };
-            var conn = (OleDbConnection)database.Connection;
-            conn.TryOpen(true);
+            var conn = (OleDbConnection)database.Connection.TryOpen();
 
             var tbPrimary = conn.GetOleDbSchemaTable(OleDbSchemaGuid.Primary_Keys, new[] { null, null, restrictionValues.GetValue(nameof(Column.TableName)) });
 
@@ -103,8 +101,7 @@ namespace Fireasy.Data.Schema
         protected override IEnumerable<ForeignKey> GetForeignKeys(IDatabase database, RestrictionDictionary restrictionValues)
         {
             var restrictions = new[] { null, null, restrictionValues.GetValue(nameof(ForeignKey.TableName)), restrictionValues.GetValue(nameof(ForeignKey.Name)) };
-            var conn = (OleDbConnection)database.Connection;
-            conn.TryOpen(true);
+            var conn = (OleDbConnection)database.Connection.TryOpen();
 
             foreach (DataRow row in conn.GetOleDbSchemaTable(OleDbSchemaGuid.Foreign_Keys, restrictions).Rows)
             {

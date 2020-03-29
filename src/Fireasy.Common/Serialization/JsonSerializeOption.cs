@@ -6,9 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-
 namespace Fireasy.Common.Serialization
 {
     /// <summary>

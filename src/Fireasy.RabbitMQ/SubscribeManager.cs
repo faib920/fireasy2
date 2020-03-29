@@ -9,16 +9,18 @@ using Fireasy.Common;
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
+using Fireasy.Common.Serialization;
 using Fireasy.Common.Subscribes;
 #if NETSTANDARD
+using Fireasy.Common.Options;
 using Fireasy.Common.Subscribes.Configuration;
+using Microsoft.Extensions.Options;
 #endif
 using Fireasy.Common.Threading;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,12 +28,13 @@ using System.Threading.Tasks;
 namespace Fireasy.RabbitMQ
 {
     [ConfigurationSetting(typeof(RabbitConfigurationSetting))]
-    public class SubscribeManager : DisposeableBase, ISubscribeManager, IConfigurationSettingHostService
+    public class SubscribeManager : DisposeableBase, ISubscribeManager, IConfigurationSettingHostService, IServiceProviderAccessor
     {
         private RabbitConfigurationSetting setting;
 
         private static Lazy<IConnection> connectionLazy;
         private static readonly SafetyDictionary<string, RabbitChannelCollection> subscribers = new SafetyDictionary<string, RabbitChannelCollection>();
+        private Func<ISerializer> serializerFactory;
 
         /// <summary>
         /// 初始化 <see cref="SubscribeManager"/> 类的新实例。
@@ -40,14 +43,34 @@ namespace Fireasy.RabbitMQ
         {
         }
 
-#if NETSTANDARD
-        internal SubscribeManager(RabbitOptions options)
+        /// <summary>
+        /// 初始化 <see cref="SubscribeManager"/> 类的新实例。
+        /// </summary>
+        /// <param name="ServiceProvider"></param>
+        public SubscribeManager(IServiceProvider serviceProvider)
         {
+            ServiceProvider = serviceProvider;
+        }
+
+#if NETSTANDARD
+        /// <summary>
+        /// 初始化 <see cref="SubscribeManager"/> 类的新实例。
+        /// </summary>
+        /// <param name="options"></param>
+        public SubscribeManager(IServiceProvider serviceProvider, IOptionsMonitor<RabbitOptions> options)
+            : this (serviceProvider)
+        {
+            var optValue = options.CurrentValue;
+            if (!optValue.IsConfigured())
+            {
+                return;
+            }
+
             RabbitConfigurationSetting setting = null;
-            if (!string.IsNullOrEmpty(options.ConfigName))
+            if (!string.IsNullOrEmpty(optValue.ConfigName))
             {
                 var section = ConfigurationUnity.GetSection<SubscribeConfigurationSection>();
-                if (section != null && section.GetSetting(options.ConfigName) is ExtendConfigurationSetting extSetting)
+                if (section != null && section.GetSetting(optValue.ConfigName) is ExtendConfigurationSetting extSetting)
                 {
                     setting = (RabbitConfigurationSetting)extSetting.Extend;
                 }
@@ -56,13 +79,13 @@ namespace Fireasy.RabbitMQ
             {
                 setting = new RabbitConfigurationSetting
                 {
-                    Server = options.Server,
-                    Port = options.Port ?? -1,
-                    Password = options.Password,
-                    UserName = options.UserName,
-                    ExchangeType = options.ExchangeType,
-                    VirtualHost = options.VirtualHost,
-                    RequeueDelayTime = options.RequeueDelayTime
+                    Server = optValue.Server,
+                    Port = optValue.Port ?? -1,
+                    Password = optValue.Password,
+                    UserName = optValue.UserName,
+                    ExchangeType = optValue.ExchangeType,
+                    VirtualHost = optValue.VirtualHost,
+                    RequeueDelayTime = optValue.RequeueDelayTime
                 };
             }
 
@@ -71,9 +94,13 @@ namespace Fireasy.RabbitMQ
                 (this as IConfigurationSettingHostService).Attach(setting);
             }
 
-            options.Initializer?.Invoke(this);
+            optValue.Initializer?.Invoke(this);
         }
 #endif
+        /// <summary>
+        /// 获取或设置应用程序服务提供者实例。
+        /// </summary>
+        public IServiceProvider ServiceProvider { get; set; }
 
         /// <summary>
         /// 向 Rabbit 服务器发送消息主题。
@@ -284,25 +311,14 @@ namespace Fireasy.RabbitMQ
         /// <summary>
         /// 序列化对象。
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        protected virtual T Deserialize<T>(byte[] value)
-        {
-            var serializer = CreateSerializer();
-            return serializer.Deserialize<T>(value);
-        }
-
-        /// <summary>
-        /// 序列化对象。
-        /// </summary>
         /// <param name="type"></param>
         /// <param name="value"></param>
         /// <returns></returns>
         protected virtual object Deserialize(Type type, byte[] value)
         {
-            var serializer = CreateSerializer();
-            return serializer.Deserialize(type, value);
+            var serializer = GetSerializer();
+
+            return serializer.Deserialize(value, type);
         }
 
         /// <summary>
@@ -313,22 +329,37 @@ namespace Fireasy.RabbitMQ
         /// <returns></returns>
         protected virtual byte[] Serialize<T>(T value)
         {
-            var serializer = CreateSerializer();
+            var serializer = GetSerializer();
             return serializer.Serialize(value);
         }
 
-        private RabbitSerializer CreateSerializer()
+        private ISerializer GetSerializer()
         {
-            if (setting.SerializerType != null)
+            return SingletonLocker.Lock(ref serializerFactory, this, () =>
             {
-                var serializer = setting.SerializerType.New<RabbitSerializer>();
-                if (serializer != null)
+                return new Func<ISerializer>(() =>
                 {
-                    return serializer;
-                }
-            }
+                    ISerializer _serializer = null;
+                    if (setting.SerializerType != null)
+                    {
+                        _serializer = setting.SerializerType.New<ISerializer>();
+                    }
 
-            return new RabbitSerializer();
+                    if (_serializer == null)
+                    {
+                        _serializer = ServiceProvider.TryGetService<ISerializer>(() => SerializerFactory.CreateSerializer());
+                    }
+
+                    if (_serializer == null)
+                    {
+                        var option = new JsonSerializeOption();
+                        option.Converters.Add(new FullDateTimeJsonConverter());
+                        _serializer = new JsonSerializer(option);
+                    }
+
+                    return _serializer;
+                });
+            })();
         }
 
         private IConnection GetConnection()
@@ -391,7 +422,7 @@ namespace Fireasy.RabbitMQ
 
                         try
                         {
-                           
+
                             if (found.Handler.DataType == typeof(byte[]))
                             {
                                 body = args.Body;
@@ -407,7 +438,7 @@ namespace Fireasy.RabbitMQ
                         catch (Exception exp)
                         {
                             Tracer.Error($"RabbitMQSubscribeManager Consume the Topic of '{channelName}':\n{exp.Output()}");
-                            
+
                             _consumer.Model.BasicNack(args.DeliveryTag, false, false);
 
                             if (setting.RequeueDelayTime != null)
@@ -448,7 +479,7 @@ namespace Fireasy.RabbitMQ
             return setting;
         }
 
-        protected override void Dispose(bool disposing)
+        protected override bool Dispose(bool disposing)
         {
             if (connectionLazy != null && connectionLazy.IsValueCreated)
             {
@@ -457,7 +488,7 @@ namespace Fireasy.RabbitMQ
 
             subscribers?.ForEach(s => s.Value.Dispose());
 
-            base.Dispose(disposing);
+            return base.Dispose(disposing);
         }
 
         private class RabbitChannelCollection : DisposeableBase
@@ -479,12 +510,12 @@ namespace Fireasy.RabbitMQ
                 channels.ForEach(action);
             }
 
-            protected override void Dispose(bool disposing)
+            protected override bool Dispose(bool disposing)
             {
                 channels.ForEach(s => s.Dispose());
                 channels.Clear();
 
-                base.Dispose(disposing);
+                return base.Dispose(disposing);
             }
         }
 
@@ -500,10 +531,10 @@ namespace Fireasy.RabbitMQ
 
             public IModel Model { get; private set; }
 
-            protected override void Dispose(bool disposing)
+            protected override bool Dispose(bool disposing)
             {
                 Model?.Dispose();
-                base.Dispose(disposing);
+                return base.Dispose(disposing);
             }
         }
 
@@ -517,7 +548,7 @@ namespace Fireasy.RabbitMQ
         private class CustomEventingBasicConsumer : EventingBasicConsumer
         {
             public CustomEventingBasicConsumer(IModel model, string channelName)
-                : base (model)
+                : base(model)
             {
                 ChannelName = channelName;
             }

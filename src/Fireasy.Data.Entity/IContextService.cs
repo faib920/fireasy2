@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common;
 using Fireasy.Data.Provider;
 using System;
 using System.Data;
@@ -14,17 +15,12 @@ namespace Fireasy.Data.Entity
     /// <summary>
     /// 数据上下文的服务组件。
     /// </summary>
-    public interface IContextService : IDisposable, IProviderAware
+    public interface IContextService : IDisposable, IServiceProviderAccessor, IProviderAware
     {
         /// <summary>
         /// 获取 <see cref="EntityContextOptions"/> 实例。
         /// </summary>
         EntityContextOptions Options { get; }
-
-        /// <summary>
-        /// 获取应用程序服务提供者实例。
-        /// </summary>
-        IServiceProvider ServiceProvider { get; }
 
         /// <summary>
         /// 创建实体类型所对应的 <see cref="IRepositoryProvider"/> 实例。

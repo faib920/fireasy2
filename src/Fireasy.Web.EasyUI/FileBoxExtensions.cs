@@ -7,7 +7,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Linq.Expressions;
-using Fireasy.Web.Mvc;
+using Fireasy.Web.Mvc.Rendering;
 #if !NETCOREAPP
 using System.Web.Mvc;
 #else

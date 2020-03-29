@@ -28,9 +28,9 @@ namespace Fireasy.Data.Entity.Linq.Translators.Configuration
                         HideTableAliases = ndOption.GetAttributeValue("hideTableAliases", false),
                         HideColumnAliases = ndOption.GetAttributeValue("hideColumnAliases", false),
                         CacheParsing = ndOption.GetAttributeValue("cacheParsing", true),
-                        CacheParsingTimes = ndOption.GetAttributeValue("cacheParsingTimes").GetTimeSpan(TimeSpan.FromMinutes(10)),
+                        CacheParsingTimes = ndOption.GetAttributeValue("cacheParsingTimes").ToTimeSpan(TimeSpan.FromMinutes(10)),
                         CacheExecution = ndOption.GetAttributeValue("cacheExecution", false),
-                        CacheExecutionTimes = ndOption.GetAttributeValue("cacheExecutionTimes").GetTimeSpan(TimeSpan.FromMinutes(5)),
+                        CacheExecutionTimes = ndOption.GetAttributeValue("cacheExecutionTimes").ToTimeSpan(TimeSpan.FromMinutes(5)),
                         TraceEntityState = ndOption.GetAttributeValue("traceEntityState", true),
                 };
             }
@@ -51,9 +51,9 @@ namespace Fireasy.Data.Entity.Linq.Translators.Configuration
                         HideTableAliases = ndOption.GetSection("hideTableAliases").Value.To(false),
                         HideColumnAliases = ndOption.GetSection("hideColumnAliases").Value.To(false),
                         CacheParsing = ndOption.GetSection("cacheParsing").Value.To(true),
-                        CacheParsingTimes = ndOption.GetSection("cacheParsingTimes").Value.GetTimeSpan(TimeSpan.FromMinutes(10)),
+                        CacheParsingTimes = ndOption.GetSection("cacheParsingTimes").Value.ToTimeSpan(TimeSpan.FromMinutes(10)),
                         CacheExecution = ndOption.GetSection("cacheExecution").Value.To(false),
-                        CacheExecutionTimes = ndOption.GetSection("cacheExecutionTimes").Value.GetTimeSpan(TimeSpan.FromMinutes(5)),
+                        CacheExecutionTimes = ndOption.GetSection("cacheExecutionTimes").Value.ToTimeSpan(TimeSpan.FromMinutes(5)),
                         TraceEntityState = ndOption.GetSection("traceEntityState").Value.To(true)
                 };
             }

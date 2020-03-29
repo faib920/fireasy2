@@ -101,12 +101,11 @@ namespace Fireasy.Common.Serialization
             return obj;
         }
 
-        protected override void Dispose(bool disposing)
+        protected override bool Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                context.Dispose();
-            }
+            context.Dispose();
+
+            return base.Dispose(disposing);
         }
     }
 }

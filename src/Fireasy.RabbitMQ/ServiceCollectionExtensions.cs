@@ -22,9 +22,12 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IServiceCollection AddRabbitMQSubscriber(this IServiceCollection services, Action<RabbitOptions> setupAction)
         {
-            var options = new RabbitOptions();
-            setupAction?.Invoke(options);
-            services.AddSingleton(typeof(ISubscribeManager), p => new SubscribeManager(options));
+            if (setupAction != null)
+            {
+                services.Configure(setupAction);
+            }
+
+            services.AddSingleton<ISubscribeManager, SubscribeManager>();
             return services;
         }
     }

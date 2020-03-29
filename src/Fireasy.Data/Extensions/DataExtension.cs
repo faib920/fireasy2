@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -444,7 +445,7 @@ namespace Fireasy.Data.Extensions
         /// 清理IDbCommand中的参数。
         /// </summary>
         /// <param name="command"></param>
-        public static void ClearParameters(this DbCommand command)
+        public static void ClearParameters(this IDbCommand command)
         {
             if (command.Parameters.Count != 0)
             {
@@ -457,7 +458,7 @@ namespace Fireasy.Data.Extensions
         /// </summary>
         /// <param name="command"></param>
         /// <param name="parameters"></param>
-        public static void SyncParameters(this DbCommand command, IEnumerable<Parameter> parameters)
+        public static void SyncParameters(this IDbCommand command, IEnumerable<Parameter> parameters)
         {
             if (command.Parameters.Count == 0 ||
                 parameters == null)
@@ -475,7 +476,7 @@ namespace Fireasy.Data.Extensions
                 var par = command.Parameters[paramter.ParameterName];
                 if (par != null)
                 {
-                    paramter.Value = par.Value;
+                    paramter.Value = ((DbParameter)par).Value;
                 }
             }
         }
@@ -708,82 +709,74 @@ namespace Fireasy.Data.Extensions
             return "1 = 1";
         }
 
-        internal static void TryOpen(this DbConnection connection, bool autoOpen = true)
+        internal static DbConnection TryOpen(this DbConnection connection)
         {
-            if (autoOpen && connection.State != ConnectionState.Open)
+            if (connection.State != ConnectionState.Open)
             {
                 try
                 {
+                    var watch = Stopwatch.StartNew();
                     connection.Open();
+                    Tracer.Debug($"The connection of '{connection.ConnectionString}' was opened ({watch.ElapsedMilliseconds}ms).");
                 }
                 catch (DbException exp)
                 {
+                    Tracer.Error($"Opening Connection of '{connection.ConnectionString}' throw exception:{exp.Output()}");
                     throw ConnectionException.Throw(ConnectionState.Open, exp);
                 }
             }
+
+            return connection;
         }
 
-        internal static async Task TryOpenAsync(this DbConnection connection, bool autoOpen = true, CancellationToken cancellationToken = default)
+        internal static async Task<DbConnection> TryOpenAsync(this DbConnection connection, CancellationToken cancellationToken = default)
         {
-            if (autoOpen && connection.State != ConnectionState.Open)
+            if (connection.State == ConnectionState.Broken)
             {
-                try
-                {
-                    await connection.OpenAsync(cancellationToken);
-                }
-                catch (DbException exp)
-                {
-                    throw ConnectionException.Throw(ConnectionState.Open, exp);
-                }
-            }
-        }
-
-        internal static void TryClose(this DbConnection connection, bool autoOpen = true)
-        {
-            if (autoOpen && connection.State != ConnectionState.Closed)
-            {
-                try
-                {
-                    connection.Close();
-                }
-                catch (DbException exp)
-                {
-                    throw ConnectionException.Throw(ConnectionState.Closed, exp);
-                }
-            }
-        }
-
-        internal static void OpenClose(this DbConnection connection, Action action)
-        {
-            if (action == null)
-            {
-                return;
+                connection.Close();
             }
 
             if (connection.State != ConnectionState.Open)
             {
                 try
                 {
-                    connection.Open();
+                    var watch = Stopwatch.StartNew();
+                    await connection.OpenAsync(cancellationToken);
+                    Tracer.Debug($"The connection of '{connection.ConnectionString}' was opened ({watch.ElapsedMilliseconds}ms).");
                 }
                 catch (DbException exp)
                 {
+                    Tracer.Error($"Opening Connection of '{connection.ConnectionString}' throw exception:{exp.Output()}");
                     throw ConnectionException.Throw(ConnectionState.Open, exp);
                 }
             }
 
-            action();
-            if (connection.State != ConnectionState.Closed)
+            return connection;
+        }
+
+        internal static DbConnection TryClose(this DbConnection connection, bool allowClose = true)
+        {
+            if (!allowClose)
+            {
+                return connection;
+            }
+
+            if (connection.State == ConnectionState.Open)
             {
                 try
                 {
+                    var watch = Stopwatch.StartNew();
                     connection.Close();
+                    Tracer.Debug($"The connection of '{connection.ConnectionString}' was closed ({watch.ElapsedMilliseconds}ms).");
                 }
                 catch (DbException exp)
                 {
-                    throw ConnectionException.Throw(ConnectionState.Closed, exp);
+                    Tracer.Error($"Closing Connection of '{connection.ConnectionString}' throw exception:{exp.Output()}");
+                    throw ConnectionException.Throw(ConnectionState.Open, exp);
                 }
             }
+
+            return connection;
         }
 
         private static DbType GetGenericDbType(Type type)

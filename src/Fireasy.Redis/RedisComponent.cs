@@ -9,26 +9,29 @@ using Fireasy.Common;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 #if NETSTANDARD
+using Fireasy.Common.ComponentModel;
 using CSRedis;
-using System.Text;
+using System.Linq;
 #else
 using StackExchange.Redis;
 #endif
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Fireasy.Common.ComponentModel;
+using System.Text;
 using System.Text.RegularExpressions;
+using Fireasy.Common.Serialization;
+using Fireasy.Common.Threading;
 
 namespace Fireasy.Redis
 {
     /// <summary>
     /// Redis 组件抽象类。
     /// </summary>
-    public abstract class RedisComponent : DisposeableBase, IConfigurationSettingHostService
+    public abstract class RedisComponent : DisposeableBase, IConfigurationSettingHostService, IServiceProviderAccessor
     {
         private List<int> dbRanage;
         private Func<string, string> captureRule;
+        private Func<ISerializer> serializerFactory;
 
 #if NETSTANDARD
         private readonly List<string> connectionStrs = new List<string>();
@@ -38,6 +41,10 @@ namespace Fireasy.Redis
 
         protected ConfigurationOptions Options { get; private set; }
 #endif
+        /// <summary>
+        /// 获取或设置应用程序服务提供者实例。
+        /// </summary>
+        public IServiceProvider ServiceProvider { get; set; }
 
         /// <summary>
         /// 获取 Redis 的相关配置。
@@ -52,8 +59,13 @@ namespace Fireasy.Redis
         /// <returns></returns>
         protected virtual T Deserialize<T>(string value)
         {
-            var serializer = CreateSerializer();
-            return serializer.Deserialize<T>(value);
+            var serializer = GetSerializer();
+            if (serializer is ITextSerializer txtSerializer)
+            {
+                return txtSerializer.Deserialize<T>(value);
+            }
+
+            return serializer.Deserialize<T>(Encoding.UTF8.GetBytes(value));
         }
 
         /// <summary>
@@ -64,8 +76,13 @@ namespace Fireasy.Redis
         /// <returns></returns>
         protected virtual object Deserialize(Type type, string value)
         {
-            var serializer = CreateSerializer();
-            return serializer.Deserialize(type, value);
+            var serializer = GetSerializer();
+            if (serializer is ITextSerializer txtSerializer)
+            {
+                return txtSerializer.Deserialize(value, type);
+            }
+
+            return serializer.Deserialize(Encoding.UTF8.GetBytes(value), type);
         }
 
         /// <summary>
@@ -76,22 +93,13 @@ namespace Fireasy.Redis
         /// <returns></returns>
         protected virtual string Serialize<T>(T value)
         {
-            var serializer = CreateSerializer();
-            return serializer.Serialize(value);
-        }
-
-        private RedisSerializer CreateSerializer()
-        {
-            if (Setting.SerializerType != null)
+            var serializer = GetSerializer();
+            if (serializer is ITextSerializer txtSerializer)
             {
-                var serializer = Setting.SerializerType.New<RedisSerializer>();
-                if (serializer != null)
-                {
-                    return serializer;
-                }
+                return txtSerializer.Serialize(value);
             }
 
-            return new RedisSerializer();
+            return Encoding.UTF8.GetString(serializer.Serialize(value));
         }
 
 #if NETSTANDARD
@@ -104,9 +112,17 @@ namespace Fireasy.Redis
 
             var ckey = captureRule == null ? key : captureRule(key);
             var index = GetModulus(ckey, dbRanage.Count);
+
+            Tracer.Debug($"Select redis db{index} for the key '{key}'.");
+
             return clients.GetOrAdd(index, k =>
             {
-                return new CSRedisClient(null, connectionStrs.Select(s => string.Concat(s, $",defaultDatabase={dbRanage[k]}")).ToArray());
+                var constrs = connectionStrs.Select(s => string.Concat(s, $",defaultDatabase={dbRanage[k]}")).ToArray();
+                constrs.ForEach(s =>
+                {
+                    Tracer.Debug($"Connecting to the redis server '{s}'.");
+                });
+                return new CSRedisClient(null, constrs);
             });
         }
 
@@ -126,6 +142,11 @@ namespace Fireasy.Redis
             var client = connectionLazy.Value;
             var ckey = captureRule == null ? key : captureRule(key);
             var index = dbRanage != null ? GetModulus(ckey, dbRanage.Count) : (Options.DefaultDatabase ?? 0);
+
+            if (dbRanage != null)
+            {
+                Tracer.Debug($"Select redis db{index} for the key '{key}'.");
+            }
 
             return client.GetDatabase(index);
         }
@@ -186,14 +207,14 @@ namespace Fireasy.Redis
                         connStr.Append($",poolsize={Setting.PoolSize}");
                     }
 
-                    if (Setting.ConnectTimeout != 5000)
+                    if (Setting.ConnectTimeout.Milliseconds != 5000)
                     {
-                        connStr.Append($",connectTimeout={Setting.ConnectTimeout}");
+                        connStr.Append($",connectTimeout={Setting.ConnectTimeout.Milliseconds}");
                     }
 
-                    if (Setting.SyncTimeout != 10000)
+                    if (Setting.SyncTimeout.Milliseconds != 10000)
                     {
-                        connStr.Append($",syncTimeout={Setting.SyncTimeout}");
+                        connStr.Append($",syncTimeout={Setting.SyncTimeout.Milliseconds}");
                     }
 
                     connStr.Append(",allowAdmin=true");
@@ -237,14 +258,14 @@ namespace Fireasy.Redis
                     Options.WriteBuffer = (int)Setting.WriteBuffer;
                 }
 
-                if (Setting.ConnectTimeout != 5000)
+                if (Setting.ConnectTimeout.Milliseconds != 5000)
                 {
-                    Options.ConnectTimeout = Setting.ConnectTimeout;
+                    Options.ConnectTimeout = Setting.ConnectTimeout.Milliseconds;
                 }
 
-                if (Setting.SyncTimeout != 10000)
+                if (Setting.SyncTimeout.Milliseconds != 10000)
                 {
-                    Options.SyncTimeout = Setting.SyncTimeout;
+                    Options.SyncTimeout = Setting.SyncTimeout.Milliseconds;
                 }
 
                 foreach (var host in Setting.Hosts)
@@ -337,7 +358,36 @@ namespace Fireasy.Redis
             }
         }
 
-        protected override void Dispose(bool disposing)
+        private ISerializer GetSerializer()
+        {
+            return SingletonLocker.Lock(ref serializerFactory, this, () =>
+            {
+                return new Func<ISerializer>(() =>
+                {
+                    ISerializer _serializer = null;
+                    if (Setting.SerializerType != null)
+                    {
+                        _serializer = Setting.SerializerType.New<ISerializer>();
+                    }
+
+                    if (_serializer == null)
+                    {
+                        _serializer = ServiceProvider.TryGetService<ISerializer>(() => SerializerFactory.CreateSerializer());
+                    }
+
+                    if (_serializer == null)
+                    {
+                        var option = new JsonSerializeOption();
+                        option.Converters.Add(new FullDateTimeJsonConverter());
+                        _serializer = new JsonSerializer(option);
+                    }
+
+                    return _serializer;
+                });
+            })();
+        }
+
+        protected override bool Dispose(bool disposing)
         {
 #if NETSTANDARD
             foreach (var client in clients)
@@ -352,7 +402,7 @@ namespace Fireasy.Redis
                 connectionLazy.Value.Dispose();
             }
 #endif
-            base.Dispose(disposing);
+            return base.Dispose(disposing);
         }
     }
 }

@@ -9,11 +9,9 @@
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Xml;
 using System;
-using System.Diagnostics;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
@@ -83,7 +81,20 @@ namespace Fireasy.Common.Ioc.Configuration
                     componentType = serviceType;
                 }
 
-                var singleton = child.GetSection("singleton").Value.To<bool>();
+                var lifetime = Lifetime.Transient;
+                var singleton = false;
+                if (child.GetSection("lifetime") != null)
+                {
+                    lifetime = child.GetSection("lifetime").Value.To<Lifetime>();
+                }
+                else
+                {
+                    singleton = child.GetSection("singleton").Value.To<bool>();
+                    if (singleton)
+                    {
+                        lifetime = Lifetime.Singleton;
+                    }
+                }
 
                 var assembly = child.GetSection("assembly").Value;
 
@@ -103,7 +114,8 @@ namespace Fireasy.Common.Ioc.Configuration
                 {
                     ServiceType = serviceType.ParseType(),
                     ImplementationType = componentType.ParseType(),
-                    Singleton = singleton
+                    Singleton = singleton,
+                    Lifetime = lifetime
                 });
 
             }
@@ -130,7 +142,16 @@ namespace Fireasy.Common.Ioc.Configuration
                     componentType = serviceType;
                 }
 
-                var singleton = child.GetAttributeValue<bool>("singleton");
+                var lifetime = Lifetime.Transient;
+                var singleton = false;
+                if (child.Attributes["lifetime"] != null)
+                {
+                    lifetime = child.GetAttributeValue<Lifetime>("lifetime");
+                }
+                else
+                {
+                    singleton = child.GetAttributeValue<bool>("singleton");
+                }
 
                 var assembly = child.GetAttributeValue("assembly");
 
@@ -150,7 +171,8 @@ namespace Fireasy.Common.Ioc.Configuration
                 {
                     ServiceType = serviceType.ParseType(),
                     ImplementationType = componentType.ParseType(),
-                    Singleton = singleton
+                    Singleton = singleton,
+                    Lifetime = lifetime
                 });
             }
 

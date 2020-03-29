@@ -7,9 +7,11 @@
 // -----------------------------------------------------------------------
 #if NETSTANDARD
 using Fireasy.Common.ComponentModel;
+using Fireasy.Common.Options;
 using Fireasy.Common.Subscribes.Configuration;
 using System.Collections.Generic;
 using CSRedis;
+using Microsoft.Extensions.Options;
 #endif
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Subscribes;
@@ -41,40 +43,50 @@ namespace Fireasy.Redis
         }
 
 #if NETSTANDARD
-        internal SubscribeManager(RedisSubscribeOptions options)
+        /// <summary>
+        /// 初始化 <see cref="SubscribeManager"/> 类的新实例。
+        /// </summary>
+        /// <param name="options"></param>
+        public SubscribeManager(IOptionsMonitor<RedisSubscribeOptions> options)
         {
+            var optValue = options.CurrentValue;
+            if (!optValue.IsConfigured())
+            {
+                return;
+            }
+
             RedisConfigurationSetting setting;
-            if (!string.IsNullOrEmpty(options.ConfigName))
+            if (!string.IsNullOrEmpty(optValue.ConfigName))
             {
                 var section = ConfigurationUnity.GetSection<SubscribeConfigurationSection>();
-                if (section != null && section.GetSetting(options.ConfigName) is ExtendConfigurationSetting extSetting)
+                if (section != null && section.GetSetting(optValue.ConfigName) is ExtendConfigurationSetting extSetting)
                 {
                     setting = (RedisConfigurationSetting)extSetting.Extend;
                 }
                 else
                 {
-                    throw new InvalidOperationException($"无效的配置节: {options.ConfigName}。");
+                    throw new InvalidOperationException($"无效的配置节: {optValue.ConfigName}。");
                 }
             }
             else
             {
                 setting = new RedisConfigurationSetting
                 {
-                    Password = options.Password,
-                    ConnectionString = options.ConnectionString,
-                    DefaultDb = options.DefaultDb,
-                    ConnectTimeout = options.ConnectTimeout,
-                    LockTimeout = options.LockTimeout,
-                    SyncTimeout = options.SyncTimeout,
-                    WriteBuffer = options.WriteBuffer,
-                    PoolSize = options.PoolSize,
-                    SerializerType = options.SerializerType,
-                    Ssl = options.Ssl,
-                    Twemproxy = options.Twemproxy,
-                    RequeueDelayTime = options.RequeueDelayTime
+                    Password = optValue.Password,
+                    ConnectionString = optValue.ConnectionString,
+                    DefaultDb = optValue.DefaultDb,
+                    ConnectTimeout = optValue.ConnectTimeout,
+                    LockTimeout = optValue.LockTimeout,
+                    SyncTimeout = optValue.SyncTimeout,
+                    WriteBuffer = optValue.WriteBuffer,
+                    PoolSize = optValue.PoolSize,
+                    SerializerType = optValue.SerializerType,
+                    Ssl = optValue.Ssl,
+                    Twemproxy = optValue.Twemproxy,
+                    RequeueDelayTime = optValue.RequeueDelayTime
                 };
 
-                RedisHelper.ParseHosts(setting, options.Hosts);
+                RedisHelper.ParseHosts(setting, optValue.Hosts);
             }
 
             if (setting != null)
@@ -82,7 +94,7 @@ namespace Fireasy.Redis
                 (this as IConfigurationSettingHostService).Attach(setting);
             }
 
-            options.Initializer?.Invoke(this);
+            optValue.Initializer?.Invoke(this);
         }
 #endif
 
@@ -132,7 +144,14 @@ namespace Fireasy.Redis
 #if NETSTANDARD
             var client = GetConnection(null);
             var name = TopicHelper.GetTopicName(typeof(TSubject));
-            await client.PublishAsync(name, Serialize(subject));
+            try
+            {
+                await client.PublishAsync(name, Serialize(subject));
+            }
+            catch (AggregateException exp)
+            {
+                Tracer.Error($"RedisMQ PublishAsync throw exception:\n{exp.Output()}");
+            }
 #else
             var data = Encoding.UTF8.GetBytes(Serialize(subject));
             var name = TopicHelper.GetTopicName(typeof(TSubject));
@@ -150,7 +169,15 @@ namespace Fireasy.Redis
         {
 #if NETSTANDARD
             var client = GetConnection(null);
-            await client.PublishAsync(name, Serialize(subject));
+            try
+            {
+                await client.PublishAsync(name, Serialize(subject));
+            }
+            catch (AggregateException exp)
+            {
+                Tracer.Error($"RedisMQ PublishAsync throw exception:\n{exp.Output()}");
+            }
+
 #else
             var data = Encoding.UTF8.GetBytes(Serialize(subject));
             Publish(name, data);
@@ -226,7 +253,7 @@ namespace Fireasy.Redis
             channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((name, msg =>
                     {
-                        Tracer.Debug($"RedisSubscribeManager accept message of '{name}'.");
+                        Tracer.Debug($"RedisSubscribeManager received the message of '{name}'.");
 
                         TSubject subject = null;
                         try
@@ -236,7 +263,7 @@ namespace Fireasy.Redis
                         }
                         catch (Exception exp)
                         {
-                            Tracer.Error($"Redis Consume the Topic of '{name}':\n{exp.Output()}");
+                            Tracer.Error($"Redis Consume the Topic of '{name}' throw exception:\n{exp.Output()}");
 
                             if (Setting.RequeueDelayTime != null && subject != null)
                             {
@@ -253,7 +280,7 @@ namespace Fireasy.Redis
             var client = GetConnection();
             client.GetSubscriber().Subscribe(name, (channel, value) =>
                 {
-                    Tracer.Debug($"RedisSubscribeManager accept message of '{name}'.");
+                    Tracer.Debug($"RedisSubscribeManager received the message of '{name}'.");
 
                     TSubject subject = null;
                     try
@@ -263,7 +290,7 @@ namespace Fireasy.Redis
                     }
                     catch (Exception exp)
                     {
-                        Tracer.Error($"Redis Consume the Topic of '{name}':\n{exp.Output()}");
+                        Tracer.Error($"Redis Consume the Topic of '{name}' throw exception:\n{exp.Output()}");
 
                         if (Setting.RequeueDelayTime != null && subject != null)
                         {
@@ -292,7 +319,7 @@ namespace Fireasy.Redis
             channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((name, msg =>
                     {
-                        Tracer.Debug($"RedisSubscribeManager accept message of '{name}'.");
+                        Tracer.Debug($"RedisSubscribeManager received the message of '{name}'.");
 
                         TSubject subject = null;
                         try
@@ -302,7 +329,7 @@ namespace Fireasy.Redis
                         }
                         catch (Exception exp)
                         {
-                            Tracer.Error($"Redis Consume the Topic of '{name}':\n{exp.Output()}");
+                            Tracer.Error($"Redis Consume the Topic of '{name}' throw exception:\n{exp.Output()}");
 
                             if (Setting.RequeueDelayTime != null && subject != null)
                             {
@@ -319,7 +346,7 @@ namespace Fireasy.Redis
             var client = GetConnection();
             client.GetSubscriber().Subscribe(name, (channel, value) =>
                 {
-                    Tracer.Debug($"RedisSubscribeManager accept message of '{name}'.");
+                    Tracer.Debug($"RedisSubscribeManager received the message of '{name}'.");
 
                     TSubject subject = null;
                     try
@@ -329,7 +356,7 @@ namespace Fireasy.Redis
                     }
                     catch (Exception exp)
                     {
-                        Tracer.Error($"Redis Consume the Topic of '{name}':\n{exp.Output()}");
+                        Tracer.Error($"Redis Consume the Topic of '{name}' throw exception:\n{exp.Output()}");
 
                         if (Setting.RequeueDelayTime != null && subject != null)
                         {
@@ -357,7 +384,7 @@ namespace Fireasy.Redis
             channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((name, msg =>
                     {
-                        Tracer.Debug($"RedisSubscribeManager accept message of '{name}'.");
+                        Tracer.Debug($"RedisSubscribeManager received the message of '{name}'.");
 
                         object subject = null;
                         try
@@ -370,7 +397,7 @@ namespace Fireasy.Redis
                         }
                         catch (Exception exp)
                         {
-                            Tracer.Error($"Redis Consume the Topic of '{name}':\n{exp.Output()}");
+                            Tracer.Error($"Redis Consume the Topic of '{name}' throw exception:\n{exp.Output()}");
                             
                             if (Setting.RequeueDelayTime != null)
                             {
@@ -386,7 +413,7 @@ namespace Fireasy.Redis
 #else
             client.GetSubscriber().Subscribe(name, (channel, value) =>
                 {
-                    Tracer.Debug($"RedisSubscribeManager accept message of '{name}'.");
+                    Tracer.Debug($"RedisSubscribeManager received the message of '{name}'.");
 
                     var subject = Deserialize(subjectType, Encoding.UTF8.GetString(value));
                     if (subject != null)
@@ -397,7 +424,7 @@ namespace Fireasy.Redis
                         }
                         catch (Exception exp)
                         {
-                            Tracer.Error($"Redis Consume the Topic of '{name}':\n{exp.Output()}");
+                            Tracer.Error($"Redis Consume the Topic of '{name}' throw exception:\n{exp.Output()}");
 
                             if (Setting.RequeueDelayTime != null)
                             {
@@ -425,7 +452,7 @@ namespace Fireasy.Redis
             channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((name, msg =>
                     {
-                        Tracer.Debug($"RedisSubscribeManager accept message of '{name}'.");
+                        Tracer.Debug($"RedisSubscribeManager received the message of '{name}'.");
 
                         var bytes = Encoding.UTF8.GetBytes(msg.Body);
                         try
@@ -434,7 +461,7 @@ namespace Fireasy.Redis
                         }
                         catch (Exception exp)
                         {
-                            Tracer.Error($"Redis Consume the Topic of '{name}':\n{exp.Output()}");
+                            Tracer.Error($"Redis Consume the Topic of '{name}' throw exception:\n{exp.Output()}");
                             
                             if (Setting.RequeueDelayTime != null)
                             {
@@ -450,7 +477,7 @@ namespace Fireasy.Redis
 #else
             client.GetSubscriber().Subscribe(name, (c, value) =>
                 {
-                    Tracer.Debug($"RedisSubscribeManager accept message of '{name}'.");
+                    Tracer.Debug($"RedisSubscribeManager received the message of '{name}'.");
 
                     try
                     {
@@ -458,7 +485,7 @@ namespace Fireasy.Redis
                     }
                     catch (Exception exp)
                     {
-                        Tracer.Error($"Redis Consume the Topic of '{name}':\n{exp.Output()}");
+                        Tracer.Error($"Redis Consume the Topic of '{name}' throw exception:\n{exp.Output()}");
 
                         if (Setting.RequeueDelayTime != null)
                         {
@@ -509,7 +536,7 @@ namespace Fireasy.Redis
 #endif
         }
 
-        protected override void Dispose(bool disposing)
+        protected override bool Dispose(bool disposing)
         {
 #if NETSTANDARD
             foreach (var kvp in channels)
@@ -520,7 +547,7 @@ namespace Fireasy.Redis
 
             channels.Clear();
 #endif
-            base.Dispose(disposing);
+            return base.Dispose(disposing);
         }
     }
 }

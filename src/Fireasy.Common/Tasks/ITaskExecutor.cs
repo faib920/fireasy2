@@ -30,6 +30,6 @@ namespace Fireasy.Common.Tasks
         /// 触发的执行处理。
         /// </summary>
         /// <param name="cancellationToken"></param>
-        Task ExecuteAsync(TaskExecuteContext context, CancellationToken cancellationToken = default);
+        Task ExecuteAsync(TaskExecuteContext context);
     }
 }

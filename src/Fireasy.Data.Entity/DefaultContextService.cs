@@ -8,6 +8,7 @@
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Threading;
 using Fireasy.Data.Entity.Linq;
+using Fireasy.Data.Entity.Query;
 using System;
 using System.Data;
 
@@ -37,18 +38,18 @@ namespace Fireasy.Data.Entity
             Func<IDatabase> dbCreator;
             if (context.Options.Provider != null && context.Options.ConnectionString != null)
             {
-                dbCreator = () => new Database(context.Options.ConnectionString, context.Options.Provider, context.ServiceProvider);
+                dbCreator = () => new Database(context.Options.ConnectionString, context.Options.Provider);
             }
             else if (context.Options != null)
             {
-                dbCreator = () => DatabaseFactory.CreateDatabase(context.Options.ConfigName, context.ServiceProvider);
+                dbCreator = () => DatabaseFactory.CreateDatabase(context.Options.ConfigName);
             }
             else
             {
                 throw new InvalidOperationException(SR.GetString(SRKind.NotSupportDatabaseFactory));
             }
 
-            Database = EntityDatabaseFactory.CreateDatabase(InstanceName, dbCreator);
+            Database = EntityDatabaseFactory.CreateDatabase(InstanceName, dbCreator).TrySetServiceProvider(context.ServiceProvider);
             QueryPolicy = new DefaultQueryPolicy(Provider);
         }
 
@@ -89,9 +90,12 @@ namespace Fireasy.Data.Entity
         /// 释放资源。
         /// </summary>
         /// <param name="disposing"></param>
-        protected override void Dispose(bool disposing)
+        protected override bool Dispose(bool disposing)
         {
             Database?.Dispose();
+            Database = null;
+
+            return base.Dispose(disposing);
         }
     }
 }

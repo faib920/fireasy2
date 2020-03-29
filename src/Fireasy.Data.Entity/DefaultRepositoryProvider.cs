@@ -6,11 +6,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
-using Fireasy.Common.Threading;
 using Fireasy.Data.Batcher;
 using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Entity.Properties;
+using Fireasy.Data.Entity.Query;
 using Fireasy.Data.Provider;
 using Fireasy.Data.Syntax;
 using System;
@@ -51,7 +51,7 @@ namespace Fireasy.Data.Entity
 
         IRepository IRepositoryProvider.CreateRepository(EntityContextOptions options)
         {
-            return SingletonLocker.Lock(ref repository, () => new EntityRepository<TEntity>(this, options));
+            return repository ?? (repository = new EntityRepository<TEntity>(this, options));
         }
 
         /// <summary>

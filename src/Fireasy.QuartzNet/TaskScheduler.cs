@@ -9,28 +9,29 @@ using Fireasy.Common.Extensions;
 using Fireasy.Common.Tasks;
 #if NETSTANDARD
 using Microsoft.Extensions.Hosting;
-using System.Threading;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 #endif
 using Quartz;
 using Quartz.Impl;
 using System;
 using System.Collections.Specialized;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Fireasy.Common;
 
 namespace Fireasy.QuartzNet
 {
-    public class TaskScheduler : ITaskScheduler
+    public class TaskScheduler : DisposeableBase, ITaskScheduler, IServiceProviderAccessor
     {
         private readonly IScheduler scheduler;
-        private readonly IServiceProvider serviceProvider;
+        private readonly CancellationTokenSource stopToken = new CancellationTokenSource();
 
         public TaskScheduler()
         {
             var props = new NameValueCollection
                 {
-                    { "quartz.serializer.type", "binary" },
-                    { "quartz.config", "~/quartz.config" }
+                    { "quartz.serializer.type", "binary" }
                 };
 
             var factory = new StdSchedulerFactory(props);
@@ -39,62 +40,19 @@ namespace Fireasy.QuartzNet
         }
 
 #if NETSTANDARD
-        public TaskScheduler(IServiceProvider serviceProvider, IEnumerable<TaskExecutorDefiniton> definitions)
+        public TaskScheduler(IServiceProvider serviceProvider, IOptions<QuartzScheduleOptions> options)
             : this()
         {
-            this.serviceProvider = serviceProvider;
+            ServiceProvider = serviceProvider;
+            var _options = options.Value;
 
-            if (definitions == null)
-            {
-                return;
-            }
-
-            foreach (var def in definitions)
-            {
-                var executor = serviceProvider.GetService(def.ExecutorType);
-                if (executor == null)
-                {
-                    continue;
-                }
-
-                var dataMap = new JobDataMap
-                    {
-                        { "executor", executor },
-                        { "serviceProvider", serviceProvider }
-                    };
-
-                Func<JobBuilder> bfunc = null;
-                if (executor is ITaskExecutor)
-                {
-                    bfunc = () => JobBuilder.Create<SyncJobWrapper>();
-
-                }
-                else if (executor is IAsyncTaskExecutor)
-                {
-                    bfunc = () => JobBuilder.Create<AsyncJobWrapper>();
-
-                }
-
-                if (bfunc != null)
-                {
-                    var job = bfunc().SetJobData(dataMap).Build();
-
-                    scheduler.ScheduleJob(job, CreateTrigger(def.Delay, def.Period));
-                }
-            }
-        }
-
-        public TaskScheduler(IServiceProvider serviceProvider, QuartzScheduleOptions options)
-            : this()
-        {
-            this.serviceProvider = serviceProvider;
-
-            foreach (var task in options.Tasks)
+            foreach (var task in _options.Tasks)
             {
                 var dataMap = new JobDataMap
                     {
                         { "executor", task.Executor },
-                        { "serviceProvider", serviceProvider }
+                        { "serviceProvider", serviceProvider },
+                        { "cancellationToken", stopToken.Token }
                     };
 
                 var job = JobBuilder.Create<AnonymousJobWrapper>()
@@ -106,12 +64,23 @@ namespace Fireasy.QuartzNet
         }
 #endif
 
-        public void Start<T>(StartOptions<T> options) where T : ITaskExecutor
+        /// <summary>
+        /// 获取预执行器列表。
+        /// </summary>
+        public Queue<TaskExecutorDefiniton> PreTasks { get; } = new Queue<TaskExecutorDefiniton>();
+
+        /// <summary>
+        /// 获取或设置应用程序服务提供者实例。
+        /// </summary>
+        public IServiceProvider ServiceProvider { get; set; }
+
+        public void StartExecutor<T>(StartOptions<T> options) where T : ITaskExecutor
         {
             var dataMap = new JobDataMap
             {
                 { "arguments", options.Arguments },
-                { "serviceProvider", serviceProvider },
+                { "serviceProvider", ServiceProvider },
+                { "cancellationToken", stopToken.Token },
                 { "initializer", options.Initializer }
             };
 
@@ -122,12 +91,13 @@ namespace Fireasy.QuartzNet
             scheduler.ScheduleJob(job, CreateTrigger(options.Delay, options.Period));
         }
 
-        public void StartAsync<T>(StartOptions<T> options) where T : IAsyncTaskExecutor
+        public void StartExecutorAsync<T>(StartOptions<T> options) where T : IAsyncTaskExecutor
         {
             var dataMap = new JobDataMap
             {
                 { "arguments", options.Arguments },
-                { "serviceProvider", serviceProvider },
+                { "serviceProvider", ServiceProvider },
+                { "cancellationToken", stopToken.Token },
                 { "initializer", options.Initializer }
             };
 
@@ -138,10 +108,26 @@ namespace Fireasy.QuartzNet
             scheduler.ScheduleJob(job, CreateTrigger(options.Delay, options.Period));
         }
 
+        public void Start()
+        {
+            while (PreTasks.Count > 0)
+            {
+                TaskRunHelper.Run(this, PreTasks.Dequeue());
+            }
+        }
+
         public void Stop()
         {
+            stopToken.Cancel();
             scheduler?.Shutdown();
             scheduler?.TryDispose();
+        }
+
+        protected override bool Dispose(bool disposing)
+        {
+            stopToken.Dispose();
+
+            return base.Dispose(disposing);
         }
 
         private ITrigger CreateTrigger(TimeSpan delay, TimeSpan period)
@@ -157,6 +143,7 @@ namespace Fireasy.QuartzNet
 #if NETSTANDARD
         Task IHostedService.StartAsync(CancellationToken cancellationToken)
         {
+            Start();
             return Task.CompletedTask;
         }
 

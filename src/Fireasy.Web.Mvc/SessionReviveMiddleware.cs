@@ -7,8 +7,8 @@
 // -----------------------------------------------------------------------
 #if NETCOREAPP
 
+using Fireasy.Common.Extensions;
 using Microsoft.AspNetCore.Http;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Fireasy.Web.Mvc
@@ -18,8 +18,8 @@ namespace Fireasy.Web.Mvc
     /// </summary>
     public class SessionReviveMiddleware
     {
-        private RequestDelegate next;
-        private ISessionReviveNotification notification;
+        private readonly RequestDelegate next;
+        private readonly ISessionReviveNotification notification;
 
         /// <summary>
         /// 初始化 <see cref="SessionReviveMiddleware"/> 类的新实例。
@@ -36,7 +36,7 @@ namespace Fireasy.Web.Mvc
         {
             if (notification != null &&
                 context.Session != null &&
-                context.Session.Keys.Count() == 0 &&
+                context.Session.Keys.IsNullOrEmpty() &&
                 context.User.Identity.IsAuthenticated)
             {
                 await notification.InvokeAsync(context);

@@ -61,7 +61,7 @@ namespace Fireasy.Data.Schema
         /// <summary>
         /// 获取列长度。
         /// </summary>
-        public long Size { get; set; }
+        public long Length { get; set; }
 
         /// <summary>
         /// 获取是否可为空。

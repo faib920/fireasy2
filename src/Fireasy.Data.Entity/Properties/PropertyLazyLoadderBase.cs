@@ -67,6 +67,21 @@ namespace Fireasy.Data.Entity.Properties
 
             return Expression.Lambda(binExp, parExp);
         }
+
+        /// <summary>
+        /// 判断是否不需要加载。
+        /// </summary>
+        /// <param name="identifier"></param>
+        /// <returns></returns>
+        protected bool CheckWithoutLoading(IInstanceIdentifier identifier)
+        {
+            if (identifier is EntityContextOptions options && options.LoadBehavior == LoadBehavior.None)
+            {
+                return true;
+            }
+
+            return false;
+        }
     }
 
     /// <summary>
@@ -81,14 +96,14 @@ namespace Fireasy.Data.Entity.Properties
             var instanceName = entity.GetInstanceName();
             var environment = entity.GetEnvironment();
 
-            var identification = ContextInstanceManager.TryGet(instanceName);
-            if (identification == null)
+            var identifier = ContextInstanceManager.TryGet(instanceName);
+            if (identifier == null || CheckWithoutLoading(identifier))
             {
                 return PropertyValue.Empty;
             }
 
-            var contextProvider = identification.GetProviderService<IContextProvider>();
-            using var service = contextProvider.CreateContextService(new ContextServiceContext(identification));
+            var contextProvider = identifier.GetProviderService<IContextProvider>();
+            using var service = contextProvider.CreateContextService(new ContextServiceContext(identifier));
             service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
 
             var repProvider = service.CreateRepositoryProvider(entityProperty.RelationalType);
@@ -143,14 +158,14 @@ namespace Fireasy.Data.Entity.Properties
             var instanceName = entity.GetInstanceName();
             var environment = entity.GetEnvironment();
 
-            var identification = ContextInstanceManager.TryGet(instanceName);
-            if (identification == null)
+            var identifier = ContextInstanceManager.TryGet(instanceName);
+            if (identifier == null || CheckWithoutLoading(identifier))
             {
                 return PropertyValue.Empty;
             }
 
-            var contextProvider = identification.GetProviderService<IContextProvider>();
-            using var service = contextProvider.CreateContextService(new ContextServiceContext(identification));
+            var contextProvider = identifier.GetProviderService<IContextProvider>();
+            using var service = contextProvider.CreateContextService(new ContextServiceContext(identifier));
             service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
 
             var repProvider = service.CreateRepositoryProvider(entityProperty.RelationalType);
@@ -207,14 +222,14 @@ namespace Fireasy.Data.Entity.Properties
             var instanceName = entity.GetInstanceName();
             var environment = entity.GetEnvironment();
 
-            var identification = ContextInstanceManager.TryGet(instanceName);
-            if (identification == null)
+            var identifier = ContextInstanceManager.TryGet(instanceName);
+            if (identifier == null || CheckWithoutLoading(identifier))
             {
                 return PropertyValue.Empty;
             }
 
-            var contextProvider = identification.GetProviderService<IContextProvider>();
-            using var service = contextProvider.CreateContextService(new ContextServiceContext(identification));
+            var contextProvider = identifier.GetProviderService<IContextProvider>();
+            using var service = contextProvider.CreateContextService(new ContextServiceContext(identifier));
             service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
 
             var repProvider = service.CreateRepositoryProvider(referenceProperty.RelationalType);

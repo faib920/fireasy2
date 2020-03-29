@@ -14,13 +14,14 @@ using Fireasy.Common;
 using Fireasy.Data.Provider;
 using System.Threading;
 using System.Threading.Tasks;
+using Fireasy.Common.Extensions;
 
 namespace Fireasy.Data.Entity
 {
     /// <summary>
     /// 用于在持久化环境中对 <see cref="IDatabase"/> 对象的包装。无法继承此类。
     /// </summary>
-    internal sealed class EntityDatabase : IDatabase
+    internal sealed class EntityDatabase : IDatabase, IServiceProviderAccessor
     {
         private readonly IDatabase database;
 
@@ -45,6 +46,12 @@ namespace Fireasy.Data.Entity
             set { database.ConnectionString = value; }
         }
 
+        IServiceProvider IServiceProviderAccessor.ServiceProvider
+        {
+            get { return database.TryGetServiceProvider(); }
+            set { database.TrySetServiceProvider(value); }
+        }
+
         IProvider IDatabase.Provider
         {
             get { return database.Provider; }
@@ -65,7 +72,6 @@ namespace Fireasy.Data.Entity
         {
             get { return database.Connection; }
         }
-
         bool IDatabase.BeginTransaction(IsolationLevel level)
         {
             return database.BeginTransaction(level);
@@ -101,9 +107,9 @@ namespace Fireasy.Data.Entity
             return database.ExecuteNonQuery(queryCommand, parameters);
         }
 
-        IDataReader IDatabase.ExecuteReader(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters)
+        IDataReader IDatabase.ExecuteReader(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CommandBehavior? behavior = null)
         {
-            return database.ExecuteReader(queryCommand, segment, parameters);
+            return database.ExecuteReader(queryCommand, segment, parameters, behavior);
         }
 
         object IDatabase.ExecuteScalar(IQueryCommand queryCommand, ParameterCollection parameters)
@@ -136,9 +142,9 @@ namespace Fireasy.Data.Entity
             return database.ExecuteNonQueryAsync(queryCommand, parameters, cancellationToken);
         }
 
-        Task<IDataReader> IDatabase.ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CancellationToken cancellationToken)
+        Task<IDataReader> IDatabase.ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CommandBehavior? behavior, CancellationToken cancellationToken)
         {
-            return database.ExecuteReaderAsync(queryCommand, segment, parameters, cancellationToken);
+            return database.ExecuteReaderAsync(queryCommand, segment, parameters, behavior, cancellationToken);
         }
 
         Task<object> IDatabase.ExecuteScalarAsync(IQueryCommand queryCommand, ParameterCollection parameters, CancellationToken cancellationToken)

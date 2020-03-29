@@ -262,7 +262,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 return false;
             }
 
-            return a.NodeType switch
+            return (DbExpressionType)a.NodeType switch
             {
                 DbExpressionType.Scalar => CompareScalar((ScalarExpression)a, (ScalarExpression)b),
                 DbExpressionType.Exists => CompareExists((ExistsExpression)a, (ExistsExpression)b),

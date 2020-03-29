@@ -18,7 +18,7 @@ namespace Fireasy.Data.Entity
         /// 初始化 <see cref="ContextServiceContext"/> 类的新实例。
         /// </summary>
         /// <param name="identification"></param>
-        public ContextServiceContext(IInstanceIdentification identification)
+        public ContextServiceContext(IInstanceIdentifier identification)
         {
             ServiceProvider = identification.ServiceProvider;
             Options = (EntityContextOptions)identification;

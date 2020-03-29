@@ -13,7 +13,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.IO;
 using System.Linq;
 
 namespace Fireasy.Data.Provider
@@ -25,7 +24,7 @@ namespace Fireasy.Data.Provider
     {
         private DbProviderFactory factory;
         private readonly IProviderFactoryResolver[] resolvers;
-        private readonly SafetyDictionary<string, IProviderService> services = new SafetyDictionary<string, IProviderService>();
+        private readonly SafetyDictionary<Type, Lazy<IProviderService>> services = new SafetyDictionary<Type, Lazy<IProviderService>>();
 
         /// <summary>
         /// 初始化 <see cref="ProviderBase"/> 类的新实例。
@@ -54,7 +53,10 @@ namespace Fireasy.Data.Provider
         /// </summary>
         public virtual DbProviderFactory DbProviderFactory
         {
-            get { return SingletonLocker.Lock(ref factory, () => InitDbProviderFactory()); }
+            get
+            {
+                return SingletonLocker.Lock(ref factory, this, () => InitDbProviderFactory());
+            }
         }
 
         /// <summary>
@@ -77,22 +79,22 @@ namespace Fireasy.Data.Provider
         /// <returns></returns>
         public virtual TService GetService<TService>() where TService : class, IProviderService
         {
-            if (services.TryGetValue(typeof(TService).Name, out IProviderService service))
+            if (services.TryGetValue(typeof(TService), out Lazy<IProviderService> lazy))
             {
-                return (TService)service;
+                return (TService)lazy.Value;
             }
 
             var attr = typeof(TService).GetCustomAttributes<DefaultProviderServiceAttribute>().FirstOrDefault();
             if (attr != null && typeof(TService).IsAssignableFrom(attr.ServiceType))
             {
-                service = attr.ServiceType.New<TService>();
+                var service = attr.ServiceType.New<TService>();
                 if (service == null)
                 {
                     return default;
                 }
 
                 service.Provider = this;
-                return (TService)service;
+                return service;
             }
 
             return default;
@@ -104,7 +106,7 @@ namespace Fireasy.Data.Provider
         /// <returns></returns>
         public virtual IEnumerable<IProviderService> GetServices()
         {
-            return services.Values;
+            return services.Values.Select(s => s.Value);
         }
 
         /// <summary>
@@ -114,30 +116,18 @@ namespace Fireasy.Data.Provider
         /// <typeparam name="TImplement"></typeparam>
         public virtual void RegisterService<TDefinition, TImplement>() where TDefinition : class, IProviderService where TImplement : class, TDefinition, new()
         {
-            RegisterService<TDefinition>(new TImplement
-            {
-                Provider = this
-            });
+            RegisterService(typeof(TDefinition), typeof(TImplement));
         }
 
-        /// <summary>
-        /// 注册指定类型的插件服务。
-        /// </summary>
-        /// <typeparam name="TService"></typeparam>
-        /// <param name="provider"></param>
-        public virtual void RegisterService<TService>(TService provider) where TService : class, IProviderService
-        {
-            services.AddOrUpdate(typeof(TService).Name, () => provider);
-        }
 
         /// <summary>
         /// 注册指定类型的插件服务。
         /// </summary>
         /// <param name="definedType"></param>
-        /// <param name="service"></param>
-        public virtual void RegisterService(Type definedType, IProviderService service)
+        /// <param name="factory"></param>
+        public virtual void RegisterService(Type definedType, Func<IProviderService> factory)
         {
-            services.AddOrUpdate(definedType.Name, () => service);
+            services.AddOrUpdate(definedType, () => new Lazy<IProviderService>(factory));
         }
 
         /// <summary>
@@ -149,8 +139,18 @@ namespace Fireasy.Data.Provider
             var providerService = serviceType.GetDirectImplementInterface(typeof(IProviderService));
             if (providerService != null)
             {
-                RegisterService(providerService, serviceType.New<IProviderService>());
+                services.AddOrUpdate(providerService, () => new Lazy<IProviderService>(() => serviceType.New<IProviderService>()));
             }
+        }
+
+        /// <summary>
+        /// 注册插件服务类型。
+        /// </summary>
+        /// <param name="serviceType">服务类型。</param>
+        /// <param name="implType">实现类型。</param>
+        public virtual void RegisterService(Type serviceType, Type implType)
+        {
+            services.AddOrUpdate(serviceType, () => new Lazy<IProviderService>(() => implType.New<IProviderService>()));
         }
 
         /// <summary>

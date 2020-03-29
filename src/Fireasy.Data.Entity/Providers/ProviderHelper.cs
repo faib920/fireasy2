@@ -8,7 +8,6 @@
 using Fireasy.Data.Entity.Generation;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Provider;
-using System;
 
 namespace Fireasy.Data.Entity.Providers
 {
@@ -34,22 +33,22 @@ namespace Fireasy.Data.Entity.Providers
             switch (provider)
             {
                 case MsSqlProvider _:
-                    provider.RegisterService(serviceType, new MsSqlTranslateProvider());
+                    provider.RegisterService(serviceType, () => new MsSqlTranslateProvider());
                     break;
                 case OracleProvider _:
-                    provider.RegisterService(serviceType, new OracleTranslateProvider());
+                    provider.RegisterService(serviceType, () => new OracleTranslateProvider());
                     break;
                 case MySqlProvider _:
-                    provider.RegisterService(serviceType, new MySqlTranslateProvider());
+                    provider.RegisterService(serviceType, () => new MySqlTranslateProvider());
                     break;
                 case SQLiteProvider _:
-                    provider.RegisterService(serviceType, new SQLiteTranslateProvider());
+                    provider.RegisterService(serviceType, () => new SQLiteTranslateProvider());
                     break;
                 case PostgreSqlProvider _:
-                    provider.RegisterService(serviceType, new PostgreSqlTranslateProvider());
+                    provider.RegisterService(serviceType, () => new PostgreSqlTranslateProvider());
                     break;
                 case FirebirdProvider _:
-                    provider.RegisterService(serviceType, new FirebirdTranslateProvider());
+                    provider.RegisterService(serviceType, () => new FirebirdTranslateProvider());
                     break;
                 default:
                     return null;
@@ -75,26 +74,26 @@ namespace Fireasy.Data.Entity.Providers
             switch (provider)
             {
                 case MsSqlProvider _:
-                    provider.RegisterService(serviceType, new MsSqlTableGenerator());
+                    provider.RegisterService(serviceType, () => new MsSqlTableGenerator());
                     break;
                 case OracleProvider _:
-                    provider.RegisterService(serviceType, new OracleTableGenerator());
+                    provider.RegisterService(serviceType, () => new OracleTableGenerator());
                     break;
                 case MySqlProvider _:
-                    provider.RegisterService(serviceType, new MySqlTableGenerator());
+                    provider.RegisterService(serviceType, () => new MySqlTableGenerator());
                     break;
                 case SQLiteProvider _:
-                    provider.RegisterService(serviceType, new SQLiteTableGenerator());
+                    provider.RegisterService(serviceType, () => new SQLiteTableGenerator());
                     break;
 #if !NETSTANDARD
                 case OleDbProvider _:
                     break;
 #endif
                 case PostgreSqlProvider _:
-                    provider.RegisterService(serviceType, new PostgreSqlTableGenerator());
+                    provider.RegisterService(serviceType, () => new PostgreSqlTableGenerator());
                     break;
                 case FirebirdProvider _:
-                    provider.RegisterService(serviceType, new FirebirdTableGenerator());
+                    provider.RegisterService(serviceType, () => new FirebirdTableGenerator());
                     break;
                 default:
                     return null;

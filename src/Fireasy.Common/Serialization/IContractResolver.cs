@@ -8,6 +8,7 @@
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Reflection;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -47,6 +48,7 @@ namespace Fireasy.Common.Serialization
     public class DefaultContractResolver : IContractResolver
     {
         private SerializeOption option;
+        private readonly ConcurrentDictionary<Type, List<SerializerPropertyMetadata>> cache = new ConcurrentDictionary<Type, List<SerializerPropertyMetadata>>();
 
         /// <summary>
         /// 初始化 <see cref="DefaultContractResolver"/> 类的新实例。
@@ -64,25 +66,28 @@ namespace Fireasy.Common.Serialization
         /// <returns></returns>
         public virtual List<SerializerPropertyMetadata> GetProperties(Type type)
         {
-            return type.GetProperties()
-                .Where(s => s.CanRead && !SerializerUtil.IsNoSerializable(option, s))
-                .Distinct(new SerializerUtil.PropertyEqualityComparer())
-                .Select(s => new SerializerPropertyMetadata
-                {
-                    Filter = (p, l) =>
+            return cache.GetOrAdd(type, k =>
+            {
+                return k.GetProperties()
+                    .Where(s => s.CanRead && !SerializerUtil.IsNoSerializable(option, s))
+                    .Distinct(new SerializerUtil.PropertyEqualityComparer())
+                    .Select(s => new SerializerPropertyMetadata
                     {
-                        return !SerializerUtil.CheckLazyValueCreate(l, p.Name);
-                    },
-                    Getter = o => ReflectionCache.GetAccessor(s).GetValue(o),
-                    Setter = (o, v) => ReflectionCache.GetAccessor(s).SetValue(o, v),
-                    PropertyInfo = s,
-                    PropertyName = ResolvePropertyName(s),
-                    Formatter = s.GetCustomAttributes<TextFormatterAttribute>().FirstOrDefault()?.Formatter,
-                    DefaultValue = s.GetCustomAttributes<DefaultValueAttribute>().FirstOrDefault()?.Value,
-                    Converter = s.GetCustomAttributes<TextPropertyConverterAttribute>().FirstOrDefault()?.ConverterType.New<ITextConverter>()
-                })
-                .Where(s => !string.IsNullOrEmpty(s.PropertyName))
-                .ToList();
+                        Filter = (p, l) =>
+                        {
+                            return !SerializerUtil.CheckLazyValueCreate(l, p.Name);
+                        },
+                        Getter = o => ReflectionCache.GetAccessor(s).GetValue(o),
+                        Setter = (o, v) => ReflectionCache.GetAccessor(s).SetValue(o, v),
+                        PropertyInfo = s,
+                        PropertyName = ResolvePropertyName(s),
+                        Formatter = s.GetCustomAttributes<TextFormatterAttribute>().FirstOrDefault()?.Formatter,
+                        DefaultValue = s.GetCustomAttributes<DefaultValueAttribute>().FirstOrDefault()?.Value,
+                        Converter = s.GetCustomAttributes<TextPropertyConverterAttribute>().FirstOrDefault()?.ConverterType.New<ITextConverter>()
+                    })
+                    .Where(s => !string.IsNullOrEmpty(s.PropertyName))
+                    .ToList();
+            });
         }
 
         /// <summary>

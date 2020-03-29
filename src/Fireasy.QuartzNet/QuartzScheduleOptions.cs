@@ -9,6 +9,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading;
 
 namespace Fireasy.QuartzNet
 {
@@ -34,7 +35,7 @@ namespace Fireasy.QuartzNet
         /// <param name="period">执行触发间隔时间。</param>
         /// <param name="action">执行的方法。</param>
         /// <returns></returns>
-        public QuartzScheduleOptions Add(TimeSpan delay, TimeSpan period, Action<IServiceProvider> action)
+        public QuartzScheduleOptions Add(TimeSpan delay, TimeSpan period, Action<IServiceProvider, CancellationToken> action)
         {
             var task = new TaskDefinition { Delay = delay, Period = period, Executor = action };
             tasks.Add(task);
@@ -59,7 +60,7 @@ namespace Fireasy.QuartzNet
             /// <summary>
             /// 获取或设置执行的委托。
             /// </summary>
-            public Action<IServiceProvider> Executor { get; set; }
+            public Action<IServiceProvider, CancellationToken> Executor { get; set; }
         }
     }
 }

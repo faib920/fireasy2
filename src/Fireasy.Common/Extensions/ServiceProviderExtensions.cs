@@ -4,6 +4,7 @@
 //      qq="55570729">
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
+using Fireasy.Common.Ioc;
 using System;
 
 namespace Fireasy.Common.Extensions
@@ -49,6 +50,64 @@ namespace Fireasy.Common.Extensions
             }
 
             return creator == null ? default : creator();
+        }
+
+        /// <summary>
+        /// 如果对象实现了 <see cref="IServiceProviderAccessor"/>，则尝试获取 <see cref="IServiceProvider"/> 实例。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="obj"></param>
+        /// <param name="serviceProvider"></param>
+        /// <returns></returns>
+        public static IServiceProvider TryGetServiceProvider<T>(this T obj)
+        {
+            if (obj is IServiceProviderAccessor accessor)
+            {
+                return accessor.ServiceProvider;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 如果对象实现了 <see cref="IServiceProviderAccessor"/>，则尝试对实例附加 <see cref="IServiceProvider"/> 实例。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="obj"></param>
+        /// <param name="serviceProvider"></param>
+        /// <returns></returns>
+        public static T TrySetServiceProvider<T>(this T obj, IServiceProvider serviceProvider)
+        {
+            if (obj == null || serviceProvider == null)
+            {
+                return obj;
+            }
+
+            if (obj is IServiceProviderAccessor accessor && accessor.ServiceProvider != serviceProvider)
+            {
+                accessor.ServiceProvider = serviceProvider;
+            }
+
+            return obj;
+        }
+
+        /// <summary>
+        /// 如果对象实现了 <see cref="IServiceProviderAccessor"/>，则尝试使用 <see cref="Container"/> 作为实例的 <see cref="IServiceProvider"/>。
+        /// </summary>
+        /// <returns></returns>
+        public static T TryUseContainer<T>(this T obj)
+        {
+            if (obj == null)
+            {
+                return obj;
+            }
+
+            if (obj is IServiceProviderAccessor accessor && accessor.ServiceProvider == null)
+            {
+                accessor.ServiceProvider = ContainerUnity.GetContainer();
+            }
+
+            return obj;
         }
 
     }

@@ -11,6 +11,7 @@ using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Extensions;
 using Fireasy.Data.Identity;
+using Fireasy.Data.Internal;
 using Fireasy.Data.Provider;
 using Fireasy.Data.RecordWrapper;
 using Fireasy.Data.Syntax;
@@ -19,6 +20,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
 #if NETSTANDARD2_1
@@ -33,25 +35,25 @@ namespace Fireasy.Data
     /// <summary>
     /// 提供数据库基本操作的方法。
     /// </summary>
-    public class Database : DisposeableBase, IDatabase, IDistributedDatabase
+    public class Database : DisposeableBase, IDatabase, IDistributedDatabase, IServiceProviderAccessor
     {
         private readonly TransactionStack tranStack;
         private readonly DatabaseScope dbScope;
         private DbConnection connMaster;
         private DbConnection connSlave;
+        private readonly ReaderNestedlocked readerLocker = new ReaderNestedlocked();
 
         /// <summary>
         /// 初始化 <see cref="Database"/> 类的新实例。
         /// </summary>
         /// <param name="provider">数据库提供者。</param>
         /// <param name="serviceProvider">检索服务提供者。</param>
-        protected Database(IProvider provider, IServiceProvider serviceProvider = null)
+        protected Database(IProvider provider)
         {
             tranStack = new TransactionStack();
             dbScope = new DatabaseScope(this);
 
             Provider = provider;
-            Track = serviceProvider.TryGetService(() => DefaultCommandTracker.Instance);
         }
 
         /// <summary>
@@ -59,9 +61,8 @@ namespace Fireasy.Data
         /// </summary>
         /// <param name="connectionString">数据库连接字符串。</param>
         /// <param name="provider">数据库提供者。</param>
-        /// <param name="serviceProvider">检索服务提供者。</param>
-        public Database(ConnectionString connectionString, IProvider provider, IServiceProvider serviceProvider = null)
-            : this(provider, serviceProvider)
+        public Database(ConnectionString connectionString, IProvider provider)
+            : this(provider)
         {
             ConnectionString = connectionString;
         }
@@ -71,9 +72,8 @@ namespace Fireasy.Data
         /// </summary>
         /// <param name="connectionStrings">数据库连接字符串组。</param>
         /// <param name="provider">数据库提供者。</param>
-        /// <param name="serviceProvider">检索服务提供者。</param>
-        public Database(List<DistributedConnectionString> connectionStrings, IProvider provider, IServiceProvider serviceProvider = null)
-            : this(provider, serviceProvider)
+        public Database(List<DistributedConnectionString> connectionStrings, IProvider provider)
+            : this(provider)
         {
             DistributedConnectionStrings = connectionStrings.ToReadOnly();
             ConnectionString = connectionStrings.Find(s => s.Mode == DistributedMode.Master);
@@ -88,16 +88,16 @@ namespace Fireasy.Data
         /// 获取分布式数据库连接字符串组。
         /// </summary>
         public ReadOnlyCollection<DistributedConnectionString> DistributedConnectionStrings { get; private set; }
+        
+        /// <summary>
+        /// 获取或设置应用程序服务提供者实例。
+        /// </summary>
+        public IServiceProvider ServiceProvider { get; set; }
 
         /// <summary>
         /// 获取数据库提供者。
         /// </summary>
         public IProvider Provider { get; private set; }
-
-        /// <summary>
-        /// 获取或设置命令执行的跟踪器。
-        /// </summary>
-        public ICommandTracker Track { get; set; }
 
         /// <summary>
         /// 获取或设置超时时间。
@@ -145,6 +145,7 @@ namespace Fireasy.Data
             }
 
             Connection.TryOpen();
+            Tracer.Debug("Starting transcation.");
             Transaction = Connection.BeginTransaction(Provider.AmendIsolationLevel(level));
 
             return true;
@@ -162,6 +163,7 @@ namespace Fireasy.Data
                 return false;
             }
 
+            Tracer.Debug("Commiting transcation.");
             Transaction.Commit();
 
             Transaction.Dispose();
@@ -181,6 +183,7 @@ namespace Fireasy.Data
                 return false;
             }
 
+            Tracer.Debug("Rollbacking transcation.");
             Transaction.Rollback();
             Transaction.Dispose();
             Transaction = null;
@@ -277,7 +280,7 @@ namespace Fireasy.Data
 
             rowMapper ??= RowMapperFactory.CreateRowMapper<T>();
             rowMapper.RecordWrapper = Provider.GetService<IRecordWrapper>();
-            using var reader = (DbDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, cancellationToken);
+            using var reader = (DbDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, null, cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
                 yield return rowMapper.Map(this, reader);
@@ -296,7 +299,7 @@ namespace Fireasy.Data
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
 
-            using var reader = (DbDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, cancellationToken);
+            using var reader = (DbDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, null, cancellationToken);
             var wrapper = Provider.GetService<IRecordWrapper>();
             TypeDescriptorUtility.AddDefaultDynamicProvider();
 
@@ -338,7 +341,7 @@ namespace Fireasy.Data
             rowMapper ??= RowMapperFactory.CreateRowMapper<T>();
             rowMapper.RecordWrapper = Provider.GetService<IRecordWrapper>();
 
-            using var reader = (DbDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, cancellationToken);
+            using var reader = (InternalDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, null, cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
                 result.Add(rowMapper.Map(this, reader));
@@ -360,7 +363,7 @@ namespace Fireasy.Data
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
 
             var result = new List<dynamic>();
-            using var reader = (DbDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters);
+            using var reader = (InternalDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, null, cancellationToken);
             var wrapper = Provider.GetService<IRecordWrapper>();
             TypeDescriptorUtility.AddDefaultDynamicProvider();
 
@@ -396,18 +399,21 @@ namespace Fireasy.Data
         public virtual int ExecuteNonQuery(IQueryCommand queryCommand, ParameterCollection parameters = null)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
-            return UsingConnection(connection =>
-                {
-                    using var command = CreateDbCommand(connection, queryCommand, parameters);
-                    try
-                    {
-                        return HandleCommandExecuted(command, parameters, () => command.ExecuteNonQuery());
-                    }
-                    catch (DbException exp)
-                    {
-                        throw HandleException(command, exp);
-                    }
-                }, mode: DistributedMode.Master);
+            var connection = GetConnection(DistributedMode.Master).TryOpen();
+
+            using var command = CreateDbCommand(connection, queryCommand, parameters);
+            try
+            {
+                return HandleCommandExecuted(command, parameters, CommandBehavior.Default, (command, behavior) => command.ExecuteNonQuery());
+            }
+            catch (DbException exp)
+            {
+                throw HandleException(command, exp);
+            }
+            finally
+            {
+                connection.TryClose(Transaction == null);
+            }
         }
 
         /// <summary>
@@ -420,18 +426,22 @@ namespace Fireasy.Data
         public async virtual Task<int> ExecuteNonQueryAsync(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
-            return await UsingConnectionAsync(async connection =>
-                {
-                    using var command = CreateDbCommand(connection, queryCommand, parameters);
-                    try
-                    {
-                        return await HandleCommandExecutedAsync(command, parameters, () => command.ExecuteNonQueryAsync(cancellationToken), cancellationToken);
-                    }
-                    catch (DbException exp)
-                    {
-                        throw await HandleExceptionAsync(command, exp, cancellationToken);
-                    }
-                }, mode: DistributedMode.Master, cancellationToken: cancellationToken);
+            var connection = await GetConnection(DistributedMode.Master).TryOpenAsync();
+
+            using var command = CreateDbCommand(connection, queryCommand, parameters);
+            try
+            {
+                return await HandleCommandExecutedAsync(command, parameters, CommandBehavior.Default,
+                    (command, behavior, cancelToken) => ((DbCommand)command).ExecuteNonQueryAsync(cancelToken), cancellationToken);
+            }
+            catch (DbException exp)
+            {
+                throw await HandleExceptionAsync(command, exp, cancellationToken);
+            }
+            finally
+            {
+                connection.TryClose(Transaction == null);
+            }
         }
 
         /// <summary>
@@ -441,24 +451,23 @@ namespace Fireasy.Data
         /// <param name="segment">数据分段对象。</param>
         /// <param name="parameters">查询参数集合。</param>
         /// <returns>一个 <see cref="IDataReader"/> 对象。</returns>
-        public virtual IDataReader ExecuteReader(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null)
+        public virtual IDataReader ExecuteReader(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CommandBehavior? behavior = null)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
-            return UsingConnection(connection =>
-                {
-                    var command = CreateDbCommand(connection, queryCommand, parameters);
-                    try
-                    {
-                        var cmdBehavior = CommandBehavior.Default;
-                        var context = new CommandContext(this, command, segment, parameters);
-                        HandleSegmentCommand(context);
-                        return HandleCommandExecuted(command, parameters, () => command.ExecuteReader(cmdBehavior));
-                    }
-                    catch (DbException exp)
-                    {
-                        throw HandleException(command, exp);
-                    }
-                }, mode: DistributedMode.Slave);
+            var connection = GetConnection(DistributedMode.Slave).TryOpen();
+
+            var command = new InternalDataCommand(CreateDbCommand(connection, queryCommand, parameters), readerLocker);
+            try
+            {
+                var cmdBehavior = GetCommandBehavior(behavior);
+                var context = new CommandContext(this, command, segment, parameters);
+                HandleSegmentCommand(context);
+                return HandleCommandExecuted(command, parameters, cmdBehavior, (command, behavior) => command.ExecuteReader(behavior));
+            }
+            catch (DbException exp)
+            {
+                throw HandleException(command, exp);
+            }
         }
 
         /// <summary>
@@ -469,25 +478,25 @@ namespace Fireasy.Data
         /// <param name="parameters">查询参数集合。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>一个 <see cref="IDataReader"/> 对象。</returns>
-        public async virtual Task<IDataReader> ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
+        public async virtual Task<IDataReader> ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CommandBehavior? behavior = null, CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
-            return await UsingConnectionAsync(async connection =>
-                {
-                    var command = CreateDbCommand(connection, queryCommand, parameters);
-                    try
-                    {
-                        var cmdBehavior = CommandBehavior.Default;
-                        var context = new CommandContext(this, command, segment, parameters);
-                        HandleSegmentCommand(context);
+            var connection = await GetConnection(DistributedMode.Slave).TryOpenAsync();
 
-                        return await HandleCommandExecutedAsync(command, parameters, () => command.ExecuteReaderAsync(cmdBehavior, cancellationToken), cancellationToken);
-                    }
-                    catch (DbException exp)
-                    {
-                        throw await HandleExceptionAsync(command, exp, cancellationToken);
-                    }
-                }, mode: DistributedMode.Slave, cancellationToken: cancellationToken);
+            var command = new InternalDataCommand(CreateDbCommand(connection, queryCommand, parameters), readerLocker);
+            try
+            {
+                var cmdBehavior = GetCommandBehavior(behavior);
+                var context = new CommandContext(this, command, segment, parameters);
+                HandleSegmentCommand(context);
+
+                return await HandleCommandExecutedAsync(command, parameters, cmdBehavior,
+                    (command, behavior, cancelToken) => command.ExecuteReaderAsync(behavior, cancelToken), cancellationToken);
+            }
+            catch (DbException exp)
+            {
+                throw await HandleExceptionAsync(command, exp, cancellationToken);
+            }
         }
 
         /// <summary>
@@ -499,18 +508,21 @@ namespace Fireasy.Data
         public virtual object ExecuteScalar(IQueryCommand queryCommand, ParameterCollection parameters = null)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
-            return UsingConnection(connection =>
-                {
-                    using var command = CreateDbCommand(connection, queryCommand, parameters);
-                    try
-                    {
-                        return HandleCommandExecuted(command, parameters, () => command.ExecuteScalar());
-                    }
-                    catch (DbException exp)
-                    {
-                        throw HandleException(command, exp);
-                    }
-                }, mode: DistributedMode.Slave);
+            var connection = GetConnection(DistributedMode.Slave).TryOpen();
+
+            using var command = CreateDbCommand(connection, queryCommand, parameters);
+            try
+            {
+                return HandleCommandExecuted(command, parameters, CommandBehavior.Default, (command, behavior) => command.ExecuteScalar());
+            }
+            catch (DbException exp)
+            {
+                throw HandleException(command, exp);
+            }
+            finally
+            {
+                connection.TryClose(Transaction == null);
+            }
         }
 
         /// <summary>
@@ -540,18 +552,22 @@ namespace Fireasy.Data
         public async virtual Task<object> ExecuteScalarAsync(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
-            return await UsingConnectionAsync(async connection =>
-                {
-                    using var command = CreateDbCommand(connection, queryCommand, parameters);
-                    try
-                    {
-                        return await HandleCommandExecutedAsync(command, parameters, () => command.ExecuteScalarAsync(cancellationToken), cancellationToken);
-                    }
-                    catch (DbException exp)
-                    {
-                        throw await HandleExceptionAsync(command, exp, cancellationToken);
-                    }
-                }, mode: DistributedMode.Slave, cancellationToken: cancellationToken);
+            var connection = await GetConnection(DistributedMode.Slave).TryOpenAsync();
+
+            using var command = CreateDbCommand(connection, queryCommand, parameters);
+            try
+            {
+                return await HandleCommandExecutedAsync(command, parameters, CommandBehavior.Default,
+                    (command, behavior, cancelToken) => ((DbCommand)command).ExecuteScalarAsync(cancelToken), cancellationToken);
+            }
+            catch (DbException exp)
+            {
+                throw await HandleExceptionAsync(command, exp, cancellationToken);
+            }
+            finally
+            {
+                connection.TryClose(Transaction == null);
+            }
         }
 
         /// <summary>
@@ -585,34 +601,37 @@ namespace Fireasy.Data
                 throw new NotSupportedException(nameof(DataAdapter));
             }
 
-            UsingConnection(connection =>
+            var connection = GetConnection(DistributedMode.Slave).TryOpen();
+
+            using var command = CreateDbCommand(connection, queryCommand, parameters);
+            adapter.SelectCommand = command;
+
+            //如果要使用Update更新DataSet，则必须指定MissingSchemaAction.AddWithKey，
+            //但在Oracle使用分页时，却不能设置该属性，否则抛出“应为标识符或带引号的标识符”
+            //因此，如果要实现Update，只有手动添加DataSet的PrimaryKeys
+            //adapter.MissingSchemaAction = MissingSchemaAction.AddWithKey;
+            dataSet.EnforceConstraints = false;
+            HandleAdapterTableMapping(adapter, tableName);
+
+            try
+            {
+                var context = new CommandContext(this, command, segment, parameters);
+
+                //无法分页时才采用 adapter.Fill(dataSet, startRecord, maxRecords, "Table")
+                if (segment != null && !HandleSegmentCommand(context))
                 {
-                    using var command = CreateDbCommand(connection, queryCommand, parameters);
-                    adapter.SelectCommand = command;
+                    adapter.Fill(dataSet, segment.Start.Value, segment.Length, "Table");
+                }
+                else
+                {
+                    adapter.Fill(dataSet);
 
-                    //如果要使用Update更新DataSet，则必须指定MissingSchemaAction.AddWithKey，
-                    //但在Oracle使用分页时，却不能设置该属性，否则抛出“应为标识符或带引号的标识符”
-                    //因此，如果要实现Update，只有手动添加DataSet的PrimaryKeys
-                    //adapter.MissingSchemaAction = MissingSchemaAction.AddWithKey;
-                    dataSet.EnforceConstraints = false;
-                    HandleAdapterTableMapping(adapter, tableName);
-
-                    try
-                    {
-                        var context = new CommandContext(this, command, segment, parameters);
-
-                        //无法分页时才采用 adapter.Fill(dataSet, startRecord, maxRecords, "Table")
-                        var handler = !HandleSegmentCommand(context) && segment != null ?
-                            new Func<int>(() => adapter.Fill(dataSet, segment.Start.Value, segment.Length, "Table")) :
-                            new Func<int>(() => adapter.Fill(dataSet));
-
-                        return HandleCommandExecuted(command, parameters, handler);
-                    }
-                    catch (DbException exp)
-                    {
-                        throw HandleException(command, exp);
-                    }
-                }, false, DistributedMode.Slave);
+                }
+            }
+            catch (DbException exp)
+            {
+                throw HandleException(command, exp);
+            }
         }
 
         /// <summary>
@@ -630,10 +649,6 @@ namespace Fireasy.Data
             catch (DbException exp)
             {
                 return exp;
-            }
-            finally
-            {
-                connection.TryClose();
             }
         }
 
@@ -654,10 +669,6 @@ namespace Fireasy.Data
             {
                 return exp;
             }
-            finally
-            {
-                connection.TryClose();
-            }
         }
 
         /// <summary>
@@ -667,19 +678,17 @@ namespace Fireasy.Data
         public void Update(DataTable dataTable)
         {
             Guard.ArgumentNull(dataTable, nameof(dataTable));
+            var connection = GetConnection(DistributedMode.Master).TryOpen();
 
-            UsingConnection(connection =>
-                {
-                    var builder = new CommandBuilder(Provider, dataTable, connection, Transaction);
-                    var adapter = Provider.DbProviderFactory.CreateDataAdapter();
-                    if (adapter == null)
-                    {
-                        throw new NotSupportedException(nameof(DataAdapter));
-                    }
+            var builder = new CommandBuilder(Provider, dataTable, connection, Transaction);
+            var adapter = Provider.DbProviderFactory.CreateDataAdapter();
+            if (adapter == null)
+            {
+                throw new NotSupportedException(nameof(DataAdapter));
+            }
 
-                    builder.FillAdapter(adapter);
-                    return adapter.Update(dataTable);
-                }, false, DistributedMode.Master);
+            builder.FillAdapter(adapter);
+            adapter.Update(dataTable);
         }
 
         /// <summary>
@@ -703,34 +712,31 @@ namespace Fireasy.Data
         public int Update(DataTable dataTable, SqlCommand insertCommand, SqlCommand updateCommand, SqlCommand deleteCommand)
         {
             Guard.ArgumentNull(dataTable, nameof(dataTable));
+            var connection = GetConnection(DistributedMode.Master).TryOpen();
 
-            return UsingConnection(connection =>
-                {
-                    HandleDynamicDataTable(dataTable);
+            HandleDynamicDataTable(dataTable);
 
-                    var parameters = GetTableParameters(dataTable);
-                    var adapter = Provider.DbProviderFactory.CreateDataAdapter();
-                    if (adapter == null)
-                    {
-                        return UpdateManually(dataTable, parameters, insertCommand, updateCommand, deleteCommand);
-                    }
+            var parameters = GetTableParameters(dataTable);
+            var adapter = Provider.DbProviderFactory.CreateDataAdapter();
+            if (adapter == null)
+            {
+                return UpdateManually(dataTable, parameters, insertCommand, updateCommand, deleteCommand);
+            }
 
-                    if (insertCommand != null)
-                    {
-                        adapter.InsertCommand = CreateDbCommand(connection, insertCommand, parameters);
-                        adapter.InsertCommand.UpdatedRowSource = UpdateRowSource.Both;
-                    }
+            if (insertCommand != null)
+            {
+                adapter.InsertCommand = CreateDbCommand(connection, insertCommand, parameters);
+                adapter.InsertCommand.UpdatedRowSource = UpdateRowSource.Both;
+            }
 
-                    try
-                    {
-                        return adapter.Update(dataTable);
-                    }
-                    catch (Exception exp)
-                    {
-                        throw HandleException(adapter.InsertCommand, exp);
-                    }
-
-                }, false, DistributedMode.Master);
+            try
+            {
+                return adapter.Update(dataTable);
+            }
+            catch (Exception exp)
+            {
+                throw HandleException(adapter.InsertCommand, exp);
+            }
         }
 
         /// <summary>
@@ -751,8 +757,10 @@ namespace Fireasy.Data
         /// 释放对象所占用的非托管和托管资源。
         /// </summary>
         /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
-        protected override void Dispose(bool disposing)
+        protected override bool Dispose(bool disposing)
         {
+            Tracer.Debug("The Database is Disposing.");
+
             if (Transaction != null)
             {
                 Transaction.Dispose();
@@ -761,17 +769,19 @@ namespace Fireasy.Data
 
             if (connMaster != null)
             {
-                connMaster.Dispose();
+                connMaster.TryClose(true).Dispose();
                 connMaster = null;
             }
 
             if (connSlave != null)
             {
-                connSlave.Dispose();
+                connSlave.TryClose(true).Dispose();
                 connSlave = null;
             }
 
             dbScope.Dispose();
+
+            return base.Dispose(disposing);
         }
 
         /// <summary>
@@ -782,7 +792,6 @@ namespace Fireasy.Data
         protected virtual void OnConnectionStateChanged(ConnectionState originalState, ConnectionState currentState)
         {
         }
-
 
         /// <summary>
         /// 创建一个 DbCommand 对象。
@@ -812,31 +821,6 @@ namespace Fireasy.Data
             Provider.PrepareCommand(command);
 
             return command;
-        }
-
-        private T UsingConnection<T>(Func<DbConnection, T> callback, bool isAutoOpen = true, DistributedMode mode = DistributedMode.Master)
-        {
-            var result = default(T);
-            if (callback != null)
-            {
-                var connection = GetConnection(mode);
-                connection.TryOpen(isAutoOpen);
-                result = callback(connection);
-            }
-
-            return result;
-        }
-
-        private async Task<T> UsingConnectionAsync<T>(Func<DbConnection, Task<T>> callback, bool isAutoOpen = true, DistributedMode mode = DistributedMode.Master, CancellationToken cancellationToken = default)
-        {
-            if (callback != null)
-            {
-                var connection = GetConnection(mode);
-                await connection.TryOpenAsync(isAutoOpen, cancellationToken);
-                return await callback(connection);
-            }
-
-            return default;
         }
 
         private DbConnection GetConnection(DistributedMode mode = DistributedMode.Master)
@@ -960,11 +944,7 @@ namespace Fireasy.Data
                 try
                 {
                     var syntax = Provider.GetService<ISyntaxProvider>();
-                    HandlePageEvaluator(context);
-
-                    var newCommandText = syntax.Segment(context);
-                    context.Command.CommandText = newCommandText;
-                    return true;
+                    return syntax.Segment(HandlePageEvaluator(context));
                 }
                 catch (SegmentNotSupportedException)
                 {
@@ -979,12 +959,14 @@ namespace Fireasy.Data
         /// 处理分页评估器。
         /// </summary>
         /// <param name="context"></param>
-        private void HandlePageEvaluator(CommandContext context)
+        private CommandContext HandlePageEvaluator(CommandContext context)
         {
             if (context.Segment is IDataPageEvaluatable evaluatable && evaluatable.Evaluator != null)
             {
                 evaluatable.Evaluator.Evaluate(context);
             }
+
+            return context;
         }
 
         private ParameterCollection GetTableParameters(DataTable table)
@@ -1021,32 +1003,31 @@ namespace Fireasy.Data
                 dataTable.Columns.Add(COLUMN_RESULT, typeof(int));
             }
 
-            return UsingConnection(connection =>
+            var connection = GetConnection(DistributedMode.Master).TryOpen();
+
+            BeginTransaction();
+
+            using var command = CreateDbCommand(connection, sqlCommand, parameters);
+            try
+            {
+                var result = 0;
+                foreach (DataRow row in dataTable.Rows)
                 {
-                    BeginTransaction();
+                    UpdateParameters(command.Parameters, row);
 
-                    using var command = CreateDbCommand(connection, sqlCommand, parameters);
-                    try
-                    {
-                        var result = 0;
-                        foreach (DataRow row in dataTable.Rows)
-                        {
-                            UpdateParameters(command.Parameters, row);
+                    row[COLUMN_RESULT] = command.ExecuteScalar() ?? 0;
 
-                            row[COLUMN_RESULT] = command.ExecuteScalar() ?? 0;
+                    result++;
+                }
 
-                            result++;
-                        }
+                CommitTransaction();
 
-                        CommitTransaction();
-
-                        return result;
-                    }
-                    catch (DbException exp)
-                    {
-                        throw HandleException(command, exp);
-                    }
-                }, mode: DistributedMode.Master);
+                return result;
+            }
+            catch (DbException exp)
+            {
+                throw HandleException(command, exp);
+            }
         }
 
         private void UpdateParameters(DbParameterCollection parameters, DataRow row)
@@ -1067,19 +1048,18 @@ namespace Fireasy.Data
         /// <param name="func">执行的方法。</param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        private T HandleCommandExecuted<T>(DbCommand command, ParameterCollection parameters, Func<T> func)
+        private TResult HandleCommandExecuted<TCommand, TResult>(TCommand command, ParameterCollection parameters, CommandBehavior behavior, Func<TCommand, CommandBehavior, TResult> func) where TCommand : IDbCommand
         {
-            var result = default(T);
+            var tracker = ServiceProvider.TryGetService<ICommandTracker>(() => DefaultCommandTracker.Instance);
 
-            if (!ConnectionString.IsTracking || Track == null)
-            {
-                result = func();
-            }
-            else
-            {
-                var period = TimeWatcher.Watch(() => result = func());
+            var watch = Stopwatch.StartNew();
+            var result = func(command, behavior);
+            Tracer.Debug($"The DbCommand was executed ({watch.Elapsed.Milliseconds}ms):\n{command.Output()}");
+            watch.Stop();
 
-                Track?.Write(command, period);
+            if (ConnectionString.IsTracking && tracker != null)
+            {
+                tracker?.Write(command, watch.Elapsed);
             }
 
             command.SyncParameters(parameters);
@@ -1096,19 +1076,18 @@ namespace Fireasy.Data
         /// <param name="parameters"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private async Task<T> HandleCommandExecutedAsync<T>(DbCommand command, ParameterCollection parameters, Func<Task<T>> func, CancellationToken cancellationToken)
+        private async Task<TResult> HandleCommandExecutedAsync<TCommand, TResult>(TCommand command, ParameterCollection parameters, CommandBehavior behavior, Func<TCommand, CommandBehavior, CancellationToken, Task<TResult>> func, CancellationToken cancellationToken) where TCommand : IDbCommand
         {
-            var result = default(T);
+            var tracker = ServiceProvider.TryGetService<ICommandTracker>(() => DefaultCommandTracker.Instance);
 
-            if (!ConnectionString.IsTracking || Track == null)
-            {
-                result = await func();
-            }
-            else
-            {
-                var period = await TimeWatcher.WatchAsync(async () => result = await func());
+            var watch = Stopwatch.StartNew();
+            var result = await func(command, behavior, cancellationToken).ConfigureAwait(false);
+            Tracer.Debug($"The DbCommand was executed ({watch.Elapsed.Milliseconds}ms):\n{command.Output()}");
+            watch.Stop();
 
-                await Track?.WriteAsync(command, period, cancellationToken);
+            if (ConnectionString.IsTracking && tracker != null)
+            {
+                await tracker?.WriteAsync(command, watch.Elapsed, cancellationToken);
             }
 
             command.SyncParameters(parameters);
@@ -1122,11 +1101,13 @@ namespace Fireasy.Data
         /// </summary>
         /// <param name="command"></param>
         /// <param name="exp"></param>
-        private Exception HandleException(DbCommand command, Exception exp)
+        private Exception HandleException(IDbCommand command, Exception exp)
         {
-            if (ConnectionString.IsTracking && Track != null)
+            var tracker = ServiceProvider.TryGetService<ICommandTracker>(() => DefaultCommandTracker.Instance);
+
+            if (ConnectionString.IsTracking && tracker != null)
             {
-                Track.Fail(command, exp);
+                tracker.Fail(command, exp);
             }
 
             return new CommandException(command, exp);
@@ -1139,11 +1120,13 @@ namespace Fireasy.Data
         /// <param name="exp"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private async Task<Exception> HandleExceptionAsync(DbCommand command, Exception exp, CancellationToken cancellationToken)
+        private async Task<Exception> HandleExceptionAsync(IDbCommand command, Exception exp, CancellationToken cancellationToken)
         {
-            if (ConnectionString.IsTracking && Track != null)
+            var tracker = ServiceProvider.TryGetService<ICommandTracker>(() => DefaultCommandTracker.Instance);
+
+            if (ConnectionString.IsTracking && tracker != null)
             {
-                await Track.FailAsync(command, exp, cancellationToken);
+                await tracker.FailAsync(command, exp, cancellationToken);
             }
 
             return new CommandException(command, exp);
@@ -1181,6 +1164,11 @@ namespace Fireasy.Data
                 dataTable.Columns.Remove(genColumn);
                 newColumn.ColumnName = genColumn.ColumnName;
             }
+        }
+
+        private CommandBehavior GetCommandBehavior(CommandBehavior? behavior)
+        {
+            return behavior ?? (Transaction == null ? CommandBehavior.CloseConnection : CommandBehavior.Default);
         }
     }
 }

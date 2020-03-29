@@ -233,16 +233,13 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <returns></returns>
         protected virtual Expression VisitSubquery(SubqueryExpression subquery)
         {
-            switch (subquery.NodeType)
+            return ((DbExpressionType)subquery.NodeType) switch
             {
-                case DbExpressionType.Scalar:
-                    return VisitScalar((ScalarExpression)subquery);
-                case DbExpressionType.Exists:
-                    return VisitExists((ExistsExpression)subquery);
-                case DbExpressionType.In:
-                    return VisitIn((InExpression)subquery);
-            }
-            return subquery;
+                DbExpressionType.Scalar => VisitScalar((ScalarExpression)subquery),
+                DbExpressionType.Exists => VisitExists((ExistsExpression)subquery),
+                DbExpressionType.In => VisitIn((InExpression)subquery),
+                _ => subquery,
+            };
         }
 
         /// <summary>

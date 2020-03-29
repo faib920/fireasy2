@@ -6,7 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
-using Fireasy.Web.Mvc;
+using Fireasy.Web.Mvc.Rendering;
 using System;
 using System.Linq.Expressions;
 using System.Text;

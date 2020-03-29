@@ -19,6 +19,7 @@ namespace Fireasy.Data.Entity
     public abstract class ContextServiceBase :
         DisposeableBase,
         IContextService,
+        IServiceProviderAccessor,
         IEntityPersistentInstanceContainer,
         IEntityPersistentEnvironment
     {
@@ -57,9 +58,9 @@ namespace Fireasy.Data.Entity
         public IProvider Provider { get; protected set; }
 
         /// <summary>
-        /// 获取应用程序服务提供者实例。
+        /// 获取或设置应用程序服务提供者实例。
         /// </summary>
-        public IServiceProvider ServiceProvider { get; protected set; }
+        public IServiceProvider ServiceProvider { get; set; }
 
         /// <summary>
         /// 开启事务。
@@ -101,6 +102,13 @@ namespace Fireasy.Data.Entity
         /// <see cref="IRepositoryProvider"/> 的创建工厂。
         /// </summary>
         protected abstract Func<Type, IRepositoryProvider> CreateFactory { get; }
+
+        protected override bool Dispose(bool disposing)
+        {
+            providers.Clear();
+
+            return base.Dispose(disposing);
+        }
     }
 
     static class ContextServiceExtensions

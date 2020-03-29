@@ -13,12 +13,14 @@ using Fireasy.Common;
 using Fireasy.Data.Provider;
 using System.Threading;
 using System.Threading.Tasks;
+using Fireasy.Common.Extensions;
+
 namespace Fireasy.Data
 {
     /// <summary>
     /// 提供一个 <see cref="IDatabase"/> 的包装，在 Dispose 时不调用实际的销毁方法。
     /// </summary>
-    public sealed class NoDisposeDatabase : IDatabase
+    public sealed class NoDisposeDatabase : IDatabase, IServiceProviderAccessor
     {
         private readonly IDatabase innerDatabase;
 
@@ -36,6 +38,12 @@ namespace Fireasy.Data
         {
             get { return innerDatabase.ConnectionString; }
             set { innerDatabase.ConnectionString = value; }
+        }
+
+        IServiceProvider IServiceProviderAccessor.ServiceProvider
+        {
+            get { return innerDatabase.TryGetServiceProvider(); }
+            set { innerDatabase.TrySetServiceProvider(value); }
         }
 
         IProvider IDatabase.Provider
@@ -94,9 +102,9 @@ namespace Fireasy.Data
             return innerDatabase.ExecuteNonQuery(queryCommand, parameters);
         }
 
-        IDataReader IDatabase.ExecuteReader(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters)
+        IDataReader IDatabase.ExecuteReader(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CommandBehavior? behavior)
         {
-            return innerDatabase.ExecuteReader(queryCommand, segment, parameters);
+            return innerDatabase.ExecuteReader(queryCommand, segment, parameters, behavior);
         }
 
         object IDatabase.ExecuteScalar(IQueryCommand queryCommand, ParameterCollection parameters)
@@ -129,9 +137,9 @@ namespace Fireasy.Data
             return innerDatabase.ExecuteNonQueryAsync(queryCommand, parameters, cancellationToken);
         }
 
-        Task<IDataReader> IDatabase.ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CancellationToken cancellationToken)
+        Task<IDataReader> IDatabase.ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CommandBehavior? behavior, CancellationToken cancellationToken)
         {
-            return innerDatabase.ExecuteReaderAsync(queryCommand, segment, parameters, cancellationToken);
+            return innerDatabase.ExecuteReaderAsync(queryCommand, segment, parameters, behavior, cancellationToken);
         }
 
         Task<object> IDatabase.ExecuteScalarAsync(IQueryCommand queryCommand, ParameterCollection parameters, CancellationToken cancellationToken)

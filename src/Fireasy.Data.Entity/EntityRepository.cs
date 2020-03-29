@@ -8,6 +8,7 @@ using Fireasy.Common.Extensions;
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Data.Entity.Linq;
+using Fireasy.Data.Entity.Query;
 using Fireasy.Data.Entity.Subscribes;
 using Fireasy.Data.Entity.Validation;
 using Fireasy.Data.Provider;
@@ -26,16 +27,17 @@ namespace Fireasy.Data.Entity
     /// 表示在 <see cref="EntityContext"/> 实例中对实体 <typeparamref name="TEntity"/> 的仓储。它可以用于直接对实体进行创建、查询、修改和删除。
     /// </summary>
     /// <typeparam name="TEntity"></typeparam>
-    public class EntityRepository<TEntity> : 
-        IOrderedQueryable<TEntity>, 
-        IQueryProviderAware, 
-        IRepository<TEntity>, 
-        IListSource 
+    public class EntityRepository<TEntity> :
+        IOrderedQueryable<TEntity>,
+        IQueryProviderAware,
+        IRepository<TEntity>,
+        IListSource
         where TEntity : IEntity
     {
         private readonly IRepositoryProvider<TEntity> repositoryProxy;
         private readonly EntityContextOptions options;
         private readonly IProvider provider;
+        private readonly InnerPersistentSubscribeManager subMgr;
 
         /// <summary>
         /// 初始化 <see cref="EntityRepository{TEntity}"/> 类的新实例。
@@ -48,6 +50,14 @@ namespace Fireasy.Data.Entity
             this.options = options;
             provider = options.Provider;
             EntityType = typeof(TEntity);
+
+            Type contextType = null;
+            if (options is IInstanceIdentifier identifier)
+            {
+                contextType = identifier.ContextType;
+            }
+
+            subMgr = EntityPersistentSubscribeManager.GetRequiredManager(contextType);
         }
 
         /// <summary>
@@ -100,7 +110,7 @@ namespace Fireasy.Data.Entity
                 SetDefaultValue(entity);
             }
 
-            return EntityPersistentSubscribeManager.OnCreate<TEntity, int>(options.NotifyEvents, entity,
+            return subMgr.OnCreate<TEntity, int>(options.NotifyEvents, entity,
                 () => repositoryProxy.Insert(HandleValidate(entity)));
         }
 
@@ -119,7 +129,7 @@ namespace Fireasy.Data.Entity
                 SetDefaultValue(entity);
             }
 
-            return await EntityPersistentSubscribeManager.OnCreateAsync<TEntity, int>(options.NotifyEvents, entity,
+            return await subMgr.OnCreateAsync<TEntity, int>(options.NotifyEvents, entity,
                 () => repositoryProxy.InsertAsync(HandleValidate(entity), cancellationToken));
         }
 
@@ -274,7 +284,7 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return EntityPersistentSubscribeManager.OnRemove<TEntity, int>(options.NotifyEvents, entity,
+            return subMgr.OnRemove<TEntity, int>(options.NotifyEvents, entity,
                 () => repositoryProxy.Delete(entity, logicalDelete));
         }
 
@@ -289,7 +299,7 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return await EntityPersistentSubscribeManager.OnRemoveAsync<TEntity, int>(options.NotifyEvents, entity,
+            return await subMgr.OnRemoveAsync<TEntity, int>(options.NotifyEvents, entity,
                 () => repositoryProxy.DeleteAsync(entity, logicalDelete, cancellationToken));
         }
 
@@ -303,7 +313,7 @@ namespace Fireasy.Data.Entity
             var ret = repositoryProxy.Delete(primaryValues);
             if (ret > 0 && options.NotifyEvents)
             {
-                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
+                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -319,7 +329,7 @@ namespace Fireasy.Data.Entity
             var ret = await repositoryProxy.DeleteAsync(primaryValues, default);
             if (ret > 0 && options.NotifyEvents)
             {
-                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
+                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -336,7 +346,7 @@ namespace Fireasy.Data.Entity
             var ret = repositoryProxy.Delete(primaryValues, logicalDelete);
             if (ret > 0 && options.NotifyEvents)
             {
-                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
+                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -354,7 +364,7 @@ namespace Fireasy.Data.Entity
             var ret = await repositoryProxy.DeleteAsync(primaryValues, logicalDelete, cancellationToken);
             if (ret > 0 && options.NotifyEvents)
             {
-                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
+                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -371,7 +381,7 @@ namespace Fireasy.Data.Entity
             var ret = repositoryProxy.Delete(predicate, logicalDelete);
             if (ret > 0 && options.NotifyEvents)
             {
-                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
+                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -389,7 +399,7 @@ namespace Fireasy.Data.Entity
             var ret = await repositoryProxy.DeleteAsync(predicate, logicalDelete);
             if (ret > 0 && options.NotifyEvents)
             {
-                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
+                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -407,7 +417,7 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return EntityPersistentSubscribeManager.OnUpdate<TEntity, int>(options.NotifyEvents, entity,
+            return subMgr.OnUpdate<TEntity, int>(options.NotifyEvents, entity,
                 () => repositoryProxy.Update(HandleValidate(entity)));
         }
 
@@ -421,7 +431,7 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return await EntityPersistentSubscribeManager.OnUpdateAsync<TEntity, int>(options.NotifyEvents, entity,
+            return await subMgr.OnUpdateAsync<TEntity, int>(options.NotifyEvents, entity,
                 () => repositoryProxy.UpdateAsync(HandleValidate(entity), cancellationToken));
         }
 
@@ -436,7 +446,7 @@ namespace Fireasy.Data.Entity
             var ret = repositoryProxy.Update(entity, predicate);
             if (ret > 0 && options.NotifyEvents)
             {
-                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterUpdate);
+                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterUpdate);
             }
 
             return ret;
@@ -454,7 +464,7 @@ namespace Fireasy.Data.Entity
             var ret = await repositoryProxy.UpdateAsync(entity, predicate);
             if (ret > 0 && options.NotifyEvents)
             {
-                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterUpdate);
+                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterUpdate);
             }
 
             return ret;
@@ -535,7 +545,7 @@ namespace Fireasy.Data.Entity
             var ret = repositoryProxy.Update(calculator, predicate);
             if (ret > 0 && options.NotifyEvents)
             {
-                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterUpdate);
+                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterUpdate);
             }
 
             return ret;
@@ -553,7 +563,7 @@ namespace Fireasy.Data.Entity
             var ret = await repositoryProxy.UpdateAsync(calculator, predicate, cancellationToken);
             if (ret > 0 && options.NotifyEvents)
             {
-                EntityPersistentSubscribeManager.Publish<TEntity>(EntityPersistentEventType.AfterUpdate);
+                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterUpdate);
             }
 
             return ret;
@@ -579,7 +589,7 @@ namespace Fireasy.Data.Entity
             var operateName = OperateFinder.Find(fnOperation);
             var eventType = GetEventType(operateName);
 
-            return EntityPersistentSubscribeManager.OnBatch<TEntity, int>(options.NotifyEvents,
+            return subMgr.OnBatch<TEntity, int>(options.NotifyEvents,
                 instances.Cast<IEntity>(), eventType,
                 () => repositoryProxy.Batch(instances, fnOperation, batchOpt));
         }
@@ -602,7 +612,7 @@ namespace Fireasy.Data.Entity
             var operateName = OperateFinder.Find(fnOperation);
             var eventType = GetEventType(operateName);
 
-            return await EntityPersistentSubscribeManager.OnBatchAsync<TEntity, int>(options.NotifyEvents,
+            return await subMgr.OnBatchAsync<TEntity, int>(options.NotifyEvents,
                 instances.Cast<IEntity>(), eventType,
                 () => repositoryProxy.BatchAsync(instances, fnOperation, batchOpt, cancellationToken));
         }

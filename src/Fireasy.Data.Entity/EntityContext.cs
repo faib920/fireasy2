@@ -8,8 +8,10 @@
 using Fireasy.Common;
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Configuration;
+using Fireasy.Common.Extensions;
+using Fireasy.Common.Ioc;
 using Fireasy.Data.Configuration;
-using Fireasy.Data.Entity.Linq;
+using Fireasy.Data.Entity.Query;
 using Fireasy.Data.Provider;
 using System;
 using System.Collections;
@@ -22,11 +24,10 @@ namespace Fireasy.Data.Entity
     /// <summary>
     /// 提供以对象形式查询和使用实体数据的功能。
     /// </summary>
-    public abstract class EntityContext : DisposeableBase, IServiceProvider, IObjectPoolable
+    public abstract class EntityContext : DisposeableBase, IServiceProvider, IServiceProviderAccessor, IObjectPoolable
     {
-        private readonly EntityContextOptions options;
+        private EntityContextOptions options;
         private IContextService service;
-        private IServiceProvider serviceProvider;
         private IObjectPool pool;
 
         /// <summary>
@@ -71,12 +72,17 @@ namespace Fireasy.Data.Entity
         protected EntityContext(IServiceProvider serviceProvider, EntityContextOptions options)
         {
             this.options = options;
-            this.serviceProvider = serviceProvider;
+            ServiceProvider = serviceProvider;
 
             Initialize(options);
 
             new EntityRepositoryDiscoveryService(this, options).InitializeSets();
         }
+
+        /// <summary>
+        /// 获取或设置应用程序服务提供者实例。
+        /// </summary>
+        public IServiceProvider ServiceProvider { get; set; }
 
         /// <summary>
         /// 获取关联的 <see cref="IDatabase"/> 实例。
@@ -98,12 +104,21 @@ namespace Fireasy.Data.Entity
         /// 销毁资源。
         /// </summary>
         /// <param name="disposing">如果为 true，则同时释放托管资源和非托管资源；如果为 false，则仅释放非托管资源。</param>
-        protected override void Dispose(bool disposing)
+        protected override bool Dispose(bool disposing)
         {
             if (pool == null)
             {
+                Tracer.Debug($"The {GetType().Name} is Disposing.");
+
                 service?.Dispose();
+                service = null;
+
+                options = null;
+
+                return true;
             }
+
+            return false;
         }
 
         /// <summary>
@@ -240,34 +255,56 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(options, nameof(options));
 
+            TrySetContextType(options);
             TrySetServiceProvider(options);
             TryPaserInstanceSetting(options);
 
             var builder = new EntityContextOptionsBuilder(options);
             OnConfiguring(builder);
 
-            Guard.NullReference(options.Provider, "The IProvider is required for initialization.");
+            if (options.Provider == null)
+            {
+                throw new NotSupportedException(SR.GetString(SRKind.NotSupportDbProvider));
+            }
 
             var contextProvider = options.GetProviderService<IContextProvider>();
+
             service = contextProvider.CreateContextService(new ContextServiceContext(options));
+        }
+
+        private void TrySetContextType(EntityContextOptions options)
+        {
+            if (options is IInstanceIdentifier identifier && identifier.ContextType == null)
+            {
+                identifier.ContextType = GetType();
+            }
         }
 
         /// <summary>
         /// 尝试初始化 <see cref="IServiceProvider"/> 实例。
         /// </summary>
         /// <param name="options"></param>
-        private void TrySetServiceProvider(EntityContextOptions options)
+        protected virtual void TrySetServiceProvider(EntityContextOptions options)
         {
-            if (options is IInstanceIdentification identification)
+            if (options is IInstanceIdentifier identification)
             {
-                if (identification.ServiceProvider == null && serviceProvider != null)
+                if (identification.ServiceProvider == null && ServiceProvider != null)
                 {
-                    identification.ServiceProvider = serviceProvider;
+                    identification.ServiceProvider = ServiceProvider;
                 }
-                else if (serviceProvider == null && identification.ServiceProvider != null)
+                else if (ServiceProvider == null && identification.ServiceProvider != null)
                 {
-                    serviceProvider = identification.ServiceProvider;
+                    ServiceProvider = identification.ServiceProvider;
                 }
+                else if (identification.ServiceProvider == null && ServiceProvider == null)
+                {
+                    ServiceProvider = identification.ServiceProvider = ContainerUnity.GetContainer();
+                }
+            }
+
+            if (ServiceProvider == null)
+            {
+                ServiceProvider = ContainerUnity.GetContainer();
             }
         }
 
@@ -275,7 +312,7 @@ namespace Fireasy.Data.Entity
         /// 尝试从配置文件中配置 <see cref="EntityContextOptions"/> 实例。
         /// </summary>
         /// <param name="options"></param>
-        private void TryPaserInstanceSetting(EntityContextOptions options)
+        protected virtual void TryPaserInstanceSetting(EntityContextOptions options)
         {
             if (options.Provider == null && options.ConnectionString == null)
             {
@@ -318,7 +355,7 @@ namespace Fireasy.Data.Entity
             }
             else if (serviceType == typeof(IServiceProvider))
             {
-                return serviceProvider;
+                return ServiceProvider;
             }
             else if (serviceType == typeof(IDatabase) && service is IDatabaseAware aware)
             {

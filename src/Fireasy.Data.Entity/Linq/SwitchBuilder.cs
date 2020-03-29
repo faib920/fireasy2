@@ -32,7 +32,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <summary>
         /// 获取匹配的表达式。
         /// </summary>
-        public Expression Expression { get; private set; }
+        public Expression<Func<TSource, bool>> Expression { get; private set; }
 
         /// <summary>
         /// 指定在不同 <paramref name="value"/> 时所使用的断言。

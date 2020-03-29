@@ -529,16 +529,6 @@ namespace Fireasy.Common.Serialization
             }
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                xmlReader.Dispose();
-            }
-
-            base.Dispose(disposing);
-        }
-
         private class AssumeContentException : Exception
         {
             public AssumeContentException(string content)

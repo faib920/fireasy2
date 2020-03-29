@@ -233,7 +233,8 @@ namespace Fireasy.Common.Caching
         /// <typeparam name="TValue"></typeparam>
         /// <param name="cacheKey">用于哈希集的缓存键。</param>
         /// <param name="initializeSet">用于初始化哈希集的函数。</param>
+        /// <param name="checkExpiration">是否检查元素的过期时间。</param>
         /// <returns></returns>
-        ICacheHashSet<TKey, TValue> GetHashSet<TKey, TValue>(string cacheKey, Func<IEnumerable<Tuple<TKey, TValue, ICacheItemExpiration>>> initializeSet = null);
+        ICacheHashSet<TKey, TValue> GetHashSet<TKey, TValue>(string cacheKey, Func<IEnumerable<Tuple<TKey, TValue, ICacheItemExpiration>>> initializeSet = null, bool checkExpiration = true);
     }
 }

@@ -13,6 +13,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
 using Fireasy.Common.Extensions;
+using Fireasy.Common.Ioc;
+using System.Text;
 
 namespace Fireasy.Web.Mvc
 {
@@ -43,7 +45,7 @@ namespace Fireasy.Web.Mvc
 
                 return base.GetParameterValue(controllerContext, parameterDescriptor);
             }
-            else 
+            else
             {
                 //对json进行反序列化，由于使用了基于 Fireasy AOP 的实体模型，所以必须使用 Fireasy 的反序列化方法 
                 var json = controllerContext.HttpContext.Request.Params[parameterDescriptor.ParameterName];
@@ -56,17 +58,24 @@ namespace Fireasy.Web.Mvc
                         var globalconverters = GlobalSetting.Converters.Where(s => s is JsonConverter).Cast<JsonConverter>();
                         option.Converters.AddRange(globalconverters);
 
-                        var serializer = new JsonSerializer(option);
-                        return serializer.Deserialize(json, parameterDescriptor.ParameterType);
+                        var serializer = ContainerUnity.GetContainer().TryGetService<ISerializer>(() => new JsonSerializer(option));
+                        if (serializer is ITextSerializer txtSerializer)
+                        {
+                            return txtSerializer.Deserialize(json, parameterDescriptor.ParameterType);
+                        }
+                        else
+                        {
+                            return serializer.Deserialize(Encoding.UTF8.GetBytes(json), parameterDescriptor.ParameterType);
+                        }
                     }
                     catch (Exception exp)
                     {
                         var logger = LoggerFactory.CreateLogger();
                         if (logger != null)
                         {
-                            var message = string.Format("无法解析控制器 {0} 的方法 {1} 的参数 {2} 的值。\n\n数据为: {3}", 
-                                parameterDescriptor.ActionDescriptor.ControllerDescriptor.ControllerName, 
-                                parameterDescriptor.ActionDescriptor.ActionName, 
+                            var message = string.Format("无法解析控制器 {0} 的方法 {1} 的参数 {2} 的值。\n\n数据为: {3}",
+                                parameterDescriptor.ActionDescriptor.ControllerDescriptor.ControllerName,
+                                parameterDescriptor.ActionDescriptor.ActionName,
                                 parameterDescriptor.ParameterName,
                                 json);
 

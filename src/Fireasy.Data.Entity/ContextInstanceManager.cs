@@ -21,7 +21,7 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public class ContextInstanceManager
     {
-        private static readonly SafetyDictionary<string, IInstanceIdentification> instances = new SafetyDictionary<string, IInstanceIdentification>();
+        private static readonly SafetyDictionary<string, IInstanceIdentifier> instances = new SafetyDictionary<string, IInstanceIdentifier>();
 
         /// <summary>
         /// 析构函数。
@@ -40,18 +40,18 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 尝试从管理器里获取与实例名对应的 <see cref="IInstanceIdentification"/> 实例。
+        /// 尝试从管理器里获取与实例名对应的 <see cref="IInstanceIdentifier"/> 实例。
         /// </summary>
         /// <param name="instanceName"></param>
         /// <returns></returns>
-        public static IInstanceIdentification TryGet(string instanceName)
+        public static IInstanceIdentifier TryGet(string instanceName)
         {
             if (string.IsNullOrEmpty(instanceName))
             {
                 return null;
             }
 
-            if (instances.TryGetValue(instanceName, out IInstanceIdentification value))
+            if (instances.TryGetValue(instanceName, out IInstanceIdentifier value))
             {
                 return value;
             }
@@ -60,11 +60,11 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 尝试将 <see cref="IInstanceIdentification"/> 实例添加到管理器，并返回一个实例名。如果管理器中已有该实例，则返回原有的实例名。
+        /// 尝试将 <see cref="IInstanceIdentifier"/> 实例添加到管理器，并返回一个实例名。如果管理器中已有该实例，则返回原有的实例名。
         /// </summary>
         /// <param name="identification"></param>
         /// <returns></returns>
-        public static string TryAdd(IInstanceIdentification identification)
+        public static string TryAdd(IInstanceIdentifier identification)
         {
             lock (instances)
             {
@@ -79,7 +79,11 @@ namespace Fireasy.Data.Entity
 #if NETSTANDARD
                 if (identification.ServiceProvider != null)
                 {
-                    identification.ServiceProvider = identification.ServiceProvider.CreateScope() as IServiceProvider;
+                    var factory = identification.ServiceProvider.GetService<IServiceScopeFactory>();
+                    if (factory != null)
+                    {
+                        identification.ServiceProvider = factory.CreateScope() as IServiceProvider;
+                    }
                 }
 #endif
 

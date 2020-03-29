@@ -101,7 +101,7 @@ namespace Fireasy.Data.Entity
             return ReflectionCache.GetMember("EntityProxyType", entityType, providerName, (k, n) =>
             {
                 var assembly = CompileAll(n, k.Assembly, null, null);
-                return assembly == null ? k : assembly.GetType(k.Name, false);
+                return assembly == null ? k : assembly.GetType(k.Name, true);
             });
         }
 

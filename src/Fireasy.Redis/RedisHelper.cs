@@ -27,7 +27,7 @@ namespace Fireasy.Redis
             CSRedisClientLock locker;
             while ((locker = client.Lock(token, (int)timeout.TotalSeconds)) == null)
             {
-                Thread.Sleep(10);
+                Thread.Sleep(100);
             }
 
             try
@@ -45,7 +45,7 @@ namespace Fireasy.Redis
             CSRedisClientLock locker;
             while ((locker = client.Lock(token, (int)timeout.TotalSeconds)) == null)
             {
-                Thread.Sleep(10);
+                Thread.Sleep(100);
             }
 
             T result;
@@ -66,7 +66,7 @@ namespace Fireasy.Redis
             CSRedisClientLock locker;
             while ((locker = client.Lock(token, (int)timeout.TotalSeconds)) == null)
             {
-                Thread.Sleep(10);
+                Thread.Sleep(100);
             }
 
             try
@@ -84,7 +84,7 @@ namespace Fireasy.Redis
             CSRedisClientLock locker;
             while ((locker = client.Lock(token, (int)timeout.TotalSeconds)) == null)
             {
-                Thread.Sleep(10);
+                Thread.Sleep(100);
             }
 
             T result;

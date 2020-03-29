@@ -75,9 +75,11 @@ namespace Fireasy.MongoDB
         /// 释放资源。
         /// </summary>
         /// <param name="disposing"></param>
-        protected override void Dispose(bool disposing)
+        protected override bool Dispose(bool disposing)
         {
             Session?.Dispose();
+
+            return base.Dispose(disposing);
         }
     }
 }

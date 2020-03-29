@@ -149,7 +149,9 @@ SELECT T.TABLE_CATALOG,
        (SELECT C.COLSTAT FROM SYSCOLUMNS C
             LEFT JOIN SYSOBJECTS O ON C.ID = O.ID WHERE O.XTYPE='U' AND O.NAME = T.TABLE_NAME AND C.NAME = T.COLUMN_NAME) AUTOINC
   FROM INFORMATION_SCHEMA.COLUMNS T
-WHERE  (T.TABLE_CATALOG = '{connpar.Database}') AND
+  JOIN INFORMATION_SCHEMA.TABLES O
+    ON O.TABLE_CATALOG = T.TABLE_CATALOG AND O.TABLE_SCHEMA = T.TABLE_SCHEMA AND T.TABLE_NAME = O.TABLE_NAME
+WHERE (O.TABLE_TYPE <> 'view' AND T.TABLE_CATALOG = '{connpar.Database}') AND
   (T.TABLE_NAME = @TABLENAME OR (@TABLENAME IS NULL)) AND 
   (T.COLUMN_NAME = @COLUMNNAME OR (@COLUMNNAME IS NULL))
  ORDER BY T.TABLE_CATALOG, T.TABLE_SCHEMA, T.TABLE_NAME";
@@ -210,32 +212,49 @@ WHERE TABLE_TYPE = 'view'
             var connpar = GetConnectionParameter(database);
 
             SqlCommand sql = $@"
-SELECT
-  VIEW_CATALOG,
-  VIEW_SCHEMA,
-  VIEW_NAME,
-  TABLE_CATALOG,
-  TABLE_SCHEMA,
-  TABLE_NAME,
-  COLUMN_NAME
-FROM INFORMATION_SCHEMA.VIEW_COLUMN_USAGE
-WHERE (VIEW_CATALOG = '{connpar.Database}')
-  AND (VIEW_NAME = @TABLE OR (@TABLE IS NULL))
-  AND (COLUMN_NAME = @COLUMN OR (@COLUMN IS NULL))
-ORDER BY VIEW_CATALOG, VIEW_SCHEMA, VIEW_NAME";
+SELECT T.TABLE_CATALOG,
+       T.TABLE_SCHEMA,
+       T.TABLE_NAME,
+       T.COLUMN_NAME,
+       T.DATA_TYPE AS DATATYPE,
+       T.CHARACTER_MAXIMUM_LENGTH AS LENGTH,
+       T.NUMERIC_PRECISION AS PRECISION,
+       T.NUMERIC_SCALE AS SCALE,
+       T.IS_NULLABLE AS NULLABLE,
+       (SELECT COUNT(1) FROM SYSCOLUMNS A
+            JOIN SYSINDEXKEYS B ON A.ID=B.ID AND A.COLID=B.COLID AND A.ID=OBJECT_ID(T.TABLE_NAME)
+            JOIN SYSINDEXES C ON A.ID=C.ID AND B.INDID=C.INDID JOIN SYSOBJECTS D ON C.NAME=D.NAME AND D.XTYPE= 'PK' WHERE A.NAME = T.COLUMN_NAME) COLUMN_IS_PK,
+       T.COLUMN_DEFAULT,
+       (SELECT VALUE FROM ::FN_LISTEXTENDEDPROPERTY('MS_Description','user',T.TABLE_SCHEMA,'table',T.TABLE_NAME,'column',T.COLUMN_NAME)) COMMENTS,
+       0 AUTOINC
+  FROM INFORMATION_SCHEMA.COLUMNS T
+  JOIN INFORMATION_SCHEMA.TABLES O
+    ON O.TABLE_CATALOG = T.TABLE_CATALOG AND O.TABLE_SCHEMA = T.TABLE_SCHEMA AND T.TABLE_NAME = O.TABLE_NAME
+WHERE (O.TABLE_TYPE = 'view' AND T.TABLE_CATALOG = '{connpar.Database}') AND
+  (T.TABLE_NAME = @TABLENAME OR (@TABLENAME IS NULL)) AND 
+  (T.COLUMN_NAME = @COLUMNNAME OR (@COLUMNNAME IS NULL))
+ ORDER BY T.TABLE_CATALOG, T.TABLE_SCHEMA, T.TABLE_NAME";
 
             restrictionValues
-                .Parameterize(parameters, "TABLE", nameof(ViewColumn.ViewName))
-                .Parameterize(parameters, "COLUMN", nameof(ViewColumn.Name));
+                .Parameterize(parameters, "TABLENAME", nameof(ViewColumn.ViewName))
+                .Parameterize(parameters, "COLUMNNAME", nameof(ViewColumn.Name));
 
             return ExecuteAndParseMetadata(database, sql, parameters, (wrapper, reader) => new ViewColumn
             {
                 Catalog = wrapper.GetString(reader, 0),
                 Schema = wrapper.GetString(reader, 1),
                 ViewName = wrapper.GetString(reader, 2),
-                Name = wrapper.GetString(reader, 6)
+                Name = wrapper.GetString(reader, 3),
+                DataType = wrapper.GetString(reader, 4),
+                Length = wrapper.GetInt64(reader, 5),
+                NumericPrecision = wrapper.GetInt32(reader, 6),
+                NumericScale = wrapper.GetInt32(reader, 7),
+                IsNullable = wrapper.GetString(reader, 8) == "YES",
+                IsPrimaryKey = wrapper.GetInt32(reader, 9) > 0,
+                Default = wrapper.GetString(reader, 10),
+                Description = wrapper.GetString(reader, 11),
+                Autoincrement = wrapper.GetInt32(reader, 12) == 1
             });
-
         }
 
         protected override IEnumerable<ForeignKey> GetForeignKeys(IDatabase database, RestrictionDictionary restrictionValues)

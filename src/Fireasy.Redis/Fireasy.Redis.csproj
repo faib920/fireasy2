@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net45;net461;netstandard2.0</TargetFrameworks>
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
@@ -12,7 +12,7 @@
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Redis Provider</Product>
-    <Version>2.1.2-preview3</Version>
+    <Version>2.1.2</Version>
     <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
     <Description>
@@ -21,10 +21,17 @@
       示例源码：https://github.com/faib920/zero
     </Description>
     <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>
+    <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
     <DocumentationFile>..\..\Release\net45\Fireasy.Redis.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net461|AnyCPU'">
+    <DocumentationFile>..\..\Release\net461\Fireasy.Redis.xml</DocumentationFile>
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
 
@@ -40,6 +47,12 @@
     <Reference Include="System.Configuration" />
     <PackageReference Include="StackExchange.Redis.StrongName">
       <Version>1.2.6</Version>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
+    <Reference Include="System.Configuration" />
+    <PackageReference Include="StackExchange.Redis">
+      <Version>2.0.601</Version>
     </PackageReference>
   </ItemGroup>
 

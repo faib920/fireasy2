@@ -164,8 +164,9 @@ namespace Fireasy.Data
         /// <param name="queryCommand">查询命令。</param>
         /// <param name="segment">数据分段对象。</param>
         /// <param name="parameters">查询参数集合。</param>
+        /// <param name="behavior"></param>
         /// <returns>一个 <see cref="IDataReader"/> 对象。</returns>
-        IDataReader ExecuteReader(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null);
+        IDataReader ExecuteReader(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CommandBehavior? behavior = null);
 
         /// <summary>
         /// 异步的，执行查询文本并返回一个 <see cref="IDataReader"/>。
@@ -173,9 +174,10 @@ namespace Fireasy.Data
         /// <param name="queryCommand">查询命令。</param>
         /// <param name="segment">数据分段对象。</param>
         /// <param name="parameters">查询参数集合。</param>
+        /// <param name="behavior"></param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>一个 <see cref="IDataReader"/> 对象。</returns>
-        Task<IDataReader> ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CancellationToken cancellationToken = default);
+        Task<IDataReader> ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CommandBehavior? behavior = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 执行查询文本，并返回第一行的第一列。

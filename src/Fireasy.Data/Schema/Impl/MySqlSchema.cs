@@ -186,7 +186,7 @@ SELECT T.TABLE_CATALOG,
 FROM 
   INFORMATION_SCHEMA.VIEWS T
 WHERE (T.TABLE_SCHEMA = '{connpar.Database}') AND 
-  AND (T.TABLE_NAME = ?NAME OR ?NAME IS NULL)
+  (T.TABLE_NAME = ?NAME OR ?NAME IS NULL)
  ORDER BY T.TABLE_CATALOG, T.TABLE_SCHEMA, T.TABLE_NAME";
 
             restrictionValues.Parameterize(parameters, "NAME", nameof(View.Name));
@@ -208,9 +208,19 @@ WHERE (T.TABLE_SCHEMA = '{connpar.Database}') AND
 SELECT T.TABLE_CATALOG,
        T.TABLE_SCHEMA,
        T.TABLE_NAME,
-       T.COLUMN_NAME
+       T.COLUMN_NAME,
+       T.DATA_TYPE,
+       T.CHARACTER_MAXIMUM_LENGTH,
+       T.NUMERIC_PRECISION,
+       T.NUMERIC_SCALE,
+       T.IS_NULLABLE,
+       T.COLUMN_KEY,
+       T.COLUMN_DEFAULT,
+       T.COLUMN_COMMENT,
+       T.EXTRA
 FROM INFORMATION_SCHEMA.COLUMNS T
-JOIN INFORMATION_SCHEMA.VIEWS V ON V.TABLE_NAME = T.TABLE_NAME
+JOIN INFORMATION_SCHEMA.VIEWS O
+  ON O.TABLE_SCHEMA = T.TABLE_SCHEMA AND O.TABLE_NAME = T.TABLE_NAME
 WHERE (T.TABLE_SCHEMA = '{connpar.Database}') AND 
   (T.TABLE_NAME = ?TABLENAME OR ?TABLENAME IS NULL) AND 
   (T.COLUMN_NAME = ?COLUMNNAME OR ?COLUMNNAME IS NULL)
@@ -225,7 +235,16 @@ WHERE (T.TABLE_SCHEMA = '{connpar.Database}') AND
                 Catalog = wrapper.GetString(reader, 0),
                 Schema = wrapper.GetString(reader, 1),
                 ViewName = wrapper.GetString(reader, 2),
-                Name = wrapper.GetString(reader, 3)
+                Name = wrapper.GetString(reader, 3),
+                DataType = wrapper.GetString(reader, 4),
+                Length = wrapper.GetInt64(reader, 5),
+                NumericPrecision = wrapper.GetInt32(reader, 6),
+                NumericScale = wrapper.GetInt32(reader, 7),
+                IsNullable = wrapper.GetString(reader, 8) == "YES",
+                IsPrimaryKey = wrapper.GetString(reader, 9) == "PRI",
+                Default = wrapper.GetString(reader, 10),
+                Description = wrapper.GetString(reader, 11),
+                Autoincrement = false
             });
         }
 

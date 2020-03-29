@@ -5,12 +5,12 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Tasks;
 using Quartz;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Fireasy.QuartzNet
@@ -31,10 +31,10 @@ namespace Fireasy.QuartzNet
             {
                 var service = context.MergedJobDataMap["serviceProvider"] as IServiceProvider;
                 var arguments = context.MergedJobDataMap["arguments"] as IDictionary<string, object>;
-                var econtext = new TaskExecuteContext(service, arguments);
-                Tracer.Debug($"The Task '{executor.GetType()}' Executing.");
+                var cancellationToken = (CancellationToken)context.MergedJobDataMap["cancellationToken"];
+
+                var econtext = new TaskExecuteContext(service, arguments, cancellationToken);
                 await executor.ExecuteAsync(econtext);
-                Tracer.Debug($"The Task '{executor.GetType()}' Completed.");
             }
         }
     }
@@ -53,14 +53,14 @@ namespace Fireasy.QuartzNet
         {
             var serviceProvider = context.MergedJobDataMap["serviceProvider"] as IServiceProvider;
             var arguments = context.MergedJobDataMap["arguments"] as IDictionary<string, object>;
+            var cancellationToken = (CancellationToken)context.MergedJobDataMap["cancellationToken"];
+
             if (typeof(TJob).New(serviceProvider) is IAsyncTaskExecutor executor)
             {
                 var initializer = context.MergedJobDataMap["initializer"] as Action<TJob>;
                 initializer?.Invoke((TJob)executor);
-                var econtext = new TaskExecuteContext(serviceProvider, arguments);
-                Tracer.Debug($"The Task '{typeof(TJob)}' Executing.");
+                var econtext = new TaskExecuteContext(serviceProvider, arguments, cancellationToken);
                 await executor.ExecuteAsync(econtext);
-                Tracer.Debug($"The Task '{typeof(TJob)}' Completed.");
             }
         }
     }

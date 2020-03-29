@@ -10,7 +10,6 @@ using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -21,14 +20,14 @@ namespace Fireasy.Common.Caching
     /// <summary>
     /// 基于内存的缓存管理。无法继承此类。
     /// </summary>
-    public sealed class MemoryCacheManager : DisposeableBase, ICacheManager
+    public sealed class MemoryCacheManager : DisposeableBase, ICacheManager, IServiceProviderAccessor
     {
         private static readonly ConcurrentDictionary<string, object> hashSet = new ConcurrentDictionary<string, object>();
 
         /// <summary>
         /// 获取 <see cref="MemoryCacheManager"/> 的静态实例。
         /// </summary>
-        public readonly static MemoryCacheManager Instance = new MemoryCacheManager();
+        public readonly static MemoryCacheManager Instance = new MemoryCacheManager().TryUseContainer();
 
         private readonly MemoryDictionary cacheDictionary = new MemoryDictionary();
         private readonly CacheOptimizer optimizer;
@@ -42,6 +41,11 @@ namespace Fireasy.Common.Caching
         }
 
         /// <summary>
+        /// 获取或设置应用程序服务提供者实例。
+        /// </summary>
+        public IServiceProvider ServiceProvider { get; set; }
+
+        /// <summary>
         /// 将对象插入到缓存管理器中。
         /// </summary>
         /// <typeparam name="T">缓存对象的类型。</typeparam>
@@ -51,8 +55,9 @@ namespace Fireasy.Common.Caching
         /// <param name="removeCallback">当对象从缓存中移除时，使用该回调方法通知应用程序。</param>
         public T Add<T>(string cacheKey, T value, TimeSpan? expire = null, CacheItemRemovedCallback removeCallback = null)
         {
-            var func = new Func<CacheItem>(() => CreateCacheItem(cacheKey, () => value, () => expire == null ? RelativeTime.Default : new RelativeTime(expire.Value), removeCallback));
-            cacheDictionary.AddOrUpdate(cacheKey, k => func(), (k, v) => func());
+            cacheKey = ServiceProvider.GetCacheKey(cacheKey);
+            var func = new Func<string, CacheItem>(key => CreateCacheItem(key, () => value, () => expire == null ? RelativeTime.Default : new RelativeTime(expire.Value), removeCallback));
+            cacheDictionary.AddOrUpdate(cacheKey, k => func(k), (k, v) => func(k));
 
             return value;
         }
@@ -67,8 +72,9 @@ namespace Fireasy.Common.Caching
         /// <param name="removeCallback">当对象从缓存中移除时，使用该回调方法通知应用程序。</param>
         public T Add<T>(string cacheKey, T value, ICacheItemExpiration expiration, CacheItemRemovedCallback removeCallback = null)
         {
-            var func = new Func<CacheItem>(() => CreateCacheItem(cacheKey, () => value, () => expiration ?? RelativeTime.Default, removeCallback));
-            cacheDictionary.AddOrUpdate(cacheKey, k => func(), (k, v) => func());
+            cacheKey = ServiceProvider.GetCacheKey(cacheKey);
+            var func = new Func<string, CacheItem>(key => CreateCacheItem(key, () => value, () => expiration ?? RelativeTime.Default, removeCallback));
+            cacheDictionary.AddOrUpdate(cacheKey, k => func(k), (k, v) => func(k));
 
             return value;
         }
@@ -81,6 +87,7 @@ namespace Fireasy.Common.Caching
         /// <exception cref="NotSupportedException">不支持该方法。</exception>
         public bool Contains(string cacheKey)
         {
+            cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             return cacheDictionary.ContainsKey(cacheKey);
         }
 
@@ -91,6 +98,7 @@ namespace Fireasy.Common.Caching
         /// <returns></returns>
         public TimeSpan? GetExpirationTime(string cacheKey)
         {
+            cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             if (cacheDictionary.TryGetValue(cacheKey, out CacheItem entry))
             {
                 return entry.Expiration?.GetExpirationTime();
@@ -106,6 +114,7 @@ namespace Fireasy.Common.Caching
         /// <param name="expiration">判断对象过期的对象。</param>
         public void SetExpirationTime(string cacheKey, Func<ICacheItemExpiration> expiration)
         {
+            cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             if (cacheDictionary.TryGetValue(cacheKey, out CacheItem entry))
             {
                 entry.Expiration = expiration == null ? NeverExpired.Instance : expiration();
@@ -120,6 +129,7 @@ namespace Fireasy.Common.Caching
         /// <exception cref="NotSupportedException">不支持该方法。</exception>
         public object Get(string cacheKey)
         {
+            cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             if (cacheDictionary.TryGetValue(cacheKey, out CacheItem entry))
             {
                 if (optimizer.Update(entry) == null)
@@ -145,6 +155,7 @@ namespace Fireasy.Common.Caching
         /// <returns>检索到的缓存对象，未找到时为 null。</returns>
         public T Get<T>(string cacheKey)
         {
+            cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             var value = Get(cacheKey);
             if (value != null && typeof(T).IsAssignableFrom(value.GetType()))
             {
@@ -164,6 +175,7 @@ namespace Fireasy.Common.Caching
         /// <returns></returns>
         public T TryGet<T>(string cacheKey, Func<T> valueCreator, Func<ICacheItemExpiration> expiration = null)
         {
+            cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             if (cacheDictionary.TryGetValue(cacheKey, out CacheItem entry))
             {
                 //判断是否过期，移除后再添加
@@ -195,6 +207,7 @@ namespace Fireasy.Common.Caching
         /// <returns></returns>
         public object TryGet(Type dataType, string cacheKey, Func<object> valueCreator, Func<ICacheItemExpiration> expiration = null)
         {
+            cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             if (cacheDictionary.TryGetValue(cacheKey, out CacheItem entry))
             {
                 //判断是否过期，移除后再添加
@@ -225,6 +238,7 @@ namespace Fireasy.Common.Caching
         /// <returns></returns>
         public bool TryGet<T>(string cacheKey, out T value)
         {
+            cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             if (cacheDictionary.TryGetValue(cacheKey, out CacheItem entry))
             {
                 //判断是否过期
@@ -255,6 +269,7 @@ namespace Fireasy.Common.Caching
         /// <exception cref="NotSupportedException">不支持该方法。</exception>
         public void Remove(string cacheKey)
         {
+            cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             if (cacheDictionary.TryRemove(cacheKey, out CacheItem entry))
             {
                 NotifyCacheRemoved(entry);
@@ -288,9 +303,11 @@ namespace Fireasy.Common.Caching
         /// <typeparam name="TValue"></typeparam>
         /// <param name="cacheKey">用于哈希集的缓存键。</param>
         /// <param name="initializeSet">用于初始化哈希集的函数。</param>
+        /// <param name="checkExpiration">是否检查元素的过期时间。</param>
         /// <returns></returns>
-        public ICacheHashSet<TKey, TValue> GetHashSet<TKey, TValue>(string cacheKey, Func<IEnumerable<Tuple<TKey, TValue, ICacheItemExpiration>>> initializeSet = null)
+        public ICacheHashSet<TKey, TValue> GetHashSet<TKey, TValue>(string cacheKey, Func<IEnumerable<Tuple<TKey, TValue, ICacheItemExpiration>>> initializeSet = null, bool checkExpiration = true)
         {
+            cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             return (ICacheHashSet<TKey, TValue>)hashSet.GetOrAdd(cacheKey, k => new MemoryHashSet<TKey, TValue>(initializeSet));
         }
 
@@ -408,11 +425,13 @@ namespace Fireasy.Common.Caching
             Clear();
         }
 
-        protected override void Dispose(bool disposing)
+        protected override bool Dispose(bool disposing)
         {
             hashSet.Clear();
             cacheDictionary.Clear();
             optimizer?.Dispose();
+
+            return base.Dispose(disposing);
         }
     }
 }

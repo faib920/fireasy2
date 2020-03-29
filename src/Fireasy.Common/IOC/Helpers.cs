@@ -57,6 +57,34 @@ namespace Fireasy.Common.Ioc
             return IsConcreteConstructableType(serviceType, out errorMesssage);
         }
 
+        /// <summary>
+        /// 发现程序集中的所有依赖类型。
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="action"></param>
+        internal static void DiscoverAssembly(Assembly assembly, Action<Type, Type> action)
+        {
+            foreach (var type in assembly.GetExportedTypes())
+            {
+                if (type.IsInterface || type.IsAbstract || type.IsEnum || type.IsDefined(typeof(IgnoreRegisterAttribute)))
+                {
+                    continue;
+                }
+
+                action(type, type);
+
+                foreach (var interfaceType in type.GetInterfaces())
+                {
+                    if (interfaceType.IsDefined(typeof(IgnoreRegisterAttribute)) || interfaceType.FullName.StartsWith("System"))
+                    {
+                        continue;
+                    }
+
+                    action(interfaceType, type);
+                }
+            }
+        }
+
         private static bool HasSinglePublicConstructor(Type serviceType)
         {
             return serviceType.GetConstructors().Length == 1;

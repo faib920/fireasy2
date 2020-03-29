@@ -6,14 +6,15 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if NETSTANDARD
+using Fireasy.Common;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Reflection;
 using Fireasy.Data.Entity;
 using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Linq.Translators.Configuration;
+using Fireasy.Data.Entity.Query;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
 using System.Linq;
 
@@ -40,7 +41,7 @@ namespace Microsoft.Extensions.DependencyInjection
                     services.Remove(desc);
 
                     var optionsType = ReflectionCache.GetMember("EntityOptionsType", desc.ServiceType, k => typeof(EntityContextOptions<>).MakeGenericType(k));
-                    services.AddScoped(optionsType, sp => ContextOptionsFactory(optionsType, sp, setupAction));
+                    services.AddScoped(optionsType, sp => ContextOptionsFactory(desc.ServiceType, optionsType, sp, setupAction));
                     services.AddScoped(typeof(EntityContextOptions), sp => sp.GetRequiredService(optionsType));
                     services.AddScoped(desc.ServiceType, desc.ServiceType);
                 }
@@ -86,24 +87,24 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
-        private static EntityContextOptions ContextOptionsFactory(Type optionsType, IServiceProvider serviceProvider, Action<EntityContextOptionsBuilder> setupAction)
+        private static EntityContextOptions ContextOptionsFactory(Type contextType, Type optionsType, IServiceProvider serviceProvider, Action<EntityContextOptionsBuilder> setupAction)
         {
-            var builder = new EntityContextOptionsBuilder(optionsType.New<EntityContextOptions>(serviceProvider));
+            var builder = new EntityContextOptionsBuilder(contextType, optionsType.New<EntityContextOptions>(serviceProvider));
             setupAction?.Invoke(builder);
             return builder.Options;
         }
 
         private static EntityContextOptions ContextOptionsFactory<TContext>(IServiceProvider serviceProvider, Action<EntityContextOptionsBuilder> setupAction) where TContext : EntityContext
         {
-            var builder = new EntityContextOptionsBuilder(new EntityContextOptions<TContext>(serviceProvider));
+            var builder = new EntityContextOptionsBuilder(typeof(TContext), new EntityContextOptions<TContext>(serviceProvider));
             setupAction?.Invoke(builder);
             return builder.Options;
         }
 
         private static IServiceCollection RegisterBase(this IServiceCollection services)
         {
-            services.AddSingleton<ICacheParsingProcessor, DefaultCacheParsingProcessor>();
-            services.AddSingleton<ICacheExecutionProcessor, DefaultCacheExecutionProcessor>();
+            services.AddSingleton<IQueryCache, DefaultQueryCache>();
+            services.AddSingleton<IExecuteCache, DefaultExecuteCache>();
             return services;
         }
     }
@@ -112,7 +113,14 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         internal static void Bind(IServiceCollection services, IConfiguration configuration)
         {
-            ConfigurationUnity.Bind<TranslatorConfigurationSection>(configuration);
+            try
+            {
+                ConfigurationUnity.Bind<TranslatorConfigurationSection>(configuration);
+            }
+            catch (Exception exp)
+            {
+                Tracer.Error($"{typeof(ConfigurationBinder).FullName} throw exception when binding:{exp.Output()}");
+            }
         }
     }
 }

@@ -64,25 +64,5 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// 获取或设置是否跟踪返回的实体的状态。默认为 true。
         /// </summary>
         public bool TraceEntityState { get; set; } = true;
-
-        /// <summary>
-        /// 克隆一份选项。
-        /// </summary>
-        /// <returns></returns>
-        public TranslateOptions Clone()
-        {
-            return new TranslateOptions
-                {
-                    AttachParameter = AttachParameter,
-                    HideTableAliases = HideTableAliases,
-                    HideColumnAliases = HideColumnAliases,
-                    CacheParsing = CacheParsing,
-                    CacheParsingTimes = CacheParsingTimes,
-                    CacheExecution = CacheExecution,
-                    CacheExecutionTimes = CacheExecutionTimes,
-                    WhereOnly = WhereOnly,
-                    TraceEntityState = TraceEntityState
-                };
-        }
     }
 }

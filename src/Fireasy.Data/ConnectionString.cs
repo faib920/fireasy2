@@ -200,7 +200,7 @@ namespace Fireasy.Data
                 Properties.Add(name.ToLower(), value, isCustomized);
             }
 
-            return builder.ToString();
+            return string.Intern(builder.ToString());
         }
 
         /// <summary>

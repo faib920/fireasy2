@@ -8,7 +8,6 @@
 #if NETSTANDARD
 using Microsoft.Extensions.Hosting;
 #endif
-using System;
 using System.Collections.Generic;
 
 namespace Fireasy.Common.Tasks
@@ -22,21 +21,31 @@ namespace Fireasy.Common.Tasks
 #endif
     {
         /// <summary>
+        /// 获取预先安排的执行任务队列。
+        /// </summary>
+        Queue<TaskExecutorDefiniton> PreTasks { get; }
+
+        /// <summary>
         /// 启动一个任务执行器。
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="option">启动选项。</param>
-        void Start<T>(StartOptions<T> option) where T : ITaskExecutor;
+        void StartExecutor<T>(StartOptions<T> option) where T : ITaskExecutor;
 
         /// <summary>
         /// 启动一个异步的任务执行器。
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="option">启动选项。</param>
-        void StartAsync<T>(StartOptions<T> option) where T : IAsyncTaskExecutor;
+        void StartExecutorAsync<T>(StartOptions<T> option) where T : IAsyncTaskExecutor;
 
         /// <summary>
-        /// 停止任务执行器的运行。
+        /// 启动任务调度器。
+        /// </summary>
+        void Start();
+
+        /// <summary>
+        /// 停止任务调度器。
         /// </summary>
         void Stop();
     }

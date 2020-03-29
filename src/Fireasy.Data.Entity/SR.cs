@@ -75,6 +75,7 @@ namespace Fireasy.Data.Entity
         internal const string InvalidOperationWhenRepositoryIsReadonly = "InvalidOperationWhenRepositoryIsReadonly";
         internal const string NotSupportDatabase = "NotSupportDatabase";
         internal const string NotSupportDatabaseFactory = "NotSupportDatabaseFactory";
+        internal const string NotSupportDbProvider = "NotSupportDbProvider";
     }
 
     internal sealed class SR

@@ -6,7 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Diagnostics;
 using System.Threading;
 
 namespace Fireasy.Common.Tasks
@@ -46,9 +45,7 @@ namespace Fireasy.Common.Tasks
             {
                 timer = new Timer(o =>
                 {
-                    Tracer.Debug($"The Task '{executor.GetType()}' Executing.");
                     executor.Execute(context);
-                    Tracer.Debug($"The Task '{executor.GetType()}' Completed.");
                 }, null, delay, period);
             }
         }
@@ -64,10 +61,12 @@ namespace Fireasy.Common.Tasks
             }
         }
 
-        protected override void Dispose(bool disposing)
+        protected override bool Dispose(bool disposing)
         {
             timer?.Dispose();
             timer = null;
+
+            return base.Dispose(disposing);
         }
     }
 }

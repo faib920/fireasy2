@@ -6,10 +6,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if NETCOREAPP
+using Fireasy.Common.Extensions;
 using Fireasy.Common.Serialization;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Net.Http.Headers;
+using System;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -48,6 +50,7 @@ namespace Fireasy.Web.Mvc
         public override Task WriteResponseBodyAsync(OutputFormatterWriteContext context, Encoding selectedEncoding)
         {
             var response = context.HttpContext.Response;
+            var serviceProvider = context.HttpContext.RequestServices;
 
             JsonSerializeOption option = null;
             if (context.Object is JsonResultWrapper wrapper)
@@ -72,10 +75,17 @@ namespace Fireasy.Web.Mvc
                 option.Reference(mvcOptions.JsonSerializeOption);
             }
 
-            var serializer = new JsonSerializer(option);
+            var serializer = serviceProvider.TryGetService<ISerializer>(() => new JsonSerializer(option));
 
-            var content = serializer.Serialize(context.Object);
-            response.Body.WriteAsync(selectedEncoding.GetBytes(content));
+            if (serializer is ITextSerializer txtSerializer)
+            {
+                var content = txtSerializer.Serialize(context.Object);
+                response.Body.WriteAsync(selectedEncoding.GetBytes(content));
+            }
+            else
+            {
+                response.Body.WriteAsync(serializer.Serialize(context.Object));
+            }
 
             return Task.CompletedTask;
         }

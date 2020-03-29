@@ -6,7 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.ComponentModel;
-using Fireasy.Common.Threading;
 using Fireasy.Data.Entity;
 using Fireasy.Data.Entity.Metadata;
 using MongoDB.Bson.Serialization;
@@ -53,6 +52,11 @@ namespace Fireasy.MongoDB
             var provider = new MongoQueryProvider(collection);
             QueryProvider = provider;
             Queryable = new MongoQueryable<TEntity>(provider);
+        }
+
+        IRepository IRepositoryProvider.CreateRepository(EntityContextOptions options)
+        {
+            return repository ?? (repository = new EntityRepository<TEntity>(this, options));
         }
 
         /// <summary>
@@ -361,11 +365,6 @@ namespace Fireasy.MongoDB
             }
 
             return builder;
-        }
-
-        IRepository IRepositoryProvider.CreateRepository(EntityContextOptions options)
-        {
-            return SingletonLocker.Lock(ref repository, () => new EntityRepository<TEntity>(this, options));
         }
 
         /// <summary>

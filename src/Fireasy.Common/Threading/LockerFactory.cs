@@ -41,7 +41,7 @@ namespace Fireasy.Common.Threading
                     setting = extend.Base;
                 }
 
-                services.AddSingleton(typeof(IDistributedLocker), ((LockerConfigurationSetting)setting).LockerType);
+                services.AddSingleton(typeof(IDistributedLocker), sp => CreateLocker(sp, ((LockerConfigurationSetting)setting).Name));
             }
 
             return services;
@@ -54,6 +54,17 @@ namespace Fireasy.Common.Threading
         /// <param name="configName">应用程序配置项的名称。</param>
         /// <returns><paramref name="configName"/>为配置项对应的 <see cref="IDistributedLocker"/> 实例。</returns>
         public static IDistributedLocker CreateLocker(string configName = null)
+        {
+            return CreateLocker(null, configName);
+        }
+
+        /// <summary>
+        /// 根据应用程序配置，创建一个分布式锁。
+        /// </summary>
+        /// <param name="serviceProvider">应用程序服务提供者实例。</param>
+        /// <param name="configName">应用程序配置项的名称。</param>
+        /// <returns><paramref name="configName"/>为配置项对应的 <see cref="IDistributedLocker"/> 实例。</returns>
+        private static IDistributedLocker CreateLocker(IServiceProvider serviceProvider, string configName = null)
         {
             IDistributedLocker locker;
             IConfigurationSettingItem setting = null;
@@ -85,7 +96,7 @@ namespace Fireasy.Common.Threading
             }
 
             return ConfigurationUnity.Cached<IDistributedLocker>($"Locker_{configName}", 
-                () => ConfigurationUnity.CreateInstance<LockerConfigurationSetting, IDistributedLocker>(setting, s => s.LockerType));
+                () => ConfigurationUnity.CreateInstance<LockerConfigurationSetting, IDistributedLocker>(serviceProvider, setting, s => s.LockerType));
         }
     }
 }

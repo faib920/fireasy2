@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.Caching;
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Ioc.Configuration;
 
@@ -17,6 +17,7 @@ namespace Fireasy.Common.Ioc
     public static class ContainerUnity
     {
         private const string DEFAULT = "_default_container";
+        private static readonly SafetyDictionary<string, Container> containers = new SafetyDictionary<string, Container>();
 
         /// <summary>
         /// 获取指定名称的 IOC 容器，如果该容器不存在，则创建新的容器。<paramref name="name"/> 为 null 时返回 <see cref="Container.Instance"/> 实例。
@@ -31,14 +32,12 @@ namespace Fireasy.Common.Ioc
                 name = DEFAULT;
             }
 
-            var cacheMgr = MemoryCacheManager.Instance;
-
-            return cacheMgr.TryGet<Container>(name, () =>
+            return containers.GetOrAdd(name, k =>
                 {
                     var container = new Container();
-                    ConfigureContainer(name, container);
+                    ConfigureContainer(k, container);
                     return container;
-                }, () => NeverExpired.Instance);
+                });
         }
 
         private static void ConfigureContainer(string name, Container container)

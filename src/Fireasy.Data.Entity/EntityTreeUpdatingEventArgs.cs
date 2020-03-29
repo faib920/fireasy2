@@ -5,9 +5,10 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Data.Entity.Linq;
+using Fireasy.Data.Entity.Query;
 using System;
 using System.Linq.Expressions;
-using Fireasy.Data.Entity.Linq;
 
 namespace Fireasy.Data.Entity
 {

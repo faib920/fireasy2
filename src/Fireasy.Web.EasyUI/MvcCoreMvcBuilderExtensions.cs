@@ -5,13 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-// -----------------------------------------------------------------------
-// <copyright company="Fireasy"
-//      email="faib920@126.com"
-//      qq="55570729">
-//   (c) Copyright Fireasy. All rights reserved.
-// </copyright>
-// -----------------------------------------------------------------------
 #if NETCOREAPP
 using Fireasy.Web.EasyUI;
 using Fireasy.Web.EasyUI.Binders;
@@ -42,10 +35,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 {
                     SettingsBindManager.RegisterBinder(binder.Key, binder.Value);
                 }
-            }
 
-            if (setupAction != null)
-            {
                 builder.Services.Configure(setupAction);
             }
 

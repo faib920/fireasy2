@@ -33,7 +33,13 @@ namespace Fireasy.Common.Ioc.Configuration
         /// <summary>
         /// 获取或设置是否单例。
         /// </summary>
+        [Obsolete]
         public bool Singleton { get; set; }
+
+        /// <summary>
+        /// 获取或设置实例的生命周期。
+        /// </summary>
+        public Lifetime Lifetime { get; set; }
 
     }
 }

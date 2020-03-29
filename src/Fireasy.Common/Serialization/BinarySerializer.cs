@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.IO;
 
 namespace Fireasy.Common.Serialization
@@ -44,6 +45,14 @@ namespace Fireasy.Common.Serialization
         /// <param name="bytes">字节数组。</param>
         /// <returns>反序列化后的对象。</returns>
         public abstract T Deserialize<T>(byte[] bytes);
+
+        /// <summary>
+        /// 从一个字节数组中反序列化对象。
+        /// </summary>
+        /// <param name="bytes">字节数组。</param>
+        /// <param name="type"></param>
+        /// <returns>反序列化后的对象。</returns>
+        public abstract object Deserialize(byte[] bytes, Type type);
 
         /// <summary>
         /// 从一个磁盘文件反序列化对象。

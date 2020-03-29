@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Web.Mvc;
+using Fireasy.Web.Mvc.Rendering;
 using System;
 using System.Linq.Expressions;
 #if !NETCOREAPP

@@ -53,7 +53,7 @@ namespace Fireasy.Data.Entity
             /// </summary>
             public TContext Context { get; private set; }
 
-            protected override void Dispose(bool disposing)
+            protected override bool Dispose(bool disposing)
             {
                 if (pool != null)
                 {
@@ -67,6 +67,8 @@ namespace Fireasy.Data.Entity
                     pool = null;
                     Context = null;
                 }
+
+                return base.Dispose(disposing);
             }
         }
 

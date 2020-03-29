@@ -11,7 +11,7 @@ namespace Fireasy.Common.Serialization
     /// <summary>
     /// 提供对象的二进制序列化与反序列化方法。
     /// </summary>
-    public interface IBinarySerializer
+    public interface IBinarySerializer : ISerializer
     {
         /// <summary>
         /// 将对象序列化为字节数组表示。

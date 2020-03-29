@@ -74,7 +74,14 @@ timer(s): {period}
 ===========================================================
 ";
 
-            await subscribeMgr.PublishAsync(new CommandTrackerSubject { FileName = fileName, Content = content });
+            try
+            {
+                await subscribeMgr.PublishAsync(new CommandTrackerSubject { FileName = fileName, Content = content });
+            }
+            catch (Exception exp)
+            {
+
+            }
         }
 
         async Task ICommandTracker.FailAsync(IDbCommand command, Exception exception, CancellationToken cancellationToken)

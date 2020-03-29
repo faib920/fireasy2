@@ -16,7 +16,7 @@ namespace Fireasy.Common.Subscribes
     /// </summary>
     public class SynchronizedSubscribeManager : ISubscribeManager
     {
-        private static readonly SubscriberCollection subscribers = new SubscriberCollection();
+        private readonly SubscriberCollection subscribers = new SubscriberCollection();
 
         /// <summary>
         /// 缺省实例。
@@ -152,7 +152,7 @@ namespace Fireasy.Common.Subscribes
             throw new NotImplementedException();
         }
 
-        Task ISubscribeManager.PublishAsync(string name, byte[] data, CancellationToken cancellationToken = default)
+        Task ISubscribeManager.PublishAsync(string name, byte[] data, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }

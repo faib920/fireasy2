@@ -40,11 +40,9 @@ namespace Fireasy.Data.Backup
                     option.Database = connection.Database;
                 }
 
-                connection.OpenClose(() =>
-                    {
-                        using var command = database.Provider.CreateCommand(connection, null, sb.ToString());
-                        command.ExecuteNonQuery();
-                    });
+                connection.TryOpen();
+                using var command = database.Provider.CreateCommand(connection, null, sb.ToString());
+                command.ExecuteNonQuery();
             }
             catch (Exception exp)
             {
@@ -71,11 +69,9 @@ namespace Fireasy.Data.Backup
                     option.Database = connection.Database;
                 }
 
-                connection.OpenClose(() =>
-                    {
-                        using var command = database.Provider.CreateCommand(connection, null, sb.ToString());
-                        command.ExecuteNonQuery();
-                    });
+                connection.TryOpen();
+                using var command = database.Provider.CreateCommand(connection, null, sb.ToString());
+                command.ExecuteNonQuery();
             }
             catch (Exception exp)
             {

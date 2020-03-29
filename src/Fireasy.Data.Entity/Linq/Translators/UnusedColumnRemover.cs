@@ -60,8 +60,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitSubquery(SubqueryExpression subquery)
         {
-            if ((subquery.NodeType == DbExpressionType.Scalar ||
-                subquery.NodeType == DbExpressionType.In) &&
+            if (((DbExpressionType)subquery.NodeType == DbExpressionType.Scalar ||
+                (DbExpressionType)subquery.NodeType == DbExpressionType.In) &&
                 subquery.Select != null)
             {
                 MarkColumnAsUsed(subquery.Select.Alias, subquery.Select.Columns[0].Name);

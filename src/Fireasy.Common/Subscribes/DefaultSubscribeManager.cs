@@ -7,7 +7,6 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,9 +17,10 @@ namespace Fireasy.Common.Subscribes
     /// </summary>
     public class DefaultSubscribeManager : ISubscribeManager
     {
-        private static readonly SubscriberCollection subscribers = new SubscriberCollection();
+        private readonly SubscriberCollection subscribers = new SubscriberCollection();
         private readonly ConcurrentQueue<SubjectData> queue = new ConcurrentQueue<SubjectData>();
-        private readonly Thread thread = null;
+        private readonly Timer timer = null;
+        private bool processing = false;
 
         private class SubjectData
         {
@@ -48,25 +48,23 @@ namespace Fireasy.Common.Subscribes
 
         protected DefaultSubscribeManager()
         {
-            thread = new Thread(new ThreadStart(ProcessQueue)) { IsBackground = true };
-            thread.Start();
+            timer = new Timer(o => ProcessQueue(), null, 10, 1000);
         }
 
         private void ProcessQueue()
         {
-            while (true)
+            if (processing)
             {
-                if (queue.Count == 0)
-                {
-                    Thread.Sleep(500);
-                }
-
-                while (queue.TryDequeue(out SubjectData obj) && obj != null)
-                {
-                    Tracer.Debug($"DefaultSubscribeManager accept message of '{obj.Name}'.");
-                    subscribers.Accept(obj.Name, obj.Data);
-                }
+                return;
             }
+
+            processing = true;
+            while (queue.TryDequeue(out SubjectData obj) && obj != null)
+            {
+                Tracer.Debug($"DefaultSubscribeManager accept message of '{obj.Name}'.");
+                subscribers.Accept(obj.Name, obj.Data);
+            }
+            processing = false;
         }
 
         /// <summary>
