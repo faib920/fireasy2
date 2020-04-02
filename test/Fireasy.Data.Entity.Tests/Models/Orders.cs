@@ -27,7 +27,7 @@ namespace Fireasy.Data.Entity.Tests.Models
         /// 获取或设置。
         /// </summary>
 
-        [PropertyMapping(ColumnName = "CustomerID", Description = "", Length = 5, IsNullable = true)]
+        [PropertyMapping(ColumnName = "CustomerID", Description = "", Length = 5, DefaultValueFormatter = "D", DefaultValue = PropertyValue.Constants.Guid, IsNullable = true)]
         public virtual string CustomerID { get; set; }
 
         /// <summary>
@@ -41,7 +41,7 @@ namespace Fireasy.Data.Entity.Tests.Models
         /// 获取或设置。
         /// </summary>
 
-        [PropertyMapping(ColumnName = "OrderDate", Description = "", Length = 2147483647, IsNullable = true)]
+        [PropertyMapping(ColumnName = "OrderDate", Description = "", Length = 2147483647, DefaultValue = PropertyValue.Constants.Now, IsNullable = true)]
         public virtual DateTime? OrderDate { get; set; }
 
         /// <summary>
@@ -143,7 +143,6 @@ namespace Fireasy.Data.Entity.Tests.Models
         /// <summary>
         /// 属性 EmployeeID 的验证特性。
         /// </summary>
-        [Range(2, 4)]
         public object EmployeeID { get; set; }
 
         /// <summary>

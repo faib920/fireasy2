@@ -7,7 +7,6 @@
 // -----------------------------------------------------------------------
 #if !NETCOREAPP
 using Fireasy.Common.Extensions;
-using Fireasy.Common.Ioc;
 using System;
 using System.Web.Mvc;
 using System.Web.Routing;
@@ -17,21 +16,21 @@ namespace Fireasy.Web.Mvc
     /// <summary>
     /// 控制器创建者。
     /// </summary>
-    public class ControllerActivator : System.Web.Mvc.IControllerActivator
+    public class ControllerActivator : IControllerActivator
     {
-        private Container container;
+        private readonly IServiceProvider serviceProvider;
 
         /// <summary>
         /// 初始化 <see cref="ControllerActivator"/> 类的新实例。
         /// </summary>
-        /// <param name="container">指定的IOC容器。</param>
-        public ControllerActivator(Container container)
+        /// <param name="serviceProvider">应用程序服务提供者实例。</param>
+        public ControllerActivator(IServiceProvider serviceProvider)
         {
-            this.container = container;
+            this.serviceProvider = serviceProvider;
         }
 
         /// <summary>
-        /// 初始化 <see cref="DependencyResolver"/> 类的新实例。
+        /// 初始化 <see cref="ControllerActivator"/> 类的新实例。
         /// </summary>
         public ControllerActivator()
         {
@@ -45,9 +44,10 @@ namespace Fireasy.Web.Mvc
         /// <returns></returns>
         public IController Create(RequestContext requestContext, Type controllerType)
         {
-            if (container != null)
+            if (serviceProvider != null &&
+                serviceProvider.GetService(controllerType) is IController controller)
             {
-                return container.Resolve(controllerType) as IController;
+                return controller;
             }
 
             if (controllerType.IsAbstract || controllerType.IsInterface)

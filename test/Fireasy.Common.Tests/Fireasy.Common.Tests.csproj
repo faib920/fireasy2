@@ -30,7 +30,7 @@
     <PackageReference Include="Swifter.Json" Version="1.2.9.5" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)'=='net451'">
+  <ItemGroup Condition="'$(TargetFramework)'=='net461'">
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="System" />
@@ -46,6 +46,8 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.0" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Fireasy.Aliyun.AMQP\Fireasy.Aliyun.AMQP.csproj" />
+    <ProjectReference Include="..\..\src\Fireasy.Aliyun\Fireasy.Aliyun.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.App.Licence\Fireasy.App.Licence.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.Common\Fireasy.Common.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.Log4net\Fireasy.Log4net.csproj" />

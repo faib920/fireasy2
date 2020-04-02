@@ -12,7 +12,7 @@ namespace Fireasy.Data.Tests
             throw new NotImplementedException();
         }
 
-        public override string UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter)
+        public override void UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter)
         {
             throw new NotImplementedException();
         }
@@ -67,6 +67,11 @@ namespace Fireasy.Data.Tests
         }
 
         public string ExistsTable(string tableName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string ExistsTables(string[] tableNames)
         {
             throw new NotImplementedException();
         }

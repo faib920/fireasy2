@@ -5,12 +5,17 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using RabbitMQ.Client;
 
-namespace Fireasy.Common.Ioc.Registrations
+namespace Fireasy.Aliyun.AMQP
 {
-    internal class ConcreteTransientRegistration<TConcrete> :
-        TransientRegistration<TConcrete, TConcrete>
-        where TConcrete : class
-    {
-    }
+	public class AliyunMechanismFactory : AuthMechanismFactory
+	{
+		public string Name => "PLAIN";
+
+		public AuthMechanism GetInstance()
+		{
+			return new AliyunMechanism();
+		}
+	}
 }

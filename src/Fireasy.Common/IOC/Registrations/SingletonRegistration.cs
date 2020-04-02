@@ -14,19 +14,20 @@ namespace Fireasy.Common.Ioc.Registrations
     {
         private static readonly object locker = new object();
         private object instance;
-        private readonly Func<object> instanceCreator;
+        private readonly Func<IResolver, object> instanceCreator;
 
-        internal SingletonRegistration(Type serviceType, object instance) :
-            base(serviceType, instance.GetType())
+        internal SingletonRegistration(Container container, Type serviceType, object instance) :
+            base(container, serviceType, instance.GetType())
         {
             this.instance = instance;
         }
 
-        internal SingletonRegistration(Type serviceType, Type implementationType, Func<object> instanceCreator) :
-            base(serviceType, implementationType)
+        internal SingletonRegistration(Container container, Type serviceType, Func<IResolver, object> instanceCreator) :
+            base(container, serviceType, (Type)null)
         {
             this.instanceCreator = instanceCreator;
         }
+        public override Lifetime Lifetime => Lifetime.Singleton;
 
         internal override Expression BuildExpression()
         {
@@ -34,7 +35,7 @@ namespace Fireasy.Common.Ioc.Registrations
             {
                 if (instance == null && instanceCreator != null)
                 {
-                    instance = instanceCreator();
+                    instance = instanceCreator(container);
                 }
             }
 

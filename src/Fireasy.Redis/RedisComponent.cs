@@ -103,6 +103,11 @@ namespace Fireasy.Redis
         }
 
 #if NETSTANDARD
+        protected virtual CSRedisClient CreateClient(string[] constrs)
+        {
+            return new CSRedisClient(null, constrs);
+        }
+
         protected CSRedisClient GetConnection(string key = null)
         {
             if (string.IsNullOrEmpty(key) || dbRanage == null)
@@ -122,7 +127,7 @@ namespace Fireasy.Redis
                 {
                     Tracer.Debug($"Connecting to the redis server '{s}'.");
                 });
-                return new CSRedisClient(null, constrs);
+                return CreateClient(constrs);
             });
         }
 
@@ -132,6 +137,16 @@ namespace Fireasy.Redis
         }
 
 #else
+        /// <summary>
+        /// 创建 <see cref="ConnectionMultiplexer"/> 实例。
+        /// </summary>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        protected virtual ConnectionMultiplexer CreateConnection(ConfigurationOptions options)
+        {
+            return ConnectionMultiplexer.Connect(Options);
+        }
+
         protected IConnectionMultiplexer GetConnection()
         {
             return connectionLazy.Value ?? throw new InvalidOperationException("不能初始化 Redis 的连接。");
@@ -292,7 +307,7 @@ namespace Fireasy.Redis
 
             if (connectionLazy == null)
             {
-                connectionLazy = new Lazy<ConnectionMultiplexer>(() => ConnectionMultiplexer.Connect(Options));
+                connectionLazy = new Lazy<ConnectionMultiplexer>(() => CreateConnection(Options));
             }
 #endif
         }

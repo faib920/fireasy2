@@ -82,11 +82,11 @@ namespace Fireasy.Common.Tests.Subscribes
         {
             var subMgr = SubscribeManagerFactory.CreateManager("redis");
 
-            subMgr.Discovery<TestSubject>(this.GetType().Assembly);
+            subMgr.Discovery(this.GetType().Assembly);
             subMgr.AddSubscriber<TestSubject>(new SubjectSubscriber1());
             subMgr.Publish(new TestSubject { Key = "fireasy1" });
 
-            Thread.Sleep(2000);
+            Thread.Sleep(5000);
         }
 
         [Topic("test11")]
@@ -108,6 +108,19 @@ namespace Fireasy.Common.Tests.Subscribes
             public void Accept(TestSubject subject)
             {
                 Console.WriteLine($"subscriber2: {subject.Key}");
+            }
+        }
+
+        public class SubjectSubscribeHandler : ISubscribeHandler
+        {
+            public async Task Test(TestSubject subject)
+            {
+                Console.WriteLine($"subscriber handler1: {subject.Key}");
+            }
+
+            public void Test11(TestSubject subject)
+            {
+                Console.WriteLine($"subscriber handler2: {subject.Key}");
             }
         }
     }

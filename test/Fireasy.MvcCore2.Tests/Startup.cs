@@ -1,4 +1,5 @@
 ﻿using Fireasy.Common.Ioc;
+using Fireasy.Common.Tasks;
 using Fireasy.MvcCore.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -6,6 +7,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using Newton = Newtonsoft.Json;
 
 namespace Fireasy.MvcCore.Tests
 {
@@ -28,7 +34,7 @@ namespace Fireasy.MvcCore.Tests
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
-            services.AddTransient<IModel, TestModel>();
+            services.AddScoped<IModel, TestModel>();
 
             services.Configure<EntityOption>(s =>
             {
@@ -37,12 +43,25 @@ namespace Fireasy.MvcCore.Tests
 
             services
                 .AddFireasy(Configuration)
-                .AddIoc(ContainerUnity.GetContainer())
-                .AddEntityContext<TestContext>();
+                .AddIoc()
+                .AddEntityContextPool<TestContext>()
+                .AddEntityContext<TestContext1>()
+                //.AddNLogger()
+                .AddLog4netLogger()
+                .AddNewtonsoftSerializer(s => { s.DateFormatString = "yyyy-MM"; });
+
+            //services.AddRedisCaching(s => s.DefaultDb = 22);
 
             services.AddMvc()
                 .ConfigureFireasyMvc(s => { s.JsonSerializeOption.Converters.Add(new Fireasy.Data.Entity.LightEntityJsonConverter());  })
                 .AddXmlSerializerFormatters();
+
+
+            //services.AddQuartzScheduler(options =>
+            //    options.Add(TimeSpan.Zero, TimeSpan.FromSeconds(5), (p, c) =>
+            //        {
+            //            Console.WriteLine(DateTime.Now + " quartz coming...");
+            //        }));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -76,6 +95,36 @@ namespace Fireasy.MvcCore.Tests
 
     public class TestModel : IModel
     {
+        public TestModel(IServiceProvider serviceProvider)
+        {
+
+        }
+
         public string Name { get; set; }
+    }
+
+    public class TestExecutor : IAsyncTaskExecutor
+    {
+        public TestExecutor(Fireasy.Common.Logging.ILogger logger)
+        {
+
+        }
+
+        public async Task ExecuteAsync(TaskExecuteContext context)
+        {
+            Console.WriteLine(DateTime.Now + " bbb");
+        }
+    }
+    public class TestExecutor1 : ITaskExecutor
+    {
+        public TestExecutor1(Fireasy.Common.Logging.ILogger logger)
+        {
+
+        }
+
+        public void Execute(TaskExecuteContext context)
+        {
+            Console.WriteLine(DateTime.Now + " ccc");
+        }
     }
 }

@@ -5,15 +5,15 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 
 namespace Fireasy.Common.Ioc
 {
-    internal class ResolveScope : Scope<ResolveScope>
+    public sealed class ResolveException : Exception
     {
-        public IRegistration Registration { get; set; }
-
-        public Lazy<object> Creator { get; set; }
+        public ResolveException(string message)
+            : base (message)
+        {
+        }
     }
 }

@@ -1,4 +1,6 @@
-﻿using Fireasy.Data.Entity;
+﻿using Fireasy.Common.Ioc;
+using Fireasy.Common.Logging;
+using Fireasy.Data.Entity;
 using Microsoft.Extensions.Options;
 using System;
 using System.Linq;
@@ -31,15 +33,41 @@ namespace Fireasy.MvcCore.Services
         public string Name { get; set; }
     }
 
-
     public class TestContext : EntityContext
     {
-        public TestContext(EntityContextOptions options, IOptions<EntityOption> p)
-            : base(options)
+        private static IServiceProvider sp;
+
+        public TestContext(IServiceProvider serviceProvider, EntityContextOptions<TestContext> options, ILogger logger)
+            : base(serviceProvider, options)
+        {
+            if (sp == null)
+            {
+                sp = serviceProvider;
+            }
+        }
+
+        public EntityRepository<Orders> Orders { get; set; }
+
+        protected override bool Dispose(bool disposing)
+        {
+            return base.Dispose(disposing);
+        }
+    }
+
+    public class TestContext1 : EntityContext
+    {
+        public TestContext1(IServiceProvider serviceProvider, EntityContextOptions<TestContext1> options)
+            : base(serviceProvider, options)
         {
         }
 
         public EntityRepository<Orders> Orders { get; set; }
+
+        protected override bool Dispose(bool disposing)
+        {
+            return base.Dispose(disposing);
+        }
+
     }
 
     /// <summary>

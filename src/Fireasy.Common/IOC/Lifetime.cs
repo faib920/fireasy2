@@ -21,7 +21,7 @@ namespace Fireasy.Common.Ioc
         /// </summary>
         Singleton,
         /// <summary>
-        /// 线程范围。
+        /// 同一请求范围内共享。
         /// </summary>
         Scoped
     }

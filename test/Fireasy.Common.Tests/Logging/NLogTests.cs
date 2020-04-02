@@ -24,13 +24,5 @@ namespace Fireasy.Common.Tests.Logging
             var log = LoggerFactory.CreateLogger("nlog");
             log.Error("fireasy output.", new System.IO.FileNotFoundException("file not found.", "c:\\a.txt"));
         }
-
-        [TestMethod]
-        public void TestSubError()
-        {
-            var log = LoggerFactory.CreateLogger("nlog").GetLogger<NLogTests>();
-            log.Error("fireasy output.", new System.IO.FileNotFoundException("file not found.", "c:\\a.txt"));
-        }
-
     }
 }

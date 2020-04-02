@@ -27,7 +27,7 @@ namespace Fireasy.Common.Subscribes
             {
                 var container = ContainerUnity.GetContainer();
 
-                Helper.Discovery(subscribeMgr, assembly, type => container.Register(type, type), type => container.Resolve(type));
+                Helper.Discovery(subscribeMgr, assembly, type => container.Register(type, type, Lifetime.Transient), type => container.Resolve(type));
             }
 
             return subscribeMgr;
@@ -70,7 +70,6 @@ namespace Fireasy.Common.Subscribes
                                 var instance = activator(type);
                                 if (instance != null)
                                 {
-
                                     method.FastInvoke(instance, new[] { o });
                                 }
 

@@ -102,6 +102,14 @@
       <Project>{e534fe1a-bd42-4508-b848-fa8b37312ad5}</Project>
       <Name>Fireasy.Common</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\Fireasy.Data.Entity\Fireasy.Data.Entity.csproj">
+      <Project>{8e21d3b6-389a-4abc-9a82-b1212e6c517e}</Project>
+      <Name>Fireasy.Data.Entity</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\Fireasy.Data\Fireasy.Data.csproj">
+      <Project>{8f96cfec-6aa9-416b-94db-87b2f7fac951}</Project>
+      <Name>Fireasy.Data</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\Fireasy.Windows.Forms\Fireasy.Windows.Forms.csproj">
       <Project>{12b62972-48db-4a40-9406-0bf1f4bd41a9}</Project>
       <Name>Fireasy.Windows.Forms</Name>

@@ -6,8 +6,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Ioc.Registrations;
+#if NETSTANDARD
+using Microsoft.Extensions.DependencyInjection;
+#endif
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -22,30 +26,19 @@ namespace Fireasy.Common.Ioc
     /// <summary>
     /// 控制反转的容器，用于存放描述组件与服务的联系。
     /// </summary>
-    public sealed class Container : IServiceProvider
+    public sealed class Container : DisposeableBase, IServiceProvider, IResolver
+#if NETSTANDARD
+        , IServiceScopeFactory
+#endif
     {
         private ParameterExpression parExp = null;
         private readonly List<IRegistration> registrations = new List<IRegistration>();
         private readonly List<InstanceInitializer> instanceInitializers = new List<InstanceInitializer>();
-        private ResolveScope scope = null;
+        private readonly List<IDisposable> dispObjects = new List<IDisposable>();
 
         public Container()
         {
-            RegisterSingleton<IServiceProvider>(this);
-        }
-
-        /// <summary>
-        /// 注册服务类型及实现类型，<typeparamref name="TImplementation"/> 是 <typeparamref name="TService"/> 的实现类。
-        /// </summary>
-        /// <typeparam name="TService">服务类型。</typeparam>
-        /// <typeparam name="TImplementation">实现类型。</typeparam>
-        /// <returns>当前的 IOC 容器。</returns>
-        public Container Register<TService, TImplementation>()
-            where TImplementation : class, TService
-            where TService : class
-        {
-            AddRegistration(new TransientRegistration<TService, TImplementation>());
-            return this;
+            Register<IServiceProvider>(this);
         }
 
         /// <summary>
@@ -59,29 +52,30 @@ namespace Fireasy.Common.Ioc
             where TImplementation : class, TService
             where TService : class
         {
-            if (lifetime == Lifetime.Singleton)
-            {
-                return RegisterSingleton<TService, TImplementation>();
-            }
-            else if (lifetime == Lifetime.Scoped)
-            {
-                AddRegistration(Creator.CreateScoped(typeof(TService), typeof(TImplementation)));
-                return this;
-            }
-
-            return Register<TService, TImplementation>();
+            return Register(typeof(TService), typeof(TImplementation), lifetime);
         }
 
         /// <summary>
-        /// 注册服务类型及实现类型，<paramref name="implementationType"/> 是 <paramref name="serviceType"/> 的实现类。
+        /// 注册服务类型，实现类型是其本身。
+        /// </summary>
+        /// <typeparam name="TService">服务类型。</typeparam>
+        /// <param name="lifetime">生命周期。</param>
+        /// <returns>当前的 IOC 容器。</returns>
+        public Container Register<TService>(Lifetime lifetime)
+            where TService : class
+        {
+            return Register(typeof(TService), typeof(TService), lifetime);
+        }
+
+        /// <summary>
+        /// 注册服务类型，实现类型是其本身。
         /// </summary>
         /// <param name="serviceType">服务类型。</param>
-        /// <param name="implementationType">实现类型。</param>
+        /// <param name="lifetime">生命周期。</param>
         /// <returns>当前的 IOC 容器。</returns>
-        public Container Register(Type serviceType, Type implementationType)
+        public Container Register(Type serviceType, Lifetime lifetime)
         {
-            AddRegistration(Creator.CreateTransient(serviceType, implementationType));
-            return this;
+            return Register(serviceType, serviceType, lifetime);
         }
 
         /// <summary>
@@ -95,100 +89,71 @@ namespace Fireasy.Common.Ioc
         {
             if (lifetime == Lifetime.Singleton)
             {
-                return RegisterSingleton(serviceType, implementationType);
+                registrations.Add(this.CreateSingleton(serviceType, implementationType));
             }
             else if (lifetime == Lifetime.Scoped)
             {
-                AddRegistration(Creator.CreateScoped(serviceType, implementationType));
-                return this;
+                registrations.Add(this.CreateScoped(serviceType, implementationType));
+            }
+            else if (lifetime == Lifetime.Transient)
+            {
+                registrations.Add(this.CreateTransient(serviceType, implementationType));
             }
 
-            return Register(serviceType, implementationType);
-        }
-
-        /// <summary>
-        /// 使用服务对象的构造器注册它的服务类型。
-        /// </summary>
-        /// <typeparam name="TService">服务类型。</typeparam>
-        /// <param name="instanceCreator">实例的构造方法。</param>
-        /// <returns>当前的 IOC 容器。</returns>
-        public Container Register<TService>(Func<TService> instanceCreator) where TService : class
-        {
-            AddRegistration(new FuncRegistration<TService>(instanceCreator));
             return this;
         }
 
         /// <summary>
         /// 使用服务对象的构造器注册它的服务类型。
         /// </summary>
-        /// <param name="serviceType">服务类型。</param>
-        /// <param name="instanceCreator">实例的构造方法。</param>
-        /// <returns>当前的 IOC 容器。</returns>
-        public Container Register(Type serviceType, Func<object> instanceCreator)
-        {
-            var registration = Creator.CreateFunc(serviceType, instanceCreator);
-            AddRegistration(registration);
-            return this;
-        }
-
-        /// <summary>
-        /// 使用服务对象的构造器注册它的服务类型，该对象是一个单例。
-        /// </summary>
         /// <typeparam name="TService">服务类型。</typeparam>
         /// <param name="instanceCreator">实例的构造方法。</param>
+        /// <param name="lifetime">生命周期。</param>
         /// <returns>当前的 IOC 容器。</returns>
-        public Container RegisterSingleton<TService>(Func<TService> instanceCreator) where TService : class
+        public Container Register<TService>(Func<IResolver, TService> instanceCreator, Lifetime lifetime) where TService : class
         {
-            AddRegistration(new SingletonRegistration(typeof(TService), instanceCreator()));
+            if (lifetime == Lifetime.Singleton)
+            {
+                registrations.Add(this.CreateSingleton(instanceCreator(this)));
+            }
+            else
+            {
+                registrations.Add(this.CreateFunc(typeof(TService), instanceCreator, lifetime));
+            }
+
             return this;
         }
 
         /// <summary>
-        /// 使用服务对象的实例注册它的服务类型，该对象是一个单例。
+        /// 使用服务对象本身注册单例服务类型。
         /// </summary>
         /// <typeparam name="TService">服务类型。</typeparam>
-        /// <param name="instance">类型 <typeparamref name="TService"/> 的实例。</param>
+        /// <param name="instance">实例的构造方法。</param>
         /// <returns>当前的 IOC 容器。</returns>
-        public Container RegisterSingleton<TService>(TService instance) where TService : class
+        public Container Register<TService>(TService instance) where TService : class
         {
-            AddRegistration(new SingletonRegistration(typeof(TService), instance));
+            registrations.Add(this.CreateSingleton(typeof(TService), instance));
             return this;
         }
 
         /// <summary>
-        /// 使用服务对象的构造器注册它的服务类型，该对象是一个单例。
+        /// 使用服务对象的构造器注册它的服务类型。
         /// </summary>
         /// <param name="serviceType">服务类型。</param>
         /// <param name="instanceCreator">实例的构造方法。</param>
+        /// <param name="lifetime">生命周期。</param>
         /// <returns>当前的 IOC 容器。</returns>
-        public Container RegisterSingleton(Type serviceType, Func<object> instanceCreator)
+        public Container Register(Type serviceType, Func<IResolver, object> instanceCreator, Lifetime lifetime)
         {
-            AddRegistration(new SingletonRegistration(serviceType, instanceCreator));
-            return this;
-        }
+            if (lifetime == Lifetime.Singleton)
+            {
+                registrations.Add(this.CreateSingleton(serviceType, instanceCreator(this)));
+            }
+            else
+            {
+                registrations.Add(this.CreateFunc(serviceType, instanceCreator, lifetime));
+            }
 
-        /// <summary>
-        /// 使用服务对象的构造器注册它的服务类型，该对象是一个单例。
-        /// </summary>
-        /// <typeparam name="TService">服务类型。</typeparam>
-        /// <typeparam name="TImplementation">实现类型。</typeparam>
-        /// <returns>当前的 IOC 容器。</returns>
-        public Container RegisterSingleton<TService, TImplementation>()
-            where TImplementation : class, TService
-            where TService : class
-        {
-            return RegisterSingleton(typeof(TService), typeof(TImplementation));
-        }
-
-        /// <summary>
-        /// 使用服务对象的构造器注册它的服务类型，该对象是一个单例。
-        /// </summary>
-        /// <param name="serviceType">服务类型。</param>
-        /// <param name="implementationType">实现类型。</param>
-        /// <returns>当前的 IOC 容器。</returns>
-        public Container RegisterSingleton(Type serviceType, Type implementationType)
-        {
-            AddRegistration(Creator.RelyWithTransient(serviceType, implementationType, this));
             return this;
         }
 
@@ -264,40 +229,29 @@ namespace Fireasy.Common.Ioc
         /// <returns>类型的实例对象。如果没有注册，则为 null。</returns>
         public object Resolve(Type serviceType)
         {
-            if (scope == null)
+            using var scope = new ResolveLoopScope();
+            var obj = ResolveHelper.Resolve(this, serviceType, out Lifetime lifetime);
+            if (lifetime == Lifetime.Singleton && obj is IDisposable dispObj)
             {
-                scope = new ResolveScope();
+                TryAddDisposableObject(dispObj);
             }
 
-            if (IsEnumerableResolve(serviceType))
-            {
-                var elementType = serviceType.GetEnumerableElementType();
-                var regs = GetRegistrations(elementType);
-                var list = CreateEnumerable(elementType);
+            return obj;
+        }
 
-                foreach (var reg in regs)
-                {
-                    list.Add(reg.Resolve());
-                }
-
-                return list;
-            }
-
-            IRegistration registration;
-            if ((registration = GetRegistrations(serviceType).LastOrDefault()) != null)
-            {
-                return registration.Resolve();
-            }
-
-            if (!serviceType.IsAbstract && !serviceType.IsInterface)
-            {
-                registration = Creator.CreateTransient(serviceType, serviceType);
-                AddRegistration(registration);
-
-                return registration.Resolve();
-            }
-
-            return null;
+#if NETSTANDARD
+        IServiceScope IServiceScopeFactory.CreateScope()
+        {
+            return new ResolveScope(this);
+        }
+#endif
+        /// <summary>
+        /// 创建一个当前线程范围内的反转服务。
+        /// </summary>
+        /// <returns></returns>
+        public IResolver CreateScope()
+        {
+            return new ResolveScope(this);
         }
 
         /// <summary>
@@ -326,7 +280,7 @@ namespace Fireasy.Common.Ioc
         /// <returns>类型的注册器。</returns>
         public IEnumerable<IRegistration> GetRegistrations(Type serviceType)
         {
-            if (IsEnumerableResolve(serviceType))
+            if (Helpers.IsEnumerableResolve(serviceType))
             {
                 var elementType = serviceType.GetEnumerableElementType();
                 return registrations.Where(s => s.ServiceType == elementType);
@@ -413,12 +367,6 @@ namespace Fireasy.Common.Ioc
                 .ToArray();
         }
 
-        private void AddRegistration(IRegistration registration)
-        {
-            registration.As<AbstractRegistration>(e => e.SetContainer(this));
-            registrations.Add(registration);
-        }
-
         /// <summary>
         /// 通过 XML 配置文件进行注册。
         /// </summary>
@@ -458,19 +406,6 @@ namespace Fireasy.Common.Ioc
             return this;
         }
 
-        /// <summary>
-        /// 判断是否需要反转为 <see cref="IEnumerable{T}"/> 类型的对象。
-        /// </summary>
-        /// <param name="serviceType"></param>
-        /// <returns></returns>
-        public bool IsEnumerableResolve(Type serviceType)
-        {
-            Type definitionType;
-
-            return serviceType.IsGenericType &&
-                (definitionType = serviceType.GetGenericTypeDefinition()) != null
-                && (definitionType == typeof(IEnumerable<>) || definitionType == typeof(IList<>) || definitionType == typeof(IList<>));
-        }
 
         internal ParameterExpression GetParameterExpression()
         {
@@ -498,19 +433,179 @@ namespace Fireasy.Common.Ioc
                 {
                     if (singleton)
                     {
-                        RegisterSingleton(serviceType, implementationType);
+                        Register(serviceType, implementationType, Lifetime.Singleton);
                     }
                     else
                     {
-                        Register(serviceType, implementationType);
+                        Register(serviceType, implementationType, Lifetime.Transient);
                     }
                 }
             }
         }
 
-        private IList CreateEnumerable(Type serviceType)
+        private void TryAddDisposableObject(IDisposable dispObj)
         {
-            return typeof(List<>).MakeGenericType(serviceType).New<IList>();
+            if (!dispObjects.Contains(dispObj))
+            {
+                dispObjects.Add(dispObj);
+            }
+        }
+
+        protected override bool Dispose(bool disposing)
+        {
+            dispObjects.ForEach(s => s.Dispose());
+            dispObjects.Clear();
+
+            return base.Dispose(disposing);
+        }
+
+        private class ResolveScope : DisposeableBase, IServiceProvider, IResolver
+#if NETSTANDARD
+            ,IServiceScope
+#endif
+        {
+            private readonly IResolver root;
+            private readonly List<IDisposable> dispObjects = new List<IDisposable>();
+            private readonly SafetyDictionary<Type, object> scopeObjects = new SafetyDictionary<Type, object>();
+
+            public IServiceProvider ServiceProvider => this;
+
+            public ResolveScope(IResolver root)
+            {
+                this.root = root;
+            }
+
+            public IResolver CreateScope()
+            {
+                return new ResolveScope(root);
+            }
+
+            public object Resolve(Type serviceType)
+            {
+                if (scopeObjects.TryGetValue(serviceType, out var obj))
+                {
+                    return obj;
+                }
+
+                using var scope = new ResolveLoopScope();
+                obj = ResolveHelper.Resolve(this, serviceType, out Lifetime lifetime);
+
+                if (lifetime == Lifetime.Scoped)
+                {
+                    scopeObjects.TryAdd(serviceType, obj);
+                }
+
+                if (obj is IDisposable dispObj)
+                {
+                    if (lifetime != Lifetime.Singleton)
+                    {
+                        dispObjects.Add(dispObj);
+                    }
+                    else if (root is Container container)
+                    {
+                        container.TryAddDisposableObject(dispObj);
+                    }
+                }
+
+                return obj;
+            }
+
+            public TService Resolve<TService>() where TService : class
+            {
+                var obj = Resolve(typeof(TService));
+                if (obj != null)
+                {
+                    return (TService)obj;
+                }
+
+                return default;
+            }
+
+            public IEnumerable<IRegistration> GetRegistrations(Type serviceType)
+            {
+                return root.GetRegistrations(serviceType);
+            }
+
+            object IServiceProvider.GetService(Type serviceType)
+            {
+                return Resolve(serviceType);
+            }
+
+            protected override bool Dispose(bool disposing)
+            {
+                dispObjects.ForEach(s => s.Dispose());
+                dispObjects.Clear();
+                scopeObjects.Clear();
+
+                return base.Dispose(disposing);
+            }
+        }
+
+        private class ResolveHelper
+        {
+            internal static object Resolve(IResolver resolver, Type serviceType, out Lifetime lifetime)
+            {
+                lifetime = Lifetime.Transient;
+
+                if (Helpers.IsEnumerableResolve(serviceType))
+                {
+                    var elementType = serviceType.GetEnumerableElementType();
+                    var regs = resolver.GetRegistrations(elementType);
+
+                    var list = CreateEnumerable(elementType);
+
+                    regs.Select(s => s.ServiceType).Distinct().ForEach(s =>
+                    {
+                        if (!ResolveLoopScope.Current.TryAddType(s))
+                        {
+                            throw new ResolveException(SR.GetString(SRKind.LoopResolveSameType, s));
+                        }
+                    });
+
+                    foreach (var reg in regs)
+                    {
+                        lifetime = reg.Lifetime;
+                        list.Add(reg.Resolve(resolver));
+                    }
+
+                    return list;
+                }
+
+                IRegistration registration;
+                if ((registration = resolver.GetRegistrations(serviceType).LastOrDefault()) != null)
+                {
+                    if (!ResolveLoopScope.Current.TryAddType(registration.ServiceType))
+                    {
+                        throw new ResolveException(SR.GetString(SRKind.LoopResolveSameType, registration.ServiceType));
+                    }
+
+                    lifetime = registration.Lifetime;
+                    return registration.Resolve(resolver);
+                }
+
+                if (!serviceType.IsAbstract && !serviceType.IsInterface)
+                {
+                    return serviceType.New();
+                }
+
+                return null;
+            }
+
+            private static IEnumerable<IRegistration> GetRegistrations(List<IRegistration> registrations, Type serviceType)
+            {
+                if (Helpers.IsEnumerableResolve(serviceType))
+                {
+                    var elementType = serviceType.GetEnumerableElementType();
+                    return registrations.Where(s => s.ServiceType == elementType);
+                }
+
+                return registrations.Where(s => s.ServiceType == serviceType);
+            }
+
+            private static IList CreateEnumerable(Type serviceType)
+            {
+                return typeof(List<>).MakeGenericType(serviceType).New<IList>();
+            }
         }
     }
 }

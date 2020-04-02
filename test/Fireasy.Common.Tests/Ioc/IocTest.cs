@@ -72,36 +72,62 @@ namespace Fireasy.Common.Tests.Ioc
     }
     public interface ICClass
     {
-        IDClass D { get; set; }
+        IDClass DClass { get; set; }
     }
 
     public interface IDClass
     {
     }
 
-    public class CClass : ICClass
+    public class CClass : ICClass, IDisposable
     {
+        private Guid g = Guid.NewGuid();
+
         //[IgnoreInjectProperty]
-        public IDClass D { get; set; }
+        public IDClass DClass { get; set; }
+
+        public void Dispose()
+        {
+            Console.WriteLine("CClass Dispose");
+        }
     }
 
-    public class CClass2 : ICClass
+    public class CClass2 : ICClass, IDisposable
     {
-        public IDClass D { get; set; }
+        public IDClass DClass { get; set; }
+
+        public void Dispose()
+        {
+            Console.WriteLine("CClass Dispose");
+        }
     }
 
-    public class DClass : IDClass
+    public class DClass : IDClass, IDisposable
     {
+        private Guid g = Guid.NewGuid();
+
+        public void Dispose()
+        {
+            Console.WriteLine("DClass Dispose");
+        }
     }
 
-    public class DClass1 : IDClass
+    public class DClass1 : IDClass, IDisposable
     {
+        private Guid g = Guid.NewGuid();
+
         public DClass1()
         {
 
         }
 
         public IEnumerable<ICClass> Clss { get; set; }
+
+        public void Dispose()
+        {
+            Console.WriteLine("DClass1 Dispose");
+        }
+
     }
 
     [TestClass]
@@ -114,8 +140,8 @@ namespace Fireasy.Common.Tests.Ioc
             var container = ContainerUnity.GetContainer();
 
             container
-                .Register<IMainService, MainService>()
-                .Register(typeof(IMainService), typeof(MainServiceSecond));
+                .RegisterTransient<IMainService, MainService>()
+                .RegisterTransient(typeof(IMainService), typeof(MainServiceSecond));
 
             var obj = container.Resolve<IMainService>();
 
@@ -126,7 +152,7 @@ namespace Fireasy.Common.Tests.Ioc
         public void TestSigleton()
         {
             var container = ContainerUnity.GetContainer();
-            container.RegisterSingleton<IMainService>(() => new MainService());
+            container.RegisterSingleton<IMainService>(r => new MainService());
 
             //第一次反转
             var obj1 = container.Resolve<IMainService>();
@@ -154,7 +180,7 @@ namespace Fireasy.Common.Tests.Ioc
         public void TestInstance()
         {
             var container = ContainerUnity.GetContainer();
-            container.Register<IMainService>(() => new MainService());
+            container.RegisterTransient<IMainService>(r => new MainService());
 
             //第一次反转
             var obj1 = container.Resolve<IMainService>();
@@ -169,9 +195,9 @@ namespace Fireasy.Common.Tests.Ioc
         public void TestEnumerable()
         {
             var container = ContainerUnity.GetContainer();
-            container.Register<IMainService>(() => new MainService());
-            container.Register<IMainService>(() => new MainService());
-            container.Register<IMainService>(() => new MainService());
+            container.RegisterTransient<IMainService>(r => new MainService());
+            container.RegisterTransient<IMainService>(r => new MainService());
+            container.RegisterTransient<IMainService>(r => new MainService());
 
             var list = container.Resolve<IEnumerable<IMainService>>();
             var obj = container.Resolve<IMainService>();
@@ -183,9 +209,9 @@ namespace Fireasy.Common.Tests.Ioc
         public void TestEnumerableInjection()
         {
             var container = ContainerUnity.GetContainer();
-            container.Register<ICClass, CClass>();
-            container.Register<ICClass, CClass>();
-            container.Register<IDClass, DClass1>();
+            container.RegisterTransient<ICClass, CClass>();
+            container.RegisterTransient<ICClass, CClass>();
+            container.RegisterTransient<IDClass, DClass1>();
 
             var obj = container.Resolve<IDClass>();
 
@@ -210,7 +236,7 @@ namespace Fireasy.Common.Tests.Ioc
         {
             var container = ContainerUnity.GetContainer();
 
-            container.Register<IMainService, MainService>();
+            container.RegisterTransient<IMainService, MainService>();
             container.RegisterInitializer<IMainService>(s => s.Name = "fireasy");
 
             var obj = container.Resolve<IMainService>();
@@ -243,7 +269,7 @@ namespace Fireasy.Common.Tests.Ioc
         public void TestGeneric()
         {
             var container = ContainerUnity.GetContainer();
-            container.Register<IGeneric<MainService>, Generic>();
+            container.RegisterTransient<IGeneric<MainService>, Generic>();
 
             var obj = container.Resolve<IGeneric<MainService>>();
 
@@ -255,8 +281,8 @@ namespace Fireasy.Common.Tests.Ioc
         {
             var container = ContainerUnity.GetContainer();
 
-            container.Register<IAClass, AClass>();
-            container.Register<IBClass, BClass>();
+            container.RegisterTransient<IAClass, AClass>();
+            container.RegisterTransient<IBClass, BClass>();
 
             var a = container.Resolve<IAClass>();
 
@@ -268,12 +294,12 @@ namespace Fireasy.Common.Tests.Ioc
         {
             var container = ContainerUnity.GetContainer();
 
-            container.Register<ICClass, CClass>();
-            container.Register<IDClass, DClass>();
+            container.RegisterTransient<ICClass, CClass>();
+            container.RegisterTransient<IDClass, DClass>();
 
             var c = container.Resolve<ICClass>();
 
-            Assert.IsNotNull(c.D);
+            Assert.IsNotNull(c.DClass);
         }
 
         [TestMethod]
@@ -281,12 +307,12 @@ namespace Fireasy.Common.Tests.Ioc
         {
             var container = ContainerUnity.GetContainer();
 
-            container.Register<ICClass, CClass>();
-            container.Register<IDClass, DClass>();
+            container.RegisterTransient<ICClass, CClass>();
+            container.RegisterTransient<IDClass, DClass>();
 
             var c = container.Resolve<ICClass>();
 
-            Assert.IsNull(c.D);
+            Assert.IsNull(c.DClass);
         }
 
         [TestMethod]
@@ -367,12 +393,105 @@ namespace Fireasy.Common.Tests.Ioc
             var container = ContainerUnity.GetContainer();
 
             container
-                .Register<IAopBase, AopImpl>()
-                .Register<IAClass, AClass>();
+                .RegisterTransient<IAopBase, AopImpl>()
+                .RegisterTransient<IAClass, AClass>();
             //.Register<IBClass, BClass>();
 
             var obj = container.Resolve<IAopBase>();
             obj.Test();
+        }
+
+        [TestMethod]
+        public void TestScope()
+        {
+            var container = ContainerUnity.GetContainer();
+
+            container.Register<ICClass, CClass2>(Lifetime.Scoped);
+            container.Register<IDClass, DClass>(Lifetime.Scoped);
+
+            using (var scope = container.CreateScope())
+            {
+                var c1 = scope.Resolve<ICClass>();
+                var c2 = scope.Resolve<ICClass>();
+                var d1 = scope.Resolve<IDClass>();
+                var d2 = scope.Resolve<IDClass>();
+            }
+        }
+
+        [TestMethod]
+        public void TestScope1()
+        {
+            var container = ContainerUnity.GetContainer();
+
+            container.Register<ICClass, CClass2>(Lifetime.Transient);
+            container.Register<IDClass, DClass>(Lifetime.Scoped);
+
+            using (var scope = container.CreateScope())
+            {
+                var c1 = scope.Resolve<ICClass>();
+                var c2 = scope.Resolve<ICClass>();
+                var d1 = scope.Resolve<IDClass>();
+                var d2 = scope.Resolve<IDClass>();
+            }
+        }
+
+        [TestMethod]
+        public void TestScope1_1()
+        {
+            var container = ContainerUnity.GetContainer();
+
+            container.Register<ICClass, CClass2>(Lifetime.Scoped);
+            container.Register<IDClass, DClass>(Lifetime.Transient);
+
+            using (var scope = container.CreateScope())
+            {
+                var c1 = scope.Resolve<ICClass>();
+                var c2 = scope.Resolve<ICClass>();
+                var d1 = scope.Resolve<IDClass>();
+                var d2 = scope.Resolve<IDClass>();
+            }
+        }
+
+        [TestMethod]
+        public void TestScope1_2()
+        {
+            var container = ContainerUnity.GetContainer();
+
+            container.Register<ICClass>(p => new CClass2 { DClass = p.Resolve<IDClass>() }, Lifetime.Scoped);
+            container.Register<IDClass>(p => new DClass(), Lifetime.Transient);
+
+            using (var scope = container.CreateScope())
+            {
+                var c1 = scope.Resolve<ICClass>();
+                var c2 = scope.Resolve<ICClass>();
+                var d1 = scope.Resolve<IDClass>();
+                var d2 = scope.Resolve<IDClass>();
+
+                using (var scope1 = scope.CreateScope())
+                {
+                    var c11 = scope1.Resolve<ICClass>();
+                    var c21 = scope1.Resolve<ICClass>();
+                    var d11 = scope1.Resolve<IDClass>();
+                    var d21 = scope1.Resolve<IDClass>();
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestScope2()
+        {
+            var container = ContainerUnity.GetContainer();
+
+            container.Register<ICClass, CClass>(Lifetime.Singleton);
+
+            using (var scope = container.CreateScope())
+            {
+                var c1 = scope.Resolve<ICClass>();
+                var c2 = scope.Resolve<ICClass>();
+            }
+
+            Console.WriteLine("最后释放");
+            container.Dispose();
         }
     }
 }

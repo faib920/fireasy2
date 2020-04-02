@@ -25,9 +25,15 @@ namespace Fireasy.Common.Ioc
         Type ImplementationType { get; }
 
         /// <summary>
+        /// 获取生命周期。
+        /// </summary>
+        Lifetime Lifetime { get; }
+
+        /// <summary>
         /// 从容器里解析出实现类的实例。
         /// </summary>
+        /// <param name="resolver"></param>
         /// <returns></returns>
-        object Resolve();
+        object Resolve(IResolver resolver);
     }
 }

@@ -17,9 +17,10 @@ namespace Fireasy.Web.Mvc
     /// <summary>
     /// 扩展自默认控制器工厂的类。
     /// </summary>
-    public class ControllerFactory : System.Web.Mvc.DefaultControllerFactory
+    public class ControllerFactory : DefaultControllerFactory
     {
-        private Container container;
+        private readonly Container container;
+        private IResolveScope scope;
 
         /// <summary>
         /// 初始化 <see cref="ControllerFactory"/> 类的新实例。
@@ -54,6 +55,7 @@ namespace Fireasy.Web.Mvc
         /// <returns></returns>
         protected override IController GetControllerInstance(RequestContext requestContext, Type controllerType)
         {
+            scope = container?.CreateScope();
             if (controllerType == null)
             {
                 return base.GetControllerInstance(requestContext, controllerType);
@@ -65,10 +67,9 @@ namespace Fireasy.Web.Mvc
                 return base.GetControllerInstance(requestContext, controllerType);
             }
 
-            var controller = container != null ? 
-                container.Resolve(controllerType) as IController : base.GetControllerInstance(requestContext, controllerType);
+            var controller = scope?.Resolve(controllerType) as IController ?? base.GetControllerInstance(requestContext, controllerType);
             
-            controller.As<System.Web.Mvc.Controller>(c =>
+            controller.As<Controller>(c =>
                 {
                     c.ActionInvoker = ControllerActionInvoker.Instance;
                 });
@@ -76,40 +77,16 @@ namespace Fireasy.Web.Mvc
             return controller;
         }
 
-#if PLUGIN
         /// <summary>
-        /// 根据控制器名称获得控制器类型。
+        /// 释放控制器实例。
         /// </summary>
-        /// <param name="requestContext"></param>
-        /// <param name="controllerName">控制器名称。</param>
-        /// <returns>控制器类型。</returns>
-        private Type GetControllerTypeFromPlugins(RequestContext requestContext, string controllerName)
+        /// <param name="controller"></param>
+        public override void ReleaseController(IController controller)
         {
-            if (!requestContext.RouteData.Values.ContainsKey("pluginName"))
-            {
-                return null;
-            }
+            scope?.Dispose();
 
-            var pluginName = requestContext.RouteData.GetRequiredString("pluginName");
-
-            foreach (var plugin in PluginManager.GetPlugins())
-            {
-                if (!string.Equals(pluginName, plugin.Plugin.Name, StringComparison.CurrentCultureIgnoreCase))
-                {
-                    continue;
-                }
-
-                var type = plugin.GetControllerType(controllerName + "Controller");
-
-                if (type != null)
-                {
-                    return type;
-                }
-            }
-
-            return null;
+            base.ReleaseController(controller);
         }
-#endif
     }
 }
 #endif

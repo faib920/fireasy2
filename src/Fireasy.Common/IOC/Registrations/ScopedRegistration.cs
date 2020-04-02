@@ -12,5 +12,11 @@ namespace Fireasy.Common.Ioc.Registrations
         where TImplementation : class, TService
         where TService : class
     {
+        public ScopedRegistration(Container container)
+            : base(container)
+        {
+        }
+
+        public override Lifetime Lifetime => Lifetime.Scoped;
     }
 }

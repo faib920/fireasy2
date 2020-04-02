@@ -9,6 +9,7 @@ using Fireasy.Common;
 using Fireasy.Common.Configuration;
 using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Linq.Translators;
+using Fireasy.Data.Entity.Query;
 using Fireasy.Data.Entity.Tests.Models;
 using Fireasy.Data.Provider;
 using Fireasy.Data.Syntax;

@@ -572,7 +572,7 @@ studio");
             Console.WriteLine("使用Fireasy序列化 50000 行的字典");
             var time1 = await TimeWatcher.WatchAsync(async () =>
             {
-                var json = await serializer.SerializeAsync(dictionary);
+                //var json = await serializer.SerializeAsync(dictionary);
                 //Console.WriteLine("长度: " + json);
             });
 

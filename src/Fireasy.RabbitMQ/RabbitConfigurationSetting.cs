@@ -34,7 +34,7 @@ namespace Fireasy.RabbitMQ
         public int Port { get; set; }
 
         /// <summary>
-        /// 获取或设置自定义的序列化类。继承自 <see cref="RabbitSerializer"/> 类。
+        /// 获取或设置对象序列化器的类型。
         /// </summary>
         public Type SerializerType { get; set; }
 

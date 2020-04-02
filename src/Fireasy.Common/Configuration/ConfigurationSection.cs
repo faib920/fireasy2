@@ -205,7 +205,7 @@ namespace Fireasy.Common.Configuration
 
         private IConfigurationSettingItem ParseSetting(XmlNode node, Type type)
         {
-            var att = type.GetCustomAttributes<ConfigurationSettingAttribute>().FirstOrDefault();
+            var att = type.GetCustomAttributes<ConfigurationSettingAttribute>(true).FirstOrDefault();
             if (att != null)
             {
                 var att1 = att.Type.GetCustomAttributes<ConfigurationSettingParseTypeAttribute>().FirstOrDefault();
@@ -229,7 +229,7 @@ namespace Fireasy.Common.Configuration
 #if NETSTANDARD
         private IConfigurationSettingItem ParseSetting(IConfiguration configuration, Type type)
         {
-            var att = type.GetCustomAttributes<ConfigurationSettingAttribute>().FirstOrDefault();
+            var att = type.GetCustomAttributes<ConfigurationSettingAttribute>(true).FirstOrDefault();
             if (att != null)
             {
                 var att1 = att.Type.GetCustomAttributes<ConfigurationSettingParseTypeAttribute>().FirstOrDefault();

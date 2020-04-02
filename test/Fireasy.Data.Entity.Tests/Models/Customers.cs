@@ -15,7 +15,7 @@ namespace Fireasy.Data.Entity.Tests.Models
         /// 获取或设置。
         /// </summary>
 
-        [PropertyMapping(ColumnName = "CustomerID", Description = "", IsPrimaryKey = true, Length = 5, IsNullable = false)]
+        [PropertyMapping(ColumnName = "CustomerID1", Description = "", IsPrimaryKey = true, Length = 5, IsNullable = false)]
         public virtual string CustomerID { get; set; }
 
         /// <summary>

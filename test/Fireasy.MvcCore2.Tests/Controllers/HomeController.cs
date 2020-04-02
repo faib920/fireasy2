@@ -1,7 +1,9 @@
-﻿using Fireasy.Common.Caching;
+﻿using Fireasy.Common;
+using Fireasy.Common.Caching;
 using Fireasy.Common.Localization;
 using Fireasy.Common.Logging;
 using Fireasy.Common.Serialization;
+using Fireasy.Common.Tasks;
 using Fireasy.Data.Entity;
 using Fireasy.MvcCore.Services;
 using Fireasy.MvcCore.Tests.Models;
@@ -18,13 +20,13 @@ namespace Fireasy.MvcCore.Tests.Controllers
     public class HomeController : Controller
     {
         private IService service;
-        private ILogger logger;
+        private ILogger<HomeController> logger;
 
-        public HomeController(IService context, ICacheManager cacheMgr, ILogger logger, IStringLocalizerManager localizer)
+        public HomeController(IServiceProvider sp, ITaskScheduler sc, ISerializer ser, IModel model, IService context, ICacheManager cacheMgr, ILogger<HomeController> logger, IStringLocalizerManager localizer)
         {
+            var tt = ser.Serialize("dfafdsaf");
             var str = localizer.GetLocalizer("Test")["Name"];
             this.logger = logger;
-            logger.Info("dfafasf");
             this.service = context;
         }
 
@@ -35,15 +37,16 @@ namespace Fireasy.MvcCore.Tests.Controllers
 
         public IActionResult Index()
         {
-            logger.Info("dfasdfaffsa");
-            //try
-            //{
-            //    service.Update();
-            //}
-            //catch (Exception exp)
-            //{
-            //    Console.WriteLine(exp.Message);
-            //}
+            Tracer.Debug("dfdfasfafasdf");
+
+            try
+            {
+                service.Update();
+            }
+            catch (Exception exp)
+            {
+                Console.WriteLine(exp.Message);
+            }
             return View();
         }
 
@@ -61,6 +64,7 @@ namespace Fireasy.MvcCore.Tests.Controllers
         [HttpGet]
         public JsonResult TestJsonSerializeOption([FromServices]JsonSerializeOptionHosting hosting)
         {
+            throw new Exception("");
             hosting.Option.Converters.Add(new FullDateTimeJsonConverter());
             return Json(DateTime.Now);
         }

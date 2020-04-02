@@ -1,6 +1,7 @@
 ﻿using Fireasy.Common;
 using Fireasy.Common.Caching;
 using Fireasy.Common.Extensions;
+using Fireasy.Common.Reflection;
 using Fireasy.Common.Serialization;
 using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Linq.Expressions;
@@ -43,14 +44,35 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var context = new DbContext())
             {
-                var rr = context.Customers.Where(s => s.CustomerID == "ALFKI").FirstOrDefault();
-                var customers = context.Customers.Get("ALFKI");
-                customers.Address = "bb21";
-                context.RemoveCache(typeof(Customers));
-                var r = context.Customers.UpdateAsync(customers);
-                rr = context.Customers.Where(s => s.CustomerID == "ALFKI").FirstOrDefault();
-                Assert.AreEqual(rr.Address, customers.Address);
+                var rr = context.Orders.Where(s => true).Take(10).ToList();
+                var rr1 = context.Orders.Where(s => true).Take(10).ToList();
             }
+        }
+
+        [TestMethod]
+        public void TestDeserialize()
+        {
+            SerializeOption.GlobalConverters.Add(new LightEntityJsonConverter());
+            var json = "{\"CustomerID\": 1, \"City\": \"3443\" }";
+
+            var o = new Common.Serialization.JsonSerializer().Deserialize<Customers>(json);
+            Console.WriteLine(o);
+        }
+
+        [TestMethod]
+        public void TestGet111()
+        {
+            Parallel.For(1, 10, i =>
+            {
+                using (var context = new DbContext())
+                {
+                    var rr = context.Customers.Where(s => s.CustomerID == "ALFKI").FirstOrDefault();
+                }
+                using (var context = new DbContext())
+                {
+                    var rr = context.Customers.Where(s => s.CustomerID == "ALFKI").FirstOrDefault();
+                }
+            });
         }
 
         [TestMethod]
@@ -77,7 +99,7 @@ namespace Fireasy.Data.Entity.Tests
         {
             var guid = Guid.NewGuid().ToString();
 
-            using (var scope = new TestScope() {  Guid = guid })
+            using (var scope = new TestScope() { Guid = guid })
             using (var context = new DbContext())
             {
                 Console.WriteLine("ThreadId(" + index + "): " + Thread.CurrentThread.ManagedThreadId + " guid:" + TestScope.Current.Guid);
@@ -132,6 +154,8 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var context = new DbContext())
             {
+                var t = context.Database.ExecuteNonQueryAsync((SqlCommand)"ddd").AsSync();
+
                 var ret = await context.Customers.AllAsync(s => s.CustomerID == "ALFKI");
                 Assert.IsFalse(ret);
             }
@@ -183,6 +207,8 @@ namespace Fireasy.Data.Entity.Tests
             using (var context = new DbContext())
             {
                 var ret = await context.OrderDetails.SumAsync(s => s.Quantity);
+                Console.WriteLine(ret);
+                ret = await context.OrderDetails.Where(s => true).SumAsync(s => s.Quantity);
                 Console.WriteLine(ret);
             }
         }
@@ -252,8 +278,11 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var context = new DbContext())
             {
-                var ret = await context.Customers.FirstOrDefaultAsync(s => s.CustomerID == "ALFKI");
-                Assert.IsNotNull(ret);
+                using (var c1 = new DbContext())
+                {
+                    var ret = await c1.Customers.FirstOrDefaultAsync(s => s.CustomerID == "ALFKI");
+                    Assert.IsNotNull(ret);
+                }
             }
         }
 
@@ -299,7 +328,7 @@ namespace Fireasy.Data.Entity.Tests
 
                 Assert.AreEqual(1, c);
 
-                var q = queryable.BatchOr(new long[] { 10251, 10252, 10253 }, (s, t) => s.OrderID == t);
+                var q = queryable.BatchOr(new long[] { }, (s, t) => s.OrderID == t);
 
                 Assert.AreEqual(3, q.Count());
             }
@@ -343,6 +372,7 @@ namespace Fireasy.Data.Entity.Tests
             OrderDetails detail;
             using (var db = new DbContext())
             {
+                SerializeOption.GlobalConverters.Add(new LightEntityJsonConverter());
                 db.BeginTransaction();
 
                 detail = db.OrderDetails.FirstOrDefault();
@@ -416,7 +446,7 @@ namespace Fireasy.Data.Entity.Tests
 
                 foreach (var detail in details)
                 {
-                    //Console.WriteLine(detail.Orders.Customers.Address);
+                    Console.WriteLine(detail.Orders.Customers.Address);
                 }
             }
         }
@@ -468,7 +498,7 @@ namespace Fireasy.Data.Entity.Tests
                     var list1 = db.Orders
                         .Segment(a1)
                         .CacheParsing(true, TimeSpan.FromDays(1))
-                        .CacheExecution(true, TimeSpan.FromDays(1))
+                        .CacheExecution(false, TimeSpan.FromDays(1))
                         .AsNoTracking()
                         .ToList();
                 }));
@@ -478,7 +508,7 @@ namespace Fireasy.Data.Entity.Tests
                     var list2 = db.Orders
                         .Segment(a2)
                         .CacheParsing(true, TimeSpan.FromDays(1))
-                        .CacheExecution(true, TimeSpan.FromDays(1))
+                        .CacheExecution(false, TimeSpan.FromDays(1))
                         .AsNoTracking()
                         .ToList();
                 }));
@@ -556,7 +586,7 @@ namespace Fireasy.Data.Entity.Tests
                 var detail = db.OrderDetails
                             .Include(s => s.Products)
                             .Include(s => s.Orders)
-                            .FirstOrDefault(s => s.OrderID == 1 && s.ProductID == 1);
+                            .FirstOrDefault();
 
                 Assert.AreEqual(detail.Orders.CustomerID, "VINET");
             }
@@ -875,9 +905,9 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var customer = new Orders
                 {
-                    CustomerID = "A2111",
+                    //CustomerID = "A2111",
                     EmployeeID = 1,
-                    OrderDate = DateTime.Now,
+                    //OrderDate = DateTime.Now,
                     //ShipVia = 3
                 };
 
@@ -894,7 +924,7 @@ namespace Fireasy.Data.Entity.Tests
                 {
                     CustomerID = "766v",
                     CompanyName = "a2"
-                    
+
                 };
 
                 var ret = await db.Customers.InsertAsync(customer);
@@ -950,7 +980,7 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var db = new DbContext())
             {
-                var customer = Customers.New();
+                var customer = db.New<Customers>();
                 customer.CustomerID = "F2";
                 customer.CompanyName = "kunming";
                 customer.City = "kunming";
@@ -964,7 +994,7 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var db = new DbContext())
             {
-                var customer = Customers.Wrap(() => new Customers
+                var customer = db.Wrap(() => new Customers
                 {
                     CustomerID = "F3",
                     CompanyName = "kunming",
@@ -981,6 +1011,9 @@ namespace Fireasy.Data.Entity.Tests
             var order = new Orders
             {
                 OrderDate = DateTime.Now,
+                CustomerID = "ALFKI",
+                EmployeeID = 5,
+                ShipVia = 3,
                 OrderDetailses = new EntitySet<OrderDetails>(),
             };
 
@@ -1014,13 +1047,34 @@ namespace Fireasy.Data.Entity.Tests
         }
 
         [TestMethod]
+        public void TestUpdateByExtension()
+        {
+            using (var db = new DbContext())
+            {
+                db.Orders
+                    .AssertWhere(true, s => s.EmployeeID != 1L)
+                    .Where(s => s.OrderDate > DateTime.Now)
+                    .Where(s => false)
+                    .OrderBy(s => s.CustomerID)
+                    .Update(() => new Orders { CustomerID = "aa" });
+
+                db.Orders
+                    .AssertWhere(true, s => s.EmployeeID != 1L)
+                    .Where(s => s.OrderDate > DateTime.Now)
+                    .Where(s => false)
+                    .OrderBy(s => s.CustomerID)
+                    .Update(p => { p.CustomerID = "aa"; });
+            }
+        }
+
+        [TestMethod]
         public void TestUpdateNoEvents()
         {
             using (var db = new DbContext())
             {
                 var order = db.Orders.FirstOrDefault();
                 order.ShipName = null;
-                db.Orders.ConfigOptions(s => s.NotifyEvents = false).Update(order);
+                //db.Orders.ConfigOptions(s => s.NotifyEvents = false).Update(order);
             }
         }
 
@@ -1031,7 +1085,7 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var order = db.Orders.FirstOrDefault();
                 order.ShipName = "211111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111";
-                db.Orders.ConfigOptions(s => s.ValidateEntity = true).Update(order);
+                //db.Orders.ConfigOptions(s => s.ValidateEntity = true).Update(order);
             }
         }
 
@@ -1051,7 +1105,7 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var db = new DbContext())
             {
-                var order = Orders.Wrap(() => new Orders { OrderID = 11092 });
+                var order = db.Wrap(() => new Orders { OrderID = 11092 });
                 order.ShipName = "fireasy";
                 db.Orders.Update(order);
             }
@@ -1093,7 +1147,7 @@ namespace Fireasy.Data.Entity.Tests
 
                 for (var i = 0; i < 2; i++)
                 {
-                    var product = Products.New(); ;
+                    var product = db.New<Products>(); ;
 
                     //product.Photo = new byte[] { 45, 55, 34, 67, 133, 54, 213 };
                     sss.Add(product);
@@ -1159,7 +1213,7 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var db = new DbContext())
             {
-                var order = await db.Orders.OrderBy(s => s.OrderDate).FirstOrDefaultAsync(s => true, new CancellationToken(true));
+                var order = await db.Orders.OrderBy(s => s.OrderDate).FirstOrDefaultAsync(s => true);
                 order.ShipName = "cc" + new Random(DateTime.Now.Millisecond).Next(100);
                 await db.Orders.UpdateAsync(order);
                 Console.WriteLine("后续代码");
@@ -1246,6 +1300,19 @@ namespace Fireasy.Data.Entity.Tests
         }
 
         [TestMethod]
+        public void TestDeleteByExtension()
+        {
+            using (var db = new DbContext())
+            {
+                db.Orders
+                    .AssertWhere(true, s => s.EmployeeID != 1L)
+                    .Where(s => s.OrderDate > DateTime.Now)
+                    .Where(s => false)
+                    .Delete();
+            }
+        }
+
+        [TestMethod]
         public async Task TestDeleteWhereAsync()
         {
             using (var db = new DbContext())
@@ -1263,15 +1330,15 @@ namespace Fireasy.Data.Entity.Tests
 
                 for (var i = 0; i < 3; i++)
                 {
-                    var d = Products.New();
+                    var d = db.New<Products>();
                     d.ProductName = "aa1111";
                     d.Discontinued = 0;
                     list.Add(d);
                 }
 
-                db.Products.Batch(list, (u, s) => u.Insert(s));
+                db.Products.Batch(list, (u, s) => u.Insert(s), new BatchOperateOptions { CheckModifiedKinds = BatchCheckModifiedKinds.Everyone });
 
-                var p = Products.Wrap(() => new Products { ProductName = "b11", Discontinued = 0 });
+                var p = db.Wrap(() => new Products { ProductName = "b11", Discontinued = 0 });
                 db.Products.Insert(p);
                 Console.WriteLine(p.ProductID);
             }
@@ -1286,7 +1353,7 @@ namespace Fireasy.Data.Entity.Tests
 
                 for (var i = 0; i < 3; i++)
                 {
-                    var d = Products.New();
+                    var d = db.New<Products>();
                     d.ProductName = "aa1111";
                     d.Discontinued = 0;
                     list.Add(d);
@@ -1305,7 +1372,7 @@ namespace Fireasy.Data.Entity.Tests
 
                 for (var i = 0; i < 3; i++)
                 {
-                    var d = Depts.Wrap(() => new Depts { DeptID = i + 50, DeptName = "a" + i });
+                    var d = db.Wrap(() => new Depts { DeptID = i + 50, DeptName = "a" + i });
                     list.Add(d);
                 }
 
@@ -1324,7 +1391,7 @@ namespace Fireasy.Data.Entity.Tests
 
                 for (var i = 0; i < 3; i++)
                 {
-                    var d = Depts.Wrap(() => new Depts { DeptID = i + 50, DeptName = "a" + i });
+                    var d = db.Wrap(() => new Depts { DeptID = i + 50, DeptName = "a" + i });
                     list.Add(d);
                 }
 
@@ -1343,7 +1410,7 @@ namespace Fireasy.Data.Entity.Tests
 
                 for (var i = 0; i < 3; i++)
                 {
-                    var d = Products.New();
+                    var d = db.New<Products>();
                     d.ProductID = 1;
                     //d.Orders = null;
                     list.Add(d);
@@ -1363,7 +1430,7 @@ namespace Fireasy.Data.Entity.Tests
 
                 for (var i = 0; i < 3; i++)
                 {
-                    var d = Products.New();
+                    var d = db.New<Products>();
                     d.ProductID = 100 + i;
                     //d.Orders = null;
                     list.Add(d);
@@ -1383,7 +1450,7 @@ namespace Fireasy.Data.Entity.Tests
 
                 for (var i = 0; i < 10; i++)
                 {
-                    var p = Products.New();
+                    var p = db.New<Products>();
                     p.ProductName = "aa";
                     p.Discontinued = 0;
                     list.Add(p);
@@ -1402,7 +1469,7 @@ namespace Fireasy.Data.Entity.Tests
 
                 for (var i = 0; i < 10; i++)
                 {
-                    var p = Products.New();
+                    var p = db.New<Products>();
                     p.ProductName = "aa";
                     p.Discontinued = 0;
                     list.Add(p);
@@ -1580,6 +1647,26 @@ namespace Fireasy.Data.Entity.Tests
                     .AssertWhere(startTime != null, s => s.OrderDate >= startTime)
                     .AssertWhere(endTime != null, s => s.OrderDate <= endTime)
                     .AssertWhere(state == 0, s => s.RequiredDate == DateTime.Now, s => s.RequiredDate >= DateTime.Now);
+
+                foreach (var item in list)
+                {
+                    Console.WriteLine(item);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestSwitchWhere()
+        {
+            using (var context = new DbContext())
+            {
+                var value = "aa";
+
+                var list = context.Orders
+                    .SwitchWhere(value, b => b
+                        .When("aa", s => s.ShipCity == "kunming")
+                        .When("bb", s => s.ShipName == "fireasy")
+                        .When("cc", s => s.OrderDate >= DateTime.Today));
 
                 foreach (var item in list)
                 {
@@ -1820,7 +1907,7 @@ namespace Fireasy.Data.Entity.Tests
 
                 for (var i = 0; i < 3; i++)
                 {
-                    var d = Depts.New();
+                    var d = db.New<Depts>();
                     d.DeptID = i + 50;
                     d.DeptName = "a" + i;
                     list.Add(d);
@@ -1848,7 +1935,7 @@ namespace Fireasy.Data.Entity.Tests
                 db.Orders.Update(order);
             }
         }
-        
+
         [TestMethod]
         public void TestSubscriberForAsyncUpdate()
         {

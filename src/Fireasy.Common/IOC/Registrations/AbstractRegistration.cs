@@ -14,21 +14,31 @@ namespace Fireasy.Common.Ioc.Registrations
     internal abstract class AbstractRegistration : IRegistration
     {
         private static readonly object locker = new object();
-        private Func<Container, object> instanceCreator;
+        private Func<IResolver, object> instanceCreator;
+        protected readonly Container container;
+        protected readonly ParameterExpression parameter = Expression.Parameter(typeof(IResolver), "r");
 
-        protected AbstractRegistration(Type serviceType, Type implementationType)
+        protected AbstractRegistration(Container container, Type serviceType, Type implementationType)
         {
+            this.container = container;
             ServiceType = serviceType;
             ImplementationType = implementationType;
         }
+
+        protected AbstractRegistration(Container container, Type serviceType, Func<IResolver, object> instanceCreator)
+        {
+            this.container = container;
+            ServiceType = serviceType;
+            this.instanceCreator = instanceCreator;
+        }
+
+        public virtual Lifetime Lifetime { get; }
 
         public Type ServiceType { get; private set; }
 
         public Type ImplementationType { get; set; }
 
-        internal Container Container { get; private set; }
-
-        public object Resolve()
+        public object Resolve(IResolver resolver)
         {
             lock (locker)
             {
@@ -38,22 +48,16 @@ namespace Fireasy.Common.Ioc.Registrations
                 }
             }
 
-            return instanceCreator(Container);
+            return instanceCreator(resolver);
         }
 
-        private Func<Container, object> BuildInstanceCreator()
+        private Func<IResolver, object> BuildInstanceCreator()
         {
             var expression = BuildExpression();
-            var newInstanceMethod = Expression.Lambda<Func<Container, object>>(expression, Container.GetParameterExpression());
+            var newInstanceMethod = Expression.Lambda<Func<IResolver, object>>(expression, parameter);
             return newInstanceMethod.Compile();
         }
 
         internal abstract Expression BuildExpression();
-
-        internal AbstractRegistration SetContainer(Container container)
-        {
-            Container = container;
-            return this;
-        }
     }
 }

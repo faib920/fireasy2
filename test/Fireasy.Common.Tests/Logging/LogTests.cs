@@ -23,12 +23,6 @@ namespace Fireasy.Common.Tests.Logging
             });
         }
 
-        [TestMethod]
-        public async Task TestSubLogger()
-        {
-            DefaultLogger.Instance.GetLogger<TestLogger>().Info("fireasy");
-        }
-
         public class TestLogger
         {
 

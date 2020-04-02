@@ -30,8 +30,6 @@ namespace Fireasy.RabbitMQ
     [ConfigurationSetting(typeof(RabbitConfigurationSetting))]
     public class SubscribeManager : DisposeableBase, ISubscribeManager, IConfigurationSettingHostService, IServiceProviderAccessor
     {
-        private RabbitConfigurationSetting setting;
-
         private static Lazy<IConnection> connectionLazy;
         private static readonly SafetyDictionary<string, RabbitChannelCollection> subscribers = new SafetyDictionary<string, RabbitChannelCollection>();
         private Func<ISerializer> serializerFactory;
@@ -97,6 +95,12 @@ namespace Fireasy.RabbitMQ
             optValue.Initializer?.Invoke(this);
         }
 #endif
+
+        /// <summary>
+        /// 获取 RabbitMQ 的相关配置。
+        /// </summary>
+        protected RabbitConfigurationSetting Setting { get; private set; }
+
         /// <summary>
         /// 获取或设置应用程序服务提供者实例。
         /// </summary>
@@ -160,7 +164,7 @@ namespace Fireasy.RabbitMQ
         {
             using (var channel = GetConnection().CreateModel())
             {
-                if (string.IsNullOrEmpty(setting.ExchangeType))
+                if (string.IsNullOrEmpty(Setting.ExchangeType))
                 {
                     channel.QueueDeclare(name, true, false, false, null);
 
@@ -173,7 +177,7 @@ namespace Fireasy.RabbitMQ
                 else
                 {
                     var exchangeName = GetExchangeName(name);
-                    channel.ExchangeDeclare(exchangeName, setting.ExchangeType);
+                    channel.ExchangeDeclare(exchangeName, Setting.ExchangeType);
                     channel.BasicPublish(exchangeName, name, null, data);
                 }
             }
@@ -333,6 +337,25 @@ namespace Fireasy.RabbitMQ
             return serializer.Serialize(value);
         }
 
+        /// <summary>
+        /// 创建 <see cref="ConnectionFactory"/> 实例。
+        /// </summary>
+        /// <param name="setting"></param>
+        /// <returns></returns>
+        protected virtual ConnectionFactory CreateConnectionFactory()
+        {
+            return new ConnectionFactory
+            {
+                UserName = Setting.UserName,
+                Password = Setting.Password,
+                Endpoint = new AmqpTcpEndpoint(new Uri(Setting.Server)),
+                Port = Setting.Port,
+                RequestedHeartbeat = 12,
+                AutomaticRecoveryEnabled = true,
+                VirtualHost = string.IsNullOrEmpty(Setting.VirtualHost) ? "/" : Setting.VirtualHost
+            };
+        }
+
         private ISerializer GetSerializer()
         {
             return SingletonLocker.Lock(ref serializerFactory, this, () =>
@@ -340,14 +363,14 @@ namespace Fireasy.RabbitMQ
                 return new Func<ISerializer>(() =>
                 {
                     ISerializer _serializer = null;
-                    if (setting.SerializerType != null)
+                    if (Setting.SerializerType != null)
                     {
-                        _serializer = setting.SerializerType.New<ISerializer>();
+                        _serializer = Setting.SerializerType.New<ISerializer>();
                     }
 
                     if (_serializer == null)
                     {
-                        _serializer = ServiceProvider.TryGetService<ISerializer>(() => SerializerFactory.CreateSerializer());
+                        _serializer = ServiceProvider.TryGetService(() => SerializerFactory.CreateSerializer());
                     }
 
                     if (_serializer == null)
@@ -366,16 +389,7 @@ namespace Fireasy.RabbitMQ
         {
             connectionLazy = SingletonLocker.Lock(ref connectionLazy, () =>
                 {
-                    return new Lazy<IConnection>(() => new ConnectionFactory
-                    {
-                        UserName = setting.UserName,
-                        Password = setting.Password,
-                        Endpoint = new AmqpTcpEndpoint(new Uri(setting.Server)),
-                        Port = setting.Port,
-                        RequestedHeartbeat = 12,
-                        AutomaticRecoveryEnabled = true,
-                        VirtualHost = string.IsNullOrEmpty(setting.VirtualHost) ? "/" : setting.VirtualHost
-                    }.CreateConnection());
+                    return new Lazy<IConnection>(() => CreateConnectionFactory().CreateConnection());
                 });
 
             return connectionLazy.Value;
@@ -391,7 +405,7 @@ namespace Fireasy.RabbitMQ
             var channel = GetConnection().CreateModel();
             var queueName = channelName;
 
-            if (string.IsNullOrEmpty(setting.ExchangeType))
+            if (string.IsNullOrEmpty(Setting.ExchangeType))
             {
                 channel.BasicQos(0, 1, false);
                 channel.QueueDeclare(channelName, true, false, false, null);
@@ -399,7 +413,7 @@ namespace Fireasy.RabbitMQ
             else
             {
                 var exchangeName = GetExchangeName(channelName);
-                channel.ExchangeDeclare(exchangeName, setting.ExchangeType);
+                channel.ExchangeDeclare(exchangeName, Setting.ExchangeType);
                 queueName = channel.QueueDeclare().QueueName;
                 channel.QueueBind(queueName, exchangeName, channelName);
             }
@@ -422,7 +436,6 @@ namespace Fireasy.RabbitMQ
 
                         try
                         {
-
                             if (found.Handler.DataType == typeof(byte[]))
                             {
                                 body = args.Body;
@@ -441,11 +454,11 @@ namespace Fireasy.RabbitMQ
 
                             _consumer.Model.BasicNack(args.DeliveryTag, false, false);
 
-                            if (setting.RequeueDelayTime != null)
+                            if (Setting.RequeueDelayTime != null)
                             {
                                 Task.Run(() =>
                                     {
-                                        Thread.SpinWait(setting.RequeueDelayTime.Value);
+                                        Thread.SpinWait(Setting.RequeueDelayTime.Value);
                                         Publish(_consumer.ChannelName, args.Body);
                                     });
                             }
@@ -466,17 +479,17 @@ namespace Fireasy.RabbitMQ
         /// <returns></returns>
         private string GetExchangeName(string channelName)
         {
-            return string.Concat(setting.ExchangeType, channelName);
+            return string.Concat(Setting.ExchangeType, channelName);
         }
 
         void IConfigurationSettingHostService.Attach(IConfigurationSettingItem setting)
         {
-            this.setting = (RabbitConfigurationSetting)setting;
+            Setting = (RabbitConfigurationSetting)setting;
         }
 
         IConfigurationSettingItem IConfigurationSettingHostService.GetSetting()
         {
-            return setting;
+            return Setting;
         }
 
         protected override bool Dispose(bool disposing)

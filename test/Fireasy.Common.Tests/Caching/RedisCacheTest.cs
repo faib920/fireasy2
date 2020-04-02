@@ -1,6 +1,7 @@
 ﻿using Fireasy.Common.Caching;
 using Fireasy.Common.Subscribes;
 using Fireasy.Common.Threading;
+using Fireasy.Redis;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
@@ -20,21 +21,21 @@ namespace Fireasy.Common.Tests.Caching
         [TestMethod]
         public async Task TestTryGet()
         {
-            var subMgr = SubscribeManagerFactory.CreateManager("redis");
-
-            Parallel.For(0, 4, i =>
-            {
-                var locker = LockerFactory.CreateLocker();
-                locker.Lock("dfafafaf", TimeSpan.FromSeconds(10), () =>
-                {
-                    Thread.Sleep(1000);
-                    Console.WriteLine(i + " " + DateTime.Now);
-                });
-            });
+            //Parallel.For(0, 4, i =>
+            //{
+            //    var locker = LockerFactory.CreateLocker();
+            //    locker.Lock("dfafafaf", TimeSpan.FromSeconds(10), () =>
+            //    {
+            //        Thread.Sleep(1000);
+            //        Console.WriteLine(i + " " + DateTime.Now);
+            //    });
+            //});
 
             var cacheMgr = CacheManagerFactory.CreateManager("redis");
-            cacheMgr = CacheManagerFactory.CreateManager("redis");
             var value = await cacheMgr.TryGetAsync("test1", () => Task.FromResult(100));
+            value = await cacheMgr.TryGetAsync("test2", () => Task.FromResult(100));
+            value = await cacheMgr.TryGetAsync("test3", () => Task.FromResult(100));
+            value = await cacheMgr.TryGetAsync("test4", () => Task.FromResult(100));
             Assert.AreEqual(100, value);
         }
 
@@ -98,7 +99,7 @@ namespace Fireasy.Common.Tests.Caching
                 return 100;
             }
 
-            Parallel.For(0, 5, (i, s) => Console.WriteLine(cacheMgr.TryGet("test", () => Get(), () => new RelativeTime(TimeSpan.FromSeconds(5)))));
+            Parallel.For(0, 10, (i, s) => Console.WriteLine(cacheMgr.TryGet("test", () => Get(), () => new RelativeTime(TimeSpan.FromSeconds(5)))));
         }
 
         [TestMethod]

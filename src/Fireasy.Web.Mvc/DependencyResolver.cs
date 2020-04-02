@@ -7,7 +7,6 @@
 // -----------------------------------------------------------------------
 #if !NETCOREAPP
 using Fireasy.Common.Extensions;
-using Fireasy.Common.Ioc;
 using System;
 using System.Collections.Generic;
 using System.Web.Mvc;
@@ -16,15 +15,15 @@ namespace Fireasy.Web.Mvc
 {
     public class DependencyResolver : IDependencyResolver
     {
-        private Container container;
+        private readonly IServiceProvider serviceProvider;
 
         /// <summary>
         /// 初始化 <see cref="DependencyResolver"/> 类的新实例。
         /// </summary>
-        /// <param name="container">指定的IOC容器。</param>
-        public DependencyResolver(Container container)
+        /// <param name="serviceProvider">应用程序服务提供者实例。</param>
+        public DependencyResolver(IServiceProvider serviceProvider)
         {
-            this.container = container;
+            this.serviceProvider = serviceProvider;
         }
 
         /// <summary>
@@ -36,7 +35,7 @@ namespace Fireasy.Web.Mvc
 
         public object GetService(Type serviceType)
         {
-            if (container == null)
+            if (serviceProvider == null)
             {
                 if (serviceType.IsInterface || serviceType.IsAbstract)
                 {
@@ -46,22 +45,12 @@ namespace Fireasy.Web.Mvc
                 return serviceType.New();
             }
 
-            if (!container.IsRegistered(serviceType))
-            {
-                return null;
-            }
-
-            return container.Resolve(serviceType);
+            return serviceProvider.GetService(serviceType);
         }
 
         public IEnumerable<object> GetServices(Type serviceType)
         {
-            if (container == null || !container.IsRegistered(serviceType))
-            {
-                yield break;
-            }
-
-            yield return container.Resolve(serviceType);
+            yield return serviceProvider.GetService(serviceType);
         }
     }
 }

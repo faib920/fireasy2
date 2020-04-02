@@ -134,6 +134,19 @@ namespace Fireasy.Data.Tests
         }
 
         [TestMethod]
+        public void TestModifyConnection()
+        {
+            using (var db = DatabaseFactory.CreateDatabase("mysql"))
+            {
+                var p = db.Provider.GetConnectionParameter(db.ConnectionString);
+                p.UserId = "test";
+                db.Provider.UpdateConnectionString(db.ConnectionString, p);
+
+                Console.WriteLine(db.Connection.ConnectionString);
+            }
+        }
+
+        [TestMethod]
         public void TestEncrypt()
         {
             var mthEncrypt = Type.GetType("Fireasy.Data.ConnectionStringEncryptHelper, Fireasy.Data").GetMethod("Encrypt", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);

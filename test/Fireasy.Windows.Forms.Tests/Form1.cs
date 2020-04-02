@@ -1,26 +1,38 @@
-﻿using System;
+﻿using Fireasy.Common.Caching;
+using Fireasy.Common.Serialization;
+using System.Data;
+using Fireasy.Data.Entity;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Fireasy.Data;
+using Fireasy.Data.Provider;
+using Fireasy.Common.Extensions;
 
 namespace Fireasy.Windows.Forms.Tests
 {
     public partial class Form1 : Form
     {
+        private DbContext db = new DbContext();
+
         public Form1()
         {
             InitializeComponent();
 
             stringLocalizerHolder1.Apply();
+
+            Fireasy.Common.Subscribes.DefaultSubscribeManager.Instance.AddSubscriber("", (b) => { });
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            MemoryCacheManager.Instance.Add("aa", "dfasfdafasfd", new RelativeTime(TimeSpan.FromSeconds(100)));
+
             var c1 = new ComplexComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
             var c11 = new TreeListComplexComboBoxEditor(c1);
             c1.Items.Add("dfadfadfsf");
@@ -59,6 +71,15 @@ namespace Fireasy.Windows.Forms.Tests
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
+
+        }
+    }
+
+    public class DbContext : EntityContext
+    {
+        protected override void OnConfiguring(EntityContextOptionsBuilder builder)
+        {
+            builder.UseSqlServer("dfadf");
 
         }
     }

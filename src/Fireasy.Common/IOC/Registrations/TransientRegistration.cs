@@ -5,12 +5,12 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Aop;
+using Fireasy.Common.Extensions;
 using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using Fireasy.Common.Extensions;
-using Fireasy.Common.Aop;
 
 namespace Fireasy.Common.Ioc.Registrations
 {
@@ -18,19 +18,23 @@ namespace Fireasy.Common.Ioc.Registrations
         where TImplementation : class, TService
         where TService : class
     {
-        private static readonly MethodInfo MthResolve = typeof(Container).GetMethod(nameof(Container.Resolve), new[] { typeof(Type) });
-
-        public TransientRegistration()
-            : base(typeof(TService), typeof(TImplementation))
+        public TransientRegistration(Container container)
+            : base(container, typeof(TService), typeof(TImplementation))
         {
         }
 
+        public TransientRegistration(Container container, Func<IResolver, TService> instanceCreator)
+            : base(container, typeof(TService), instanceCreator)
+        {
+        }
+        public override Lifetime Lifetime => Lifetime.Transient;
+
         internal override Expression BuildExpression()
         {
-            var newExpression = BuildNewExpression();
-            var instanceInitializer = Container.GetInitializer<TImplementation>();
-            var initExpression = BuildMemberInitExpression(newExpression);
-            return instanceInitializer != null ? BuildExpressionWithInstanceInitializer(initExpression, instanceInitializer) : initExpression;
+            var newExp = BuildNewExpression();
+            var initMbrExp = BuildMemberInitExpression(newExp);
+            var initializer = container.GetInitializer<TImplementation>();
+            return initializer != null ? BuildExpressionWithInstanceInitializer(initMbrExp, initializer) : initMbrExp;
         }
 
         private Expression BuildExpressionWithInstanceInitializer(Expression expression,
@@ -47,18 +51,31 @@ namespace Fireasy.Common.Ioc.Registrations
 
         private NewExpression BuildNewExpression()
         {
-            //检查是否可构造
-            Helpers.CheckConstructable(typeof(TImplementation));
-            //获取默认的构造函数
+            ConstructorInfo[] constructors = null;
             ConstructorInfo constructor = null;
 
             if (typeof(IAopSupport).IsAssignableFrom(typeof(TImplementation)))
             {
-                constructor = AspectFactory.GetProxyType(typeof(TImplementation)).GetConstructors().Single();
+                constructors = AspectFactory.GetProxyType(typeof(TImplementation)).GetConstructors();
             }
             else
             {
-                constructor = typeof(TImplementation).GetConstructors().Single();
+                constructors = typeof(TImplementation).GetConstructors();
+            }
+
+            //寻找最匹配的构造方法
+            foreach (var con in constructors.OrderBy(s => s.GetParameters().Length))
+            {
+                if (con.GetParameters().All(s => container.IsRegistered(s.ParameterType)))
+                {
+                    constructor = con;
+                    break;
+                }
+            }
+
+            if (constructor == null)
+            {
+                throw new InvalidOperationException(SR.GetString(SRKind.NoDefaultConstructor));
             }
 
             var arguments =
@@ -70,19 +87,7 @@ namespace Fireasy.Common.Ioc.Registrations
 
         private Expression BuildParameterExpression(Type parameterType)
         {
-            var regs = Container.GetRegistrations(parameterType);
-            if (regs.Any())
-            {
-                if (Container.IsEnumerableResolve(parameterType))
-                {
-                    var elementType = parameterType.GetEnumerableElementType();
-                    return Expression.NewArrayInit(elementType, regs.Select(s => (s as AbstractRegistration).BuildExpression()));
-                }
-
-                return (regs.LastOrDefault() as AbstractRegistration).BuildExpression();
-            }
-
-            return Expression.Constant(null, parameterType);
+            return Expression.Call(parameter, nameof(IResolver.Resolve), new Type[] { parameterType });
         }
 
         private Expression BuildMemberInitExpression(NewExpression newExpression)
@@ -90,14 +95,10 @@ namespace Fireasy.Common.Ioc.Registrations
             var parameters = newExpression.Constructor.GetParameters();
 
             var bindings = from s in ImplementationType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                             where s.CanWrite && Container.GetRegistrations(s.PropertyType).Any()
+                             where s.CanWrite && container.GetRegistrations(s.PropertyType).Any()
                                 && !s.IsDefined<IgnoreInjectPropertyAttribute>()
                                 && !parameters.Any(t => t.ParameterType == s.PropertyType) //如果构造器里已经有这个类型，则不使用属性注入
-                                select (MemberBinding)Expression.Bind(s, Expression.Convert(
-                                    Expression.Call(Container.GetParameterExpression(), MthResolve, new Expression[]
-                                        {
-                                            Expression.Constant(s.PropertyType)
-                                        }) , s.PropertyType));
+                                select (MemberBinding)Expression.Bind(s, BuildParameterExpression(s.PropertyType));
 
             return Expression.MemberInit(newExpression, bindings);
         }

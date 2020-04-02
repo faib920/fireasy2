@@ -27,7 +27,7 @@ namespace Fireasy.MvcCore3.Tests
 
             services
                 .AddFireasy(Configuration)
-                .AddIoc(ContainerUnity.GetContainer());
+                .AddIoc();
 
             services.AddControllersWithViews()
                 .ConfigureFireasyMvc(s => { s.JsonSerializeOption.Converters.Add(new Fireasy.Data.Entity.LightEntityJsonConverter()); });

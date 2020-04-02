@@ -1,27 +1,32 @@
 ﻿using Fireasy.Data.Entity.Initializers;
 using Fireasy.Data.Entity.Tests.Models;
 using Fireasy.Data.Provider;
+using Fireasy.MongoDB;
 using System;
 
 namespace Fireasy.Data.Entity.Tests
 {
     public class DbContext : EntityContext
     {
+        public DbContext()
+        {
+
+        }
+
         protected override void OnConfiguring(EntityContextOptionsBuilder builder)
         {
-            builder.Options.NotifyEvents = true;
-            //builder.UseOracleTrigger<Products>().UseCodeFirst();
-            //builder.UseEnvironment(s => s.AddVariable("Year", "2009")).UseCodeFirst();
-            builder.UseCodeFirst();
+            //builder.Options.CacheParsing = false;
+            builder.Options.CacheExecution = true;
+            //builder.UseMongoDB("server=mongodb://localhost;database=test");
             base.OnConfiguring(builder);
         }
 
-        protected override void Dispose(bool disposing)
+        protected override bool Dispose(bool disposing)
         {
-            base.Dispose(disposing);
+            return base.Dispose(disposing);
         }
 
-        public EntityRepository<Products> Products { get; set; }
+        public IRepository<Products> Products { get; set; }
 
         public EntityRepository<Categories> Categories { get; set; }
 

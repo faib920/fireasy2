@@ -47,3 +47,4 @@ AlgorithmNotSupported=不支持 {0} 密码算法。
 CacheServerAnomaly=缓存服务器异常。
 KeyMustBeStringable=Key 必须为可字符串化的类型，如 String、Int32、DateTime 等等。
 UnableCreateCachedDelegate=无法为此创建缓存态委托。
+LoopResolveSameType=检测到循环反转类型为 {0} 的对象，已被终止。

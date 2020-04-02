@@ -18,7 +18,7 @@ namespace Fireasy.Common.Tests.Subscribes
         [TestMethod]
         public void Test()
         {
-            var subMgr = SubscribeManagerFactory.CreateManager("rabbit");
+            var subMgr = SubscribeManagerFactory.CreateManager("amqp");
             var r = new Random();
             subMgr.AddSubscriber<TestSubject>(s =>
             {
@@ -27,7 +27,7 @@ namespace Fireasy.Common.Tests.Subscribes
                 Console.WriteLine("1:" + s.Key);
                 if (r.Next(10) < 5)
                 {
-                    throw new Exception();
+                    //throw new Exception();
                 }
             });
             subMgr.AddSubscriber<TestSubject>("a", s =>
@@ -45,7 +45,7 @@ namespace Fireasy.Common.Tests.Subscribes
             subMgr.Publish("a", new TestSubject { Key = "fireasy7" });
             subMgr.Publish("a", new TestSubject { Key = "fireasy8" });
 
-            Thread.Sleep(50000);
+            Thread.Sleep(5000);
         }
 
         [TestMethod]
@@ -83,6 +83,7 @@ namespace Fireasy.Common.Tests.Subscribes
             Thread.Sleep(10000);
         }
 
+        [Topic("Fireasy.Common.Tests.TestSubject")]
         public class TestSubject
         {
             public string Key { get; set; }

@@ -8,6 +8,7 @@
 using Fireasy.Common.Extensions;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -83,6 +84,15 @@ namespace Fireasy.Common.Ioc
                     action(interfaceType, type);
                 }
             }
+        }
+
+        internal static bool IsEnumerableResolve(Type serviceType)
+        {
+            Type definitionType;
+
+            return serviceType.IsGenericType &&
+                (definitionType = serviceType.GetGenericTypeDefinition()) != null
+                && (definitionType == typeof(IEnumerable<>) || definitionType == typeof(IList<>) || definitionType == typeof(IList<>));
         }
 
         private static bool HasSinglePublicConstructor(Type serviceType)
