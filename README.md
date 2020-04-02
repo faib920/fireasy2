@@ -16,6 +16,9 @@ Fireasy 支持 net3.5(已废弃)/net4.0(已废弃)/net4.5/net4.6/net4.7/netstand
 *	[Fireasy.NLog](https://www.nuget.org/packages/Fireasy.NLog)
 *	[Fireasy.Log4net](https://www.nuget.org/packages/Fireasy.Log4net)
 *	[Fireasy.Newtonsoft](https://www.nuget.org/packages/Fireasy.Newtonsoft)
+*	[Fireasy.MongoDB](https://www.nuget.org/packages/Fireasy.MongoDB)
+*	[Fireasy.QuartzNet](https://www.nuget.org/packages/Fireasy.QuartzNet)
+*	[Fireasy.Aliyun.AMQP](https://www.nuget.org/packages/Fireasy.Aliyun.AMQP)
 
 Fireasy 的Demo项目 [https://github.com/faib920/zero](https://github.com/faib920/zero)。
 
@@ -43,6 +46,8 @@ Fireasy 的使用手册 [《Fireasy从入门到精通》](http://www.fireasy.cn/
 *	反射缓存：使用缓存提供反射调用的性能。
 *	本地化：定义一组本地化方案，可使用基于资源文件或XML文件来配置字符串本地化资源。
 *	时间监视器：提供一个用于记录方法执行耗时的计时器。
+*	任务调度器：提供一个在后台定时运行任务的调度器。
+*	线程锁/异步锁：提供线程锁/异步锁/分布式锁。
 
 <b>`Fireasy.Data`</b>
 
@@ -112,6 +117,7 @@ public void Sample()
 *	实体模型：IEntity定义了一组实体的特性，正如上面说的一样，GetValue和SetValue离不开依赖属性，IsModified可判断属性值是否改变。LightEntity是目前所采用的基类，它在EntityContext初始化时，自动进行了AOP代理包装，使实体获得了状态记忆功能。因此你的属性需要定义成virtual。
 *	实体关系：与ef类似，用于定义实体间的关系，主外键名称一致的情况下会自动创建关系，否则需要使用RelationshipAttribute或RelationshipAssignAttribute关联。
 *	实体上下文：提供类似于ef的数据上下文，即EntityContext，它一样可以使用CodeFirst模式。
+*	实体上下文对象池：可以使用对象池，提高对象的复用率降低创建对象耗用的时间。
 *	实体仓储：每一个实体对应一个仓储，它们分布在EntityContext上，提供LINQ查询、新增、修改、删除等提供。
 *	仓储适配器：默认的适配器是基于Fireasy.Data的，你也可以实现其他的适配器，以达到在不改变Entity模型的情况下依然可以使用其他框架的目的，比如ef、mongodb等等。
 *	LINQ查询：支持常用的LINQ查询，如Where、OrderBy、GroupBy、Join等等。
