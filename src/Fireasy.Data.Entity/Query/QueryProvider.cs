@@ -6,10 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using Fireasy.Common;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Linq.Translators;
-using Fireasy.Data.Provider;
 using System;
 #if !NETFRAMEWORK && !NETSTANDARD2_0
 using System.Collections.Generic;
@@ -29,7 +27,7 @@ namespace Fireasy.Data.Entity.Query
         IQueryProvider, 
         ITranslateSupport, 
         IAsyncQueryProvider, 
-        IProviderAware
+        IContextTypeAware
     {
         private readonly EntityQueryProvider entityQueryProvider;
 
@@ -41,14 +39,14 @@ namespace Fireasy.Data.Entity.Query
         {
             this.entityQueryProvider = entityQueryProvider;
             ServiceProvider = entityQueryProvider.ServiceProvider;
-            Provider = entityQueryProvider.Provider;
+            ContextType = entityQueryProvider.ContextType;
             ContextOptions = entityQueryProvider.ContextOptions;
         }
 
         /// <summary>
-        /// 获取数据库提供者实例。
+        /// 获取 <see cref="EntityContext"/> 的类型。
         /// </summary>
-        public IProvider Provider { get; private set; }
+        public Type ContextType { get; private set; }
 
         /// <summary>
         /// 获取应用程序服务提供者实例。

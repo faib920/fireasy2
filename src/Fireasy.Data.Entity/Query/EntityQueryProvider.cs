@@ -11,7 +11,6 @@ using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Linq.Translators.Configuration;
-using Fireasy.Data.Provider;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -26,7 +25,7 @@ namespace Fireasy.Data.Entity.Query
     /// <summary>
     /// 为实体提供 LINQ 查询的支持。无法继承此类。
     /// </summary>
-    public sealed class EntityQueryProvider : IEntityQueryProvider, IProviderAware
+    public sealed class EntityQueryProvider : IEntityQueryProvider, IContextTypeAware
     {
         private readonly IDatabase database;
         private readonly IContextService contextService;
@@ -50,15 +49,15 @@ namespace Fireasy.Data.Entity.Query
             }
 
             this.contextService = contextService;
-            Provider = contextService.Provider;
+            ContextType = contextService.ContextType;
             ServiceProvider = contextService.ServiceProvider;
             ContextOptions = contextService.Options;
         }
 
         /// <summary>
-        /// 获取数据库提供者实例。
+        /// 获取 <see cref="EntityContext"/> 的类型。
         /// </summary>
-        public IProvider Provider { get; private set; }
+        public Type ContextType { get; private set; }
 
         /// <summary>
         /// 获取应用程序服务提供者实例。

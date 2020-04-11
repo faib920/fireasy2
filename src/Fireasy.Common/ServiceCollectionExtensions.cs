@@ -29,7 +29,6 @@ using Fireasy.Common.Tasks.Configuration;
 using Fireasy.Common.Threading;
 using Fireasy.Common.Threading.Configuration;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -71,6 +70,11 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddIoc(this IServiceCollection services, string containerName = null)
         {
             var section = ConfigurationUnity.GetSection<ContainerConfigurationSection>();
+            if (section == null)
+            {
+                return services;
+            }
+
             var setting = string.IsNullOrEmpty(containerName) ? section.Default : section.Settings[containerName];
             if (setting == null)
             {
@@ -134,7 +138,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="callAssembly"></param>
         /// <param name="configuration"></param>
         /// <param name="services"></param>
-        public static void Initialize(this IConfiguration configuration, Assembly callAssembly, IServiceCollection services = null, Func<AssemblyName, bool> filter = null)
+        public static void Initialize(this IConfiguration configuration, Assembly callAssembly, IServiceCollection services = null, Func<Assembly, bool> filter = null)
         {
             var assemblies = new List<Assembly>();
 
@@ -143,10 +147,10 @@ namespace Microsoft.Extensions.DependencyInjection
             assemblies.ForEach(assembly =>
                 {
                     var binderAttr = assembly.GetCustomAttributes<ConfigurationBinderAttribute>().FirstOrDefault();
-                    var type = binderAttr != null ? binderAttr.BinderType : assembly.GetType("Microsoft.Extensions.DependencyInjection.ConfigurationBinder");
+                    var type = binderAttr != null ? binderAttr.BinderType : assembly.GetType("Microsoft.Extensions.DependencyInjection.ConfigurationBinder", false);
                     if (type != null)
                     {
-                        var method = type.GetMethod("Bind", BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(IServiceCollection), typeof(IConfiguration) }, null);
+                        var method = type.GetMethod("Bind", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public, null, new[] { typeof(IServiceCollection), typeof(IConfiguration) }, null);
                         if (method != null)
                         {
                             method.Invoke(null, new object[] { services, configuration });
@@ -157,10 +161,9 @@ namespace Microsoft.Extensions.DependencyInjection
             assemblies.Clear();
         }
 
-        private static bool ExcludeAssembly(AssemblyName assemblyName)
+        private static bool FilterAssembly(Assembly assembly)
         {
-            return !assemblyName.Name.StartsWith("system.", StringComparison.OrdinalIgnoreCase) &&
-                    !assemblyName.Name.StartsWith("microsoft.", StringComparison.OrdinalIgnoreCase);
+            return assembly.IsDefined(typeof(ConfigurationBinderAttribute));
         }
 
         private static Assembly LoadAssembly(AssemblyName assemblyName)
@@ -174,12 +177,13 @@ namespace Microsoft.Extensions.DependencyInjection
                 return null;
             }
         }
-        private static void FindReferenceAssemblies(Assembly assembly, List<Assembly> assemblies, Func<AssemblyName, bool> filter)
+
+        private static void FindReferenceAssemblies(Assembly assembly, List<Assembly> assemblies, Func<Assembly, bool> filter)
         {
             foreach (var asb in assembly.GetReferencedAssemblies()
-                .Where(filter ?? ExcludeAssembly)
                 .Select(s => LoadAssembly(s))
-                .Where(s => s != null))
+                .Where(s => s != null)
+                .Where(filter ?? FilterAssembly))
             {
                 if (!assemblies.Contains(asb))
                 {

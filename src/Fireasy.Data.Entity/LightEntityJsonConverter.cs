@@ -39,7 +39,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public override object ReadJson(JsonSerializer serializer, JsonReader reader, Type dataType)
         {
-            var proxyType = EntityProxyManager.GetType((string)null, dataType);
+            var proxyType = EntityProxyManager.GetType((Type)null, dataType);
             var json = reader.ReadRaw();
             return serializer.Deserialize(json, proxyType);
         }

@@ -1,12 +1,11 @@
-﻿using Fireasy.Data.Entity.Linq.Translators;
-using Fireasy.Data.Provider;
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright company="Fireasy"
 //      email="faib920@126.com"
 //      qq="55570729">
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Data.Entity.Linq.Translators;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -24,7 +23,7 @@ namespace Fireasy.Data.Entity.Query
     /// 提供对特定数据源的查询进行计算的功能。
     /// </summary>
     /// <typeparam name="T">数据类型。</typeparam>
-    public class QuerySet<T> : IOrderedQueryable<T>, IListSource, IQueryExportation
+    public class QuerySet<T> : IOrderedQueryable<T>, IListSource, IQueryExportation, IContextTypeAware
 #if !NETFRAMEWORK && !NETSTANDARD2_0
         , IAsyncEnumerable<T>
 #endif
@@ -44,6 +43,11 @@ namespace Fireasy.Data.Entity.Query
             Provider = provider ?? throw new ArgumentNullException(nameof(provider));
             var instance = new QuerySet<T> { Expression = Expression.Constant(null, typeof(T)), Provider = provider };
             Expression = Expression.Constant(instance, typeof(QuerySet<T>));
+
+            if (provider is IContextTypeAware q)
+            {
+                ContextType = q.ContextType;
+            }
         }
 
         /// <summary>
@@ -55,7 +59,17 @@ namespace Fireasy.Data.Entity.Query
         {
             Provider = provider ?? throw new ArgumentNullException(nameof(provider));
             Expression = expression ?? throw new ArgumentNullException(nameof(expression));
+
+            if (provider is IContextTypeAware q)
+            {
+                ContextType = q.ContextType;
+            }
         }
+
+        /// <summary>
+        /// 获取 <see cref="EntityContext"/> 的类型。
+        /// </summary>
+        public Type ContextType { get; private set; }
 
         /// <summary>
         /// 获取查询解释文本。

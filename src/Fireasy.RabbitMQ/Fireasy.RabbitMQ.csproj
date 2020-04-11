@@ -12,7 +12,7 @@
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <DelaySign>False</DelaySign>
     <Product>Fireasy RabbitMQ Provider</Product>
-    <Version>2.1.2.2</Version>
+    <Version>2.1.2.3</Version>
     <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
     <Description>RabbitMQ 消息订阅/发布的实现。

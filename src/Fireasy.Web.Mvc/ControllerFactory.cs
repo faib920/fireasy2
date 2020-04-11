@@ -20,7 +20,7 @@ namespace Fireasy.Web.Mvc
     public class ControllerFactory : DefaultControllerFactory
     {
         private readonly Container container;
-        private IResolveScope scope;
+        private IResolver scope;
 
         /// <summary>
         /// 初始化 <see cref="ControllerFactory"/> 类的新实例。
@@ -71,7 +71,7 @@ namespace Fireasy.Web.Mvc
             
             controller.As<Controller>(c =>
                 {
-                    c.ActionInvoker = ControllerActionInvoker.Instance;
+                    c.ActionInvoker = new ControllerActionInvoker();
                 });
 
             return controller;

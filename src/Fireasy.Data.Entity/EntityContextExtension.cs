@@ -151,10 +151,10 @@ namespace Fireasy.Data.Entity
         /// <param name="entityType">实体类型。</param>
         /// <param name="applyDefaultValue">是否应用默认值。</param>
         /// <returns></returns>
-        public static IEntity New(this EntityContext context, Type entityType, bool applyDefaultValue)
+        public static IEntity New<TContext>(this TContext context, Type entityType, bool applyDefaultValue) where TContext : EntityContext
         {
             var provider = (IProvider)context.GetService(typeof(IProvider));
-            var proxyType = EntityProxyManager.GetType(provider.ProviderName, entityType);
+            var proxyType = EntityProxyManager.GetType(typeof(TContext), entityType);
             var entity = proxyType.New<IEntity>();
 
             if (applyDefaultValue)

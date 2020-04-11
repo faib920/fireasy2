@@ -73,7 +73,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static TEntity New(bool applyDefaultValue)
         {
-            var proxyType = EntityProxyManager.GetType((string)null, typeof(TEntity));
+            var proxyType = EntityProxyManager.GetType((Type)null, typeof(TEntity));
             var entity = proxyType.New<TEntity>();
 
             if (applyDefaultValue)

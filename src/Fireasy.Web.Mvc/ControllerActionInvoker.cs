@@ -23,7 +23,6 @@ namespace Fireasy.Web.Mvc
     /// </summary>
     public class ControllerActionInvoker : System.Web.Mvc.Async.AsyncControllerActionInvoker
     {
-        internal static ControllerActionInvoker Instance = new ControllerActionInvoker();
         private ActionContext context;
 
         /// <summary>

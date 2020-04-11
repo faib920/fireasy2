@@ -42,9 +42,9 @@ namespace Fireasy.MongoDB
             var collectionSettings = new MongoCollectionSettings { AssignIdOnInsert = false };
             collection = contextService.Database.GetCollection<TEntity>(metadata.TableName, collectionSettings);
 
-            cache.GetOrAdd(typeof(TEntity), () =>
+            cache.GetOrAdd(typeof(TEntity), contextService.ContextType, (k, c) =>
                 {
-                    var serializer = new CustomBsonSerializer(contextService.Provider.ProviderName);
+                    var serializer = new CustomBsonSerializer(c);
                     BsonSerializer.RegisterSerializer(serializer);
                     return serializer;
                 });
@@ -372,17 +372,17 @@ namespace Fireasy.MongoDB
         /// </summary>
         private class CustomBsonSerializer : BsonClassMapSerializer<TEntity>
         {
-            private readonly string providerName;
+            private readonly Type contextType;
 
-            public CustomBsonSerializer(string providerName)
+            public CustomBsonSerializer(Type contextType)
                 : base(BsonClassMap.RegisterClassMap<TEntity>().Freeze())
             {
-                this.providerName = providerName;
+                this.contextType = contextType;
             }
 
             public override TEntity Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
             {
-                var entityType = EntityProxyManager.GetType(providerName, args.NominalType);
+                var entityType = EntityProxyManager.GetType(contextType, args.NominalType);
                 var ser = BsonSerializer.SerializerRegistry.GetSerializer(entityType);
                 return (TEntity)ser.Deserialize(context);
             }

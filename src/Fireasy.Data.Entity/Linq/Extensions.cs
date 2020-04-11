@@ -535,7 +535,7 @@ namespace Fireasy.Data.Entity.Linq
                 return -1;
             }
 
-            var entity = EntityProxyManager.GetType(source.Provider as IProviderAware, typeof(TEntity)).New<TEntity>();
+            var entity = EntityProxyManager.GetType(source.Provider as IContextTypeAware, typeof(TEntity)).New<TEntity>();
             entity.InitByExpression(valueCreator);
 
             return UpdateWhere(source, entity, predicate);
@@ -557,7 +557,7 @@ namespace Fireasy.Data.Entity.Linq
                 return -1;
             }
 
-            var entity = EntityProxyManager.GetType(source.Provider as IProviderAware, typeof(TEntity)).New<TEntity>();
+            var entity = EntityProxyManager.GetType(source.Provider as IContextTypeAware, typeof(TEntity)).New<TEntity>();
             entity.InitByExpression(valueCreator);
 
             return await UpdateWhereAsync(source, entity, predicate, cancellationToken);
@@ -580,7 +580,7 @@ namespace Fireasy.Data.Entity.Linq
                 return -1;
             }
 
-            var entity = EntityProxyManager.GetType(source.Provider as IProviderAware, typeof(TEntity)).New<TEntity>();
+            var entity = EntityProxyManager.GetType(source.Provider as IContextTypeAware, typeof(TEntity)).New<TEntity>();
             initializer(entity);
 
             return UpdateWhere(source, entity, predicate);
@@ -604,7 +604,7 @@ namespace Fireasy.Data.Entity.Linq
                 return -1;
             }
 
-            var entity = EntityProxyManager.GetType(source.Provider as IProviderAware, typeof(TEntity)).New<TEntity>();
+            var entity = EntityProxyManager.GetType(source.Provider as IContextTypeAware, typeof(TEntity)).New<TEntity>();
             initializer(entity);
 
             return await UpdateWhereAsync(source, entity, predicate, cancellationToken);
@@ -1175,9 +1175,12 @@ namespace Fireasy.Data.Entity.Linq
 
             var result = source.Provider.Execute<int>(expression);
 
-            if (primary != null && result > 0 && !entity.IsModified(primary.Name) && result != (int)entity.GetValue(primary))
+            if (primary != null && result > 0 && 
+                primary.Type.IsNumericType() &&
+                !entity.IsModified(primary.Name) && 
+                result != (int)entity.GetValue(primary))
             {
-                entity.SetValue(primary, result);
+                entity.SetValue(primary, PropertyValue.NewValue(result, primary.Type));
             }
 
             return result.To<int>();

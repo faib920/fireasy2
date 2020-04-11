@@ -731,7 +731,19 @@ namespace Fireasy.Data
 
             try
             {
-                return adapter.Update(dataTable);
+                var tracker = ServiceProvider.TryGetService<ICommandTracker>(() => DefaultCommandTracker.Instance);
+
+                var watch = Stopwatch.StartNew();
+                var result = adapter.Update(dataTable);
+                Tracer.Debug($"The DbDataAdapter was executed ({watch.Elapsed.Milliseconds}ms):\n{adapter.InsertCommand.Output()}");
+                watch.Stop();
+
+                if (ConnectionString.IsTracking && tracker != null)
+                {
+                    tracker?.Write(adapter.InsertCommand, watch.Elapsed);
+                }
+
+                return result;
             }
             catch (Exception exp)
             {
@@ -1103,6 +1115,8 @@ namespace Fireasy.Data
         /// <param name="exp"></param>
         private Exception HandleException(IDbCommand command, Exception exp)
         {
+            Tracer.Debug($"The DbCommand was throw exception:\n{command.Output()}\n{exp.Output()}");
+
             var tracker = ServiceProvider.TryGetService<ICommandTracker>(() => DefaultCommandTracker.Instance);
 
             if (ConnectionString.IsTracking && tracker != null)
@@ -1122,6 +1136,8 @@ namespace Fireasy.Data
         /// <returns></returns>
         private async Task<Exception> HandleExceptionAsync(IDbCommand command, Exception exp, CancellationToken cancellationToken)
         {
+            Tracer.Debug($"The DbCommand was throw exception:\n{command.Output()}\n{exp.Output()}");
+
             var tracker = ServiceProvider.TryGetService<ICommandTracker>(() => DefaultCommandTracker.Instance);
 
             if (ConnectionString.IsTracking && tracker != null)

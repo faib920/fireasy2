@@ -17,7 +17,7 @@ namespace Fireasy.Common
         /// <summary>
         /// 获取或设置用于过滤程序集的函数。
         /// </summary>
-        public Func<AssemblyName, bool> AssemblyFilter { get; set; }
+        public Func<Assembly, bool> AssemblyFilter { get; set; }
 
         /// <summary>
         /// 注册消息订阅器。

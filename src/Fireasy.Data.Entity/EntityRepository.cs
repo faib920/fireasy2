@@ -30,6 +30,7 @@ namespace Fireasy.Data.Entity
     public class EntityRepository<TEntity> :
         IOrderedQueryable<TEntity>,
         IQueryProviderAware,
+        IContextTypeAware,
         IRepository<TEntity>,
         IListSource
         where TEntity : IEntity
@@ -51,14 +52,18 @@ namespace Fireasy.Data.Entity
             provider = options.Provider;
             EntityType = typeof(TEntity);
 
-            Type contextType = null;
             if (options is IInstanceIdentifier identifier)
             {
-                contextType = identifier.ContextType;
+                ContextType = identifier.ContextType;
             }
 
-            subMgr = EntityPersistentSubscribeManager.GetRequiredManager(contextType);
+            subMgr = EntityPersistentSubscribeManager.GetRequiredManager(ContextType);
         }
+
+        /// <summary>
+        /// 获取 <see cref="EntityContext"/> 的类型。
+        /// </summary>
+        public Type ContextType { get; private set; }
 
         /// <summary>
         /// 获取关联的实体类型。
@@ -140,7 +145,7 @@ namespace Fireasy.Data.Entity
         /// <returns>如果主键是自增类型，则为主键值，否则为影响的实体数。</returns>
         public virtual int Insert(Expression<Func<TEntity>> creator)
         {
-            var entity = EntityProxyManager.GetType(provider.ProviderName, typeof(TEntity)).New<TEntity>();
+            var entity = EntityProxyManager.GetType(ContextType, typeof(TEntity)).New<TEntity>();
             entity.InitByExpression(creator);
 
             return Insert(entity);
@@ -154,7 +159,7 @@ namespace Fireasy.Data.Entity
         /// <returns>如果主键是自增类型，则为主键值，否则为影响的实体数。</returns>
         public async virtual Task<int> InsertAsync(Expression<Func<TEntity>> creator, CancellationToken cancellationToken = default)
         {
-            var entity = EntityProxyManager.GetType(provider.ProviderName, typeof(TEntity)).New<TEntity>();
+            var entity = EntityProxyManager.GetType(ContextType, typeof(TEntity)).New<TEntity>();
             entity.InitByExpression(creator);
 
             return await InsertAsync(entity, cancellationToken);
@@ -170,7 +175,7 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(initializer, nameof(initializer));
 
-            var entity = EntityProxyManager.GetType(provider.ProviderName, typeof(TEntity)).New<TEntity>();
+            var entity = EntityProxyManager.GetType(ContextType, typeof(TEntity)).New<TEntity>();
             initializer(entity);
 
             return Insert(entity);
@@ -186,7 +191,7 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(initializer, nameof(initializer));
 
-            var entity = EntityProxyManager.GetType(provider.ProviderName, typeof(TEntity)).New<TEntity>();
+            var entity = EntityProxyManager.GetType(ContextType, typeof(TEntity)).New<TEntity>();
             initializer(entity);
 
             return await InsertAsync(entity, cancellationToken);
@@ -478,7 +483,7 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public virtual int Update(Expression<Func<TEntity>> creator, Expression<Func<TEntity, bool>> predicate)
         {
-            var entity = EntityProxyManager.GetType(provider.ProviderName, typeof(TEntity)).New<TEntity>();
+            var entity = EntityProxyManager.GetType(ContextType, typeof(TEntity)).New<TEntity>();
             entity.InitByExpression(creator);
 
             return predicate == null ? Update(entity) : Update(entity, predicate);
@@ -493,7 +498,7 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public async virtual Task<int> UpdateAsync(Expression<Func<TEntity>> creator, Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         {
-            var entity = EntityProxyManager.GetType(provider.ProviderName, typeof(TEntity)).New<TEntity>();
+            var entity = EntityProxyManager.GetType(ContextType, typeof(TEntity)).New<TEntity>();
             entity.InitByExpression(creator);
 
             return predicate == null ? await UpdateAsync(entity, cancellationToken) : await UpdateAsync(entity, predicate, cancellationToken);
@@ -509,7 +514,7 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(initializer, nameof(initializer));
 
-            var entity = EntityProxyManager.GetType(provider.ProviderName, typeof(TEntity)).New<TEntity>();
+            var entity = EntityProxyManager.GetType(ContextType, typeof(TEntity)).New<TEntity>();
 
             initializer(entity);
 
@@ -527,7 +532,7 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(initializer, nameof(initializer));
 
-            var entity = EntityProxyManager.GetType(provider.ProviderName, typeof(TEntity)).New<TEntity>();
+            var entity = EntityProxyManager.GetType(ContextType, typeof(TEntity)).New<TEntity>();
 
             initializer(entity);
 
@@ -626,6 +631,23 @@ namespace Fireasy.Data.Entity
         public virtual EntityRepository<TEntity> Include(Expression<Func<TEntity, object>> fnMember)
         {
             repositoryProxy.As<IQueryPolicyExecutor<TEntity>>(s => s.IncludeWith(fnMember));
+            return this;
+        }
+
+        /// <summary>
+        /// 根据断言指定要包括在查询结果中的关联对象。
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <param name="isTrue">要计算的条件表达式。如果条件为 true，则进行 Include。</param>
+        /// <param name="fnMember">要包含的属性的表达式。</param>
+        /// <returns></returns>
+        public EntityRepository<TEntity> AssertInclude(bool isTrue, Expression<Func<TEntity, object>> fnMember)
+        {
+            if (isTrue)
+            {
+                repositoryProxy.As<IQueryPolicyExecutor<TEntity>>(s => s.IncludeWith(fnMember));
+            }
+
             return this;
         }
 

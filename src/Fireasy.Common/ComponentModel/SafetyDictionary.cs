@@ -98,6 +98,33 @@ namespace Fireasy.Common.ComponentModel
         }
 
         /// <summary>
+        /// 尝试通过 key 获取值，如果 key 不存在则通过函数生成新值并添加到字典中。
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="arg1">参数1。</param>
+        /// <param name="valueFactory">新值的函数。</param>
+        /// <returns></returns>
+        public TValue GetOrAdd<TArg1>(TKey key, TArg1 arg1, Func<TKey, TArg1, TValue> valueFactory)
+        {
+            var lazy = LazyValues.GetOrAdd(key, k => new Lazy<TValue>(() => valueFactory(key, arg1), mode));
+            return lazy != null && lazy.Value != null ? lazy.Value : default;
+        }
+
+        /// <summary>
+        /// 尝试通过 key 获取值，如果 key 不存在则通过函数生成新值并添加到字典中。
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="arg1">参数1。</param>
+        /// <param name="arg2">参数2。</param>
+        /// <param name="valueFactory">新值的函数。</param>
+        /// <returns></returns>
+        public TValue GetOrAdd<TArg1, TArg2>(TKey key, TArg1 arg1, TArg2 arg2, Func<TKey, TArg1, TArg2, TValue> valueFactory)
+        {
+            var lazy = LazyValues.GetOrAdd(key, k => new Lazy<TValue>(() => valueFactory(key, arg1, arg2), mode));
+            return lazy != null && lazy.Value != null ? lazy.Value : default;
+        }
+
+        /// <summary>
         /// 尝试添加新值。
         /// </summary>
         /// <param name="key"></param>

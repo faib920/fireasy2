@@ -19,12 +19,12 @@ namespace Fireasy.Data.Entity.Initializers
         {
             if (context.Mappers.Count > 0)
             {
-                var providerName = context.ContextService.Provider.ProviderName;
+                var contextType = context.ContextService.ContextType;
                 var injection = context.ContextService.Provider.GetService<IInjectionProvider>();
 
                 context.Mappers.GroupBy(s => s.EntityType.Assembly)
                     .Select(s => new { assembly = s.Key, types = s.Select(t => t.EntityType).Distinct().ToArray() })
-                    .ForEach(s => EntityProxyManager.CompileAll(providerName, s.assembly, s.types, injection));
+                    .ForEach(s => EntityProxyManager.CompileAll(contextType, s.assembly, s.types, injection));
             }
         }
     }

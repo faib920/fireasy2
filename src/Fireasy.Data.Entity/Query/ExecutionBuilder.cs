@@ -285,8 +285,8 @@ namespace Fireasy.Data.Entity.Query
             {
                 if (elementType.IsNotCompiled())
                 {
-                    var provider = TranslateScope.Current?.Provider;
-                    elementType = EntityProxyManager.GetType(provider, elementType);
+                    var contextType = TranslateScope.Current?.ContextType;
+                    elementType = EntityProxyManager.GetType(contextType, elementType);
                     return Expression.New(elementType);
                 }
             }

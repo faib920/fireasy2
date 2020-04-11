@@ -9,6 +9,7 @@ using Fireasy.Data.Identity;
 using Fireasy.Data.RecordWrapper;
 using Fireasy.Data.Schema;
 using Fireasy.Data.Syntax;
+using System;
 
 namespace Fireasy.Data.Provider
 {
@@ -49,7 +50,7 @@ namespace Fireasy.Data.Provider
         {
             var provider = connectionString.Properties["provider"];
 
-            if (provider.IndexOf("SQLOLEDB") != -1)
+            if (IsSqlServer(provider))
             {
                 return new ConnectionParameter
                 {
@@ -58,8 +59,30 @@ namespace Fireasy.Data.Provider
                     Password = connectionString.Properties["password"]
                 };
             }
-
-            return null;
+            else if (IsMsOffice(provider))
+            {
+                return new ConnectionParameter
+                {
+                    Database = connectionString.Properties["data source"],
+                    Password = connectionString.Properties["Jet OLEDB:database password"]
+                };
+            }
+            else if (IsOracle(provider))
+            {
+                return new ConnectionParameter
+                {
+                    Database = connectionString.Properties["data source"],
+                    UserId = connectionString.Properties["user id"],
+                    Password = connectionString.Properties["password"]
+                };
+            }
+            else
+            {
+                return new ConnectionParameter
+                {
+                    Database = connectionString.Properties["data source"]
+                };
+            }
         }
 
         /// <summary>
@@ -69,11 +92,58 @@ namespace Fireasy.Data.Provider
         /// <param name="parameter"></param>
         public override void UpdateConnectionString(ConnectionString connectionString, ConnectionParameter parameter)
         {
-            connectionString.Properties
-                .TrySetValue(parameter.Database, "data source")
-                .TrySetValue(parameter.UserId, "user id")
-                .TrySetValue(parameter.Password, "password")
-                .Update();
+            var provider = connectionString.Properties["provider"];
+
+            if (IsSqlServer(provider))
+            {
+                connectionString.Properties
+                    .TrySetValue(parameter.Database, "initial catalog")
+                    .TrySetValue(parameter.UserId, "user id")
+                    .TrySetValue(parameter.Password, "password")
+                    .Update();
+            }
+            else if (IsMsOffice(provider))
+            {
+                connectionString.Properties
+                    .TrySetValue(parameter.Database, "data source")
+                    .TrySetValue(parameter.Password, "Jet OLEDB:database password")
+                    .Update();
+            }
+            else if (IsOracle(provider))
+            {
+                connectionString.Properties
+                    .TrySetValue(parameter.Database, "data source")
+                    .TrySetValue(parameter.UserId, "user id")
+                    .TrySetValue(parameter.Password, "password")
+                    .Update();
+            }
+            else
+            {
+                connectionString.Properties
+                    .TrySetValue(parameter.Database, "data source")
+                    .Update();
+            }
+        }
+
+        protected virtual bool IsSqlServer(string provider)
+        {
+            return provider.IndexOf("sqloledb", StringComparison.OrdinalIgnoreCase) != -1;
+        }
+
+        protected virtual bool IsMsOffice(string provider)
+        {
+            return provider.IndexOf("micrisoft.jet.oledb.", StringComparison.OrdinalIgnoreCase) != -1 ||
+                provider.IndexOf("micrisoft.ace.oledb.", StringComparison.OrdinalIgnoreCase) != -1;
+        }
+
+        protected virtual bool IsOracle(string provider)
+        {
+            return provider.IndexOf("msdaora", StringComparison.OrdinalIgnoreCase) != -1;
+        }
+
+        protected virtual bool IsFoxpro(string provider)
+        {
+            return provider.IndexOf("vfpoledb", StringComparison.OrdinalIgnoreCase) != -1;
         }
     }
 }

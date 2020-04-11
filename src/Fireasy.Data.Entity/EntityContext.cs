@@ -172,7 +172,24 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 对关联对象
+        /// 根据断言指定要包括在查询结果中的关联对象。
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <param name="isTrue">要计算的条件表达式。如果条件为 true，则进行 Include。</param>
+        /// <param name="fnMember">要包含的属性的表达式。</param>
+        /// <returns></returns>
+        public EntityContext AssertInclude<TEntity>(bool isTrue, Expression<Func<TEntity, object>> fnMember) where TEntity : IEntity
+        {
+            if (isTrue)
+            {
+                InvokeQueryPolicy(q => q.IncludeWith(fnMember));
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// 对关联子实体集指定筛选表达式。
         /// </summary>
         /// <typeparam name="TEntity"></typeparam>
         /// <param name="memberQuery"></param>
@@ -185,7 +202,7 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 
+        /// 对实体指定筛选表达式。
         /// </summary>
         /// <typeparam name="TEntity"></typeparam>
         /// <param name="fnApply"></param>

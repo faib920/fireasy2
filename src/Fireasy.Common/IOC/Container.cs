@@ -246,7 +246,7 @@ namespace Fireasy.Common.Ioc
         }
 #endif
         /// <summary>
-        /// 创建一个当前线程范围内的反转服务。
+        /// 创建一个当前请求范围内的反转服务。
         /// </summary>
         /// <returns></returns>
         public IResolver CreateScope()

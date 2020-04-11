@@ -21,8 +21,14 @@ namespace Fireasy.Data.Entity
         public ContextServiceContext(IInstanceIdentifier identification)
         {
             ServiceProvider = identification.ServiceProvider;
+            ContextType = identification.ContextType;
             Options = (EntityContextOptions)identification;
         }
+
+        /// <summary>
+        /// 获取 <see cref="EntityContext"/> 的类型。
+        /// </summary>
+        public Type ContextType { get; private set; }
 
         /// <summary>
         /// 获取应用程序服务提供者实例。

@@ -20,6 +20,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         internal TranslateScope(IContextService contextService, TranslateOptions options)
         {
             Provider = contextService.Provider;
+            ContextType = contextService.ContextType;
             ServiceProvider = contextService.ServiceProvider;
             TranslateProvider = Provider.GetTranslateProvider();
             SyntaxProvider = Provider.GetService<ISyntaxProvider>();
@@ -32,6 +33,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
         public string InstanceName { get; private set; }
 
         public EntityPersistentEnvironment  PersistentEnvironment { get; private set; }
+
+        public Type ContextType { get; private set; }
 
         public IProvider Provider { get; private set; }
 

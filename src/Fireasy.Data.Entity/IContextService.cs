@@ -15,7 +15,7 @@ namespace Fireasy.Data.Entity
     /// <summary>
     /// 数据上下文的服务组件。
     /// </summary>
-    public interface IContextService : IDisposable, IServiceProviderAccessor, IProviderAware
+    public interface IContextService : IDisposable, IServiceProviderAccessor, IProviderAware, IContextTypeAware
     {
         /// <summary>
         /// 获取 <see cref="EntityContextOptions"/> 实例。
@@ -35,6 +35,11 @@ namespace Fireasy.Data.Entity
         /// <typeparam name="TEntity"></typeparam>
         /// <returns></returns>
         IRepositoryProvider<TEntity> CreateRepositoryProvider<TEntity>() where TEntity : class, IEntity;
+
+        /// <summary>
+        /// 获取 <see cref="EntityContext"/> 的类型。
+        /// </summary>
+        Type ContextType { get; }
 
         /// <summary>
         /// 开启一个事务。

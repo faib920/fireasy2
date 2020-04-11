@@ -32,10 +32,16 @@ namespace Fireasy.Data.Entity
         protected ContextServiceBase(ContextServiceContext context)
         {
             Provider = context.Options.Provider;
+            ContextType = context.ContextType;
             ServiceProvider = context.ServiceProvider;
             Options = context.Options;
             InstanceName = ContextInstanceManager.TryAdd(context.Options);
         }
+
+        /// <summary>
+        /// 获取 <see cref="EntityContext"/> 的类型。
+        /// </summary>
+        public Type ContextType { get; private set; }
 
         /// <summary>
         /// 获取或设置实例名称。
