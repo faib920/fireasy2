@@ -79,38 +79,22 @@ namespace Fireasy.Redis
 
         public void Lock(string token, TimeSpan timeout, Action action)
         {
-#if NETSTANDARD
             RedisHelper.Lock(GetConnection(token), token, timeout, action);
-#else
-            RedisHelper.Lock(GetDatabase(token), token, timeout, action);
-#endif
         }
 
         public T Lock<T>(string token, TimeSpan timeout, Func<T> func)
         {
-#if NETSTANDARD
             return RedisHelper.Lock(GetConnection(token), token, timeout, func);
-#else
-            return RedisHelper.Lock(GetDatabase(token), token, timeout, func);
-#endif
         }
 
         public async Task LockAsync(string token, TimeSpan timeout, Func<Task> func)
         {
-#if NETSTANDARD
             await RedisHelper.LockAsync(GetConnection(token), token, timeout, func);
-#else
-            await RedisHelper.LockAsync(GetDatabase(token), token, timeout, func);
-#endif
         }
 
         public async Task<T> LockAsync<T>(string token, TimeSpan timeout, Func<Task<T>> func)
         {
-#if NETSTANDARD
             return await RedisHelper.LockAsync(GetConnection(token), token, timeout, func);
-#else
-            return await RedisHelper.LockAsync(GetDatabase(token), token, timeout, func);
-#endif
         }
     }
 }

@@ -115,8 +115,7 @@ namespace Fireasy.Windows.Forms
             UpdateRegion();
 
             //如果控件已经放在一个容器中，则从容器中移除
-            var container = content.Parent as ContainerControl;
-            if (container != null)
+            if (content.Parent is ContainerControl container)
             {
                 container.Controls.Remove(content);
             }
@@ -206,7 +205,7 @@ namespace Fireasy.Windows.Forms
             SetOwnerItem(control);
 
             resizableTop = resizableLeft = false;
-            Point location = control.PointToScreen(new Point(area.Left, area.Top + area.Height - 3));
+            Point location = control.PointToScreen(new Point(area.Left, area.Top + area.Height));
             Rectangle screen = Screen.FromControl(control).WorkingArea;
             if (location.X + Size.Width > (screen.Left + screen.Width))
             {

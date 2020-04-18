@@ -12,6 +12,9 @@ using System.Windows.Forms;
 
 namespace Fireasy.Windows.Forms
 {
+    /// <summary>
+    /// 自定义弹出框的 <see cref="ComboBox"/>。
+    /// </summary>
     public class PopupComboBox : ComboBox
     {
         private Popup dropDown;
@@ -19,6 +22,8 @@ namespace Fireasy.Windows.Forms
         private bool isFirstDrop = true;
         private bool isOpened = false;
         private bool isDroped = false;
+        private object selectedValue;
+        private object selectedItem;
 
         public new event EventHandler DropDown;
         public new event EventHandler DropDownClosed;
@@ -31,13 +36,25 @@ namespace Fireasy.Windows.Forms
             Resizable = true;
         }
 
+        /// <summary>
+        /// 获取或设置是否在打开时获取焦点。
+        /// </summary>
         [DefaultValue(true)]
+        [Description("获取或设置是否在打开时获取焦点。")]
         public bool FocusOnOpen { get; set; }
 
+        /// <summary>
+        /// 获取或设置是否使用效果。
+        /// </summary>
         [DefaultValue(false)]
+        [Description("获取或设置是否使用效果。")]
         public bool UseFadeEffect { get; set; }
 
+        /// <summary>
+        /// 获取或设置是否可调整大小。
+        /// </summary>
         [DefaultValue(true)]
+        [Description("获取或设置是否可调整大小。")]
         public bool Resizable { get; set; }
 
         /// <summary>
@@ -63,10 +80,13 @@ namespace Fireasy.Windows.Forms
                     dropDown.Dispose();
                 }
 
-                dropDown = new Popup(value);
-                dropDown.FocusOnOpen = FocusOnOpen;
-                dropDown.UseFadeEffect = UseFadeEffect;
-                dropDown.Resizable = Resizable;
+                dropDown = new Popup(value)
+                {
+                    FocusOnOpen = FocusOnOpen,
+                    UseFadeEffect = UseFadeEffect,
+                    Resizable = Resizable
+                };
+
                 dropDown.Opening += (o, e) => isOpened = true;
                 dropDown.Opened += (o, e) => { isDroped = true; OnPopupOpened(); };
                 dropDown.Closed += (o, e) => isDroped = false;
@@ -132,7 +152,11 @@ namespace Fireasy.Windows.Forms
             }
         }
 
-        public virtual void SetText(string text)
+        /// <summary>
+        /// 设置 <see cref="ComboBox"/> 的显示文本。
+        /// </summary>
+        /// <param name="text"></param>
+        public void SetText(string text)
         {
             if (Items.Count == 0)
             {
@@ -144,11 +168,16 @@ namespace Fireasy.Windows.Forms
                 return;
             }
 
-            Items[0] = SelectedValue = text;
+            Items[0] = text;
             SelectedIndex = 0;
         }
 
-        public virtual void SetItem(string text, object value)
+        /// <summary>
+        /// 设置当前选中项。
+        /// </summary>
+        /// <param name="text">控件显示的文本。</param>
+        /// <param name="value">当前的值。</param>
+        public void SetItem(string text, object value)
         {
             SelectedValue = value;
             SetText(text);
@@ -158,6 +187,32 @@ namespace Fireasy.Windows.Forms
         {
             dropDown.Width = DropDownWidth;
             base.OnResize(e);
+        }
+
+        /// <summary>
+        /// 获取或设置选中项的值。
+        /// </summary>
+        public virtual new object SelectedValue
+        {
+            get { return selectedValue; }
+            set { selectedValue = value; }
+        }
+
+        /// <summary>
+        /// 获取或设置选中项的项。
+        /// </summary>
+        public virtual new object SelectedItem
+        {
+            get { return selectedItem; }
+            set { selectedItem = value; }
+        }
+
+        /// <summary>
+        /// 获取或设置选中项的文本。
+        /// </summary>
+        public virtual new string SelectedText
+        {
+            get { return string.Empty; }
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)

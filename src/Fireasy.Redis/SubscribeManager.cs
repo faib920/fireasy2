@@ -5,12 +5,12 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if NETSTANDARD
 using Fireasy.Common.ComponentModel;
-using Fireasy.Common.Options;
 using Fireasy.Common.Subscribes.Configuration;
 using System.Collections.Generic;
 using CSRedis;
+#if NETSTANDARD
+using Fireasy.Common.Options;
 using Microsoft.Extensions.Options;
 #endif
 using Fireasy.Common.Configuration;
@@ -31,9 +31,7 @@ namespace Fireasy.Redis
     [ConfigurationSetting(typeof(RedisConfigurationSetting))]
     public class SubscribeManager : RedisComponent, ISubscribeManager
     {
-#if NETSTANDARD
         private readonly SafetyDictionary<string, List<CSRedisClient.SubscribeObject>> channels = new SafetyDictionary<string, List<CSRedisClient.SubscribeObject>>();
-#endif
 
         /// <summary>
         /// 初始化 <see cref="SubscribeManager"/> 类的新实例。
@@ -105,15 +103,9 @@ namespace Fireasy.Redis
         /// <param name="subject">主题内容。</param>
         public void Publish<TSubject>(TSubject subject) where TSubject : class
         {
-#if NETSTANDARD
             var client = GetConnection(null);
             var name = TopicHelper.GetTopicName(typeof(TSubject));
             client.Publish(name, Serialize(subject));
-#else
-            var data = Encoding.UTF8.GetBytes(Serialize(subject));
-            var name = TopicHelper.GetTopicName(typeof(TSubject));
-            Publish(name, data);
-#endif
         }
 
         /// <summary>
@@ -124,13 +116,8 @@ namespace Fireasy.Redis
         /// <param name="subject">主题内容。</param>
         public void Publish<TSubject>(string name, TSubject subject) where TSubject : class
         {
-#if NETSTANDARD
             var client = GetConnection(null);
             client.Publish(name, Serialize(subject));
-#else
-            var data = Encoding.UTF8.GetBytes(Serialize(subject));
-            Publish(name, data);
-#endif
         }
 
         /// <summary>
@@ -141,7 +128,6 @@ namespace Fireasy.Redis
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task PublishAsync<TSubject>(TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
         {
-#if NETSTANDARD
             var client = GetConnection(null);
             var name = TopicHelper.GetTopicName(typeof(TSubject));
             try
@@ -152,11 +138,6 @@ namespace Fireasy.Redis
             {
                 Tracer.Error($"RedisMQ PublishAsync throw exception:\n{exp.Output()}");
             }
-#else
-            var data = Encoding.UTF8.GetBytes(Serialize(subject));
-            var name = TopicHelper.GetTopicName(typeof(TSubject));
-            Publish(name, data);
-#endif
         }
 
         /// <summary>
@@ -167,7 +148,6 @@ namespace Fireasy.Redis
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task PublishAsync<TSubject>(string name, TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
         {
-#if NETSTANDARD
             var client = GetConnection(null);
             try
             {
@@ -178,10 +158,6 @@ namespace Fireasy.Redis
                 Tracer.Error($"RedisMQ PublishAsync throw exception:\n{exp.Output()}");
             }
 
-#else
-            var data = Encoding.UTF8.GetBytes(Serialize(subject));
-            Publish(name, data);
-#endif
         }
 
         /// <summary>
@@ -192,11 +168,7 @@ namespace Fireasy.Redis
         public void Publish(string name, byte[] data)
         {
             var client = GetConnection();
-#if NETSTANDARD
             client.Publish(name, Encoding.UTF8.GetString(data));
-#else
-            client.GetSubscriber().Publish(name, data);
-#endif        
         }
 
         /// <summary>
@@ -209,11 +181,7 @@ namespace Fireasy.Redis
         public async Task PublishAsync(string name, byte[] data, CancellationToken cancellationToken = default)
         {
             var client = GetConnection();
-#if NETSTANDARD
             await client.PublishAsync(name, Encoding.UTF8.GetString(data));
-#else
-            client.GetSubscriber().Publish(name, data);
-#endif        
         }
 
         /// <summary>
@@ -248,7 +216,6 @@ namespace Fireasy.Redis
         /// <param name="subscriber">读取主题的方法。</param>
         public void AddSubscriber<TSubject>(string name, Action<TSubject> subscriber) where TSubject : class
         {
-#if NETSTANDARD
             var client = GetConnection(null);
             channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((name, msg =>
@@ -276,33 +243,6 @@ namespace Fireasy.Redis
                         }
                     }
                 )));
-#else
-            var client = GetConnection();
-            client.GetSubscriber().Subscribe(name, (channel, value) =>
-                {
-                    Tracer.Debug($"RedisSubscribeManager received the message of '{name}'.");
-
-                    TSubject subject = null;
-                    try
-                    {
-                        subject = Deserialize<TSubject>(Encoding.UTF8.GetString(value));
-                        subscriber(subject);
-                    }
-                    catch (Exception exp)
-                    {
-                        Tracer.Error($"Redis Consume the Topic of '{name}' throw exception:\n{exp.Output()}");
-
-                        if (Setting.RequeueDelayTime != null && subject != null)
-                        {
-                            Task.Run(() =>
-                                {
-                                    Thread.Sleep(Setting.RequeueDelayTime.Value);
-                                    Publish(name, subject);
-                                });
-                        }
-                    }
-                });
-#endif
         }
 
 
@@ -314,7 +254,6 @@ namespace Fireasy.Redis
         /// <param name="subscriber">读取主题的方法。</param>
         public void AddAsyncSubscriber<TSubject>(string name, Func<TSubject, Task> subscriber) where TSubject : class
         {
-#if NETSTANDARD
             var client = GetConnection(null);
             channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((name, msg =>
@@ -342,33 +281,6 @@ namespace Fireasy.Redis
                         }
                     }
                 )));
-#else
-            var client = GetConnection();
-            client.GetSubscriber().Subscribe(name, (channel, value) =>
-                {
-                    Tracer.Debug($"RedisSubscribeManager received the message of '{name}'.");
-
-                    TSubject subject = null;
-                    try
-                    {
-                        subject = Deserialize<TSubject>(Encoding.UTF8.GetString(value));
-                        subscriber(subject).AsSync();
-                    }
-                    catch (Exception exp)
-                    {
-                        Tracer.Error($"Redis Consume the Topic of '{name}' throw exception:\n{exp.Output()}");
-
-                        if (Setting.RequeueDelayTime != null && subject != null)
-                        {
-                            Task.Run(() =>
-                                {
-                                    Thread.Sleep(Setting.RequeueDelayTime.Value);
-                                    Publish(name, subject);
-                                });
-                        }
-                    }
-                });
-#endif
         }
 
         /// <summary>
@@ -380,7 +292,6 @@ namespace Fireasy.Redis
         {
             var client = GetConnection();
             var name = TopicHelper.GetTopicName(subjectType);
-#if NETSTANDARD
             channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((name, msg =>
                     {
@@ -410,34 +321,6 @@ namespace Fireasy.Redis
                         }
                     }
                 )));
-#else
-            client.GetSubscriber().Subscribe(name, (channel, value) =>
-                {
-                    Tracer.Debug($"RedisSubscribeManager received the message of '{name}'.");
-
-                    var subject = Deserialize(subjectType, Encoding.UTF8.GetString(value));
-                    if (subject != null)
-                    {
-                        try
-                        {
-                            subscriber.DynamicInvoke(subject);
-                        }
-                        catch (Exception exp)
-                        {
-                            Tracer.Error($"Redis Consume the Topic of '{name}' throw exception:\n{exp.Output()}");
-
-                            if (Setting.RequeueDelayTime != null)
-                            {
-                                Task.Run(() =>
-                                    {
-                                        Thread.Sleep(Setting.RequeueDelayTime.Value);
-                                        Publish(name, (byte[])value);
-                                    });
-                            }
-                        }
-                    }
-                });
-#endif
         }
 
         /// <summary>
@@ -448,7 +331,6 @@ namespace Fireasy.Redis
         public void AddSubscriber(string name, Action<byte[]> subscriber)
         {
             var client = GetConnection();
-#if NETSTANDARD
             channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((name, msg =>
                     {
@@ -474,30 +356,6 @@ namespace Fireasy.Redis
                         }
                     }
             )));
-#else
-            client.GetSubscriber().Subscribe(name, (c, value) =>
-                {
-                    Tracer.Debug($"RedisSubscribeManager received the message of '{name}'.");
-
-                    try
-                    {
-                        subscriber.DynamicInvoke((byte[])value);
-                    }
-                    catch (Exception exp)
-                    {
-                        Tracer.Error($"Redis Consume the Topic of '{name}' throw exception:\n{exp.Output()}");
-
-                        if (Setting.RequeueDelayTime != null)
-                        {
-                            Task.Run(() =>
-                                {
-                                    Thread.Sleep(Setting.RequeueDelayTime.Value);
-                                    Publish(name, (byte[])value);
-                                });
-                        }
-                    }
-                });
-#endif        
         }
 
         /// <summary>
@@ -526,19 +384,14 @@ namespace Fireasy.Redis
         public void RemoveSubscriber(string name)
         {
             var client = GetConnection();
-#if NETSTANDARD
             if (channels.TryRemove(name, out List<CSRedisClient.SubscribeObject> subs) && subs != null)
             {
                 subs.ForEach(s => s.Dispose());
             }
-#else
-            client.GetSubscriber().Unsubscribe(name);
-#endif
         }
 
         protected override bool Dispose(bool disposing)
         {
-#if NETSTANDARD
             foreach (var kvp in channels)
             {
                 kvp.Value.ForEach(s => s.Dispose());
@@ -546,7 +399,6 @@ namespace Fireasy.Redis
             }
 
             channels.Clear();
-#endif
             return base.Dispose(disposing);
         }
     }

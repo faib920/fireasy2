@@ -1,5 +1,4 @@
-﻿using System;
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright company="Fireasy"
 //      email="faib920@126.com"
 //      qq="55570729">
@@ -7,8 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Drawing;
-using System.Linq;
-using System.Threading;
 using System.Windows.Forms;
 
 namespace Fireasy.Windows.Forms
@@ -303,8 +300,10 @@ namespace Fireasy.Windows.Forms
                     var column = (TreeListColumn)info.Element;
                     using (var graphics = CreateGraphics())
                     {
-                        var drawArgs = new TreeListColumnRenderEventArgs(column, graphics, info.Bounds);
-                        drawArgs.DrawState = drawState;
+                        var drawArgs = new TreeListColumnRenderEventArgs(column, graphics, info.Bounds)
+                        {
+                            DrawState = drawState
+                        };
                         graphics.KeepClip(bound.ColumnBound, () => Renderer.DrawColumnHeader(drawArgs));
                     }
 
@@ -342,9 +341,11 @@ namespace Fireasy.Windows.Forms
 
                     using (var graphics = CreateGraphics())
                     {
-                        var drawArgs = new TreeListItemRenderEventArgs(item, graphics, info.Bounds);
-                        drawArgs.DrawState = drawState;
-                        drawArgs.Alternate = vitem.Index % 2 != 0;
+                        var drawArgs = new TreeListItemRenderEventArgs(item, graphics, info.Bounds)
+                        {
+                            DrawState = drawState,
+                            Alternate = vitem.Index % 2 != 0
+                        };
                         DrawItem(drawArgs);
                     }
 
@@ -477,8 +478,7 @@ namespace Fireasy.Windows.Forms
 
                 for (var i = start; i <= end; i++)
                 {
-                    var t = virMgr.Items[i].Item as TreeListItem;
-                    if (t == null)
+                    if (!(virMgr.Items[i].Item is TreeListItem t))
                     {
                         continue;
                     }

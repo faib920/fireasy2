@@ -1,5 +1,4 @@
-﻿using Fireasy.Common;
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright company="Fireasy"
 //      email="faib920@126.com"
 //      qq="55570729">
@@ -41,21 +40,20 @@ namespace Fireasy.Windows.Forms
                 return;
             }
 
-            if (dataSource is DataSet)
+            if (dataSource is DataSet dataSet)
             {
-                var ds = (DataSet)dataSource;
-                if (ds.Tables.Count > 0)
+                if (dataSet.Tables.Count > 0)
                 {
-                    BindDataTable(ds.Tables[0]);
+                    BindDataTable(dataSet.Tables[0]);
                 }
             }
-            if (dataSource is DataTable)
+            if (dataSource is DataTable dataTable)
             {
-                BindDataTable((DataTable)dataSource);
+                BindDataTable(dataTable);
             }
-            else if (dataSource is IEnumerable)
+            else if (dataSource is IEnumerable enumerable)
             {
-                BindEnumerable((IEnumerable)dataSource);
+                BindEnumerable(enumerable);
             }
 
             EndUpdate();
@@ -100,9 +98,8 @@ namespace Fireasy.Windows.Forms
             {
                 foreach (var vitem in virMgr.Items)
                 {
-                    var item = vitem.Item as TreeListItem;
-                    if (item != null && 
-                        item.KeyValue != null && 
+                    if (vitem.Item is TreeListItem item &&
+                        item.KeyValue != null &&
                         selectKeyValues.FirstOrDefault(s => s.Equals(item.KeyValue)) != null)
                     {
                         item.Selected = true;
@@ -117,10 +114,6 @@ namespace Fireasy.Windows.Forms
         /// <param name="table"></param>
         private void BindDataTable(DataTable table)
         {
-            foreach (DataRow row in table.Rows)
-            {
-
-            }
         }
 
         /// <summary>
@@ -179,14 +172,13 @@ namespace Fireasy.Windows.Forms
         {
             var binding = new List<PropertyDescriptor>();
             var properties = new List<PropertyDescriptor>();
-            PropertyDescriptor primary = null;
 
             foreach (PropertyDescriptor pd in TypeDescriptor.GetProperties(element))
             {
                 properties.Add(pd);
             }
 
-            primary = FindProperty(properties, KeyField);
+            var primary = FindProperty(properties, KeyField);
 
             foreach (var column in Columns)
             {
@@ -199,7 +191,7 @@ namespace Fireasy.Windows.Forms
         private PropertyDescriptor FindProperty(List<PropertyDescriptor> properties, string name)
         {
             return string.IsNullOrEmpty(name) ? null : 
-                properties.FirstOrDefault(s => s.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));
+                properties.Find(s => s.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));
         }
 
         private class ObjectBindingDefinition

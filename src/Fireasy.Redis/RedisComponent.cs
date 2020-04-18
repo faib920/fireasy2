@@ -8,13 +8,9 @@
 using Fireasy.Common;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
-#if NETSTANDARD
 using Fireasy.Common.ComponentModel;
 using CSRedis;
 using System.Linq;
-#else
-using StackExchange.Redis;
-#endif
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -32,15 +28,9 @@ namespace Fireasy.Redis
         private List<int> dbRanage;
         private Func<string, string> captureRule;
         private Func<ISerializer> serializerFactory;
-
-#if NETSTANDARD
         private readonly List<string> connectionStrs = new List<string>();
         private readonly SafetyDictionary<int, CSRedisClient> clients = new SafetyDictionary<int, CSRedisClient>();
-#else
-        private Lazy<ConnectionMultiplexer> connectionLazy;
 
-        protected ConfigurationOptions Options { get; private set; }
-#endif
         /// <summary>
         /// 获取或设置应用程序服务提供者实例。
         /// </summary>
@@ -102,7 +92,6 @@ namespace Fireasy.Redis
             return Encoding.UTF8.GetString(serializer.Serialize(value));
         }
 
-#if NETSTANDARD
         protected virtual CSRedisClient CreateClient(string[] constrs)
         {
             return new CSRedisClient(null, constrs);
@@ -136,51 +125,11 @@ namespace Fireasy.Redis
             return clients.Values;
         }
 
-#else
-        /// <summary>
-        /// 创建 <see cref="ConnectionMultiplexer"/> 实例。
-        /// </summary>
-        /// <param name="options"></param>
-        /// <returns></returns>
-        protected virtual ConnectionMultiplexer CreateConnection(ConfigurationOptions options)
-        {
-            return ConnectionMultiplexer.Connect(Options);
-        }
-
-        protected IConnectionMultiplexer GetConnection()
-        {
-            return connectionLazy.Value ?? throw new InvalidOperationException("不能初始化 Redis 的连接。");
-        }
-
-        protected IDatabase GetDatabase(string key)
-        {
-            var client = connectionLazy.Value;
-            var ckey = captureRule == null ? key : captureRule(key);
-            var index = dbRanage != null ? GetModulus(ckey, dbRanage.Count) : (Options.DefaultDatabase ?? 0);
-
-            if (dbRanage != null)
-            {
-                Tracer.Debug($"Select redis db{index} for the key '{key}'.");
-            }
-
-            return client.GetDatabase(index);
-        }
-
-        protected IEnumerable<IDatabase> GetDatabases()
-        {
-            var client = connectionLazy.Value;
-            foreach (var index in dbRanage)
-            {
-                yield return client.GetDatabase(index);
-            }
-        }
-#endif
 
         void IConfigurationSettingHostService.Attach(IConfigurationSettingItem setting)
         {
             Setting = (RedisConfigurationSetting)setting;
 
-#if NETSTANDARD
             if (!string.IsNullOrEmpty(Setting.ConnectionString))
             {
                 connectionStrs.Add(Setting.ConnectionString);
@@ -251,65 +200,6 @@ namespace Fireasy.Redis
                     ParseKeyCapture(Setting.KeyRule);
                 }
             }
-#else
-            if (!string.IsNullOrEmpty(Setting.ConnectionString))
-            {
-                Options = ConfigurationOptions.Parse(Setting.ConnectionString);
-            }
-            else
-            {
-                Options = new ConfigurationOptions
-                {
-                    DefaultDatabase = Setting.DefaultDb == 0 || !string.IsNullOrEmpty(Setting.DbRange) ? (int?)null : Setting.DefaultDb,
-                    Password = Setting.Password,
-                    AllowAdmin = true,
-                    Ssl = Setting.Ssl,
-                    Proxy = Setting.Twemproxy ? Proxy.Twemproxy : Proxy.None,
-                    AbortOnConnectFail = false,
-                };
-
-                if (Setting.WriteBuffer != null)
-                {
-                    Options.WriteBuffer = (int)Setting.WriteBuffer;
-                }
-
-                if (Setting.ConnectTimeout.TotalMilliseconds != 5000)
-                {
-                    Options.ConnectTimeout = (int)Setting.ConnectTimeout.TotalMilliseconds;
-                }
-
-                if (Setting.SyncTimeout.TotalMilliseconds != 10000)
-                {
-                    Options.SyncTimeout = (int)Setting.SyncTimeout.TotalMilliseconds;
-                }
-
-                foreach (var host in Setting.Hosts)
-                {
-                    if (host.Port == 0)
-                    {
-                        Options.EndPoints.Add(host.Server);
-                    }
-                    else
-                    {
-                        Options.EndPoints.Add(host.Server, host.Port);
-                    }
-                }
-            }
-
-            if (!string.IsNullOrEmpty(Setting.DbRange))
-            {
-                ParseDbRange(Setting.DbRange);
-                if (!string.IsNullOrEmpty(Setting.KeyRule))
-                {
-                    ParseKeyCapture(Setting.KeyRule);
-                }
-            }
-
-            if (connectionLazy == null)
-            {
-                connectionLazy = new Lazy<ConnectionMultiplexer>(() => CreateConnection(Options));
-            }
-#endif
         }
 
         IConfigurationSettingItem IConfigurationSettingHostService.GetSetting()
@@ -404,19 +294,12 @@ namespace Fireasy.Redis
 
         protected override bool Dispose(bool disposing)
         {
-#if NETSTANDARD
             foreach (var client in clients)
             {
                 client.Value.Dispose();
             }
 
             clients.Clear();
-#else
-            if (connectionLazy.IsValueCreated)
-            {
-                connectionLazy.Value.Dispose();
-            }
-#endif
             return base.Dispose(disposing);
         }
     }

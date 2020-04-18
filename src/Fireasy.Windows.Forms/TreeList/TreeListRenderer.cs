@@ -122,6 +122,10 @@ namespace Fireasy.Windows.Forms
             e.Graphics.DrawString(e.TreeList.LoadingText, e.TreeList.Font, Brushes.Gray, rect, sf);
         }
 
+        /// <summary>
+        /// 绘制分组。
+        /// </summary>
+        /// <param name="e"></param>
         public virtual void DrawGroup(TreeListGroupRenderEventArgs e)
         {
             var sf = new StringFormat();
@@ -152,6 +156,10 @@ namespace Fireasy.Windows.Forms
             DrawItemBackground(e);
         }
 
+        /// <summary>
+        /// 绘制没有数据时背景。
+        /// </summary>
+        /// <param name="e"></param>
         public virtual void DrawNoneItem(TreeListRenderEventArgs e)
         {
             var sf = new StringFormat();
@@ -163,6 +171,10 @@ namespace Fireasy.Windows.Forms
             e.Graphics.DrawString(e.TreeList.NoneItemText, e.TreeList.Font, Brushes.LightGray, rect, sf);
         }
 
+        /// <summary>
+        /// 绘制页脚。
+        /// </summary>
+        /// <param name="e"></param>
         public virtual void DrawFooterBackground(TreeListItemRenderEventArgs e)
         {
             using (var br = new LinearGradientBrush(e.Bounds, Color.FromArgb(250, 250, 250), Color.FromArgb(240, 240, 240), 90))

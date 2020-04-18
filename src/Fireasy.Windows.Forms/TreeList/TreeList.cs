@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Design;
-using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -27,14 +26,14 @@ namespace Fireasy.Windows.Forms
         private TreeListRenderer renderer;
         private TreeListItem footer;
         private TreeListHitTestInfo lastHoverHitInfo;
-        private TreeListBound bound;
+        private readonly TreeListBound bound;
         private TreeListSelectedItemCollection selectedList = null;
         private TreeListCheckedItemCollection checkedList = null;
         private VScrollBar vbar;
         private HScrollBar hbar;
         private Panel psize;
-        private ToolTipWrapper tip;
-        private TreeListEditController editor;
+        private readonly ToolTipWrapper tip;
+        private readonly TreeListEditController editor;
         private int sortVersion;
         private SortOrder sortedOrder = SortOrder.None;
         private TreeListColumn sortedColumn;
@@ -807,21 +806,6 @@ namespace Fireasy.Windows.Forms
         #endregion
 
         #region 方法重载
-        protected override void OnPaintBackground(PaintEventArgs pevent)
-        {
-        }
-
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            ThemeManager.BaseRenderer.DrawBackground(new BackgroundRenderEventArgs(this, e.Graphics, bound.ItemBound));
-            ThemeManager.BaseRenderer.DrawBorder(new BorderRenderEventArgs(this, e.Graphics, ClientRectangle));
-
-            DrawColumns(e.Graphics);
-            DrawRowNumberColumn(e.Graphics);
-            DrawItems(e.Graphics);
-            DrawFooter(e.Graphics);
-        }
-
         protected override void OnMouseMove(MouseEventArgs e)
         {
             if (lastHoverHitInfo != null &&
@@ -1078,7 +1062,7 @@ namespace Fireasy.Windows.Forms
             }
             else if (y >= bound.ItemBound.Height - itemHeight)
             {
-                vbar.Value = Math.Min((vitem.Index - bound.ItemBound.Height / itemHeight + 1) * itemHeight, vbar.Maximum);
+                vbar.Value = Math.Min((vitem.Index - (bound.ItemBound.Height + (showHeader ? HeaderHeight : 0)) / itemHeight) * itemHeight, vbar.Maximum);
             }
         }
 
@@ -1179,6 +1163,7 @@ namespace Fireasy.Windows.Forms
             }
 
             RaiseItemSelectionChangedEvent();
+            EnsureVisible(item);
             InvalidateItem(item);
         }
 
@@ -1298,9 +1283,11 @@ namespace Fireasy.Windows.Forms
                     {
                         case ItemType.Item:
                             var litem = vitem.Item as TreeListItem;
-                            var e1 = new TreeListItemRenderEventArgs(litem, graphics, rect);
-                            e1.Alternate = i % 2 != 0;
-                            e1.DrawState = litem.Selected ? DrawState.Selected : DrawState.Normal;
+                            var e1 = new TreeListItemRenderEventArgs(litem, graphics, rect)
+                            {
+                                Alternate = i % 2 != 0,
+                                DrawState = litem.Selected ? DrawState.Selected : DrawState.Normal
+                            };
                             DrawItem(e1, false);
 
                             y = IncreaseItemY(y);
@@ -1331,171 +1318,6 @@ namespace Fireasy.Windows.Forms
             }
         }
 
-        private void DrawFooter(Graphics graphics)
-        {
-            if (!ShowFooter)
-            {
-                return;
-            }
-
-            var rect = bound.FooterBound;
-            rect = rect.ReduceLeft(GetOffsetLeft());
-            var e = new TreeListItemRenderEventArgs(Footer, graphics, rect);
-            e.DrawState = DrawState.Normal;
-
-            Renderer.DrawFooterBackground(e);
-
-            if (Footer == null)
-            {
-                return;
-            }
-
-            e.Graphics.KeepClip(bound.FooterBound, () =>
-            {
-                DrawCells(e.Graphics, e.Item.Cells, e.Bounds, e.DrawState);
-            });
-        }
-
-        private void DrawItem(TreeListItemRenderEventArgs e, bool setClip = true)
-        {
-            e.Graphics.KeepClip(bound.ItemBound, () =>
-            {
-                Renderer.DrawItem(e);
-                DrawCells(e.Graphics, e.Item.Cells, e.Bounds, e.DrawState);
-            }, setClip);
-
-            if (ShowRowNumber)
-            {
-                var e3 = new TreeListRowNumberRenderEventArgs(this, RowNumberIndex + e.Item.DataIndex, e.Graphics, new Rectangle(bound.WorkBound.X, e.Bounds.Y, RowNumberWidth, e.Bounds.Height));
-
-                e.Graphics.KeepClip(bound.RowNumberBound, () =>
-                {
-                    e3.DrawState = e.DrawState;
-                    DrawRowNumber(e3);
-                });
-            }
-        }
-
-        private void DrawRowNumber(TreeListRowNumberRenderEventArgs e, bool setClip = true)
-        {
-            e.Graphics.KeepClip(bound.WorkBound, () =>
-            {
-                Renderer.DrawRowNumber(e);
-
-                if (e.TreeList.ShowGridLines)
-                {
-                    Renderer.DrawCellGridLines(e.Graphics, e.Bounds);
-                }
-            }, setClip);
-        }
-
-        private void DrawGroup(TreeListGroupRenderEventArgs e, bool setClip = true)
-        {
-            e.Graphics.KeepClip(bound.ItemBound, () =>
-            {
-                Renderer.DrawGroup(e);
-            }, setClip);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="g"></param>
-        /// <param name="cells">要绘制的子项。</param>
-        /// <param name="bound"><see cref="TreeListItem"/> 的绘制范围。</param>
-        /// <param name="drawState">绘制状态。</param>
-        private void DrawCells(Graphics g, TreeListCellCollection cells, Rectangle bound, DrawState drawState)
-        {
-            var x = bound.X;
-            var isDrawing = false;
-
-            foreach (var cell in cells)
-            {
-                if (cell.Column.Hidden)
-                {
-                    continue;
-                }
-
-                var rect = new Rectangle(x, bound.Top, cell.Column.Width, bound.Height);
-                if (!bound.IntersectsWith(rect) && isDrawing)
-                {
-                    break;
-                }
-
-                rect.Inflate(-2, 0);
-                var e = new TreeListCellRenderEventArgs(cell, g, rect);
-                e.DrawState = drawState;
-
-                g.KeepClip(rect, () =>
-                {
-                    Renderer.DrawCell(e);
-                });
-
-                if (e.Cell.Item.TreeList.ShowGridLines)
-                {
-                    rect.Inflate(2, 0);
-                    Renderer.DrawCellGridLines(e.Graphics, rect);
-                }
-
-                x += cell.Column.Width;
-                isDrawing = true;
-            }
-        }
-
-        private void ProcessSpringColumnWidth()
-        {
-            var width = 0;
-            TreeListColumn springColumn = null;
-            var assert = new AssertFlag();
-
-            foreach (var column in Columns)
-            {
-                if (!column.Spring || !assert.AssertTrue())
-                {
-                    width += column.Width;
-                }
-                else
-                {
-                    springColumn = column;
-                }
-            }
-
-            if (springColumn != null)
-            {
-                springColumn.Width = Math.Max(0, Width - width - bound.WorkBound.X * 2 - (ShowVerScrollBar ? vbar.Width : 0));
-            }
-        }
-
-        /// <summary>
-        /// 在调整列头宽度时，绘制一条直接，这条直线是可逆线。
-        /// </summary>
-        /// <param name="pos">X 轴坐标。</param>
-        private void DrawDragLine(int pos)
-        {
-            if (pos == -1)
-            {
-                return;
-            }
-
-            var start = PointToScreen(new Point(pos, 1));
-            var end = PointToScreen(new Point(pos, Height - 1));
-            ControlPaint.DrawReversibleLine(start, end, Color.Black);
-        }
-
-        private void RedrawSelectedItems()
-        {
-            using (var graphics = CreateGraphics())
-            {
-                foreach (var vitem in virMgr.Items)
-                {
-                    if (vitem.Item.Selected)
-                    {
-                        var e = GetListItemRenderEventArgs(graphics, vitem, DrawState.Selected);
-                        DrawItem(e);
-                    }
-                }
-            }
-        }
 
         private TreeListItemRenderEventArgs GetListItemRenderEventArgs(Graphics graphics, VirtualTreeListItem item, DrawState state)
         {
@@ -1503,9 +1325,11 @@ namespace Fireasy.Windows.Forms
 
             var y = bound.ItemBound.Y + item.Index * GetAdjustItemHeight() - GetOffsetTop();
             var rect = new Rectangle(bound.ItemBound.X - hbar.Value, y, width, ItemHeight);
-            var e = new TreeListItemRenderEventArgs((TreeListItem)item.Item, graphics, rect);
-            e.Alternate = item.Index % 2 != 0;
-            e.DrawState = state;
+            var e = new TreeListItemRenderEventArgs((TreeListItem)item.Item, graphics, rect)
+            {
+                Alternate = item.Index % 2 != 0,
+                DrawState = state
+            };
             return e;
         }
 
@@ -1545,8 +1369,10 @@ namespace Fireasy.Windows.Forms
                 case TreeListHitTestType.Column:
                     using (var graphics = CreateGraphics())
                     {
-                        var drawArgs = new TreeListColumnRenderEventArgs((TreeListColumn)info.Element, graphics, info.Bounds);
-                        drawArgs.DrawState = DrawState.Normal;
+                        var drawArgs = new TreeListColumnRenderEventArgs((TreeListColumn)info.Element, graphics, info.Bounds)
+                        {
+                            DrawState = DrawState.Normal
+                        };
                         graphics.KeepClip(bound.ColumnBound, () => Renderer.DrawColumnHeader(drawArgs));
                     }
 
@@ -1590,9 +1416,11 @@ namespace Fireasy.Windows.Forms
                             rect.Offset(0, h);
                         }
 
-                        var drawArgs = new TreeListItemRenderEventArgs(item, graphics, rect);
-                        drawArgs.DrawState = DrawState.Normal;
-                        drawArgs.Alternate = vitem.Index % 2 != 0;
+                        var drawArgs = new TreeListItemRenderEventArgs(item, graphics, rect)
+                        {
+                            DrawState = DrawState.Normal,
+                            Alternate = vitem.Index % 2 != 0
+                        };
                         DrawItem(drawArgs);
                     }
 

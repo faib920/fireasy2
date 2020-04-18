@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
@@ -15,39 +14,39 @@ namespace Fireasy.Windows.Forms
 {
     public class ComplexComboBox : PopupComboBox
     {
-        private TreeList tree;
-
         public ComplexComboBox()
         {
             InitializeComponent();
-            DropDownControl = tree;
+            DropDownControl = TreeList;
         }
 
         /// <summary>
         /// 获取或设置作为下拉内容的 <see cref="TreeList"/> 对象。
         /// </summary>
-        public TreeList TreeList
-        {
-            get { return tree; }
-        }
+        public TreeList TreeList { get; private set; }
 
-        public TreeListColumnCollection Columns
+        public new object SelectedItem
         {
             get
             {
-                return TreeList.Columns;
+                if (TreeList.SelectedItems.Count == 0)
+                {
+                    return null;
+                }
+
+                return TreeList.SelectedItems[0];
             }
         }
 
-        public new TreeListItemCollection Items
+        public override string SelectedText
         {
             get
             {
-                return TreeList.Items;
+                return string.Empty;
             }
         }
 
-        public new object SelectedValue
+        public override object SelectedValue
         {
             get
             {
@@ -55,19 +54,19 @@ namespace Fireasy.Windows.Forms
             }
             set
             {
-                base.SelectedValue = value;
-
                 if (TreeList.ShowCheckBoxes)
                 {
+                    base.SelectedValue = value;
+
                     if (value != null)
                     {
                         var texts = new List<string>();
                         CheckItem(TreeList.Items, value as object[], texts);
-                        SelectedText = string.Join(",", texts);
+                        SetText(string.Join(",", texts));
                     }
                     else
                     {
-                        SelectedText = string.Empty;
+                        SetText(string.Empty);
                     }
                 }
                 else
@@ -75,7 +74,7 @@ namespace Fireasy.Windows.Forms
                     TreeList.SelectedItems.Clear();
                     if (!FindItem(TreeList.Items, value))
                     {
-                        SelectedText = string.Empty;
+                        SetText(string.Empty);
                     }
                 }
             }
@@ -92,7 +91,7 @@ namespace Fireasy.Windows.Forms
         /// <param name="treelist"></param>
         public void SetTreeList(TreeList treelist)
         {
-            tree = treelist;
+            TreeList = treelist;
             DropDownControl = treelist;
         }
 
@@ -100,11 +99,12 @@ namespace Fireasy.Windows.Forms
         {
             foreach (var item in items)
             {
-                if (object.Equals(GetValue(item), value))
+                if (Equals(GetValue(item), value))
                 {
                     item.Selected = true;
                     base.SelectedValue = value;
-                    SelectedText = GetDisplayText(item);
+                    base.SelectedItem = item;
+                    SetText(GetDisplayText(item));
                     ExpendAllParent(item);
                     return true;
                 }
@@ -144,14 +144,17 @@ namespace Fireasy.Windows.Forms
 
         private void InitializeComponent()
         {
-            tree = new TreeList();
-            tree.Dock = DockStyle.Fill;
-            tree.HotTracking = true;
-            tree.ShowHeader = false;
-            tree.Columns.Add(new TreeListColumn { Spring = true });
-            tree.ItemClick += TreeList_ItemClick;
-            tree.AfterItemCheckChange += TreeList_AfterItemCheckChange;
-            tree.ShowGridLines = false;
+            TreeList = new TreeList
+            {
+                Dock = DockStyle.Fill,
+                HotTracking = true,
+                ShowHeader = false
+            };
+
+            TreeList.Columns.Add(new TreeListColumn { Spring = true });
+            TreeList.ItemClick += TreeList_ItemClick;
+            TreeList.AfterItemCheckChange += TreeList_AfterItemCheckChange;
+            TreeList.ShowGridLines = false;
         }
 
         void TreeList_ItemClick(object sender, TreeListItemEventArgs e)
@@ -161,9 +164,7 @@ namespace Fireasy.Windows.Forms
                 return;
             }
 
-            SelectedItem = e.Item;
-            SelectedText = GetDisplayText(e.Item);
-            SelectedValue = GetValue(e.Item);
+            SetItem(GetDisplayText(e.Item), GetValue(e.Item));
 
             HideDropDown();
         }
@@ -189,8 +190,7 @@ namespace Fireasy.Windows.Forms
                 array.Add(GetValue(item));
             }
 
-            SelectedText = sb.ToString();
-            SelectedValue = array.Count == 0 ? null : array.ToArray();
+            SetItem(sb.ToString(), array.Count == 0 ? null : array.ToArray());
         }
 
         private string GetDisplayText(TreeListItem item)

@@ -5,11 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 
 namespace Fireasy.Windows.Forms
@@ -192,162 +188,102 @@ namespace Fireasy.Windows.Forms
         #region 事件虚方法
         protected virtual void OnColumnClick(TreeListColumnClickEventArgs e)
         {
-            if (ColumnClick != null)
-            {
-                ColumnClick(this, e);
-            }
+            ColumnClick?.Invoke(this, e);
         }
 
         protected virtual void OnItemDataBound(TreeListItemDataBoundEventArgs e)
         {
-            if (ItemDataBound != null)
-            {
-                ItemDataBound(this, e);
-            }
+            ItemDataBound?.Invoke(this, e);
         }
 
         protected virtual void OnCellDataBound(TreeListCellDataBoundEventArgs e)
         {
-            if (CellDataBound != null)
-            {
-                CellDataBound(this, e);
-            }
+            CellDataBound?.Invoke(this, e);
         }
 
         protected virtual void OnItemClick(TreeListItemEventArgs e)
         {
-            if (ItemClick != null)
-            {
-                ItemClick(this, e);
-            }
+            ItemClick?.Invoke(this, e);
         }
 
         protected virtual void OnCellClick(TreeListCellEventArgs e)
         {
-            if (CellClick != null)
-            {
-                CellClick(this, e);
-            }
+            CellClick?.Invoke(this, e);
         }
 
         protected virtual void OnItemDoubleClick(TreeListItemEventArgs e)
         {
-            if (ItemDoubleClick != null)
-            {
-                ItemDoubleClick(this, e);
-            }
+            ItemDoubleClick?.Invoke(this, e);
         }
 
         protected virtual void OnItemSelectionChanged(TreeListItemSelectionEventArgs e)
         {
-            if (ItemSelectionChanged != null)
-            {
-                ItemSelectionChanged(this, e);
-            }
+            ItemSelectionChanged?.Invoke(this, e);
         }
 
         protected virtual void OnBeforeItemExpand(TreeListItemCancelEventArgs e)
         {
-            if (BeforeItemExpand != null)
-            {
-                BeforeItemExpand(this, e);
-            }
+            BeforeItemExpand?.Invoke(this, e);
         }
 
         protected virtual void OnBeforeItemCollapse(TreeListItemCancelEventArgs e)
         {
-            if (BeforeItemCollapse != null)
-            {
-                BeforeItemCollapse(this, e);
-            }
+            BeforeItemCollapse?.Invoke(this, e);
         }
 
         protected virtual void OnAfterItemExpand(TreeListItemEventArgs e)
         {
-            if (AfterItemExpand != null)
-            {
-                AfterItemExpand(this, e);
-            }
+            AfterItemExpand?.Invoke(this, e);
         }
 
         protected virtual void OnAfterItemCollapse(TreeListItemEventArgs e)
         {
-            if (AfterItemCollapse != null)
-            {
-                AfterItemCollapse(this, e);
-            }
+            AfterItemCollapse?.Invoke(this, e);
         }
 
         protected virtual void OnDemandLoad(TreeListItemEventArgs e)
         {
-            if (DemandLoad != null)
-            {
-                DemandLoad(this, e);
-            }
+            DemandLoad?.Invoke(this, e);
         }
 
         protected virtual void OnBeforeCellEditing(TreeListBeforeCellEditingEventArgs e)
         {
-            if (BeforeCellEditing != null)
-            {
-                BeforeCellEditing(this, e);
-            }
+            BeforeCellEditing?.Invoke(this, e);
         }
 
         protected virtual void OnAfterCellEdited(TreeListAfterCellEditedEventArgs e)
         {
-            if (AfterCellEdited != null)
-            {
-                AfterCellEdited(this, e);
-            }
+            AfterCellEdited?.Invoke(this, e);
         }
 
         protected virtual void OnBeforeCellUpdating(TreeListBeforeCellUpdatingEventArgs e)
         {
-            if (BeforeCellUpdating != null)
-            {
-                BeforeCellUpdating(this, e);
-            }
+            BeforeCellUpdating?.Invoke(this, e);
         }
 
         protected virtual void OnAfterCellUpdated(TreeListAfterCellUpdatedEventArgs e)
         {
-            if (AfterCellUpdated != null)
-            {
-                AfterCellUpdated(this, e);
-            }
+            AfterCellUpdated?.Invoke(this, e);
         }
 
         protected virtual void OnBeforeItemCheckChange(TreeListItemCancelEventArgs e)
         {
-            if (BeforeItemCheckChange != null)
-            {
-                BeforeItemCheckChange(this, e);
-            }
+            BeforeItemCheckChange?.Invoke(this, e);
         }
 
         protected virtual void OnAfterItemCheckChange(TreeListItemEventArgs e)
         {
-            if (AfterItemCheckChange != null)
-            {
-                AfterItemCheckChange(this, e);
-            }
+            AfterItemCheckChange?.Invoke(this, e);
         }
 
         protected virtual void OnBeforeCellCheckChange(TreeListCellCancelEventArgs e)
         {
-            if (BeforeCellCheckChange != null)
-            {
-                BeforeCellCheckChange(this, e);
-            }
+            BeforeCellCheckChange?.Invoke(this, e);
         }
 
         protected virtual void OnAfterCellCheckChange(TreeListCellEventArgs e)
         {
-            if (AfterCellCheckChange != null)
-            {
-                AfterCellCheckChange(this, e);
-            }
+            AfterCellCheckChange?.Invoke(this, e);
         }
         #endregion
     }

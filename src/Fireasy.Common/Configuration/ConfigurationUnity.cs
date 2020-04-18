@@ -9,6 +9,7 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 #if NETSTANDARD
@@ -45,9 +46,16 @@ namespace Fireasy.Common.Configuration
             }
 
 #if NETSTANDARD
-            if (cfgCache.TryGetValue(attribute.Name, out IConfigurationSection value))
+            var tryCount = 0;
+            while (tryCount++ < 10)
             {
-                return (T)value;
+                if (cfgCache.TryGetValue(attribute.Name, out IConfigurationSection value))
+                {
+                    return (T)value;
+                }
+
+                Tracer.Debug($"Delayed attempt GetSection {typeof(T)} ({tryCount}).");
+                Thread.Sleep(500);
             }
 
             return default;

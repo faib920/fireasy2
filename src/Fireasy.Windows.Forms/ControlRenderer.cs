@@ -1,5 +1,4 @@
-﻿using System;
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright company="Fireasy"
 //      email="faib920@126.com"
 //      qq="55570729">
@@ -49,8 +48,7 @@ namespace Fireasy.Windows.Forms
         /// <param name="e"></param>
         public virtual void DrawBackground(BackgroundRenderEventArgs e)
         {
-            var control = e.Control as Control;
-            if (control == null)
+            if (!(e.Control is Control control))
             {
                 return;
             }
