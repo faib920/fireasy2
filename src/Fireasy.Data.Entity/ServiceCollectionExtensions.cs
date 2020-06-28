@@ -14,7 +14,9 @@ using Fireasy.Data.Entity;
 using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Linq.Translators.Configuration;
 using Fireasy.Data.Entity.Query;
+using Fireasy.Data.Entity.Subscribes;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
 using System.Linq;
 
@@ -84,6 +86,28 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddScoped<EntityContextPool<TContext>.Lease>();
             services.AddScoped(sp => sp.GetService<EntityContextPool<TContext>.Lease>().Context);
 
+            return services;
+        }
+
+        /// <summary>
+        /// 添加实体的事件订阅器。
+        /// </summary>
+        /// <param name="services"></param>
+        /// <returns></returns>
+        public static IServiceCollection AddPersistentSubscriber<TSubscriber>(this IServiceCollection services) where TSubscriber : PersistentSubscriber
+        {
+            services.TryAddEnumerable(ServiceDescriptor.Transient<PersistentSubscriber, TSubscriber>());
+            return services;
+        }
+
+        /// <summary>
+        /// 添加实体的异步事件订阅器。
+        /// </summary>
+        /// <param name="services"></param>
+        /// <returns></returns>
+        public static IServiceCollection AddAsyncPersistentSubscriber<TSubscriber>(this IServiceCollection services) where TSubscriber : AsyncPersistentSubscriber
+        {
+            services.TryAddEnumerable(ServiceDescriptor.Transient<AsyncPersistentSubscriber, TSubscriber>());
             return services;
         }
 

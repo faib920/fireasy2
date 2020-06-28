@@ -38,20 +38,22 @@ namespace Fireasy.Data.Entity.Query
         public QueryProvider(EntityQueryProvider entityQueryProvider)
         {
             this.entityQueryProvider = entityQueryProvider;
-            ServiceProvider = entityQueryProvider.ServiceProvider;
-            ContextType = entityQueryProvider.ContextType;
+            ContextService = entityQueryProvider.ContextService;
             ContextOptions = entityQueryProvider.ContextOptions;
         }
 
         /// <summary>
         /// 获取 <see cref="EntityContext"/> 的类型。
         /// </summary>
-        public Type ContextType { get; private set; }
+        public Type ContextType
+        {
+            get { return ContextService.ContextType; }
+        }
 
         /// <summary>
-        /// 获取应用程序服务提供者实例。
+        /// 获取 <see cref="IContextService"/> 实例。
         /// </summary>
-        public IServiceProvider ServiceProvider { get; private set; }
+        public IContextService ContextService { get; private set; }
 
         /// <summary>
         /// 获取参数选项。
@@ -114,14 +116,14 @@ namespace Fireasy.Data.Entity.Query
         /// <returns></returns>
         public TResult Execute<TResult>(Expression expression)
         {
-            var executeCache = ServiceProvider.TryGetService(() => DefaultExecuteCache.Instance);
+            var executeCache = ContextService.ServiceProvider.TryGetService(() => DefaultExecuteCache.Instance);
             return executeCache.TryGet(expression, GetCacheContext(), () => entityQueryProvider.Execute<TResult>(expression));
         }
 
 #if !NETFRAMEWORK && !NETSTANDARD2_0
         public IAsyncEnumerable<TResult> ExecuteEnumerableAsync<TResult>(Expression expression, CancellationToken cancellationToken)
         {
-            var executeCache = ServiceProvider.TryGetService(() => DefaultExecuteCache.Instance);
+            var executeCache = ContextService.ServiceProvider.TryGetService(() => DefaultExecuteCache.Instance);
             return executeCache.TryGet(expression, GetCacheContext(), () => entityQueryProvider.ExecuteEnumerableAsync<TResult>(expression, cancellationToken));
         }
 #endif
@@ -135,7 +137,7 @@ namespace Fireasy.Data.Entity.Query
         /// <returns></returns>
         public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
         {
-            var executeCache = ServiceProvider.TryGetService(() => DefaultExecuteCache.Instance);
+            var executeCache = ContextService.ServiceProvider.TryGetService(() => DefaultExecuteCache.Instance);
             return await executeCache.TryGetAsync(expression, GetCacheContext(), c => entityQueryProvider.ExecuteAsync<TResult>(expression, c), cancellationToken);
         }
 

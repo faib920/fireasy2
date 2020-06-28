@@ -18,7 +18,7 @@ using Microsoft.Extensions.Configuration;
 namespace Fireasy.Common.Caching.Configuration
 {
     /// <summary>
-    /// 提供对缓存管理器的配置管理。对应的配置节为 fireasy/cachings。
+    /// 提供对缓存管理器的配置管理。对应的配置节为 fireasy/cachings(.net framework) 或 fireasy:cachings(.net core)。
     /// </summary>
     [ConfigurationSectionStorage("fireasy/cachings")]
     public sealed class CachingConfigurationSection : ManagableConfigurationSection<CachingConfigurationSetting>

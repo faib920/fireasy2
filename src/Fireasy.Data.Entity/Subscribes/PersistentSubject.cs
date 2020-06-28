@@ -13,15 +13,15 @@ namespace Fireasy.Data.Entity.Subscribes
     /// <summary>
     /// 实体持久化的消息主题。
     /// </summary>
-    public sealed class EntityPersistentSubject
+    public sealed class PersistentSubject
     {
         /// <summary>
-        /// 初始化 <see cref="EntityPersistentSubject"/> 类的新实例。
+        /// 初始化 <see cref="PersistentSubject"/> 类的新实例。
         /// </summary>
         /// <param name="entityType">实体类型。</param>
         /// <param name="eventType">持久化事件类型。</param>
         /// <param name="argument"></param>
-        public EntityPersistentSubject(Type entityType, EntityPersistentEventType eventType, object argument)
+        public PersistentSubject(Type entityType, PersistentEventType eventType, object argument)
         {
             EntityType = entityType;
             EventType = eventType;
@@ -36,7 +36,7 @@ namespace Fireasy.Data.Entity.Subscribes
         /// <summary>
         /// 获取当前的事件类型。
         /// </summary>
-        public EntityPersistentEventType EventType { get; private set; }
+        public PersistentEventType EventType { get; private set; }
 
         /// <summary>
         /// 获取持久化事件参数。

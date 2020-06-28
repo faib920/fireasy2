@@ -14,7 +14,6 @@ using Fireasy.Common.Reflection;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Entity.Query;
-using Fireasy.Data.Provider;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -349,6 +348,49 @@ namespace Fireasy.Data.Entity.Linq
         }
 
         /// <summary>
+        /// 使用一个 SQL 条件表达式。
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="condition">一个条件表达式。</param>
+        /// <param name="parameterAct">用于初始化参数的方法。</param>
+        /// <returns></returns>
+        public static IQueryable<TSource> Where<TSource>(this IQueryable<TSource> source, string condition, Action<ParameterCollection> parameterAct = null)
+        {
+            if (source == null || string.IsNullOrEmpty(condition))
+            {
+                return source;
+            }
+
+            var parameters = new ParameterCollection();
+            parameterAct?.Invoke(parameters);
+
+            return Where(source, condition, parameters);
+        }
+
+        /// <summary>
+        /// 使用一个 SQL 条件表达式。
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="condition">一个条件表达式。</param>
+        /// <param name="parameters">一个参数集合。</param>
+        /// <returns></returns>
+        public static IQueryable<TSource> Where<TSource>(this IQueryable<TSource> source, string condition, ParameterCollection parameters)
+        {
+            if (source == null || string.IsNullOrEmpty(condition))
+            {
+                return source;
+            }
+
+            var method = (MethodInfo)MethodBase.GetCurrentMethod();
+
+            var expression = Expression.Call(method.MakeGenericMethod(typeof(TSource)), source.Expression, Expression.Constant(condition), Expression.Constant(parameters));
+
+            return source.Provider.CreateQuery<TSource>(expression);
+        }
+
+        /// <summary>
         /// 使用一个排序定义对象对集合中的元素进行排序。
         /// </summary>
         /// <typeparam name="TSource"></typeparam>
@@ -356,16 +398,11 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="sort">排序定义。</param>
         /// <param name="otherwise">当 <paramref name="sort"/> 为 Empty 时，使用此表达式进行排序。</param>
         /// <returns></returns>
-        public static IQueryable<TSource> OrderBy<TSource>(this IQueryable<TSource> source, SortDefinition sort, Expression<Func<IQueryable<TSource>, IQueryable<TSource>>> otherwise = null)
+        public static IQueryable<TSource> OrderBy<TSource>(this IQueryable<TSource> source, SortDefinition sort, Func<IQueryable<TSource>, IQueryable<TSource>> otherwise = null)
         {
             if (sort == null)
             {
-                if (otherwise != null)
-                {
-                    return UseDefinitionQuery<TSource>(source, otherwise);
-                }
-
-                return source;
+                return otherwise == null ? source : otherwise(source);
             }
 
             return source.OrderBy(sort.Member, sort.Order, otherwise);
@@ -379,16 +416,11 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="sort">排序定义。</param>
         /// <param name="otherwise">当 <paramref name="sort"/> 为 Empty 时，使用此表达式进行排序。</param>
         /// <returns></returns>
-        public static IQueryable<TSource> ThenBy<TSource>(this IQueryable<TSource> source, SortDefinition sort, Expression<Func<IQueryable<TSource>, IQueryable<TSource>>> otherwise = null)
+        public static IQueryable<TSource> ThenBy<TSource>(this IQueryable<TSource> source, SortDefinition sort, Func<IQueryable<TSource>, IQueryable<TSource>> otherwise = null)
         {
             if (sort == null)
             {
-                if (otherwise != null)
-                {
-                    return UseDefinitionQuery<TSource>(source, otherwise);
-                }
-
-                return source;
+                 return otherwise == null ? source : otherwise(source);
             }
 
             return source.ThenBy(sort.Member, sort.Order, otherwise);
@@ -403,16 +435,11 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="sortOrder">排序类型。</param>
         /// <param name="otherwise">当 <paramref name="memberName"/> 为空时，使用此表达式进行排序。</param>
         /// <returns></returns>
-        public static IQueryable<TSource> OrderBy<TSource>(this IQueryable<TSource> source, string memberName, SortOrder sortOrder = SortOrder.None, Expression<Func<IQueryable<TSource>, IQueryable<TSource>>> otherwise = null)
+        public static IQueryable<TSource> OrderBy<TSource>(this IQueryable<TSource> source, string memberName, SortOrder sortOrder = SortOrder.None, Func<IQueryable<TSource>, IQueryable<TSource>> otherwise = null)
         {
             if (string.IsNullOrEmpty(memberName) && sortOrder == SortOrder.None)
             {
-                if (otherwise != null)
-                {
-                    return UseDefinitionQuery<TSource>(source, otherwise);
-                }
-
-                return source;
+                return otherwise == null ? source : otherwise(source);
             }
 
             var methodName = sortOrder == SortOrder.Ascending ? nameof(Queryable.OrderBy) : nameof(Queryable.OrderByDescending);
@@ -429,16 +456,11 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="sortOrder">排序类型。</param>
         /// <param name="otherwise">当 <paramref name="memberName"/> 为空时，使用此表达式进行排序。</param>
         /// <returns></returns>
-        public static IQueryable<TSource> ThenBy<TSource>(this IQueryable<TSource> source, string memberName, SortOrder sortOrder = SortOrder.Ascending, Expression<Func<IQueryable<TSource>, IQueryable<TSource>>> otherwise = null)
+        public static IQueryable<TSource> ThenBy<TSource>(this IQueryable<TSource> source, string memberName, SortOrder sortOrder = SortOrder.Ascending, Func<IQueryable<TSource>, IQueryable<TSource>> otherwise = null)
         {
             if (string.IsNullOrEmpty(memberName) && sortOrder == SortOrder.None)
             {
-                if (otherwise != null)
-                {
-                    return UseDefinitionQuery<TSource>(source, otherwise);
-                }
-
-                return source;
+                return otherwise == null ? source : otherwise(source);
             }
 
             var methodName = sortOrder == SortOrder.Ascending ? nameof(Queryable.ThenBy) : nameof(Queryable.ThenByDescending);
@@ -1659,25 +1681,6 @@ namespace Fireasy.Data.Entity.Linq
         }
 
         /// <summary>
-        /// 当客户端排序定义为空时，使用预定义的排序表达式。
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="source"></param>
-        /// <param name="orderPredicate"></param>
-        /// <returns></returns>
-        private static IQueryable<T> UseDefinitionQuery<T>(IQueryable<T> source, Expression<Func<IQueryable<T>, IQueryable<T>>> orderPredicate)
-        {
-            var orderBys = OrderGatherer.Gather(orderPredicate.Body);
-            var expression = source.Expression;
-            foreach (var kvp in orderBys)
-            {
-                expression = Expression.Call(null, kvp.Key, new[] { expression, kvp.Value });
-            }
-
-            return source.Provider.CreateQuery<T>(expression);
-        }
-
-        /// <summary>
         /// 检查是否实现了 IAsyncQueryProvider 接口。
         /// </summary>
         /// <param name="provider"></param>
@@ -1699,38 +1702,6 @@ namespace Fireasy.Data.Entity.Linq
             if (metadata != null && metadata.IsReadonly)
             {
                 throw new InvalidOperationException(SR.GetString(SRKind.InvalidOperationWhenRepositoryIsReadonly));
-            }
-        }
-
-        /// <summary>
-        /// 用于收集表达式中使用的排序表达式。
-        /// </summary>
-        private class OrderGatherer : Fireasy.Common.Linq.Expressions.ExpressionVisitor
-        {
-            private readonly Dictionary<MethodInfo, Expression> orderBys = new Dictionary<MethodInfo, Expression>();
-
-            internal static Dictionary<MethodInfo, Expression> Gather(Expression expression)
-            {
-                var gatherer = new OrderGatherer();
-                gatherer.Visit(expression);
-                return gatherer.orderBys;
-            }
-
-            protected override Expression VisitMethodCall(MethodCallExpression methodCallExp)
-            {
-                if (methodCallExp.Method.DeclaringType == typeof(Queryable) &&
-                    (methodCallExp.Method.Name == nameof(Queryable.OrderBy) || methodCallExp.Method.Name == nameof(Queryable.OrderByDescending) ||
-                    methodCallExp.Method.Name == nameof(Queryable.ThenBy) || methodCallExp.Method.Name == nameof(Queryable.ThenByDescending)))
-                {
-                    Visit(methodCallExp.Arguments[0]);
-                    orderBys.Add(methodCallExp.Method, methodCallExp.Arguments[1]);
-                }
-                else
-                {
-                    throw new ArgumentException(SR.GetString(SRKind.InvalidOrderExpression));
-                }
-
-                return methodCallExp;
             }
         }
 

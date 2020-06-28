@@ -7,7 +7,6 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -17,25 +16,6 @@ namespace Fireasy.Common.Ioc
 {
     internal static class Helpers
     {
-        internal static void CheckConstructable(Type serviceType)
-        {
-            string errorMessage;
-            if (!IsConcreteConstructableType(serviceType, out errorMessage))
-            {
-                throw new Exception(errorMessage);
-            }
-        }
-
-        internal static void CheckCollectionHasEmptyItem(IEnumerable collection, Type serviceType)
-        {
-            var hasNull = collection.Cast<object>().Any(c => c == null);
-
-            if (hasNull)
-            {
-                throw new Exception(SR.GetString(SRKind.CollectionHasEmptyItem));
-            }
-        }
-
         internal static Action<T> CreateAction<T>(object action)
         {
             var actionArgumentType = action.GetType().GetGenericArguments()[0];
@@ -51,19 +31,12 @@ namespace Fireasy.Common.Ioc
             return instanceInitializer.Compile();
         }
 
-        internal static bool IsConcreteConstructableType(Type serviceType)
-        {
-            string errorMesssage;
-
-            return IsConcreteConstructableType(serviceType, out errorMesssage);
-        }
-
         /// <summary>
         /// 发现程序集中的所有依赖类型。
         /// </summary>
         /// <param name="assembly"></param>
-        /// <param name="action"></param>
-        internal static void DiscoverAssembly(Assembly assembly, Action<Type, Type> action)
+        /// <param name="regAct"></param>
+        internal static void DiscoverAssembly(Assembly assembly, Action<Type, Type, Lifetime> regAct)
         {
             foreach (var type in assembly.GetExportedTypes())
             {
@@ -72,16 +45,31 @@ namespace Fireasy.Common.Ioc
                     continue;
                 }
 
-                action(type, type);
+                Lifetime? lifetime;
+                var interfaceTypes = type.GetDirectImplementInterfaces().ToArray();
 
-                foreach (var interfaceType in type.GetInterfaces())
+                //如果使用标注
+                if (type.IsDefined(typeof(ServiceRegisterAttribute)))
                 {
-                    if (interfaceType.IsDefined(typeof(IgnoreRegisterAttribute)) || interfaceType.FullName.StartsWith("System"))
-                    {
-                        continue;
-                    }
+                    lifetime = type.GetCustomAttribute<ServiceRegisterAttribute>().Lifetime;
+                }
+                else
+                {
+                    lifetime = GetLifetimeFromType(type);
+                }
 
-                    action(interfaceType, type);
+                if (lifetime == null)
+                {
+                    continue;
+                }
+
+                if (interfaceTypes.Length == 0)
+                {
+                    regAct(type, type, (Lifetime)lifetime);
+                }
+                else
+                {
+                    interfaceTypes.ForEach(s => regAct(s, type, (Lifetime)lifetime));
                 }
             }
         }
@@ -95,50 +83,22 @@ namespace Fireasy.Common.Ioc
                 && (definitionType == typeof(IEnumerable<>) || definitionType == typeof(IList<>) || definitionType == typeof(IList<>));
         }
 
-        private static bool HasSinglePublicConstructor(Type serviceType)
+        private static Lifetime? GetLifetimeFromType(Type type)
         {
-            return serviceType.GetConstructors().Length == 1;
-        }
-
-        private static bool HasConstructorWithOnlyValidParameters(Type serviceType)
-        {
-            return GetFirstInvalidConstructorParameter(serviceType) == null;
-        }
-
-        private static ParameterInfo GetFirstInvalidConstructorParameter(Type serviceType)
-        {
-            return (
-                from constructor in serviceType.GetConstructors()
-                from parameter in constructor.GetParameters()
-                let type = parameter.ParameterType
-                where type.IsValueType || type == typeof(string)
-                select parameter).FirstOrDefault();
-        }
-
-        private static bool IsConcreteConstructableType(Type serviceType, out string errorMessage)
-        {
-            errorMessage = null;
-
-            if (!serviceType.IsConcreteType())
+            if (typeof(ISingletonService).IsAssignableFrom(type))
             {
-                errorMessage = SR.GetString(SRKind.NotConcreteType);
-                return false;
+                return Lifetime.Singleton;
+            }
+            else if (typeof(ITransientService).IsAssignableFrom(type))
+            {
+                return Lifetime.Transient;
+            }
+            else if (typeof(IScopedService).IsAssignableFrom(type))
+            {
+                return Lifetime.Scoped;
             }
 
-            if (!HasSinglePublicConstructor(serviceType))
-            {
-                errorMessage = SR.GetString(SRKind.NoDefaultConstructor);
-                return false;
-            }
-
-            if (!HasConstructorWithOnlyValidParameters(serviceType))
-            {
-                var invalidParameter = GetFirstInvalidConstructorParameter(serviceType);
-                errorMessage = SR.GetString(SRKind.ConstructorHasParameterOfValueType, invalidParameter.Name);
-                return false;
-            }
-
-            return true;
+            return null;
         }
     }
 }

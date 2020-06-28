@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Fireasy.Data.Entity.Generation
 {
@@ -40,7 +41,7 @@ namespace Fireasy.Data.Entity.Generation
                 if (properties.Count > 0)
                 {
                     var commands = BuildCreateTableCommands(syntax, tableName, properties);
-                    BatchExecute(database, commands);
+                    BatchExecuteAsync(database, commands);
                     return true;
                 }
             }
@@ -73,7 +74,7 @@ namespace Fireasy.Data.Entity.Generation
             if (properties.Count != 0)
             {
                 var commands = BuildAddFieldCommands(syntax, tableName, properties);
-                BatchExecute(database, commands);
+                BatchExecuteAsync(database, commands);
             }
 
             return properties;
@@ -194,9 +195,9 @@ namespace Fireasy.Data.Entity.Generation
             }
         }
 
-        private void BatchExecute(IDatabase database, SqlCommand[] commands)
+        private void BatchExecuteAsync(IDatabase database, SqlCommand[] commands)
         {
-            commands.ForEach(async c => await database.ExecuteNonQueryAsync(c));
+            commands.ForEach(s => database.ExecuteNonQuery(s));
         }
     }
 }

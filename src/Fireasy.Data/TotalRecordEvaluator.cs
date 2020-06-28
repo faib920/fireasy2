@@ -12,6 +12,8 @@ using Fireasy.Data.Extensions;
 using Fireasy.Data.RecordWrapper;
 using System;
 using System.Data;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fireasy.Data
 {
@@ -20,42 +22,46 @@ namespace Fireasy.Data
     /// </summary>
     public sealed class TotalRecordEvaluator : IDataPageEvaluator
     {
-        /// <summary>
-        /// 获取缓存记录数的时间间隔，默认为 null，不缓存。
-        /// </summary>
-        public TimeSpan? Expiration { get; set; }
-
         void IDataPageEvaluator.Evaluate(CommandContext context)
         {
             if (context.Segment is IPager dataPager)
             {
-                dataPager.RecordCount = GetRecoredCount(context);
+                dataPager.RecordCount = GetRecordCountFromDatabase(context);
             }
         }
 
-        private int GetRecoredCount(CommandContext context)
+        async Task IDataPageEvaluator.EvaluateAsync(CommandContext context, CancellationToken cancellationToken)
         {
-            ICacheManager cacheManager;
-            if (Expiration != null &&
-                (cacheManager = CacheManagerFactory.CreateManager()) != null)
+            if (context.Segment is IPager dataPager)
             {
-                var key = context.Command.Output();
-                return cacheManager.Contains(key) ?
-                    (int)cacheManager.Get(key) :
-                    cacheManager.Add(key, GetRecordCountFromDatabase(context), new RelativeTime((TimeSpan)Expiration));
+                dataPager.RecordCount = await GetRecordCountFromDatabaseAsync(context, cancellationToken);
             }
-
-            return GetRecordCountFromDatabase(context);
         }
 
         private int GetRecordCountFromDatabase(CommandContext context)
         {
-            var count = 0;
+            using var reader = context.Database.ExecuteReader(GetCommand(context), parameters: context.Parameters, behavior: CommandBehavior.Default);
+            var wrapper = context.Database.Provider.GetService<IRecordWrapper>();
+            return GetRecordCount(reader, wrapper);
+        }
+
+        private async Task<int> GetRecordCountFromDatabaseAsync(CommandContext context, CancellationToken cancellationToken = default)
+        {
+            using var reader = await context.Database.ExecuteReaderAsync(GetCommand(context), parameters: context.Parameters, behavior: CommandBehavior.Default, cancellationToken: cancellationToken);
+            var wrapper = context.Database.Provider.GetService<IRecordWrapper>();
+            return GetRecordCount(reader, wrapper);
+        }
+
+        private SqlCommand GetCommand(CommandContext context)
+        {
             var cullingOrderBy = DbUtility.CullingOrderBy(context.Command.CommandText);
             SqlCommand sqlCount = $"SELECT COUNT(1) FROM ({cullingOrderBy}) TEMP";
+            return sqlCount;
+        }
 
-            using var reader = context.Database.ExecuteReader(sqlCount, parameters: context.Parameters, behavior: CommandBehavior.Default);
-            var wrapper = context.Database.Provider.GetService<IRecordWrapper>();
+        private int GetRecordCount(IDataReader reader, IRecordWrapper wrapper)
+        {
+            var count = 0;
             if (reader.Read())
             {
                 switch (reader.GetFieldType(0).GetDbType())

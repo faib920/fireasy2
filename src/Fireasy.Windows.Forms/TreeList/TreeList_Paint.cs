@@ -193,7 +193,10 @@ namespace Fireasy.Windows.Forms
                     if (vitem.Item.Selected)
                     {
                         var e = GetListItemRenderEventArgs(graphics, vitem, DrawState.Selected);
-                        DrawItem(e);
+                        if (e != null)
+                        {
+                            DrawItem(e);
+                        }
                     }
                 }
             }

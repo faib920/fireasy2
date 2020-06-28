@@ -9,7 +9,6 @@
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Windows.Forms
 {
@@ -47,7 +46,7 @@ namespace Fireasy.Windows.Forms
             picker.Width = Width + 2;
             picker.Top = -1;
 
-            SendMessage(picker.Handle, CB_SETITEMHEIGHT, -1, rect.Height);
+            SendMessage(picker.Handle, CB_SETITEMHEIGHT, -1, rect.Height - 3);
 
             picker.DroppedDown = true;
             picker.Focus();

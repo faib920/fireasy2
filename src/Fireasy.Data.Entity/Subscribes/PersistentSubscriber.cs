@@ -7,98 +7,97 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Fireasy.Data.Entity.Subscribes
 {
     /// <summary>
-    /// 异步的实体持久化的事件订阅器抽象类。
+    /// 实体持久化的事件订阅器抽象类。
     /// </summary>
-    public abstract class AsyncEntityPersistentSubscriber
+    public abstract class PersistentSubscriber
     {
         /// <summary>
         /// 接收主题信息并进行处理。
         /// </summary>
         /// <param name="subject"></param>
-        public async Task AcceptAsync(EntityPersistentSubject subject)
+        public void Accept(PersistentSubject subject)
         {
             switch (subject.EventType)
             {
-                case EntityPersistentEventType.BeforeCreate:
+                case PersistentEventType.BeforeCreate:
                     {
                         if (subject.Argument is EntityEventArgs arg)
                         {
-                            arg.Cancel = !await OnBeforeCreateAsync(arg.Entity);
+                            arg.Cancel = !OnBeforeCreate(arg.Entity);
                         }
                     }
                     break;
-                case EntityPersistentEventType.AfterCreate:
+                case PersistentEventType.AfterCreate:
                     {
                         if (subject.Argument is EntityEventArgs arg)
                         {
-                            await OnAfterCreateAsync(arg.Entity);
-                        }
-                    }
-
-                    await OnCreateAsync(subject.EntityType);
-                    break;
-                case EntityPersistentEventType.BeforeUpdate:
-                    {
-                        if (subject.Argument is EntityEventArgs arg)
-                        {
-                            arg.Cancel = !await OnBeforeUpdateAsync(arg.Entity);
-                        }
-                    }
-                    break;
-                case EntityPersistentEventType.AfterUpdate:
-                    {
-                        if (subject.Argument is EntityEventArgs arg)
-                        {
-                            await OnAfterUpdateAsync(arg.Entity);
+                            OnAfterCreate(arg.Entity);
                         }
                     }
 
-                    await OnUpdateAsync(subject.EntityType);
+                    OnCreate(subject.EntityType);
                     break;
-                case EntityPersistentEventType.BeforeRemove:
+                case PersistentEventType.BeforeUpdate:
                     {
                         if (subject.Argument is EntityEventArgs arg)
                         {
-                            arg.Cancel = !await OnBeforeRemoveAsync(arg.Entity);
+                            arg.Cancel = !OnBeforeUpdate(arg.Entity);
                         }
                     }
                     break;
-                case EntityPersistentEventType.AfterRemove:
+                case PersistentEventType.AfterUpdate:
                     {
                         if (subject.Argument is EntityEventArgs arg)
                         {
-                            await OnAfterRemoveAsync(arg.Entity);
+                            OnAfterUpdate(arg.Entity);
                         }
                     }
 
-                    await OnRemoveAsync(subject.EntityType);
+                    OnUpdate(subject.EntityType);
                     break;
-                case EntityPersistentEventType.BeforeBatch:
+                case PersistentEventType.BeforeRemove:
+                    {
+                        if (subject.Argument is EntityEventArgs arg)
+                        {
+                            arg.Cancel = !OnBeforeRemove(arg.Entity);
+                        }
+                    }
+                    break;
+                case PersistentEventType.AfterRemove:
+                    {
+                        if (subject.Argument is EntityEventArgs arg)
+                        {
+                            OnAfterRemove(arg.Entity);
+                        }
+                    }
+
+                    OnRemove(subject.EntityType);
+                    break;
+                case PersistentEventType.BeforeBatch:
                     {
                         var arg = subject.Argument as EntitiesArgs;
-                        arg.Cancel = !await OnBeforeBatchAsync(arg.Entities, arg.OperType);
+                        arg.Cancel = !OnBeforeBatch(arg.Entities, arg.OperType);
                     }
                     break;
-                case EntityPersistentEventType.AfterBatch:
+                case PersistentEventType.AfterBatch:
                     {
                         var arg = subject.Argument as EntitiesArgs;
-                        await OnAfterBatchAsync(arg.Entities, arg.OperType);
+                        OnAfterBatch(arg.Entities, arg.OperType);
 
                         switch (arg.OperType)
                         {
-                            case EntityPersistentOperater.Create:
-                                await OnCreateAsync(subject.EntityType);
+                            case PersistentOperator.Create:
+                                OnCreate(subject.EntityType);
                                 break;
-                            case EntityPersistentOperater.Update:
-                                await OnUpdateAsync(subject.EntityType);
+                            case PersistentOperator.Update:
+                                OnUpdate(subject.EntityType);
                                 break;
-                            case EntityPersistentOperater.Remove:
-                                await OnRemoveAsync(subject.EntityType);
+                            case PersistentOperator.Remove:
+                                OnRemove(subject.EntityType);
                                 break;
                         }
                     }
@@ -112,7 +111,7 @@ namespace Fireasy.Data.Entity.Subscribes
         /// </summary>
         /// <param name="entity">创建的实体对象。</param>
         /// <returns>取消则返回 false。</returns>
-        protected virtual async Task<bool> OnBeforeCreateAsync(IEntity entity)
+        protected virtual bool OnBeforeCreate(IEntity entity)
         {
             return true;
         }
@@ -121,7 +120,7 @@ namespace Fireasy.Data.Entity.Subscribes
         /// 用于实体创建之后的通知。
         /// </summary>
         /// <param name="entity">创建的实体对象。</param>
-        protected virtual async Task OnAfterCreateAsync(IEntity entity)
+        protected virtual void OnAfterCreate(IEntity entity)
         {
         }
 
@@ -129,7 +128,7 @@ namespace Fireasy.Data.Entity.Subscribes
         /// 用于实体创建之前的通知。
         /// </summary>
         /// <param name="entityType"></param>
-        protected virtual async Task OnCreateAsync(Type entityType)
+        protected virtual void OnCreate(Type entityType)
         {
         }
 
@@ -138,7 +137,7 @@ namespace Fireasy.Data.Entity.Subscribes
         /// </summary>
         /// <param name="entity">更新的实体对象。</param>
         /// <returns>取消则返回 false。</returns>
-        protected virtual async Task<bool> OnBeforeUpdateAsync(IEntity entity)
+        protected virtual bool OnBeforeUpdate(IEntity entity)
         {
             return true;
         }
@@ -147,7 +146,7 @@ namespace Fireasy.Data.Entity.Subscribes
         /// 用于实体更新之后的通知。
         /// </summary>
         /// <param name="entity">更新的实体对象。</param>
-        protected virtual async Task OnAfterUpdateAsync(IEntity entity)
+        protected virtual void OnAfterUpdate(IEntity entity)
         {
         }
 
@@ -155,7 +154,7 @@ namespace Fireasy.Data.Entity.Subscribes
         /// 用于实体更新之后的通知。
         /// </summary>
         /// <param name="entityType"></param>
-        protected virtual async Task OnUpdateAsync(Type entityType)
+        protected virtual void OnUpdate(Type entityType)
         {
         }
 
@@ -164,7 +163,7 @@ namespace Fireasy.Data.Entity.Subscribes
         /// </summary>
         /// <param name="entity">移除的实体对象。</param>
         /// <returns>取消则返回 false。</returns>
-        protected virtual async Task<bool> OnBeforeRemoveAsync(IEntity entity)
+        protected virtual bool OnBeforeRemove(IEntity entity)
         {
             return true;
         }
@@ -173,7 +172,7 @@ namespace Fireasy.Data.Entity.Subscribes
         /// 用于实体移除之后的通知。
         /// </summary>
         /// <param name="entity">移除的实体对象。</param>
-        protected virtual async Task OnAfterRemoveAsync(IEntity entity)
+        protected virtual void OnAfterRemove(IEntity entity)
         {
         }
 
@@ -181,7 +180,7 @@ namespace Fireasy.Data.Entity.Subscribes
         /// 用于实体移除之后的通知。
         /// </summary>
         /// <param name="entityType"></param>
-        protected virtual async Task OnRemoveAsync(Type entityType)
+        protected virtual void OnRemove(Type entityType)
         {
         }
 
@@ -191,7 +190,7 @@ namespace Fireasy.Data.Entity.Subscribes
         /// <param name="entities">批量处理的实体对象。</param>
         /// <param name="operater"></param>
         /// <returns>取消则返回 false。</returns>
-        protected virtual async Task<bool> OnBeforeBatchAsync(IEnumerable<IEntity> entities, EntityPersistentOperater operater)
+        protected virtual bool OnBeforeBatch(IEnumerable<IEntity> entities, PersistentOperator operater)
         {
             return true;
         }
@@ -201,9 +200,8 @@ namespace Fireasy.Data.Entity.Subscribes
         /// </summary>
         /// <param name="entities">批量处理的实体对象。</param>
         /// <param name="operater"></param>
-        protected virtual async Task OnAfterBatchAsync(IEnumerable<IEntity> entities, EntityPersistentOperater operater)
+        protected virtual void OnAfterBatch(IEnumerable<IEntity> entities, PersistentOperator operater)
         {
         }
-
     }
 }

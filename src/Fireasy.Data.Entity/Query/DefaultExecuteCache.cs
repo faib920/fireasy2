@@ -10,6 +10,7 @@ using Fireasy.Common.Caching;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Ioc;
+using Fireasy.Common.MultiTenancy;
 using Fireasy.Common.Tasks;
 using Fireasy.Common.Threading;
 using Fireasy.Data.Entity.Linq;
@@ -180,8 +181,8 @@ namespace Fireasy.Data.Entity.Query
 
         private void TryStartRunner()
         {
-            var barrierSvr = serviceProvider.TryGetService<ICacheClearTaskBarrier>();
-            var barrier = barrierSvr == null ? "default" : barrierSvr.GetBarrier();
+            var tenancyProvider = serviceProvider.TryGetService<ITenancyProvider<CacheTenancyInfo>>();
+            var barrier = tenancyProvider == null ? "default" : tenancyProvider.GetTenancyInfo().Key;
             if (barriers.Contains(barrier))
             {
                 return;

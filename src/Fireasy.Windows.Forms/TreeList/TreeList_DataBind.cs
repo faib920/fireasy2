@@ -31,6 +31,7 @@ namespace Fireasy.Windows.Forms
             var selectKeyValues = GetSelectedItems();
 
             Items.Clear();
+            Groups.Clear();
             SelectedItems.InternalClear();
             CheckedItems.InternalClear();
 

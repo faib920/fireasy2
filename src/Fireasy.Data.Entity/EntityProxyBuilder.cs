@@ -44,6 +44,18 @@ namespace Fireasy.Data.Entity
             typeBuilder.ImplementInterface(typeof(ICompiledEntity));
             typeBuilder.SetCustomAttribute(() => new SerializableAttribute());
 
+            //重写构造器
+            foreach (var cons in entityType.GetConstructors(BindingFlags.Public | BindingFlags.Instance))
+            {
+                var parameters = cons.GetParameters();
+                typeBuilder.DefineConstructor(parameters.Select(s => s.ParameterType).ToArray()).AppendCode(e =>
+                {
+                    e.ldarg_0.For(0, parameters.Length, (b, i) => b.ldarg(i + 1))
+                    .call(cons).nop.ret();
+                });
+            }
+
+            //重写属性
             var properties = from s in entityType.GetProperties()
                              let getMth = s.GetGetMethod()
                              where getMth.IsVirtual && !getMth.IsFinal

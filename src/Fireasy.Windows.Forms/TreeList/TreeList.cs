@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common;
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -1062,7 +1063,7 @@ namespace Fireasy.Windows.Forms
             }
             else if (y >= bound.ItemBound.Height - itemHeight)
             {
-                vbar.Value = Math.Min((vitem.Index - (bound.ItemBound.Height + (showHeader ? HeaderHeight : 0)) / itemHeight) * itemHeight, vbar.Maximum);
+                vbar.Value = Math.Max(0, Math.Min((vitem.Index - (bound.ItemBound.Height + (showHeader ? HeaderHeight : 0)) / itemHeight) * itemHeight, vbar.Maximum));
             }
         }
 
@@ -1134,6 +1135,16 @@ namespace Fireasy.Windows.Forms
             Items.Sort(++sortVersion, column, order);
             UpdateItems();
         }
+
+        /// <summary>
+        /// 重置所有高亮的项。
+        /// </summary>
+        public void ResetHighlight()
+        {
+            groups.SelectMany(s => s.Items).Where(s => s.Highlight).ForEach(s => s.Highlight = false);
+            Items.Where(s => s.Highlight).ForEach(s => s.Highlight = false);
+        }
+
         #endregion
 
         #region 内部方法
@@ -1312,7 +1323,7 @@ namespace Fireasy.Windows.Forms
                 case ItemType.Item:
                     return new Rectangle(workRect.X - GetOffsetLeft(), y, width, ItemHeight);
                 case ItemType.Group:
-                    return new Rectangle(workRect.X - GetOffsetLeft(), y, bound.ColumnBound.Width, ItemHeight); //GroupHeight
+                    return new Rectangle(workRect.X - GetOffsetLeft(), y, width, ItemHeight); //GroupHeight
                 default:
                     return Rectangle.Empty;
             }
@@ -1325,12 +1336,17 @@ namespace Fireasy.Windows.Forms
 
             var y = bound.ItemBound.Y + item.Index * GetAdjustItemHeight() - GetOffsetTop();
             var rect = new Rectangle(bound.ItemBound.X - hbar.Value, y, width, ItemHeight);
-            var e = new TreeListItemRenderEventArgs((TreeListItem)item.Item, graphics, rect)
+
+            if (item.Item is TreeListItem titem)
             {
-                Alternate = item.Index % 2 != 0,
-                DrawState = state
-            };
-            return e;
+                return new TreeListItemRenderEventArgs(titem, graphics, rect)
+                {
+                    Alternate = item.Index % 2 != 0,
+                    DrawState = state
+                };
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -1494,14 +1510,23 @@ namespace Fireasy.Windows.Forms
             return bound;
         }
 
-        internal void UpdateItems()
+        internal void UpdateItems(int index = -1)
         {
             if (isUpdating)
             {
                 return;
             }
 
-            SelectedItems.InternalClear();
+            if (Items.Count > 0 && index >= 0)
+            {
+                var newItem = index <= Items.Count - 1 ? Items[index] : Items.Last();
+                SelectItem(newItem, true);
+            }
+            else
+            {
+                SelectedItems.InternalClear();
+            }
+
             virMgr.Recalc();
             SetScrollBars();
             Invalidate();
@@ -1522,7 +1547,8 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         private void InitScrollBars()
         {
-            vbar = new VScrollBar() { Visible = false, LargeChange = GetAdjustItemHeight() * 3, SmallChange = 5 };
+            var h = GetAdjustItemHeight();
+            vbar = new VScrollBar() { Visible = false, LargeChange = h * 10, SmallChange = h };
             vbar.ValueChanged += (o, e) =>
             {
                 HideEditor();
@@ -1552,7 +1578,7 @@ namespace Fireasy.Windows.Forms
             var width = GetColumnTotalWidth();
             var borderWidth = GetBorderWidth();
             var height = virMgr.Items.Count * itemHeight;
-            var large = GetAdjustItemHeight() * 3;
+            var large = GetAdjustItemHeight() * 10;
 
             if (ShowVerScrollBar)
             {
@@ -1831,6 +1857,22 @@ namespace Fireasy.Windows.Forms
             {
                 invalidateCells.Remove(cell);
             }
+        }
+
+        internal void RemoveValidateFlags(TreeListItem item)
+        {
+            for (var i = invalidateCells.Count - 1; i >= 0; i--)
+            {
+                if (invalidateCells[i].Item == item)
+                {
+                    invalidateCells.RemoveAt(i);
+                }
+            }
+        }
+
+        internal void RemoveValidateFlags()
+        {
+            invalidateCells.Clear();
         }
         #endregion
     }

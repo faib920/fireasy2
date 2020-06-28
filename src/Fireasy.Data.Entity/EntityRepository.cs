@@ -38,32 +38,32 @@ namespace Fireasy.Data.Entity
         private readonly IRepositoryProvider<TEntity> repositoryProxy;
         private readonly EntityContextOptions options;
         private readonly IProvider provider;
-        private readonly InnerPersistentSubscribeManager subMgr;
+        private readonly IContextService contextService;
+        private readonly InnerSubscribeManager subMgr;
 
         /// <summary>
         /// 初始化 <see cref="EntityRepository{TEntity}"/> 类的新实例。
         /// </summary>
-        /// <param name="repositoryProxy"></param>
+        /// <param name="contextService"></param>
         /// <param name="options"></param>
-        public EntityRepository(IRepositoryProvider<TEntity> repositoryProxy, EntityContextOptions options)
+        public EntityRepository(IContextService contextService, IRepositoryProvider<TEntity> repositoryProxy, EntityContextOptions options)
         {
+            this.contextService = contextService;
             this.repositoryProxy = repositoryProxy;
             this.options = options;
             provider = options.Provider;
             EntityType = typeof(TEntity);
 
-            if (options is IInstanceIdentifier identifier)
-            {
-                ContextType = identifier.ContextType;
-            }
-
-            subMgr = EntityPersistentSubscribeManager.GetRequiredManager(ContextType);
+            subMgr = PersistentSubscribeManager.GetRequiredManager(contextService.ContextType);
         }
 
         /// <summary>
         /// 获取 <see cref="EntityContext"/> 的类型。
         /// </summary>
-        public Type ContextType { get; private set; }
+        public Type ContextType
+        {
+            get { return contextService.ContextType; }
+        }
 
         /// <summary>
         /// 获取关联的实体类型。
@@ -115,7 +115,7 @@ namespace Fireasy.Data.Entity
                 SetDefaultValue(entity);
             }
 
-            return subMgr.OnCreate<TEntity, int>(options.NotifyEvents, entity,
+            return subMgr.OnCreate<TEntity, int>(contextService.ServiceProvider, options.NotifyEvents, entity,
                 () => repositoryProxy.Insert(HandleValidate(entity)));
         }
 
@@ -134,7 +134,7 @@ namespace Fireasy.Data.Entity
                 SetDefaultValue(entity);
             }
 
-            return await subMgr.OnCreateAsync<TEntity, int>(options.NotifyEvents, entity,
+            return await subMgr.OnCreateAsync<TEntity, int>(contextService.ServiceProvider, options.NotifyEvents, entity,
                 () => repositoryProxy.InsertAsync(HandleValidate(entity), cancellationToken));
         }
 
@@ -289,7 +289,7 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return subMgr.OnRemove<TEntity, int>(options.NotifyEvents, entity,
+            return subMgr.OnRemove<TEntity, int>(contextService.ServiceProvider, options.NotifyEvents, entity,
                 () => repositoryProxy.Delete(entity, logicalDelete));
         }
 
@@ -304,7 +304,7 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return await subMgr.OnRemoveAsync<TEntity, int>(options.NotifyEvents, entity,
+            return await subMgr.OnRemoveAsync<TEntity, int>(contextService.ServiceProvider, options.NotifyEvents, entity,
                 () => repositoryProxy.DeleteAsync(entity, logicalDelete, cancellationToken));
         }
 
@@ -318,7 +318,7 @@ namespace Fireasy.Data.Entity
             var ret = repositoryProxy.Delete(primaryValues);
             if (ret > 0 && options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
+                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -334,7 +334,7 @@ namespace Fireasy.Data.Entity
             var ret = await repositoryProxy.DeleteAsync(primaryValues, default);
             if (ret > 0 && options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
+                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -351,7 +351,7 @@ namespace Fireasy.Data.Entity
             var ret = repositoryProxy.Delete(primaryValues, logicalDelete);
             if (ret > 0 && options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
+                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -369,7 +369,7 @@ namespace Fireasy.Data.Entity
             var ret = await repositoryProxy.DeleteAsync(primaryValues, logicalDelete, cancellationToken);
             if (ret > 0 && options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
+                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -386,7 +386,7 @@ namespace Fireasy.Data.Entity
             var ret = repositoryProxy.Delete(predicate, logicalDelete);
             if (ret > 0 && options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
+                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -404,7 +404,7 @@ namespace Fireasy.Data.Entity
             var ret = await repositoryProxy.DeleteAsync(predicate, logicalDelete);
             if (ret > 0 && options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterRemove);
+                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -422,7 +422,7 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return subMgr.OnUpdate<TEntity, int>(options.NotifyEvents, entity,
+            return subMgr.OnUpdate<TEntity, int>(contextService.ServiceProvider, options.NotifyEvents, entity,
                 () => repositoryProxy.Update(HandleValidate(entity)));
         }
 
@@ -436,7 +436,7 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return await subMgr.OnUpdateAsync<TEntity, int>(options.NotifyEvents, entity,
+            return await subMgr.OnUpdateAsync<TEntity, int>(contextService.ServiceProvider, options.NotifyEvents, entity,
                 () => repositoryProxy.UpdateAsync(HandleValidate(entity), cancellationToken));
         }
 
@@ -451,7 +451,7 @@ namespace Fireasy.Data.Entity
             var ret = repositoryProxy.Update(entity, predicate);
             if (ret > 0 && options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterUpdate);
+                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterUpdate);
             }
 
             return ret;
@@ -469,7 +469,7 @@ namespace Fireasy.Data.Entity
             var ret = await repositoryProxy.UpdateAsync(entity, predicate);
             if (ret > 0 && options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterUpdate);
+                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterUpdate);
             }
 
             return ret;
@@ -550,7 +550,7 @@ namespace Fireasy.Data.Entity
             var ret = repositoryProxy.Update(calculator, predicate);
             if (ret > 0 && options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterUpdate);
+                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterUpdate);
             }
 
             return ret;
@@ -568,7 +568,7 @@ namespace Fireasy.Data.Entity
             var ret = await repositoryProxy.UpdateAsync(calculator, predicate, cancellationToken);
             if (ret > 0 && options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(EntityPersistentEventType.AfterUpdate);
+                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterUpdate);
             }
 
             return ret;
@@ -594,7 +594,7 @@ namespace Fireasy.Data.Entity
             var operateName = OperateFinder.Find(fnOperation);
             var eventType = GetEventType(operateName);
 
-            return subMgr.OnBatch<TEntity, int>(options.NotifyEvents,
+            return subMgr.OnBatch<TEntity, int>(contextService.ServiceProvider, options.NotifyEvents,
                 instances.Cast<IEntity>(), eventType,
                 () => repositoryProxy.Batch(instances, fnOperation, batchOpt));
         }
@@ -617,7 +617,7 @@ namespace Fireasy.Data.Entity
             var operateName = OperateFinder.Find(fnOperation);
             var eventType = GetEventType(operateName);
 
-            return await subMgr.OnBatchAsync<TEntity, int>(options.NotifyEvents,
+            return await subMgr.OnBatchAsync<TEntity, int>(contextService.ServiceProvider, options.NotifyEvents,
                 instances.Cast<IEntity>(), eventType,
                 () => repositoryProxy.BatchAsync(instances, fnOperation, batchOpt, cancellationToken));
         }
@@ -922,13 +922,13 @@ namespace Fireasy.Data.Entity
             }
         }
 
-        private EntityPersistentOperater GetEventType(string operateName)
+        private PersistentOperator GetEventType(string operateName)
         {
             return operateName switch
             {
-                "Insert" => EntityPersistentOperater.Create,
-                "Update" => EntityPersistentOperater.Update,
-                "Delete" => EntityPersistentOperater.Remove,
+                "Insert" => PersistentOperator.Create,
+                "Update" => PersistentOperator.Update,
+                "Delete" => PersistentOperator.Remove,
                 _ => throw new InvalidOperationException(),
             };
         }

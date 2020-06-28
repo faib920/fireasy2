@@ -158,16 +158,16 @@ namespace Fireasy.Data.Entity
         }
 
 #if NETSTANDARD && !NETSTANDARD2_0
-        IAsyncEnumerable<T> IDatabase.ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper, CancellationToken cancellationToken)
+        IAsyncEnumerable<T> IDatabase.ExecuteAsyncEnumerable<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper, CancellationToken cancellationToken)
         {
-            return database.ExecuteEnumerableAsync<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);
+            return database.ExecuteAsyncEnumerable<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);
         }
 
-        IAsyncEnumerable<dynamic> IDatabase.ExecuteEnumerableAsync(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CancellationToken cancellationToken)
+        IAsyncEnumerable<dynamic> IDatabase.ExecuteAsyncEnumerable(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CancellationToken cancellationToken)
         {
-            return database.ExecuteEnumerableAsync(queryCommand, segment, parameters, cancellationToken);
+            return database.ExecuteAsyncEnumerable(queryCommand, segment, parameters, cancellationToken);
         }
-#else
+#endif
         Task<IEnumerable<T>> IDatabase.ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper, CancellationToken cancellationToken)
         {
             return database.ExecuteEnumerableAsync<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);
@@ -177,7 +177,6 @@ namespace Fireasy.Data.Entity
         {
             return database.ExecuteEnumerableAsync(queryCommand, segment, parameters, cancellationToken);
         }
-#endif
 
         Exception IDatabase.TryConnect()
         {

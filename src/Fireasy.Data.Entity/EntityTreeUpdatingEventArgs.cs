@@ -9,6 +9,9 @@ using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Query;
 using System;
 using System.Linq.Expressions;
+#if NETSTANDARD
+using Microsoft.Extensions.DependencyInjection;
+#endif
 
 namespace Fireasy.Data.Entity
 {
@@ -100,9 +103,14 @@ namespace Fireasy.Data.Entity
 
             var instanceName = Current.GetInstanceName();
             var environment = Current.GetEnvironment();
-            var identification = ContextInstanceManager.TryGet(instanceName);
-            var contextProvider = identification.GetProviderService<IContextProvider>();
-            using var service = contextProvider.CreateContextService(new ContextServiceContext(identification));
+            var identifier = ContextInstanceManager.TryGet(instanceName);
+            var contextProvider = identifier.GetProviderService<IContextProvider>();
+#if NETSTANDARD
+            using var scope = identifier.ServiceProvider.CreateScope();
+            using var service = contextProvider.CreateContextService(new ContextServiceContext(scope.ServiceProvider, identifier));
+#else
+            using var service = contextProvider.CreateContextService(new ContextServiceContext(identifier));
+#endif
             service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
 
             var queryProvider = new EntityQueryProvider(service);
@@ -126,9 +134,14 @@ namespace Fireasy.Data.Entity
 
             var instanceName = Current.GetInstanceName();
             var environment = Current.GetEnvironment();
-            var identification = ContextInstanceManager.TryGet(instanceName);
-            var contextProvider = identification.GetProviderService<IContextProvider>();
-            using var service = contextProvider.CreateContextService(new ContextServiceContext(identification));
+            var identifier = ContextInstanceManager.TryGet(instanceName);
+            var contextProvider = identifier.GetProviderService<IContextProvider>();
+#if NETSTANDARD
+            using var scope = identifier.ServiceProvider.CreateScope();
+            using var service = contextProvider.CreateContextService(new ContextServiceContext(scope.ServiceProvider, identifier));
+#else
+            using var service = contextProvider.CreateContextService(new ContextServiceContext(identifier));
+#endif
             service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
 
             var queryProvider = new EntityQueryProvider(service);

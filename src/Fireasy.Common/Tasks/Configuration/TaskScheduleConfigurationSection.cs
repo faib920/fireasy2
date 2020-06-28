@@ -17,7 +17,7 @@ using Microsoft.Extensions.Configuration;
 namespace Fireasy.Common.Tasks.Configuration
 {
     /// <summary>
-    /// 提供对任务调度管理器的配置管理。对应的配置节为 fireasy/taskSchedulers。
+    /// 提供对任务调度管理器的配置管理。对应的配置节为 fireasy/taskSchedulers(.net framework) 或 fireasy:taskSchedulers(.net core)。
     /// </summary>
     [ConfigurationSectionStorage("fireasy/taskSchedulers")]
     public sealed class TaskScheduleConfigurationSection : ManagableConfigurationSection<TaskScheduleConfigurationSetting>

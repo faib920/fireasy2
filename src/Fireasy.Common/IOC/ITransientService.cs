@@ -5,10 +5,12 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-namespace Fireasy.Data.Entity.Query
+namespace Fireasy.Common.Ioc
 {
-    public interface ICacheClearTaskBarrier
+    /// <summary>
+    /// 通过程序集发现瞬时服务。
+    /// </summary>
+    public interface ITransientService
     {
-        string GetBarrier();
     }
 }

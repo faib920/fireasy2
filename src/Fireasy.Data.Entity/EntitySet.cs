@@ -23,7 +23,6 @@ namespace Fireasy.Data.Entity
     public class EntitySet<TEntity> : IEntitySet,
         IList<TEntity>,
         IList,
-        IKeepStateCloneable,
         ICloneable,
         IEntityRelation
         where TEntity : class, IEntity
@@ -408,17 +407,6 @@ namespace Fireasy.Data.Entity
             foreach (var item in innerList)
             {
                 item.As<ICloneable>(s => list.Add((TEntity)s.Clone()));
-            }
-
-            return list;
-        }
-
-        object IKeepStateCloneable.Clone()
-        {
-            var list = new EntitySet<TEntity>();
-            foreach (var item in innerList)
-            {
-                item.As<IKeepStateCloneable>(s => list.innerList.Add((TEntity)s.Clone()));
             }
 
             return list;

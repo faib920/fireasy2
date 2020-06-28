@@ -153,16 +153,16 @@ namespace Fireasy.Data
         }
 
 #if NETSTANDARD && !NETSTANDARD2_0
-        IAsyncEnumerable<T> IDatabase.ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper, CancellationToken cancellationToken)
+        IAsyncEnumerable<T> IDatabase.ExecuteAsyncEnumerable<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper, CancellationToken cancellationToken)
         {
-            return innerDatabase.ExecuteEnumerableAsync<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);
+            return innerDatabase.ExecuteAsyncEnumerable<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);
         }
 
-        IAsyncEnumerable<dynamic> IDatabase.ExecuteEnumerableAsync(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CancellationToken cancellationToken)
+        IAsyncEnumerable<dynamic> IDatabase.ExecuteAsyncEnumerable(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CancellationToken cancellationToken)
         {
-            return innerDatabase.ExecuteEnumerableAsync(queryCommand, segment, parameters, cancellationToken);
+            return innerDatabase.ExecuteAsyncEnumerable(queryCommand, segment, parameters, cancellationToken);
         }
-#else
+#endif
         Task<IEnumerable<T>> IDatabase.ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper, CancellationToken cancellationToken)
         {
             return innerDatabase.ExecuteEnumerableAsync<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);
@@ -172,7 +172,6 @@ namespace Fireasy.Data
         {
             return innerDatabase.ExecuteEnumerableAsync(queryCommand, segment, parameters, cancellationToken);
         }
-#endif
 
         Task IDatabase.UpdateAsync(DataTable dataTable, CancellationToken cancellationToken)
         {

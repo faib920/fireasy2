@@ -20,6 +20,7 @@ using System.Threading;
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using Fireasy.Common;
+using System.Linq;
 
 namespace Fireasy.Redis
 {
@@ -57,46 +58,57 @@ namespace Fireasy.Redis
         public CacheManager(IServiceProvider serviceProvider, IOptionsMonitor<RedisCachingOptions> options)
             : this(serviceProvider)
         {
+            RedisConfigurationSetting setting = null;
             var optValue = options.CurrentValue;
             if (!optValue.IsConfigured())
             {
-                return;
-            }
-
-            RedisConfigurationSetting setting;
-            if (!string.IsNullOrEmpty(optValue.ConfigName))
-            {
                 var section = ConfigurationUnity.GetSection<CachingConfigurationSection>();
-                if (section != null && section.GetSetting(optValue.ConfigName) is ExtendConfigurationSetting extSetting)
+                var matchSetting = section.Settings.FirstOrDefault(s => s.Value.CacheType == typeof(CacheManager)).Value;
+                if (matchSetting != null && section.GetSetting(matchSetting.Name) is ExtendConfigurationSetting extSetting)
                 {
                     setting = (RedisConfigurationSetting)extSetting.Extend;
                 }
                 else
                 {
-                    throw new InvalidOperationException($"无效的配置节: {optValue.ConfigName}。");
+                    throw new InvalidOperationException($"未发现与 {typeof(CacheManager).FullName} 相匹配的配置。");
                 }
             }
             else
             {
-                setting = new RedisConfigurationSetting
+                if (!string.IsNullOrEmpty(optValue.ConfigName))
                 {
-                    Password = optValue.Password,
-                    ConnectionString = optValue.ConnectionString,
-                    DefaultDb = optValue.DefaultDb,
-                    DbRange = optValue.DbRange,
-                    KeyRule = optValue.KeyRule,
-                    ConnectTimeout = optValue.ConnectTimeout,
-                    LockTimeout = optValue.LockTimeout,
-                    SyncTimeout = optValue.SyncTimeout,
-                    WriteBuffer = optValue.WriteBuffer,
-                    PoolSize = optValue.PoolSize,
-                    SerializerType = optValue.SerializerType,
-                    Ssl = optValue.Ssl,
-                    Twemproxy = optValue.Twemproxy,
-                    SlidingTime = optValue.SlidingTime
-                };
+                    var section = ConfigurationUnity.GetSection<CachingConfigurationSection>();
+                    if (section != null && section.GetSetting(optValue.ConfigName) is ExtendConfigurationSetting extSetting)
+                    {
+                        setting = (RedisConfigurationSetting)extSetting.Extend;
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"无效的配置节: {optValue.ConfigName}。");
+                    }
+                }
+                else
+                {
+                    setting = new RedisConfigurationSetting
+                    {
+                        Password = optValue.Password,
+                        ConnectionString = optValue.ConnectionString,
+                        DefaultDb = optValue.DefaultDb,
+                        DbRange = optValue.DbRange,
+                        KeyRule = optValue.KeyRule,
+                        ConnectTimeout = optValue.ConnectTimeout,
+                        LockTimeout = optValue.LockTimeout,
+                        SyncTimeout = optValue.SyncTimeout,
+                        WriteBuffer = optValue.WriteBuffer,
+                        PoolSize = optValue.PoolSize,
+                        SerializerType = optValue.SerializerType,
+                        Ssl = optValue.Ssl,
+                        Twemproxy = optValue.Twemproxy,
+                        SlidingTime = optValue.SlidingTime
+                    };
 
-                RedisHelper.ParseHosts(setting, optValue.Hosts);
+                    RedisHelper.ParseHosts(setting, optValue.Hosts);
+                }
             }
 
             if (setting != null)

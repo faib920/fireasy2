@@ -18,7 +18,7 @@ using Microsoft.Extensions.Configuration;
 namespace Fireasy.Common.Subscribes.Configuration
 {
     /// <summary>
-    /// 提供对订阅管理器的配置管理。对应的配置节为 fireasy/subscribers。
+    /// 提供对订阅管理器的配置管理。对应的配置节为 fireasy/subscribers(.net framework) 或 fireasy:subscribers(.net core)。
     /// </summary>
     [ConfigurationSectionStorage("fireasy/subscribers")]
     public sealed class SubscribeConfigurationSection : ManagableConfigurationSection<SubscribeConfigurationSetting>

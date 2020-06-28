@@ -18,7 +18,7 @@ using Microsoft.Extensions.Configuration;
 namespace Fireasy.Common.Threading.Configuration
 {
     /// <summary>
-    /// 提供对锁的配置管理。对应的配置节为 fireasy/lockers。
+    /// 提供对锁的配置管理。对应的配置节为 fireasy/lockers(.net framework) 或 fireasy:lockers(.net core)。
     /// </summary>
     [ConfigurationSectionStorage("fireasy/lockers")]
     public sealed class LockerConfigurationSection : ManagableConfigurationSection<LockerConfigurationSetting>

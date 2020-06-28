@@ -158,14 +158,25 @@ namespace Fireasy.Common.Ioc
         }
 
         /// <summary>
-        /// 遍列程序集中的所有类型，以其接口类型注册服务类型。
+        /// 遍列程序集中的所有类型，并将服务注入到容器中。
         /// </summary>
         /// <param name="assembly">程序集。</param>
-        /// <param name="lifetime">生命周期。</param>
         /// <returns></returns>
-        public Container RegisterAssembly(Assembly assembly, Lifetime lifetime = Lifetime.Transient)
+        public Container RegisterAssembly(Assembly assembly)
         {
-            Helpers.DiscoverAssembly(assembly, (svrType, implType) => Register(svrType, implType, lifetime));
+            Helpers.DiscoverAssembly(assembly, (svrType, implType, lifetime) => Register(svrType, implType, lifetime));
+
+            return this;
+        }
+
+        /// <summary>
+        /// 遍列当前调用的程序集的所有依赖程序集，遍列程序集中的所有类型，并将服务注入到容器中。
+        /// </summary>
+        /// <param name="filter">过滤函数，如果指定了此函数，则只检索满足条件的程序集。</param>
+        /// <returns></returns>
+        public Container RegisterAllAssemblies(Func<Assembly, bool> filter = null)
+        {
+            Assembly.GetExecutingAssembly().ForEachAssemblies(ass => RegisterAssembly(ass), filter);
 
             return this;
         }
@@ -174,12 +185,11 @@ namespace Fireasy.Common.Ioc
         /// 遍列程序集中的所有类型，以其接口类型注册服务类型。
         /// </summary>
         /// <param name="assemblyName">程序集名称。</param>
-        /// <param name="lifetime">生命周期。</param>
         /// <returns></returns>
-        public Container RegisterAssembly(string assemblyName, Lifetime lifetime = Lifetime.Transient)
+        public Container RegisterAssembly(string assemblyName)
         {
             var assembly = Assembly.Load(assemblyName);
-            return RegisterAssembly(assembly, lifetime);
+            return RegisterAssembly(assembly);
         }
 
         /// <summary>

@@ -16,7 +16,7 @@ using Microsoft.Extensions.Configuration;
 namespace Fireasy.Common.Logging.Configuration
 {
     /// <summary>
-    /// 表示日志的配置节。无法继承此类。
+    /// 表示日志的配置节。无法继承此类。对应的配置节为 fireasy/loggings(.net framework) 或 fireasy:loggings(.net core)。
     /// </summary>
     [ConfigurationSectionStorage("fireasy/loggings")]
     public sealed class LoggingConfigurationSection : ManagableConfigurationSection<LoggingConfigurationSetting>

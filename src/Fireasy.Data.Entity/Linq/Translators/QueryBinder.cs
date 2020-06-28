@@ -154,6 +154,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     case nameof(Extensions.ToListAsync):
                         isQueryAsync = true;
                         return Visit(node.Arguments[0]);
+                    case nameof(Extensions.Where):
+                        return BindWhere(node.Type, node.Arguments[0], node.Arguments[1], node.Arguments[2]);
                 }
             }
             else if (typeof(IRepository).IsAssignableFrom(node.Method.DeclaringType))
@@ -442,6 +444,31 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             expMaps[predicate.Parameters[0]] = projection.Projector;
             var where = Visit(predicate.Body);
+
+            var alias = GetNextAlias();
+            var pc = ProjectColumns(projection.Projector, alias, projection.Select.Alias);
+            return new ProjectionExpression(
+                new SelectExpression(alias, pc.Columns, projection.Select, where),
+                pc.Projector, isQueryAsync, isNoTracking
+                );
+        }
+
+        private Expression BindWhere(Type resultType, Expression source, Expression condition, Expression parameters)
+        {
+            var projection = VisitSequence(source);
+            if (projection == null)
+            {
+                return null;
+            }
+
+            var sql = ((ConstantExpression)condition).Value.ToString();
+            List<NamedValueExpression> values = null;
+            if (parameters != null && parameters is ConstantExpression constExp && constExp.Value is ParameterCollection pars)
+            {
+                values = pars.Select(s => new NamedValueExpression(s.ParameterName, Expression.Constant(s.Value))).ToList();
+            }
+
+            var where = new SqlExpression(sql, values);
 
             var alias = GetNextAlias();
             var pc = ProjectColumns(projection.Projector, alias, projection.Select.Alias);

@@ -19,6 +19,7 @@ using Fireasy.Common.Localization;
 using Fireasy.Common.Localization.Configuration;
 using Fireasy.Common.Logging;
 using Fireasy.Common.Logging.Configuration;
+using Fireasy.Common.Mapper.Configuration;
 using Fireasy.Common.Options;
 using Fireasy.Common.Serialization;
 using Fireasy.Common.Serialization.Configuration;
@@ -29,9 +30,9 @@ using Fireasy.Common.Tasks.Configuration;
 using Fireasy.Common.Threading;
 using Fireasy.Common.Threading.Configuration;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -46,6 +47,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </summary>
         /// <param name="services"></param>
         /// <param name="configuration"></param>
+        /// <param name="setupAction"></param>
         /// <returns></returns>
         public static IServiceCollection AddFireasy(this IServiceCollection services, IConfiguration configuration, Action<CoreOptions> setupAction = null)
         {
@@ -83,38 +85,47 @@ namespace Microsoft.Extensions.DependencyInjection
 
             foreach (var reg in setting.Registrations)
             {
-                var lifetime = reg.Lifetime switch
-                {
-                    Lifetime.Transient => ServiceLifetime.Transient,
-                    Lifetime.Singleton => ServiceLifetime.Singleton,
-                    Lifetime.Scoped => ServiceLifetime.Scoped,
-                    _ => ServiceLifetime.Transient
-                };
-
-                void register(IServiceCollection services, Type svrType, Type implType)
-                {
-                    if (implType == null)
-                    {
-                        Tracer.Debug($"Couldn't find the implementation of '{svrType}'.");
-                    }
-                    else if (svrType != null)
-                    {
-                        Tracer.Debug($"{lifetime}-Descriptor has been registered: {svrType} --> {implType}.");
-                        services.Add(ServiceDescriptor.Describe(svrType, CheckAopProxyType(implType), lifetime));
-                    }
-                }
-
                 if (reg.Assembly != null)
                 {
-                    Helpers.DiscoverAssembly(reg.Assembly, (svrType, implType) => register(services, svrType, implType));
+                    Helpers.DiscoverAssembly(reg.Assembly, (svrType, implType, lifetime) => Register(services, svrType, implType, GetLifetime(lifetime)));
                 }
                 else
                 {
-                    register(services, reg.ServiceType, reg.ImplementationType);
+                    Register(services, reg.ServiceType, reg.ImplementationType, GetLifetime(reg.Lifetime));
                 }
             }
 
             return services;
+        }
+
+
+        /// <summary>
+        /// 绑定所有和 fireasy 有关的配置项。
+        /// </summary>
+        /// <param name="callAssembly"></param>
+        /// <param name="configuration"></param>
+        /// <param name="services"></param>
+        /// <param name="filter">过滤函数，如果指定了此函数，则只检索满足条件的程序集。</param>
+        public static void Initialize(this IConfiguration configuration, Assembly callAssembly, IServiceCollection services = null, Func<Assembly, bool> filter = null)
+        {
+            callAssembly.ForEachAssemblies(ass =>
+                {
+                    var binderAttr = ass.GetCustomAttributes<ConfigurationBinderAttribute>().FirstOrDefault();
+                    var type = binderAttr != null ? binderAttr.BinderType : ass.GetType("Microsoft.Extensions.DependencyInjection.ConfigurationBinder", false);
+                    if (type != null)
+                    {
+                        var method = type.GetMethod("Bind", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public, null, new[] { typeof(IServiceCollection), typeof(IConfiguration) }, null);
+                        if (method != null)
+                        {
+                            method.Invoke(null, new object[] { services, configuration });
+                        }
+                    }
+                }, filter ?? FilterAssembly);
+        }
+
+        private static bool FilterAssembly(Assembly assembly)
+        {
+            return assembly.IsDefined(typeof(ConfigurationBinderAttribute));
         }
 
         /// <summary>
@@ -132,66 +143,28 @@ namespace Microsoft.Extensions.DependencyInjection
             return type;
         }
 
-        /// <summary>
-        /// 绑定所有和 fireasy 有关的配置项。
-        /// </summary>
-        /// <param name="callAssembly"></param>
-        /// <param name="configuration"></param>
-        /// <param name="services"></param>
-        public static void Initialize(this IConfiguration configuration, Assembly callAssembly, IServiceCollection services = null, Func<Assembly, bool> filter = null)
+        private static void Register(IServiceCollection services, Type svrType, Type implType, ServiceLifetime lifetime)
         {
-            var assemblies = new List<Assembly>();
-
-            FindReferenceAssemblies(callAssembly, assemblies, filter);
-
-            assemblies.ForEach(assembly =>
-                {
-                    var binderAttr = assembly.GetCustomAttributes<ConfigurationBinderAttribute>().FirstOrDefault();
-                    var type = binderAttr != null ? binderAttr.BinderType : assembly.GetType("Microsoft.Extensions.DependencyInjection.ConfigurationBinder", false);
-                    if (type != null)
-                    {
-                        var method = type.GetMethod("Bind", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public, null, new[] { typeof(IServiceCollection), typeof(IConfiguration) }, null);
-                        if (method != null)
-                        {
-                            method.Invoke(null, new object[] { services, configuration });
-                        }
-                    }
-                });
-
-            assemblies.Clear();
-        }
-
-        private static bool FilterAssembly(Assembly assembly)
-        {
-            return assembly.IsDefined(typeof(ConfigurationBinderAttribute));
-        }
-
-        private static Assembly LoadAssembly(AssemblyName assemblyName)
-        {
-            try
+            if (implType == null)
             {
-                return Assembly.Load(assemblyName);
+                Tracer.Debug($"Couldn't find the implementation of '{svrType}'.");
             }
-            catch
+            else if (svrType != null)
             {
-                return null;
+                Tracer.Debug($"{lifetime}-Descriptor has been registered: {svrType} --> {implType}.");
+                services.Replace(ServiceDescriptor.Describe(svrType, CheckAopProxyType(implType), lifetime));
             }
         }
 
-        private static void FindReferenceAssemblies(Assembly assembly, List<Assembly> assemblies, Func<Assembly, bool> filter)
+        private static ServiceLifetime GetLifetime(Lifetime lifetime)
         {
-            foreach (var asb in assembly.GetReferencedAssemblies()
-                .Select(s => LoadAssembly(s))
-                .Where(s => s != null)
-                .Where(filter ?? FilterAssembly))
+            return lifetime switch
             {
-                if (!assemblies.Contains(asb))
-                {
-                    assemblies.Add(asb);
-                }
-
-                FindReferenceAssemblies(asb, assemblies, filter);
-            }
+                Lifetime.Transient => ServiceLifetime.Transient,
+                Lifetime.Singleton => ServiceLifetime.Singleton,
+                Lifetime.Scoped => ServiceLifetime.Scoped,
+                _ => ServiceLifetime.Transient
+            };
         }
 
     }
@@ -211,6 +184,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 ConfigurationUnity.Bind<SerializerConfigurationSection>(configuration);
                 ConfigurationUnity.Bind<StringLocalizerConfigurationSection>(configuration);
                 ConfigurationUnity.Bind<TaskScheduleConfigurationSection>(configuration);
+                ConfigurationUnity.Bind<ObjectMapperConfigurationSection>(configuration);
             }
             catch (Exception exp)
             {

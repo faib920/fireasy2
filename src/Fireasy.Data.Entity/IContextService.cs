@@ -37,11 +37,6 @@ namespace Fireasy.Data.Entity
         IRepositoryProvider<TEntity> CreateRepositoryProvider<TEntity>() where TEntity : class, IEntity;
 
         /// <summary>
-        /// 获取 <see cref="EntityContext"/> 的类型。
-        /// </summary>
-        Type ContextType { get; }
-
-        /// <summary>
         /// 开启一个事务。
         /// </summary>
         /// <param name="level"></param>

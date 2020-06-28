@@ -8,12 +8,15 @@
 #if NETSTANDARD
 using Fireasy.Common.Subscribes;
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace Fireasy.Common
 {
     public class CoreOptions
     {
+        public Dictionary<string, Dictionary<Type, List<Delegate>>> de = new Dictionary<string, Dictionary<Type, List<Delegate>>>();
+
         /// <summary>
         /// 获取或设置用于过滤程序集的函数。
         /// </summary>
@@ -44,7 +47,7 @@ namespace Fireasy.Common
     {
         private readonly string name;
 
-        public SubscribeOptions(string name)
+        internal SubscribeOptions(string name)
         {
             this.name = name;
         }
@@ -52,11 +55,11 @@ namespace Fireasy.Common
         /// <summary>
         /// 注册消息订阅器。
         /// </summary>
-        /// <param name="name">配置实例名称。</param>
         /// <param name="subscriber">消息订阅器。</param>
-        public void Add<TSubject>(Action<TSubject> subscriber) where TSubject : class
+        public SubscribeOptions Add<TSubject>(Action<TSubject> subscriber) where TSubject : class
         {
             SubscribeManagerFactory.CreateManager(name)?.AddSubscriber(subscriber);
+            return this;
         }
     }
 }

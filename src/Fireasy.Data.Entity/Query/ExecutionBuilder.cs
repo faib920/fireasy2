@@ -281,14 +281,19 @@ namespace Fireasy.Data.Entity.Query
         protected override Expression VisitNew(NewExpression node)
         {
             var elementType = node.Type;
-            if (typeof(IEntity).IsAssignableFrom(elementType))
+
+            if (typeof(IEntity).IsAssignableFrom(elementType) && elementType.IsNotCompiled())
             {
-                if (elementType.IsNotCompiled())
-                {
-                    var contextType = TranslateScope.Current?.ContextType;
-                    elementType = EntityProxyManager.GetType(contextType, elementType);
-                    return Expression.New(elementType);
-                }
+                var contextType = TranslateScope.Current?.ContextType;
+                elementType = EntityProxyManager.GetType(contextType, elementType);
+            }
+
+            if (elementType != node.Type)
+            {
+                var types = node.Arguments.Select(s => s.Type).ToArray();
+                var arguments = node.Arguments.Select(s => Visit(s));
+                var consInfo = elementType.GetConstructor(types);
+                return Expression.New(consInfo, arguments);
             }
 
             return base.VisitNew(node);
@@ -298,9 +303,9 @@ namespace Fireasy.Data.Entity.Query
         {
             var save = receivingMember;
             receivingMember = binding.Member;
-            var result = base.VisitBinding(binding);
+            var bindings = base.VisitBinding(binding);
             receivingMember = save;
-            return result;
+            return bindings;
         }
 
         protected override Expression VisitConstant(ConstantExpression constExp)
@@ -424,7 +429,7 @@ namespace Fireasy.Data.Entity.Query
             Expression innerKey = MakeJoinKey(join.InnerKey);
             Expression outerKey = MakeJoinKey(join.OuterKey);
 
-            var kvpConstructor = ReflectionCache.GetMember("KeyValueConstructor", new [] { innerKey.Type, join.Projection.Projector.Type }, pars => typeof(KeyValuePair<,>).MakeGenericType(pars).GetConstructor(pars));
+            var kvpConstructor = ReflectionCache.GetMember("KeyValueConstructor", new[] { innerKey.Type, join.Projection.Projector.Type }, pars => typeof(KeyValuePair<,>).MakeGenericType(pars).GetConstructor(pars));
             Expression constructKVPair = Expression.New(kvpConstructor, innerKey, join.Projection.Projector);
             ProjectionExpression newProjection = new ProjectionExpression(join.Projection.Select, constructKVPair, isAsync, join.Projection.IsNoTracking);
 
@@ -724,7 +729,10 @@ namespace Fireasy.Data.Entity.Query
         private Expression CreateParameterCollectionExpression(Expression expression)
         {
             var namedValues = NamedValueGatherer.Gather(expression);
-            var values = namedValues.Select(v => Expression.Convert(Visit(v.Value), typeof(object))).ToArray();
+
+            var values = (from v in namedValues
+             let nex = Visit(v.Value)
+             select nex.NodeType == ExpressionType.Convert ? nex : Expression.Convert(nex, typeof(object))).ToArray();
 
             if (values.Length > 0)
             {

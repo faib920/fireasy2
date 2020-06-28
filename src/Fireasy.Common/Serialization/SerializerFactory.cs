@@ -48,7 +48,7 @@ namespace Fireasy.Common.Serialization
         /// 根据应用程序配置，创建文本序列化器。
         /// </summary>
         /// <param name="configName">应用程序配置项的名称。</param>
-        /// <returns><paramref name="configName"/>缺省时，如果应用程序未配置，则为 <see cref="MemoryCacheManager"/>，否则为配置项对应的 <see cref="ICacheManager"/> 实例。</returns>
+        /// <returns></returns>
         public static ISerializer CreateSerializer(string configName = null)
         {
             return CreateSerializer(null, configName);
@@ -59,7 +59,7 @@ namespace Fireasy.Common.Serialization
         /// </summary>
         /// <param name="serviceProvider">应用程序服务提供者实例。</param>
         /// <param name="configName">应用程序配置项的名称。</param>
-        /// <returns><paramref name="configName"/>缺省时，如果应用程序未配置，则为 <see cref="MemoryCacheManager"/>，否则为配置项对应的 <see cref="ICacheManager"/> 实例。</returns>
+        /// <returns></returns>
         private static ISerializer CreateSerializer(IServiceProvider serviceProvider, string configName = null)
         {
             ISerializer serializer;

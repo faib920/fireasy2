@@ -51,7 +51,7 @@ namespace Fireasy.Data.Entity
 
         IRepository IRepositoryProvider.CreateRepository(EntityContextOptions options)
         {
-            return repository ?? (repository = new EntityRepository<TEntity>(this, options));
+            return repository ?? (repository = new EntityRepository<TEntity>(contextService, this, options));
         }
 
         /// <summary>

@@ -28,7 +28,6 @@ namespace Fireasy.Data.Entity.Query
     public sealed class EntityQueryProvider : IEntityQueryProvider, IContextTypeAware
     {
         private readonly IDatabase database;
-        private readonly IContextService contextService;
         private static readonly ConcurrentDictionary<ParameterInfo[], Tuple<bool, bool>> attrCache = new ConcurrentDictionary<ParameterInfo[], Tuple<bool, bool>>(new ParametersComparer());
 
         /// <summary>
@@ -48,21 +47,22 @@ namespace Fireasy.Data.Entity.Query
                 throw new InvalidOperationException(SR.GetString(SRKind.NotFoundDatabaseAware));
             }
 
-            this.contextService = contextService;
-            ContextType = contextService.ContextType;
-            ServiceProvider = contextService.ServiceProvider;
+            ContextService = contextService;
             ContextOptions = contextService.Options;
         }
 
         /// <summary>
         /// 获取 <see cref="EntityContext"/> 的类型。
         /// </summary>
-        public Type ContextType { get; private set; }
+        public Type ContextType
+        {
+            get { return ContextService.ContextType; }
+        }
 
         /// <summary>
-        /// 获取应用程序服务提供者实例。
+        /// 获取 <see cref="IContextService"/> 实例。
         /// </summary>
-        public IServiceProvider ServiceProvider { get; private set; }
+        public IContextService ContextService { get; private set; }
 
         /// <summary>
         /// 获取参数选项。
@@ -77,7 +77,7 @@ namespace Fireasy.Data.Entity.Query
         /// <exception cref="TranslateException">对 LINQ 表达式解析失败时抛出此异常。</exception>
         public object Execute(Expression expression)
         {
-            var queryCache = ServiceProvider.TryGetService(() => DefaultQueryCache.Instance);
+            var queryCache = ContextService.ServiceProvider.TryGetService(() => DefaultQueryCache.Instance);
             var efn = queryCache.TryGetDelegate(expression, GetCacheContext(), () => (LambdaExpression)GetExecutionPlan(expression));
 
             var attrs = GetMethodAttributes(efn.Method);
@@ -112,7 +112,7 @@ namespace Fireasy.Data.Entity.Query
         /// <exception cref="TranslateException">对 LINQ 表达式解析失败时抛出此异常。</exception>
         public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
         {
-            var queryCache = ServiceProvider.TryGetService(() => DefaultQueryCache.Instance);
+            var queryCache = ContextService.ServiceProvider.TryGetService(() => DefaultQueryCache.Instance);
             var efn = queryCache.TryGetDelegate(expression, GetCacheContext(), () => (LambdaExpression)GetExecutionPlan(expression));
 
             var result = InternalExecuteQuery(expression, efn, cancellationToken);
@@ -123,7 +123,7 @@ namespace Fireasy.Data.Entity.Query
 #if !NETFRAMEWORK && !NETSTANDARD2_0
         public IAsyncEnumerable<TResult> ExecuteEnumerableAsync<TResult>(Expression expression, CancellationToken cancellationToken)
         {
-            var queryCache = ServiceProvider.TryGetService(() => DefaultQueryCache.Instance);
+            var queryCache = ContextService.ServiceProvider.TryGetService(() => DefaultQueryCache.Instance);
             var efn = queryCache.TryGetDelegate(expression, GetCacheContext(), () => (LambdaExpression)GetExecutionPlan(expression, true));
 
             var result = InternalExecuteQuery(expression, efn, cancellationToken);
@@ -149,7 +149,7 @@ namespace Fireasy.Data.Entity.Query
 
                 var options = GetTranslateOptions();
 
-                using var scope = new TranslateScope(contextService, options);
+                using var scope = new TranslateScope(ContextService, options);
                 var translation = scope.TranslateProvider.Translate(expression);
                 var translator = scope.TranslateProvider.CreateTranslator();
 
@@ -180,7 +180,7 @@ namespace Fireasy.Data.Entity.Query
 
                 options ??= GetTranslateOptions();
 
-                using var scope = new TranslateScope(contextService, options);
+                using var scope = new TranslateScope(ContextService, options);
                 var translation = scope.TranslateProvider.Translate(expression);
                 var translator = scope.TranslateProvider.CreateTranslator();
 

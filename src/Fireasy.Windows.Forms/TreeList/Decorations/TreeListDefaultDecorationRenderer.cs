@@ -58,7 +58,11 @@ namespace Fireasy.Windows.Forms
                 foreColor = Color.DarkGray;
             }
 
-            if (state == DrawState.Hot)
+            if (item.Highlight)
+            {
+                foreColor = Color.White;
+            }
+            else if (state == DrawState.Hot)
             {
                 foreColor = SystemColors.HotTrack;
             }

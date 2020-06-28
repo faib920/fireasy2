@@ -18,7 +18,7 @@ namespace Fireasy.Common.Configuration
     /// <summary>
     /// 表示命名的配置项。
     /// </summary>
-    public interface INamedIConfigurationSettingItem
+    public interface INamedIConfigurationSettingItem : IConfigurationSettingItem
     {
         /// <summary>
         /// 获取或设置名称。

@@ -493,7 +493,7 @@ namespace Fireasy.Data.Extensions
 
             foreach (var parameter in parameters)
             {
-                if (command.CommandType == CommandType.Text && parameter.Value is IEnumerable && !(parameter.Value is string))
+                if (command.CommandType == CommandType.Text && parameter.Value is IEnumerable && !(parameter.Value is string) && !(parameter.Value is byte[]))
                 {
                     var parmeterName = parameter.ParameterName[0] == syntax.ParameterPrefix[0] ? parameter.ParameterName : syntax.ParameterPrefix + parameter.ParameterName;
 

@@ -18,7 +18,7 @@ using Microsoft.Extensions.Configuration;
 namespace Fireasy.Common.Serialization.Configuration
 {
     /// <summary>
-    /// 提供对文本序列化器的配置管理。对应的配置节为 fireasy/serialzers。
+    /// 提供对文本序列化器的配置管理。对应的配置节为 fireasy/serialzers(.net framework) 或 fireasy:serialzers(.net core)。
     /// </summary>
     [ConfigurationSectionStorage("fireasy/serialzers")]
     public sealed class SerializerConfigurationSection : ManagableConfigurationSection<SerializerConfigurationSetting>

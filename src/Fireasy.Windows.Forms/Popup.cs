@@ -104,6 +104,7 @@ namespace Fireasy.Windows.Forms
             content.MaximumSize = content.Size;
             Size = content.Size;
             TabStop = content.TabStop = true;
+            Font = DefaultFont;
             Items.Add(host);
             content.Disposed += (sender, e) =>
             {

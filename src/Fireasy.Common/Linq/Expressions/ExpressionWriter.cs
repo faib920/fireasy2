@@ -389,7 +389,7 @@ namespace Fireasy.Common.Linq.Expressions
             }
             else if (c.Type.IsArray || typeof(IEnumerable).IsAssignableFrom(c.Type))
             {
-                var elementType = c.Type.GetEnumerableElementType();
+                var elementType = c.Type.GetEnumerableElementType() ?? typeof(object);
                 VisitNewArray(
                     Expression.NewArrayInit(
                         elementType,

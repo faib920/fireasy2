@@ -8,10 +8,12 @@
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Threading;
 #if NETSTANDARD
+using Fireasy.Common.Options;
 using Fireasy.Common.Threading.Configuration;
 using Microsoft.Extensions.Options;
 #endif
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Fireasy.Redis
@@ -34,40 +36,56 @@ namespace Fireasy.Redis
         /// 初始化 <see cref="RedisLocker"/> 类的新实例。
         /// </summary>
         /// <param name="options"></param>
-        public RedisLocker(IOptions<RedisDistributedLockerOptions> options)
+        public RedisLocker(IOptionsMonitor<RedisDistributedLockerOptions> options)
         {
-            var _options = options.Value;
-            RedisConfigurationSetting setting;
-            if (!string.IsNullOrEmpty(_options.ConfigName))
+            RedisConfigurationSetting setting = null;
+            var optValue = options.CurrentValue;
+            if (!optValue.IsConfigured())
             {
                 var section = ConfigurationUnity.GetSection<LockerConfigurationSection>();
-                if (section != null && section.GetSetting(_options.ConfigName) is ExtendConfigurationSetting extSetting)
+                var matchSetting = section.Settings.FirstOrDefault(s => s.Value.LockerType == typeof(RedisLocker)).Value;
+                if (matchSetting != null && section.GetSetting(matchSetting.Name) is ExtendConfigurationSetting extSetting)
                 {
                     setting = (RedisConfigurationSetting)extSetting.Extend;
                 }
                 else
                 {
-                    throw new InvalidOperationException($"无效的配置节: {_options.ConfigName}。");
+                    throw new InvalidOperationException($"未发现与 {typeof(RedisLocker).FullName} 相匹配的配置。");
                 }
             }
             else
             {
-                setting = new RedisConfigurationSetting
+                if (!string.IsNullOrEmpty(optValue.ConfigName))
                 {
-                    Password = _options.Password,
-                    ConnectionString = _options.ConnectionString,
-                    DefaultDb = _options.DefaultDb,
-                    ConnectTimeout = _options.ConnectTimeout,
-                    LockTimeout = _options.LockTimeout,
-                    SyncTimeout = _options.SyncTimeout,
-                    WriteBuffer = _options.WriteBuffer,
-                    PoolSize = _options.PoolSize,
-                    SerializerType = _options.SerializerType,
-                    Ssl = _options.Ssl,
-                    Twemproxy = _options.Twemproxy
-                };
+                    var section = ConfigurationUnity.GetSection<LockerConfigurationSection>();
+                    if (section != null && section.GetSetting(optValue.ConfigName) is ExtendConfigurationSetting extSetting)
+                    {
+                        setting = (RedisConfigurationSetting)extSetting.Extend;
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"无效的配置节: {optValue.ConfigName}。");
+                    }
+                }
+                else
+                {
+                    setting = new RedisConfigurationSetting
+                    {
+                        Password = optValue.Password,
+                        ConnectionString = optValue.ConnectionString,
+                        DefaultDb = optValue.DefaultDb,
+                        ConnectTimeout = optValue.ConnectTimeout,
+                        LockTimeout = optValue.LockTimeout,
+                        SyncTimeout = optValue.SyncTimeout,
+                        WriteBuffer = optValue.WriteBuffer,
+                        PoolSize = optValue.PoolSize,
+                        SerializerType = optValue.SerializerType,
+                        Ssl = optValue.Ssl,
+                        Twemproxy = optValue.Twemproxy
+                    };
 
-                RedisHelper.ParseHosts(setting, _options.Hosts);
+                    RedisHelper.ParseHosts(setting, optValue.Hosts);
+                }
             }
 
             if (setting != null)

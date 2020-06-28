@@ -13,12 +13,12 @@ using System.Threading.Tasks;
 
 namespace Fireasy.Data.Internal
 {
-    internal class InternalDataCommand : IDbCommand
+    internal class InternalDbCommand : IDbCommand
     {
         private readonly IDbCommand command;
         private readonly ReaderNestedlocked locker;
 
-        public InternalDataCommand(IDbCommand command, ReaderNestedlocked locker)
+        public InternalDbCommand(IDbCommand command, ReaderNestedlocked locker)
         {
             this.command = command;
             this.locker = locker;

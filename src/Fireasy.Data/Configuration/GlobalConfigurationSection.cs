@@ -14,6 +14,9 @@ using Microsoft.Extensions.Configuration;
 
 namespace Fireasy.Data.Configuration
 {
+    /// <summary>
+    /// 公共配置参数。对应的配置节为 fireasy/dataGlobal(.net framework) 或 fireasy:dataGlobal(.net core)。
+    /// </summary>
     [ConfigurationSectionStorage("fireasy/dataGlobal")]
     public class GlobalConfigurationSection : Fireasy.Common.Configuration.ConfigurationSection
     {

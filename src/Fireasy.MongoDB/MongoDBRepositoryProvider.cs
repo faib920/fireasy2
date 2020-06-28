@@ -29,6 +29,7 @@ namespace Fireasy.MongoDB
     {
         private static readonly SafetyDictionary<Type, CustomBsonSerializer> cache = new SafetyDictionary<Type, CustomBsonSerializer>();
 
+        private readonly MongoDBContextService contextService;
         private readonly MongoCollection<TEntity> collection;
         private IRepository repository;
 
@@ -38,6 +39,7 @@ namespace Fireasy.MongoDB
         /// <param name="contextService"></param>
         public MongoDBRepositoryProvider(MongoDBContextService contextService)
         {
+            this.contextService = contextService;
             var metadata = EntityMetadataUnity.GetEntityMetadata(typeof(TEntity));
             var collectionSettings = new MongoCollectionSettings { AssignIdOnInsert = false };
             collection = contextService.Database.GetCollection<TEntity>(metadata.TableName, collectionSettings);
@@ -56,7 +58,7 @@ namespace Fireasy.MongoDB
 
         IRepository IRepositoryProvider.CreateRepository(EntityContextOptions options)
         {
-            return repository ?? (repository = new EntityRepository<TEntity>(this, options));
+            return repository ?? (repository = new EntityRepository<TEntity>(contextService, this, options));
         }
 
         /// <summary>

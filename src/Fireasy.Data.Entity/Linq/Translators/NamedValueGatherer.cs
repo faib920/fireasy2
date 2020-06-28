@@ -30,6 +30,20 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return value;
         }
 
+        protected override Expression VisitSqlText(SqlExpression sql)
+        {
+            if (sql.Parameters != null)
+            {
+                foreach (var p in sql.Parameters)
+                {
+                    if (!namedValues.Contains(p))
+                    {
+                        namedValues.Add(p);
+                    }
+                }
+            }
+            return sql;
+        }
     }
 
     class NamedValueComparer : IEqualityComparer<NamedValueExpression>

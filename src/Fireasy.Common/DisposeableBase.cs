@@ -28,6 +28,7 @@ namespace Fireasy.Common
         [SuppressMessage("Design", "CA1063")]
         ~DisposeableBase()
         {
+            Tracer.Debug($"From {GetType().Name} destructor!!!");
             DoDispose(false);
         }
 

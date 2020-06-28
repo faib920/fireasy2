@@ -8,6 +8,7 @@
 
 using Fireasy.Common;
 using Fireasy.Data.Provider;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -81,6 +82,25 @@ namespace Fireasy.Data.Extensions
             parameter.ParameterName = parameterName;
             parameter.Value = value;
             return parameter;
+        }
+
+        /// <summary>
+        /// 更新 <see cref="ConnectionString"/> 对象里面的参数。
+        /// </summary>
+        /// <param name="connStr"></param>
+        /// <param name="provider"></param>
+        /// <param name="updater"></param>
+        /// <returns></returns>
+        public static ConnectionString UpdateBy(this ConnectionString connStr, IProvider provider, Action<ConnectionParameter> updater)
+        {
+            Guard.ArgumentNull(connStr, nameof(connStr));
+            Guard.ArgumentNull(provider, nameof(provider));
+
+            var param = provider.GetConnectionParameter(connStr);
+            updater?.Invoke(param);
+            provider.UpdateConnectionString(connStr, param);
+
+            return connStr;
         }
     }
 }

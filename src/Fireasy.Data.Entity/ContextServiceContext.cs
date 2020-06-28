@@ -17,12 +17,24 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 初始化 <see cref="ContextServiceContext"/> 类的新实例。
         /// </summary>
-        /// <param name="identification"></param>
-        public ContextServiceContext(IInstanceIdentifier identification)
+        /// <param name="serviceProvider"></param>
+        /// <param name="identifier"></param>
+        public ContextServiceContext(IServiceProvider serviceProvider, IInstanceIdentifier identifier)
         {
-            ServiceProvider = identification.ServiceProvider;
-            ContextType = identification.ContextType;
-            Options = (EntityContextOptions)identification;
+            ServiceProvider = serviceProvider;
+            ContextType = identifier.ContextType;
+            Options = (EntityContextOptions)identifier;
+        }
+
+        /// <summary>
+        /// 初始化 <see cref="ContextServiceContext"/> 类的新实例。
+        /// </summary>
+        /// <param name="identifier"></param>
+        public ContextServiceContext(IInstanceIdentifier identifier)
+        {
+            ServiceProvider = identifier.ServiceProvider;
+            ContextType = identifier.ContextType;
+            Options = (EntityContextOptions)identifier;
         }
 
         /// <summary>

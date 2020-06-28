@@ -18,7 +18,7 @@ using Microsoft.Extensions.Configuration;
 namespace Fireasy.Data.Configuration
 {
     /// <summary>
-    /// 数据库实例配置类。
+    /// 数据库实例配置类。对应的配置节为 fireasy/dataInstances(.net framework) 或 fireasy:dataInstances(.net core)。
     /// </summary>
     [ConfigurationSectionStorage("fireasy/dataInstances")]
     public sealed class InstanceConfigurationSection : DefaultInstaneConfigurationSection<IInstanceConfigurationSetting>

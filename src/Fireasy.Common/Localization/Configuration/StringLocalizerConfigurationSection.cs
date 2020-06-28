@@ -17,7 +17,7 @@ using Microsoft.Extensions.Configuration;
 namespace Fireasy.Common.Localization.Configuration
 {
     /// <summary>
-    /// 提供对字符串本地化管理器的配置管理。对应的配置节为 fireasy/stringLocalizers。
+    /// 提供对字符串本地化管理器的配置管理。对应的配置节为 fireasy/stringLocalizers(.net framework) 或 fireasy:stringLocalizers(.net core)。
     /// </summary>
     [ConfigurationSectionStorage("fireasy/stringLocalizers")]
     public sealed class StringLocalizerConfigurationSection : ManagableConfigurationSection<StringLocalizerConfigurationSetting>

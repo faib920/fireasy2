@@ -19,7 +19,7 @@ using Microsoft.Extensions.Configuration;
 namespace Fireasy.Common.Ioc.Configuration
 {
     /// <summary>
-    /// 表示容器的配置节。无法继承此类。
+    /// 表示容器的配置节。无法继承此类。对应的配置节为 fireasy/containers(.net framework) 或 fireasy:containers(.net core)。
     /// </summary>
     [ConfigurationSectionStorage("fireasy/containers")]
     public sealed class ContainerConfigurationSection : DefaultInstaneConfigurationSection<ContainerConfigurationSetting>

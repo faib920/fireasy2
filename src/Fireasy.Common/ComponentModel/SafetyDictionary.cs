@@ -21,7 +21,7 @@ namespace Fireasy.Common.ComponentModel
     /// <typeparam name="TValue"></typeparam>
     public class SafetyDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
     {
-        private readonly LazyThreadSafetyMode mode = LazyThreadSafetyMode.ExecutionAndPublication;
+        private readonly LazyThreadSafetyMode _mode = LazyThreadSafetyMode.ExecutionAndPublication;
 
         /// <summary>
         /// 实例化 <see cref="SafetyDictionary{TKey, TValue}"/> 类的新实例。 
@@ -52,7 +52,7 @@ namespace Fireasy.Common.ComponentModel
             {
                 foreach (var kvp in collection)
                 {
-                    LazyValues.TryAdd(kvp.Key, new Lazy<TValue>(() => kvp.Value, mode));
+                    LazyValues.TryAdd(kvp.Key, new Lazy<TValue>(() => kvp.Value, _mode));
                 }
             }
         }
@@ -68,7 +68,7 @@ namespace Fireasy.Common.ComponentModel
             {
                 foreach (var kvp in collection)
                 {
-                    LazyValues.TryAdd(kvp.Key, new Lazy<TValue>(() => kvp.Value, mode));
+                    LazyValues.TryAdd(kvp.Key, new Lazy<TValue>(() => kvp.Value, _mode));
                 }
             }
         }
@@ -81,7 +81,7 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public TValue GetOrAdd(TKey key, Func<TValue> valueFactory)
         {
-            var lazy = LazyValues.GetOrAdd(key, k => new Lazy<TValue>(valueFactory, mode));
+            var lazy = LazyValues.GetOrAdd(key, k => new Lazy<TValue>(valueFactory, _mode));
             return lazy != null && lazy.Value != null ? lazy.Value : default;
         }
 
@@ -93,7 +93,7 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public TValue GetOrAdd(TKey key, Func<TKey, TValue> valueFactory)
         {
-            var lazy = LazyValues.GetOrAdd(key, k => new Lazy<TValue>(() => valueFactory(key), mode));
+            var lazy = LazyValues.GetOrAdd(key, k => new Lazy<TValue>(() => valueFactory(key), _mode));
             return lazy != null && lazy.Value != null ? lazy.Value : default;
         }
 
@@ -106,7 +106,7 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public TValue GetOrAdd<TArg1>(TKey key, TArg1 arg1, Func<TKey, TArg1, TValue> valueFactory)
         {
-            var lazy = LazyValues.GetOrAdd(key, k => new Lazy<TValue>(() => valueFactory(key, arg1), mode));
+            var lazy = LazyValues.GetOrAdd(key, k => new Lazy<TValue>(() => valueFactory(key, arg1), _mode));
             return lazy != null && lazy.Value != null ? lazy.Value : default;
         }
 
@@ -120,7 +120,7 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public TValue GetOrAdd<TArg1, TArg2>(TKey key, TArg1 arg1, TArg2 arg2, Func<TKey, TArg1, TArg2, TValue> valueFactory)
         {
-            var lazy = LazyValues.GetOrAdd(key, k => new Lazy<TValue>(() => valueFactory(key, arg1, arg2), mode));
+            var lazy = LazyValues.GetOrAdd(key, k => new Lazy<TValue>(() => valueFactory(key, arg1, arg2), _mode));
             return lazy != null && lazy.Value != null ? lazy.Value : default;
         }
 
@@ -132,7 +132,7 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public bool TryAdd(TKey key, TValue value)
         {
-            return LazyValues.TryAdd(key, new Lazy<TValue>(() => value, mode));
+            return LazyValues.TryAdd(key, new Lazy<TValue>(() => value, _mode));
         }
 
         /// <summary>
@@ -143,7 +143,7 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public bool TryAdd(TKey key, Func<TValue> valueFactory)
         {
-            return LazyValues.TryAdd(key, new Lazy<TValue>(valueFactory, mode));
+            return LazyValues.TryAdd(key, new Lazy<TValue>(valueFactory, _mode));
         }
 
         /// <summary>
@@ -176,8 +176,8 @@ namespace Fireasy.Common.ComponentModel
         public TValue AddOrUpdate(TKey key, Func<TValue> addOrUpdateFactory)
         {
             var lazy = LazyValues.AddOrUpdate(key,
-                k => new Lazy<TValue>(addOrUpdateFactory, mode),
-                (k, v) => new Lazy<TValue>(addOrUpdateFactory, mode));
+                k => new Lazy<TValue>(addOrUpdateFactory, _mode),
+                (k, v) => new Lazy<TValue>(addOrUpdateFactory, _mode));
 
             if (lazy != null)
             {
@@ -196,8 +196,8 @@ namespace Fireasy.Common.ComponentModel
         public TValue AddOrUpdate(TKey key, Func<TKey, TValue> addOrUpdateFactory)
         {
             var lazy = LazyValues.AddOrUpdate(key,
-                k => new Lazy<TValue>(() => addOrUpdateFactory(key), mode),
-                (k, v) => new Lazy<TValue>(() => addOrUpdateFactory(key), mode));
+                k => new Lazy<TValue>(() => addOrUpdateFactory(key), _mode),
+                (k, v) => new Lazy<TValue>(() => addOrUpdateFactory(key), _mode));
 
             if (lazy != null)
             {

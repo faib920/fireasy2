@@ -11,7 +11,7 @@ namespace Fireasy.Data.Entity.Subscribes
     /// <summary>
     /// 实体持久化的事件类型。
     /// </summary>
-    public enum EntityPersistentEventType
+    public enum PersistentEventType
     {
         /// <summary>
         /// 创建实体之前。
@@ -50,7 +50,7 @@ namespace Fireasy.Data.Entity.Subscribes
     /// <summary>
     /// 持久化操作类别。
     /// </summary>
-    public enum EntityPersistentOperater
+    public enum PersistentOperator
     {
         /// <summary>
         /// 创建实体。

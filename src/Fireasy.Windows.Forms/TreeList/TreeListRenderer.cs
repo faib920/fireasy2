@@ -78,7 +78,8 @@ namespace Fireasy.Windows.Forms
 
             var flags = TextFormatFlags.EndEllipsis | TextFormatFlags.VerticalCenter | TextFormatFlags.PreserveGraphicsClipping | TextFormatFlags.HorizontalCenter;
 
-            TextRenderer.DrawText(e.Graphics, e.Index.ToString(), e.TreeList.Font, e.Bounds, Color.Black, flags);
+            var color = e.DrawState == DrawState.Selected && e.TreeList.Focused ? SystemColors.Window : SystemColors.WindowText;
+            TextRenderer.DrawText(e.Graphics, e.Index.ToString(), e.TreeList.Font, e.Bounds, color, flags);
         }
 
         private Color GetRowNumberBackgroundColor(TreeListRowNumberRenderEventArgs e)
@@ -332,6 +333,10 @@ namespace Fireasy.Windows.Forms
             if (e.DrawState == DrawState.Selected)
             {
                 return e.Item.TreeList.Focused ? SystemColors.Highlight : SystemColors.ButtonFace;
+            }
+            else if (e.Item.Highlight)
+            {
+                return Color.Red;
             }
             else if (e.Item.BackgroundColor != Color.Empty)
             {

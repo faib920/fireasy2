@@ -15,6 +15,7 @@ using Fireasy.Common.Serialization;
 using Fireasy.Common.Threading;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Dynamic;
@@ -31,6 +32,8 @@ namespace Fireasy.Common.Extensions
     {
         private static readonly ReadWriteLocker locker = new ReadWriteLocker();
         private static readonly MethodInfo MthToType = typeof(GenericExtension).GetMethod(nameof(GenericExtension.ToType));
+        private static readonly MethodInfo MthMapTo = typeof(GenericExtension).GetMethod(nameof(GenericExtension.InternalMapTo), BindingFlags.NonPublic | BindingFlags.Static);
+        private static readonly ConcurrentDictionary<string, Delegate> cache = new ConcurrentDictionary<string, Delegate>();
 
         /// <summary>
         /// 判断对象是否为空。
@@ -220,6 +223,23 @@ namespace Fireasy.Common.Extensions
         }
 
         /// <summary>
+        /// 将源对象映射到目标对象。
+        /// </summary>
+        /// <typeparam name="TSource">对象的类型。</typeparam>
+        /// <typeparam name="TTarget">要转换的类型。</typeparam>
+        /// <param name="source">源对象。</param>
+        /// <param name="target">目标对象。</param>
+        /// <param name="mapper">转换器。</param>
+        /// <returns></returns>
+        public static TTarget MapTo<TSource, TTarget>(this TSource source, TTarget target, ConvertMapper mapper = null)
+        {
+            Guard.ArgumentNull(source, nameof(source));
+            Guard.ArgumentNull(target, nameof(target));
+
+            return (TTarget)InternalMapTo(source, target, mapper);
+        }
+
+        /// <summary>
         /// 将对象转换为指定的类型。
         /// </summary>
         /// <typeparam name="TSource">对象的类型。</typeparam>
@@ -254,7 +274,13 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static object ToType(this object value, Type conversionType, object defaultValue = null, ConvertMapper mapper = null)
         {
+            if (value == null && defaultValue != null)
+            {
+                return defaultValue;
+            }
+
             Guard.ArgumentNull(conversionType, nameof(conversionType));
+
             if (value.IsNullOrEmpty())
             {
                 return conversionType.IsNullableType() ? null : (defaultValue ?? conversionType.GetDefaultValue());
@@ -270,6 +296,7 @@ namespace Fireasy.Common.Extensions
                 {
                     return Enum.Parse(conversionType, value.ToString(), true);
                 }
+
                 if (conversionType == typeof(bool?) && Convert.ToInt32(value) == -1)
                 {
                     return null;
@@ -279,6 +306,7 @@ namespace Fireasy.Common.Extensions
                 {
                     return value.ToType(conversionType.GetGenericArguments()[0]);
                 }
+
                 if (conversionType == typeof(bool))
                 {
                     if (value is string)
@@ -288,6 +316,7 @@ namespace Fireasy.Common.Extensions
                     }
                     return Convert.ToInt32(value) == 1;
                 }
+
                 if (value is bool)
                 {
                     if (conversionType == typeof(string))
@@ -296,14 +325,17 @@ namespace Fireasy.Common.Extensions
                     }
                     return Convert.ToBoolean(value) ? 1 : 0;
                 }
+
                 if (conversionType == typeof(Type))
                 {
                     return Type.GetType(value.ToString(), false, true);
                 }
+
                 if (value is Type && conversionType == typeof(string))
                 {
                     return ((Type)value).FullName;
                 }
+
                 if (typeof(IConvertible).IsAssignableFrom(conversionType))
                 {
                     return Convert.ChangeType(value, conversionType, null);
@@ -311,7 +343,7 @@ namespace Fireasy.Common.Extensions
 
                 return value.CloneTo(conversionType, mapper);
             }
-            catch (Exception exp)
+            catch
             {
                 return defaultValue;
             }
@@ -592,8 +624,7 @@ namespace Fireasy.Common.Extensions
             }
 
             //如果可枚举
-            var enumerable = obj as IEnumerable;
-            if (enumerable != null && typeof(IEnumerable).IsAssignableFrom(conversionType))
+            if (obj is IEnumerable enumerable && typeof(IEnumerable).IsAssignableFrom(conversionType))
             {
                 if (typeof(IDictionary).IsAssignableFrom(conversionType))
                 {
@@ -605,9 +636,51 @@ namespace Fireasy.Common.Extensions
                 }
             }
 
-            var cacheMgr = MemoryCacheManager.Instance;
-            var func = cacheMgr.TryGet(sourceType.FullName + "-" + conversionType.FullName, () => BuildCloneToDelegate(obj, conversionType, mapper));
+            var func = cache.GetOrAdd($"{sourceType.FullName}-{conversionType.FullName}", k =>
+            {
+                return BuildCloneToDelegate(obj, conversionType, mapper);
+            });
+
             return func.DynamicInvoke(obj);
+        }
+
+        /// <summary>
+        /// 将对象克隆为指定类型的实例。
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        private static object InternalMapTo(this object source, object target, ConvertMapper mapper)
+        {
+            var sourceType = source.GetType();
+            var targetType = target.GetType();
+
+            //接口或抽象类，生成一个实现类
+            if (targetType.IsInterface || targetType.IsAbstract)
+            {
+                targetType = targetType.BuildImplementType();
+            }
+
+            //如果可枚举
+            if (source is IEnumerable enumerable && typeof(IEnumerable).IsAssignableFrom(targetType))
+            {
+                if (typeof(IDictionary).IsAssignableFrom(targetType))
+                {
+                    return ConvertToDictionary(enumerable, targetType);
+                }
+                else
+                {
+                    return ConvertToEnumerable(enumerable, targetType);
+                }
+            }
+
+            var func = cache.GetOrAdd($"{sourceType.FullName}-{targetType.FullName}-mapto", k =>
+            {
+                return BuildMapToDelegate(source, target, targetType, mapper);
+            });
+
+            func.DynamicInvoke(source, target);
+            return target;
         }
 
         private static Delegate BuildCloneToDelegate(object obj, Type conversionType, ConvertMapper mapper)
@@ -617,8 +690,7 @@ namespace Fireasy.Common.Extensions
             var parExp = Expression.Parameter(sourceType, "s");
 
             TypeDescriptorUtility.AddDefaultDynamicProvider();
-            var @dynamic = obj as IDynamicMetaObjectProvider;
-            if (@dynamic != null)
+            if (obj is IDynamicMetaObjectProvider @dynamic)
             {
                 GetDynamicMemberBindings(@dynamic, conversionType, parExp, bindings, mapper);
             }
@@ -634,16 +706,40 @@ namespace Fireasy.Common.Extensions
             return lambda.Compile();
         }
 
-        private static void GetDynamicMemberBindings(IDynamicMetaObjectProvider @dynamic, Type conversionType, ParameterExpression parExp, List<MemberBinding> bindings, ConvertMapper mapper)
+        private static Delegate BuildMapToDelegate(object source, object target, Type conversionType, ConvertMapper mapper)
+        {
+            var sourceType = source.GetType();
+            var assignments = new List<BinaryExpression>();
+            var sourceParExp = Expression.Parameter(sourceType, "s");
+            var targetParExp = Expression.Parameter(conversionType, "t");
+
+            TypeDescriptorUtility.AddDefaultDynamicProvider();
+            if (source is IDynamicMetaObjectProvider @dynamic)
+            {
+                GetDynamicMemberAssignments(@dynamic, conversionType, sourceParExp, targetParExp, assignments, mapper);
+            }
+            else
+            {
+                GetGeneralMemberAssignments(source, target, sourceType, conversionType, sourceParExp, targetParExp, assignments, mapper);
+            }
+
+            var blockExp = Expression.Block(assignments);
+            var funcType = typeof(Action<,>).MakeGenericType(sourceType, conversionType);
+            var lambda = Expression.Lambda(funcType, blockExp, sourceParExp, targetParExp);
+            return lambda.Compile();
+        }
+
+        private static void GetDynamicMemberBindings(IDynamicMetaObjectProvider @dynamic, Type targetType,
+            ParameterExpression sourceParExp, List<MemberBinding> bindings, ConvertMapper mapper)
         {
             var method = typeof(DynamicManager).GetMethod(nameof(DynamicManager.GetMember), BindingFlags.Instance | BindingFlags.Public);
             var metaObject = @dynamic.GetMetaObject(Expression.Constant(@dynamic));
-            var metaObjExp = Expression.TypeAs(parExp, typeof(IDynamicMetaObjectProvider));
+            var metaObjExp = Expression.TypeAs(sourceParExp, typeof(IDynamicMetaObjectProvider));
             foreach (var name in metaObject.GetDynamicMemberNames())
             {
                 try
                 {
-                    var descProperty = conversionType.GetProperty(name, BindingFlags.Public | BindingFlags.Instance);
+                    var descProperty = targetType.GetProperty(name, BindingFlags.Public | BindingFlags.Instance);
                     if (descProperty == null || !descProperty.CanWrite)
                     {
                         continue;
@@ -662,31 +758,61 @@ namespace Fireasy.Common.Extensions
             }
         }
 
-        private static void GetGeneralMemberBindings(object obj, Type sourceType, Type conversionType, ParameterExpression parExp, List<MemberBinding> bindings, ConvertMapper mapper)
+        private static void GetDynamicMemberAssignments(IDynamicMetaObjectProvider @dynamic, Type targetType,
+            ParameterExpression sourceParExp, ParameterExpression targetParExp, List<BinaryExpression> assignments, ConvertMapper mapper)
         {
-            var lazyMgr = obj as ILazyManager;
-            foreach (var property in conversionType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            var method = typeof(DynamicManager).GetMethod(nameof(DynamicManager.GetMember), BindingFlags.Instance | BindingFlags.Public);
+            var metaObject = @dynamic.GetMetaObject(Expression.Constant(@dynamic));
+            var metaObjExp = Expression.TypeAs(sourceParExp, typeof(IDynamicMetaObjectProvider));
+            foreach (var name in metaObject.GetDynamicMemberNames())
             {
                 try
                 {
-                    if (lazyMgr != null && !lazyMgr.IsValueCreated(property.Name))
+                    var descProperty = targetType.GetProperty(name, BindingFlags.Public | BindingFlags.Instance);
+                    if (descProperty == null || !descProperty.CanWrite)
                     {
                         continue;
                     }
 
-                    Expression descExp = null;
+                    var mgrExp = Expression.New(typeof(DynamicManager));
+                    var exp = (Expression)Expression.Call(mgrExp, method, metaObjExp, Expression.Constant(name));
+                    exp = Expression.Call(null, MthToType, exp, Expression.Constant(descProperty.PropertyType), Expression.Constant(null), Expression.Constant(null, typeof(ConvertMapper)));
+                    exp = (Expression)Expression.Convert(exp, descProperty.PropertyType);
+                    var descExp = Expression.MakeMemberAccess(targetParExp, descProperty);
+                    assignments.Add(Expression.Assign(descExp, exp));
+                }
+                catch
+                {
+                    continue;
+                }
+            }
+        }
+
+        private static void GetGeneralMemberBindings(object source, Type sourceType, Type targetType,
+            ParameterExpression sourceParExp, List<MemberBinding> bindings, ConvertMapper mapper)
+        {
+            foreach (var property in targetType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                try
+                {
+                    if (source is ILazyManager lazyMgr && !lazyMgr.IsValueCreated(property.Name))
+                    {
+                        continue;
+                    }
+
+                    Expression sourceExp = null;
 
                     //在映射器里查找转换表达式
                     if (mapper != null)
                     {
-                        descExp = mapper.GetMapExpression(property);
-                        if (descExp != null)
+                        sourceExp = mapper.GetMapExpression(property);
+                        if (sourceExp != null)
                         {
-                            descExp = (ExpressionReplacer.Replace(descExp, parExp) as LambdaExpression).Body;
+                            sourceExp = (ExpressionReplacer.Replace(sourceExp, sourceParExp) as LambdaExpression).Body;
                         }
                     }
 
-                    if (descExp == null)
+                    if (sourceExp == null)
                     {
                         var sourceProperty = sourceType.GetProperty(property.Name, BindingFlags.Public | BindingFlags.Instance);
                         if (sourceProperty == null || !sourceProperty.CanRead || !property.CanWrite)
@@ -694,25 +820,88 @@ namespace Fireasy.Common.Extensions
                             continue;
                         }
 
-                        descExp = Expression.MakeMemberAccess(parExp, sourceProperty);
-                        if (property.PropertyType != sourceProperty.PropertyType)
-                        {
-                            descExp = Expression.Call(null, MthToType,
-                                Expression.Convert(descExp, typeof(object)),
-                                Expression.Constant(property.PropertyType),
-                                Expression.Constant(null),
-                                Expression.Constant(null, typeof(ConvertMapper)));
-                            descExp = Expression.Convert(descExp, property.PropertyType);
-                        }
+                        sourceExp = GetPropertyExpression(sourceParExp, null, property, sourceProperty);
                     }
 
-                    bindings.Add(Expression.Bind(property, descExp));
+                    bindings.Add(Expression.Bind(property, sourceExp));
                 }
                 catch
                 {
                     continue;
                 }
             }
+        }
+
+        private static void GetGeneralMemberAssignments(object source, object target,
+            Type sourceType, Type targetType, ParameterExpression sourceParExp, ParameterExpression targetParExp,
+            List<BinaryExpression> assignments, ConvertMapper mapper)
+        {
+            foreach (var property in targetType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                try
+                {
+                    if (source is ILazyManager lazyMgr && !lazyMgr.IsValueCreated(property.Name))
+                    {
+                        continue;
+                    }
+
+                    Expression sourceExp = null;
+
+                    //在映射器里查找转换表达式
+                    if (mapper != null)
+                    {
+                        sourceExp = mapper.GetMapExpression(property);
+                        if (sourceExp != null)
+                        {
+                            sourceExp = (ExpressionReplacer.Replace(sourceExp, sourceParExp) as LambdaExpression).Body;
+                        }
+                    }
+
+                    if (sourceExp == null)
+                    {
+                        var sourceProperty = sourceType.GetProperty(property.Name, BindingFlags.Public | BindingFlags.Instance);
+                        if (sourceProperty == null || !sourceProperty.CanRead || !property.CanWrite)
+                        {
+                            continue;
+                        }
+
+                        sourceExp = GetPropertyExpression(sourceParExp, target, property, sourceProperty);
+                    }
+
+                    var descExp = Expression.MakeMemberAccess(targetParExp, property);
+                    assignments.Add(Expression.Assign(descExp, sourceExp));
+                }
+                catch
+                {
+                    continue;
+                }
+            }
+        }
+
+        private static Expression GetPropertyExpression(Expression sourceParExp, object target, PropertyInfo targetProperty, PropertyInfo sourceProperty)
+        {
+            Expression sourceExp = Expression.MakeMemberAccess(sourceParExp, sourceProperty);
+
+            var propertyValue = target == null ? null : targetProperty.GetValue(target);
+            if (propertyValue != null)
+            {
+                sourceExp = Expression.Call(null, MthMapTo,
+                    Expression.Convert(sourceExp, typeof(object)),
+                    Expression.Constant(propertyValue),
+                    Expression.Constant(null, typeof(ConvertMapper)));
+                sourceExp = Expression.Convert(sourceExp, targetProperty.PropertyType);
+            }
+            else if (targetProperty.PropertyType != sourceProperty.PropertyType)
+            {
+                sourceExp = Expression.Call(null, MthToType,
+                    Expression.Convert(sourceExp, typeof(object)),
+                    Expression.Constant(targetProperty.PropertyType),
+                    Expression.Constant(propertyValue),
+                    Expression.Constant(null, typeof(ConvertMapper)));
+                sourceExp = Expression.Convert(sourceExp, targetProperty.PropertyType);
+            }
+
+            return sourceExp;
         }
 
         private static object ConvertToEnumerable(IEnumerable enumerable, Type conversionType)

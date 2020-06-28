@@ -1209,8 +1209,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 case ExpressionType.AndAlso:
                 case ExpressionType.Or:
                 case ExpressionType.OrElse:
-                    return IsBoolean(expr.Type);
                 case ExpressionType.Not:
+                case ExpressionType.Call:
+                case (ExpressionType)DbExpressionType.SqlText:
                     return IsBoolean(expr.Type);
                 case ExpressionType.Equal:
                 case ExpressionType.NotEqual:
@@ -1223,8 +1224,6 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 case (ExpressionType)DbExpressionType.Exists:
                 case (ExpressionType)DbExpressionType.In:
                     return true;
-                case ExpressionType.Call:
-                    return IsBoolean(expr.Type);
                 default:
                     return false;
             }
@@ -1909,6 +1908,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
         protected override Expression VisitSqlText(SqlExpression sql)
         {
             Write(sql.SqlCommand);
+
+            if (sql.Parameters != null)
+            {
+                sql.Parameters.ForEach(s => Parameters.Add(s.Name, (s.Value as ConstantExpression).Value));
+            }
 
             return sql;
         }

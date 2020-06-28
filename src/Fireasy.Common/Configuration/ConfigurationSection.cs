@@ -47,7 +47,7 @@ namespace Fireasy.Common.Configuration
     /// 一个抽象类，表示配置节的信息。
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class ConfigurationSection<T> : ConfigurationSection where T : IConfigurationSettingItem
+    public abstract class ConfigurationSection<T> : ConfigurationSection, IConfigurationSectionWithCount where T : IConfigurationSettingItem
     {
         private readonly ConfigurationSettings<IConfigurationSettingItem> innerSettings = new ConfigurationSettings<IConfigurationSettingItem>();
         private ConfigurationSettings<T> settings;
@@ -87,6 +87,11 @@ namespace Fireasy.Common.Configuration
                                     setting = new ExtendConfigurationSetting { Base = setting, Extend = extend };
                                 }
                             }
+                        }
+
+                        if (setting is INamedIConfigurationSettingItem named)
+                        {
+                            named.Name = name;
                         }
 
                         if (setting != null)
@@ -138,6 +143,11 @@ namespace Fireasy.Common.Configuration
                         }
                     }
 
+                    if (setting is INamedIConfigurationSettingItem named)
+                    {
+                        named.Name = name;
+                    }
+
                     if (setting != null)
                     {
                         innerSettings.Add(name, setting);
@@ -185,6 +195,14 @@ namespace Fireasy.Common.Configuration
                 }
 
                 return settings;
+            }
+        }
+
+        int IConfigurationSectionWithCount.Count
+        {
+            get
+            {
+                return Settings.Count;
             }
         }
 

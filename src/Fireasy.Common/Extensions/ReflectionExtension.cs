@@ -711,6 +711,26 @@ namespace Fireasy.Common.Extensions
         }
 
         /// <summary>
+        /// 获取直接实现的接口类型集合。
+        /// </summary>
+        /// <param name="type">源类型。</param>
+        /// <param name="interfaceType">接口类型。</param>
+        /// <returns></returns>
+        public static IEnumerable<Type> GetDirectImplementInterfaces(this Type type)
+        {
+            Guard.ArgumentNull(type, nameof(type));
+            foreach (var type1 in type.GetInterfaces())
+            {
+                var im = type.GetInterfaceMap(type1);
+                if (im.TargetMethods.Length > 0 &&
+                    im.TargetMethods[0].DeclaringType == type)
+                {
+                    yield return type1;
+                }
+            }
+        }
+
+        /// <summary>
         /// 获取直接实现指定接口类的接口。
         /// </summary>
         /// <param name="type">源类型。</param>
@@ -1084,6 +1104,52 @@ namespace Fireasy.Common.Extensions
             }
 
             return properties;
+        }
+
+        /// <summary>
+        /// 递归枚举所有引用的程序集。
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="assemblies"></param>
+        /// <param name="finder"></param>
+        /// <param name="filter"></param>
+        /// <returns></returns>
+        public static void ForEachAssemblies(this Assembly assembly, Action<Assembly> finder, Func<Assembly, bool> filter)
+        {
+            Guard.ArgumentNull(assembly, nameof(assembly));
+            Guard.ArgumentNull(finder, nameof(finder));
+
+            var assemblies = new List<Assembly>();
+            ForEachAssemblies(assembly, assemblies, finder, filter);
+        }
+
+        private static void ForEachAssemblies(this Assembly assembly, List<Assembly> assemblies, Action<Assembly> finder, Func<Assembly, bool> filter)
+        {
+            foreach (var asb in assembly.GetReferencedAssemblies()
+                .Select(s => LoadAssembly(s))
+                .Where(s => s != null)
+                .Where(filter))
+            {
+                if (!assemblies.Contains(asb))
+                {
+                    finder?.Invoke(asb);
+                    assemblies.Add(asb);
+
+                    ForEachAssemblies(asb, assemblies, finder, filter);
+                }
+            }
+        }
+
+        private static Assembly LoadAssembly(AssemblyName assemblyName)
+        {
+            try
+            {
+                return Assembly.Load(assemblyName);
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private static Type InternalBuildImplementType(Type definedType)

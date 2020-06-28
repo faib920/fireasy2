@@ -56,6 +56,14 @@ namespace Fireasy.Windows.Forms
                 shiftPressed = false;
                 shiftRowIndex = -1;
             }
+            else if (ShowCheckBoxes && e.Modifiers == Keys.None && e.KeyCode == Keys.Space)
+            {
+                var item = SelectedItems.FirstOrDefault();
+                if (item != null)
+                {
+                    item.Checked = !item.Checked;
+                }
+            }
         }
 
         /// <summary>
@@ -79,18 +87,36 @@ namespace Fireasy.Windows.Forms
                 switch (msg.WParam.ToInt32())
                 {
                     case 40: //下移
-                        if (index++ < virMgr.Items.Count - 1)
+                        if (index++ >= virMgr.Items.Count - 1)
                         {
-                            virMgr.Items[index].Item.Selected = true;
+                            return base.PreProcessMessage(ref msg);
                         }
 
+                        if (virMgr.Items[index].Item is TreeListGroup)
+                        {
+                            if (index++ >= virMgr.Items.Count - 1)
+                            {
+                                return base.PreProcessMessage(ref msg);
+                            }
+                        }
+
+                        virMgr.Items[index].Item.Selected = true;
                         break;
                     case 38: //上移
-                        if (index-- > 0)
+                        if (index-- <= 0)
                         {
-                            virMgr.Items[index].Item.Selected = true;
+                            return base.PreProcessMessage(ref msg);
                         }
 
+                        if (virMgr.Items[index].Item is TreeListGroup)
+                        {
+                            if (index-- <= 0)
+                            {
+                                return base.PreProcessMessage(ref msg);
+                            }
+                        }
+
+                        virMgr.Items[index].Item.Selected = true;
                         break;
                 }
 

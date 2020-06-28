@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Ioc;
+using Fireasy.Common.MultiTenancy;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
@@ -51,24 +52,91 @@ namespace Fireasy.Common.ComponentModel
     /// <typeparam name="T"></typeparam>
     public class ObjectPool<T> : DisposeableBase, IObjectPool where T : class, IObjectPoolable
     {
-        private readonly ConcurrentQueue<T> queue = new ConcurrentQueue<T>();
+        private readonly SafetyDictionary<string, InternalQueue> queueDict = new SafetyDictionary<string, InternalQueue>();
         private readonly Func<T> creator;
 
         private readonly int maxSize;
-        private int count;
         private Timer timer = null;
-        private DateTime? lastRetTime = null;
         private TimeSpan? idleTime = TimeSpan.FromMinutes(1);
+        private readonly ITenancyProvider<ObjectPoolTenancyInfo> tenancyProvider;
+
+        private class InternalQueue
+        {
+            private DateTime? lastAccessTime = null;
+            private readonly ConcurrentQueue<T> queue = new ConcurrentQueue<T>();
+            private readonly int maxSize;
+            private int count;
+
+            public InternalQueue(ObjectPool<T> pool, string key)
+            {
+                maxSize = pool.maxSize;
+                Key = key;
+            }
+
+            public int Count  => count;
+
+            public string Key { get; }
+
+            public bool TryDequeue(out T obj)
+            {
+                if (queue.TryDequeue(out obj))
+                {
+                    Interlocked.Decrement(ref count);
+                    return true;
+                }
+
+                return false;
+            }
+
+            public bool TryEnqueue(T obj)
+            {
+                if (Interlocked.Increment(ref count) <= maxSize)
+                {
+                    lastAccessTime = DateTime.Now;
+
+                    queue.Enqueue(obj);
+
+                    return true;
+                }
+
+                Interlocked.Decrement(ref count);
+
+                return false;
+            }
+
+            public bool TryIdle(TimeSpan? idleTime, Action<T> idleHandler)
+            {
+                var _savedLastAccessTime = lastAccessTime.Value;
+                if (DateTime.Now - lastAccessTime.Value > idleTime.Value)
+                {
+                    while (TryDequeue(out T obj))
+                    {
+                        idleHandler?.Invoke(obj);
+
+                        if (_savedLastAccessTime != lastAccessTime)
+                        {
+                            break;
+                        }
+                    }
+
+                    return true;
+                }
+
+                return false;
+            }
+        }
 
         /// <summary>
         /// 初始化 <see cref="ObjectPool{T}"/> 类的新实例。
         /// </summary>
         /// <param name="creator">创建对象的函数。</param>
         /// <param name="maxSize">最大对象数。</param>
-        public ObjectPool(Func<T> creator, int maxSize = 100)
+        /// <param name="tenancyProvider">多租户信息提供者。</param>
+        public ObjectPool(Func<T> creator, int maxSize = 100, ITenancyProvider<ObjectPoolTenancyInfo> tenancyProvider = null)
         {
             this.creator = creator;
             this.maxSize = maxSize;
+            this.tenancyProvider = tenancyProvider;
 
             StartIdleCheckThread();
         }
@@ -103,11 +171,23 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public virtual T Rent()
         {
+            return Rent(creator, null);
+        }
+
+        /// <summary>
+        /// 从缓冲池中返回一个对象，如果缓冲池为空或对象已用尽，则创建一个新对象。
+        /// </summary>
+        /// <param name="creator">创建新对象的函数。</param>
+        /// <param name="initializer">从池里拿出时对象的初始化函数。</param>
+        /// <returns></returns>
+        public virtual T Rent(Func<T> creator, Action<T> initializer)
+        {
+            var queue = GetQueue();
             if (queue.TryDequeue(out T obj))
             {
-                Interlocked.Decrement(ref count);
-                Tracer.Debug($"Rent {typeof(T).Name} from the pool (count:{count}).");
+                Tracer.Debug($"Rent {typeof(T).Name} from the pool (named:{queue.Key}, count:{queue.Count}).");
                 OnRent(obj);
+                initializer?.Invoke(obj);
                 return obj;
             }
 
@@ -125,20 +205,17 @@ namespace Fireasy.Common.ComponentModel
         public virtual bool Return(T obj)
         {
             Guard.ArgumentNull(obj, nameof(obj));
-            lastRetTime = DateTime.Now;
+            var queue = GetQueue();
 
-            if (Interlocked.Increment(ref count) <= maxSize)
+            if (queue.TryEnqueue(obj))
             {
-                Tracer.Debug($"Return {typeof(T).Name} back to the pool (count:{count}).");
+                Tracer.Debug($"Return {typeof(T).Name} back to the pool (named:{queue.Key}, count:{queue.Count}).");
 
                 obj.SetPool(this);
                 OnReturn(obj);
-
-                queue.Enqueue(obj);
                 return true;
             }
 
-            Interlocked.Decrement(ref count);
             return false;
         }
 
@@ -160,38 +237,36 @@ namespace Fireasy.Common.ComponentModel
 
         protected override bool Dispose(bool disposing)
         {
-            while (queue.TryDequeue(out T obj))
+            foreach (var q in queueDict)
             {
-                obj.SetPool(null);
-                obj.TryDispose();
+                while (q.Value.TryDequeue(out T obj))
+                {
+                    obj.SetPool(null);
+                    obj.TryDispose();
+                }
             }
 
             return base.Dispose(disposing);
+        }
+
+        private InternalQueue GetQueue()
+        {
+            var tenancy = tenancyProvider?.GetTenancyInfo() ?? ObjectPoolTenancyInfo.Default;
+            return queueDict.GetOrAdd(tenancy.Key, k => new InternalQueue(this, k));
         }
 
         private void StartIdleCheckThread()
         {
             timer = new Timer(o =>
             {
-                if (IdleTime == null || lastRetTime == null || DateTime.Now - lastRetTime.Value <= IdleTime.Value)
+                foreach (var q in queueDict)
                 {
-                    return;
-                }
-
-                var _lastRetTime = lastRetTime.Value;
-
-                while (queue.TryDequeue(out T obj))
-                {
-                    Interlocked.Decrement(ref count);
-                    Tracer.Debug($"Take back the idle {typeof(T).Name} from the pool (count:{count}).");
-
-                    obj.SetPool(null);
-                    obj.TryDispose();
-
-                    if (_lastRetTime != lastRetTime.Value)
+                    q.Value.TryIdle(IdleTime, obj =>
                     {
-                        break;
-                    }
+                        Tracer.Debug($"Take back the idle {typeof(T).Name} from the pool (named:{q.Key}, count:{q.Value.Count}).");
+                        obj.SetPool(null);
+                        obj.TryDispose();
+                    });
                 }
             }, null, IdleTime.Value, IdleTime.Value);
         }

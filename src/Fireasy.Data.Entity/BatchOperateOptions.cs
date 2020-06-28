@@ -14,6 +14,15 @@ namespace Fireasy.Data.Entity
     public class BatchOperateOptions
     {
         /// <summary>
+        /// 初始化 <see cref="BatchOperateOptions"/> 类的新实例。
+        /// </summary>
+        /// <param name="chkModifiedKinds"></param>
+        public BatchOperateOptions(BatchCheckModifiedKinds chkModifiedKinds)
+        {
+            CheckModifiedKinds = chkModifiedKinds;
+        }
+
+        /// <summary>
         /// 获取或设置属性的检查方式。
         /// </summary>
         public BatchCheckModifiedKinds CheckModifiedKinds { get; set; }

@@ -19,7 +19,7 @@ namespace Fireasy.Common.ComponentModel
     /// </summary>
     public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor
     {
-        private readonly IDynamicMetaObjectProvider instance;
+        private readonly IDynamicMetaObjectProvider _instance;
 
         /// <summary>
         /// 初始化 <see cref="DynamicTypeDescriptor"/> 类的新实例。
@@ -27,7 +27,7 @@ namespace Fireasy.Common.ComponentModel
         /// <param name="instance"></param>
         public DynamicTypeDescriptor(IDynamicMetaObjectProvider instance)
         {
-            this.instance = instance;
+            _instance = instance;
         }
 
         string ICustomTypeDescriptor.GetComponentName()
@@ -62,7 +62,7 @@ namespace Fireasy.Common.ComponentModel
 
         object ICustomTypeDescriptor.GetPropertyOwner(PropertyDescriptor pd)
         {
-            return instance;
+            return _instance;
         }
 
         AttributeCollection ICustomTypeDescriptor.GetAttributes()
@@ -88,39 +88,39 @@ namespace Fireasy.Common.ComponentModel
         PropertyDescriptorCollection ICustomTypeDescriptor.GetProperties(Attribute[] attributes)
         {
             return new PropertyDescriptorCollection(
-                ((IDictionary<string, object>)instance).Keys
-                .Select(x => new DynamicPropertyDescriptor(instance, x))
+                ((IDictionary<string, object>)_instance).Keys
+                .Select(x => new DynamicPropertyDescriptor(_instance, x))
                 .ToArray());
         }
 
         private class DynamicPropertyDescriptor : PropertyDescriptor
         {
-            private readonly IDynamicMetaObjectProvider instance;
-            private readonly string name;
+            private readonly IDynamicMetaObjectProvider _instance;
+            private readonly string _name;
 
             public DynamicPropertyDescriptor(IDynamicMetaObjectProvider instance, string name)
                 : base(name, null)
             {
-                this.instance = instance;
-                this.name = name;
+                _instance = instance;
+                _name = name;
             }
 
             public override Type PropertyType
             {
                 get 
                 {
-                    return instance.TryGetMember(name, out object value) ? value.GetType() : null;
+                    return _instance.TryGetMember(_name, out object value) ? value.GetType() : null;
                 }
             }
 
             public override void SetValue(object component, object value)
             {
-                instance.TrySetMember(name, value);
+                _instance.TrySetMember(_name, value);
             }
 
             public override object GetValue(object component)
             {
-                instance.TryGetMember(name, out object value);
+                _instance.TryGetMember(_name, out object value);
                 return value;
             }
 

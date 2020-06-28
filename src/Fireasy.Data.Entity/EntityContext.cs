@@ -29,6 +29,7 @@ namespace Fireasy.Data.Entity
         private EntityContextOptions options;
         private IContextService service;
         private IObjectPool pool;
+        private IServiceProvider serviceProvider;
 
         /// <summary>
         /// 初始化 <see cref="EntityContext"/> 类的新实例。
@@ -72,7 +73,7 @@ namespace Fireasy.Data.Entity
         protected EntityContext(IServiceProvider serviceProvider, EntityContextOptions options)
         {
             this.options = options;
-            ServiceProvider = serviceProvider;
+            this.serviceProvider = serviceProvider;
 
             Initialize(options);
 
@@ -82,7 +83,15 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 获取或设置应用程序服务提供者实例。
         /// </summary>
-        public IServiceProvider ServiceProvider { get; set; }
+        public IServiceProvider ServiceProvider
+        {
+            get { return serviceProvider; }
+            set 
+            {
+                serviceProvider = value;
+                service.ServiceProvider = value;
+            }
+        }
 
         /// <summary>
         /// 获取关联的 <see cref="IDatabase"/> 实例。
@@ -286,7 +295,7 @@ namespace Fireasy.Data.Entity
 
             var contextProvider = options.GetProviderService<IContextProvider>();
 
-            service = contextProvider.CreateContextService(new ContextServiceContext(options));
+            service = contextProvider.CreateContextService(new ContextServiceContext(serviceProvider, options));
         }
 
         private void TrySetContextType(EntityContextOptions options)
@@ -305,23 +314,23 @@ namespace Fireasy.Data.Entity
         {
             if (options is IInstanceIdentifier identification)
             {
-                if (identification.ServiceProvider == null && ServiceProvider != null)
+                if (identification.ServiceProvider == null && serviceProvider != null)
                 {
-                    identification.ServiceProvider = ServiceProvider;
+                    identification.ServiceProvider = serviceProvider;
                 }
                 else if (ServiceProvider == null && identification.ServiceProvider != null)
                 {
-                    ServiceProvider = identification.ServiceProvider;
+                    serviceProvider = identification.ServiceProvider;
                 }
-                else if (identification.ServiceProvider == null && ServiceProvider == null)
+                else if (identification.ServiceProvider == null && serviceProvider == null)
                 {
-                    ServiceProvider = identification.ServiceProvider = ContainerUnity.GetContainer();
+                    serviceProvider = identification.ServiceProvider = ContainerUnity.GetContainer();
                 }
             }
 
-            if (ServiceProvider == null)
+            if (serviceProvider == null)
             {
-                ServiceProvider = ContainerUnity.GetContainer();
+                serviceProvider = ContainerUnity.GetContainer();
             }
         }
 

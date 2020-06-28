@@ -7,6 +7,7 @@
 using Fireasy.Common;
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
+using Fireasy.Common.MultiTenancy;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -19,6 +20,8 @@ namespace Fireasy.Data.Entity
     /// <typeparam name="TContext"></typeparam>
     public class EntityContextPool<TContext> : ObjectPool<TContext> where TContext : EntityContext
     {
+        private readonly EntityContextOptions<TContext> options;
+
         /// <summary>
         /// 初始化 <see cref="EntityContextPool{TContext}"/> 类的新实例。
         /// </summary>
@@ -26,8 +29,14 @@ namespace Fireasy.Data.Entity
         /// <param name="options"></param>
         /// <param name="maxSize">缓冲池的最大数量。</param>
         public EntityContextPool(IServiceProvider serviceProvider, EntityContextOptions<TContext> options, int maxSize)
-            : base(() => CreateInstance(serviceProvider, options), maxSize)
+            : base(null, maxSize, serviceProvider.TryGetService<ITenancyProvider<ObjectPoolTenancyInfo>>())
         {
+            this.options = options;
+        }
+
+        public TContext Rent(IServiceProvider serviceProvider)
+        {
+            return base.Rent(() => CreateInstance(serviceProvider, options), s => s.TrySetServiceProvider(serviceProvider));
         }
 
         /// <summary>
@@ -36,16 +45,18 @@ namespace Fireasy.Data.Entity
         public sealed class Lease : DisposeableBase
         {
             private EntityContextPool<TContext> pool;
+            private readonly IServiceProvider serviceProvider;
 
             /// <summary>
             /// 初始化 <see cref="Lease"/> 类的新实例。
             /// </summary>
             /// <param name="pool"></param>
-            public Lease(EntityContextPool<TContext> pool)
+            public Lease(IServiceProvider serviceProvider, EntityContextPool<TContext> pool)
             {
+                this.serviceProvider = serviceProvider;
                 this.pool = pool;
 
-                Context = this.pool.Rent();
+                Context = this.pool.Rent(serviceProvider);
             }
 
             /// <summary>

@@ -16,7 +16,7 @@ using Microsoft.Extensions.Configuration;
 namespace Fireasy.Data.Converter.Configuration
 {
     /// <summary>
-    /// 表示数据转换器的配置节。
+    /// 表示数据转换器的配置节。对应的配置节为 fireasy/dataConverters(.net framework) 或 fireasy:dataConverters(.net core)。
     /// </summary>
     [ConfigurationSectionStorage("fireasy/dataConverters")]
     public sealed class ConverterConfigurationSection : ConfigurationSection<ConverterConfigurationSetting>
@@ -31,21 +31,13 @@ namespace Fireasy.Data.Converter.Configuration
                 {
                     var sourceTypeName = node.GetAttributeValue("sourceType");
                     var converterTypeName = node.GetAttributeValue("converterType");
-                    if (string.IsNullOrEmpty(sourceTypeName))
-                    {
-                        throw new Exception(SR.GetString(SRKind.NonRequiredAttribute, "sourceTypeName"));
-                    }
 
                     if (string.IsNullOrEmpty(converterTypeName))
                     {
                         throw new Exception(SR.GetString(SRKind.NonRequiredAttribute, "converterType"));
                     }
 
-                    return new ConverterConfigurationSetting
-                               {
-                                   SourceType = Type.GetType(sourceTypeName, false, true),
-                                   ConverterType = Type.GetType(converterTypeName, false, true)
-                               };
+                    return GetSetting(sourceTypeName, converterTypeName);
                 });
         }
 
@@ -60,24 +52,56 @@ namespace Fireasy.Data.Converter.Configuration
                 {
                     var sourceTypeName = c.GetSection("sourceType").Value;
                     var converterTypeName = c.GetSection("converterType").Value;
-                    if (string.IsNullOrEmpty(sourceTypeName))
-                    {
-                        throw new Exception(SR.GetString(SRKind.NonRequiredAttribute, "sourceTypeName"));
-                    }
 
                     if (string.IsNullOrEmpty(converterTypeName))
                     {
                         throw new Exception(SR.GetString(SRKind.NonRequiredAttribute, "converterType"));
                     }
 
-                    return new ConverterConfigurationSetting
-                        {
-                            SourceType = Type.GetType(sourceTypeName, false, true),
-                            ConverterType = Type.GetType(converterTypeName, false, true)
-                        };
+                    return GetSetting(sourceTypeName, converterTypeName);
                 });
         }
 #endif
+        private static ConverterConfigurationSetting GetSetting(string sourceTypeName, string converterTypeName)
+        {
+            Type sourceType = null;
+            var converterType = Type.GetType(converterTypeName, false, true);
+
+            if (converterType == null || !typeof(IValueConverter).IsAssignableFrom(converterType))
+            {
+                throw new Exception(SR.GetString(SRKind.NonRequiredAttribute, "converterType"));
+            }
+
+            if (!string.IsNullOrEmpty(sourceTypeName))
+            {
+                sourceType = Type.GetType(sourceTypeName, false, true);
+            }
+            else
+            {
+                var baseType = converterType.BaseType;
+                while (baseType != typeof(object))
+                {
+                    if (baseType.IsGenericType)
+                    {
+                        sourceType = baseType.GetGenericArguments()[0];
+                        break;
+                    }
+
+                    baseType = baseType.BaseType;
+                }
+            }
+
+            if (sourceType == null)
+            {
+                throw new Exception(SR.GetString(SRKind.NonRequiredAttribute, "sourceType"));
+            }
+
+            return new ConverterConfigurationSetting
+            {
+                SourceType = sourceType,
+                ConverterType = converterType
+            };
+        }
 
     }
 }

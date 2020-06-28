@@ -43,13 +43,12 @@ namespace Fireasy.Common.Ioc
         private static void ConfigureContainer(string name, Container container)
         {
             var section = ConfigurationUnity.GetSection<ContainerConfigurationSection>();
-
-            IConfigurationSettingItem setting;
-
             if (section == null)
             {
                 return;
             }
+
+            IConfigurationSettingItem setting;
 
             if (name == DEFAULT && section.Default != null)
             {
@@ -64,11 +63,12 @@ namespace Fireasy.Common.Ioc
             {
                 if (reg.Assembly != null)
                 {
-                    container.RegisterAssembly(reg.Assembly, reg.Singleton ? Lifetime.Singleton : Lifetime.Transient);
+                    container.RegisterAssembly(reg.Assembly);
                 }
                 else if (reg.ServiceType != null && reg.ImplementationType != null)
                 {
-                    container.Register(reg.ServiceType, reg.ImplementationType, reg.Singleton ? Lifetime.Singleton : Lifetime.Transient);
+                    var lifetime = reg.Singleton ? Lifetime.Singleton : reg.Lifetime;
+                    container.Register(reg.ServiceType, reg.ImplementationType, lifetime);
                 }
             }
         }

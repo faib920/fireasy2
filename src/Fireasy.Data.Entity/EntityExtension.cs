@@ -305,8 +305,18 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static IEntity InitByExpression(this IEntity entity, LambdaExpression creator)
         {
+            if (creator.Body is NewExpression)
+            {
+                throw new InvalidOperationException(SR.GetString(SRKind.InvalidExpressionInit));
+            }
+
             if (creator.Body is MemberInitExpression initExp)
             {
+                if (initExp.NewExpression.Arguments.Count > 0)
+                {
+                    throw new InvalidOperationException(SR.GetString(SRKind.InvalidExpressionInit));
+                }
+
                 foreach (var bind in initExp.Bindings)
                 {
                     if (bind as MemberAssignment == null)

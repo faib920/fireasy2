@@ -58,6 +58,16 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public IDatabase Database { get; private set; }
 
+        public override IServiceProvider ServiceProvider
+        {
+            get { return base.ServiceProvider; }
+            set
+            {
+                base.ServiceProvider = value;
+                Database?.TrySetServiceProvider(value);
+            }
+        }
+
         protected override Func<Type, IRepositoryProvider> CreateFactory => 
             type => typeof(DefaultRepositoryProvider<>).MakeGenericType(type).New<IRepositoryProvider>(this);
 

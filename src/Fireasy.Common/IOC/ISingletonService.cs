@@ -5,11 +5,12 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-
-namespace Fireasy.Data.Entity
+namespace Fireasy.Common.Ioc
 {
-    internal interface IKeepStateCloneable
+    /// <summary>
+    /// 通过程序集发现单例服务。
+    /// </summary>
+    public interface ISingletonService
     {
-        object Clone();
     }
 }

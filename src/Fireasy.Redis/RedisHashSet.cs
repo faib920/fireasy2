@@ -5,17 +5,16 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.Caching;
 using CSRedis;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Linq;
+using Fireasy.Common;
+using Fireasy.Common.Caching;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Tasks;
-using System.Diagnostics;
-using Fireasy.Common;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fireasy.Redis
 {
@@ -355,7 +354,8 @@ namespace Fireasy.Redis
             var scheduler = TaskSchedulerFactory.CreateScheduler();
             if (scheduler != null)
             {
-                var startOption = new StartOptions<ExpireTaskExecutor>(TimeSpan.FromSeconds(10), TimeSpan.FromMinutes(1))
+                var r = new Random(DateTime.Now.Millisecond);
+                var startOption = new StartOptions<ExpireTaskExecutor>(TimeSpan.FromSeconds(r.Next(1, 30)), TimeSpan.FromSeconds(r.Next(60, 130)))
                 {
                     Initializer = s =>
                     {
@@ -398,23 +398,21 @@ namespace Fireasy.Redis
                 {
                     if (!string.IsNullOrEmpty(s.Value))
                     {
-                        RedisHelper.Lock(
-                            Client, string.Concat(CacheKey, ":", s.Key),
-                            TimeSpan.FromSeconds(10), () =>
+                        try
+                        {
+                            var value = Deserialize(s.Value);
+                            if (value != null && value.HasExpired())
                             {
-                                try
+                                if (Client.HExists(CacheKey, s.Key))
                                 {
-                                    var value = Deserialize(s.Value);
-                                    if (value != null && value.HasExpired())
-                                    {
-                                        Client.HDel(CacheKey, s.Key);
-                                    }
+                                    Client.HDel(CacheKey, s.Key);
                                 }
-                                catch (Exception exp)
-                                {
-                                    Tracer.Error($"RedisHashSet ExpireTaskExecutor throw exception:\n{exp.Output()}");
-                                }
-                            });
+                            }
+                        }
+                        catch (Exception exp)
+                        {
+                            Tracer.Error($"RedisHashSet ExpireTaskExecutor throw exception:\n{exp.Output()}");
+                        }
                     }
                 });
             }

@@ -106,7 +106,7 @@ namespace Fireasy.Data
         /// <param name="rowMapper">数据行映射器。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>一个 <typeparamref name="T"/> 类型的对象的枚举器。</returns>
-        IAsyncEnumerable<T> ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, IDataRowMapper<T> rowMapper = null, CancellationToken cancellationToken = default);
+        IAsyncEnumerable<T> ExecuteAsyncEnumerable<T>(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, IDataRowMapper<T> rowMapper = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 异步的，执行查询文本并将结果并返回动态序列。
@@ -116,8 +116,8 @@ namespace Fireasy.Data
         /// <param name="parameters">查询参数集合。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>一个动态对象的枚举器。</returns>
-        IAsyncEnumerable<dynamic> ExecuteEnumerableAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CancellationToken cancellationToken = default);
-#else
+        IAsyncEnumerable<dynamic> ExecuteAsyncEnumerable(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CancellationToken cancellationToken = default);
+#endif
         /// <summary>
         /// 异步的，执行查询文本并将结果以一个 <see cref="IEnumerable{T}"/> 的序列返回。
         /// </summary>
@@ -139,7 +139,6 @@ namespace Fireasy.Data
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>一个动态对象的枚举器。</returns>
         Task<IEnumerable<dynamic>> ExecuteEnumerableAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CancellationToken cancellationToken = default);
-#endif
 
         /// <summary>
         /// 执行查询文本，返回受影响的记录数。

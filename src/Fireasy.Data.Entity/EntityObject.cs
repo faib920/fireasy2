@@ -26,7 +26,6 @@ namespace Fireasy.Data.Entity
     public abstract class EntityObject :
         IEntity,
         ICloneable,
-        IKeepStateCloneable,
         INotifyPropertyChanging,
         INotifyPropertyChanged,
         IEntityPersistentEnvironment,
@@ -472,62 +471,42 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
-        /// 克隆出一个新的实体对象。克隆的新实体状态为 <see cref="EntityState.Attached"/>，且所有的属性变为被修改的。
+        /// 克隆出一个新的实体对象。
         /// </summary>
         /// <returns></returns>
         public object Clone()
         {
-            return CloneInternal(false, false);
-        }
-
-        /// <summary>
-        /// 克隆出一个新的实体对象。
-        /// </summary>
-        /// <param name="dismodified">如果为 true，将丢弃实体被修改后的属性值，沿用原来的值。</param>
-        /// <returns></returns>
-        public IEntity Clone(bool dismodified = false)
-        {
-            return (IEntity)CloneInternal(false, !dismodified);
-        }
-
-        object IKeepStateCloneable.Clone()
-        {
-            return CloneInternal(true, false);
-        }
-
-        /// <summary>
-        /// 克隆实体。
-        /// </summary>
-        /// <param name="keepState">新实例是事保持原来实体的状态。</param>
-        /// <param name="readOldValue"></param>
-        /// <returns></returns>
-        private object CloneInternal(bool keepState, bool readOldValue)
-        {
             var entity = entityType.New<EntityObject>();
-            if (keepState)
-            {
-                entity.SetState(state);
-            }
 
             entity.InitializeInstanceName((this.As<IEntityPersistentInstanceContainer>().InstanceName));
             entity.InitializeEnvironment(environment);
-            this.TryLockModifing(() =>
+
+            if (entityType.IsNotCompiled())
+            {
+                foreach (var property in PropertyUnity.GetProperties(entityType))
                 {
-                    foreach (var k in InnerEntry)
+                    var pv = this.GetValue(property);
+                    entity.SetValue(property, pv);
+                }
+            }
+            else
+            {
+                this.TryLockModifing(() =>
+                {
+                    InnerEntry.ForEach(k =>
                     {
-                        //保持状态且值没有修改
-                        if (keepState && !k.Value.IsModified)
+                        var property = PropertyUnity.GetProperty(entityType, k.Key);
+                        if (property?.Info.IsPrimaryKey == true)
                         {
-                            entity.InnerEntry.Initializate(k.Key, k.Value.GetOldValue().Clone());
+                            entity.InnerEntry.Initializate(k.Key, k.Value.GetCurrentValue());
                         }
                         else
                         {
-                            entity.InnerEntry.Modify(k.Key, readOldValue
-                                ? k.Value.GetOldValue().Clone() :
-                                k.Value.GetCurrentValue().Clone());
+                            entity.InnerEntry.Modify(k.Key, k.Value.GetCurrentValue());
                         }
-                    }
+                    });
                 });
+            }
 
             return entity;
         }

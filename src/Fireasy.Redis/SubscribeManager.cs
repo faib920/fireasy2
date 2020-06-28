@@ -22,6 +22,7 @@ using System.Threading;
 using System.Diagnostics;
 using Fireasy.Common.Extensions;
 using Fireasy.Common;
+using System.Linq;
 
 namespace Fireasy.Redis
 {
@@ -47,44 +48,55 @@ namespace Fireasy.Redis
         /// <param name="options"></param>
         public SubscribeManager(IOptionsMonitor<RedisSubscribeOptions> options)
         {
+            RedisConfigurationSetting setting = null;
             var optValue = options.CurrentValue;
             if (!optValue.IsConfigured())
             {
-                return;
-            }
-
-            RedisConfigurationSetting setting;
-            if (!string.IsNullOrEmpty(optValue.ConfigName))
-            {
                 var section = ConfigurationUnity.GetSection<SubscribeConfigurationSection>();
-                if (section != null && section.GetSetting(optValue.ConfigName) is ExtendConfigurationSetting extSetting)
+                var matchSetting = section.Settings.FirstOrDefault(s => s.Value.SubscriberType == typeof(SubscribeManager)).Value;
+                if (matchSetting != null && section.GetSetting(matchSetting.Name) is ExtendConfigurationSetting extSetting)
                 {
                     setting = (RedisConfigurationSetting)extSetting.Extend;
                 }
                 else
                 {
-                    throw new InvalidOperationException($"无效的配置节: {optValue.ConfigName}。");
+                    throw new InvalidOperationException($"未发现与 {typeof(SubscribeManager).FullName} 相匹配的配置。");
                 }
             }
             else
             {
-                setting = new RedisConfigurationSetting
+                if (!string.IsNullOrEmpty(optValue.ConfigName))
                 {
-                    Password = optValue.Password,
-                    ConnectionString = optValue.ConnectionString,
-                    DefaultDb = optValue.DefaultDb,
-                    ConnectTimeout = optValue.ConnectTimeout,
-                    LockTimeout = optValue.LockTimeout,
-                    SyncTimeout = optValue.SyncTimeout,
-                    WriteBuffer = optValue.WriteBuffer,
-                    PoolSize = optValue.PoolSize,
-                    SerializerType = optValue.SerializerType,
-                    Ssl = optValue.Ssl,
-                    Twemproxy = optValue.Twemproxy,
-                    RequeueDelayTime = optValue.RequeueDelayTime
-                };
+                    var section = ConfigurationUnity.GetSection<SubscribeConfigurationSection>();
+                    if (section != null && section.GetSetting(optValue.ConfigName) is ExtendConfigurationSetting extSetting)
+                    {
+                        setting = (RedisConfigurationSetting)extSetting.Extend;
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"无效的配置节: {optValue.ConfigName}。");
+                    }
+                }
+                else
+                {
+                    setting = new RedisConfigurationSetting
+                    {
+                        Password = optValue.Password,
+                        ConnectionString = optValue.ConnectionString,
+                        DefaultDb = optValue.DefaultDb,
+                        ConnectTimeout = optValue.ConnectTimeout,
+                        LockTimeout = optValue.LockTimeout,
+                        SyncTimeout = optValue.SyncTimeout,
+                        WriteBuffer = optValue.WriteBuffer,
+                        PoolSize = optValue.PoolSize,
+                        SerializerType = optValue.SerializerType,
+                        Ssl = optValue.Ssl,
+                        Twemproxy = optValue.Twemproxy,
+                        RequeueDelayTime = optValue.RequeueDelayTime
+                    };
 
-                RedisHelper.ParseHosts(setting, optValue.Hosts);
+                    RedisHelper.ParseHosts(setting, optValue.Hosts);
+                }
             }
 
             if (setting != null)

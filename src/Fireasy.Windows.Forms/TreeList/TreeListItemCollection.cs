@@ -108,13 +108,15 @@ namespace Fireasy.Windows.Forms
         /// <param name="index">移除的索引位置。</param>
         protected override void RemoveItem(int index)
         {
+            var item = this[index];
             base.RemoveItem(index);
 
             ResortIndex();
 
             if (treelist != null)
             {
-                treelist.UpdateItems();
+                treelist.RemoveValidateFlags(item);
+                treelist.UpdateItems(index);
             }
         }
 
@@ -127,6 +129,7 @@ namespace Fireasy.Windows.Forms
 
             if (treelist != null)
             {
+                treelist.RemoveValidateFlags();
                 treelist.UpdateItems();
             }
         }

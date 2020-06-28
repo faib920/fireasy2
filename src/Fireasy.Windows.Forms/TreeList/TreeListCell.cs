@@ -6,10 +6,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.Extensions;
 using System;
 using System.ComponentModel;
 using System.Globalization;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Windows.Forms
 {

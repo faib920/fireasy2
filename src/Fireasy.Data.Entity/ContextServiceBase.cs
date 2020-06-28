@@ -66,7 +66,7 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 获取或设置应用程序服务提供者实例。
         /// </summary>
-        public IServiceProvider ServiceProvider { get; set; }
+        public virtual IServiceProvider ServiceProvider { get; set; }
 
         /// <summary>
         /// 开启事务。

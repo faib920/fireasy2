@@ -110,13 +110,6 @@ namespace Fireasy.Data.Entity
         /// <param name="propertyName">属性名称。</param>
         /// <returns></returns>
         bool IsModified(string propertyName);
-
-        /// <summary>
-        /// 克隆出一个新的实体对象。
-        /// </summary>
-        /// <param name="dismodified">如果为 true，将丢弃实体被修改后的属性值，沿用原来的值。</param>
-        /// <returns></returns>
-        IEntity Clone(bool dismodified = false);
     }
 
     /// <summary>

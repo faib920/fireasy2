@@ -7,6 +7,9 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Linq;
+#if NETSTANDARD
+using Microsoft.Extensions.DependencyInjection;
+#endif
 using System;
 using System.Linq;
 using System.Linq.Expressions;
@@ -102,8 +105,13 @@ namespace Fireasy.Data.Entity.Properties
                 return PropertyValue.Empty;
             }
 
-            var contextProvider = identifier.GetProviderService<IContextProvider>();
+            var contextProvider = identifier.Provider.GetService<IContextProvider>();
+#if NETSTANDARD
+            using var scope = identifier.ServiceProvider.GetService<IServiceScopeFactory>()?.CreateScope();
+            using var service = contextProvider.CreateContextService(new ContextServiceContext(scope?.ServiceProvider ?? identifier.ServiceProvider, identifier));
+#else
             using var service = contextProvider.CreateContextService(new ContextServiceContext(identifier));
+#endif
             service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
 
             var repProvider = service.CreateRepositoryProvider(entityProperty.RelationalType);
@@ -164,8 +172,13 @@ namespace Fireasy.Data.Entity.Properties
                 return PropertyValue.Empty;
             }
 
-            var contextProvider = identifier.GetProviderService<IContextProvider>();
+            var contextProvider = identifier.Provider.GetService<IContextProvider>();
+#if NETSTANDARD
+            using var scope = identifier.ServiceProvider.GetService<IServiceScopeFactory>()?.CreateScope();
+            using var service = contextProvider.CreateContextService(new ContextServiceContext(scope?.ServiceProvider ?? identifier.ServiceProvider, identifier));
+#else
             using var service = contextProvider.CreateContextService(new ContextServiceContext(identifier));
+#endif
             service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
 
             var repProvider = service.CreateRepositoryProvider(entityProperty.RelationalType);
@@ -228,8 +241,13 @@ namespace Fireasy.Data.Entity.Properties
                 return PropertyValue.Empty;
             }
 
-            var contextProvider = identifier.GetProviderService<IContextProvider>();
+            var contextProvider = identifier.Provider.GetService<IContextProvider>();
+#if NETSTANDARD
+            using var scope = identifier.ServiceProvider.GetService<IServiceScopeFactory>()?.CreateScope();
+            using var service = contextProvider.CreateContextService(new ContextServiceContext(scope?.ServiceProvider ?? identifier.ServiceProvider , identifier));
+#else
             using var service = contextProvider.CreateContextService(new ContextServiceContext(identifier));
+#endif
             service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
 
             var repProvider = service.CreateRepositoryProvider(referenceProperty.RelationalType);

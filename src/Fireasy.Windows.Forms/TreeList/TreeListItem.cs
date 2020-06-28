@@ -20,6 +20,7 @@ namespace Fireasy.Windows.Forms
         private TreeListItemCollection items;
         private TreeListCellCollection cells;
         private bool selected;
+        private bool highlight;
         private bool @checked;
         private bool expanded;
         private bool showBox = true;
@@ -288,6 +289,25 @@ namespace Fireasy.Windows.Forms
                 {
                     TreeList.SelectItem(this, value, !TreeList.MultiSelect);
                 }
+            }
+        }
+
+        /// <summary>
+        /// 获取或设置是否高亮显示。
+        /// </summary>
+        [Browsable(false)]
+        public bool Highlight
+        {
+            get { return highlight; }
+            set
+            {
+                if (highlight == value)
+                {
+                    return;
+                }
+
+                highlight = value;
+                InvalidateItem();
             }
         }
 

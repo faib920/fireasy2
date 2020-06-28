@@ -47,7 +47,6 @@ namespace Fireasy.Data
         /// 初始化 <see cref="Database"/> 类的新实例。
         /// </summary>
         /// <param name="provider">数据库提供者。</param>
-        /// <param name="serviceProvider">检索服务提供者。</param>
         protected Database(IProvider provider)
         {
             tranStack = new TransactionStack();
@@ -136,6 +135,7 @@ namespace Fireasy.Data
             tranStack.Push();
             if (Transaction != null)
             {
+                Tracer.Debug("事务已开启");
                 return false;
             }
 
@@ -165,9 +165,8 @@ namespace Fireasy.Data
 
             Tracer.Debug("Commiting transcation.");
             Transaction.Commit();
-
-            Transaction.Dispose();
             Transaction = null;
+
             return true;
         }
 
@@ -185,8 +184,8 @@ namespace Fireasy.Data
 
             Tracer.Debug("Rollbacking transcation.");
             Transaction.Rollback();
-            Transaction.Dispose();
             Transaction = null;
+
             return true;
         }
 
@@ -274,7 +273,7 @@ namespace Fireasy.Data
         /// <param name="rowMapper">数据行映射器。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>一个 <typeparamref name="T"/> 类型的对象的枚举器。</returns>
-        public async virtual IAsyncEnumerable<T> ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, IDataRowMapper<T> rowMapper = null, [EnumeratorCancellation]CancellationToken cancellationToken = default)
+        public async virtual IAsyncEnumerable<T> ExecuteAsyncEnumerable<T>(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, IDataRowMapper<T> rowMapper = null, [EnumeratorCancellation]CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
 
@@ -295,7 +294,7 @@ namespace Fireasy.Data
         /// <param name="parameters">查询参数集合。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>一个动态对象的枚举器。</returns>
-        public virtual async IAsyncEnumerable<dynamic> ExecuteEnumerableAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, [EnumeratorCancellation]CancellationToken cancellationToken = default)
+        public virtual async IAsyncEnumerable<dynamic> ExecuteAsyncEnumerable(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, [EnumeratorCancellation]CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
 
@@ -322,7 +321,7 @@ namespace Fireasy.Data
                 yield return expando;
             }
         }
-#else
+#endif
         /// <summary>
         /// 异步的，执行查询文本并将结果以一个 <see cref="IEnumerable{T}"/> 的序列返回。
         /// </summary>
@@ -388,7 +387,6 @@ namespace Fireasy.Data
 
             return result;
         }
-#endif
 
         /// <summary>
         /// 执行查询文本，返回受影响的记录数。
@@ -456,7 +454,7 @@ namespace Fireasy.Data
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
             var connection = GetConnection(DistributedMode.Slave).TryOpen();
 
-            var command = new InternalDataCommand(CreateDbCommand(connection, queryCommand, parameters), readerLocker);
+            var command = new InternalDbCommand(CreateDbCommand(connection, queryCommand, parameters), readerLocker);
             try
             {
                 var cmdBehavior = GetCommandBehavior(behavior);
@@ -483,12 +481,12 @@ namespace Fireasy.Data
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
             var connection = await GetConnection(DistributedMode.Slave).TryOpenAsync();
 
-            var command = new InternalDataCommand(CreateDbCommand(connection, queryCommand, parameters), readerLocker);
+            var command = new InternalDbCommand(CreateDbCommand(connection, queryCommand, parameters), readerLocker);
             try
             {
                 var cmdBehavior = GetCommandBehavior(behavior);
                 var context = new CommandContext(this, command, segment, parameters);
-                HandleSegmentCommand(context);
+                await HandleSegmentCommandAsync(context, cancellationToken);
 
                 return await HandleCommandExecutedAsync(command, parameters, cmdBehavior,
                     (command, behavior, cancelToken) => command.ExecuteReaderAsync(behavior, cancelToken), cancellationToken);
@@ -775,19 +773,19 @@ namespace Fireasy.Data
 
             if (Transaction != null)
             {
-                Transaction.Dispose();
+                Transaction.Commit();
                 Transaction = null;
             }
 
             if (connMaster != null)
             {
-                connMaster.TryClose(true).Dispose();
+                connMaster.Dispose();
                 connMaster = null;
             }
 
             if (connSlave != null)
             {
-                connSlave.TryClose(true).Dispose();
+                connSlave.Dispose();
                 connSlave = null;
             }
 
@@ -968,6 +966,30 @@ namespace Fireasy.Data
         }
 
         /// <summary>
+        /// 对执行的SQL脚本使用分页参数。
+        /// </summary>
+        /// <param name="context"></param>
+        private async Task<bool> HandleSegmentCommandAsync(CommandContext context, CancellationToken cancellationToken)
+        {
+            //使用数据分段
+            if (context.Segment != null &&
+                context.Command.CommandType == CommandType.Text)
+            {
+                try
+                {
+                    var syntax = Provider.GetService<ISyntaxProvider>();
+                    return syntax.Segment(await HandlePageEvaluatorAsync(context, cancellationToken));
+                }
+                catch (SegmentNotSupportedException)
+                {
+                    throw;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// 处理分页评估器。
         /// </summary>
         /// <param name="context"></param>
@@ -976,6 +998,20 @@ namespace Fireasy.Data
             if (context.Segment is IDataPageEvaluatable evaluatable && evaluatable.Evaluator != null)
             {
                 evaluatable.Evaluator.Evaluate(context);
+            }
+
+            return context;
+        }
+
+        /// <summary>
+        /// 异步的，处理分页评估器。
+        /// </summary>
+        /// <param name="context"></param>
+        private async Task<CommandContext> HandlePageEvaluatorAsync(CommandContext context, CancellationToken cancellationToken)
+        {
+            if (context.Segment is IDataPageEvaluatable evaluatable && evaluatable.Evaluator != null)
+            {
+                await evaluatable.Evaluator.EvaluateAsync(context, cancellationToken);
             }
 
             return context;
@@ -1094,7 +1130,7 @@ namespace Fireasy.Data
 
             var watch = Stopwatch.StartNew();
             var result = await func(command, behavior, cancellationToken).ConfigureAwait(false);
-            Tracer.Debug($"The DbCommand was executed ({watch.Elapsed.Milliseconds}ms):\n{command.Output()}");
+            Tracer.Debug($"The DbCommand was executed ({Thread.CurrentThread.ManagedThreadId}th, {watch.Elapsed.Milliseconds}ms):\n{command.Output()}");
             watch.Stop();
 
             if (ConnectionString.IsTracking && tracker != null)

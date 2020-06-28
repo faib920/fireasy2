@@ -138,5 +138,14 @@ namespace Fireasy.Data.Entity
         {
             this.SetValue(property, value);
         }
+
+        /// <summary>
+        /// 克隆实体对象。
+        /// </summary>
+        /// <returns></returns>
+        public new TEntity Clone()
+        {
+            return (TEntity)base.Clone();
+        }
     }
 }

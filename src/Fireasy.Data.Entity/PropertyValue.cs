@@ -1859,11 +1859,6 @@ namespace Fireasy.Data.Entity
                     {
                         return Empty;
                     }
-                    var staClone = _object.As<IKeepStateCloneable>();
-                    if (staClone != null)
-                    {
-                        return new PropertyValue { storageType = StorageType.Object, _object = staClone.Clone() };
-                    }
                     var cloneable = _object.As<ICloneable>();
                     return new PropertyValue { storageType = StorageType.Object, _object = cloneable == null ? _object : cloneable.Clone() };
             }

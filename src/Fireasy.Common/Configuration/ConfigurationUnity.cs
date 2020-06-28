@@ -9,7 +9,6 @@
 using System;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 #if NETSTANDARD
@@ -46,16 +45,9 @@ namespace Fireasy.Common.Configuration
             }
 
 #if NETSTANDARD
-            var tryCount = 0;
-            while (tryCount++ < 10)
+            if (cfgCache.TryGetValue(attribute.Name, out IConfigurationSection value))
             {
-                if (cfgCache.TryGetValue(attribute.Name, out IConfigurationSection value))
-                {
-                    return (T)value;
-                }
-
-                Tracer.Debug($"Delayed attempt GetSection {typeof(T)} ({tryCount}).");
-                Thread.Sleep(500);
+                return (T)value;
             }
 
             return default;
@@ -97,7 +89,14 @@ namespace Fireasy.Common.Configuration
                     var section = new T();
                     section.Bind(configuration.GetSection(key.Replace("/", ":")));
 
-                    Tracer.Debug($"The {typeof(T).Name} was bound.");
+                    if (section is IConfigurationSectionWithCount wc)
+                    {
+                        Tracer.Debug($"The {typeof(T).Name} was bound ({wc.Count} items).");
+                    }
+                    else
+                    {
+                        Tracer.Debug($"The {typeof(T).Name} was bound.");
+                    }
 
                     return section;
                 });
@@ -188,7 +187,7 @@ namespace Fireasy.Common.Configuration
                 return default;
             }
 
-            var instance = serviceProvider != null ? 
+            var instance = serviceProvider != null ?
                 (TInstance)type.New(serviceProvider) : type.New<TInstance>().TryUseContainer();
 
             if (instance == null)

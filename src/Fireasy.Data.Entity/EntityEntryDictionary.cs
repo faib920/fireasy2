@@ -78,6 +78,11 @@ namespace Fireasy.Data.Entity
             }
         }
 
+        internal void Add(string propertyName, EntityEntry entry)
+        {
+            dicEntry.Add(propertyName, entry);
+        }
+
         internal void Modify(string propertyName, bool modified = true)
         {
             if (!modified && Has(propertyName))

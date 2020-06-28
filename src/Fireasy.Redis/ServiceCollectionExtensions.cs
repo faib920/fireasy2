@@ -22,7 +22,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services"></param>
         /// <param name="setupAction"></param>
         /// <returns></returns>
-        public static IServiceCollection AddRedisCaching(this IServiceCollection services, Action<RedisCachingOptions> setupAction)
+        public static IServiceCollection AddRedisCaching(this IServiceCollection services, Action<RedisCachingOptions> setupAction = null)
         {
             if (setupAction != null)
             {
@@ -39,7 +39,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services"></param>
         /// <param name="setupAction"></param>
         /// <returns></returns>
-        public static IServiceCollection AddRedisSubscriber(this IServiceCollection services, Action<RedisSubscribeOptions> setupAction)
+        public static IServiceCollection AddRedisSubscriber(this IServiceCollection services, Action<RedisSubscribeOptions> setupAction = null)
         {
             if (setupAction != null)
             {
@@ -56,7 +56,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services"></param>
         /// <param name="setupAction"></param>
         /// <returns></returns>
-        public static IServiceCollection AddRedisDistributedLocker(this IServiceCollection services, Action<RedisDistributedLockerOptions> setupAction)
+        public static IServiceCollection AddRedisDistributedLocker(this IServiceCollection services, Action<RedisDistributedLockerOptions> setupAction = null)
         {
             if (setupAction != null)
             {

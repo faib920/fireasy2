@@ -63,3 +63,4 @@ InvalidOperationWhenRepositoryIsReadonly=此仓储为只读仓储，因此不支
 NotSupportDatabase=未提供 IDatabase 实例。
 NotSupportDatabaseFactory=未提供创建 IDatabase 的方法。
 NotSupportDbProvider=对于 EntityContext 初始化来说，必须提供 IProvider 实例。请检查数据库实例配置，或重写 OnConfiguring 方法提供 IProvider。
+InvalidExpressionInit=使用构造函数表达式是无效的，必须使用成员初始化表达式。

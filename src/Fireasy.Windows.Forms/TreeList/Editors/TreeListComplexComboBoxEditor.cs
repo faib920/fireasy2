@@ -5,14 +5,19 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
-
 
 namespace Fireasy.Windows.Forms
 {
     public class TreeListComplexComboBoxEditor : TreeListWrapEditor<ComplexComboBox>
     {
+        [DllImport("user32.dll")]
+        static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, Int32 wParam, Int32 lParam);
+        private const Int32 CB_SETITEMHEIGHT = 0x153;
+
         /// <summary>
         /// 初始化 <see cref="TreeListComplexComboBoxEditor"/> 类的新实例。
         /// </summary>
@@ -41,7 +46,7 @@ namespace Fireasy.Windows.Forms
             picker.Width = Width + 2;
             picker.Top = -1;
 
-            picker.Height = rect.Height;
+            SendMessage(picker.Handle, CB_SETITEMHEIGHT, -1, rect.Height - 3);
 
             picker.DroppedDown = true;
             picker.Focus();

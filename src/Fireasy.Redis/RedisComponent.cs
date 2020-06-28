@@ -107,7 +107,7 @@ namespace Fireasy.Redis
             var ckey = captureRule == null ? key : captureRule(key);
             var index = GetModulus(ckey, dbRanage.Count);
 
-            Tracer.Debug($"Select redis db{index} for the key '{key}'.");
+            Tracer.Debug($"Select redis db{dbRanage[index]} for the key '{key}'.");
 
             return clients.GetOrAdd(index, k =>
             {
@@ -128,6 +128,11 @@ namespace Fireasy.Redis
 
         void IConfigurationSettingHostService.Attach(IConfigurationSettingItem setting)
         {
+            if (Setting != null)
+            {
+                return;
+            }
+
             Setting = (RedisConfigurationSetting)setting;
 
             if (!string.IsNullOrEmpty(Setting.ConnectionString))
