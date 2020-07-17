@@ -95,7 +95,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private class RedundantSubqueryGatherer : DbExpressionVisitor
         {
-            private List<SelectExpression> redundant;
+            private List<SelectExpression> _redundant;
 
             private RedundantSubqueryGatherer()
             {
@@ -105,7 +105,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 var gatherer = new RedundantSubqueryGatherer();
                 gatherer.Visit(source);
-                return gatherer.redundant;
+                return gatherer._redundant;
             }
 
             private static bool IsRedudantSubquery(SelectExpression select)
@@ -125,12 +125,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 if (IsRedudantSubquery(select))
                 {
-                    if (redundant == null)
+                    if (_redundant == null)
                     {
-                        redundant = new List<SelectExpression>();
+                        _redundant = new List<SelectExpression>();
                     }
 
-                    redundant.Add(select);
+                    _redundant.Add(select);
                 }
 
                 return select;
@@ -145,7 +145,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private class SubqueryMerger : DbExpressionVisitor
         {
-            private bool isTopLevel = true;
+            private bool _isTopLevel = true;
 
             private SubqueryMerger()
             {
@@ -158,8 +158,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             protected override Expression VisitSelect(SelectExpression select)
             {
-                var wasTopLevel = isTopLevel;
-                isTopLevel = false;
+                var wasTopLevel = _isTopLevel;
+                _isTopLevel = false;
 
                 select = (SelectExpression)base.VisitSelect(select);
 

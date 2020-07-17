@@ -52,11 +52,11 @@ namespace Fireasy.Data.Entity.Query
         /// <summary>
         /// 获取是否启用。
         /// </summary>
-        public bool? Enabled { get; private set; }
+        public bool? Enabled { get; }
 
         /// <summary>
         /// 获取缓存过期时间。
         /// </summary>
-        public TimeSpan? Times { get; private set; }
+        public TimeSpan? Times { get; }
     }
 }

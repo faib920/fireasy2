@@ -5,6 +5,12 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-namespace Fireasy.Data.Entity.Linq.Expressions
+namespace Fireasy.Common.Caching
 {
+    /// <summary>
+    /// 表示基于内存的缓存管理器。
+    /// </summary>
+    public interface IMemoryCacheManager : ICacheManager
+    {
+    }
 }

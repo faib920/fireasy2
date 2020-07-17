@@ -66,7 +66,7 @@ namespace Fireasy.Common.Extensions
             if (date.DayOfWeek != startDayOfWeek)
             {
                 var d = startDayOfWeek - date.DayOfWeek;
-                return startDayOfWeek <= date.DayOfWeek ? date.AddDays(d) : 
+                return startDayOfWeek <= date.DayOfWeek ? date.AddDays(d) :
                     date.AddDays(-7 + d);
             }
 
@@ -184,7 +184,7 @@ namespace Fireasy.Common.Extensions
         public static DateTime LastWeek(this DateTime date, DayOfWeek dayOfWeek)
         {
             var last = date.EndOfMonth();
-            var day = dayOfWeek <= last.DayOfWeek ? last.DayOfWeek - dayOfWeek : 
+            var day = dayOfWeek <= last.DayOfWeek ? last.DayOfWeek - dayOfWeek :
                 7 - Math.Abs(dayOfWeek - last.DayOfWeek);
 
             return last.AddDays(day * -1);

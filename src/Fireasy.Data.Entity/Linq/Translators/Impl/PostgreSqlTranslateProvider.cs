@@ -4,9 +4,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
 {
     public class PostgreSqlTranslateProvider : TranslateProviderBase
     {
-        public override TranslatorBase CreateTranslator()
+        public override TranslatorBase CreateTranslator(TranslateContext transContext)
         {
-            return new PostgreSqlTranslator();
+            return new PostgreSqlTranslator(transContext);
         }
 
         protected override Expression BuildExpression(Expression expression)

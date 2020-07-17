@@ -28,6 +28,16 @@ namespace Fireasy.Redis
         /// 初始化 <see cref="RedisLocker"/> 类的新实例。
         /// </summary>
         public RedisLocker()
+            : base()
+        {
+        }
+
+        /// <summary>
+        /// 初始化 <see cref="RedisLocker"/> 类的新实例。
+        /// </summary>
+        /// <param name="serviceProvider"></param>
+        public RedisLocker(IServiceProvider serviceProvider)
+            : base(serviceProvider)
         {
         }
 
@@ -36,7 +46,8 @@ namespace Fireasy.Redis
         /// 初始化 <see cref="RedisLocker"/> 类的新实例。
         /// </summary>
         /// <param name="options"></param>
-        public RedisLocker(IOptionsMonitor<RedisDistributedLockerOptions> options)
+        public RedisLocker(IServiceProvider serviceProvider, IOptionsMonitor<RedisDistributedLockerOptions> options)
+            : this(serviceProvider)
         {
             RedisConfigurationSetting setting = null;
             var optValue = options.CurrentValue;

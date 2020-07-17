@@ -16,8 +16,8 @@ namespace Fireasy.Data.Entity
     [Serializable]
     internal class EntityEntry
     {
-        private PropertyValue oldValue;
-        private PropertyValue newValue;
+        private PropertyValue _oldValue;
+        private PropertyValue _newValue;
 
         /// <summary>
         /// 获取或设置实体值是否已修改。
@@ -34,10 +34,10 @@ namespace Fireasy.Data.Entity
         /// </summary>
         internal void Reset()
         {
-            if (IsModified && newValue != null)
+            if (IsModified && _newValue != null)
             {
-                oldValue = newValue.Clone();
-                newValue = PropertyValue.Empty;
+                _oldValue = _newValue.Clone();
+                _newValue = PropertyValue.Empty;
                 IsModified = false;
             }
         }
@@ -48,7 +48,7 @@ namespace Fireasy.Data.Entity
         /// <param name="value"></param>
         internal void Modify(PropertyValue value)
         {
-            newValue = value;
+            _newValue = value;
             IsModified = true;
         }
 
@@ -59,7 +59,7 @@ namespace Fireasy.Data.Entity
         {
             if (!IsModified)
             {
-                newValue = oldValue;
+                _newValue = _oldValue;
                 IsModified = true;
             }
         }
@@ -72,10 +72,10 @@ namespace Fireasy.Data.Entity
         {
             if (IsModified)
             {
-                return newValue;
+                return _newValue;
             }
 
-            return PropertyValue.IsEmpty(newValue) ? oldValue : newValue;
+            return PropertyValue.IsEmpty(_newValue) ? _oldValue : _newValue;
         }
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         internal PropertyValue GetOldValue()
         {
-            return oldValue;
+            return _oldValue;
         }
 
         /// <summary>
@@ -95,11 +95,11 @@ namespace Fireasy.Data.Entity
         {
             if (IsModified)
             {
-                newValue = value;
+                _newValue = value;
             }
             else
             {
-                oldValue = value;
+                _oldValue = value;
             }
         }
 
@@ -110,7 +110,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         internal static EntityEntry InitByOldValue(PropertyValue value)
         {
-            return new EntityEntry { oldValue = value };
+            return new EntityEntry { _oldValue = value };
         }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         internal static EntityEntry InitByNewValue(PropertyValue value)
         {
-            return new EntityEntry { newValue = value, IsModified = true };
+            return new EntityEntry { _newValue = value, IsModified = true };
         }
     }
 }

@@ -13,7 +13,7 @@ namespace Fireasy.Common.Serialization
     /// <summary>
     /// 表示此属性不被序列化。此类无法继承。
     /// </summary>
-    [AttributeUsage(AttributeTargets.Property, AllowMultiple=false)]
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
     public sealed class NoTextSerializableAttribute : Attribute
     {
     }

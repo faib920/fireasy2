@@ -6,8 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using Fireasy.Common.Configuration;
+using System;
 
 namespace Fireasy.Data.Converter.Configuration
 {

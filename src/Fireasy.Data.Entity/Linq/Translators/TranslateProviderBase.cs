@@ -8,7 +8,6 @@
 
 using Fireasy.Common.Linq.Expressions;
 using Fireasy.Data.Provider;
-using Fireasy.Data.Syntax;
 using System;
 using System.Linq;
 using System.Linq.Expressions;
@@ -25,24 +24,25 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <summary>
         /// 获取一个 ELinq 翻译器。
         /// </summary>
+        /// <param name="transContext"></param>
         /// <returns></returns>
-        public abstract TranslatorBase CreateTranslator();
+        public abstract TranslatorBase CreateTranslator(TranslateContext transContext);
 
         /// <summary>
         /// 对 ELinq 表达式进行翻译，并返回翻译的结果。
         /// </summary>
+        /// <param name="transContext"></param>
         /// <param name="expression">一个 ELinq 表达式。</param>
         /// <returns></returns>
-        public virtual Expression Translate(Expression expression)
+        public virtual Expression Translate(TranslateContext transContext, Expression expression)
         {
             expression = PartialEvaluator.Eval(expression, CanBeEvaluatedLocally);
-            return TranslateInternal(expression);
+            return TranslateInternal(transContext, expression);
         }
 
-        private Expression TranslateInternal(Expression expression)
+        private Expression TranslateInternal(TranslateContext transContext, Expression expression)
         {
-            var syntax = TranslateScope.Current.SyntaxProvider;
-            var translation = QueryBinder.Bind(expression, syntax);
+            var translation = QueryBinder.Bind(transContext, expression);
 
             translation = LogicalDeleteFlagRewriter.Rewrite(translation);
             translation = GlobalQueryPolicyRewriter.Rewrite(translation);
@@ -52,7 +52,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             translation = RedundantSubqueryRemover.Remove(translation);
             translation = RedundantJoinRemover.Remove(translation);
 
-            var bound = RelationshipBinder.Bind(translation);
+            var bound = RelationshipBinder.Bind(transContext, translation);
             if (bound != translation)
             {
                 translation = bound;
@@ -63,9 +63,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
             translation = ComparisonRewriter.Rewrite(translation);
 
             Expression rewritten;
-            if (TranslateScope.Current != null && TranslateScope.Current.QueryPolicy != null)
+            if (transContext.QueryPolicy != null)
             {
-                rewritten = RelationshipIncluder.Include(TranslateScope.Current.QueryPolicy, translation);
+                rewritten = RelationshipIncluder.Include(transContext, translation);
                 if (rewritten != translation)
                 {
                     translation = rewritten;

@@ -19,7 +19,7 @@ namespace Fireasy.Common.Serialization
     /// </summary>
     public sealed class BinaryCryptoSerializer : BinarySerializer
     {
-        private readonly ICryptoProvider cryptoProvider;
+        private readonly ICryptoProvider _cryptoProvider;
 
         /// <summary>
         /// 初始化 <see cref="BinaryCryptoSerializer"/> 类的新实例。
@@ -27,7 +27,7 @@ namespace Fireasy.Common.Serialization
         /// <param name="cryptoProvider">数据加密算法提供者。</param>
         public BinaryCryptoSerializer(ICryptoProvider cryptoProvider)
         {
-            this.cryptoProvider = cryptoProvider;
+            _cryptoProvider = cryptoProvider;
         }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace Fireasy.Common.Serialization
                 using var stream = new MemoryStream();
                 var bin = new BinaryFormatter();
                 bin.Serialize(stream, obj);
-                var bytes = cryptoProvider.Encrypt(stream.ToArray());
+                var bytes = _cryptoProvider.Encrypt(stream.ToArray());
 
                 using var nstream = new MemoryStream();
                 if (Token != null && Token.Data != null && Token.Data.Length > 0)
@@ -96,7 +96,7 @@ namespace Fireasy.Common.Serialization
 
             try
             {
-                using var stream = new MemoryStream(cryptoProvider.Decrypt(data));
+                using var stream = new MemoryStream(_cryptoProvider.Decrypt(data));
                 var bin = new BinaryFormatter
                 {
                     Binder = new IgnoreSerializationBinder()

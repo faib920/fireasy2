@@ -5,20 +5,20 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Common.Serialization
 {
     internal class TypeConverterCache<T> where T : ITextConverter
     {
-        private Dictionary<Type, T> typeConverters = new Dictionary<Type, T>();
+        private readonly Dictionary<Type, T> _typeConverters = new Dictionary<Type, T>();
 
         internal T GetWritableConverter(Type type, SerializeOption option)
         {
-            return typeConverters.TryGetValue(type, () =>
+            return _typeConverters.TryGetValue(type, () =>
             {
                 TextConverterAttribute attr;
                 if ((attr = type.GetCustomAttributes<TextConverterAttribute>().FirstOrDefault()) != null &&
@@ -35,7 +35,7 @@ namespace Fireasy.Common.Serialization
 
         internal T GetReadableConverter(Type type, SerializeOption option)
         {
-            return typeConverters.TryGetValue(type, () =>
+            return _typeConverters.TryGetValue(type, () =>
             {
                 TextConverterAttribute attr;
                 if ((attr = type.GetCustomAttributes<TextConverterAttribute>().FirstOrDefault()) != null &&

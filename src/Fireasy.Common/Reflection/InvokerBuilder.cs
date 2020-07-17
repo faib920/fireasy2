@@ -56,11 +56,11 @@ namespace Fireasy.Common.Reflection
                 {
                     var variable = Expression.Variable(parameterType);
                     refParameterMap.Add(new ByRefParameter
-                        {
-                            Value = argExpression,
-                            Variable = variable,
-                            IsOut = parameter.IsOut
-                        });
+                    {
+                        Value = argExpression,
+                        Variable = variable,
+                        IsOut = parameter.IsOut
+                    });
 
                     argExpression = variable;
                 }

@@ -23,7 +23,7 @@ namespace Fireasy.Data.Schema.Linq
         /// <param name="currMember">当前使用的 <see cref="MemberInfo"/> 对象。</param>
         /// <param name="mbrRestrs">提供限制查询的 <see cref="MemberInfo"/> 列表。</param>
         public SchemaQueryTranslateException(MemberInfo currMember, IEnumerable<MemberInfo> mbrRestrs)
-            : base (SR.GetString(SRKind.RestrictionNotSupportedOfMember, currMember.Name, GetMemberNames(mbrRestrs)))
+            : base(SR.GetString(SRKind.RestrictionNotSupportedOfMember, currMember.Name, GetMemberNames(mbrRestrs)))
         {
         }
 

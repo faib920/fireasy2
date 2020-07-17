@@ -22,7 +22,7 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Substring(object sourceExp, object startExp, object lenExp = null)
         {
-            return lenExp == null ? 
+            return lenExp == null ?
                 $"SUBSTR({sourceExp}, {startExp})" :
                 $"SUBSTR({sourceExp}, {startExp}, {lenExp})";
         }

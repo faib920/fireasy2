@@ -27,17 +27,17 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取分组表的别名。
         /// </summary>
-        public TableAlias GroupByAlias { get; private set; }
+        public TableAlias GroupByAlias { get; }
 
         /// <summary>
         /// 获取分组是的聚合运算表达式。
         /// </summary>
-        public Expression AggregateInGroupSelect { get; private set; }
+        public Expression AggregateInGroupSelect { get; }
 
         /// <summary>
         /// 获取聚合子查询表达式。
         /// </summary>
-        public ScalarExpression AggregateAsSubquery { get; private set; }
+        public ScalarExpression AggregateAsSubquery { get; }
 
         /// <summary>
         /// 更新 <see cref="AggregateSubqueryExpression"/> 对象。

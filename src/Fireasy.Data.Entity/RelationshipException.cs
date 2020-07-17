@@ -20,7 +20,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="message">异常的信息。</param>
         public RelationshipException(string message)
-            : base (message)
+            : base(message)
         {
         }
     }

@@ -14,9 +14,9 @@ namespace Fireasy.Common.Dynamic
 {
     public sealed class DynamicManager
     {
-        private readonly Dictionary<string, CallSite<Func<CallSite, object, object>>> getCallSites = new Dictionary<string, CallSite<Func<CallSite, object, object>>>();
-        private readonly Dictionary<string, CallSite<Func<CallSite, object, object, object>>> setCallSites = new Dictionary<string, CallSite<Func<CallSite, object, object, object>>>();
-        private readonly object errorResult = new object();
+        private readonly Dictionary<string, CallSite<Func<CallSite, object, object>>> _getCallSites = new Dictionary<string, CallSite<Func<CallSite, object, object>>>();
+        private readonly Dictionary<string, CallSite<Func<CallSite, object, object, object>>> _setCallSites = new Dictionary<string, CallSite<Func<CallSite, object, object, object>>>();
+        private readonly object _errorResult = new object();
 
         /// <summary>
         /// 获取动态对象中指定名称的属性值。
@@ -54,14 +54,14 @@ namespace Fireasy.Common.Dynamic
         /// <returns></returns>
         public bool TryGetMember(IDynamicMetaObjectProvider dynamicProvider, string name, out object value)
         {
-            if (!getCallSites.TryGetValue(name, out CallSite<Func<CallSite, object, object>> callSite))
+            if (!_getCallSites.TryGetValue(name, out CallSite<Func<CallSite, object, object>> callSite))
             {
                 callSite = CallSite<Func<CallSite, object, object>>.Create(new NoThrowGetBinderMember((GetMemberBinder)BinderWrapper.GetMember(name)));
             }
 
             var result = callSite.Target(callSite, dynamicProvider);
 
-            if (!ReferenceEquals(result, errorResult))
+            if (!ReferenceEquals(result, _errorResult))
             {
                 value = result;
                 return true;
@@ -82,14 +82,14 @@ namespace Fireasy.Common.Dynamic
         /// <returns></returns>
         public bool TrySetMember(IDynamicMetaObjectProvider dynamicProvider, string name, object value)
         {
-            if (!setCallSites.TryGetValue(name, out CallSite<Func<CallSite, object, object, object>> callSite))
+            if (!_setCallSites.TryGetValue(name, out CallSite<Func<CallSite, object, object, object>> callSite))
             {
                 callSite = CallSite<Func<CallSite, object, object, object>>.Create(new NoThrowSetBinderMember((SetMemberBinder)BinderWrapper.SetMember(name)));
             }
 
             var result = callSite.Target(callSite, dynamicProvider, value);
 
-            return !ReferenceEquals(result, errorResult);
+            return !ReferenceEquals(result, _errorResult);
         }
     }
 }

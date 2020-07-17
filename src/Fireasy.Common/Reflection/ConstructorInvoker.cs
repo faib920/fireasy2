@@ -5,11 +5,9 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.Emit;
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Reflection.Emit;
 
 namespace Fireasy.Common.Reflection
 {
@@ -18,7 +16,7 @@ namespace Fireasy.Common.Reflection
     /// </summary>
     public class ConstructorInvoker
     {
-        private readonly Func<object[], object> invoker;
+        private readonly Func<object[], object> _invoker;
 
         /// <summary>
         /// 
@@ -32,7 +30,7 @@ namespace Fireasy.Common.Reflection
         public ConstructorInvoker(ConstructorInfo constructorInfo)
         {
             ConstructorInfo = constructorInfo;
-            invoker = GetConstructorDelegate(constructorInfo);
+            _invoker = GetConstructorDelegate(constructorInfo);
         }
 
         private Func<object[], object> GetConstructorDelegate(ConstructorInfo constructorInfo)
@@ -69,12 +67,12 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public object Invoke(params object[] parameters)
         {
-            if (invoker == null)
+            if (_invoker == null)
             {
                 throw new NotSupportedException(SR.GetString(SRKind.UnableCreateCachedDelegate));
             }
 
-            return invoker(parameters);
+            return _invoker(parameters);
         }
     }
 }

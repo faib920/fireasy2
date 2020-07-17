@@ -31,7 +31,7 @@ namespace Fireasy.Common
         /// <param name="flags">标志位。</param>
         /// <param name="description">说明文本。</param>
         public EnumDescriptionAttribute(int flags, string description)
-            : base (description)
+            : base(description)
         {
             Flags = flags;
         }

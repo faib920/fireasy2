@@ -5,6 +5,10 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 using Fireasy.Common.Ioc;
+#if NETSTANDARD
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+#endif
 using System;
 
 namespace Fireasy.Common.Extensions
@@ -25,10 +29,17 @@ namespace Fireasy.Common.Extensions
         {
             if (serviceProvier != null)
             {
-                var service = serviceProvier.GetService(typeof(T));
-                if (service != null)
+                try
                 {
-                    return (T)service;
+                    var service = serviceProvier.GetService(typeof(T));
+                    if (service != null)
+                    {
+                        return (T)service;
+                    }
+                }
+                catch (ObjectDisposedException)
+                {
+                    Tracer.Error($"{serviceProvier} is disposed");
                 }
             }
 
@@ -46,7 +57,14 @@ namespace Fireasy.Common.Extensions
         {
             if (serviceProvier != null)
             {
-                return serviceProvier.GetService(serviceType);
+                try
+                {
+                    return serviceProvier.GetService(serviceType);
+                }
+                catch (ObjectDisposedException)
+                {
+                    Tracer.Error($"{serviceProvier} is disposed");
+                }
             }
 
             return creator == null ? default : creator();
@@ -110,5 +128,63 @@ namespace Fireasy.Common.Extensions
             return obj;
         }
 
+        /// <summary>
+        /// 在当前请求内创建一个范围的 <see cref="IServiceProvider"/> 实例。
+        /// </summary>
+        /// <param name="serviceProvider"></param>
+        /// <returns></returns>
+#if NETSTANDARD
+        public static IServiceScope TryCreateScope(this IServiceProvider serviceProvider)
+        {
+            if (serviceProvider.GetService(typeof(IServiceScopeFactory)) is IServiceScopeFactory factory)
+            {
+                return factory.CreateScope();
+            }
+            else if (serviceProvider is IResolver resolver)
+            {
+                return resolver.CreateScope();
+            }
+#else
+        public static IResolver TryCreateScope(this IServiceProvider serviceProvider)
+        {
+            if (serviceProvider is IResolver resolver)
+            {
+                return resolver.CreateScope();
+            }
+
+#endif
+
+            return null;
+        }
+
+#if NETSTANDARD
+        /// <summary>
+        /// 记录跟踪性日志。
+        /// </summary>
+        /// <param name="serviceProvider"></param>
+        /// <param name="message"></param>
+        public static void LogInformation(this IServiceProvider serviceProvider, string message)
+        {
+            var logger = serviceProvider.TryGetService<ILogger<Tracer>>();
+            if (logger != null)
+            {
+                logger.LogInformation(message);
+            }
+        }
+
+        /// <summary>
+        /// 记录错误性日志。
+        /// </summary>
+        /// <param name="serviceProvider"></param>
+        /// <param name="message"></param>
+        public static void LogError(this IServiceProvider serviceProvider, string message)
+        {
+            var logger = serviceProvider.TryGetService<ILogger<Tracer>>();
+            if (logger != null)
+            {
+                logger.LogError(message);
+            }
+        }
+#endif
     }
 }

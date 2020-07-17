@@ -6,61 +6,17 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if NETSTANDARD
-using Fireasy.Common.Subscribes;
 using System;
-using System.Collections.Generic;
 using System.Reflection;
 
 namespace Fireasy.Common
 {
     public class CoreOptions
     {
-        public Dictionary<string, Dictionary<Type, List<Delegate>>> de = new Dictionary<string, Dictionary<Type, List<Delegate>>>();
-
         /// <summary>
         /// 获取或设置用于过滤程序集的函数。
         /// </summary>
         public Func<Assembly, bool> AssemblyFilter { get; set; }
-
-        /// <summary>
-        /// 注册消息订阅器。
-        /// </summary>
-        /// <param name="name">配置实例名称。</param>
-        /// <param name="subscriber">消息订阅器。</param>
-        public void AddSubscriber<TSubject>(string name, Action<TSubject> subscriber) where TSubject : class
-        {
-            SubscribeManagerFactory.CreateManager(name)?.AddSubscriber(subscriber);
-        }
-
-        /// <summary>
-        /// 配置消息订阅器。
-        /// </summary>
-        /// <param name="name">配置实例名称。</param>
-        /// <returns></returns>
-        public SubscribeOptions ConfigSubscribers(string name)
-        {
-            return new SubscribeOptions(name);
-        }
-    }
-
-    public class SubscribeOptions
-    {
-        private readonly string name;
-
-        internal SubscribeOptions(string name)
-        {
-            this.name = name;
-        }
-
-        /// <summary>
-        /// 注册消息订阅器。
-        /// </summary>
-        /// <param name="subscriber">消息订阅器。</param>
-        public SubscribeOptions Add<TSubject>(Action<TSubject> subscriber) where TSubject : class
-        {
-            SubscribeManagerFactory.CreateManager(name)?.AddSubscriber(subscriber);
-            return this;
-        }
     }
 }
 #endif

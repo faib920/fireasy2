@@ -6,7 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Runtime.Serialization;
 
 namespace Fireasy.Data.Backup
 {
@@ -28,7 +27,7 @@ namespace Fireasy.Data.Backup
         /// </summary>
         /// <param name="exception">导致当前异常的异常。</param>
         public BackupException(Exception exception)
-            : base (SR.GetString(SRKind.FailInBackup, exception.Message), exception)
+            : base(SR.GetString(SRKind.FailInBackup, exception.Message), exception)
         {
         }
 
@@ -38,7 +37,7 @@ namespace Fireasy.Data.Backup
         /// <param name="message">解释异常原因的错误消息。</param>
         /// <param name="exception">导致当前异常的异常</param>
         public BackupException(string message, Exception exception)
-            : base (message, exception)
+            : base(message, exception)
         {
         }
     }

@@ -17,12 +17,12 @@ namespace Fireasy.Common.Caching
         /// </summary>
         /// <param name="serviceProvider"></param>
         /// <param name="cacheKey"></param>
-        /// <param name="additional"></param>
+        /// <param name="specialKey"></param>
         /// <returns></returns>
-        public static string GetCacheKey(this IServiceProvider serviceProvider, string cacheKey, object additional = null)
+        public static string GetCacheKey(this IServiceProvider serviceProvider, string cacheKey, object specialKey = null)
         {
             var normalizer = serviceProvider.TryGetService<ICacheKeyNormalizer>();
-            return normalizer != null ? normalizer.NormalizeKey(cacheKey, additional) : cacheKey;
+            return normalizer != null ? normalizer.NormalizeKey(cacheKey, specialKey) : cacheKey;
         }
     }
 }

@@ -21,14 +21,14 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取所属的表的别名。
         /// </summary>
-        public TableAlias Alias { get; private set; }
+        public TableAlias Alias { get; }
 
         /// <summary>
         /// 获取列的名称。
         /// </summary>
-        public string Name { get; private set; }
+        public string Name { get; }
 
-        public PropertyMapInfo MapInfo { get; private set; }
+        public PropertyMapInfo MapInfo { get; }
 
         /// <summary>
         /// 获取哈希码。
@@ -75,11 +75,11 @@ namespace Fireasy.Data.Entity.Linq.Expressions
     public class SubqueryColumnExpression : ColumnExpression
     {
         internal SubqueryColumnExpression(Type type, TableAlias alias, string name, string subquery)
-            : base (type, alias, name, null)
+            : base(type, alias, name, null)
         {
             Subquery = subquery;
         }
 
-        public string Subquery { get; private set; }
+        public string Subquery { get; }
     }
 }

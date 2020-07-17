@@ -7,8 +7,8 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Localization.Configuration;
-using System.Globalization;
 using System;
+using System.Globalization;
 #if NETSTANDARD
 using Microsoft.Extensions.DependencyInjection;
 #endif
@@ -71,8 +71,8 @@ namespace Fireasy.Common.Localization
             var section = ConfigurationUnity.GetSection<StringLocalizerConfigurationSection>();
             if (section != null && section.Factory != null)
             {
-                manager = ConfigurationUnity.Cached<IStringLocalizerManager>($"LocalizerManager_{configName}", 
-                    () => section.Factory.CreateInstance(configName) as IStringLocalizerManager);
+                manager = ConfigurationUnity.Cached<IStringLocalizerManager>($"LocalizerManager_{configName}", serviceProvider,
+                    () => section.Factory.CreateInstance(serviceProvider, configName) as IStringLocalizerManager);
                 if (manager != null)
                 {
                     return WithCulture(manager, section);
@@ -96,7 +96,7 @@ namespace Fireasy.Common.Localization
                 return null;
             }
 
-            return WithCulture(ConfigurationUnity.Cached<IStringLocalizerManager>($"LocalizerManager_{configName}", 
+            return WithCulture(ConfigurationUnity.Cached<IStringLocalizerManager>($"LocalizerManager_{configName}", serviceProvider,
                 () => ConfigurationUnity.CreateInstance<StringLocalizerConfigurationSetting, IStringLocalizerManager>(serviceProvider, setting, s => s.LocalizerType)), section);
         }
 
@@ -109,7 +109,7 @@ namespace Fireasy.Common.Localization
                     manager.CultureInfo = CultureInfo.GetCultureInfo(section.Culture);
                 }
                 catch (CultureNotFoundException)
-                { 
+                {
                 }
             }
 

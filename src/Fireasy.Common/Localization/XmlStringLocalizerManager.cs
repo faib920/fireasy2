@@ -18,7 +18,7 @@ namespace Fireasy.Common.Localization
     /// </summary>
     public class XmlStringLocalizerManager : IStringLocalizerManager
     {
-        private static readonly ConcurrentDictionary<string, IStringLocalizer> localizers = new ConcurrentDictionary<string, IStringLocalizer>();
+        private static readonly ConcurrentDictionary<string, IStringLocalizer> _localizers = new ConcurrentDictionary<string, IStringLocalizer>();
 
         /// <summary>
         /// 获取或设置 <see cref="CultureInfo"/> 对象。
@@ -63,7 +63,7 @@ namespace Fireasy.Common.Localization
                 return NullStringLocalizer.Instance;
             }
 
-            return localizers.GetOrAdd(fileName, key =>
+            return _localizers.GetOrAdd(fileName, key =>
                 {
                     var doc = new XmlDocument();
                     doc.Load(key);

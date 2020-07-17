@@ -36,7 +36,7 @@ namespace Fireasy.Data.Entity
         }
 
         // <summary>
-        // The DbSet properties initializer part of the pair.
+        // The EntityRepository properties initializer part of the pair.
         // </summary>
         public Action<EntityContext> SetsInitializer
         {

@@ -16,8 +16,8 @@ namespace Fireasy.Common.Caching
         /// 标准化缓存键。
         /// </summary>
         /// <param name="cacheKey"></param>
-        /// <param name="additional"></param>
+        /// <param name="specialKey"></param>
         /// <returns></returns>
-        string NormalizeKey(string cacheKey, object additional = null);
+        string NormalizeKey(string cacheKey, object specialKey = null);
     }
 }

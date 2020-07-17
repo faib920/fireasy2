@@ -32,13 +32,6 @@ namespace Fireasy.Common.Subscribes
         void Publish<TSubject>(string name, TSubject subject) where TSubject : class;
 
         /// <summary>
-        /// 向指定的通道发送数据。
-        /// </summary>
-        /// <param name="name">主题名称。</param>
-        /// <param name="data">发送的数据。</param>
-        void Publish(string name, byte[] data);
-
-        /// <summary>
         /// 异步的，向管理器发送主题。
         /// </summary>
         /// <typeparam name="TSubject"></typeparam>
@@ -54,14 +47,6 @@ namespace Fireasy.Common.Subscribes
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <param name="subject">主题内容。</param>
         Task PublishAsync<TSubject>(string name, TSubject subject, CancellationToken cancellationToken = default) where TSubject : class;
-
-        /// <summary>
-        /// 异步的，向指定的通道发送数据。
-        /// </summary>
-        /// <param name="name">主题名称。</param>
-        /// <param name="data">发送的数据。</param>
-        /// <param name="cancellationToken">取消操作的通知。</param>
-        Task PublishAsync(string name, byte[] data, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 添加一个订阅方法。
@@ -99,13 +84,6 @@ namespace Fireasy.Common.Subscribes
         /// <param name="subjectType">主题的类型。</param>
         /// <param name="subscriber">读取主题的方法。</param>
         void AddSubscriber(Type subjectType, Delegate subscriber);
-
-        /// <summary>
-        /// 添加一个订阅方法。
-        /// </summary>
-        /// <param name="name">主题名称。</param>
-        /// <param name="subscriber">读取数据的方法。</param>
-        void AddSubscriber(string name, Action<byte[]> subscriber);
 
         /// <summary>
         /// 移除相关的订阅方法。

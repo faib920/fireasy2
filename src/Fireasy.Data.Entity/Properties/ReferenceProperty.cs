@@ -18,7 +18,7 @@ namespace Fireasy.Data.Entity.Properties
         /// 初始化 <see cref="ReferenceProperty"/> 类的新实例。
         /// </summary>
         public ReferenceProperty()
-            : base (RelationPropertyType.RefProperty)
+            : base(RelationPropertyType.RefProperty)
         {
         }
 

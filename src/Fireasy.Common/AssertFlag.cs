@@ -12,15 +12,15 @@ namespace Fireasy.Common
     /// </summary>
     public sealed class AssertFlag
     {
-        private bool flag;
-        private readonly bool initFlag; //初始的状态
+        private bool _flag;
+        private readonly bool _initFlag; //初始的状态
 
         /// <summary>
         /// 使用初始的标志位初始化 <see cref="AssertFlag"/> 类的新实例。
         /// </summary>
         public AssertFlag()
         {
-            flag = initFlag = true;
+            _flag = _initFlag = true;
         }
 
         /// <summary>
@@ -29,9 +29,9 @@ namespace Fireasy.Common
         /// <returns>相等则为 true，否则为 false。</returns>
         public bool AssertTrue()
         {
-            if (flag == initFlag)
+            if (_flag == _initFlag)
             {
-                flag = !flag;
+                _flag = !_flag;
                 return true;
             }
 
@@ -43,7 +43,7 @@ namespace Fireasy.Common
         /// </summary>
         public void Reset()
         {
-            flag = initFlag;
+            _flag = _initFlag;
         }
     }
 }

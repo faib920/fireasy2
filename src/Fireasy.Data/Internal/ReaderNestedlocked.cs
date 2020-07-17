@@ -15,7 +15,7 @@ namespace Fireasy.Data.Internal
     /// </summary>
     internal class ReaderNestedlocked
     {
-        private int count;
+        private int _count;
 
         /// <summary>
         /// 数量增加1。
@@ -23,7 +23,7 @@ namespace Fireasy.Data.Internal
         /// <returns></returns>
         public int Increment()
         {
-            return Interlocked.Increment(ref count);
+            return Interlocked.Increment(ref _count);
         }
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace Fireasy.Data.Internal
         /// <returns></returns>
         public int Decrement()
         {
-            return Interlocked.Decrement(ref count);
+            return Interlocked.Decrement(ref _count);
         }
     }
 }

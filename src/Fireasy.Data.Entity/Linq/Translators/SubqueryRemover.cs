@@ -1,11 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
+using Fireasy.Data.Entity.Linq.Expressions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using Fireasy.Data.Entity.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
@@ -16,13 +16,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class SubqueryRemover : DbExpressionVisitor
     {
-        private readonly HashSet<SelectExpression> selectsToRemove;
-        private readonly Dictionary<TableAlias, Dictionary<string, Expression>> map;
+        private readonly HashSet<SelectExpression> _selectsToRemove;
+        private readonly Dictionary<TableAlias, Dictionary<string, Expression>> _map;
 
         private SubqueryRemover(IEnumerable<SelectExpression> selectsToRemove)
         {
-            this.selectsToRemove = new HashSet<SelectExpression>(selectsToRemove);
-            map = selectsToRemove.ToDictionary(d => d.Alias, d => d.Columns.ToDictionary(d2 => d2.Name, d2 => d2.Expression));
+            _selectsToRemove = new HashSet<SelectExpression>(selectsToRemove);
+            _map = selectsToRemove.ToDictionary(d => d.Alias, d => d.Columns.ToDictionary(d2 => d2.Name, d2 => d2.Expression));
         }
 
         public static SelectExpression Remove(SelectExpression outerSelect, params SelectExpression[] selectsToRemove)
@@ -42,12 +42,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitSelect(SelectExpression select)
         {
-            return selectsToRemove.Contains(select) ? Visit(select.From) : base.VisitSelect(select);
+            return _selectsToRemove.Contains(select) ? Visit(select.From) : base.VisitSelect(select);
         }
 
         protected override Expression VisitColumn(ColumnExpression column)
         {
-            if (map.TryGetValue(column.Alias, out Dictionary<string, Expression> nameMap))
+            if (_map.TryGetValue(column.Alias, out Dictionary<string, Expression> nameMap))
             {
                 if (nameMap.TryGetValue(column.Name, out Expression expr))
                 {

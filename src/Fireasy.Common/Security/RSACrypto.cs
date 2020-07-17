@@ -5,23 +5,23 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Common.Security
 {
     internal class RSACrypto : AsymmetricCrypto
     {
-        private readonly RSACryptoServiceProvider rsa = null;
+        private readonly RSACryptoServiceProvider _rsa = null;
 
         public RSACrypto()
             : base("RSA")
         {
-            rsa = new RSACryptoServiceProvider();
+            _rsa = new RSACryptoServiceProvider();
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace Fireasy.Common.Security
         public override byte[] Encrypt(byte[] source)
         {
             FromXmlString(PublicKey);
-            return rsa.Encrypt(source, false);
+            return _rsa.Encrypt(source, false);
         }
 
         /// <summary>
@@ -110,7 +110,7 @@ namespace Fireasy.Common.Security
         public override byte[] Decrypt(byte[] cipherData)
         {
             FromXmlString(PrivateKey);
-            return rsa.Decrypt(cipherData, false);
+            return _rsa.Decrypt(cipherData, false);
         }
 
         /// <summary>
@@ -133,7 +133,7 @@ namespace Fireasy.Common.Security
         {
             FromXmlString(PrivateKey);
             var md5 = CryptographyFactory.Create(CryptoAlgorithm.MD5);
-            return rsa.SignHash(md5.Encrypt(source), "MD5");
+            return _rsa.SignHash(md5.Encrypt(source), "MD5");
         }
 
         /// <summary>
@@ -146,15 +146,15 @@ namespace Fireasy.Common.Security
         {
             FromXmlString(PublicKey);
             var md5 = CryptographyFactory.Create(CryptoAlgorithm.MD5);
-            return rsa.VerifyHash(md5.Encrypt(source), "MD5", signature);
+            return _rsa.VerifyHash(md5.Encrypt(source), "MD5", signature);
         }
 
         private string ToXmlString(bool includePrivateParameters)
         {
 #if !NETSTANDARD
-            return rsa.ToXmlString(includePrivateParameters);
+            return _rsa.ToXmlString(includePrivateParameters);
 #else
-            var parameters = rsa.ExportParameters(includePrivateParameters);
+            var parameters = _rsa.ExportParameters(includePrivateParameters);
 
             var sb = new StringBuilder();
             sb.Append("<RSAKeyValue>");
@@ -183,7 +183,7 @@ namespace Fireasy.Common.Security
         private void FromXmlString(string xmlString)
         {
 #if !NETSTANDARD
-            rsa.FromXmlString(xmlString);
+            _rsa.FromXmlString(xmlString);
 #else
             var parameters = new RSAParameters();
 
@@ -226,7 +226,7 @@ namespace Fireasy.Common.Security
                 }
             }
 
-            rsa.ImportParameters(parameters);
+            _rsa.ImportParameters(parameters);
 #endif
         }
     }

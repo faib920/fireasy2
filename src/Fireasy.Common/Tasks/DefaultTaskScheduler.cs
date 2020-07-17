@@ -13,6 +13,8 @@ using System.Threading.Tasks;
 #endif
 using System.Collections.Generic;
 using System.Threading;
+using Fireasy.Common.ComponentModel;
+using Fireasy.Common.Ioc;
 
 namespace Fireasy.Common.Tasks
 {
@@ -24,16 +26,26 @@ namespace Fireasy.Common.Tasks
         /// <summary>
         /// 获取 <see cref="DefaultTaskScheduler"/> 的静态实例。
         /// </summary>
-        public readonly static DefaultTaskScheduler Instance = new DefaultTaskScheduler().TryUseContainer();
+        public readonly static DefaultTaskScheduler Instance = new DefaultTaskScheduler();
 
-        private readonly List<ITaskRunner> runners = new List<ITaskRunner>();
-        private readonly CancellationTokenSource stopToken = new CancellationTokenSource();
+        private readonly List<ITaskRunner> _runners = new List<ITaskRunner>();
+        private readonly CancellationTokenSource _stopToken = new CancellationTokenSource();
 
         /// <summary>
         /// 初始化 <see cref="DefaultTaskScheduler"/> 类的新实例。
         /// </summary>
         public DefaultTaskScheduler()
+            : this(ContainerUnity.GetContainer())
         {
+        }
+
+        /// <summary>
+        /// 初始化 <see cref="DefaultTaskScheduler"/> 类的新实例。
+        /// </summary>
+        /// <param name="serviceProvider"></param>
+        public DefaultTaskScheduler(IServiceProvider serviceProvider)
+        {
+            ServiceProvider = serviceProvider;
         }
 
         /// <summary>
@@ -59,7 +71,7 @@ namespace Fireasy.Common.Tasks
             }
 
             options.Initializer?.Invoke((T)executor);
-            var context = new TaskExecuteContext(ServiceProvider, options.Arguments, stopToken.Token);
+            var context = new TaskExecuteContext(ServiceProvider, options.Arguments, _stopToken.Token);
             AddRunner(new DefaultTaskRunner(options.Delay, options.Period, executor, context));
         }
 
@@ -76,7 +88,7 @@ namespace Fireasy.Common.Tasks
             }
 
             options.Initializer?.Invoke((T)executor);
-            var context = new TaskExecuteContext(ServiceProvider, options.Arguments, stopToken.Token);
+            var context = new TaskExecuteContext(ServiceProvider, options.Arguments, _stopToken.Token);
             AddRunner(new DefaultAsyncTaskRunner(options.Delay, options.Period, executor, context));
         }
 
@@ -96,16 +108,16 @@ namespace Fireasy.Common.Tasks
         /// </summary>
         public void Stop()
         {
-            stopToken.Cancel();
-            runners.ForEach(s => s.Stop());
+            _stopToken.Cancel();
+            _runners.ForEach(s => s.Stop());
         }
 
         protected override bool Dispose(bool disposing)
         {
-            runners.ForEach(s => s.TryDispose());
-            runners.Clear();
+            _runners.ForEach(s => s.TryDispose());
+            _runners.Clear();
 
-            stopToken.Dispose();
+            _stopToken.Dispose();
 
             return base.Dispose(disposing);
         }
@@ -113,7 +125,7 @@ namespace Fireasy.Common.Tasks
         private void AddRunner(ITaskRunner runner)
         {
             runner.Start();
-            runners.Add(runner);
+            _runners.Add(runner);
         }
 
 #if NETSTANDARD

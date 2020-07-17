@@ -13,7 +13,7 @@ namespace Fireasy.Data
     /// </summary>
     public sealed class TableCommand : IQueryCommand
     {
-        private readonly string tableName;
+        private readonly string _tableName;
 
         /// <summary>
         /// 将字符串转换为 <see cref="TableCommand"/> 实例。
@@ -41,7 +41,7 @@ namespace Fireasy.Data
         /// <param name="tableName">数据表的名称。</param>
         public TableCommand(string tableName)
         {
-            this.tableName = tableName;
+            _tableName = tableName;
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace Fireasy.Data
         /// <returns></returns>
         public override string ToString()
         {
-            return tableName;
+            return _tableName;
         }
     }
 }

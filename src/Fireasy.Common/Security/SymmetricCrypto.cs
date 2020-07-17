@@ -17,7 +17,7 @@ namespace Fireasy.Common.Security
     /// </summary>
     public class SymmetricCrypto : ICryptoProvider
     {
-        private readonly string algorithmName;
+        private readonly string _algorithmName;
 
         /// <summary>
         /// 初始化 <see cref="SymmetricCrypto"/> 类的新实例。
@@ -26,7 +26,7 @@ namespace Fireasy.Common.Security
         public SymmetricCrypto(string algorithmName)
         {
             Guard.ArgumentNull(algorithmName, nameof(algorithmName));
-            this.algorithmName = algorithmName;
+            _algorithmName = algorithmName;
             SetDefaultKeyIV();
         }
 
@@ -49,8 +49,8 @@ namespace Fireasy.Common.Security
             var sourceArray = CryptographyFactory.Create(CryptoAlgorithm.MD5).Encrypt(key, Encoding.GetEncoding(0));
             CryptKey = new byte[8];
             CryptIV = new byte[8];
-            Array.Copy(sourceArray, 0, this.CryptKey, 0, 8);
-            Array.Copy(sourceArray, 8, this.CryptIV, 0, 8);
+            Array.Copy(sourceArray, 0, CryptKey, 0, 8);
+            Array.Copy(sourceArray, 8, CryptIV, 0, 8);
         }
 
         /// <summary>
@@ -94,7 +94,7 @@ namespace Fireasy.Common.Security
                 throw new Exception(SR.GetString(SRKind.SourceCanotReadDestCanotWrite));
             }
 
-            using (var algorithm = CreateAlgorithm(algorithmName))
+            using (var algorithm = CreateAlgorithm(_algorithmName))
             {
                 if (algorithm != null)
                 {
@@ -158,7 +158,7 @@ namespace Fireasy.Common.Security
                 throw new Exception(SR.GetString(SRKind.SourceCanotReadDestCanotWrite));
             }
 
-            using (var algorithm = CreateAlgorithm(algorithmName))
+            using (var algorithm = CreateAlgorithm(_algorithmName))
             {
                 if (algorithm != null)
                 {

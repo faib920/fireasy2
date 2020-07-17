@@ -28,14 +28,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public abstract class TranslatorBase : DbExpressionVisitor
     {
-        private readonly Stack<string> stack = new Stack<string>();
-        private StringBuilder builder;
+        private readonly Stack<string> _stack = new Stack<string>();
+        private StringBuilder _builder;
         private const int Indent = 2;
-        private int dept;
-        private readonly Dictionary<TableAlias, string> aliases;
-        private IDataSegment dataSegment;
-        private bool hideTableAliases;
-        private bool hideColumnAliases;
+        private int _dept;
+        private readonly Dictionary<TableAlias, string> _aliases;
+        private IDataSegment _dataSegment;
+        private bool _hideTableAliases;
+        private bool _hideColumnAliases;
 
         /// <summary>
         /// 获取或设置是否嵌套查询。
@@ -45,20 +45,18 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <summary>
         /// 初始化 <see cref="TranslatorBase"/> 类的新实例。
         /// </summary>
-        protected TranslatorBase()
+        protected TranslatorBase(TranslateContext transContext)
         {
-            builder = new StringBuilder();
-            aliases = new Dictionary<TableAlias, string>();
+            _builder = new StringBuilder();
+            _aliases = new Dictionary<TableAlias, string>();
             Parameters = new ParameterCollection();
 
-            if (TranslateScope.Current != null)
-            {
-                Options = TranslateScope.Current.Options;
-                hideTableAliases = Options.HideTableAliases;
-                hideColumnAliases = Options.HideColumnAliases;
-                Syntax = TranslateScope.Current.SyntaxProvider;
-                Environment = TranslateScope.Current.PersistentEnvironment;
-            }
+            Options = transContext.Options;
+            _hideTableAliases = Options.HideTableAliases;
+            _hideColumnAliases = Options.HideColumnAliases;
+
+            Syntax = transContext.SyntaxProvider;
+            Environment = transContext.PersistentEnvironment;
         }
 
         /// <summary>
@@ -74,7 +72,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <summary>
         /// 获取参数集合。
         /// </summary>
-        protected ParameterCollection Parameters { get; private set; }
+        protected ParameterCollection Parameters { get; }
 
         /// <summary>
         /// 获取或设置持久化环境。
@@ -88,7 +86,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns>翻译结果对象。</returns>
         public TranslateResult Translate(Expression expression)
         {
-            builder = new StringBuilder();
+            _builder = new StringBuilder();
             Parameters.Clear();
 
             Visit(expression);
@@ -97,7 +95,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 QueryText = ToString(),
                 Syntax = Syntax,
-                DataSegment = dataSegment,
+                DataSegment = _dataSegment,
                 Parameters = Parameters
             };
         }
@@ -109,11 +107,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         private string TranslateString(Expression expression)
         {
-            stack.Push(builder.ToString());
-            builder.Length = 0;
+            _stack.Push(_builder.ToString());
+            _builder.Length = 0;
             Visit(expression);
-            var str = builder.ToString();
-            builder = new StringBuilder(stack.Pop());
+            var str = _builder.ToString();
+            _builder = new StringBuilder(_stack.Pop());
             return str;
         }
 
@@ -123,7 +121,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         public override string ToString()
         {
-            return builder.ToString();
+            return _builder.ToString();
         }
 
         /// <summary>
@@ -132,9 +130,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <param name="style">缩进样式。</param>
         protected void WriteLine(Indentation style)
         {
-            builder.AppendLine();
+            _builder.AppendLine();
             SetIndentation(style);
-            builder.Append(new string(' ', dept * Indent));
+            _builder.Append(new string(' ', _dept * Indent));
         }
 
         /// <summary>
@@ -143,7 +141,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <param name="value"></param>
         protected void Write(object value)
         {
-            builder.Append(value);
+            _builder.Append(value);
         }
 
         /// <summary>
@@ -155,10 +153,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
             switch (style)
             {
                 case Indentation.Inner:
-                    dept++;
+                    _dept++;
                     break;
                 case Indentation.Outer:
-                    dept--;
+                    _dept--;
                     break;
             }
         }
@@ -402,7 +400,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             // 2) agg(lookup[outer])
             ParameterExpression lookup = Expression.Parameter(toLookup.Type, "lookup");
             var property = lookup.Type.GetProperty("Item");
-            Expression access = Expression.Call(lookup, property.GetGetMethod(), this.Visit(outerKey));
+            Expression access = Expression.Call(lookup, property.GetGetMethod(), Visit(outerKey));
             if (join.Projection.Aggregator != null)
             {
                 // apply aggregator
@@ -657,7 +655,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             if (!(column is SubqueryColumnExpression sqc))
             {
-                if (column.Alias != null && !hideColumnAliases)
+                if (column.Alias != null && !_hideColumnAliases)
                 {
                     Write(GetAliasName(column.Alias));
                     Write(".");
@@ -668,7 +666,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             else
             {
                 var alias = string.Empty;
-                if (column.Alias != null && !hideColumnAliases)
+                if (column.Alias != null && !_hideColumnAliases)
                 {
                     alias = GetAliasName(column.Alias) + ".";
                 }
@@ -763,7 +761,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     var tableName = GetTableName(table);
                     Write(DbUtility.FormatByQuote(Syntax, tableName));
 
-                    if (!hideTableAliases)
+                    if (!_hideTableAliases)
                     {
                         WriteAs();
                         Write(GetAliasName(table.Alias));
@@ -894,7 +892,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitSegment(SegmentExpression segment)
         {
-            dataSegment = segment.Segment;
+            _dataSegment = segment.Segment;
             return segment;
         }
 
@@ -1236,10 +1234,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         protected string GetAliasName(TableAlias alias)
         {
-            if (!aliases.TryGetValue(alias, out string name))
+            if (!_aliases.TryGetValue(alias, out string name))
             {
-                name = $"t{aliases.Count}";
-                aliases.Add(alias, name);
+                name = $"t{_aliases.Count}";
+                _aliases.Add(alias, name);
             }
 
             return name;
@@ -1694,7 +1692,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         exp = Expression.Constant(constExp.Value.ToString(), typeof(string));
                     }
 
-                    Write(Syntax.String.Concat("'%,'", TranslateString(exp),  "',%'"));
+                    Write(Syntax.String.Concat("'%,'", TranslateString(exp), "',%'"));
                     break;
             }
 
@@ -2027,14 +2025,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <param name="func"></param>
         protected Expression HideAliases(Func<Expression> func)
         {
-            var _hideTableAliases = hideTableAliases;
-            var _hideColumnAliases = hideColumnAliases;
-            hideTableAliases = hideColumnAliases = true;
+            var _hideTableAliases = this._hideTableAliases;
+            var _hideColumnAliases = this._hideColumnAliases;
+            this._hideTableAliases = this._hideColumnAliases = true;
 
             var exp = func?.Invoke();
 
-            hideTableAliases = _hideColumnAliases;
-            hideColumnAliases = _hideTableAliases;
+            this._hideTableAliases = _hideColumnAliases;
+            this._hideColumnAliases = _hideTableAliases;
 
             return exp;
         }
@@ -2054,27 +2052,27 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
         }
 
-        class CompoundKey : IEquatable<CompoundKey>, IEnumerable<object>, IEnumerable
+        private class CompoundKey : IEquatable<CompoundKey>, IEnumerable<object>, IEnumerable
         {
-            readonly object[] values;
-            readonly int hc;
+            private readonly object[] _values;
+            private readonly int _hc;
 
             public CompoundKey(params object[] values)
             {
-                this.values = values;
+                _values = values;
                 for (int i = 0, n = values.Length; i < n; i++)
                 {
                     object value = values[i];
                     if (value != null)
                     {
-                        hc ^= (value.GetHashCode() + i);
+                        _hc ^= (value.GetHashCode() + i);
                     }
                 }
             }
 
             public override int GetHashCode()
             {
-                return hc;
+                return _hc;
             }
 
             public override bool Equals(object obj)
@@ -2084,11 +2082,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             public bool Equals(CompoundKey other)
             {
-                if (other == null || other.values.Length != values.Length)
+                if (other == null || other._values.Length != _values.Length)
                     return false;
-                for (int i = 0, n = other.values.Length; i < n; i++)
+                for (int i = 0, n = other._values.Length; i < n; i++)
                 {
-                    if (!object.Equals(this.values[i], other.values[i]))
+                    if (!object.Equals(_values[i], other._values[i]))
                         return false;
                 }
                 return true;
@@ -2096,12 +2094,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             public IEnumerator<object> GetEnumerator()
             {
-                return ((IEnumerable<object>)values).GetEnumerator();
+                return ((IEnumerable<object>)_values).GetEnumerator();
             }
 
             IEnumerator IEnumerable.GetEnumerator()
             {
-                return this.GetEnumerator();
+                return GetEnumerator();
             }
         }
         #endregion

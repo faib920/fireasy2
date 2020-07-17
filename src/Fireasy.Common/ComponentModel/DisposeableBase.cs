@@ -6,9 +6,11 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Diagnostics.CodeAnalysis;
+#if NETSTANDARD2_1
 using System.Threading.Tasks;
+#endif
 
-namespace Fireasy.Common
+namespace Fireasy.Common.ComponentModel
 {
     /// <summary>
     /// 实现了标准的 <see cref="IDisposable"/> 模式的抽象类。
@@ -18,7 +20,7 @@ namespace Fireasy.Common
         , IAsyncDisposable
 #endif
     {
-        private bool isDisposed = false;
+        private bool _isDisposed = false;
 
         /// <summary>
         /// 获取是否检验是否已经释放，当为 true 时，重复 Dispose 会引发 <see cref="ObjectDisposedException"/> 异常。默认为 false。
@@ -44,16 +46,16 @@ namespace Fireasy.Common
 
         private void DoDispose(bool disposing)
         {
-            if (VerifyDisposed && isDisposed)
+            if (VerifyDisposed && _isDisposed)
             {
                 throw new ObjectDisposedException(GetType().Name);
             }
 
-            if (!isDisposed)
+            if (!_isDisposed)
             {
                 if (Dispose(disposing))
                 {
-                    isDisposed = true;
+                    _isDisposed = true;
                 }
             }
         }
@@ -81,16 +83,16 @@ namespace Fireasy.Common
 
         private async ValueTask DoDisposeAsync(bool disposing)
         {
-            if (VerifyDisposed && isDisposed)
+            if (VerifyDisposed && _isDisposed)
             {
                 throw new ObjectDisposedException(GetType().Name);
             }
 
-            if (!isDisposed)
+            if (!_isDisposed)
             {
                 if (await DisposeAsync(disposing))
                 {
-                    isDisposed = true;
+                    _isDisposed = true;
                 }
             }
         }

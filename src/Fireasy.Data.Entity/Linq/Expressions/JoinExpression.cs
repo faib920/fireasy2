@@ -29,22 +29,22 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取 JOIN 的类别。
         /// </summary>
-        public JoinType JoinType { get; private set; }
+        public JoinType JoinType { get; }
 
         /// <summary>
         /// 获取 JOIN 左边的查询表达式。
         /// </summary>
-        public Expression Left { get; private set; }
+        public Expression Left { get; }
 
         /// <summary>
         /// 获取 JOIN 右边的查询表达式。
         /// </summary>
-        public Expression Right { get; private set; }
+        public Expression Right { get; }
 
         /// <summary>
         /// 获取 ON 条件表达式。
         /// </summary>
-        public new Expression Condition { get; private set; }
+        public new Expression Condition { get; }
 
         /// <summary>
         /// 更新 <see cref="JoinExpression"/> 对象。

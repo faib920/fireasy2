@@ -33,7 +33,7 @@ namespace Fireasy.Common.Ioc.Registrations
         {
             var newExp = BuildNewExpression();
             var initMbrExp = BuildMemberInitExpression(newExp);
-            var initializer = container.GetInitializer<TImplementation>();
+            var initializer = _container.GetInitializer<TImplementation>();
             return initializer != null ? BuildExpressionWithInstanceInitializer(initMbrExp, initializer) : initMbrExp;
         }
 
@@ -66,7 +66,7 @@ namespace Fireasy.Common.Ioc.Registrations
             //寻找最匹配的构造方法
             foreach (var con in constructors.OrderBy(s => s.GetParameters().Length))
             {
-                if (con.GetParameters().All(s => container.IsRegistered(s.ParameterType)))
+                if (con.GetParameters().All(s => _container.IsRegistered(s.ParameterType)))
                 {
                     constructor = con;
                     break;
@@ -87,7 +87,7 @@ namespace Fireasy.Common.Ioc.Registrations
 
         private Expression BuildParameterExpression(Type parameterType)
         {
-            return Expression.Call(parameter, nameof(IResolver.Resolve), new Type[] { parameterType });
+            return Expression.Call(_parameter, nameof(IResolver.Resolve), new Type[] { parameterType });
         }
 
         private Expression BuildMemberInitExpression(NewExpression newExpression)
@@ -95,10 +95,10 @@ namespace Fireasy.Common.Ioc.Registrations
             var parameters = newExpression.Constructor.GetParameters();
 
             var bindings = from s in ImplementationType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                             where s.CanWrite && container.GetRegistrations(s.PropertyType).Any()
-                                && !s.IsDefined<IgnoreInjectPropertyAttribute>()
-                                && !parameters.Any(t => t.ParameterType == s.PropertyType) //如果构造器里已经有这个类型，则不使用属性注入
-                                select (MemberBinding)Expression.Bind(s, BuildParameterExpression(s.PropertyType));
+                           where s.CanWrite && _container.GetRegistrations(s.PropertyType).Any()
+                              && !s.IsDefined<IgnoreInjectPropertyAttribute>()
+                              && !parameters.Any(t => t.ParameterType == s.PropertyType) //如果构造器里已经有这个类型，则不使用属性注入
+                           select (MemberBinding)Expression.Bind(s, BuildParameterExpression(s.PropertyType));
 
             return Expression.MemberInit(newExpression, bindings);
         }

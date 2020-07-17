@@ -21,7 +21,7 @@ namespace Fireasy.Data.Entity.Properties
         /// 初始化 <see cref="EnumProperty"/> 类的新实例。
         /// </summary>
         public EnumProperty()
-            : base (RelationPropertyType.Enum)
+            : base(RelationPropertyType.Enum)
         {
         }
 

@@ -9,7 +9,7 @@ namespace System.ComponentModel.DataAnnotations
             MetadataClassType = metadataClassType;
         }
 
-        public Type MetadataClassType { get; private set; }
+        public Type MetadataClassType { get; }
     }
 }
 #endif

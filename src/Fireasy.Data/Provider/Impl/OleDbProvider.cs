@@ -8,7 +8,6 @@
 using Fireasy.Data.Identity;
 using Fireasy.Data.RecordWrapper;
 using Fireasy.Data.Schema;
-using Fireasy.Data.Syntax;
 using System;
 
 namespace Fireasy.Data.Provider

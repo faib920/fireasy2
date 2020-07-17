@@ -85,7 +85,7 @@ namespace Fireasy.Data.Entity
                             .ldstr(property.Name)
                             .call(MethodCache.GetProperty)
                             .call(MethodCache.GetValue)
-                            .Assert(op_Explicit != null, e1 => e1.call(op_Explicit), 
+                            .Assert(op_Explicit != null, e1 => e1.call(op_Explicit),
                                 e1 => e1.call(MethodCache.PVGetValue.MakeGenericMethod(property.PropertyType)))
                             .Assert(isEnum, e1 => e1.unbox_any(property.PropertyType))
                             .stloc_1
@@ -108,7 +108,7 @@ namespace Fireasy.Data.Entity
                             .call(MethodCache.GetProperty)
                             .ldarg_1
                             .Assert(isEnum, e1 => e1.box(property.PropertyType))
-                            .Assert(op_Implicit != null, e1 => e1.call(op_Implicit), 
+                            .Assert(op_Implicit != null, e1 => e1.call(op_Implicit),
                                 e1 => e1.ldtoken(property.PropertyType).call(MethodCache.TypeGetTypeFromHandle).call(MethodCache.PVNewValue))
                             .call(MethodCache.SetValue)
                             .nop
@@ -126,12 +126,12 @@ namespace Fireasy.Data.Entity
                             callvirt(MethodCache.InitValue).ret();
                     });
 
-            injection?.Inject(new EntityInjectionContext 
-                { 
-                    EntityType = entityType, 
-                    AssemblyBuilder = assemblyBuilder, 
-                    TypeBuilder = typeBuilder 
-                });
+            injection?.Inject(new EntityInjectionContext
+            {
+                EntityType = entityType,
+                AssemblyBuilder = assemblyBuilder,
+                TypeBuilder = typeBuilder
+            });
 
             return typeBuilder.CreateType();
         }

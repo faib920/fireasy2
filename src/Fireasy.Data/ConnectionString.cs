@@ -19,7 +19,7 @@ namespace Fireasy.Data
     /// <remarks>连接字符串中可使用特殊的名称来标记数据库文件的有效地址，这些标识包含|datadirectory|或来自 <see cref="Environment.SpecialFolder"/> 枚举项，如|System|、|ApplicationData|，同时，也可以使用../路径命令符。</remarks>
     public class ConnectionString
     {
-        private string connectionString;
+        private string _connectionString;
 
         /// <summary>
         /// 将连接字符串转换为 <see cref="ConnectionString"/> 对象。
@@ -53,7 +53,7 @@ namespace Fireasy.Data
                 return false;
             }
 
-            return connStr1.connectionString == connStr2.connectionString;
+            return connStr1._connectionString == connStr2._connectionString;
         }
 
         public static bool operator !=(ConnectionString connStr1, ConnectionString connStr2)
@@ -68,7 +68,7 @@ namespace Fireasy.Data
                 return true;
             }
 
-            return connStr1.connectionString != connStr2.connectionString;
+            return connStr1._connectionString != connStr2._connectionString;
         }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace Fireasy.Data
             Guard.ArgumentNull(connectionString, nameof(connectionString));
 
             Properties = new ConnectionProperties(this);
-            this.connectionString = ParseConnectionString(connectionString);
+            _connectionString = ParseConnectionString(connectionString);
         }
 
         /// <summary>
@@ -110,7 +110,7 @@ namespace Fireasy.Data
         /// <returns>数据库连接字符串。</returns>
         public override string ToString()
         {
-            return connectionString;
+            return _connectionString;
         }
 
         /// <summary>
@@ -132,7 +132,7 @@ namespace Fireasy.Data
                 builder.AppendFormat("{0}={1};", name, value);
             }
 
-            connectionString = builder.ToString();
+            _connectionString = builder.ToString();
         }
 
         /// <summary>

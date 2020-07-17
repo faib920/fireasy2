@@ -26,16 +26,16 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <summary>
         /// 获取 ELinq 访问器。
         /// </summary>
-        public DbExpressionVisitor Visitor { get; private set; }
+        public DbExpressionVisitor Visitor { get; }
 
         /// <summary>
         /// 获取要绑定的 <see cref="MethodCallExpression"/> 表达式。
         /// </summary>
-        public MethodCallExpression Expression { get; private set; }
+        public MethodCallExpression Expression { get; }
 
         /// <summary>
         /// 获取当前数据库的语法服务。
         /// </summary>
-        public ISyntaxProvider Syntax { get; private set; }
+        public ISyntaxProvider Syntax { get; }
     }
 }

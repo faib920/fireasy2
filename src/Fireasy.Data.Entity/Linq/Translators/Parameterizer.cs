@@ -15,8 +15,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class Parameterizer : DbExpressionVisitor
     {
-        private readonly Dictionary<TypeAndValue, NamedValueExpression> map = new Dictionary<TypeAndValue, NamedValueExpression>();
-        private readonly Dictionary<HashedExpression, NamedValueExpression> pmap = new Dictionary<HashedExpression, NamedValueExpression>();
+        private readonly Dictionary<TypeAndValue, NamedValueExpression> _tmap = new Dictionary<TypeAndValue, NamedValueExpression>();
+        private readonly Dictionary<HashedExpression, NamedValueExpression> _hmap = new Dictionary<HashedExpression, NamedValueExpression>();
+        private int _param = 0;
 
         public static Expression Parameterize(Expression expression)
         {
@@ -26,7 +27,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         protected override Expression VisitProjection(ProjectionExpression proj)
         {
             // don't parameterize the projector or aggregator!
-            SelectExpression select = (SelectExpression)this.Visit(proj.Select);
+            SelectExpression select = (SelectExpression)Visit(proj.Select);
             return proj.Update(select, proj.Projector, proj.Aggregator);
         }
 
@@ -80,18 +81,17 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return UpdateColumnAssignment(ca, ca.Column, expression);
         }
 
-        int iParam = 0;
         protected override Expression VisitConstant(ConstantExpression c)
         {
             if (c.Value != null && !IsNumeric(c.Value.GetType()))
             {
                 var tv = new TypeAndValue(c.Type, c.Value);
-                if (!map.TryGetValue(tv, out NamedValueExpression nv))
+                if (!_tmap.TryGetValue(tv, out NamedValueExpression nv))
                 {
                     // re-use same name-value if same type & value
-                    var name = string.Intern("p" + iParam++);
+                    var name = string.Intern("p" + _param++);
                     nv = new NamedValueExpression(name, c);
-                    map.Add(tv, nv);
+                    _tmap.Add(tv, nv);
                 }
 
                 return nv;
@@ -104,7 +104,6 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             return GetNamedValue(p);
         }
-
 
         protected override Expression VisitMethodCall(MethodCallExpression methodCallExp)
         {
@@ -133,11 +132,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
         private Expression GetNamedValue(Expression e)
         {
             var he = new HashedExpression(e);
-            if (!pmap.TryGetValue(he, out NamedValueExpression nv))
+            if (!_hmap.TryGetValue(he, out NamedValueExpression nv))
             {
-                var name = "p" + (iParam++);
+                var name = "p" + (_param++);
                 nv = new NamedValueExpression(name, e);
-                pmap.Add(he, nv);
+                _hmap.Add(he, nv);
             }
 
             return nv;
@@ -167,15 +166,15 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private struct TypeAndValue : IEquatable<TypeAndValue>
         {
-            private readonly Type type;
-            private readonly object value;
-            private readonly int hash;
+            private readonly Type _type;
+            private readonly object _value;
+            private readonly int _hash;
 
             public TypeAndValue(Type type, object value)
             {
-                this.type = type;
-                this.value = value;
-                hash = type.GetHashCode() + (value != null ? value.GetHashCode() : 0);
+                _type = type;
+                _value = value;
+                _hash = type.GetHashCode() + (value != null ? value.GetHashCode() : 0);
             }
 
             public override bool Equals(object obj)
@@ -190,24 +189,24 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             public bool Equals(TypeAndValue vt)
             {
-                return vt.type == type && Equals(vt.value, this.value);
+                return vt._type == _type && Equals(vt._value, _value);
             }
 
             public override int GetHashCode()
             {
-                return hash;
+                return _hash;
             }
         }
 
         private struct HashedExpression : IEquatable<HashedExpression>
         {
-            private readonly Expression expression;
-            private readonly int hashCode;
+            private readonly Expression _expression;
+            private readonly int _hashCode;
 
             public HashedExpression(Expression expression)
             {
-                this.expression = expression;
-                hashCode = Hasher.ComputeHash(expression);
+                _expression = expression;
+                _hashCode = Hasher.ComputeHash(expression);
             }
 
             public override bool Equals(object obj)
@@ -222,29 +221,29 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             public bool Equals(HashedExpression other)
             {
-                return hashCode == other.hashCode &&
-                    DbExpressionComparer.AreEqual(expression, other.expression);
+                return _hashCode == other._hashCode &&
+                    DbExpressionComparer.AreEqual(_expression, other._expression);
             }
 
             public override int GetHashCode()
             {
-                return hashCode;
+                return _hashCode;
             }
 
             private class Hasher : DbExpressionVisitor
             {
-                private int hc;
+                private int _hc;
 
                 internal static int ComputeHash(Expression expression)
                 {
                     var hasher = new Hasher();
                     hasher.Visit(expression);
-                    return hasher.hc;
+                    return hasher._hc;
                 }
 
                 protected override Expression VisitConstant(ConstantExpression c)
                 {
-                    hc += ((c.Value != null) ? c.Value.GetHashCode() : 0);
+                    _hc += ((c.Value != null) ? c.Value.GetHashCode() : 0);
                     return c;
                 }
             }

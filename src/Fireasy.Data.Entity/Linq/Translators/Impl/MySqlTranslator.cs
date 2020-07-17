@@ -5,14 +5,18 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Expressions;
-using Fireasy.Data.Provider;
+using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
-    public class MySqlTranslator  : TranslatorBase
+    public class MySqlTranslator : TranslatorBase
     {
+        public MySqlTranslator(TranslateContext transContext)
+            : base (transContext)
+        {
+        }
+
         protected override Expression VisitSelect(SelectExpression select)
         {
             if (Options.WhereOnly)

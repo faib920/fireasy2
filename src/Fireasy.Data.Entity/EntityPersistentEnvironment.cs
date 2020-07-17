@@ -19,8 +19,8 @@ namespace Fireasy.Data.Entity
     [Serializable]
     public sealed class EntityPersistentEnvironment
     {
-        private readonly Dictionary<string, object> parameters = new Dictionary<string, object>();
-        private Func<string, string> formatter;
+        private readonly Dictionary<string, object> _parameters = new Dictionary<string, object>();
+        private Func<string, string> _formatters;
 
         /// <summary>
         /// 添加一个环境变量，如果当前环境中已经存在该变量名称，则使用新值进行替换。
@@ -35,14 +35,13 @@ namespace Fireasy.Data.Entity
             Guard.ArgumentNull(name, nameof(name));
             Guard.ArgumentNull(value, nameof(value));
 
-            object v;
-            if (!parameters.TryGetValue(name, out v))
+            if (!_parameters.TryGetValue(name, out object v))
             {
-                parameters.Add(name, value);
+                _parameters.Add(name, value);
             }
             else if (!v.Equals(value))
             {
-                parameters[name] = value;
+                _parameters[name] = value;
             }
 
             return this;
@@ -55,7 +54,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityPersistentEnvironment SetFormatter(Func<string, string> formatter)
         {
-            this.formatter = formatter;
+            _formatters = formatter;
             return this;
         }
 
@@ -66,9 +65,9 @@ namespace Fireasy.Data.Entity
         public EntityPersistentEnvironment RemoveVariable(string name)
         {
             Guard.ArgumentNull(name, nameof(name));
-            if (parameters.ContainsKey(name))
+            if (_parameters.ContainsKey(name))
             {
-                parameters.Remove(name);
+                _parameters.Remove(name);
             }
 
             return this;
@@ -107,7 +106,7 @@ namespace Fireasy.Data.Entity
             foreach (Match match in matches)
             {
                 var key = match.Value.TrimStart('<').TrimEnd('>');
-                if (parameters.TryGetValue(key, out object v) && v is IProperty p)
+                if (_parameters.TryGetValue(key, out object v) && v is IProperty p)
                 {
                     var value = entity.GetValue(p);
                     if (!PropertyValue.IsEmpty(value))
@@ -131,9 +130,9 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public string GetVariableTableName(EntityMetadata metadata)
         {
-            if (formatter != null)
+            if (_formatters != null)
             {
-                return formatter(metadata.TableName);
+                return _formatters(metadata.TableName);
             }
 
             var regx = new Regex(@"(<\w+>)");
@@ -146,7 +145,7 @@ namespace Fireasy.Data.Entity
             foreach (Match match in matches)
             {
                 var key = match.Value.TrimStart('<').TrimEnd('>');
-                if (parameters.TryGetValue(key, out object v) && v != null)
+                if (_parameters.TryGetValue(key, out object v) && v != null)
                 {
                     tableName = tableName.Replace(match.Value, v.ToString());
                 }

@@ -17,7 +17,7 @@ namespace Fireasy.Data.Schema
         /// 获取约束分录名称。
         /// </summary>
         public string Catalog { get; set; }
-        
+
         /// <summary>
         /// 获取约束架构名称。
         /// </summary>

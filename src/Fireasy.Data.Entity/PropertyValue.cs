@@ -27,17 +27,17 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 当前日期。
         /// </summary>
-        private readonly static PropertyValue Today = new PropertyValue { _dateTime = new DateTime(1, 1, 1), storageType = StorageType.DateTime, isConstant = true };
+        private readonly static PropertyValue Today = new PropertyValue { _dateTime = new DateTime(1, 1, 1), _storageType = StorageType.DateTime, _isConstant = true };
 
         /// <summary>
         /// 当前时间。
         /// </summary>
-        private readonly static PropertyValue Now = new PropertyValue { _dateTime = new DateTime(2, 2, 2, 2, 2, 2), storageType = StorageType.DateTime, isConstant = true };
+        private readonly static PropertyValue Now = new PropertyValue { _dateTime = new DateTime(2, 2, 2, 2, 2, 2), _storageType = StorageType.DateTime, _isConstant = true };
 
         /// <summary>
         /// 当前时间。
         /// </summary>
-        private readonly static PropertyValue NewGuid = new PropertyValue { _guid = Guid.Empty, storageType = StorageType.Guid, isConstant = true };
+        private readonly static PropertyValue NewGuid = new PropertyValue { _guid = Guid.Empty, _storageType = StorageType.Guid, _isConstant = true };
 
         /// <summary>
         /// 默认值常量。
@@ -61,14 +61,14 @@ namespace Fireasy.Data.Entity
         }
 
         #region 存储
-        internal DbType? dataType;
+        internal DbType? _dataType;
 
-        private bool isConstant;
+        private bool _isConstant;
 
         /// <summary>
         /// 获取存储数据的实际类型。
         /// </summary>
-        private StorageType storageType;
+        private StorageType _storageType;
 
         private char? _char;
 
@@ -117,7 +117,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(char value)
         {
-            return new PropertyValue { storageType = StorageType.Char, _char = value };
+            return new PropertyValue { _storageType = StorageType.Char, _char = value };
         }
 
         /// <summary>
@@ -132,7 +132,7 @@ namespace Fireasy.Data.Entity
                 return '\0';
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => (char)value._byte,
                 StorageType.SByte => (char)value._sbyte,
@@ -147,7 +147,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(char? value)
         {
-            return new PropertyValue { storageType = StorageType.Char, _char = value };
+            return new PropertyValue { _storageType = StorageType.Char, _char = value };
         }
 
         /// <summary>
@@ -162,7 +162,7 @@ namespace Fireasy.Data.Entity
                 return null;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => (char?)value._byte,
                 StorageType.SByte => (char?)value._sbyte,
@@ -179,7 +179,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(bool value)
         {
-            return new PropertyValue { storageType = StorageType.Boolean, _boolean = value };
+            return new PropertyValue { _storageType = StorageType.Boolean, _boolean = value };
         }
 
         /// <summary>
@@ -194,7 +194,7 @@ namespace Fireasy.Data.Entity
                 return false;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => value._byte > 0,
                 StorageType.SByte => value._sbyte > 0,
@@ -219,7 +219,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(bool? value)
         {
-            return new PropertyValue { storageType = StorageType.Boolean, _boolean = value };
+            return new PropertyValue { _storageType = StorageType.Boolean, _boolean = value };
         }
 
         /// <summary>
@@ -234,7 +234,7 @@ namespace Fireasy.Data.Entity
                 return null;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => value._byte > 0,
                 StorageType.SByte => value._sbyte > 0,
@@ -261,7 +261,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(byte value)
         {
-            return new PropertyValue { storageType = StorageType.Byte, _byte = value };
+            return new PropertyValue { _storageType = StorageType.Byte, _byte = value };
         }
 
         /// <summary>
@@ -276,7 +276,7 @@ namespace Fireasy.Data.Entity
                 return 0;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => (byte)value._byte,
                 StorageType.SByte => (byte)value._sbyte,
@@ -302,7 +302,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(byte? value)
         {
-            return new PropertyValue { storageType = StorageType.Byte, _byte = value };
+            return new PropertyValue { _storageType = StorageType.Byte, _byte = value };
         }
 
         /// <summary>
@@ -317,7 +317,7 @@ namespace Fireasy.Data.Entity
                 return null;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => (byte?)value._byte,
                 StorageType.SByte => (byte?)value._sbyte,
@@ -345,7 +345,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(sbyte value)
         {
-            return new PropertyValue { storageType = StorageType.SByte, _sbyte = value };
+            return new PropertyValue { _storageType = StorageType.SByte, _sbyte = value };
         }
 
         /// <summary>
@@ -360,7 +360,7 @@ namespace Fireasy.Data.Entity
                 return 0;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => (sbyte)value._byte,
                 StorageType.SByte => (sbyte)value._sbyte,
@@ -386,7 +386,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(sbyte? value)
         {
-            return new PropertyValue { storageType = StorageType.SByte, _sbyte = value };
+            return new PropertyValue { _storageType = StorageType.SByte, _sbyte = value };
         }
 
         /// <summary>
@@ -401,7 +401,7 @@ namespace Fireasy.Data.Entity
                 return null;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => (sbyte?)value._byte,
                 StorageType.SByte => value._sbyte,
@@ -429,7 +429,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(byte[] value)
         {
-            return new PropertyValue { storageType = StorageType.ByteArray, _byteArray = value };
+            return new PropertyValue { _storageType = StorageType.ByteArray, _byteArray = value };
         }
 
         /// <summary>
@@ -455,7 +455,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(DateTime value)
         {
-            return new PropertyValue { storageType = StorageType.DateTime, _dateTime = value };
+            return new PropertyValue { _storageType = StorageType.DateTime, _dateTime = value };
         }
 
         /// <summary>
@@ -475,7 +475,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(DateTime? value)
         {
-            return new PropertyValue { storageType = StorageType.DateTime, _dateTime = value };
+            return new PropertyValue { _storageType = StorageType.DateTime, _dateTime = value };
         }
 
         /// <summary>
@@ -497,7 +497,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(Guid value)
         {
-            return new PropertyValue { storageType = StorageType.Guid, _guid = value };
+            return new PropertyValue { _storageType = StorageType.Guid, _guid = value };
         }
 
         /// <summary>
@@ -539,7 +539,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(Guid? value)
         {
-            return new PropertyValue { storageType = StorageType.Guid, _guid = value };
+            return new PropertyValue { _storageType = StorageType.Guid, _guid = value };
         }
 
         /// <summary>
@@ -583,7 +583,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(short value)
         {
-            return new PropertyValue { storageType = StorageType.Int16, _int16 = value };
+            return new PropertyValue { _storageType = StorageType.Int16, _int16 = value };
         }
 
         /// <summary>
@@ -598,7 +598,7 @@ namespace Fireasy.Data.Entity
                 return 0;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => (short)value._byte,
                 StorageType.SByte => (short)value._sbyte,
@@ -624,7 +624,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(short? value)
         {
-            return new PropertyValue { storageType = StorageType.Int16, _int16 = value };
+            return new PropertyValue { _storageType = StorageType.Int16, _int16 = value };
         }
 
         /// <summary>
@@ -639,7 +639,7 @@ namespace Fireasy.Data.Entity
                 return null;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => value._byte,
                 StorageType.SByte => value._sbyte,
@@ -667,7 +667,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(ushort value)
         {
-            return new PropertyValue { storageType = StorageType.UInt16, _uint16 = value };
+            return new PropertyValue { _storageType = StorageType.UInt16, _uint16 = value };
         }
 
         /// <summary>
@@ -682,7 +682,7 @@ namespace Fireasy.Data.Entity
                 return 0;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => (ushort)value._byte,
                 StorageType.SByte => (ushort)value._sbyte,
@@ -708,7 +708,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(ushort? value)
         {
-            return new PropertyValue { storageType = StorageType.UInt16, _uint16 = value };
+            return new PropertyValue { _storageType = StorageType.UInt16, _uint16 = value };
         }
 
         /// <summary>
@@ -723,7 +723,7 @@ namespace Fireasy.Data.Entity
                 return null;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => value._byte,
                 StorageType.SByte => (ushort?)value._sbyte,
@@ -751,7 +751,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(int value)
         {
-            return new PropertyValue { storageType = StorageType.Int32, _int32 = value };
+            return new PropertyValue { _storageType = StorageType.Int32, _int32 = value };
         }
 
         /// <summary>
@@ -766,7 +766,7 @@ namespace Fireasy.Data.Entity
                 return 0;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => (int)value._byte,
                 StorageType.SByte => (int)value._sbyte,
@@ -792,7 +792,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(int? value)
         {
-            return new PropertyValue { storageType = StorageType.Int32, _int32 = value };
+            return new PropertyValue { _storageType = StorageType.Int32, _int32 = value };
         }
 
         /// <summary>
@@ -807,7 +807,7 @@ namespace Fireasy.Data.Entity
                 return null;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => value._byte,
                 StorageType.SByte => value._sbyte,
@@ -835,7 +835,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(uint value)
         {
-            return new PropertyValue { storageType = StorageType.UInt32, _uint32 = value };
+            return new PropertyValue { _storageType = StorageType.UInt32, _uint32 = value };
         }
 
         /// <summary>
@@ -850,7 +850,7 @@ namespace Fireasy.Data.Entity
                 return 0;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => (uint)value._byte,
                 StorageType.SByte => (uint)value._sbyte,
@@ -876,7 +876,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(uint? value)
         {
-            return new PropertyValue { storageType = StorageType.UInt32, _uint32 = value };
+            return new PropertyValue { _storageType = StorageType.UInt32, _uint32 = value };
         }
 
         /// <summary>
@@ -891,7 +891,7 @@ namespace Fireasy.Data.Entity
                 return null;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => value._byte,
                 StorageType.SByte => (uint?)value._sbyte,
@@ -919,7 +919,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(long value)
         {
-            return new PropertyValue { storageType = StorageType.Int64, _int64 = value };
+            return new PropertyValue { _storageType = StorageType.Int64, _int64 = value };
         }
 
         /// <summary>
@@ -934,7 +934,7 @@ namespace Fireasy.Data.Entity
                 return 0L;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => (long)value._byte,
                 StorageType.SByte => (long)value._sbyte,
@@ -960,7 +960,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(long? value)
         {
-            return new PropertyValue { storageType = StorageType.Int64, _int64 = value };
+            return new PropertyValue { _storageType = StorageType.Int64, _int64 = value };
         }
 
         /// <summary>
@@ -975,7 +975,7 @@ namespace Fireasy.Data.Entity
                 return null;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => value._byte,
                 StorageType.SByte => value._sbyte,
@@ -1003,7 +1003,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(ulong value)
         {
-            return new PropertyValue { storageType = StorageType.UInt64, _uint64 = value };
+            return new PropertyValue { _storageType = StorageType.UInt64, _uint64 = value };
         }
 
         /// <summary>
@@ -1018,7 +1018,7 @@ namespace Fireasy.Data.Entity
                 return 0L;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => (ulong)value._byte,
                 StorageType.SByte => (ulong)value._sbyte,
@@ -1044,7 +1044,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(ulong? value)
         {
-            return new PropertyValue { storageType = StorageType.UInt64, _uint64 = value };
+            return new PropertyValue { _storageType = StorageType.UInt64, _uint64 = value };
         }
 
         /// <summary>
@@ -1059,7 +1059,7 @@ namespace Fireasy.Data.Entity
                 return null;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => value._byte,
                 StorageType.SByte => (ulong?)value._sbyte,
@@ -1087,7 +1087,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(decimal value)
         {
-            return new PropertyValue { storageType = StorageType.Decimal, _decimal = value };
+            return new PropertyValue { _storageType = StorageType.Decimal, _decimal = value };
         }
 
         /// <summary>
@@ -1102,7 +1102,7 @@ namespace Fireasy.Data.Entity
                 return 0m;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => (decimal)value._byte,
                 StorageType.SByte => (decimal)value._sbyte,
@@ -1128,7 +1128,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(decimal? value)
         {
-            return new PropertyValue { storageType = StorageType.Decimal, _decimal = value };
+            return new PropertyValue { _storageType = StorageType.Decimal, _decimal = value };
         }
 
         /// <summary>
@@ -1143,7 +1143,7 @@ namespace Fireasy.Data.Entity
                 return null;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => value._byte,
                 StorageType.SByte => value._sbyte,
@@ -1171,7 +1171,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(float value)
         {
-            return new PropertyValue { storageType = StorageType.Single, _single = value };
+            return new PropertyValue { _storageType = StorageType.Single, _single = value };
         }
 
         /// <summary>
@@ -1186,7 +1186,7 @@ namespace Fireasy.Data.Entity
                 return 0;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => (float)value._byte,
                 StorageType.SByte => (float)value._sbyte,
@@ -1212,7 +1212,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(float? value)
         {
-            return new PropertyValue { storageType = StorageType.Single, _single = value };
+            return new PropertyValue { _storageType = StorageType.Single, _single = value };
         }
 
         /// <summary>
@@ -1227,7 +1227,7 @@ namespace Fireasy.Data.Entity
                 return null;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => (float)value._byte,
                 StorageType.SByte => (float)value._sbyte,
@@ -1255,7 +1255,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(double value)
         {
-            return new PropertyValue { storageType = StorageType.Double, _double = value };
+            return new PropertyValue { _storageType = StorageType.Double, _double = value };
         }
 
         /// <summary>
@@ -1270,7 +1270,7 @@ namespace Fireasy.Data.Entity
                 return 0d;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => (double)value._byte,
                 StorageType.SByte => (double)value._sbyte,
@@ -1296,7 +1296,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(double? value)
         {
-            return new PropertyValue { storageType = StorageType.Double, _double = value };
+            return new PropertyValue { _storageType = StorageType.Double, _double = value };
         }
 
         /// <summary>
@@ -1311,7 +1311,7 @@ namespace Fireasy.Data.Entity
                 return null;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => value._byte,
                 StorageType.SByte => value._sbyte,
@@ -1339,7 +1339,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(string value)
         {
-            return new PropertyValue { storageType = StorageType.String, _string = value };
+            return new PropertyValue { _storageType = StorageType.String, _string = value };
         }
 
         /// <summary>
@@ -1361,7 +1361,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static implicit operator PropertyValue(Enum value)
         {
-            return new PropertyValue { storageType = StorageType.Enum, _enum = value };
+            return new PropertyValue { _storageType = StorageType.Enum, _enum = value };
         }
 
         /// <summary>
@@ -1376,7 +1376,7 @@ namespace Fireasy.Data.Entity
                 return null;
             }
 
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Enum => value._enum,
                 StorageType.Object => (Enum)value._object,
@@ -1388,12 +1388,12 @@ namespace Fireasy.Data.Entity
         #region ==和!=
         public static bool operator ==(PropertyValue v1, PropertyValue v2)
         {
-            if (v1.storageType != v2.storageType)
+            if (v1._storageType != v2._storageType)
             {
                 return false;
             }
 
-            return v1.storageType switch
+            return v1._storageType switch
             {
                 StorageType.Boolean => v1._boolean == v2._boolean,
                 StorageType.Byte => v1._byte == v2._byte,
@@ -1458,7 +1458,7 @@ namespace Fireasy.Data.Entity
         #region int equals
         public static bool operator ==(PropertyValue v1, int v2)
         {
-            if (v1.storageType != StorageType.Int32)
+            if (v1._storageType != StorageType.Int32)
             {
                 return false;
             }
@@ -1468,7 +1468,7 @@ namespace Fireasy.Data.Entity
 
         public static bool operator !=(PropertyValue v1, int v2)
         {
-            if (v1.storageType != StorageType.Int32)
+            if (v1._storageType != StorageType.Int32)
             {
                 return true;
             }
@@ -1478,7 +1478,7 @@ namespace Fireasy.Data.Entity
 
         public static bool operator ==(int v1, PropertyValue v2)
         {
-            if (v2.storageType != StorageType.Int32)
+            if (v2._storageType != StorageType.Int32)
             {
                 return false;
             }
@@ -1488,7 +1488,7 @@ namespace Fireasy.Data.Entity
 
         public static bool operator !=(int v1, PropertyValue v2)
         {
-            if (v2.storageType != StorageType.Int32)
+            if (v2._storageType != StorageType.Int32)
             {
                 return true;
             }
@@ -1500,7 +1500,7 @@ namespace Fireasy.Data.Entity
         #region uint equals
         public static bool operator ==(PropertyValue v1, uint v2)
         {
-            if (v1.storageType != StorageType.UInt32)
+            if (v1._storageType != StorageType.UInt32)
             {
                 return false;
             }
@@ -1510,7 +1510,7 @@ namespace Fireasy.Data.Entity
 
         public static bool operator !=(PropertyValue v1, uint v2)
         {
-            if (v1.storageType != StorageType.UInt32)
+            if (v1._storageType != StorageType.UInt32)
             {
                 return true;
             }
@@ -1520,7 +1520,7 @@ namespace Fireasy.Data.Entity
 
         public static bool operator ==(uint v1, PropertyValue v2)
         {
-            if (v2.storageType != StorageType.UInt32)
+            if (v2._storageType != StorageType.UInt32)
             {
                 return false;
             }
@@ -1530,7 +1530,7 @@ namespace Fireasy.Data.Entity
 
         public static bool operator !=(uint v1, PropertyValue v2)
         {
-            if (v2.storageType != StorageType.UInt32)
+            if (v2._storageType != StorageType.UInt32)
             {
                 return true;
             }
@@ -1542,7 +1542,7 @@ namespace Fireasy.Data.Entity
         #region long equals
         public static bool operator ==(PropertyValue v1, long v2)
         {
-            if (v1.storageType != StorageType.Int64)
+            if (v1._storageType != StorageType.Int64)
             {
                 return false;
             }
@@ -1552,7 +1552,7 @@ namespace Fireasy.Data.Entity
 
         public static bool operator !=(PropertyValue v1, long v2)
         {
-            if (v1.storageType != StorageType.Int64)
+            if (v1._storageType != StorageType.Int64)
             {
                 return true;
             }
@@ -1562,7 +1562,7 @@ namespace Fireasy.Data.Entity
 
         public static bool operator ==(long v1, PropertyValue v2)
         {
-            if (v2.storageType != StorageType.Int64)
+            if (v2._storageType != StorageType.Int64)
             {
                 return false;
             }
@@ -1572,7 +1572,7 @@ namespace Fireasy.Data.Entity
 
         public static bool operator !=(long v1, PropertyValue v2)
         {
-            if (v2.storageType != StorageType.Int64)
+            if (v2._storageType != StorageType.Int64)
             {
                 return true;
             }
@@ -1584,7 +1584,7 @@ namespace Fireasy.Data.Entity
         #region ulong equals
         public static bool operator ==(PropertyValue v1, ulong v2)
         {
-            if (v1.storageType != StorageType.UInt64)
+            if (v1._storageType != StorageType.UInt64)
             {
                 return false;
             }
@@ -1594,7 +1594,7 @@ namespace Fireasy.Data.Entity
 
         public static bool operator !=(PropertyValue v1, ulong v2)
         {
-            if (v1.storageType != StorageType.UInt64)
+            if (v1._storageType != StorageType.UInt64)
             {
                 return true;
             }
@@ -1604,7 +1604,7 @@ namespace Fireasy.Data.Entity
 
         public static bool operator ==(ulong v1, PropertyValue v2)
         {
-            if (v2.storageType != StorageType.UInt64)
+            if (v2._storageType != StorageType.UInt64)
             {
                 return false;
             }
@@ -1614,7 +1614,7 @@ namespace Fireasy.Data.Entity
 
         public static bool operator !=(ulong v1, PropertyValue v2)
         {
-            if (v2.storageType != StorageType.UInt64)
+            if (v2._storageType != StorageType.UInt64)
             {
                 return true;
             }
@@ -1626,7 +1626,7 @@ namespace Fireasy.Data.Entity
         #region string equals
         public static bool operator ==(PropertyValue v1, string v2)
         {
-            if (v1.storageType != StorageType.String)
+            if (v1._storageType != StorageType.String)
             {
                 return false;
             }
@@ -1636,7 +1636,7 @@ namespace Fireasy.Data.Entity
 
         public static bool operator !=(PropertyValue v1, string v2)
         {
-            if (v1.storageType != StorageType.String)
+            if (v1._storageType != StorageType.String)
             {
                 return true;
             }
@@ -1646,7 +1646,7 @@ namespace Fireasy.Data.Entity
 
         public static bool operator ==(string v1, PropertyValue v2)
         {
-            if (v2.storageType != StorageType.String)
+            if (v2._storageType != StorageType.String)
             {
                 return false;
             }
@@ -1656,7 +1656,7 @@ namespace Fireasy.Data.Entity
 
         public static bool operator !=(string v1, PropertyValue v2)
         {
-            if (v2.storageType != StorageType.String)
+            if (v2._storageType != StorageType.String)
             {
                 return true;
             }
@@ -1669,7 +1669,7 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 获取该对象是否有效，即数字不为 0、字符串不为空字符时有效。
         /// </summary>
-        public bool IsValid => storageType switch
+        public bool IsValid => _storageType switch
         {
             StorageType.Byte => _byte != 0,
             StorageType.SByte => _sbyte != 0,
@@ -1693,11 +1693,11 @@ namespace Fireasy.Data.Entity
         /// <param name="correctType">要纠正的实际存储的类型。</param>
         public void CorrectValue(Type correctType)
         {
-            if (correctType.IsEnum && storageType != StorageType.Enum)
+            if (correctType.IsEnum && _storageType != StorageType.Enum)
             {
                 CorrectEnumValue(correctType);
             }
-            else if (correctType.GetNonNullableType() == typeof(Guid) && storageType != StorageType.Guid)
+            else if (correctType.GetNonNullableType() == typeof(Guid) && _storageType != StorageType.Guid)
             {
                 CorrectGuidValue();
             }
@@ -1705,7 +1705,7 @@ namespace Fireasy.Data.Entity
 
         private void CorrectEnumValue(Type correctType)
         {
-            switch (storageType)
+            switch (_storageType)
             {
                 case StorageType.Byte:
                     _enum = (Enum)Enum.Parse(correctType, _byte.ToString());
@@ -1725,12 +1725,12 @@ namespace Fireasy.Data.Entity
                     break;
             }
 
-            storageType = StorageType.Enum;
+            _storageType = StorageType.Enum;
         }
 
         private void CorrectGuidValue()
         {
-            switch (storageType)
+            switch (_storageType)
             {
                 case StorageType.String:
                     _guid = new Guid(_string);
@@ -1742,7 +1742,7 @@ namespace Fireasy.Data.Entity
                     break;
             }
 
-            storageType = StorageType.Guid;
+            _storageType = StorageType.Guid;
         }
 
         #region object
@@ -1752,7 +1752,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public object GetValue()
         {
-            return storageType switch
+            return _storageType switch
             {
                 StorageType.Boolean => _boolean,
                 StorageType.Byte => _byte,
@@ -1806,7 +1806,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public override int GetHashCode()
         {
-            return storageType switch
+            return _storageType switch
             {
                 StorageType.Boolean => _boolean == null ? 0 : _boolean.GetHashCode(),
                 StorageType.Byte => _byte == null ? 0 : _byte.GetHashCode(),
@@ -1835,7 +1835,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public PropertyValue Clone()
         {
-            switch (storageType)
+            switch (_storageType)
             {
                 case StorageType.Boolean: return _boolean;
                 case StorageType.Byte: return _byte;
@@ -1860,7 +1860,7 @@ namespace Fireasy.Data.Entity
                         return Empty;
                     }
                     var cloneable = _object.As<ICloneable>();
-                    return new PropertyValue { storageType = StorageType.Object, _object = cloneable == null ? _object : cloneable.Clone() };
+                    return new PropertyValue { _storageType = StorageType.Object, _object = cloneable == null ? _object : cloneable.Clone() };
             }
         }
 
@@ -1875,7 +1875,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public override string ToString()
         {
-            return storageType == StorageType.Empty ? string.Empty : GetValue().ToStringSafely();
+            return _storageType == StorageType.Empty ? string.Empty : GetValue().ToStringSafely();
         }
 
         #endregion
@@ -2001,7 +2001,7 @@ namespace Fireasy.Data.Entity
                 };
             }
 
-            return new PropertyValue { storageType = StorageType.Object, _object = value };
+            return new PropertyValue { _storageType = StorageType.Object, _object = value };
         }
 
         private static PropertyValue ProcessNewDateTime(object value)
@@ -2055,7 +2055,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static Parameter Parametrization(PropertyValue value, Parameter parameter)
         {
-            switch (value.storageType)
+            switch (value._storageType)
             {
                 case StorageType.Boolean:
                     parameter.Value = value._boolean;
@@ -2133,7 +2133,7 @@ namespace Fireasy.Data.Entity
                     var converter = ConvertManager.GetConverter(value._object.GetType());
                     if (converter != null)
                     {
-                        var dbType = value.dataType ?? DbType.String;
+                        var dbType = value._dataType ?? DbType.String;
                         parameter.Value = converter.ConvertTo(value._object, dbType);
                         parameter.DbType = dbType;
                     }
@@ -2151,7 +2151,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public PropertyValue TryAllotValue(Type type, string formatter)
         {
-            if (!isConstant)
+            if (!_isConstant)
             {
                 return this;
             }
@@ -2179,7 +2179,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static object GetValueSafely(PropertyValue value)
         {
-            if (value == Empty || value.storageType == StorageType.Empty)
+            if (value == Empty || value._storageType == StorageType.Empty)
             {
                 return null;
             }
@@ -2194,7 +2194,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static bool IsEmpty(PropertyValue value)
         {
-            return value == Empty || value.storageType == StorageType.Empty || value.GetValue() == null;
+            return value == Empty || value._storageType == StorageType.Empty || value.GetValue() == null;
         }
 
         /// <summary>
@@ -2204,7 +2204,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static bool IsEmptyOrDefault(PropertyValue value)
         {
-            return value.storageType switch
+            return value._storageType switch
             {
                 StorageType.Byte => value._byte == 0 || value._byte == null,
                 StorageType.SByte => value._sbyte == 0 || value._sbyte == null,
@@ -2219,7 +2219,7 @@ namespace Fireasy.Data.Entity
                 StorageType.Double => value._double == 0 || value._double == null,
                 StorageType.Boolean => value._boolean == false || value._boolean == null,
                 StorageType.String => string.IsNullOrEmpty(value._string),
-                _ => value == Empty || value.storageType == StorageType.Empty || value.GetValue() == null,
+                _ => value == Empty || value._storageType == StorageType.Empty || value.GetValue() == null,
             };
         }
         #endregion

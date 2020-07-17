@@ -6,11 +6,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using System.Text;
 using Fireasy.Common;
 using Fireasy.Data.Extensions;
 using Fireasy.Data.Provider;
+using System;
+using System.Text;
 
 namespace Fireasy.Data.Backup
 {

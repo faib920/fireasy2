@@ -24,8 +24,8 @@ namespace Fireasy.Data
     /// <typeparam name="T">要构造的匿名类型。</typeparam>
     public class AnonymousRowMapper<T> : IDataRowMapper<T>
     {
-        private Func<IDataReader, T> funcDataRecd;
-        private Func<DataRow, T> funcDataRow;
+        private Func<IDataReader, T> _funcDataRecd;
+        private Func<DataRow, T> _funcDataRow;
 
         private class MethodCache
         {
@@ -42,12 +42,12 @@ namespace Fireasy.Data
         /// <returns>由当前 <see cref="IDataReader"/> 对象中的数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
         public T Map(IDatabase database, IDataReader reader)
         {
-            if (funcDataRecd == null)
+            if (_funcDataRecd == null)
             {
-                funcDataRecd = BuildExpressionForDataReader().Compile();
+                _funcDataRecd = BuildExpressionForDataReader().Compile();
             }
 
-            return funcDataRecd(reader);
+            return _funcDataRecd(reader);
         }
 
         /// <summary>
@@ -58,12 +58,12 @@ namespace Fireasy.Data
         /// <returns>由 <see cref="DataRow"/> 中数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
         public T Map(IDatabase database, DataRow row)
         {
-            if (funcDataRow == null)
+            if (_funcDataRow == null)
             {
-                funcDataRow = BuildExpressionForDataRow().Compile();
+                _funcDataRow = BuildExpressionForDataRow().Compile();
             }
 
-            return funcDataRow(row);
+            return _funcDataRow(row);
         }
 
         /// <summary>
@@ -98,8 +98,8 @@ namespace Fireasy.Data
             var parExp = Expression.Parameter(typeof(IDataReader), "s");
             var parameters =
                 GetParameters(conInfo).Select(s => (Expression)Expression.Convert(
-                            Expression.Call(MethodCache.ToType, new Expression[] 
-                                    { 
+                            Expression.Call(MethodCache.ToType, new Expression[]
+                                    {
                                         Expression.Call(Expression.Constant(RecordWrapper), MethodCache.GetValue, new Expression[] { parExp, Expression.Constant(s.Name) }),
                                         Expression.Constant(s.ParameterType),
                                         Expression.Constant(null)
@@ -119,8 +119,8 @@ namespace Fireasy.Data
             var parExp = Expression.Parameter(typeof(DataRow), "s");
             var parameters =
                 GetParameters(conInfo).Select(s => (Expression)Expression.Convert(
-                            Expression.Call(MethodCache.ToType, new Expression[] 
-                                    { 
+                            Expression.Call(MethodCache.ToType, new Expression[]
+                                    {
                                         Expression.MakeIndex(parExp, MethodCache.DataRowIndex, new List<Expression> { Expression.Constant(s.Name) }),
                                         Expression.Constant(s.ParameterType),
                                         Expression.Constant(null)

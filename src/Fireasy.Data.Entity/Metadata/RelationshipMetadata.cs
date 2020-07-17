@@ -5,10 +5,10 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Data.Entity.Metadata
 {
@@ -39,21 +39,21 @@ namespace Fireasy.Data.Entity.Metadata
         /// <summary>
         /// 获取或设置作为主体实体的类型。
         /// </summary>
-        public Type ThisType { get; private set; }
+        public Type ThisType { get; }
 
         /// <summary>
         /// 获取或设置作为客体实体的类型。
         /// </summary>
-        public Type OtherType { get; private set; }
+        public Type OtherType { get; }
 
         /// <summary>
         /// 获取关系一组键对。
         /// </summary>
-        public ReadOnlyCollection<RelationshipKey> Keys { get; private set; }
+        public ReadOnlyCollection<RelationshipKey> Keys { get; }
 
         /// <summary>
         /// 获取关系的定义方向。
         /// </summary>
-        public RelationshipStyle Style { get; private set; }
+        public RelationshipStyle Style { get; }
     }
 }

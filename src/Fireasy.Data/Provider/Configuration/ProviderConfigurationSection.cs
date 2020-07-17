@@ -6,11 +6,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.Configuration;
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Xml;
-using Fireasy.Common.Configuration;
-using Fireasy.Common.Extensions;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
@@ -45,12 +45,12 @@ namespace Fireasy.Data.Provider.Configuration
 
         private ProviderConfigurationSetting ParseProviderSetting(XmlNode node)
         {
-            return new ProviderConfigurationSetting (LoadServices(node))
-                {
-                    Name = node.GetAttributeValue("name"),
-                    InheritedProvider = node.GetAttributeValue("inherited"),
-                    Type = Type.GetType(GetEllipticalTypeName(node.GetAttributeValue("type")), false, true)
-                };
+            return new ProviderConfigurationSetting(LoadServices(node))
+            {
+                Name = node.GetAttributeValue("name"),
+                InheritedProvider = node.GetAttributeValue("inherited"),
+                Type = Type.GetType(GetEllipticalTypeName(node.GetAttributeValue("type")), false, true)
+            };
         }
 
         /// <summary>

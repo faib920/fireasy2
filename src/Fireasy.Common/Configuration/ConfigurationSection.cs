@@ -6,11 +6,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
-using Fireasy.Common.Extensions;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif

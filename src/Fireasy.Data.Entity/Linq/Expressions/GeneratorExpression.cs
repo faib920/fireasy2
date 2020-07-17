@@ -24,12 +24,12 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取关联的 <see cref="TableExpression"/> 对象。
         /// </summary>
-        public TableExpression Table { get; private set; }
+        public TableExpression Table { get; }
 
         /// <summary>
         /// 获取相关的实体表达式。
         /// </summary>
-        public Expression Entity { get; private set; }
+        public Expression Entity { get; }
 
         /// <summary>
         /// 获取相关的属性。

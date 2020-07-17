@@ -1,11 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
+using Fireasy.Data.Entity.Linq.Expressions;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
-using Fireasy.Data.Entity.Linq.Expressions;
-using System.Collections.ObjectModel;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
@@ -14,30 +14,30 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class AggregateRewriter : DbExpressionVisitor
     {
-        private ILookup<TableAlias, AggregateSubqueryExpression> lookup;
-        private Dictionary<AggregateSubqueryExpression, Expression> map;
+        private ILookup<TableAlias, AggregateSubqueryExpression> _lookup;
+        private Dictionary<AggregateSubqueryExpression, Expression> _map;
 
         public static Expression Rewrite(Expression expression)
         {
             return new AggregateRewriter
-                {
-                    map = new Dictionary<AggregateSubqueryExpression, Expression>(),
-                    lookup = AggregateGatherer.Gather(expression).ToLookup(a => a.GroupByAlias)
-                }
+            {
+                _map = new Dictionary<AggregateSubqueryExpression, Expression>(),
+                _lookup = AggregateGatherer.Gather(expression).ToLookup(a => a.GroupByAlias)
+            }
             .Visit(expression);
         }
 
         protected override Expression VisitSelect(SelectExpression select)
         {
             select = (SelectExpression)base.VisitSelect(select);
-            if (lookup.Contains(select.Alias))
+            if (_lookup.Contains(select.Alias))
             {
                 var aggColumns = new List<ColumnDeclaration>(select.Columns);
-                foreach (var ae in lookup[select.Alias])
+                foreach (var ae in _lookup[select.Alias])
                 {
                     var name = $"agg{aggColumns.Count}";
                     var cd = new ColumnDeclaration(name, ae.AggregateInGroupSelect);
-                    map.Add(ae, new ColumnExpression(ae.Type, ae.GroupByAlias, name, null));
+                    _map.Add(ae, new ColumnExpression(ae.Type, ae.GroupByAlias, name, null));
                     aggColumns.Add(cd);
                 }
 
@@ -49,7 +49,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitAggregateSubquery(AggregateSubqueryExpression aggregate)
         {
-            return map.TryGetValue(aggregate, out Expression mapped) ? mapped : Visit(aggregate.AggregateAsSubquery);
+            return _map.TryGetValue(aggregate, out Expression mapped) ? mapped : Visit(aggregate.AggregateAsSubquery);
         }
 
         private class AggregateGatherer : DbExpressionVisitor

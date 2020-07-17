@@ -18,7 +18,7 @@ namespace Fireasy.Common.Extensions
     /// </summary>
     public static class TaskExtensions
     {
-        private static readonly TaskFactory taskFactory = new TaskFactory(CancellationToken.None, TaskCreationOptions.None, TaskContinuationOptions.None, TaskScheduler.Default);
+        private static readonly TaskFactory _taskFactory = new TaskFactory(CancellationToken.None, TaskCreationOptions.None, TaskContinuationOptions.None, TaskScheduler.Default);
 
         /// <summary>
         /// 将此任务作为同步调用。
@@ -50,9 +50,10 @@ namespace Fireasy.Common.Extensions
         /// <param name="func">异步回调委托。</param>
         public static void RunSync(Func<Task> func)
         {
-            CultureInfo cultureUi = CultureInfo.CurrentUICulture;
-            CultureInfo culture = CultureInfo.CurrentCulture;
-            taskFactory.StartNew(delegate
+            var cultureUi = CultureInfo.CurrentUICulture;
+            var culture = CultureInfo.CurrentCulture;
+
+            _taskFactory.StartNew(delegate
                 {
                     CultureInfo.DefaultThreadCurrentCulture = culture;
                     CultureInfo.DefaultThreadCurrentUICulture = cultureUi;
@@ -68,9 +69,10 @@ namespace Fireasy.Common.Extensions
         /// <returns>返回值</returns>
         public static TResult RunSync<TResult>(Func<Task<TResult>> func)
         {
-            CultureInfo cultureUi = CultureInfo.CurrentUICulture;
-            CultureInfo culture = CultureInfo.CurrentCulture;
-            return taskFactory.StartNew(delegate
+            var cultureUi = CultureInfo.CurrentUICulture;
+            var culture = CultureInfo.CurrentCulture;
+
+            return _taskFactory.StartNew(delegate
                 {
                     CultureInfo.DefaultThreadCurrentCulture = culture;
                     CultureInfo.DefaultThreadCurrentUICulture = cultureUi;

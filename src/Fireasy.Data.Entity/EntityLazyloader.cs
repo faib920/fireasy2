@@ -50,18 +50,18 @@ namespace Fireasy.Data.Entity
             Guard.Assert(attr != null, new EntityLazyloadException(SR.GetString(SRKind.NotRelationProperty, property.Name), entity, property));
 
             var loadder = attr.LoadderType.New<IPropertyLazyLoadder>();
-            var asyncLoadder = new AsyncLoadder 
-                { 
-                    Entity = entity, 
-                    Property = property, 
-                    Loadder = loadder,
-                    Initializer = initializer
-                };
+            var asyncLoadder = new AsyncLoadder
+            {
+                Entity = entity,
+                Property = property,
+                Loadder = loadder,
+                Initializer = initializer
+            };
 
             var thread = new Thread(asyncLoadder.Load)
-                {
-                    IsBackground = true
-                };
+            {
+                IsBackground = true
+            };
 
             thread.Start();
         }

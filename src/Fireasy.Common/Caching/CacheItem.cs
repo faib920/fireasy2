@@ -67,7 +67,7 @@ namespace Fireasy.Common.Caching
         /// <returns>已经超过到期时间，则为 true，否则为 false。</returns>
         public bool HasExpired()
         {
-            return Expiration != null ? Expiration.HasExpired() : false;
+            return Expiration != null && Expiration.HasExpired();
         }
     }
 }

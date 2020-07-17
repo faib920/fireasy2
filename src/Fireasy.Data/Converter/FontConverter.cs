@@ -7,12 +7,12 @@
 // -----------------------------------------------------------------------
 #if !NETSTANDARD
 
+using Fireasy.Common.Extensions;
+using Fireasy.Data.Extensions;
 using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Text.RegularExpressions;
-using Fireasy.Common.Extensions;
-using Fireasy.Data.Extensions;
 
 namespace Fireasy.Data.Converter
 {

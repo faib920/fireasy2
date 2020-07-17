@@ -87,8 +87,8 @@ namespace Fireasy.Data.Batcher
 
                 //给表名加上前后导符
                 var tableName = DbUtility.FormatByQuote(database.Provider.GetService<ISyntaxProvider>(), dataTable.TableName);
-                using var bulk = new SqlBulkCopy((SqlConnection)database.Connection, 
-                    SqlBulkCopyOptions.KeepIdentity, 
+                using var bulk = new SqlBulkCopy((SqlConnection)database.Connection,
+                    SqlBulkCopyOptions.KeepIdentity,
                     (SqlTransaction)database.Transaction)
                 {
                     DestinationTableName = tableName,

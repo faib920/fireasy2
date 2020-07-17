@@ -57,7 +57,7 @@ namespace Fireasy.Common.Subscribes
         /// <param name="dataType"></param>
         /// <param name="handler"></param>
         public SyncSubscribeDelegate(Type dataType, Delegate handler)
-            : base (dataType, handler)
+            : base(dataType, handler)
         {
         }
 

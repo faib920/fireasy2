@@ -7,8 +7,8 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Linq.Expressions;
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace Fireasy.Common.Extensions
@@ -200,7 +200,7 @@ namespace Fireasy.Common.Extensions
             {
                 return (Expression<Func<T, bool>>)newExp;
             }
-            
+
             return Expression.Lambda<Func<T, bool>>(newExp, current.Parameters);
         }
 

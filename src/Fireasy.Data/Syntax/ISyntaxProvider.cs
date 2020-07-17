@@ -6,9 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Data;
 using Fireasy.Data.Provider;
-using Fireasy.Data.Schema;
+using System.Data;
 
 namespace Fireasy.Data.Syntax
 {

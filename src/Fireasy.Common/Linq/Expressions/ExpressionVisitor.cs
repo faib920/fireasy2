@@ -8,9 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Linq;
 
 namespace Fireasy.Common.Linq.Expressions
 {
@@ -155,7 +155,7 @@ namespace Fireasy.Common.Linq.Expressions
                 List<Expression> list = null;
                 for (int i = 0, n = original.Count; i < n; i++)
                 {
-                    Expression p = this.Visit(original[i]);
+                    Expression p = Visit(original[i]);
                     if (list != null)
                     {
                         list.Add(p);
@@ -217,7 +217,7 @@ namespace Fireasy.Common.Linq.Expressions
 
         protected virtual Expression VisitMemberAndExpression(MemberInfo member, Expression expression)
         {
-            return this.Visit(expression);
+            return Visit(expression);
         }
 
         /// <summary>

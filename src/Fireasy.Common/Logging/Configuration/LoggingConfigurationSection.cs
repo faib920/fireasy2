@@ -5,10 +5,10 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
-using System.Xml;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
+using System;
+using System.Xml;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
@@ -27,13 +27,13 @@ namespace Fireasy.Common.Logging.Configuration
         /// <param name="section">对应的配置节点。</param>
         public override void Initialize(XmlNode section)
         {
-            InitializeNode(section, 
-                "logging", 
+            InitializeNode(section,
+                "logging",
                 func: node => new LoggingConfigurationSetting
-                    {
-                        Name = node.GetAttributeValue("name"),
-                        LogType = Type.GetType(node.GetAttributeValue("type"), false, true)
-                    });
+                {
+                    Name = node.GetAttributeValue("name"),
+                    LogType = Type.GetType(node.GetAttributeValue("type"), false, true)
+                });
 
             //取默认实例
             DefaultInstanceName = section.GetAttributeValue("default");
@@ -50,12 +50,12 @@ namespace Fireasy.Common.Logging.Configuration
         public override void Bind(IConfiguration configuration)
         {
             Bind(configuration,
-                "settings", 
+                "settings",
                 func: c => new LoggingConfigurationSetting
-                    {
-                        Name = c.Key,
-                        LogType = Type.GetType(c.GetSection("type").Value, false, true)
-                    });
+                {
+                    Name = c.Key,
+                    LogType = Type.GetType(c.GetSection("type").Value, false, true)
+                });
 
             DefaultInstanceName = configuration.GetSection("default").Value;
             Level = LogEnvironment.GetLevel(configuration.GetSection("level").Value);

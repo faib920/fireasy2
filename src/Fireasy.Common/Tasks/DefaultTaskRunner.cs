@@ -5,6 +5,8 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.ComponentModel;
+using Fireasy.Common.Extensions;
 using System;
 using System.Threading;
 
@@ -15,11 +17,11 @@ namespace Fireasy.Common.Tasks
     /// </summary>
     public class DefaultTaskRunner : DisposeableBase, ITaskRunner
     {
-        private readonly ITaskExecutor executor;
-        private Timer timer;
-        private readonly TimeSpan delay;
-        private readonly TimeSpan period;
-        private readonly TaskExecuteContext context;
+        private readonly ITaskExecutor _executor;
+        private Timer _timer;
+        private readonly TimeSpan _delay;
+        private readonly TimeSpan _period;
+        private readonly TaskExecuteContext _context;
 
         /// <summary>
         /// 初始化 <see cref="DefaultTaskRunner{T}"/> 类的新实例。
@@ -30,10 +32,10 @@ namespace Fireasy.Common.Tasks
         /// <param name="context">执行上下文对象。</param>
         public DefaultTaskRunner(TimeSpan delay, TimeSpan period, ITaskExecutor executor, TaskExecuteContext context)
         {
-            this.delay = delay;
-            this.period = period;
-            this.executor = executor;
-            this.context = context;
+            _delay = delay;
+            _period = period;
+            _executor = executor;
+            _context = context;
         }
 
         /// <summary>
@@ -41,12 +43,14 @@ namespace Fireasy.Common.Tasks
         /// </summary>
         public void Start()
         {
-            if (timer == null)
+            if (_timer == null)
             {
-                timer = new Timer(o =>
+                _timer = new Timer(o =>
                 {
-                    executor.Execute(context);
-                }, null, delay, period);
+                    using var scope = _context.ServiceProvider.TryCreateScope();
+                    var context = new TaskExecuteContext(scope.ServiceProvider, _context.Arguments, _context.CancellationToken);
+                    _executor.Execute(context);
+                }, null, _delay, _period);
             }
         }
 
@@ -55,16 +59,16 @@ namespace Fireasy.Common.Tasks
         /// </summary>
         public void Stop()
         {
-            if (timer != null)
+            if (_timer != null)
             {
-                timer.Change(TimeSpan.FromMilliseconds(-1.0), TimeSpan.FromMilliseconds(1.0));
+                _timer.Change(TimeSpan.FromMilliseconds(-1.0), TimeSpan.FromMilliseconds(1.0));
             }
         }
 
         protected override bool Dispose(bool disposing)
         {
-            timer?.Dispose();
-            timer = null;
+            _timer?.Dispose();
+            _timer = null;
 
             return base.Dispose(disposing);
         }

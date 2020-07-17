@@ -8,7 +8,6 @@
 
 using Fireasy.Common;
 using Fireasy.Common.ComponentModel;
-using System.Collections.Concurrent;
 
 namespace Fireasy.Data.Entity
 {
@@ -17,8 +16,8 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public class EntityTransactionScope : Scope<EntityTransactionScope>
     {
-        private SafetyDictionary<string, IDatabase> databases = new SafetyDictionary<string, IDatabase>();
-        private bool isDisposed;
+        private readonly SafetyDictionary<string, IDatabase> _databases = new SafetyDictionary<string, IDatabase>();
+        private bool _isDisposed;
 
         /// <summary>
         /// 初始化 <see cref="EntityTransactionScope"/> 类的新实例。
@@ -57,14 +56,14 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public virtual void Complete()
         {
-            if (Current != this || isDisposed)
+            if (Current != this || _isDisposed)
             {
                 return;
             }
 
             base.Dispose(true);
 
-            foreach (var database in databases.Values)
+            foreach (var database in _databases.Values)
             {
                 if (database.CommitTransaction())
                 {
@@ -72,7 +71,7 @@ namespace Fireasy.Data.Entity
                 }
             }
 
-            isDisposed = true;
+            _isDisposed = true;
         }
 
         /// <summary>
@@ -80,14 +79,14 @@ namespace Fireasy.Data.Entity
         /// </summary>
         protected virtual void Rollback()
         {
-            if (Current != this || isDisposed)
+            if (Current != this || _isDisposed)
             {
                 return;
             }
 
             base.Dispose(true);
 
-            foreach (var database in databases.Values)
+            foreach (var database in _databases.Values)
             {
                 if (database.RollbackTransaction())
                 {
@@ -95,7 +94,7 @@ namespace Fireasy.Data.Entity
                 }
             }
 
-            isDisposed = true;
+            _isDisposed = true;
         }
 
         /// <summary>
@@ -105,7 +104,7 @@ namespace Fireasy.Data.Entity
         /// <param name="database"></param>
         public virtual void SetDatabase(string instanceName, IDatabase database)
         {
-            databases.TryAdd(GetDefaultInstanceName(instanceName), database);
+            _databases.TryAdd(GetDefaultInstanceName(instanceName), database);
         }
 
         /// <summary>
@@ -115,13 +114,12 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public virtual IDatabase GetDatabase(string instanceName)
         {
-            if (databases == null)
+            if (_databases == null)
             {
                 return null;
             }
 
-            IDatabase database;
-            databases.TryGetValue(GetDefaultInstanceName(instanceName), out database);
+            _databases.TryGetValue(GetDefaultInstanceName(instanceName), out IDatabase database);
             return database;
         }
 

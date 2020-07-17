@@ -6,13 +6,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using System.Drawing;
-using System.Linq;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Converter.Configuration;
-using System.Data;
+using System;
+using System.Drawing;
+using System.Linq;
 
 namespace Fireasy.Data.Converter
 {
@@ -103,8 +102,8 @@ namespace Fireasy.Data.Converter
                 }
             }
 
-            if (conversionType.IsArray 
-                ||conversionType == typeof(Color)
+            if (conversionType.IsArray
+                || conversionType == typeof(Color)
                 || conversionType == typeof(Point)
                 || conversionType == typeof(Rectangle)
                 || conversionType == typeof(Size)

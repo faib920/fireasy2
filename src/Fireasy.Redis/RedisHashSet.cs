@@ -25,13 +25,13 @@ namespace Fireasy.Redis
     /// <typeparam name="TValue"></typeparam>
     internal class RedisHashSet<TKey, TValue> : ICacheHashSet<TKey, TValue>
     {
-        private readonly RedisConfigurationSetting setting;
-        private readonly string cacheKey;
-        private readonly Func<RedisCacheItem<TValue>, string> serialize;
-        private readonly Func<string, RedisCacheItem<TValue>> deserialize;
-        private readonly Func<IEnumerable<Tuple<TKey, TValue, ICacheItemExpiration>>> initializeSet;
+        private readonly RedisConfigurationSetting _setting;
+        private readonly string _cacheKey;
+        private readonly Func<RedisCacheItem<TValue>, string> _serialize;
+        private readonly Func<string, RedisCacheItem<TValue>> _deserialize;
+        private readonly Func<IEnumerable<Tuple<TKey, TValue, ICacheItemExpiration>>> _initializeSet;
 
-        private readonly CSRedisClient client;
+        private readonly CSRedisClient _client;
 
         internal RedisHashSet(
             RedisConfigurationSetting setting,
@@ -42,12 +42,12 @@ namespace Fireasy.Redis
             Func<string, RedisCacheItem<TValue>> deserialize,
             bool checkExpiration)
         {
-            this.setting = setting;
-            this.cacheKey = cacheKey;
-            this.client = client;
-            this.serialize = serialize;
-            this.deserialize = deserialize;
-            this.initializeSet = initializeSet;
+            _setting = setting;
+            _cacheKey = cacheKey;
+            _client = client;
+            _serialize = serialize;
+            _deserialize = deserialize;
+            _initializeSet = initializeSet;
 
             Initialize();
 
@@ -71,10 +71,10 @@ namespace Fireasy.Redis
             var sKey = key.ToString();
             CheckCache<TValue> GetCacheValue()
             {
-                if (client.HExists(cacheKey, sKey))
+                if (_client.HExists(_cacheKey, sKey))
                 {
-                    var content = client.HGet(cacheKey, sKey);
-                    var item = deserialize(content);
+                    var content = _client.HGet(_cacheKey, sKey);
+                    var item = _deserialize(content);
                     if (!item.HasExpired())
                     {
                         return CheckCache<TValue>.Result(item.Value);
@@ -90,7 +90,7 @@ namespace Fireasy.Redis
                 return ck.Value;
             }
 
-            return RedisHelper.Lock(client, string.Concat(cacheKey, ":", sKey), setting.LockTimeout, () =>
+            return RedisHelper.Lock(_client, string.Concat(_cacheKey, ":", sKey), _setting.LockTimeout, () =>
                 {
                     var ck1 = GetCacheValue();
                     if (ck1.HasValue)
@@ -99,8 +99,8 @@ namespace Fireasy.Redis
                     }
 
                     var value = valueCreator();
-                    var content = serialize(new RedisCacheItem<TValue>(value, expiration == null ? NeverExpired.Instance : expiration()));
-                    client.HSet(cacheKey, sKey, content);
+                    var content = _serialize(new RedisCacheItem<TValue>(value, expiration == null ? NeverExpired.Instance : expiration()));
+                    _client.HSet(_cacheKey, sKey, content);
                     return value;
                 });
         }
@@ -115,15 +115,17 @@ namespace Fireasy.Redis
         /// <returns></returns>
         public async Task<TValue> TryGetAsync(TKey key, Func<Task<TValue>> valueCreator, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             TryReInitialize();
 
             var sKey = key.ToString();
             async Task<CheckCache<TValue>> GetCacheValue()
             {
-                if (await client.HExistsAsync(cacheKey, sKey))
+                if (await _client.HExistsAsync(_cacheKey, sKey))
                 {
-                    var content = await client.HGetAsync(cacheKey, sKey);
-                    var item = deserialize(content);
+                    var content = await _client.HGetAsync(_cacheKey, sKey);
+                    var item = _deserialize(content);
                     if (!item.HasExpired())
                     {
                         return CheckCache<TValue>.Result(item.Value);
@@ -139,7 +141,7 @@ namespace Fireasy.Redis
                 return ck.Value;
             }
 
-            return await RedisHelper.LockAsync(client, string.Concat(cacheKey, ":", sKey), setting.LockTimeout, async () =>
+            return await RedisHelper.LockAsync(_client, string.Concat(_cacheKey, ":", sKey), _setting.LockTimeout, async () =>
                 {
                     var ck1 = await GetCacheValue();
                     if (ck1.HasValue)
@@ -148,8 +150,8 @@ namespace Fireasy.Redis
                     }
 
                     var value = await valueCreator();
-                    var content = serialize(new RedisCacheItem<TValue>(value, expiration == null ? NeverExpired.Instance : expiration()));
-                    await client.HSetAsync(cacheKey, sKey, content);
+                    var content = _serialize(new RedisCacheItem<TValue>(value, expiration == null ? NeverExpired.Instance : expiration()));
+                    await _client.HSetAsync(_cacheKey, sKey, content);
                     return value;
                 });
         }
@@ -163,8 +165,8 @@ namespace Fireasy.Redis
         public void Add(TKey key, TValue value, ICacheItemExpiration expiration = null)
         {
             var sKey = key.ToString();
-            var content = serialize(new RedisCacheItem<TValue>(value, expiration ?? NeverExpired.Instance));
-            client.HSet(cacheKey, sKey, content);
+            var content = _serialize(new RedisCacheItem<TValue>(value, expiration ?? NeverExpired.Instance));
+            _client.HSet(_cacheKey, sKey, content);
         }
 
         /// <summary>
@@ -173,11 +175,14 @@ namespace Fireasy.Redis
         /// <param name="key">标识数据的 key。</param>
         /// <param name="value"></param>
         /// <param name="expiration">判断对象过期的对象。</param>
-        public async Task AddAsync(TKey key, TValue value, ICacheItemExpiration expiration = null)
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        public async Task AddAsync(TKey key, TValue value, ICacheItemExpiration expiration = null, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var sKey = key.ToString();
-            var content = serialize(new RedisCacheItem<TValue>(value, expiration ?? NeverExpired.Instance));
-            await client.HSetAsync(cacheKey, sKey, content);
+            var content = _serialize(new RedisCacheItem<TValue>(value, expiration ?? NeverExpired.Instance));
+            await _client.HSetAsync(_cacheKey, sKey, content);
         }
 
         /// <summary>
@@ -191,17 +196,17 @@ namespace Fireasy.Redis
             TryReInitialize();
 
             var sKey = key.ToString();
-            if (client.HExists(cacheKey, sKey))
+            if (_client.HExists(_cacheKey, sKey))
             {
-                var content = client.HGet(cacheKey, sKey);
-                var item = deserialize(content);
+                var content = _client.HGet(_cacheKey, sKey);
+                var item = _deserialize(content);
                 if (!item.HasExpired())
                 {
                     value = item.Value;
                     return true;
                 }
 
-                client.HDel(cacheKey, sKey);
+                _client.HDel(_cacheKey, sKey);
             }
 
             value = default;
@@ -216,7 +221,7 @@ namespace Fireasy.Redis
         {
             TryReInitialize();
 
-            return client.HKeys(cacheKey).Select(s => s.To<TKey>()).ToArray();
+            return _client.HKeys(_cacheKey).Select(s => s.To<TKey>()).ToArray();
         }
 
         /// <summary>
@@ -226,9 +231,11 @@ namespace Fireasy.Redis
         /// <returns></returns>
         public async Task<IEnumerable<TKey>> GetKeysAsync(CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             TryReInitialize();
 
-            return (await client.HKeysAsync(cacheKey)).Select(s => s.To<TKey>()).ToArray();
+            return (await _client.HKeysAsync(_cacheKey)).Select(s => s.To<TKey>()).ToArray();
         }
 
         /// <summary>
@@ -239,13 +246,13 @@ namespace Fireasy.Redis
         {
             TryReInitialize();
 
-            var set = client.HGetAll(cacheKey);
+            var set = _client.HGetAll(_cacheKey);
             var values = new List<TValue>();
             foreach (var kvp in set)
             {
                 if (!string.IsNullOrEmpty(kvp.Value))
                 {
-                    var value = deserialize(kvp.Value);
+                    var value = _deserialize(kvp.Value);
                     if (value != null && !value.HasExpired())
                     {
                         values.Add(value.Value);
@@ -263,7 +270,7 @@ namespace Fireasy.Redis
         public void Remove(TKey key)
         {
             var sKey = key.ToString();
-            client.HDel(cacheKey, sKey);
+            _client.HDel(_cacheKey, sKey);
         }
 
         /// <summary>
@@ -273,8 +280,10 @@ namespace Fireasy.Redis
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task RemoveAsync(TKey key, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var sKey = key.ToString();
-            await client.HDelAsync(cacheKey, sKey);
+            await _client.HDelAsync(_cacheKey, sKey);
         }
 
         /// <summary>
@@ -287,20 +296,23 @@ namespace Fireasy.Redis
             TryReInitialize();
 
             var sKey = key.ToString();
-            return client.HExists(cacheKey, sKey);
+            return _client.HExists(_cacheKey, sKey);
         }
 
         /// <summary>
         /// 异步的，确定集合中是否包含指定的键的值。
         /// </summary>
         /// <param name="key">标识数据的 key。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns></returns>
-        public async Task<bool> ContainsAsync(TKey key)
+        public async Task<bool> ContainsAsync(TKey key, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             TryReInitialize();
 
             var sKey = key.ToString();
-            return await client.HExistsAsync(cacheKey, sKey);
+            return await _client.HExistsAsync(_cacheKey, sKey);
         }
 
         /// <summary>
@@ -312,7 +324,7 @@ namespace Fireasy.Redis
             {
                 TryReInitialize();
 
-                return client.HLen(cacheKey);
+                return _client.HLen(_cacheKey);
             }
         }
 
@@ -321,17 +333,28 @@ namespace Fireasy.Redis
         /// </summary>
         public void Clear()
         {
-            client.Del(cacheKey);
+            _client.Del(_cacheKey);
+        }
+
+        /// <summary>
+        /// 异步的，清空整个集合。
+        /// </summary>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        public async Task ClearAsync(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            await _client.DelAsync(_cacheKey);
         }
 
         private void Initialize()
         {
-            if (initializeSet == null)
+            if (_initializeSet == null)
             {
                 return;
             }
 
-            var initValues = initializeSet();
+            var initValues = _initializeSet();
             if (initValues == null)
             {
                 return;
@@ -341,12 +364,12 @@ namespace Fireasy.Redis
             var keyValues = new object[array.Length * 2];
             for (var i = 0; i < array.Length; i++)
             {
-                var content = serialize(new RedisCacheItem<TValue>(array[i].Item2, array[i].Item3 ?? NeverExpired.Instance));
+                var content = _serialize(new RedisCacheItem<TValue>(array[i].Item2, array[i].Item3 ?? NeverExpired.Instance));
                 keyValues[i * 2] = array[i].Item1.ToString();
                 keyValues[i * 2 + 1] = content;
             }
 
-            client.HMSet(cacheKey, keyValues);
+            _client.HMSet(_cacheKey, keyValues);
         }
 
         private void StartExpireTask()
@@ -359,9 +382,9 @@ namespace Fireasy.Redis
                 {
                     Initializer = s =>
                     {
-                        s.CacheKey = cacheKey;
-                        s.Deserialize = deserialize;
-                        s.Client = client;
+                        s.CacheKey = _cacheKey;
+                        s.Deserialize = _deserialize;
+                        s.Client = _client;
                     }
                 };
 
@@ -374,7 +397,7 @@ namespace Fireasy.Redis
         /// </summary>
         private void TryReInitialize()
         {
-            var exists = client.Exists(cacheKey);
+            var exists = _client.Exists(_cacheKey);
             if (!exists)
             {
                 Initialize();

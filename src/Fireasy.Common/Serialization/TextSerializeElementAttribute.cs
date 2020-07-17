@@ -13,7 +13,7 @@ namespace Fireasy.Common.Serialization
     /// <summary>
     /// 表示此属性序列化后的元素名称。
     /// </summary>
-    [AttributeUsage(AttributeTargets.Property, AllowMultiple=false)]
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
     public sealed class TextSerializeElementAttribute : Attribute
     {
         /// <summary>

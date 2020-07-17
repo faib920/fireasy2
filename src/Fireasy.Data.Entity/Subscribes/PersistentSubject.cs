@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.Subscribes;
 using System;
 
 namespace Fireasy.Data.Entity.Subscribes
@@ -31,16 +30,16 @@ namespace Fireasy.Data.Entity.Subscribes
         /// <summary>
         /// 获取实体类型。
         /// </summary>
-        public Type EntityType { get; private set; }
+        public Type EntityType { get; }
 
         /// <summary>
         /// 获取当前的事件类型。
         /// </summary>
-        public PersistentEventType EventType { get; private set; }
+        public PersistentEventType EventType { get; }
 
         /// <summary>
         /// 获取持久化事件参数。
         /// </summary>
-        public object Argument { get; private set; }
+        public object Argument { get; }
     }
 }

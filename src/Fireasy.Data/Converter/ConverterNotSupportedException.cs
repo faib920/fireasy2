@@ -22,7 +22,7 @@ namespace Fireasy.Data.Converter
         /// <param name="type">对象的类型。</param>
         /// <param name="dbType">数据库数据类型。</param>
         public ConverterNotSupportedException(Type type, DbType dbType)
-            : base (SR.GetString(SRKind.ConverterNotSupported, type.Name, dbType))
+            : base(SR.GetString(SRKind.ConverterNotSupported, type.Name, dbType))
         {
         }
     }

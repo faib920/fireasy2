@@ -1,11 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
+using Fireasy.Data.Entity.Linq.Expressions;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using Fireasy.Data.Entity.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
@@ -14,7 +14,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class RedundantColumnRemover : DbExpressionVisitor
     {
-        private readonly Dictionary<ColumnExpression, ColumnExpression> map = new Dictionary<ColumnExpression, ColumnExpression>();
+        private readonly Dictionary<ColumnExpression, ColumnExpression> _map = new Dictionary<ColumnExpression, ColumnExpression>();
 
         public static Expression Remove(Expression expression)
         {
@@ -23,7 +23,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitColumn(ColumnExpression column)
         {
-            return map.TryGetValue(column, out ColumnExpression mapped) ? mapped : column;
+            return _map.TryGetValue(column, out ColumnExpression mapped) ? mapped : column;
         }
 
         protected override Expression VisitSelect(SelectExpression select)
@@ -49,7 +49,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         {
                             // any reference to 'j' should now just be a reference to 'i'
                             var cxj = new ColumnExpression(cj.Expression.Type, select.Alias, cj.Name, cj.Expression is ColumnExpression cj1 ? cj1.MapInfo : null);
-                            this.map.Add(cxj, cxi);
+                            _map.Add(cxj, cxi);
                             removed.Set(j, true);
                             anyRemoved = true;
                         }

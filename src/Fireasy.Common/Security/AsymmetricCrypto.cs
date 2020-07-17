@@ -5,9 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using System.IO;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace Fireasy.Common.Security
@@ -17,7 +15,7 @@ namespace Fireasy.Common.Security
     /// </summary>
     public abstract class AsymmetricCrypto : ICryptoProvider
     {
-        private readonly string algorithmName;
+        private readonly string _algorithmName;
 
         /// <summary>
         /// 初始化 <see cref="SymmetricCrypto"/> 类的新实例。
@@ -26,7 +24,7 @@ namespace Fireasy.Common.Security
         public AsymmetricCrypto(string algorithmName)
         {
             Guard.ArgumentNull(algorithmName, nameof(algorithmName));
-            this.algorithmName = algorithmName;
+            _algorithmName = algorithmName;
         }
 
         /// <summary>

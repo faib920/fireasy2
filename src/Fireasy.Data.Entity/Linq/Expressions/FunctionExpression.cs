@@ -1,11 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq.Expressions;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Data.Entity.Linq.Expressions
 {
@@ -30,12 +30,12 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取函数的名称。
         /// </summary>
-        public string Name { get; private set; }
+        public string Name { get; }
 
         /// <summary>
         /// 获取函数所包含的参数表达式。
         /// </summary>
-        public ReadOnlyCollection<Expression> Arguments { get; private set; }
+        public ReadOnlyCollection<Expression> Arguments { get; }
 
         /// <summary>
         /// 更新 <see cref="FunctionExpression"/> 对象。

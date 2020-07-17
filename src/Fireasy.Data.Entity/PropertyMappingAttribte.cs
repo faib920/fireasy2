@@ -17,15 +17,15 @@ namespace Fireasy.Data.Entity
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
     public class PropertyMappingAttribute : Attribute
     {
-        private DbType dataType;
-        private int length;
-        private int precision;
-        private int scale;
-        private bool isPrimaryKey;
-        private bool isNullable;
-        private bool isDeletedKey;
-        private LoadBehavior loadBehavior;
-        private SetMark flags = SetMark.None;
+        private DbType _dataType;
+        private int _length;
+        private int _precision;
+        private int _scale;
+        private bool _isPrimaryKey;
+        private bool _isNullable;
+        private bool _isDeletedKey;
+        private LoadBehavior _loadBehavior;
+        private SetMark _flags = SetMark.None;
 
         /// <summary>
         /// 初始化类 <see cref="PropertyMappingAttribute"/> 的新实例。
@@ -58,10 +58,10 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public DbType DataType
         {
-            get { return dataType; }
+            get { return _dataType; }
             set
             {
-                dataType = value;
+                _dataType = value;
                 SetFlag(SetMark.DataType);
             }
         }
@@ -81,10 +81,10 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public int Length
         {
-            get { return length; }
+            get { return _length; }
             set
             {
-                length = value;
+                _length = value;
                 SetFlag(SetMark.Length);
             }
         }
@@ -94,10 +94,10 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public int Precision
         {
-            get { return precision; }
+            get { return _precision; }
             set
             {
-                precision = value;
+                _precision = value;
                 SetFlag(SetMark.Precision);
             }
         }
@@ -107,10 +107,10 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public int Scale
         {
-            get { return scale; }
+            get { return _scale; }
             set
             {
-                scale = value;
+                _scale = value;
                 SetFlag(SetMark.Scale);
             }
         }
@@ -125,10 +125,10 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public bool IsPrimaryKey
         {
-            get { return isPrimaryKey; }
+            get { return _isPrimaryKey; }
             set
             {
-                isPrimaryKey = value;
+                _isPrimaryKey = value;
                 SetFlag(SetMark.IsPrimaryKey);
             }
         }
@@ -138,10 +138,10 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public bool IsNullable
         {
-            get { return isNullable; }
+            get { return _isNullable; }
             set
             {
-                isNullable = value;
+                _isNullable = value;
                 SetFlag(SetMark.IsNullable);
             }
         }
@@ -151,10 +151,10 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public bool IsDeletedKey
         {
-            get { return isDeletedKey; }
+            get { return _isDeletedKey; }
             set
             {
-                isDeletedKey = value;
+                _isDeletedKey = value;
                 SetFlag(SetMark.IsDeletedKey);
             }
         }
@@ -164,22 +164,22 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public LoadBehavior LoadBehavior
         {
-            get { return loadBehavior; }
+            get { return _loadBehavior; }
             set
             {
-                loadBehavior = value;
+                _loadBehavior = value;
                 SetFlag(SetMark.LoadBehavior);
             }
         }
 
         private void SetFlag(SetMark p)
         {
-            flags = (flags | p);
+            _flags = (_flags | p);
         }
 
         internal bool GetFlag(SetMark p)
         {
-            return flags.HasFlag(p);
+            return _flags.HasFlag(p);
         }
 
         [Flags]

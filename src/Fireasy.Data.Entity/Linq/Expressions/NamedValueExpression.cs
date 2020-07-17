@@ -26,10 +26,10 @@ namespace Fireasy.Data.Entity.Linq.Expressions
             DataType = dbType;
         }
 
-        public string Name { get; private set; }
+        public string Name { get; }
 
-        public Expression Value { get; private set; }
+        public Expression Value { get; }
 
-        public DbType DataType { get; private set; }
+        public DbType DataType { get; }
     }
 }

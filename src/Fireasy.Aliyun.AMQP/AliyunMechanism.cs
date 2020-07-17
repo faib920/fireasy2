@@ -20,7 +20,7 @@ namespace Fireasy.Aliyun.AMQP
 				return Encoding.UTF8.GetBytes("\0" + GetUserName(val) + "\0" + AliyunUtils.GetPassword(val.Password));
 			}
 
-			throw new InvalidCastException("need ConnectionFactory");
+			throw new InvalidCastException("Need ConnectionFactory.");
 		}
 
 		private string GetUserName(ConnectionFactory cf)
@@ -32,7 +32,7 @@ namespace Fireasy.Aliyun.AMQP
 			}
 			catch (Exception)
 			{
-				throw new InvalidProgramException("hostName invalid");
+				throw new InvalidProgramException("HostName invalid.");
 			}
 
 			return AliyunUtils.GetUserName(cf.UserName, text);

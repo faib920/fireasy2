@@ -20,7 +20,7 @@ namespace Fireasy.Data.Entity
         /// <param name="message">指定此异常的信息。</param>
         /// <param name="exception">内联的 <see cref="Exception"/> 信息。</param>
         public EntityPersistentException(string message, Exception exception)
-            : base (message, exception)
+            : base(message, exception)
         {
         }
     }

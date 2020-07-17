@@ -6,9 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Linq.Expressions;
 using Fireasy.Data.Provider;
-using Fireasy.Data.Syntax;
+using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
@@ -20,15 +19,17 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <summary>
         /// 创建一个翻译器对象。
         /// </summary>
+        /// <param name="transContext"></param>
         /// <returns></returns>
-        TranslatorBase CreateTranslator();
+        TranslatorBase CreateTranslator(TranslateContext transContext);
 
         /// <summary>
         /// 对 ELinq 表达式进行翻译，并返回翻译的结果。
         /// </summary>
+        /// <param name="transContext"></param>
         /// <param name="expression">一个 ELinq 表达式。</param>
         /// <returns></returns>
-        Expression Translate(Expression expression);
+        Expression Translate(TranslateContext transContext, Expression expression);
 
         /// <summary>
         /// 判断表达式中的常量是否可以被计算。

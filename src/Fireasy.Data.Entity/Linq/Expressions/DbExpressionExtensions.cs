@@ -6,7 +6,6 @@ using Fireasy.Data.Entity.Linq.Translators;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Data.Entity.Linq.Expressions
 {
@@ -22,7 +21,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
 
         internal static SelectExpression AddColumn(this SelectExpression select, ColumnDeclaration column)
         {
-            var columns = new List<ColumnDeclaration>(select.Columns) {column};
+            var columns = new List<ColumnDeclaration>(select.Columns) { column };
             return select.SetColumns(columns);
         }
 
@@ -152,7 +151,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
                 new ColumnDeclaration(d.Name,
                     new ColumnExpression(
                         d.Expression.Type,
-                        newAlias, d.Name, 
+                        newAlias, d.Name,
                         d.Expression is ColumnExpression ? ((ColumnExpression)d.Expression).MapInfo : null
                         )));
             var newFrom = new SelectExpression(newAlias, select.Columns, select.From, select.Where, select.OrderBy, select.GroupBy, select.IsDistinct, select.Skip, select.Take, select.Segment, select.Having, select.IsReverse);

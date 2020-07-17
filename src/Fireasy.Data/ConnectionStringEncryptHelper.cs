@@ -5,11 +5,11 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Security;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using Fireasy.Common.Security;
 
 namespace Fireasy.Data
 {
@@ -34,7 +34,7 @@ namespace Fireasy.Data
             var data = encrypt.Encrypt(connectionString, Encoding.GetEncoding(0));
 
             var array = new List<byte>();
-            array.AddRange(new [] { keys[1], keys[3], keys[0], keys[6] });
+            array.AddRange(new[] { keys[1], keys[3], keys[0], keys[6] });
             array.AddRange(data);
             array.AddRange(new[] { keys[7], keys[2], keys[5], keys[4] });
             return ToHex(array.ToArray());
@@ -49,7 +49,7 @@ namespace Fireasy.Data
         {
             var bytes = ToBytes(data);
             var l = bytes.Length;
-            var keys = new[] { bytes[2], bytes[0], bytes[l - 3], bytes[1], 
+            var keys = new[] { bytes[2], bytes[0], bytes[l - 3], bytes[1],
                 bytes[l - 1], bytes[l - 2], bytes[3], bytes[l - 4] };
 
             var encrypt = CryptographyFactory.Create(CryptoAlgorithm.RC2) as SymmetricCrypto;

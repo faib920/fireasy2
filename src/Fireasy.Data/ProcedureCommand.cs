@@ -13,7 +13,7 @@ namespace Fireasy.Data
     /// </summary>
     public sealed class ProcedureCommand : IQueryCommand
     {
-        private readonly string procedureName;
+        private readonly string _procedureName;
 
         /// <summary>
         /// 将字符串转换为 <see cref="ProcedureCommand"/> 实例。
@@ -41,7 +41,7 @@ namespace Fireasy.Data
         /// <param name="procedureName">存储过程的名称。</param>
         public ProcedureCommand(string procedureName)
         {
-            this.procedureName = procedureName;
+            _procedureName = procedureName;
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace Fireasy.Data
         /// <returns></returns>
         public override string ToString()
         {
-            return procedureName;
+            return _procedureName;
         }
     }
 }

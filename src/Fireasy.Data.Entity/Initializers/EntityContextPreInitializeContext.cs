@@ -19,10 +19,10 @@ namespace Fireasy.Data.Entity.Initializers
             Mappers = new ReadOnlyCollection<EntityRepositoryTypeMapper>(mappers);
         }
 
-        public EntityContext EntityContext { get; private set; }
+        public EntityContext EntityContext { get; }
 
-        public IContextService ContextService { get; private set; }
+        public IContextService ContextService { get; }
 
-        public ReadOnlyCollection<EntityRepositoryTypeMapper> Mappers { get; private set; }
+        public ReadOnlyCollection<EntityRepositoryTypeMapper> Mappers { get; }
     }
 }

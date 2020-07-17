@@ -6,12 +6,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
-using Fireasy.Common.Extensions;
-using System.ComponentModel;
 
 namespace Fireasy.Common.Serialization
 {
@@ -20,7 +20,7 @@ namespace Fireasy.Common.Serialization
     /// </summary>
     public sealed class TextSerializeElementPropertyHelper
     {
-        private readonly Dictionary<string, PropertyDescriptor> properties;
+        private readonly Dictionary<string, PropertyDescriptor> _properties;
 
         /// <summary>
         /// 初始化 <see cref="TextSerializeElementPropertyHelper"/> 类的新实例。
@@ -29,7 +29,7 @@ namespace Fireasy.Common.Serialization
         /// <param name="camel">元素名称是否使用 Camel 命名规则。</param>
         public TextSerializeElementPropertyHelper(Type type, bool camel)
         {
-            properties = new Dictionary<string, PropertyDescriptor>();
+            _properties = new Dictionary<string, PropertyDescriptor>();
 
             foreach (PropertyDescriptor property in TypeDescriptor.GetProperties(type))
             {
@@ -39,7 +39,7 @@ namespace Fireasy.Common.Serialization
                 var name = camel ? char.ToLower(property.Name[0]) + property.Name.Substring(1) : property.Name;
 
                 //如果使用了 TextSerializeElementAttribute 修饰，则取该特性指定的名称
-                properties.Add(ele == null ? name : ele.Name, property);
+                _properties.Add(ele == null ? name : ele.Name, property);
             }
         }
 
@@ -50,7 +50,7 @@ namespace Fireasy.Common.Serialization
         /// <returns>与名称对应的属性。</returns>
         public PropertyDescriptor GetProperty(string name)
         {
-            if (properties.TryGetValue(name, out PropertyDescriptor result))
+            if (_properties.TryGetValue(name, out PropertyDescriptor result))
             {
                 return result;
             }

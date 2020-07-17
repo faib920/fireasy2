@@ -33,12 +33,12 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取操作的表的表达式。
         /// </summary>
-        public Expression Table { get; private set; }
+        public Expression Table { get; }
 
         /// <summary>
         /// 获取需要更新的列表达式集合。
         /// </summary>
-        public ReadOnlyCollection<ColumnAssignment> Assignments { get; private set; }
+        public ReadOnlyCollection<ColumnAssignment> Assignments { get; }
 
         /// <summary>
         /// 获取或设置是否使用自增量插入。

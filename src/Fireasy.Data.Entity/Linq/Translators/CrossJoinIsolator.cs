@@ -12,9 +12,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class CrossJoinIsolator : DbExpressionVisitor
     {
-        private ILookup<TableAlias, ColumnExpression> columns;
-        private readonly Dictionary<ColumnExpression, ColumnExpression> map = new Dictionary<ColumnExpression, ColumnExpression>();
-        private JoinType? lastJoin;
+        private ILookup<TableAlias, ColumnExpression> _columns;
+        private readonly Dictionary<ColumnExpression, ColumnExpression> _map = new Dictionary<ColumnExpression, ColumnExpression>();
+        private JoinType? _lastJoin;
 
         public static Expression Isolate(Expression expression)
         {
@@ -23,24 +23,24 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitSelect(SelectExpression select)
         {
-            var saveColumns = columns;
-            columns = ReferencedColumnGatherer.Gather(select).ToLookup(c => c.Alias);
-            var saveLastJoin = lastJoin;
-            lastJoin = null;
+            var saveColumns = _columns;
+            _columns = ReferencedColumnGatherer.Gather(select).ToLookup(c => c.Alias);
+            var saveLastJoin = _lastJoin;
+            _lastJoin = null;
             var result = base.VisitSelect(select);
-            columns = saveColumns;
-            lastJoin = saveLastJoin;
+            _columns = saveColumns;
+            _lastJoin = saveLastJoin;
             return result;
         }
 
         protected override Expression VisitJoin(JoinExpression join)
         {
-            var saveLastJoin = lastJoin;
-            lastJoin = join.JoinType;
+            var saveLastJoin = _lastJoin;
+            _lastJoin = join.JoinType;
             join = (JoinExpression)base.VisitJoin(join);
-            lastJoin = saveLastJoin;
+            _lastJoin = saveLastJoin;
 
-            if (lastJoin != null && (join.JoinType == JoinType.CrossJoin) != (lastJoin == JoinType.CrossJoin))
+            if (_lastJoin != null && (join.JoinType == JoinType.CrossJoin) != (_lastJoin == JoinType.CrossJoin))
             {
                 var result = MakeSubquery(join);
                 return result;
@@ -67,13 +67,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var decls = new List<ColumnDeclaration>();
             foreach (var ta in aliases)
             {
-                foreach (var col in columns[ta])
+                foreach (var col in _columns[ta])
                 {
                     var name = decls.GetAvailableColumnName(col.Name);
                     var decl = new ColumnDeclaration(name, col);
                     decls.Add(decl);
                     var newCol = new ColumnExpression(col.Type, newAlias, name, null);
-                    map.Add(col, newCol);
+                    _map.Add(col, newCol);
                 }
             }
 
@@ -82,7 +82,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitColumn(ColumnExpression column)
         {
-            if (map.TryGetValue(column, out ColumnExpression mapped))
+            if (_map.TryGetValue(column, out ColumnExpression mapped))
             {
                 return mapped;
             }

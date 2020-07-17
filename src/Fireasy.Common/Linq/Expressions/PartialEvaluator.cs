@@ -80,11 +80,11 @@ namespace Fireasy.Common.Linq.Expressions
 
             private class SubtreeEvaluator : ExpressionVisitor
             {
-                private readonly HashSet<Expression> candidates;
+                private readonly HashSet<Expression> _candidates;
 
                 private SubtreeEvaluator(HashSet<Expression> candidates)
                 {
-                    this.candidates = candidates;
+                    _candidates = candidates;
                 }
 
                 internal static Expression Eval(HashSet<Expression> candidates, Expression exp)
@@ -104,7 +104,7 @@ namespace Fireasy.Common.Linq.Expressions
                     {
                         return Visit(query.Expression);
                     }
-                    else if (candidates.Contains(expression))
+                    else if (_candidates.Contains(expression))
                     {
                         return Evaluate(expression);
                     }
@@ -172,29 +172,29 @@ namespace Fireasy.Common.Linq.Expressions
 
             class Nominator : ExpressionVisitor
             {
-                private readonly Func<Expression, bool> fnCanBeEvaluated;
-                private readonly HashSet<Expression> candidates;
-                private bool cannotBeEvaluated;
+                private readonly Func<Expression, bool> _fnCanBeEvaluated;
+                private readonly HashSet<Expression> _candidates;
+                private bool _cannotBeEvaluated;
 
                 private Nominator(Func<Expression, bool> fnCanBeEvaluated)
                 {
-                    candidates = new HashSet<Expression>();
-                    this.fnCanBeEvaluated = fnCanBeEvaluated;
+                    _candidates = new HashSet<Expression>();
+                    _fnCanBeEvaluated = fnCanBeEvaluated;
                 }
 
                 internal static HashSet<Expression> Nominate(Func<Expression, bool> fnCanBeEvaluated, Expression expression)
                 {
                     var nominator = new Nominator(fnCanBeEvaluated);
                     nominator.Visit(expression);
-                    return nominator.candidates;
+                    return nominator._candidates;
                 }
 
                 public override Expression Visit(Expression expression)
                 {
                     if (expression != null)
                     {
-                        var saveCannotBeEvaluated = cannotBeEvaluated;
-                        cannotBeEvaluated = false;
+                        var saveCannotBeEvaluated = _cannotBeEvaluated;
+                        _cannotBeEvaluated = false;
 
                         var query = QueryableHelper.GetQuerableMember(expression);
                         if (query != null)
@@ -206,19 +206,19 @@ namespace Fireasy.Common.Linq.Expressions
                             base.Visit(expression);
                         }
 
-                        if (!cannotBeEvaluated)
+                        if (!_cannotBeEvaluated)
                         {
-                            if (fnCanBeEvaluated(expression))
+                            if (_fnCanBeEvaluated(expression))
                             {
-                                candidates.Add(expression);
+                                _candidates.Add(expression);
                             }
                             else
                             {
-                                cannotBeEvaluated = true;
+                                _cannotBeEvaluated = true;
                             }
                         }
 
-                        cannotBeEvaluated |= saveCannotBeEvaluated;
+                        _cannotBeEvaluated |= saveCannotBeEvaluated;
                     }
 
                     return expression;

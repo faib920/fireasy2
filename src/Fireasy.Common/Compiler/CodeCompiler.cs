@@ -172,7 +172,7 @@ namespace Fireasy.Common.Compiler
                 }
             }
 #endif
-        }   
+        }
 
         /// <summary>
         /// 编译代码生成一个新类型。
@@ -253,7 +253,7 @@ namespace Fireasy.Common.Compiler
         }
 
 #if !NETSTANDARD
-       private CompilerParameters GetCompilerParameters()
+        private CompilerParameters GetCompilerParameters()
         {
             var option = new CompilerParameters();
             if (!string.IsNullOrEmpty(OutputAssembly))

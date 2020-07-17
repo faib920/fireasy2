@@ -15,7 +15,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Fireasy.Data.Entity.Generation
 {
@@ -66,7 +65,7 @@ namespace Fireasy.Data.Entity.Generation
 
             //查询目前数据表中的所有字段
             var columns = schema.GetSchemas<Column>(database, s => s.TableName == tableName).Select(s => s.Name).ToArray();
-            
+
             //筛选出新的字段
             var properties = PropertyUnity.GetPersistentProperties(metadata.EntityType)
                 .Where(s => !columns.Contains(s.Info.FieldName, StringComparer.CurrentCultureIgnoreCase)).ToList();

@@ -65,7 +65,7 @@ namespace Fireasy.Data.Entity.Properties
         /// <summary>
         /// 获取关联属性类型。
         /// </summary>
-        internal RelationPropertyType RelationalPropertyType { get; private set; }
+        internal RelationPropertyType RelationalPropertyType { get; }
 
         /// <summary>
         /// 获取或设置关联选项。

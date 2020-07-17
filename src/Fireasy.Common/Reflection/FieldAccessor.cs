@@ -29,7 +29,7 @@ namespace Fireasy.Common.Reflection
     /// </summary>
     public class FieldAccessor : IFieldAccessor
     {
-        private readonly Func<object, object> getter;
+        private readonly Func<object, object> _getter;
 
         /// <summary>
         /// 获取要包装的 <see cref="FieldInfo"/> 对象。
@@ -43,7 +43,7 @@ namespace Fireasy.Common.Reflection
         public FieldAccessor(FieldInfo fieldInfo)
         {
             FieldInfo = fieldInfo;
-            getter = this.GetDelegate(fieldInfo);
+            _getter = GetDelegate(fieldInfo);
         }
 
         private Func<object, object> GetDelegate(FieldInfo fieldInfo)
@@ -67,12 +67,12 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public object GetValue(object instance)
         {
-            if (getter == null)
+            if (_getter == null)
             {
                 throw new NotSupportedException(SR.GetString(SRKind.UnableCreateCachedDelegate));
             }
 
-            return getter(instance);
+            return _getter(instance);
         }
     }
 }

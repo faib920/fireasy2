@@ -6,10 +6,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using System.Xml;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
+using System;
+using System.Xml;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
@@ -29,16 +29,16 @@ namespace Fireasy.Common.Composition.Configuration
         public override void Initialize(XmlNode section)
         {
             InitializeNode(
-                section, 
-                "import", 
-                null, 
-                node => 
+                section,
+                "import",
+                null,
+                node =>
                 new ImportConfigurationSetting
-                    {
-                        Assembly = node.GetAttributeValue("assembly"),
-                        ContractType = Type.GetType(node.GetAttributeValue("contractType"), false, true),
-                        ImportType = Type.GetType(node.GetAttributeValue("importType"), false, true)
-                    });
+                {
+                    Assembly = node.GetAttributeValue("assembly"),
+                    ContractType = Type.GetType(node.GetAttributeValue("contractType"), false, true),
+                    ImportType = Type.GetType(node.GetAttributeValue("importType"), false, true)
+                });
         }
 
 #if NETSTANDARD
@@ -53,7 +53,7 @@ namespace Fireasy.Common.Composition.Configuration
                 func: c => new ImportConfigurationSetting
                 {
                     Assembly = c.GetSection("assembly").Value,
-                    ContractType = Type.GetType(c.GetSection("contractType").Value??string.Empty, false, true),
+                    ContractType = Type.GetType(c.GetSection("contractType").Value ?? string.Empty, false, true),
                     ImportType = Type.GetType(c.GetSection("importType").Value ?? string.Empty, false, true)
                 });
 

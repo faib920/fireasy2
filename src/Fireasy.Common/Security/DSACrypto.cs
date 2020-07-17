@@ -15,12 +15,12 @@ namespace Fireasy.Common.Security
 {
     internal class DSACrypto : AsymmetricCrypto
     {
-        private readonly DSACryptoServiceProvider dsa = null;
+        private readonly DSACryptoServiceProvider _dsa = null;
 
         public DSACrypto()
             : base("DSA")
         {
-            dsa = new DSACryptoServiceProvider();
+            _dsa = new DSACryptoServiceProvider();
         }
 
         /// <summary>
@@ -112,7 +112,7 @@ namespace Fireasy.Common.Security
         {
             FromXmlString(PrivateKey);
             var md5 = CryptographyFactory.Create(CryptoAlgorithm.SHA1);
-            return dsa.SignHash(md5.Encrypt(source), "SHA1");
+            return _dsa.SignHash(md5.Encrypt(source), "SHA1");
         }
 
         /// <summary>
@@ -125,16 +125,16 @@ namespace Fireasy.Common.Security
         {
             FromXmlString(PublicKey);
             var md5 = CryptographyFactory.Create(CryptoAlgorithm.SHA1);
-            return dsa.VerifyHash(md5.Encrypt(source), "SHA1", signature);
+            return _dsa.VerifyHash(md5.Encrypt(source), "SHA1", signature);
         }
 
 
         private string ToXmlString(bool includePrivateParameters)
         {
 #if !NETSTANDARD
-            return dsa.ToXmlString(includePrivateParameters);
+            return _dsa.ToXmlString(includePrivateParameters);
 #else
-            var parameters = dsa.ExportParameters(includePrivateParameters);
+            var parameters = _dsa.ExportParameters(includePrivateParameters);
 
             var sb = new StringBuilder();
             sb.Append("<DSAKeyValue>");
@@ -172,7 +172,7 @@ namespace Fireasy.Common.Security
         private void FromXmlString(string xmlString)
         {
 #if !NETSTANDARD
-            dsa.FromXmlString(xmlString);
+            _dsa.FromXmlString(xmlString);
 #else
             var parameters = new DSAParameters();
 
@@ -215,7 +215,7 @@ namespace Fireasy.Common.Security
                 }
             }
 
-            dsa.ImportParameters(parameters);
+            _dsa.ImportParameters(parameters);
 #endif
         }
 

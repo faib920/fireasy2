@@ -6,7 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Data.Provider;
-using System;
 
 namespace Fireasy.Data.Entity
 {

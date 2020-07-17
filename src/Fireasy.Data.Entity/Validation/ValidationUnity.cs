@@ -21,9 +21,9 @@ namespace Fireasy.Data.Entity.Validation
     /// </summary>
     public static class ValidationUnity
     {
-        private static readonly ConcurrentDictionary<Type, Dictionary<string, List<ValidationAttribute>>> propertyValidations =
+        private static readonly ConcurrentDictionary<Type, Dictionary<string, List<ValidationAttribute>>> _propertyValidations =
             new ConcurrentDictionary<Type, Dictionary<string, List<ValidationAttribute>>>();
-        private static readonly ConcurrentDictionary<Type, List<ValidationAttribute>> entityValidations =
+        private static readonly ConcurrentDictionary<Type, List<ValidationAttribute>> _entityValidations =
             new ConcurrentDictionary<Type, List<ValidationAttribute>>();
 
         /// <summary>
@@ -177,7 +177,7 @@ namespace Fireasy.Data.Entity.Validation
             var entityType = property.EntityType;
             var propertyName = property.Name;
 
-            var pdic = propertyValidations.GetOrAdd(entityType, key => GetPropertyValidations(key));
+            var pdic = _propertyValidations.GetOrAdd(entityType, key => GetPropertyValidations(key));
 
             if (!pdic.TryGetValue(propertyName, out List<ValidationAttribute> attrs))
             {
@@ -197,7 +197,7 @@ namespace Fireasy.Data.Entity.Validation
         {
             Guard.ArgumentNull(entityType, nameof(entityType));
 
-            return entityValidations.GetOrAdd(entityType, key => GetEntityValidations(key));
+            return _entityValidations.GetOrAdd(entityType, key => GetEntityValidations(key));
         }
 
         /// <summary>

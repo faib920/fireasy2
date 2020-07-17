@@ -5,13 +5,13 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Common.Serialization
 {
@@ -20,14 +20,14 @@ namespace Fireasy.Common.Serialization
     /// </summary>
     public class ExpressionJsonReader
     {
-        private readonly JsonSerializer serializer;
-        private readonly string json;
+        private readonly JsonSerializer _serializer;
+        private readonly string _json;
 
         /// <summary>
         /// 获取参数名称与类型的字典。
         /// </summary>
-        protected readonly Dictionary<string, Type> TypeDictionary = new Dictionary<string,Type>();
-        
+        protected readonly Dictionary<string, Type> TypeDictionary = new Dictionary<string, Type>();
+
         /// <summary>
         /// 获取参数类型与表达式的字典。
         /// </summary>
@@ -40,8 +40,8 @@ namespace Fireasy.Common.Serialization
         /// <param name="json"></param>
         public ExpressionJsonReader(JsonSerializer serializer, string json)
         {
-            this.serializer = serializer;
-            this.json = json;
+            _serializer = serializer;
+            _json = json;
         }
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace Fireasy.Common.Serialization
         /// <returns></returns>
         public Expression GetExpression()
         {
-            using (var sr = new StringReader(json))
+            using (var sr = new StringReader(_json))
             using (JsonReader = new JsonReader(sr))
             {
                 return ReadSegment();
@@ -314,7 +314,7 @@ namespace Fireasy.Common.Serialization
 
             JsonReader.AssertAndConsume(JsonTokens.PairSeparator);
             JsonReader.SkipWhiteSpaces();
-            var value = serializer.Deserialize(JsonReader.ReadRaw(), type);
+            var value = _serializer.Deserialize(JsonReader.ReadRaw(), type);
             JsonReader.SkipWhiteSpaces();
 
             JsonReader.AssertAndConsume(JsonTokens.EndObjectLiteralCharacter);
@@ -572,7 +572,7 @@ namespace Fireasy.Common.Serialization
             JsonReader.SkipWhiteSpaces();
             JsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
             JsonReader.SkipWhiteSpaces();
-            
+
             //Type
             CheckKey("Type", JsonReader.ReadKey());
             JsonReader.SkipWhiteSpaces();
@@ -779,7 +779,7 @@ namespace Fireasy.Common.Serialization
             JsonReader.SkipWhiteSpaces();
             JsonReader.AssertAndConsume(JsonTokens.ElementSeparator);
             JsonReader.SkipWhiteSpaces();
-            
+
             //Arguments
             CheckKey("Arguments", JsonReader.ReadKey());
             JsonReader.SkipWhiteSpaces();

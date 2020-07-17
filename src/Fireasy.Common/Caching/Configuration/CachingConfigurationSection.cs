@@ -6,11 +6,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using System.Xml;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
-using System.Linq;
+using System;
+using System.Xml;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
@@ -30,13 +29,13 @@ namespace Fireasy.Common.Caching.Configuration
         public override void Initialize(XmlNode section)
         {
             InitializeNode(
-                section, 
-                "caching", 
+                section,
+                "caching",
                 func: node => new CachingConfigurationSetting
                 {
-                        Name = node.GetAttributeValue("name"),
-                        CacheType = Type.GetType(node.GetAttributeValue("type"), false, true)
-                    });
+                    Name = node.GetAttributeValue("name"),
+                    CacheType = Type.GetType(node.GetAttributeValue("type"), false, true)
+                });
 
             //取默认实例
             DefaultInstanceName = section.GetAttributeValue("default");
@@ -51,13 +50,13 @@ namespace Fireasy.Common.Caching.Configuration
         /// <param name="configuration">对应的配置节点。</param>
         public override void Bind(IConfiguration configuration)
         {
-            Bind(configuration, 
-                "settings", 
+            Bind(configuration,
+                "settings",
                 func: c => new CachingConfigurationSetting
-                    {
-                        Name = c.Key,
-                        CacheType = Type.GetType(c.GetSection("type").Value, false, true)
-                    });
+                {
+                    Name = c.Key,
+                    CacheType = Type.GetType(c.GetSection("type").Value, false, true)
+                });
 
             //取默认实例
             DefaultInstanceName = configuration.GetSection("default").Value;

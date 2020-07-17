@@ -17,12 +17,12 @@ namespace Fireasy.Common.Reflection
     /// </summary>
     public static class ReflectionCache
     {
-        private static readonly ConcurrentDictionary<FieldInfo, FieldAccessor> fieldAccessors = new ConcurrentDictionary<FieldInfo, FieldAccessor>();
-        private static readonly ConcurrentDictionary<Type, ConcurrentDictionary<PropertyInfo, IPropertyAccessor>> propertyAccessors = new ConcurrentDictionary<Type, ConcurrentDictionary<PropertyInfo, IPropertyAccessor>>();
-        private static readonly ConcurrentDictionary<Type, ConcurrentDictionary<MethodInfo, MethodInvoker>> methodInvoker = new ConcurrentDictionary<Type, ConcurrentDictionary<MethodInfo, MethodInvoker>>();
-        private static readonly ConcurrentDictionary<Type, ConcurrentDictionary<ConstructorInfo, ConstructorInvoker>> construtorInvoker = new ConcurrentDictionary<Type, ConcurrentDictionary<ConstructorInfo, ConstructorInvoker>>();
-        private static readonly ConcurrentDictionary<string, ConcurrentDictionary<MemberInfo, MemberInfo>> memberCache = new ConcurrentDictionary<string, ConcurrentDictionary<MemberInfo, MemberInfo>>();
-        private static readonly ConcurrentDictionary<string, ConcurrentDictionary<MemberInfo[], MemberInfo>> memberArrayCache = new ConcurrentDictionary<string, ConcurrentDictionary<MemberInfo[], MemberInfo>>();
+        private static readonly ConcurrentDictionary<FieldInfo, FieldAccessor> _fieldAccessors = new ConcurrentDictionary<FieldInfo, FieldAccessor>();
+        private static readonly ConcurrentDictionary<Type, ConcurrentDictionary<PropertyInfo, IPropertyAccessor>> _propertyAccessors = new ConcurrentDictionary<Type, ConcurrentDictionary<PropertyInfo, IPropertyAccessor>>();
+        private static readonly ConcurrentDictionary<Type, ConcurrentDictionary<MethodInfo, MethodInvoker>> _methodInvokers = new ConcurrentDictionary<Type, ConcurrentDictionary<MethodInfo, MethodInvoker>>();
+        private static readonly ConcurrentDictionary<Type, ConcurrentDictionary<ConstructorInfo, ConstructorInvoker>> _construtorInvokers = new ConcurrentDictionary<Type, ConcurrentDictionary<ConstructorInfo, ConstructorInvoker>>();
+        private static readonly ConcurrentDictionary<string, ConcurrentDictionary<MemberInfo, MemberInfo>> _memberCache = new ConcurrentDictionary<string, ConcurrentDictionary<MemberInfo, MemberInfo>>();
+        private static readonly ConcurrentDictionary<string, ConcurrentDictionary<MemberInfo[], MemberInfo>> _memberArrayCache = new ConcurrentDictionary<string, ConcurrentDictionary<MemberInfo[], MemberInfo>>();
 
         /// <summary>
         /// 获取字段的访问器。
@@ -31,7 +31,7 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public static FieldAccessor GetAccessor(FieldInfo field)
         {
-            return fieldAccessors.GetOrAdd(field, key => new FieldAccessor(key));
+            return _fieldAccessors.GetOrAdd(field, key => new FieldAccessor(key));
         }
 
         /// <summary>
@@ -41,13 +41,13 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public static PropertyAccessor GetAccessor(PropertyInfo property)
         {
-            var dict = propertyAccessors.GetOrAdd(property.DeclaringType, k => new ConcurrentDictionary<PropertyInfo, IPropertyAccessor>());
+            var dict = _propertyAccessors.GetOrAdd(property.DeclaringType, k => new ConcurrentDictionary<PropertyInfo, IPropertyAccessor>());
             return (PropertyAccessor)dict.GetOrAdd(property, key => new PropertyAccessor(key));
         }
 
         public static PropertyAccessor<T> GetAccessor<T>(PropertyInfo property)
         {
-            var dict = propertyAccessors.GetOrAdd(property.DeclaringType, k => new ConcurrentDictionary<PropertyInfo, IPropertyAccessor>());
+            var dict = _propertyAccessors.GetOrAdd(property.DeclaringType, k => new ConcurrentDictionary<PropertyInfo, IPropertyAccessor>());
             return (PropertyAccessor<T>)dict.GetOrAdd(property, key => new PropertyAccessor<T>(key));
         }
 
@@ -58,7 +58,7 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public static MethodInvoker GetInvoker(MethodInfo method)
         {
-            var dict = methodInvoker.GetOrAdd(method.DeclaringType, k => new ConcurrentDictionary<MethodInfo, MethodInvoker>());
+            var dict = _methodInvokers.GetOrAdd(method.DeclaringType, k => new ConcurrentDictionary<MethodInfo, MethodInvoker>());
             return dict.GetOrAdd(method, key => new MethodInvoker(key));
         }
 
@@ -69,7 +69,7 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public static ConstructorInvoker GetInvoker(ConstructorInfo constructor)
         {
-            var dict = construtorInvoker.GetOrAdd(constructor.DeclaringType, k => new ConcurrentDictionary<ConstructorInfo, ConstructorInvoker>());
+            var dict = _construtorInvokers.GetOrAdd(constructor.DeclaringType, k => new ConcurrentDictionary<ConstructorInfo, ConstructorInvoker>());
             return dict.GetOrAdd(constructor, key => new ConstructorInvoker(key));
         }
 
@@ -84,7 +84,7 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public static TTarget GetMember<TSource, TTarget>(string key, TSource source, Func<TSource, TTarget> creator) where TSource : MemberInfo where TTarget : MemberInfo
         {
-            var dict = memberCache.GetOrAdd(key, k => new ConcurrentDictionary<MemberInfo, MemberInfo>());
+            var dict = _memberCache.GetOrAdd(key, k => new ConcurrentDictionary<MemberInfo, MemberInfo>());
             return (TTarget)dict.GetOrAdd(source, k => creator(source));
         }
 
@@ -101,7 +101,7 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public static TTarget GetMember<TSource, TArg1, TTarget>(string key, TSource source, TArg1 arg1, Func<TSource, TArg1, TTarget> creator) where TSource : MemberInfo where TTarget : MemberInfo
         {
-            var dict = memberCache.GetOrAdd(key, k => new ConcurrentDictionary<MemberInfo, MemberInfo>());
+            var dict = _memberCache.GetOrAdd(key, k => new ConcurrentDictionary<MemberInfo, MemberInfo>());
             return (TTarget)dict.GetOrAdd(source, k => creator(source, arg1));
         }
 
@@ -120,7 +120,7 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public static TTarget GetMember<TSource, TArg1, TArg2, TTarget>(string key, TSource source, TArg1 arg1, TArg2 arg2, Func<TSource, TArg1, TArg2, TTarget> creator) where TSource : MemberInfo where TTarget : MemberInfo
         {
-            var dict = memberCache.GetOrAdd(key, k => new ConcurrentDictionary<MemberInfo, MemberInfo>());
+            var dict = _memberCache.GetOrAdd(key, k => new ConcurrentDictionary<MemberInfo, MemberInfo>());
             return (TTarget)dict.GetOrAdd(source, k => creator(source, arg1, arg2));
         }
 
@@ -140,7 +140,7 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public static TTarget GetMember<TSource, TArg1, TArg2, TArg3, TTarget>(string key, TSource source, TArg1 arg1, TArg2 arg2, TArg3 arg3, Func<TSource, TArg1, TArg2, TArg3, TTarget> creator) where TSource : MemberInfo where TTarget : MemberInfo
         {
-            var dict = memberCache.GetOrAdd(key, k => new ConcurrentDictionary<MemberInfo, MemberInfo>());
+            var dict = _memberCache.GetOrAdd(key, k => new ConcurrentDictionary<MemberInfo, MemberInfo>());
             return (TTarget)dict.GetOrAdd(source, k => creator(source, arg1, arg2, arg3));
         }
 
@@ -155,7 +155,7 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public static TTarget GetMember<TSource, TTarget>(string key, TSource[] source, Func<TSource[], TTarget> creator) where TSource : MemberInfo where TTarget : MemberInfo
         {
-            var dict = memberArrayCache.GetOrAdd(key, k => new ConcurrentDictionary<MemberInfo[], MemberInfo>(new MemberKeyComparer()));
+            var dict = _memberArrayCache.GetOrAdd(key, k => new ConcurrentDictionary<MemberInfo[], MemberInfo>(new MemberKeyComparer()));
             return (TTarget)dict.GetOrAdd(source, k => creator(source));
         }
 

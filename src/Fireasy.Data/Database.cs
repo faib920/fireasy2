@@ -37,11 +37,10 @@ namespace Fireasy.Data
     /// </summary>
     public class Database : DisposeableBase, IDatabase, IDistributedDatabase, IServiceProviderAccessor
     {
-        private readonly TransactionStack tranStack;
-        private readonly DatabaseScope dbScope;
-        private DbConnection connMaster;
-        private DbConnection connSlave;
-        private readonly ReaderNestedlocked readerLocker = new ReaderNestedlocked();
+        private readonly TransactionStack _tranStack;
+        private DbConnection _connMaster;
+        private DbConnection _connSlave;
+        private readonly ReaderNestedlocked _readerLocker = new ReaderNestedlocked();
 
         /// <summary>
         /// 初始化 <see cref="Database"/> 类的新实例。
@@ -49,9 +48,7 @@ namespace Fireasy.Data
         /// <param name="provider">数据库提供者。</param>
         protected Database(IProvider provider)
         {
-            tranStack = new TransactionStack();
-            dbScope = new DatabaseScope(this);
-
+            _tranStack = new TransactionStack();
             Provider = provider;
         }
 
@@ -87,7 +84,7 @@ namespace Fireasy.Data
         /// 获取分布式数据库连接字符串组。
         /// </summary>
         public ReadOnlyCollection<DistributedConnectionString> DistributedConnectionStrings { get; private set; }
-        
+
         /// <summary>
         /// 获取或设置应用程序服务提供者实例。
         /// </summary>
@@ -115,7 +112,7 @@ namespace Fireasy.Data
         {
             get
             {
-                var connection = connMaster ?? connSlave;
+                var connection = _connMaster ?? _connSlave;
                 if (connection == null)
                 {
                     connection = GetConnection();
@@ -132,10 +129,9 @@ namespace Fireasy.Data
         /// <returns>如果当前实例首次启动事务，则为 true，否则为 false。</returns>
         public virtual bool BeginTransaction(IsolationLevel level = IsolationLevel.ReadCommitted)
         {
-            tranStack.Push();
+            _tranStack.Push();
             if (Transaction != null)
             {
-                Tracer.Debug("事务已开启");
                 return false;
             }
 
@@ -158,7 +154,7 @@ namespace Fireasy.Data
         public virtual bool CommitTransaction()
         {
             if (Transaction == null ||
-                !tranStack.Pop())
+                !_tranStack.Pop())
             {
                 return false;
             }
@@ -177,7 +173,7 @@ namespace Fireasy.Data
         public virtual bool RollbackTransaction()
         {
             if (Transaction == null ||
-                !tranStack.Pop())
+                !_tranStack.Pop())
             {
                 return false;
             }
@@ -275,6 +271,8 @@ namespace Fireasy.Data
         /// <returns>一个 <typeparamref name="T"/> 类型的对象的枚举器。</returns>
         public async virtual IAsyncEnumerable<T> ExecuteAsyncEnumerable<T>(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, IDataRowMapper<T> rowMapper = null, [EnumeratorCancellation]CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
 
             rowMapper ??= RowMapperFactory.CreateRowMapper<T>();
@@ -335,6 +333,7 @@ namespace Fireasy.Data
         public async virtual Task<IEnumerable<T>> ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, IDataRowMapper<T> rowMapper = null, CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
+            cancellationToken.ThrowIfCancellationRequested();
 
             var result = new List<T>();
             rowMapper ??= RowMapperFactory.CreateRowMapper<T>();
@@ -360,6 +359,7 @@ namespace Fireasy.Data
         public virtual async Task<IEnumerable<dynamic>> ExecuteEnumerableAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
+            cancellationToken.ThrowIfCancellationRequested();
 
             var result = new List<dynamic>();
             using var reader = (InternalDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, null, cancellationToken);
@@ -397,6 +397,7 @@ namespace Fireasy.Data
         public virtual int ExecuteNonQuery(IQueryCommand queryCommand, ParameterCollection parameters = null)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
+
             var connection = GetConnection(DistributedMode.Master).TryOpen();
 
             using var command = CreateDbCommand(connection, queryCommand, parameters);
@@ -424,6 +425,8 @@ namespace Fireasy.Data
         public async virtual Task<int> ExecuteNonQueryAsync(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
+            cancellationToken.ThrowIfCancellationRequested();
+
             var connection = await GetConnection(DistributedMode.Master).TryOpenAsync();
 
             using var command = CreateDbCommand(connection, queryCommand, parameters);
@@ -452,9 +455,10 @@ namespace Fireasy.Data
         public virtual IDataReader ExecuteReader(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CommandBehavior? behavior = null)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
+
             var connection = GetConnection(DistributedMode.Slave).TryOpen();
 
-            var command = new InternalDbCommand(CreateDbCommand(connection, queryCommand, parameters), readerLocker);
+            var command = new InternalDbCommand(CreateDbCommand(connection, queryCommand, parameters), _readerLocker);
             try
             {
                 var cmdBehavior = GetCommandBehavior(behavior);
@@ -479,9 +483,11 @@ namespace Fireasy.Data
         public async virtual Task<IDataReader> ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CommandBehavior? behavior = null, CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
+            cancellationToken.ThrowIfCancellationRequested();
+
             var connection = await GetConnection(DistributedMode.Slave).TryOpenAsync();
 
-            var command = new InternalDbCommand(CreateDbCommand(connection, queryCommand, parameters), readerLocker);
+            var command = new InternalDbCommand(CreateDbCommand(connection, queryCommand, parameters), _readerLocker);
             try
             {
                 var cmdBehavior = GetCommandBehavior(behavior);
@@ -506,6 +512,7 @@ namespace Fireasy.Data
         public virtual object ExecuteScalar(IQueryCommand queryCommand, ParameterCollection parameters = null)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
+
             var connection = GetConnection(DistributedMode.Slave).TryOpen();
 
             using var command = CreateDbCommand(connection, queryCommand, parameters);
@@ -550,6 +557,8 @@ namespace Fireasy.Data
         public async virtual Task<object> ExecuteScalarAsync(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
+            cancellationToken.ThrowIfCancellationRequested();
+
             var connection = await GetConnection(DistributedMode.Slave).TryOpenAsync();
 
             using var command = CreateDbCommand(connection, queryCommand, parameters);
@@ -577,6 +586,8 @@ namespace Fireasy.Data
         /// <returns>第一行的第一列数据。</returns>
         public async virtual Task<T> ExecuteScalarAsync<T>(IQueryCommand queryCommand, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var result = await ExecuteScalarAsync(queryCommand, parameters, cancellationToken);
 
             return result == DBNull.Value ? default : result.To<T>();
@@ -777,19 +788,17 @@ namespace Fireasy.Data
                 Transaction = null;
             }
 
-            if (connMaster != null)
+            if (_connMaster != null)
             {
-                connMaster.Dispose();
-                connMaster = null;
+                _connMaster.Dispose();
+                _connMaster = null;
             }
 
-            if (connSlave != null)
+            if (_connSlave != null)
             {
-                connSlave.Dispose();
-                connSlave = null;
+                _connSlave.Dispose();
+                _connSlave = null;
             }
-
-            dbScope.Dispose();
 
             return base.Dispose(disposing);
         }
@@ -851,26 +860,26 @@ namespace Fireasy.Data
 
                 if (mode == DistributedMode.Slave)
                 {
-                    if (connSlave == null)
+                    if (_connSlave == null)
                     {
-                        connection = connSlave = Provider.PrepareConnection(this.CreateConnection(mode));
+                        connection = _connSlave = Provider.PrepareConnection(this.CreateConnection(mode));
                         isNew = true;
                     }
                     else
                     {
-                        connection = connSlave;
+                        connection = _connSlave;
                     }
                 }
                 else if (mode == DistributedMode.Master)
                 {
-                    if (connMaster == null)
+                    if (_connMaster == null)
                     {
-                        connection = connMaster = Provider.PrepareConnection(this.CreateConnection(mode));
+                        connection = _connMaster = Provider.PrepareConnection(this.CreateConnection(mode));
                         isNew = true;
                     }
                     else
                     {
-                        connection = connMaster;
+                        connection = _connMaster;
                     }
                 }
 
@@ -903,7 +912,7 @@ namespace Fireasy.Data
                 //命名为Table、Table1、Table2...
                 const string sysTableNameRoot = defaultTableName;
                 var tableNames = tableName.Split(',');
-                for (var i = 0; i < tableNames.Length; i++)
+                for (int i = 0, n = tableNames.Length; i < n; i++)
                 {
                     var sysTableName = i == 0 ? sysTableNameRoot : sysTableNameRoot + i;
                     adapter.TableMappings.Add(sysTableName, tableNames[i]);

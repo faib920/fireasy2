@@ -29,7 +29,7 @@ namespace Fireasy.Common.Mapper
 
             if (setting == null)
             {
-                return services;
+                services.AddSingleton(typeof(IObjectMapper), sp => CreateMapper(sp));
             }
             else
             {
@@ -67,7 +67,9 @@ namespace Fireasy.Common.Mapper
             var section = ConfigurationUnity.GetSection<ObjectMapperConfigurationSection>();
             if (section != null && section.Factory != null)
             {
-                mapper = ConfigurationUnity.Cached<IObjectMapper>($"Mapper_{configName}", () => section.Factory.CreateInstance(configName) as IObjectMapper);
+                mapper = ConfigurationUnity.Cached<IObjectMapper>($"Mapper_{configName}", serviceProvider,
+                    () => section.Factory.CreateInstance(serviceProvider, configName) as IObjectMapper);
+
                 if (mapper != null)
                 {
                     return mapper;
@@ -91,7 +93,7 @@ namespace Fireasy.Common.Mapper
                 return DefaultObjectMapper.Default;
             }
 
-            return ConfigurationUnity.Cached<IObjectMapper>($"Mapper_{configName}",
+            return ConfigurationUnity.Cached<IObjectMapper>($"Mapper_{configName}", serviceProvider,
                 () => ConfigurationUnity.CreateInstance<ObjectMapperConfigurationSetting, IObjectMapper>(serviceProvider, setting, s => s.MapperType));
         }
     }

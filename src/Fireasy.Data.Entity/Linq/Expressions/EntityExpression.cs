@@ -5,8 +5,8 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System.Linq.Expressions;
 using Fireasy.Data.Entity.Metadata;
+using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Expressions
 {
@@ -31,12 +31,12 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取实体元数据对象。
         /// </summary>
-        public EntityMetadata Metadata { get; private set; }
+        public EntityMetadata Metadata { get; }
 
         /// <summary>
         /// 获取定义的 Linq 表达式。
         /// </summary>
-        public Expression Expression { get; private set; }
+        public Expression Expression { get; }
 
         /// <summary>
         /// 更新 <see cref="EntityExpression"/> 对象。

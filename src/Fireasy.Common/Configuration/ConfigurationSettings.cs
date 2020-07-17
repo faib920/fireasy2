@@ -17,7 +17,7 @@ namespace Fireasy.Common.Configuration
     [Serializable]
     public sealed class ConfigurationSettings<T> : Dictionary<string, T> where T : IConfigurationSettingItem
     {
-        private readonly IDictionary<string, Exception> errors = new Dictionary<string, Exception>();
+        private readonly IDictionary<string, Exception> _errors = new Dictionary<string, Exception>();
 
         /// <summary>
         /// 添加一个无效的配置项，并保存其异常信息。
@@ -27,7 +27,7 @@ namespace Fireasy.Common.Configuration
         public void AddInvalidSetting(string key, Exception exception)
         {
             Add(key, new InvalidInstanceWrap<T>().Instance);
-            errors.Add(key, exception);
+            _errors.Add(key, exception);
         }
 
         /// <summary>
@@ -44,9 +44,9 @@ namespace Fireasy.Common.Configuration
                     return default;
                 }
 
-                if (errors.ContainsKey(key))
+                if (_errors.ContainsKey(key))
                 {
-                    throw errors[key];
+                    throw _errors[key];
                 }
 
                 return base[key];

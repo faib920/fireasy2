@@ -14,7 +14,7 @@ namespace Fireasy.Common.Serialization
     /// 一个抽象类，将对象序列化为二进制数据，也用于将二进制数据反序列化为对象。
     /// </summary>
     public abstract class BinarySerializer : IBinarySerializer
-    {   
+    {
         /// <summary>
         /// 获取或设置序列化令牌。
         /// </summary>

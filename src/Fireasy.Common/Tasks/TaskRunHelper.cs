@@ -12,8 +12,11 @@ namespace Fireasy.Common.Tasks
 {
     public class TaskRunHelper
     {
-        private static readonly MethodInfo StartMethod = typeof(ITaskScheduler).GetMethod(nameof(ITaskScheduler.StartExecutor));
-        private static readonly MethodInfo StartAsyncMethod = typeof(ITaskScheduler).GetMethod(nameof(ITaskScheduler.StartExecutorAsync));
+        private class MethodCache
+        {
+            internal protected static readonly MethodInfo Start = typeof(ITaskScheduler).GetMethod(nameof(ITaskScheduler.StartExecutor));
+            internal protected static readonly MethodInfo StartAsync = typeof(ITaskScheduler).GetMethod(nameof(ITaskScheduler.StartExecutorAsync));
+        }
 
         public static void Run(ITaskScheduler scheduler, TaskExecutorDefiniton definition)
         {
@@ -25,11 +28,11 @@ namespace Fireasy.Common.Tasks
             var startOption = typeof(StartOptions<>).MakeGenericType(definition.ExecutorType).New(definition.Delay, definition.Period);
             if (typeof(IAsyncTaskExecutor).IsAssignableFrom(definition.ExecutorType))
             {
-                StartAsyncMethod.MakeGenericMethod(definition.ExecutorType).Invoke(scheduler, new object[] { startOption });
+                MethodCache.StartAsync.MakeGenericMethod(definition.ExecutorType).Invoke(scheduler, new object[] { startOption });
             }
             else if (typeof(ITaskExecutor).IsAssignableFrom(definition.ExecutorType))
             {
-                StartMethod.MakeGenericMethod(definition.ExecutorType).Invoke(scheduler, new object[] { startOption });
+                MethodCache.Start.MakeGenericMethod(definition.ExecutorType).Invoke(scheduler, new object[] { startOption });
             }
         }
     }

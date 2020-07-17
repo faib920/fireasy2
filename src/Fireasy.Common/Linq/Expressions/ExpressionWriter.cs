@@ -5,6 +5,8 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.ComponentModel;
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,8 +16,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using Fireasy.Common.Extensions;
-using Fireasy.Common.ComponentModel;
 
 namespace Fireasy.Common.Linq.Expressions
 {
@@ -24,9 +24,9 @@ namespace Fireasy.Common.Linq.Expressions
     /// </summary>
     public class ExpressionWriter : ExpressionVisitor
     {
-        private readonly TextWriter writer;
-        private int depth;
-        private static readonly char[] splitters = new char[] { '\n', '\r' };
+        private readonly TextWriter _writer;
+        private int _depth;
+        private static readonly char[] _splitters = new char[] { '\n', '\r' };
 
         /// <summary>
         /// 初始化 <see cref="ExpressionWriter"/> 类的新实例。
@@ -34,7 +34,7 @@ namespace Fireasy.Common.Linq.Expressions
         /// <param name="writer"></param>
         protected ExpressionWriter(TextWriter writer)
         {
-            this.writer = writer;
+            _writer = writer;
             IndentationWidth = 2;
         }
 
@@ -92,11 +92,11 @@ namespace Fireasy.Common.Linq.Expressions
         /// <param name="style">缩进方式。</param>
         protected void WriteLine(Indentation style)
         {
-            writer.WriteLine();
+            _writer.WriteLine();
             Indent(style);
-            for (int i = 0, n = depth * IndentationWidth; i < n; i++)
+            for (int i = 0, n = _depth * IndentationWidth; i < n; i++)
             {
-                writer.Write(" ");
+                _writer.Write(" ");
             }
         }
 
@@ -108,7 +108,7 @@ namespace Fireasy.Common.Linq.Expressions
         {
             if (text.IndexOf('\n') >= 0)
             {
-                string[] lines = text.Split(splitters, StringSplitOptions.RemoveEmptyEntries);
+                string[] lines = text.Split(_splitters, StringSplitOptions.RemoveEmptyEntries);
                 for (int i = 0, n = lines.Length; i < n; i++)
                 {
                     Write(lines[i]);
@@ -120,7 +120,7 @@ namespace Fireasy.Common.Linq.Expressions
             }
             else
             {
-                writer.Write(text);
+                _writer.Write(text);
             }
         }
 
@@ -132,12 +132,12 @@ namespace Fireasy.Common.Linq.Expressions
         {
             if (style == Indentation.Inner)
             {
-                depth++;
+                _depth++;
             }
             else if (style == Indentation.Outer)
             {
-                depth--;
-                System.Diagnostics.Debug.Assert(depth >= 0);
+                _depth--;
+                System.Diagnostics.Debug.Assert(_depth >= 0);
             }
         }
 

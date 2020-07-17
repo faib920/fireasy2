@@ -15,15 +15,16 @@ namespace Fireasy.Common.Dynamic
 {
     public static class BinderWrapper
     {
-        private static readonly object getCSharpArgumentInfoArray;
-        private static readonly object setCSharpArgumentInfoArray;
-        private static MethodInvoker getMemberCall;
-        private static MethodInvoker setMemberCall;
+        private static readonly object _getCSharpArgumentInfoArray;
+        private static readonly object _setCSharpArgumentInfoArray;
+        private static MethodInvoker _getMemberCall;
+        private static MethodInvoker _setMemberCall;
 
         static BinderWrapper()
         {
-            getCSharpArgumentInfoArray = CreateSharpArgumentInfoArray(0);
-            setCSharpArgumentInfoArray = CreateSharpArgumentInfoArray(0, 3);
+            _getCSharpArgumentInfoArray = CreateSharpArgumentInfoArray(0);
+            _setCSharpArgumentInfoArray = CreateSharpArgumentInfoArray(0, 3);
+
             CreateMemberCalls();
         }
 
@@ -46,20 +47,20 @@ namespace Fireasy.Common.Dynamic
             var csharpArgumentInfoTypeEnumerableType = typeof(IEnumerable<>).MakeGenericType(typeof(CSharpArgumentInfo));
 
             var getMemberMethod = typeof(Binder).GetMethod(nameof(Binder.GetMember), new[] { typeof(CSharpBinderFlags), typeof(string), typeof(Type), csharpArgumentInfoTypeEnumerableType });
-            getMemberCall = ReflectionCache.GetInvoker(getMemberMethod);
+            _getMemberCall = ReflectionCache.GetInvoker(getMemberMethod);
 
             var setMemberMethod = typeof(Binder).GetMethod(nameof(Binder.SetMember), new[] { typeof(CSharpBinderFlags), typeof(string), typeof(Type), csharpArgumentInfoTypeEnumerableType });
-            setMemberCall = ReflectionCache.GetInvoker(setMemberMethod);
+            _setMemberCall = ReflectionCache.GetInvoker(setMemberMethod);
         }
 
         public static CallSiteBinder GetMember(string name)
         {
-            return (CallSiteBinder)getMemberCall.Invoke(null, 0, name, typeof(BinderWrapper), getCSharpArgumentInfoArray);
+            return (CallSiteBinder)_getMemberCall.Invoke(null, 0, name, typeof(BinderWrapper), _getCSharpArgumentInfoArray);
         }
 
         public static CallSiteBinder SetMember(string name)
         {
-            return (CallSiteBinder)setMemberCall.Invoke(null, 0, name, typeof(BinderWrapper), setCSharpArgumentInfoArray);
+            return (CallSiteBinder)_setMemberCall.Invoke(null, 0, name, typeof(BinderWrapper), _setCSharpArgumentInfoArray);
         }
     }
 }

@@ -5,9 +5,8 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Expressions;
-using Fireasy.Data.Provider;
+using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
@@ -16,6 +15,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class SQLiteTranslator : TranslatorBase
     {
+        public SQLiteTranslator(TranslateContext transContext)
+            : base(transContext)
+        {
+        }
+
         /// <summary>
         /// 访问 <see cref="SelectExpression"/>。
         /// </summary>

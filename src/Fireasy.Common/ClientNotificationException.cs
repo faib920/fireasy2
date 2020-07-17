@@ -19,7 +19,7 @@ namespace Fireasy.Common
         /// </summary>
         /// <param name="message">通知信息。</param>
         public ClientNotificationException(string message)
-            : base (message)
+            : base(message)
         {
         }
     }

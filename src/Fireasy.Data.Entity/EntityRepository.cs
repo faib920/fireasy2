@@ -7,7 +7,6 @@ using Fireasy.Common.Extensions;
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Query;
 using Fireasy.Data.Entity.Subscribes;
 using Fireasy.Data.Entity.Validation;
@@ -35,11 +34,11 @@ namespace Fireasy.Data.Entity
         IListSource
         where TEntity : IEntity
     {
-        private readonly IRepositoryProvider<TEntity> repositoryProxy;
-        private readonly EntityContextOptions options;
-        private readonly IProvider provider;
-        private readonly IContextService contextService;
-        private readonly InnerSubscribeManager subMgr;
+        private readonly IRepositoryProvider<TEntity> _repositoryProxy;
+        private readonly EntityContextOptions _options;
+        private readonly IProvider _provider;
+        private readonly IContextService _contextService;
+        private readonly InnerSubscribeManager _subMgr;
 
         /// <summary>
         /// 初始化 <see cref="EntityRepository{TEntity}"/> 类的新实例。
@@ -48,13 +47,13 @@ namespace Fireasy.Data.Entity
         /// <param name="options"></param>
         public EntityRepository(IContextService contextService, IRepositoryProvider<TEntity> repositoryProxy, EntityContextOptions options)
         {
-            this.contextService = contextService;
-            this.repositoryProxy = repositoryProxy;
-            this.options = options;
-            provider = options.Provider;
+            _contextService = contextService;
+            _repositoryProxy = repositoryProxy;
+            _options = options;
+            _provider = options.Provider;
             EntityType = typeof(TEntity);
 
-            subMgr = PersistentSubscribeManager.GetRequiredManager(contextService.ContextType);
+            _subMgr = PersistentSubscribeManager.GetRequiredManager(contextService.ContextType);
         }
 
         /// <summary>
@@ -62,20 +61,20 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public Type ContextType
         {
-            get { return contextService.ContextType; }
+            get { return _contextService.ContextType; }
         }
 
         /// <summary>
         /// 获取关联的实体类型。
         /// </summary>
-        public Type EntityType { get; private set; }
+        public Type EntityType { get; }
 
         /// <summary>
         /// 获取 <see cref="IQueryProvider"/> 对象。
         /// </summary>
         public IQueryProvider Provider
         {
-            get { return repositoryProxy.QueryProvider; }
+            get { return _repositoryProxy.QueryProvider; }
         }
 
         #region Get
@@ -86,7 +85,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public virtual TEntity Get(params PropertyValue[] primaryValues)
         {
-            return repositoryProxy.Get(primaryValues);
+            return _repositoryProxy.Get(primaryValues);
         }
 
         /// <summary>
@@ -96,7 +95,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public virtual async Task<TEntity> GetAsync(params PropertyValue[] primaryValues)
         {
-            return await repositoryProxy.GetAsync(primaryValues);
+            return await _repositoryProxy.GetAsync(primaryValues);
         }
         #endregion
 
@@ -110,13 +109,13 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            if (options.AllowDefaultValue)
+            if (_options.AllowDefaultValue)
             {
                 SetDefaultValue(entity);
             }
 
-            return subMgr.OnCreate<TEntity, int>(contextService.ServiceProvider, options.NotifyEvents, entity,
-                () => repositoryProxy.Insert(HandleValidate(entity)));
+            return _subMgr.OnCreate<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
+                () => _repositoryProxy.Insert(HandleValidate(entity)));
         }
 
         /// <summary>
@@ -129,13 +128,13 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            if (options.AllowDefaultValue)
+            if (_options.AllowDefaultValue)
             {
                 SetDefaultValue(entity);
             }
 
-            return await subMgr.OnCreateAsync<TEntity, int>(contextService.ServiceProvider, options.NotifyEvents, entity,
-                () => repositoryProxy.InsertAsync(HandleValidate(entity), cancellationToken));
+            return await _subMgr.OnCreateAsync<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
+                () => _repositoryProxy.InsertAsync(HandleValidate(entity), cancellationToken));
         }
 
         /// <summary>
@@ -210,7 +209,7 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entities, nameof(entities));
 
-            repositoryProxy.BatchInsert(entities, batchSize, completePercentage);
+            _repositoryProxy.BatchInsert(entities, batchSize, completePercentage);
         }
 
         /// <summary>
@@ -224,7 +223,7 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entities, nameof(entities));
 
-            await repositoryProxy.BatchInsertAsync(entities, batchSize, completePercentage, cancellationToken);
+            await _repositoryProxy.BatchInsertAsync(entities, batchSize, completePercentage, cancellationToken);
         }
 
         #endregion
@@ -289,8 +288,8 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return subMgr.OnRemove<TEntity, int>(contextService.ServiceProvider, options.NotifyEvents, entity,
-                () => repositoryProxy.Delete(entity, logicalDelete));
+            return _subMgr.OnRemove<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
+                () => _repositoryProxy.Delete(entity, logicalDelete));
         }
 
         /// <summary>
@@ -304,8 +303,8 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return await subMgr.OnRemoveAsync<TEntity, int>(contextService.ServiceProvider, options.NotifyEvents, entity,
-                () => repositoryProxy.DeleteAsync(entity, logicalDelete, cancellationToken));
+            return await _subMgr.OnRemoveAsync<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
+                () => _repositoryProxy.DeleteAsync(entity, logicalDelete, cancellationToken));
         }
 
         /// <summary>
@@ -315,10 +314,10 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public virtual int Delete(params PropertyValue[] primaryValues)
         {
-            var ret = repositoryProxy.Delete(primaryValues);
-            if (ret > 0 && options.NotifyEvents)
+            var ret = _repositoryProxy.Delete(primaryValues);
+            if (ret > 0 && _options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterRemove);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -331,10 +330,10 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public async virtual Task<int> DeleteAsync(params PropertyValue[] primaryValues)
         {
-            var ret = await repositoryProxy.DeleteAsync(primaryValues, default);
-            if (ret > 0 && options.NotifyEvents)
+            var ret = await _repositoryProxy.DeleteAsync(primaryValues, default);
+            if (ret > 0 && _options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterRemove);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -348,10 +347,10 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public virtual int Delete(PropertyValue[] primaryValues, bool logicalDelete = true)
         {
-            var ret = repositoryProxy.Delete(primaryValues, logicalDelete);
-            if (ret > 0 && options.NotifyEvents)
+            var ret = _repositoryProxy.Delete(primaryValues, logicalDelete);
+            if (ret > 0 && _options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterRemove);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -366,10 +365,10 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public async virtual Task<int> DeleteAsync(PropertyValue[] primaryValues, bool logicalDelete = true, CancellationToken cancellationToken = default)
         {
-            var ret = await repositoryProxy.DeleteAsync(primaryValues, logicalDelete, cancellationToken);
-            if (ret > 0 && options.NotifyEvents)
+            var ret = await _repositoryProxy.DeleteAsync(primaryValues, logicalDelete, cancellationToken);
+            if (ret > 0 && _options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterRemove);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -383,10 +382,10 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public virtual int Delete(Expression<Func<TEntity, bool>> predicate, bool logicalDelete = true)
         {
-            var ret = repositoryProxy.Delete(predicate, logicalDelete);
-            if (ret > 0 && options.NotifyEvents)
+            var ret = _repositoryProxy.Delete(predicate, logicalDelete);
+            if (ret > 0 && _options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterRemove);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -401,10 +400,10 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public async virtual Task<int> DeleteAsync(Expression<Func<TEntity, bool>> predicate, bool logicalDelete = true, CancellationToken cancellationToken = default)
         {
-            var ret = await repositoryProxy.DeleteAsync(predicate, logicalDelete);
-            if (ret > 0 && options.NotifyEvents)
+            var ret = await _repositoryProxy.DeleteAsync(predicate, logicalDelete);
+            if (ret > 0 && _options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterRemove);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -422,8 +421,8 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return subMgr.OnUpdate<TEntity, int>(contextService.ServiceProvider, options.NotifyEvents, entity,
-                () => repositoryProxy.Update(HandleValidate(entity)));
+            return _subMgr.OnUpdate<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
+                () => _repositoryProxy.Update(HandleValidate(entity)));
         }
 
         /// <summary>
@@ -436,8 +435,8 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return await subMgr.OnUpdateAsync<TEntity, int>(contextService.ServiceProvider, options.NotifyEvents, entity,
-                () => repositoryProxy.UpdateAsync(HandleValidate(entity), cancellationToken));
+            return await _subMgr.OnUpdateAsync<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
+                () => _repositoryProxy.UpdateAsync(HandleValidate(entity), cancellationToken));
         }
 
         /// <summary>
@@ -448,10 +447,10 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public virtual int Update(TEntity entity, Expression<Func<TEntity, bool>> predicate)
         {
-            var ret = repositoryProxy.Update(entity, predicate);
-            if (ret > 0 && options.NotifyEvents)
+            var ret = _repositoryProxy.Update(entity, predicate);
+            if (ret > 0 && _options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterUpdate);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterUpdate);
             }
 
             return ret;
@@ -466,10 +465,10 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public async virtual Task<int> UpdateAsync(TEntity entity, Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         {
-            var ret = await repositoryProxy.UpdateAsync(entity, predicate);
-            if (ret > 0 && options.NotifyEvents)
+            var ret = await _repositoryProxy.UpdateAsync(entity, predicate);
+            if (ret > 0 && _options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterUpdate);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterUpdate);
             }
 
             return ret;
@@ -547,10 +546,10 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public virtual int Update(Expression<Func<TEntity, TEntity>> calculator, Expression<Func<TEntity, bool>> predicate)
         {
-            var ret = repositoryProxy.Update(calculator, predicate);
-            if (ret > 0 && options.NotifyEvents)
+            var ret = _repositoryProxy.Update(calculator, predicate);
+            if (ret > 0 && _options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterUpdate);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterUpdate);
             }
 
             return ret;
@@ -565,10 +564,10 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public async virtual Task<int> UpdateAsync(Expression<Func<TEntity, TEntity>> calculator, Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         {
-            var ret = await repositoryProxy.UpdateAsync(calculator, predicate, cancellationToken);
-            if (ret > 0 && options.NotifyEvents)
+            var ret = await _repositoryProxy.UpdateAsync(calculator, predicate, cancellationToken);
+            if (ret > 0 && _options.NotifyEvents)
             {
-                subMgr.Publish<TEntity>(contextService.ServiceProvider, PersistentEventType.AfterUpdate);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterUpdate);
             }
 
             return ret;
@@ -594,9 +593,9 @@ namespace Fireasy.Data.Entity
             var operateName = OperateFinder.Find(fnOperation);
             var eventType = GetEventType(operateName);
 
-            return subMgr.OnBatch<TEntity, int>(contextService.ServiceProvider, options.NotifyEvents,
+            return _subMgr.OnBatch<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents,
                 instances.Cast<IEntity>(), eventType,
-                () => repositoryProxy.Batch(instances, fnOperation, batchOpt));
+                () => _repositoryProxy.Batch(instances, fnOperation, batchOpt));
         }
 
         /// <summary>
@@ -617,9 +616,9 @@ namespace Fireasy.Data.Entity
             var operateName = OperateFinder.Find(fnOperation);
             var eventType = GetEventType(operateName);
 
-            return await subMgr.OnBatchAsync<TEntity, int>(contextService.ServiceProvider, options.NotifyEvents,
+            return await _subMgr.OnBatchAsync<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents,
                 instances.Cast<IEntity>(), eventType,
-                () => repositoryProxy.BatchAsync(instances, fnOperation, batchOpt, cancellationToken));
+                () => _repositoryProxy.BatchAsync(instances, fnOperation, batchOpt, cancellationToken));
         }
         #endregion
 
@@ -630,7 +629,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public virtual EntityRepository<TEntity> Include(Expression<Func<TEntity, object>> fnMember)
         {
-            repositoryProxy.As<IQueryPolicyExecutor<TEntity>>(s => s.IncludeWith(fnMember));
+            _repositoryProxy.As<IQueryPolicyExecutor<TEntity>>(s => s.IncludeWith(fnMember));
             return this;
         }
 
@@ -645,7 +644,7 @@ namespace Fireasy.Data.Entity
         {
             if (isTrue)
             {
-                repositoryProxy.As<IQueryPolicyExecutor<TEntity>>(s => s.IncludeWith(fnMember));
+                _repositoryProxy.As<IQueryPolicyExecutor<TEntity>>(s => s.IncludeWith(fnMember));
             }
 
             return this;
@@ -658,7 +657,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public virtual EntityRepository<TEntity> Associate(Expression<Func<TEntity, IEnumerable>> memberQuery)
         {
-            repositoryProxy.As<IQueryPolicyExecutor<TEntity>>(s => s.AssociateWith(memberQuery));
+            _repositoryProxy.As<IQueryPolicyExecutor<TEntity>>(s => s.AssociateWith(memberQuery));
             return this;
         }
 
@@ -669,7 +668,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityRepository<TEntity> ConfigOptions(Action<EntityContextOptions> configuration)
         {
-            configuration?.Invoke(options);
+            configuration?.Invoke(_options);
             return this;
         }
 
@@ -859,7 +858,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         protected virtual TEntity HandleValidate(TEntity entity)
         {
-            if (options.ValidateEntity)
+            if (_options.ValidateEntity)
             {
                 ValidationUnity.Validate(entity);
             }
@@ -935,27 +934,27 @@ namespace Fireasy.Data.Entity
 
         IEnumerator<TEntity> IEnumerable<TEntity>.GetEnumerator()
         {
-            return (IEnumerator<TEntity>)repositoryProxy.Queryable.GetEnumerator();
+            return (IEnumerator<TEntity>)_repositoryProxy.Queryable.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return repositoryProxy.Queryable.GetEnumerator();
+            return _repositoryProxy.Queryable.GetEnumerator();
         }
 
         Type IQueryable.ElementType
         {
-            get { return repositoryProxy.Queryable.ElementType; }
+            get { return _repositoryProxy.Queryable.ElementType; }
         }
 
         Expression IQueryable.Expression
         {
-            get { return repositoryProxy.Queryable.Expression; }
+            get { return _repositoryProxy.Queryable.Expression; }
         }
 
         IList IListSource.GetList()
         {
-            if (repositoryProxy.Queryable is IListSource source)
+            if (_repositoryProxy.Queryable is IListSource source)
             {
                 return source.GetList();
             }

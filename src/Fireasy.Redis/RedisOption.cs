@@ -65,17 +65,17 @@ namespace Fireasy.Redis
         public bool Twemproxy { get; set; }
 
         /// <summary>
-        /// 获取或设置上锁时间（秒）。默认为 10 秒钟。
+        /// 获取或设置上锁时间。默认为 10 秒钟。
         /// </summary>
         public TimeSpan LockTimeout { get; set; } = TimeSpan.FromSeconds(10);
 
         /// <summary>
-        /// 获取或设置连接超时时间（毫秒）。默认为 5000 毫秒。
+        /// 获取或设置连接超时时间。默认为 5000 毫秒。
         /// </summary>
         public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromMilliseconds(5000);
 
         /// <summary>
-        /// 获取或设置发送/接收超时时间（毫秒）。默认为 10000 毫秒。
+        /// 获取或设置发送/接收超时时间。默认为 10000 毫秒。
         /// </summary>
         public TimeSpan SyncTimeout { get; set; } = TimeSpan.FromMilliseconds(10000);
 
@@ -101,6 +101,11 @@ namespace Fireasy.Redis
         /// 获取或设置滑行的时间。
         /// </summary>
         public TimeSpan SlidingTime { get; set; }
+        
+        /// <summary>
+        /// 获取或设置是否在使用 TryGet 时忽略异常。
+        /// </summary>
+        public bool IgnoreException { get; set; } = true;
     }
 
     /// <summary>
@@ -109,9 +114,14 @@ namespace Fireasy.Redis
     public class RedisSubscribeOptions : RedisOptionsBase
     {
         /// <summary>
-        /// 获取或设置异常时重入队列的延迟时间（毫秒）。未指定表示不重入队列。
+        /// 获取或设置异常时重入队列的延迟时间。默认为 20 秒，未指定表示不重入队列。
         /// </summary>
-        public TimeSpan? RequeueDelayTime { get; set; }
+        public TimeSpan RetryDelayTime { get; set; }
+
+        /// <summary>
+        /// 获取或设置可重试的次数。未指定表示不受限制。
+        /// </summary>
+        public int? RetryTimes { get; set; }
 
         /// <summary>
         /// 获取或设置初始化方法。

@@ -40,12 +40,12 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 获取 <see cref="EntityContext"/> 的类型。
         /// </summary>
-        public Type ContextType { get; private set; }
+        public Type ContextType { get; }
 
         /// <summary>
         /// 获取应用程序服务提供者实例。
         /// </summary>
-        public IServiceProvider ServiceProvider { get; private set; }
+        public IServiceProvider ServiceProvider { get; }
 
         /// <summary>
         /// 获取 <see cref="EntityContext"/> 的参数。

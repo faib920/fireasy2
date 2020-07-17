@@ -59,14 +59,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private class PolicyConditionReplacer : Common.Linq.Expressions.ExpressionVisitor
         {
-            private Expression where;
-            private IEnumerable<ColumnDeclaration> columns;
+            private Expression _where;
+            private IEnumerable<ColumnDeclaration> _columns;
 
             public static Expression Replace(Expression where, Expression expression, IEnumerable<ColumnDeclaration> columns)
             {
-                var visitor = new PolicyConditionReplacer { where = where, columns = columns };
+                var visitor = new PolicyConditionReplacer { _where = where, _columns = columns };
                 visitor.Visit(PartialEvaluator.Eval(expression));
-                return visitor.where;
+                return visitor._where;
             }
 
             protected override Expression VisitBinary(BinaryExpression node)
@@ -95,7 +95,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 if (isUpdated)
                 {
                     node = node.Update(left, node.Conversion, right);
-                    where = where == null ? node : Expression.And(where, node);
+                    _where = _where == null ? node : Expression.And(_where, node);
                 }
 
                 return node;
@@ -106,7 +106,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 var property = PropertyUnity.GetProperty(node.Member.DeclaringType, node.Member.Name);
                 if (property != null)
                 {
-                    var column = columns.FirstOrDefault(s => s.Name == node.Member.Name);
+                    var column = _columns.FirstOrDefault(s => s.Name == node.Member.Name);
                     return column != null ? column.Expression : node;
                 }
 
@@ -129,7 +129,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 if (node.Method.DeclaringType == typeof(AnonymousMember) && node.Method.Name == "get_Item")
                 {
                     var name = (node.Arguments[0] as ConstantExpression).Value.ToString();
-                    var column = columns.FirstOrDefault(s => s.Name == name);
+                    var column = _columns.FirstOrDefault(s => s.Name == name);
                     return column != null ? column.Expression : node;
                 }
 

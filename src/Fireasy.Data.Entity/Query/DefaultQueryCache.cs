@@ -24,12 +24,18 @@ namespace Fireasy.Data.Entity.Query
     /// </summary>
     internal class DefaultQueryCache : IQueryCache
     {
-        internal static readonly IQueryCache Instance = new DefaultQueryCache(ContainerUnity.GetContainer());
-        private readonly IServiceProvider serviceProvider;
+        internal static readonly IQueryCache Instance = new DefaultQueryCache();
+
+        private readonly IServiceProvider _serviceProvider;
+
+        public DefaultQueryCache()
+            : this (ContainerUnity.GetContainer())
+        {
+        }
 
         public DefaultQueryCache(IServiceProvider serviceProvider)
         {
-            this.serviceProvider = serviceProvider;
+            _serviceProvider = serviceProvider;
         }
 
         /// <summary>
@@ -46,18 +52,18 @@ namespace Fireasy.Data.Entity.Query
 
             var result = CacheableChecker.Check(expression);
 
-            if (!result.Required || 
-                (result.Enabled == null && (context.Enabled == false || (context.Enabled == null && !option.CacheParsing))) || 
+            if (!result.Required ||
+                (result.Enabled == null && (context.Enabled == false || (context.Enabled == null && !option.CacheParsing))) ||
                 result.Enabled == false)
             {
                 return creator().Compile();
             }
 
-            var generator = serviceProvider.TryGetService<IQueryCacheKeyGenerator>(() => ExpressionKeyGenerator.Instance);
-            var cacheKey = serviceProvider.GetCacheKey(generator.Generate(expression, "Trans"));
+            var generator = _serviceProvider.TryGetService<IQueryCacheKeyGenerator>(() => ExpressionKeyGenerator.Instance);
+            var cacheKey = _serviceProvider.GetCacheKey(generator.Generate(expression, "Trans"));
 
             Tracer.Debug($"QueryCache access to '{cacheKey}'");
-            var cacheMgr = MemoryCacheManager.Instance.TrySetServiceProvider(serviceProvider);
+            var cacheMgr = _serviceProvider.TryGetService<IMemoryCacheManager>(() => MemoryCacheManager.Instance);
 
             return cacheMgr.TryGet(cacheKey, () =>
                 {

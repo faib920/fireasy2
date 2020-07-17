@@ -72,7 +72,7 @@ namespace Fireasy.Common.Serialization
         /// <returns></returns>
         public override bool CanConvert(Type type)
         {
-            return type == typeof(T) || 
+            return type == typeof(T) ||
                 (type.IsNullableType() && type.GetNonNullableType() == typeof(T));
         }
     }

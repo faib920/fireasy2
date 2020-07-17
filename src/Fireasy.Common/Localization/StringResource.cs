@@ -16,8 +16,8 @@ namespace Fireasy.Common.Localization
     /// </summary>
     public sealed class StringResource
     {
-        private ResourceManager manager;
-        private CultureInfo cultureInfo;
+        private ResourceManager _manager;
+        private CultureInfo _cultureInfo;
 
         internal StringResource()
         {
@@ -31,7 +31,7 @@ namespace Fireasy.Common.Localization
         /// <returns></returns>
         public string GetString(string name, params object[] args)
         {
-            var res = manager.GetString(name, cultureInfo);
+            var res = _manager.GetString(name, _cultureInfo);
             if (res == null)
             {
                 return name;
@@ -60,10 +60,10 @@ namespace Fireasy.Common.Localization
             }
 
             var instance = new StringResource
-                {
-                    manager = new ResourceManager(assembly.GetName().Name + "." + resourceName, assembly),
-                    cultureInfo = cultureInfo ?? CultureInfo.CurrentCulture
-                };
+            {
+                _manager = new ResourceManager(assembly.GetName().Name + "." + resourceName, assembly),
+                _cultureInfo = cultureInfo ?? CultureInfo.CurrentCulture
+            };
 
             return instance;
         }

@@ -5,15 +5,15 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common;
+using Fireasy.Common.Extensions;
+using Fireasy.Data.Provider;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using Fireasy.Common;
-using Fireasy.Data.Provider;
 using System.Threading;
 using System.Threading.Tasks;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Data
 {
@@ -22,7 +22,7 @@ namespace Fireasy.Data
     /// </summary>
     public sealed class NoDisposeDatabase : IDatabase, IServiceProviderAccessor
     {
-        private readonly IDatabase innerDatabase;
+        private readonly IDatabase _innerDatabase;
 
         /// <summary>
         /// 初始化 <see cref="NoDisposeDatabase"/> 类的新实例。
@@ -31,166 +31,166 @@ namespace Fireasy.Data
         public NoDisposeDatabase(IDatabase database)
         {
             Guard.ArgumentNull(database, nameof(database));
-            innerDatabase = database;
+            _innerDatabase = database;
         }
 
         ConnectionString IDatabase.ConnectionString
         {
-            get { return innerDatabase.ConnectionString; }
-            set { innerDatabase.ConnectionString = value; }
+            get { return _innerDatabase.ConnectionString; }
+            set { _innerDatabase.ConnectionString = value; }
         }
 
         IServiceProvider IServiceProviderAccessor.ServiceProvider
         {
-            get { return innerDatabase.TryGetServiceProvider(); }
-            set { innerDatabase.TrySetServiceProvider(value); }
+            get { return _innerDatabase.TryGetServiceProvider(); }
+            set { _innerDatabase.TrySetServiceProvider(value); }
         }
 
         IProvider IDatabase.Provider
         {
-            get { return innerDatabase.Provider; }
+            get { return _innerDatabase.Provider; }
         }
 
         int IDatabase.Timeout
         {
-            get { return innerDatabase.Timeout; }
-            set { innerDatabase.Timeout = value; }
+            get { return _innerDatabase.Timeout; }
+            set { _innerDatabase.Timeout = value; }
         }
 
         DbTransaction IDatabase.Transaction
         {
-            get { return innerDatabase.Transaction; }
+            get { return _innerDatabase.Transaction; }
         }
 
         DbConnection IDatabase.Connection
         {
-            get { return innerDatabase.Connection; }
+            get { return _innerDatabase.Connection; }
         }
 
         bool IDatabase.BeginTransaction(IsolationLevel level)
         {
-            return innerDatabase.BeginTransaction(level);
+            return _innerDatabase.BeginTransaction(level);
         }
 
         bool IDatabase.CommitTransaction()
         {
-            return innerDatabase.CommitTransaction();
+            return _innerDatabase.CommitTransaction();
         }
 
         bool IDatabase.RollbackTransaction()
         {
-            return innerDatabase.RollbackTransaction();
+            return _innerDatabase.RollbackTransaction();
         }
 
         DataTable IDatabase.ExecuteDataTable(IQueryCommand queryCommand, string tableName, IDataSegment segment, ParameterCollection parameters)
         {
-            return innerDatabase.ExecuteDataTable(queryCommand, tableName, segment, parameters);
+            return _innerDatabase.ExecuteDataTable(queryCommand, tableName, segment, parameters);
         }
 
         IEnumerable<T> IDatabase.ExecuteEnumerable<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper)
         {
-            return innerDatabase.ExecuteEnumerable(queryCommand, segment, parameters, rowMapper);
+            return _innerDatabase.ExecuteEnumerable(queryCommand, segment, parameters, rowMapper);
         }
 
         IEnumerable<object> IDatabase.ExecuteEnumerable(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters)
         {
-            return innerDatabase.ExecuteEnumerable(queryCommand, segment, parameters);
+            return _innerDatabase.ExecuteEnumerable(queryCommand, segment, parameters);
         }
 
         int IDatabase.ExecuteNonQuery(IQueryCommand queryCommand, ParameterCollection parameters)
         {
-            return innerDatabase.ExecuteNonQuery(queryCommand, parameters);
+            return _innerDatabase.ExecuteNonQuery(queryCommand, parameters);
         }
 
         IDataReader IDatabase.ExecuteReader(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CommandBehavior? behavior)
         {
-            return innerDatabase.ExecuteReader(queryCommand, segment, parameters, behavior);
+            return _innerDatabase.ExecuteReader(queryCommand, segment, parameters, behavior);
         }
 
         object IDatabase.ExecuteScalar(IQueryCommand queryCommand, ParameterCollection parameters)
         {
-            return innerDatabase.ExecuteScalar(queryCommand, parameters);
+            return _innerDatabase.ExecuteScalar(queryCommand, parameters);
         }
 
         T IDatabase.ExecuteScalar<T>(IQueryCommand queryCommand, ParameterCollection parameters)
         {
-            return innerDatabase.ExecuteScalar<T>(queryCommand, parameters);
+            return _innerDatabase.ExecuteScalar<T>(queryCommand, parameters);
         }
 
         void IDatabase.FillDataSet(DataSet dataSet, IQueryCommand queryCommand, string tableName, IDataSegment segment, ParameterCollection parameters)
         {
-            innerDatabase.FillDataSet(dataSet, queryCommand, tableName, segment, parameters);
+            _innerDatabase.FillDataSet(dataSet, queryCommand, tableName, segment, parameters);
         }
 
         void IDatabase.Update(DataTable dataTable)
         {
-            innerDatabase.Update(dataTable);
+            _innerDatabase.Update(dataTable);
         }
 
         int IDatabase.Update(DataTable dataTable, SqlCommand insertCommand, SqlCommand updateCommand, SqlCommand deleteCommand)
         {
-            return innerDatabase.Update(dataTable, insertCommand, updateCommand, deleteCommand);
+            return _innerDatabase.Update(dataTable, insertCommand, updateCommand, deleteCommand);
         }
 
         Task<int> IDatabase.ExecuteNonQueryAsync(IQueryCommand queryCommand, ParameterCollection parameters, CancellationToken cancellationToken)
         {
-            return innerDatabase.ExecuteNonQueryAsync(queryCommand, parameters, cancellationToken);
+            return _innerDatabase.ExecuteNonQueryAsync(queryCommand, parameters, cancellationToken);
         }
 
         Task<IDataReader> IDatabase.ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CommandBehavior? behavior, CancellationToken cancellationToken)
         {
-            return innerDatabase.ExecuteReaderAsync(queryCommand, segment, parameters, behavior, cancellationToken);
+            return _innerDatabase.ExecuteReaderAsync(queryCommand, segment, parameters, behavior, cancellationToken);
         }
 
         Task<object> IDatabase.ExecuteScalarAsync(IQueryCommand queryCommand, ParameterCollection parameters, CancellationToken cancellationToken)
         {
-            return innerDatabase.ExecuteScalarAsync(queryCommand, parameters, cancellationToken);
+            return _innerDatabase.ExecuteScalarAsync(queryCommand, parameters, cancellationToken);
         }
 
         Task<T> IDatabase.ExecuteScalarAsync<T>(IQueryCommand queryCommand, ParameterCollection parameters, CancellationToken cancellationToken)
         {
-            return innerDatabase.ExecuteScalarAsync<T>(queryCommand, parameters, cancellationToken);
+            return _innerDatabase.ExecuteScalarAsync<T>(queryCommand, parameters, cancellationToken);
         }
 
 #if NETSTANDARD && !NETSTANDARD2_0
         IAsyncEnumerable<T> IDatabase.ExecuteAsyncEnumerable<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper, CancellationToken cancellationToken)
         {
-            return innerDatabase.ExecuteAsyncEnumerable<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);
+            return _innerDatabase.ExecuteAsyncEnumerable<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);
         }
 
         IAsyncEnumerable<dynamic> IDatabase.ExecuteAsyncEnumerable(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CancellationToken cancellationToken)
         {
-            return innerDatabase.ExecuteAsyncEnumerable(queryCommand, segment, parameters, cancellationToken);
+            return _innerDatabase.ExecuteAsyncEnumerable(queryCommand, segment, parameters, cancellationToken);
         }
 #endif
         Task<IEnumerable<T>> IDatabase.ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper, CancellationToken cancellationToken)
         {
-            return innerDatabase.ExecuteEnumerableAsync<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);
+            return _innerDatabase.ExecuteEnumerableAsync<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);
         }
 
         Task<IEnumerable<dynamic>> IDatabase.ExecuteEnumerableAsync(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CancellationToken cancellationToken)
         {
-            return innerDatabase.ExecuteEnumerableAsync(queryCommand, segment, parameters, cancellationToken);
+            return _innerDatabase.ExecuteEnumerableAsync(queryCommand, segment, parameters, cancellationToken);
         }
 
         Task IDatabase.UpdateAsync(DataTable dataTable, CancellationToken cancellationToken)
         {
-            return innerDatabase.UpdateAsync(dataTable, cancellationToken);
+            return _innerDatabase.UpdateAsync(dataTable, cancellationToken);
         }
 
         Task<int> IDatabase.UpdateAsync(DataTable dataTable, SqlCommand insertCommand, SqlCommand updateCommand, SqlCommand deleteCommand, CancellationToken cancellationToken)
         {
-            return innerDatabase.UpdateAsync(dataTable, insertCommand, updateCommand, deleteCommand, cancellationToken);
+            return _innerDatabase.UpdateAsync(dataTable, insertCommand, updateCommand, deleteCommand, cancellationToken);
         }
 
         Task<Exception> IDatabase.TryConnectAsync(CancellationToken cancellationToken)
         {
-            return innerDatabase.TryConnectAsync( cancellationToken);
+            return _innerDatabase.TryConnectAsync(cancellationToken);
         }
 
         Exception IDatabase.TryConnect()
         {
-            return innerDatabase.TryConnect();
+            return _innerDatabase.TryConnect();
         }
 
         void IDisposable.Dispose()

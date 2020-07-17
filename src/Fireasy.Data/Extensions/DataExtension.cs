@@ -18,6 +18,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -393,13 +394,13 @@ namespace Fireasy.Data.Extensions
                     //字符或日期型，加'
                     if (par.Value is string || par.Value is DateTime || par.Value is char)
                     {
-                        sb.AppendFormat(",{0}='{1}'", par.ParameterName, par.Value);
+                        sb.AppendFormat(",{0}='{1}'", par.ParameterName, TrimStringValue(par.Value));
                     }
 
                     //字节数组，转换为字符串
                     else if (par.Value is byte[])
                     {
-                        sb.AppendFormat(",{0}='{1}'", par.ParameterName, Encoding.ASCII.GetString(par.Value as byte[]));
+                        sb.AppendFormat(",{0}='{1}'", par.ParameterName, TrimByteValue(par.Value as byte[]));
                     }
                     else
                     {
@@ -777,6 +778,38 @@ namespace Fireasy.Data.Extensions
             }
 
             return connection;
+        }
+
+        private static string TrimStringValue(object value)
+        {
+            if (value == null)
+            {
+                return null;
+            }
+
+            var str = value.ToString();
+
+            if (str.Length > 128)
+            {
+                return str.Left(128) + $"...<<{str.Length}>>";
+            }
+
+            return str;
+        }
+
+        private static string TrimByteValue(byte[] bytes)
+        {
+            if (bytes == null)
+            {
+                return null;
+            }
+
+            if (bytes.Length > 128)
+            {
+                return Encoding.UTF8.GetString(bytes.Take(128).ToArray()) + $"...<<{bytes.Length}>>";
+            }
+
+            return Encoding.UTF8.GetString(bytes);
         }
 
         private static DbType GetGenericDbType(Type type)

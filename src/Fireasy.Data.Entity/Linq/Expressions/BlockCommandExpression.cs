@@ -28,6 +28,6 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         {
         }
 
-        public ReadOnlyCollection<Expression> Commands { get; private set; }
+        public ReadOnlyCollection<Expression> Commands { get; }
     }
 }

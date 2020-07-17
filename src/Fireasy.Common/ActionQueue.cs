@@ -16,8 +16,8 @@ namespace Fireasy.Common
     /// </summary>
     public static class ActionQueue
     {
-        private static readonly ConcurrentQueue<ActionEntry> queue = new ConcurrentQueue<ActionEntry>();
-        private static readonly Thread thread = new Thread(new ThreadStart(ProcessQueue)) { IsBackground = true };
+        private static readonly ConcurrentQueue<ActionEntry> _queue = new ConcurrentQueue<ActionEntry>();
+        private static readonly Thread _thread = new Thread(new ThreadStart(ProcessQueue)) { IsBackground = true };
 
         /// <summary>
         /// 获取或设置用于处理异常的委托。
@@ -35,11 +35,11 @@ namespace Fireasy.Common
             Guard.ArgumentNull(action, nameof(action));
 
             var entry = new ActionEntry(action, tryTimes);
-            queue.Enqueue(entry);
+            _queue.Enqueue(entry);
 
-            if (thread.ThreadState != ThreadState.Background)
+            if (_thread.ThreadState != ThreadState.Background)
             {
-                thread.Start();
+                _thread.Start();
             }
 
             return entry.Id;
@@ -52,12 +52,12 @@ namespace Fireasy.Common
         {
             while (true)
             {
-                if (queue.Count == 0)
+                if (_queue.Count == 0)
                 {
                     Thread.Sleep(1000);
                 }
 
-                if (queue.TryDequeue(out ActionEntry entry) && entry != null && entry.Action != null)
+                if (_queue.TryDequeue(out ActionEntry entry) && entry != null && entry.Action != null)
                 {
                     try
                     {
@@ -67,7 +67,7 @@ namespace Fireasy.Common
                     {
                         if (entry.CanTry())
                         {
-                            queue.Enqueue(entry);
+                            _queue.Enqueue(entry);
                         }
                         else if (ExceptionHandler != null)
                         {
@@ -80,13 +80,13 @@ namespace Fireasy.Common
 
         private class ActionEntry
         {
-            private int time = 0;
-            private readonly int tryTimes = 0;
+            private int _time = 0;
+            private readonly int _tryTimes = 0;
 
             public ActionEntry(Action action, int tryTimes)
             {
                 Id = Guid.NewGuid().ToString();
-                this.tryTimes = tryTimes;
+                _tryTimes = tryTimes;
                 Action = action;
             }
 
@@ -106,7 +106,7 @@ namespace Fireasy.Common
             /// <returns></returns>
             public bool CanTry()
             {
-                return time++ < tryTimes;
+                return _time++ < _tryTimes;
             }
         }
     }

@@ -6,10 +6,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if !NETSTANDARD
+using Fireasy.Common.Extensions;
 using System;
 using System.Configuration;
 using System.Xml;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Common.Configuration
 {

@@ -5,19 +5,19 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Providers;
 using Fireasy.Data.Entity.Query;
 using Fireasy.Data.Provider;
 using Fireasy.Data.Syntax;
 using System;
+using System.Collections.Generic;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
-    public class TranslateScope : Scope<TranslateScope>
+    public sealed class TranslateContext
     {
-        internal TranslateScope(IContextService contextService, TranslateOptions options)
+        internal TranslateContext(IContextService contextService, TranslateOptions options)
         {
             Provider = contextService.Provider;
             ContextType = contextService.ContextType;
@@ -28,24 +28,29 @@ namespace Fireasy.Data.Entity.Linq.Translators
             PersistentEnvironment = contextService.As<IEntityPersistentEnvironment, EntityPersistentEnvironment>(s => s.Environment);
             QueryPolicy = contextService.As<IQueryPolicyAware, IQueryPolicy>(s => s.QueryPolicy);
             Options = options;
+            Translator = TranslateProvider.CreateTranslator(this);
         }
 
-        public string InstanceName { get; private set; }
+        public string InstanceName { get; }
 
-        public EntityPersistentEnvironment  PersistentEnvironment { get; private set; }
+        public EntityPersistentEnvironment PersistentEnvironment { get; }
 
-        public Type ContextType { get; private set; }
+        public Type ContextType { get; }
 
-        public IProvider Provider { get; private set; }
+        public IProvider Provider { get; }
 
-        public IServiceProvider ServiceProvider { get; private set; }
+        public IServiceProvider ServiceProvider { get; }
 
-        public ITranslateProvider TranslateProvider { get; private set; }
+        public ITranslateProvider TranslateProvider { get; }
 
-        public ISyntaxProvider SyntaxProvider { get; private set; }
+        public ISyntaxProvider SyntaxProvider { get; }
 
-        public IQueryPolicy QueryPolicy { get; private set; }
+        public IQueryPolicy QueryPolicy { get; }
 
-        public TranslateOptions Options { get; private set; }
+        public TranslatorBase Translator { get; }
+
+        public TranslateOptions Options { get; }
+
+        public List<string> TemporaryBag { get; set; }
     }
 }

@@ -1,12 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
+using Fireasy.Data.Entity.Linq.Expressions;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Linq.Expressions;
-using Fireasy.Data.Entity.Linq.Expressions;
-using System;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
@@ -15,9 +13,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class OrderByRewriter : DbExpressionVisitor
     {
-        private IList<OrderExpression> gatheredOrderings;
-        private bool isOuterMostSelect = true;
-        private bool suppressOrderby;
+        private IList<OrderExpression> _gatheredOrderings;
+        private bool _isOuterMostSelect = true;
+        private bool _suppressOrderby;
 
         public static Expression Rewrite(Expression expression)
         {
@@ -26,70 +24,70 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitSelect(SelectExpression select)
         {
-            bool saveIsOuterMostSelect = this.isOuterMostSelect;
+            bool saveIsOuterMostSelect = _isOuterMostSelect;
             try
             {
-                this.isOuterMostSelect = false;
+                _isOuterMostSelect = false;
 
-                var saveSuppressOrderBy = this.suppressOrderby;
-                this.suppressOrderby = false;
+                var saveSuppressOrderBy = _suppressOrderby;
+                _suppressOrderby = false;
 
-                var saveGatheredOrderings = this.gatheredOrderings;
+                var saveGatheredOrderings = _gatheredOrderings;
                 if (saveSuppressOrderBy)
                 {
-                    this.gatheredOrderings = null;
-                    this.isOuterMostSelect = true;
+                    _gatheredOrderings = null;
+                    _isOuterMostSelect = true;
                 }
 
                 select = (SelectExpression)base.VisitSelect(select);
 
-                this.suppressOrderby = saveSuppressOrderBy;
+                _suppressOrderby = saveSuppressOrderBy;
                 if (saveSuppressOrderBy)
                 {
-                    this.gatheredOrderings = saveGatheredOrderings;
+                    _gatheredOrderings = saveGatheredOrderings;
                 }
 
                 bool hasOrderBy = select.OrderBy != null && select.OrderBy.Count > 0;
                 bool hasGroupBy = select.GroupBy != null && select.GroupBy.Count > 0;
                 bool canHaveOrderBy = saveIsOuterMostSelect || select.Take != null || select.Skip != null;
-                bool canReceiveOrderings = canHaveOrderBy && !hasGroupBy && /*!select.IsDistinct &&*/ !AggregateChecker.HasAggregates(select) && !suppressOrderby;
+                bool canReceiveOrderings = canHaveOrderBy && !hasGroupBy && /*!select.IsDistinct &&*/ !AggregateChecker.HasAggregates(select) && !_suppressOrderby;
 
                 if (hasOrderBy)
                 {
-                    this.PrependOrderings(select.OrderBy);
+                    PrependOrderings(select.OrderBy);
                 }
 
                 if (select.IsReverse)
                 {
-                    this.ReverseOrderings();
+                    ReverseOrderings();
                 }
 
                 IEnumerable<OrderExpression> orderings = null;
                 if (canReceiveOrderings)
                 {
-                    orderings = this.gatheredOrderings;
+                    orderings = _gatheredOrderings;
                 }
                 else if (canHaveOrderBy)
                 {
                     orderings = select.OrderBy;
                 }
 
-                bool canPassOnOrderings = !saveIsOuterMostSelect && !hasGroupBy && /*!select.IsDistinct &&*/ !suppressOrderby;
+                bool canPassOnOrderings = !saveIsOuterMostSelect && !hasGroupBy && /*!select.IsDistinct &&*/ !_suppressOrderby;
                 ReadOnlyCollection<ColumnDeclaration> columns = select.Columns;
-                if (this.gatheredOrderings != null)
+                if (_gatheredOrderings != null)
                 {
                     if (canPassOnOrderings)
                     {
                         var producedAliases = DeclaredAliasGatherer.Gather(select.From);
                         // reproject order expressions using this select's alias so the outer select will have properly formed expressions
-                        BindResult project = this.RebindOrderings(this.gatheredOrderings, select.Alias, producedAliases, select.Columns);
-                        this.gatheredOrderings = null;
-                        this.PrependOrderings(project.Orderings);
+                        BindResult project = RebindOrderings(_gatheredOrderings, select.Alias, producedAliases, select.Columns);
+                        _gatheredOrderings = null;
+                        PrependOrderings(project.Orderings);
                         columns = project.Columns;
                     }
                     else
                     {
-                        this.gatheredOrderings = null;
+                        _gatheredOrderings = null;
                     }
                 }
 
@@ -102,16 +100,16 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
             finally
             {
-                this.isOuterMostSelect = saveIsOuterMostSelect;
+                _isOuterMostSelect = saveIsOuterMostSelect;
             }
         }
 
         protected override Expression VisitSubquery(SubqueryExpression subquery)
         {
-            var saveSuppressOrderBy = this.suppressOrderby;
-            this.suppressOrderby = true;
+            var saveSuppressOrderBy = _suppressOrderby;
+            _suppressOrderby = true;
             var result = base.VisitSubquery(subquery);
-            this.suppressOrderby = saveSuppressOrderBy;
+            _suppressOrderby = saveSuppressOrderBy;
             return result;
         }
 
@@ -119,12 +117,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             // make sure order by expressions lifted up from the left side are not lost
             // when visiting the right side
-            Expression left = this.VisitSource(join.Left);
-            IList<OrderExpression> leftOrders = this.gatheredOrderings;
-            this.gatheredOrderings = null; // start on the right with a clean slate
-            Expression right = this.VisitSource(join.Right);
-            this.PrependOrderings(leftOrders);
-            Expression condition = this.Visit(join.Condition);
+            Expression left = VisitSource(join.Left);
+            IList<OrderExpression> leftOrders = _gatheredOrderings;
+            _gatheredOrderings = null; // start on the right with a clean slate
+            Expression right = VisitSource(join.Right);
+            PrependOrderings(leftOrders);
+            Expression condition = Visit(join.Condition);
             if (left != join.Left || right != join.Right || condition != join.Condition)
             {
                 return new JoinExpression(join.JoinType, left, right, condition);
@@ -141,25 +139,25 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             if (newOrderings != null)
             {
-                if (this.gatheredOrderings == null)
+                if (_gatheredOrderings == null)
                 {
-                    this.gatheredOrderings = new List<OrderExpression>();
+                    _gatheredOrderings = new List<OrderExpression>();
                 }
                 for (int i = newOrderings.Count - 1; i >= 0; i--)
                 {
-                    this.gatheredOrderings.Insert(0, newOrderings[i]);
+                    _gatheredOrderings.Insert(0, newOrderings[i]);
                 }
                 // trim off obvious duplicates
                 HashSet<string> unique = new HashSet<string>();
-                for (int i = 0; i < this.gatheredOrderings.Count; )
+                for (int i = 0; i < _gatheredOrderings.Count;)
                 {
-                    ColumnExpression column = this.gatheredOrderings[i].Expression as ColumnExpression;
+                    ColumnExpression column = _gatheredOrderings[i].Expression as ColumnExpression;
                     if (column != null)
                     {
                         string hash = column.Alias + ":" + column.Name;
                         if (unique.Contains(hash))
                         {
-                            this.gatheredOrderings.RemoveAt(i);
+                            _gatheredOrderings.RemoveAt(i);
                             // don't increment 'i', just continue
                             continue;
                         }
@@ -175,12 +173,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected void ReverseOrderings()
         {
-            if (this.gatheredOrderings != null)
+            if (_gatheredOrderings != null)
             {
-                for (int i = 0, n = this.gatheredOrderings.Count; i < n; i++)
+                for (int i = 0, n = _gatheredOrderings.Count; i < n; i++)
                 {
-                    var ord = this.gatheredOrderings[i];
-                    this.gatheredOrderings[i] =
+                    var ord = _gatheredOrderings[i];
+                    _gatheredOrderings[i] =
                         new OrderExpression(
                             ord.OrderType == OrderType.Ascending ? OrderType.Descending : OrderType.Ascending,
                             ord.Expression
@@ -206,9 +204,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 }
             }
 
-            public ReadOnlyCollection<ColumnDeclaration> Columns { get; private set; }
+            public ReadOnlyCollection<ColumnDeclaration> Columns { get; }
 
-            public ReadOnlyCollection<OrderExpression> Orderings { get; private set; }
+            public ReadOnlyCollection<OrderExpression> Orderings { get; }
         }
 
         /// <summary>

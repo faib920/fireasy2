@@ -1,15 +1,17 @@
 ﻿using Fireasy.Data.Entity.Linq.Expressions;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
     public class AccessTranslator : TranslatorBase
     {
+        public AccessTranslator(TranslateContext transContext)
+            : base(transContext)
+        {
+        }
+
         protected override Expression VisitSelect(SelectExpression select)
         {
             if (select.Skip != null)
@@ -48,7 +50,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             if (columns.Count == 0)
             {
-                this.Write("0");
+                Write("0");
             }
             else
             {
@@ -88,13 +90,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitConditional(ConditionalExpression c)
         {
-            this.Write("IIF(");
-            this.VisitPredicate(c.Test);
-            this.Write(", ");
-            this.VisitValue(c.IfTrue);
-            this.Write(", ");
-            this.VisitValue(c.IfFalse);
-            this.Write(")");
+            Write("IIF(");
+            VisitPredicate(c.Test);
+            Write(", ");
+            VisitValue(c.IfTrue);
+            Write(", ");
+            VisitValue(c.IfFalse);
+            Write(")");
             return c;
         }
 

@@ -95,8 +95,8 @@ namespace Fireasy.Data.Syntax
         /// <returns>处理后的分段命令文本。</returns>
         public virtual string Segment(string commandText, IDataSegment segment)
         {
-            return segment.Start != null ? 
-                $"{commandText} ROWS {segment.Start} TO {segment.End - 1}" : 
+            return segment.Start != null ?
+                $"{commandText} ROWS {segment.Start} TO {segment.End - 1}" :
                 $"{commandText} ROWS {segment.Length}";
         }
 

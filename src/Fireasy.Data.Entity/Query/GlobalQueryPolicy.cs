@@ -25,8 +25,8 @@ namespace Fireasy.Data.Entity.Query
         /// </summary>
         public static readonly GlobalQueryPolicySession Default = new GlobalQueryPolicySession();
 
-        private static readonly ConcurrentDictionary<string, GlobalQueryPolicySession> sessions = new ConcurrentDictionary<string, GlobalQueryPolicySession>();
-        private static readonly ConcurrentDictionary<string, GlobalQueryPolicySession> caches = new ConcurrentDictionary<string, GlobalQueryPolicySession>();
+        private static readonly ConcurrentDictionary<string, GlobalQueryPolicySession> _sessions = new ConcurrentDictionary<string, GlobalQueryPolicySession>();
+        private static readonly ConcurrentDictionary<string, GlobalQueryPolicySession> _cache = new ConcurrentDictionary<string, GlobalQueryPolicySession>();
 
         /// <summary>
         /// 多用户环境下创建一个会话。
@@ -40,7 +40,7 @@ namespace Fireasy.Data.Entity.Query
 
             var sessionId = sessionIdFactory();
             var lazy = new Lazy<GlobalQueryPolicySession>(() => new GlobalQueryPolicySession() { SessionIdFactory = sessionIdFactory });
-            return sessions.GetOrAdd(sessionId, k => string.IsNullOrEmpty(ident) ? lazy.Value : caches.GetOrAdd(ident, k => lazy.Value));
+            return _sessions.GetOrAdd(sessionId, k => string.IsNullOrEmpty(ident) ? lazy.Value : _cache.GetOrAdd(ident, k => lazy.Value));
         }
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace Fireasy.Data.Entity.Query
         /// <param name="sessionId"></param>
         public static void Remove(string sessionId)
         {
-            if (sessions.TryRemove(sessionId, out GlobalQueryPolicySession session))
+            if (_sessions.TryRemove(sessionId, out GlobalQueryPolicySession session))
             {
                 session.Clear();
             }
@@ -63,9 +63,9 @@ namespace Fireasy.Data.Entity.Query
         public static IEnumerable<LambdaExpression> GetPolicies(Type objType)
         {
             var result = Default.GetPolicies(objType);
-            if (sessions.Count > 0)
+            if (_sessions.Count > 0)
             {
-                var sresult = sessions.Where(s => s.Value != null && s.Key == s.Value.SessionIdFactory())
+                var sresult = _sessions.Where(s => s.Value != null && s.Key == s.Value.SessionIdFactory())
                     .SelectMany(s => s.Value.GetPolicies(objType));
 
                 result = sresult.Union(sresult);
@@ -80,8 +80,8 @@ namespace Fireasy.Data.Entity.Query
     /// </summary>
     public class GlobalQueryPolicySession
     {
-        private readonly Dictionary<Type, List<LambdaExpression>> dict = new Dictionary<Type, List<LambdaExpression>>();
-        
+        private readonly Dictionary<Type, List<LambdaExpression>> _expCache = new Dictionary<Type, List<LambdaExpression>>();
+
         /// <summary>
         /// 获取或设置会话ID的工厂。比如使用 System.Web.HttpContext.Current.Session.SessionID。
         /// </summary>
@@ -106,8 +106,8 @@ namespace Fireasy.Data.Entity.Query
         /// <param name="predicate"></param>
         public GlobalQueryPolicySession Register(Type objType, LambdaExpression predicate)
         {
-            var expressions = dict.TryGetValue(objType, () => new List<LambdaExpression>());
-            expressions.Add(predicate);
+            var exps = _expCache.TryGetValue(objType, () => new List<LambdaExpression>());
+            exps.Add(predicate);
 
             return this;
         }
@@ -128,7 +128,7 @@ namespace Fireasy.Data.Entity.Query
         /// </summary>
         public int Count
         {
-            get { return dict.Count; }
+            get { return _expCache.Count; }
         }
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace Fireasy.Data.Entity.Query
         /// </summary>
         public void Clear()
         {
-            dict.Clear();
+            _expCache.Clear();
         }
 
         /// <summary>
@@ -146,7 +146,7 @@ namespace Fireasy.Data.Entity.Query
         /// <returns></returns>
         public IEnumerable<LambdaExpression> GetPolicies(Type objType)
         {
-            return dict.Where(s => s.Key.IsAssignableFrom(objType) || s.Key == typeof(AnonymousMember)).SelectMany(s => s.Value);
+            return _expCache.Where(s => s.Key.IsAssignableFrom(objType) || s.Key == typeof(AnonymousMember)).SelectMany(s => s.Value);
         }
     }
 

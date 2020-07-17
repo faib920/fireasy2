@@ -10,7 +10,6 @@ using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Initializers;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -24,24 +23,27 @@ namespace Fireasy.Data.Entity
         #region Fields and constructors
 
         // AppDomain cache collection initializers for a known type.
-        private static readonly SafetyDictionary<Type, EntityContextTypesInitializersPair> objectSetInitializers =
+        private static readonly SafetyDictionary<Type, EntityContextTypesInitializersPair> _objectSetInitializers =
             new SafetyDictionary<Type, EntityContextTypesInitializersPair>();
 
-        // Used by the code below to create DbSet instances
-        private static readonly MethodInfo SetRepositoryMethod = typeof(EntityContext).GetMethods().FirstOrDefault(s => s.Name == nameof(EntityContext.Set) && s.IsGenericMethod);
+        private class MethodCache
+        {
+            // Used by the code below to create DbSet instances
+            internal protected static readonly MethodInfo SetRepository = typeof(EntityContext).GetMethods().FirstOrDefault(s => s.Name == nameof(EntityContext.Set) && s.IsGenericMethod);
+        }
 
-        private readonly EntityContext context;
-        private readonly EntityContextOptions options;
-        private readonly IContextService service;
+        private readonly EntityContext _context;
+        private readonly EntityContextOptions _options;
+        private readonly IContextService _contextService;
 
         // <summary>
         // Creates a set discovery service for the given derived context.
         // </summary>
         public EntityRepositoryDiscoveryService(EntityContext context, EntityContextOptions options)
         {
-            this.context = context;
-            this.options = options;
-            service = context.GetService<IContextService>();
+            _context = context;
+            _options = options;
+            _contextService = context.GetService<IContextService>();
         }
 
         #endregion
@@ -58,8 +60,8 @@ namespace Fireasy.Data.Entity
         // <returns> A dictionary of potential entity type to the list of the names of the properties that used the type. </returns>
         private EntityContextTypesInitializersPair GetSets()
         {
-            var contextType = context.GetType();
-            return objectSetInitializers.GetOrAdd(contextType, k =>
+            var contextType = _context.GetType();
+            return _objectSetInitializers.GetOrAdd(contextType, k =>
             {
                 var watch = Stopwatch.StartNew();
 
@@ -81,7 +83,7 @@ namespace Fireasy.Data.Entity
                                  where entityType != null
                                  select new EntityRepositoryTypeMapper(s, entityType)).ToList();
 
-                options.Initializers?.PreInitialize(new EntityContextPreInitializeContext(context, service, reposMaps));
+                _options.Initializers?.PreInitialize(new EntityContextPreInitializeContext(_context, _contextService, reposMaps));
 
                 // Properties declared directly on DbContext such as Database are skipped
                 foreach (var m in reposMaps)
@@ -104,7 +106,7 @@ namespace Fireasy.Data.Entity
                     var setter = m.Property.GetSetMethod();
                     if (setter != null && setter.IsPublic)
                     {
-                        var setMethod = SetRepositoryMethod.MakeGenericMethod(m.EntityType);
+                        var setMethod = MethodCache.SetRepository.MakeGenericMethod(m.EntityType);
 
                         Expression expression = Expression.Call(dbContextParam, setMethod);
                         var pType = setter.GetParameters()[0].ParameterType;
@@ -140,7 +142,7 @@ namespace Fireasy.Data.Entity
         // </summary>
         public void InitializeSets()
         {
-            GetSets()?.SetsInitializer(context); // Ensures sets have been discovered
+            GetSets()?.SetsInitializer(_context); // Ensures sets have been discovered
         }
 
         #endregion

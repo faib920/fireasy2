@@ -73,7 +73,7 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            return type == typeof(bool) ? reader.GetBoolean(i) : 
+            return type == typeof(bool) ? reader.GetBoolean(i) :
                 Convert.ToBoolean(GetValue(reader, i));
         }
 
@@ -103,7 +103,7 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            return type == typeof(byte) ? reader.GetByte(i) : 
+            return type == typeof(byte) ? reader.GetByte(i) :
                 Convert.ToByte(GetValue(reader, i));
         }
 
@@ -177,7 +177,7 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            return type == typeof(char) ? reader.GetChar(i) : 
+            return type == typeof(char) ? reader.GetChar(i) :
                 Convert.ToChar(GetValue(reader, i));
         }
 
@@ -229,7 +229,7 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            return type == typeof(short) ? reader.GetInt16(i) : 
+            return type == typeof(short) ? reader.GetInt16(i) :
                 Convert.ToInt16(GetValue(reader, i));
         }
 
@@ -319,7 +319,7 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            return type == typeof(float) ? reader.GetFloat(i) : 
+            return type == typeof(float) ? reader.GetFloat(i) :
                 Convert.ToSingle(GetValue(reader, i));
         }
 
@@ -349,7 +349,7 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            return type == typeof(double) ? reader.GetDouble(i) : 
+            return type == typeof(double) ? reader.GetDouble(i) :
                 Convert.ToDouble(GetValue(reader, i));
         }
 
@@ -379,7 +379,7 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            return type == typeof(string) ? reader.GetString(i) : 
+            return type == typeof(string) ? reader.GetString(i) :
                 Convert.ToString(GetValue(reader, i));
         }
 

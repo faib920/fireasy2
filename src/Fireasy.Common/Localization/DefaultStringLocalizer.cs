@@ -16,12 +16,12 @@ namespace Fireasy.Common.Localization
     /// </summary>
     public class DefaultStringLocalizer : IStringLocalizer
     {
-        private readonly ResourceManager resourceMgr;
-        private readonly ConcurrentDictionary<string, ResourceSet> sets = new ConcurrentDictionary<string, ResourceSet>();
+        private readonly ResourceManager _resourceMgr;
+        private readonly ConcurrentDictionary<string, ResourceSet> _resSets = new ConcurrentDictionary<string, ResourceSet>();
 
         public DefaultStringLocalizer(ResourceManager resourceMgr, CultureInfo cultureInfo)
         {
-            this.resourceMgr = resourceMgr;
+            _resourceMgr = resourceMgr;
             CultureInfo = cultureInfo;
         }
 
@@ -62,7 +62,7 @@ namespace Fireasy.Common.Localization
 
         private string GetResourceString(string name)
         {
-            var set = sets.GetOrAdd(CultureInfo.Name, k => resourceMgr.GetResourceSet(CultureInfo, true, false));
+            var set = _resSets.GetOrAdd(CultureInfo.Name, k => _resourceMgr.GetResourceSet(CultureInfo, true, false));
             if (set == null)
             {
                 return name;

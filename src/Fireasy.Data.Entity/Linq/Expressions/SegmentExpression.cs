@@ -26,6 +26,6 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取数据分段对象。
         /// </summary>
-        public IDataSegment Segment { get; private set; }
+        public IDataSegment Segment { get; }
     }
 }

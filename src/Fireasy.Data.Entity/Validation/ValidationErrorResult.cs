@@ -24,10 +24,10 @@ namespace Fireasy.Data.Entity.Validation
             ErrorMessage = errorMessage;
         }
 
-        public ValidationAttribute Attribute { get; private set; }
+        public ValidationAttribute Attribute { get; }
 
-        public string ErrorMessage { get; private set; }
+        public string ErrorMessage { get; }
 
-        public string DisplayName { get; private set; }
+        public string DisplayName { get; }
     }
 }

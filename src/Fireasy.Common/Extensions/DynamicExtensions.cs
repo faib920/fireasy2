@@ -17,8 +17,6 @@ namespace Fireasy.Common.Extensions
     /// </summary>
     public static class DynamicExtensions
     {
-        private static object ErrorResult = new object();
-
         /// <summary>
         /// 获取动态对象中成员名称的枚举。
         /// </summary>

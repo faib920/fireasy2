@@ -19,7 +19,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="property">指定引发修改异常的主要属性。</param>
         public PrimaryPropertyUpdateException(IProperty property)
-            : base (SR.GetString(SRKind.DisUpdatePrimaryProperty))
+            : base(SR.GetString(SRKind.DisUpdatePrimaryProperty))
         {
             Property = property;
         }
@@ -27,6 +27,6 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 获取引发修改异常的主要属性。
         /// </summary>
-        public IProperty Property { get; private set; }
+        public IProperty Property { get; }
     }
 }

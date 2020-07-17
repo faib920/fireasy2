@@ -6,12 +6,23 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using RabbitMQ.Client;
+using System;
 using System.Collections.Generic;
 
 namespace Fireasy.Aliyun.AMQP
 {
     public class SubscribeManager : RabbitMQ.SubscribeManager
     {
+        public SubscribeManager()
+            : base()
+        {
+        }
+
+        public SubscribeManager(IServiceProvider serviceProvider)
+            : base (serviceProvider)
+        {
+        }
+
         protected override ConnectionFactory CreateConnectionFactory()
         {
             var factory = base.CreateConnectionFactory();

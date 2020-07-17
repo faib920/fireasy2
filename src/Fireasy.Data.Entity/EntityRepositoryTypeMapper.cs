@@ -21,8 +21,8 @@ namespace Fireasy.Data.Entity
             EntityType = entityType;
         }
 
-        public PropertyInfo Property { get; private set; }
+        public PropertyInfo Property { get; }
 
-        public Type EntityType { get; private set; }
+        public Type EntityType { get; }
     }
 }

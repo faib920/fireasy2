@@ -25,11 +25,11 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取排序的类别。
         /// </summary>
-        public OrderType OrderType { get; private set; }
+        public OrderType OrderType { get; }
 
         /// <summary>
         /// 获取参照的列表达式。
         /// </summary>
-        public Expression Expression { get; private set; }
+        public Expression Expression { get; }
     }
 }

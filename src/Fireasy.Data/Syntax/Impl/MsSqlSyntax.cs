@@ -5,12 +5,12 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Data.Extensions;
+using Fireasy.Data.Provider;
 using System.Data;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Fireasy.Data.Extensions;
-using Fireasy.Data.Provider;
 
 namespace Fireasy.Data.Syntax
 {

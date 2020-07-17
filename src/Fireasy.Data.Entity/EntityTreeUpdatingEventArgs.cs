@@ -9,6 +9,7 @@ using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Query;
 using System;
 using System.Linq.Expressions;
+using Fireasy.Common.Extensions;
 #if NETSTANDARD
 using Microsoft.Extensions.DependencyInjection;
 #endif
@@ -32,7 +33,7 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 获取当前更新的实体。
         /// </summary>
-        public IEntity Current { get; private set; }
+        public IEntity Current { get; }
 
         /// <summary>
         /// 获取实体更新前的相关值。
@@ -66,7 +67,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="entity"></param>
         public EntityTreeUpdatingEventArgs(TEntity entity)
-            : base (entity)
+            : base(entity)
         {
         }
 
@@ -75,7 +76,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="e"></param>
         public EntityTreeUpdatingEventArgs(EntityTreeUpdatingEventArgs e)
-            : base ((TEntity)e.Current)
+            : base((TEntity)e.Current)
         {
             OldValue = e.OldValue;
             NewValue = e.NewValue;
@@ -85,7 +86,7 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 获取当前更新的实体。
         /// </summary>
-        public new TEntity Current { get; private set; }
+        public new TEntity Current { get; }
 
         /// <summary>
         /// 使用一个参照的实体对象更新满足条件的一序列对象。
@@ -105,12 +106,8 @@ namespace Fireasy.Data.Entity
             var environment = Current.GetEnvironment();
             var identifier = ContextInstanceManager.TryGet(instanceName);
             var contextProvider = identifier.GetProviderService<IContextProvider>();
-#if NETSTANDARD
-            using var scope = identifier.ServiceProvider.CreateScope();
-            using var service = contextProvider.CreateContextService(new ContextServiceContext(scope.ServiceProvider, identifier));
-#else
-            using var service = contextProvider.CreateContextService(new ContextServiceContext(identifier));
-#endif
+            using var scope = identifier.ServiceProvider.TryCreateScope();
+            using var service = contextProvider.CreateContextService(new ContextServiceContext(scope?.ServiceProvider ?? identifier.ServiceProvider, identifier));
             service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
 
             var queryProvider = new EntityQueryProvider(service);
@@ -136,12 +133,8 @@ namespace Fireasy.Data.Entity
             var environment = Current.GetEnvironment();
             var identifier = ContextInstanceManager.TryGet(instanceName);
             var contextProvider = identifier.GetProviderService<IContextProvider>();
-#if NETSTANDARD
-            using var scope = identifier.ServiceProvider.CreateScope();
-            using var service = contextProvider.CreateContextService(new ContextServiceContext(scope.ServiceProvider, identifier));
-#else
-            using var service = contextProvider.CreateContextService(new ContextServiceContext(identifier));
-#endif
+            using var scope = identifier.ServiceProvider.TryCreateScope();
+            using var service = contextProvider.CreateContextService(new ContextServiceContext(scope?.ServiceProvider ?? identifier.ServiceProvider, identifier));
             service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
 
             var queryProvider = new EntityQueryProvider(service);

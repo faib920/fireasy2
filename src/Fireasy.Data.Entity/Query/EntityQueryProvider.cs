@@ -27,8 +27,8 @@ namespace Fireasy.Data.Entity.Query
     /// </summary>
     public sealed class EntityQueryProvider : IEntityQueryProvider, IContextTypeAware
     {
-        private readonly IDatabase database;
-        private static readonly ConcurrentDictionary<ParameterInfo[], Tuple<bool, bool>> attrCache = new ConcurrentDictionary<ParameterInfo[], Tuple<bool, bool>>(new ParametersComparer());
+        private readonly IDatabase _database;
+        private static readonly ConcurrentDictionary<ParameterInfo[], Tuple<bool, bool>> _attrCache = new ConcurrentDictionary<ParameterInfo[], Tuple<bool, bool>>(new ParametersComparer());
 
         /// <summary>
         /// 使用一个 <see cref="IDatabase"/> 对象初始化 <see cref="EntityQueryProvider"/> 类的新实例。
@@ -40,7 +40,7 @@ namespace Fireasy.Data.Entity.Query
 
             if (contextService is IDatabaseAware aware)
             {
-                database = aware.Database;
+                _database = aware.Database;
             }
             else
             {
@@ -62,12 +62,12 @@ namespace Fireasy.Data.Entity.Query
         /// <summary>
         /// 获取 <see cref="IContextService"/> 实例。
         /// </summary>
-        public IContextService ContextService { get; private set; }
+        public IContextService ContextService { get; }
 
         /// <summary>
         /// 获取参数选项。
         /// </summary>
-        public EntityContextOptions ContextOptions { get; private set; }
+        public EntityContextOptions ContextOptions { get; }
 
         /// <summary>
         /// 执行 <see cref="Expression"/> 的查询，返回查询结果。
@@ -84,12 +84,12 @@ namespace Fireasy.Data.Entity.Query
 
             if (!attrs.Item2)
             {
-                return efn.DynamicInvoke(database);
+                return efn.DynamicInvoke(_database);
             }
 
             var segment = SegmentFinder.Find(expression);
 
-            return efn.DynamicInvoke(database, segment);
+            return efn.DynamicInvoke(_database, segment);
         }
 
         /// <summary>
@@ -149,12 +149,11 @@ namespace Fireasy.Data.Entity.Query
 
                 var options = GetTranslateOptions();
 
-                using var scope = new TranslateScope(ContextService, options);
-                var translation = scope.TranslateProvider.Translate(expression);
-                var translator = scope.TranslateProvider.CreateTranslator();
+                var transContext = new TranslateContext(ContextService, options);
+                var transExpression = transContext.TranslateProvider.Translate(transContext, expression);
 
                 var buildOptions = new ExecutionBuilder.BuildOptions { IsAsync = isAsync, IsNoTracking = !options.TraceEntityState };
-                return ExecutionBuilder.Build(translation, buildOptions);
+                return ExecutionBuilder.Build(transContext, transExpression, buildOptions);
             }
             catch (Exception ex)
             {
@@ -180,12 +179,12 @@ namespace Fireasy.Data.Entity.Query
 
                 options ??= GetTranslateOptions();
 
-                using var scope = new TranslateScope(ContextService, options);
-                var translation = scope.TranslateProvider.Translate(expression);
-                var translator = scope.TranslateProvider.CreateTranslator();
+                var transContext = new TranslateContext(ContextService, options);
+                var transExpression = transContext.TranslateProvider.Translate(transContext, expression);
+                var translator = transContext.Translator;
 
                 TranslateResult result;
-                var selects = SelectGatherer.Gather(translation).ToList();
+                var selects = SelectGatherer.Gather(transExpression).ToList();
                 if (selects.Count > 0)
                 {
                     result = translator.Translate(selects[0]);
@@ -231,7 +230,7 @@ namespace Fireasy.Data.Entity.Query
         /// <returns></returns>
         private Tuple<bool, bool> GetMethodAttributes(MethodInfo method)
         {
-            return attrCache.GetOrAdd(method.GetParameters(), ps =>
+            return _attrCache.GetOrAdd(method.GetParameters(), ps =>
                 {
                     var isAsync = false;
                     var isSegment = false;
@@ -266,11 +265,11 @@ namespace Fireasy.Data.Entity.Query
                 if (attrs.Item2)
                 {
                     var segment = SegmentFinder.Find(expression);
-                    result = efn.DynamicInvoke(database, segment, cancellationToken);
+                    result = efn.DynamicInvoke(_database, segment, cancellationToken);
                 }
                 else
                 {
-                    result = efn.DynamicInvoke(database, cancellationToken);
+                    result = efn.DynamicInvoke(_database, cancellationToken);
                 }
             }
             else
@@ -278,11 +277,11 @@ namespace Fireasy.Data.Entity.Query
                 if (attrs.Item2)
                 {
                     var segment = SegmentFinder.Find(expression);
-                    result = efn.DynamicInvoke(database, segment);
+                    result = efn.DynamicInvoke(_database, segment);
                 }
                 else
                 {
-                    result = efn.DynamicInvoke(database);
+                    result = efn.DynamicInvoke(_database);
                 }
             }
 

@@ -25,10 +25,10 @@ namespace Fireasy.Data.Schema
     /// </summary>
     public abstract class SchemaBase : ISchemaProvider
     {
-        private readonly Dictionary<Type, List<MemberInfo>> dicRestrMbrs = new Dictionary<Type, List<MemberInfo>>();
-        private readonly List<DataType> dataTypes = new List<DataType>();
+        private readonly Dictionary<Type, List<MemberInfo>> _dicRestrMbrs = new Dictionary<Type, List<MemberInfo>>();
+        private readonly List<DataType> _dataTypes = new List<DataType>();
 
-        public IProvider Provider { get; set; }
+        IProvider IProviderService.Provider { get; set; }
 
         protected ConnectionParameter GetConnectionParameter(IDatabase database)
         {
@@ -44,7 +44,7 @@ namespace Fireasy.Data.Schema
         /// <returns></returns>
         public virtual IEnumerable<T> GetSchemas<T>(IDatabase database, Expression<Func<T, bool>> predicate = null) where T : ISchemaMetadata
         {
-            var restrictionValues = SchemaQueryTranslator.GetRestrictions<T>(predicate, dicRestrMbrs);
+            var restrictionValues = SchemaQueryTranslator.GetRestrictions<T>(predicate, _dicRestrMbrs);
 
             using var connection = database.CreateConnection();
             try
@@ -98,7 +98,7 @@ namespace Fireasy.Data.Schema
         {
             Guard.ArgumentNull(restrs, nameof(restrs));
 
-            var indexes = dicRestrMbrs.TryGetValue(typeof(T), () => new List<MemberInfo>());
+            var indexes = _dicRestrMbrs.TryGetValue(typeof(T), () => new List<MemberInfo>());
 
             for (var i = 0; i < restrs.Length; i++)
             {
@@ -128,7 +128,7 @@ namespace Fireasy.Data.Schema
         /// <param name="systemType"></param>
         protected void AddDataType(string name, DbType dbType, Type systemType)
         {
-            dataTypes.Add(new DataType { Name = name, DbType = dbType, SystemType = systemType });
+            _dataTypes.Add(new DataType { Name = name, DbType = dbType, SystemType = systemType });
         }
 
         /// <summary>
@@ -264,7 +264,7 @@ namespace Fireasy.Data.Schema
         /// <returns></returns>
         protected virtual IEnumerable<DataType> GetDataTypes(IDatabase database, RestrictionDictionary restrictionValues)
         {
-            return dataTypes;
+            return _dataTypes;
         }
 
         /// <summary>

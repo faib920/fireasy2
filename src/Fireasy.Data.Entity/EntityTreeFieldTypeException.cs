@@ -33,16 +33,16 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 获取实体的类型。
         /// </summary>
-        public Type EntityType { get; private set; }
+        public Type EntityType { get; }
 
         /// <summary>
         /// 获取用于标记树映射关系的实体属性。
         /// </summary>
-        public IProperty Property { get; private set; }
+        public IProperty Property { get; }
 
         /// <summary>
         /// 获取所需的属性的类型。
         /// </summary>
-        public Type RequiredType { get; private set; }
+        public Type RequiredType { get; }
     }
 }

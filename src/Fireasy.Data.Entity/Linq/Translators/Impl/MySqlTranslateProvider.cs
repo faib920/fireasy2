@@ -11,9 +11,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
 {
     public class MySqlTranslateProvider : TranslateProviderBase
     {
-        public override TranslatorBase CreateTranslator()
+        public override TranslatorBase CreateTranslator(TranslateContext transContext)
         {
-            return new MySqlTranslator();
+            return new MySqlTranslator(transContext);
         }
 
         protected override Expression BuildExpression(Expression expression)

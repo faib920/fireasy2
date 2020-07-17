@@ -5,10 +5,10 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
-using System.Xml;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
+using System;
+using System.Xml;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif

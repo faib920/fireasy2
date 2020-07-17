@@ -6,12 +6,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Data.Entity.Linq.Translators;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Fireasy.Data.Entity.Linq.Translators;
-using Fireasy.Data.Provider;
 
 namespace Fireasy.Data.Entity.Query
 {

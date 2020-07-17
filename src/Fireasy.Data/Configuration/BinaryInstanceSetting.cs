@@ -6,12 +6,12 @@
 // </copyright>
 // ---------------------------------------------------------------
 
-using System;
-using System.IO;
-using System.Xml;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Serialization;
+using System;
+using System.IO;
+using System.Xml;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif

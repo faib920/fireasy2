@@ -6,13 +6,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.Configuration;
+using Fireasy.Common.Extensions;
+using Fireasy.Common.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml;
-using Fireasy.Common.Configuration;
-using Fireasy.Common.Extensions;
-using Fireasy.Common.Serialization;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 using Microsoft.CSharp;

@@ -14,7 +14,7 @@ namespace Fireasy.Common.Aop
     /// </summary>
     [Serializable]
     public sealed class AspectException : Exception
-    {   
+    {
         /// <summary>
         /// 初始化 <see cref="AspectException"/> 类的新实例。
         /// </summary>

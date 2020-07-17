@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
+using Fireasy.Data.Entity.Linq.Expressions;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using Fireasy.Data.Entity.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
@@ -12,7 +12,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class RedundantJoinRemover : DbExpressionVisitor
     {
-        private readonly Dictionary<TableAlias, TableAlias> map = new Dictionary<TableAlias,TableAlias>();
+        private readonly Dictionary<TableAlias, TableAlias> _map = new Dictionary<TableAlias, TableAlias>();
 
         public static Expression Remove(Expression expression)
         {
@@ -31,7 +31,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     var similarRight = (AliasedExpression)FindSimilarRight(join.Left as JoinExpression, join);
                     if (similarRight != null)
                     {
-                        map.Add(right.Alias, similarRight.Alias);
+                        _map.Add(right.Alias, similarRight.Alias);
                         return join.Left;
                     }
                 }
@@ -73,7 +73,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitColumn(ColumnExpression column)
         {
-            return map.TryGetValue(column.Alias, out TableAlias mapped) ?
+            return _map.TryGetValue(column.Alias, out TableAlias mapped) ?
                 new ColumnExpression(column.Type, mapped, column.Name, column.MapInfo) : column;
         }
     }

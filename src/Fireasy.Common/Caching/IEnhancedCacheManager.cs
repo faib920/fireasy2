@@ -25,7 +25,7 @@ namespace Fireasy.Common.Caching
         /// <param name="expiration">判断对象过期的对象。</param>
         /// <returns></returns>
         long TryIncrement(string cacheKey, Func<long> valueCreator, int step = 1, Func<ICacheItemExpiration> expiration = null);
-        
+
         /// <summary>
         /// 异步方式尝试获取增量。
         /// </summary>

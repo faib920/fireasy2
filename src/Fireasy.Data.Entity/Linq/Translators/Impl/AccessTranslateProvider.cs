@@ -4,9 +4,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
 {
     public class AccessTranslateProvider : TranslateProviderBase
     {
-        public override TranslatorBase CreateTranslator()
+        public override TranslatorBase CreateTranslator(TranslateContext transContext)
         {
-            return new AccessTranslator();
+            return new AccessTranslator(transContext);
         }
 
         protected override Expression BuildExpression(Expression expression)

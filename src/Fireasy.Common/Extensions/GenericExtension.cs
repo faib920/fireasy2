@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.Caching;
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Dynamic;
 using Fireasy.Common.Emit;
@@ -30,10 +29,15 @@ namespace Fireasy.Common.Extensions
     /// </summary>
     public static class GenericExtension
     {
-        private static readonly ReadWriteLocker locker = new ReadWriteLocker();
-        private static readonly MethodInfo MthToType = typeof(GenericExtension).GetMethod(nameof(GenericExtension.ToType));
-        private static readonly MethodInfo MthMapTo = typeof(GenericExtension).GetMethod(nameof(GenericExtension.InternalMapTo), BindingFlags.NonPublic | BindingFlags.Static);
-        private static readonly ConcurrentDictionary<string, Delegate> cache = new ConcurrentDictionary<string, Delegate>();
+        private static readonly ReadWriteLocker _locker = new ReadWriteLocker();
+
+        private class MethodCache
+        {
+            internal protected static readonly MethodInfo ToType = typeof(GenericExtension).GetMethod(nameof(GenericExtension.ToType));
+            internal protected static readonly MethodInfo MapTo = typeof(GenericExtension).GetMethod(nameof(GenericExtension.InternalMapTo), BindingFlags.NonPublic | BindingFlags.Static);
+        }
+
+        private static readonly ConcurrentDictionary<string, Delegate> _cache = new ConcurrentDictionary<string, Delegate>();
 
         /// <summary>
         /// 判断对象是否为空。
@@ -636,7 +640,7 @@ namespace Fireasy.Common.Extensions
                 }
             }
 
-            var func = cache.GetOrAdd($"{sourceType.FullName}-{conversionType.FullName}", k =>
+            var func = _cache.GetOrAdd($"{sourceType.FullName}-{conversionType.FullName}", k =>
             {
                 return BuildCloneToDelegate(obj, conversionType, mapper);
             });
@@ -674,7 +678,7 @@ namespace Fireasy.Common.Extensions
                 }
             }
 
-            var func = cache.GetOrAdd($"{sourceType.FullName}-{targetType.FullName}-mapto", k =>
+            var func = _cache.GetOrAdd($"{sourceType.FullName}-{targetType.FullName}-mapto", k =>
             {
                 return BuildMapToDelegate(source, target, targetType, mapper);
             });
@@ -747,7 +751,7 @@ namespace Fireasy.Common.Extensions
 
                     var mgrExp = Expression.New(typeof(DynamicManager));
                     var exp = (Expression)Expression.Call(mgrExp, method, metaObjExp, Expression.Constant(name));
-                    exp = Expression.Call(null, MthToType, exp, Expression.Constant(descProperty.PropertyType), Expression.Constant(null), Expression.Constant(null, typeof(ConvertMapper)));
+                    exp = Expression.Call(null, MethodCache.ToType, exp, Expression.Constant(descProperty.PropertyType), Expression.Constant(null), Expression.Constant(null, typeof(ConvertMapper)));
                     exp = (Expression)Expression.Convert(exp, descProperty.PropertyType);
                     bindings.Add(Expression.Bind(descProperty, exp));
                 }
@@ -776,7 +780,7 @@ namespace Fireasy.Common.Extensions
 
                     var mgrExp = Expression.New(typeof(DynamicManager));
                     var exp = (Expression)Expression.Call(mgrExp, method, metaObjExp, Expression.Constant(name));
-                    exp = Expression.Call(null, MthToType, exp, Expression.Constant(descProperty.PropertyType), Expression.Constant(null), Expression.Constant(null, typeof(ConvertMapper)));
+                    exp = Expression.Call(null, MethodCache.ToType, exp, Expression.Constant(descProperty.PropertyType), Expression.Constant(null), Expression.Constant(null, typeof(ConvertMapper)));
                     exp = (Expression)Expression.Convert(exp, descProperty.PropertyType);
                     var descExp = Expression.MakeMemberAccess(targetParExp, descProperty);
                     assignments.Add(Expression.Assign(descExp, exp));
@@ -885,7 +889,7 @@ namespace Fireasy.Common.Extensions
             var propertyValue = target == null ? null : targetProperty.GetValue(target);
             if (propertyValue != null)
             {
-                sourceExp = Expression.Call(null, MthMapTo,
+                sourceExp = Expression.Call(null, MethodCache.MapTo,
                     Expression.Convert(sourceExp, typeof(object)),
                     Expression.Constant(propertyValue),
                     Expression.Constant(null, typeof(ConvertMapper)));
@@ -893,7 +897,7 @@ namespace Fireasy.Common.Extensions
             }
             else if (targetProperty.PropertyType != sourceProperty.PropertyType)
             {
-                sourceExp = Expression.Call(null, MthToType,
+                sourceExp = Expression.Call(null, MethodCache.ToType,
                     Expression.Convert(sourceExp, typeof(object)),
                     Expression.Constant(targetProperty.PropertyType),
                     Expression.Constant(propertyValue),

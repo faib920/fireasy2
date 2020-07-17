@@ -27,11 +27,11 @@ namespace Fireasy.Data.Entity
         IEntityRelation
         where TEntity : class, IEntity
     {
-        private readonly List<TEntity> innerList = new List<TEntity>();
-        private readonly List<TEntity> detachedList = new List<TEntity>();
-        private bool isNullset;
-        private EntityOwner owner;
-        private EntityOwner thisOwner;
+        private readonly List<TEntity> _innerList = new List<TEntity>();
+        private readonly List<TEntity> _detachedList = new List<TEntity>();
+        private bool _isNullset;
+        private EntityOwner _owner;
+        private EntityOwner _thisOwner;
 
         /// <summary>
         /// 初始化 <see cref="T:Fireasy.Data.Entity.EntitySet`1"/> 类的新实例。
@@ -51,7 +51,7 @@ namespace Fireasy.Data.Entity
             foreach (var entity in source)
             {
                 SetEntityOwner(entity);
-                innerList.Add(entity);
+                _innerList.Add(entity);
             }
         }
 
@@ -65,7 +65,7 @@ namespace Fireasy.Data.Entity
             foreach (var entity in entities)
             {
                 SetEntityOwner(entity);
-                innerList.Add(entity);
+                _innerList.Add(entity);
             }
         }
 
@@ -79,7 +79,7 @@ namespace Fireasy.Data.Entity
             foreach (var item in source)
             {
                 SetEntityOwner((TEntity)item);
-                innerList.Add((TEntity)item);
+                _innerList.Add((TEntity)item);
             }
         }
 
@@ -102,7 +102,7 @@ namespace Fireasy.Data.Entity
             entity.SetState(EntityState.Attached);
             SetEntityOwner(entity);
             SetOwnerState();
-            innerList.Add(entity);
+            _innerList.Add(entity);
         }
 
         /// <summary>
@@ -110,16 +110,16 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public void Clear()
         {
-            for (var i = innerList.Count - 1; i >= 0; i--)
+            for (var i = _innerList.Count - 1; i >= 0; i--)
             {
-                if (innerList[i].EntityState != EntityState.Attached)
+                if (_innerList[i].EntityState != EntityState.Attached)
                 {
-                    detachedList.Add(innerList[i]);
+                    _detachedList.Add(_innerList[i]);
                 }
             }
 
             SetOwnerState();
-            innerList.Clear();
+            _innerList.Clear();
         }
 
         /// <summary>
@@ -129,7 +129,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public bool Contains(TEntity entity)
         {
-            return innerList.Contains(entity);
+            return _innerList.Contains(entity);
         }
 
         /// <summary>
@@ -139,7 +139,7 @@ namespace Fireasy.Data.Entity
         /// <param name="arrayIndex"></param>
         public void CopyTo(TEntity[] array, int arrayIndex)
         {
-            innerList.CopyTo(array, arrayIndex);
+            _innerList.CopyTo(array, arrayIndex);
         }
 
         /// <summary>
@@ -151,11 +151,11 @@ namespace Fireasy.Data.Entity
         {
             if (entity.EntityState != EntityState.Attached)
             {
-                detachedList.Add(entity);
+                _detachedList.Add(entity);
             }
 
             SetOwnerState();
-            return innerList.Remove(entity);
+            return _innerList.Remove(entity);
         }
 
         /// <summary>
@@ -163,7 +163,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public int Count
         {
-            get { return innerList.Count; }
+            get { return _innerList.Count; }
         }
 
         /// <summary>
@@ -181,7 +181,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public int IndexOf(TEntity entity)
         {
-            return innerList.IndexOf(entity);
+            return _innerList.IndexOf(entity);
         }
 
         /// <summary>
@@ -195,7 +195,7 @@ namespace Fireasy.Data.Entity
             entity.SetState(EntityState.Attached);
             SetEntityOwner(entity);
             SetOwnerState();
-            innerList.Insert(index, entity);
+            _innerList.Insert(index, entity);
         }
 
         /// <summary>
@@ -205,13 +205,13 @@ namespace Fireasy.Data.Entity
         public void RemoveAt(int index)
         {
             Guard.OutOfRange(Count, index);
-            if (innerList[index].EntityState != EntityState.Attached)
+            if (_innerList[index].EntityState != EntityState.Attached)
             {
-                detachedList.Add(innerList[index]);
+                _detachedList.Add(_innerList[index]);
             }
 
             SetOwnerState();
-            innerList.RemoveAt(index);
+            _innerList.RemoveAt(index);
         }
 
         /// <summary>
@@ -224,13 +224,13 @@ namespace Fireasy.Data.Entity
             get
             {
                 Guard.OutOfRange(Count, index);
-                return innerList[index];
+                return _innerList[index];
             }
             set
             {
                 Guard.OutOfRange(Count, index);
-                innerList[index] = value;
-                innerList[index].SetState(EntityState.Modified);
+                _innerList[index] = value;
+                _innerList[index].SetState(EntityState.Modified);
             }
         }
 
@@ -240,7 +240,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public IEnumerator<TEntity> GetEnumerator()
         {
-            return innerList.GetEnumerator();
+            return _innerList.GetEnumerator();
         }
 
         #region 实现IList
@@ -312,30 +312,30 @@ namespace Fireasy.Data.Entity
 
         IEnumerable<IEntity> IEntitySet.GetDetachedList()
         {
-            return detachedList;
+            return _detachedList;
         }
 
         IEnumerable<IEntity> IEntitySet.GetAttachedList()
         {
-            return innerList.Where(s => s.EntityState == EntityState.Attached).ToList();
+            return _innerList.Where(s => s.EntityState == EntityState.Attached).ToList();
         }
 
         IEnumerable<IEntity> IEntitySet.GetModifiedList()
         {
-            return innerList.Where(s => s.EntityState == EntityState.Modified).ToList();
+            return _innerList.Where(s => s.EntityState == EntityState.Modified).ToList();
         }
 
         void IEntitySet.Reset()
         {
-            detachedList.Clear();
+            _detachedList.Clear();
         }
 
         bool IEntitySet.IsNeedClear
         {
-            get { return isNullset; }
+            get { return _isNullset; }
             set
             {
-                isNullset = value;
+                _isNullset = value;
                 if (value)
                 {
                     Clear();
@@ -351,7 +351,7 @@ namespace Fireasy.Data.Entity
         {
             foreach (var item in source.GetDetachedList())
             {
-                detachedList.Add((TEntity)item);
+                _detachedList.Add((TEntity)item);
             }
         }
 
@@ -359,20 +359,20 @@ namespace Fireasy.Data.Entity
 
         private void SetOwnerState()
         {
-            if (owner != null)
+            if (_owner != null)
             {
-                owner.Parent.As<IEntityRelation>(s => s.NotifyModified(owner.Property.Name));
+                _owner.Parent.As<IEntityRelation>(s => s.NotifyModified(_owner.Property.Name));
             }
         }
 
         private void SetEntityOwner(IEntity entity)
         {
-            if (thisOwner == null)
+            if (_thisOwner == null)
             {
-                thisOwner = new EntityOwner(this, null);
+                _thisOwner = new EntityOwner(this, null);
             }
 
-            entity.As<IEntityRelation>(s => s.Owner = thisOwner);
+            entity.As<IEntityRelation>(s => s.Owner = _thisOwner);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -385,15 +385,15 @@ namespace Fireasy.Data.Entity
         /// </summary>
         EntityOwner IEntityRelation.Owner
         {
-            get { return owner; }
-            set { owner = value; }
+            get { return _owner; }
+            set { _owner = value; }
         }
 
         void IEntityRelation.NotifyModified(string propertyName)
         {
-            if (owner != null)
+            if (_owner != null)
             {
-                owner.Parent.As<IEntityRelation>(s => s.NotifyModified(owner.Property == null ? string.Empty : owner.Property.Name));
+                _owner.Parent.As<IEntityRelation>(s => s.NotifyModified(_owner.Property == null ? string.Empty : _owner.Property.Name));
             }
         }
 
@@ -404,7 +404,7 @@ namespace Fireasy.Data.Entity
         public virtual object Clone()
         {
             var list = new EntitySet<TEntity>();
-            foreach (var item in innerList)
+            foreach (var item in _innerList)
             {
                 item.As<ICloneable>(s => list.Add((TEntity)s.Clone()));
             }

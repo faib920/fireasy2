@@ -7,7 +7,6 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Caching.Configuration;
 using Fireasy.Common.Configuration;
-using Fireasy.Common.Extensions;
 #if NETSTANDARD
 using Microsoft.Extensions.DependencyInjection;
 #endif
@@ -45,6 +44,9 @@ namespace Fireasy.Common.Caching
                 services.AddSingleton(typeof(ICacheManager), sp => CreateManager(sp, ((CachingConfigurationSetting)setting).Name));
             }
 
+            services.AddSingleton<IMemoryCacheManager>(sp => new MemoryCacheManager(sp))
+                .AddSingleton(sp => sp.GetService(typeof(ICacheManager)) as IDistributedCacheManager);
+
             return services;
         }
 #endif
@@ -71,7 +73,8 @@ namespace Fireasy.Common.Caching
             var section = ConfigurationUnity.GetSection<CachingConfigurationSection>();
             if (section != null && section.Factory != null)
             {
-                manager = ConfigurationUnity.Cached<ICacheManager>($"CacheManager_{configName}", () => section.Factory.CreateInstance(configName) as ICacheManager);
+                manager = ConfigurationUnity.Cached<ICacheManager>($"CacheManager_{configName}", serviceProvider,
+                    () => section.Factory.CreateInstance(serviceProvider, configName) as ICacheManager);
                 if (manager != null)
                 {
                     return manager;
@@ -82,7 +85,8 @@ namespace Fireasy.Common.Caching
             {
                 if (section == null || (setting = section.GetDefault()) == null)
                 {
-                    return MemoryCacheManager.Instance.TrySetServiceProvider(serviceProvider);
+                    return serviceProvider != null ?
+                        new MemoryCacheManager(serviceProvider) : MemoryCacheManager.Instance;
                 }
             }
             else if (section != null)
@@ -95,7 +99,7 @@ namespace Fireasy.Common.Caching
                 return null;
             }
 
-            return ConfigurationUnity.Cached<ICacheManager>($"CacheManager_{configName}", 
+            return ConfigurationUnity.Cached<ICacheManager>($"CacheManager_{configName}", serviceProvider,
                 () => ConfigurationUnity.CreateInstance<CachingConfigurationSetting, ICacheManager>(serviceProvider, setting, s => s.CacheType));
         }
     }

@@ -23,7 +23,7 @@ namespace Fireasy.Data
     public sealed class DataReaderTypeBuilder
     {
 
-        private readonly IDataReader dataReader;
+        private readonly IDataReader _dataReader;
 
         /// <summary>
         /// 初始化 <see cref="DataReaderTypeBuilder"/> 类的新实例。
@@ -31,7 +31,7 @@ namespace Fireasy.Data
         /// <param name="dataReader">一个 <see cref="IDataReader"/> 对象。</param>
         public DataReaderTypeBuilder(IDataReader dataReader)
         {
-            this.dataReader = dataReader;
+            _dataReader = dataReader;
             ImplInterfaceTypes = new List<Type>();
         }
 
@@ -47,8 +47,8 @@ namespace Fireasy.Data
         public Type CreateType()
         {
             var cacheMgr = MemoryCacheManager.Instance;
-            var typeName = BuildTypeName(dataReader);
-            return cacheMgr.TryGet(typeName, () => InternalCreateType(dataReader, ImplInterfaceTypes));
+            var typeName = BuildTypeName(_dataReader);
+            return cacheMgr.TryGet(typeName, () => InternalCreateType(_dataReader, ImplInterfaceTypes));
         }
 
         private static Type InternalCreateType(IDataReader reader, IEnumerable<Type> implInterfaceTypes)

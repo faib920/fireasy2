@@ -16,17 +16,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class RelationshipIncluder : DbExpressionVisitor
     {
-        private readonly IQueryPolicy policy;
-        private ScopedDictionary<IProperty, bool> includeScope = new ScopedDictionary<IProperty, bool>(null);
+        private TranslateContext _transContext;
+        private IQueryPolicy _policy;
+        private ScopedDictionary<IProperty, bool> _includeScope = new ScopedDictionary<IProperty, bool>(null);
 
-        public static Expression Include(IQueryPolicy policy, Expression expression)
+        public static Expression Include(TranslateContext transContext, Expression expression)
         {
-            return new RelationshipIncluder(policy).Visit(expression);
-        }
-
-        public RelationshipIncluder(IQueryPolicy policy)
-        {
-            this.policy = policy;
+            return new RelationshipIncluder { _transContext = transContext, _policy = transContext.QueryPolicy }.Visit(expression);
         }
 
         protected override Expression VisitProjection(ProjectionExpression proj)
@@ -39,21 +35,21 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             if (entity.Expression is MemberInitExpression init)
             {
-                var save = includeScope;
-                includeScope = new ScopedDictionary<IProperty, bool>(this.includeScope);
+                var save = _includeScope;
+                _includeScope = new ScopedDictionary<IProperty, bool>(_includeScope);
 
                 List<MemberBinding> newBindings = null;
                 foreach (var property in PropertyUnity.GetRelatedProperties(entity.Type))
                 {
                     PropertyInfo member;
-                    if (property is IPropertyLazy && policy.IsIncluded(member = property.Info.ReflectionInfo))
+                    if (property is IPropertyLazy && _policy.IsIncluded(member = property.Info.ReflectionInfo))
                     {
-                        if (includeScope.ContainsKey(property))
+                        if (_includeScope.ContainsKey(property))
                         {
                             throw new NotSupportedException(string.Format("Cannot include '{0}.{1}' recursively.", property.Type, property.Name));
                         }
 
-                        var me = QueryUtility.GetMemberExpression(init, property);
+                        var me = QueryUtility.GetMemberExpression(_transContext, init, property);
                         if (newBindings == null)
                         {
                             newBindings = new List<MemberBinding>(init.Bindings);
@@ -68,7 +64,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     entity = new EntityExpression(entity.Metadata, Expression.MemberInit(init.NewExpression, newBindings));
                 }
 
-                includeScope = save;
+                _includeScope = save;
             }
 
             return base.VisitEntity(entity);

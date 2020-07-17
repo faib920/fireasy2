@@ -23,13 +23,13 @@ namespace Fireasy.Data.Entity.Query
     /// <summary>
     /// 提供对象查询的基本方法。无法继承此类。
     /// </summary>
-    public sealed class QueryProvider : 
-        IQueryProvider, 
-        ITranslateSupport, 
-        IAsyncQueryProvider, 
+    public sealed class QueryProvider :
+        IQueryProvider,
+        ITranslateSupport,
+        IAsyncQueryProvider,
         IContextTypeAware
     {
-        private readonly EntityQueryProvider entityQueryProvider;
+        private readonly EntityQueryProvider _entityQueryProvider;
 
         /// <summary>
         /// 初始化 <see cref="QueryProvider"/> 类的新实例。
@@ -37,7 +37,7 @@ namespace Fireasy.Data.Entity.Query
         /// <param name="entityQueryProvider"></param>
         public QueryProvider(EntityQueryProvider entityQueryProvider)
         {
-            this.entityQueryProvider = entityQueryProvider;
+            _entityQueryProvider = entityQueryProvider;
             ContextService = entityQueryProvider.ContextService;
             ContextOptions = entityQueryProvider.ContextOptions;
         }
@@ -53,12 +53,12 @@ namespace Fireasy.Data.Entity.Query
         /// <summary>
         /// 获取 <see cref="IContextService"/> 实例。
         /// </summary>
-        public IContextService ContextService { get; private set; }
+        public IContextService ContextService { get; }
 
         /// <summary>
         /// 获取参数选项。
         /// </summary>
-        public EntityContextOptions ContextOptions { get; private set; }
+        public EntityContextOptions ContextOptions { get; }
 
         /// <summary>
         /// 构造一个 <see cref="IQueryable"/> 对象，该对象可计算指定表达式树所表示的查询。
@@ -105,7 +105,7 @@ namespace Fireasy.Data.Entity.Query
         /// <returns></returns>
         public object Execute(Expression expression)
         {
-            return entityQueryProvider.Execute(expression);
+            return _entityQueryProvider.Execute(expression);
         }
 
         /// <summary>
@@ -117,14 +117,14 @@ namespace Fireasy.Data.Entity.Query
         public TResult Execute<TResult>(Expression expression)
         {
             var executeCache = ContextService.ServiceProvider.TryGetService(() => DefaultExecuteCache.Instance);
-            return executeCache.TryGet(expression, GetCacheContext(), () => entityQueryProvider.Execute<TResult>(expression));
+            return executeCache.TryGet(expression, GetCacheContext(), () => _entityQueryProvider.Execute<TResult>(expression));
         }
 
 #if !NETFRAMEWORK && !NETSTANDARD2_0
         public IAsyncEnumerable<TResult> ExecuteEnumerableAsync<TResult>(Expression expression, CancellationToken cancellationToken)
         {
             var executeCache = ContextService.ServiceProvider.TryGetService(() => DefaultExecuteCache.Instance);
-            return executeCache.TryGet(expression, GetCacheContext(), () => entityQueryProvider.ExecuteEnumerableAsync<TResult>(expression, cancellationToken));
+            return executeCache.TryGet(expression, GetCacheContext(), () => _entityQueryProvider.ExecuteEnumerableAsync<TResult>(expression, cancellationToken));
         }
 #endif
 
@@ -138,7 +138,7 @@ namespace Fireasy.Data.Entity.Query
         public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
         {
             var executeCache = ContextService.ServiceProvider.TryGetService(() => DefaultExecuteCache.Instance);
-            return await executeCache.TryGetAsync(expression, GetCacheContext(), c => entityQueryProvider.ExecuteAsync<TResult>(expression, c), cancellationToken);
+            return await executeCache.TryGetAsync(expression, GetCacheContext(), c => _entityQueryProvider.ExecuteAsync<TResult>(expression, c), cancellationToken);
         }
 
         /// <summary>
@@ -149,7 +149,7 @@ namespace Fireasy.Data.Entity.Query
         /// <returns>翻译结果。</returns>
         TranslateResult ITranslateSupport.Translate(Expression expression, TranslateOptions option)
         {
-            return entityQueryProvider.Translate(expression, option);
+            return _entityQueryProvider.Translate(expression, option);
         }
 
         private ExecuteCacheContext GetCacheContext()

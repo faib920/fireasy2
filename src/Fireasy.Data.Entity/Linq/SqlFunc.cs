@@ -7,7 +7,6 @@
 // -----------------------------------------------------------------------
 using Fireasy.Data.Entity.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Translators;
-using System;
 using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq
@@ -49,7 +48,7 @@ namespace Fireasy.Data.Entity.Linq
 
         private abstract class AggregateFunctionBinder : IMethodCallBinder
         {
-            private AggregateType aggType;
+            private readonly AggregateType aggType;
 
             public AggregateFunctionBinder(AggregateType aggType)
             {
@@ -74,7 +73,7 @@ namespace Fireasy.Data.Entity.Linq
         private class SumFunctionBinder : AggregateFunctionBinder
         {
             public SumFunctionBinder()
-                : base (AggregateType.Sum)
+                : base(AggregateType.Sum)
             {
             }
         }

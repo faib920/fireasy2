@@ -6,11 +6,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using System.Xml;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
-using System.Linq;
+using System;
+using System.Xml;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
@@ -30,13 +29,13 @@ namespace Fireasy.Common.Subscribes.Configuration
         public override void Initialize(XmlNode section)
         {
             InitializeNode(
-                section, 
-                "subscriber", 
+                section,
+                "subscriber",
                 func: node => new SubscribeConfigurationSetting
-                    {
-                        Name = node.GetAttributeValue("name"),
-                        SubscriberType = Type.GetType(node.GetAttributeValue("type"), false, true)
-                    });
+                {
+                    Name = node.GetAttributeValue("name"),
+                    SubscriberType = Type.GetType(node.GetAttributeValue("type"), false, true)
+                });
 
             //取默认实例
             DefaultInstanceName = section.GetAttributeValue("default");
@@ -51,13 +50,13 @@ namespace Fireasy.Common.Subscribes.Configuration
         /// <param name="configuration">对应的配置节点。</param>
         public override void Bind(IConfiguration configuration)
         {
-            Bind(configuration, 
-                "settings", 
+            Bind(configuration,
+                "settings",
                 func: c => new SubscribeConfigurationSetting
-                    {
-                        Name = c.Key,
-                        SubscriberType = Type.GetType(c.GetSection("type").Value, false, true)
-                    });
+                {
+                    Name = c.Key,
+                    SubscriberType = Type.GetType(c.GetSection("type").Value, false, true)
+                });
 
             //取默认实例
             DefaultInstanceName = configuration.GetSection("default").Value;

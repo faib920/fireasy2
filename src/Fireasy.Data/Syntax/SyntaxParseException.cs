@@ -20,7 +20,7 @@ namespace Fireasy.Data.Syntax
         /// </summary>
         /// <param name="syntaxName">语法名称。</param>
         public SyntaxParseException(string syntaxName)
-            : base (SR.GetString(SRKind.SyntaxParseNotSupported, syntaxName))
+            : base(SR.GetString(SRKind.SyntaxParseNotSupported, syntaxName))
         {
         }
     }

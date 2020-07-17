@@ -26,6 +26,6 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取查询表达式。
         /// </summary>
-        public SelectExpression Select { get; private set; }
+        public SelectExpression Select { get; }
     }
 }

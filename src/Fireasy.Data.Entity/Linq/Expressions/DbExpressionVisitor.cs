@@ -55,7 +55,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
                 case DbExpressionType.Projection:
                     return VisitProjection((ProjectionExpression)exp);
                 case DbExpressionType.NamedValue:
-                    return this.VisitNamedValue((NamedValueExpression)exp);
+                    return VisitNamedValue((NamedValueExpression)exp);
                 case DbExpressionType.Function:
                     return VisitFunction((FunctionExpression)exp);
                 case DbExpressionType.Entity:
@@ -169,9 +169,9 @@ namespace Fireasy.Data.Entity.Linq.Expressions
 
         protected virtual Expression VisitClientJoin(ClientJoinExpression join)
         {
-            var projection = (ProjectionExpression)this.Visit(join.Projection);
-            var outerKey = this.VisitMemberAndExpressionList(join.OuterKey);
-            var innerKey = this.VisitMemberAndExpressionList(join.InnerKey);
+            var projection = (ProjectionExpression)Visit(join.Projection);
+            var outerKey = VisitMemberAndExpressionList(join.OuterKey);
+            var innerKey = VisitMemberAndExpressionList(join.InnerKey);
             return join.Update(projection, outerKey, innerKey);
         }
 
@@ -284,7 +284,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <returns></returns>
         protected virtual Expression VisitAggregateSubquery(AggregateSubqueryExpression aggregate)
         {
-            var subquery = (ScalarExpression) Visit(aggregate.AggregateAsSubquery);
+            var subquery = (ScalarExpression)Visit(aggregate.AggregateAsSubquery);
             return aggregate.Update(subquery);
         }
 
@@ -331,15 +331,15 @@ namespace Fireasy.Data.Entity.Linq.Expressions
             switch ((DbExpressionType)command.NodeType)
             {
                 case DbExpressionType.Insert:
-                    return this.VisitInsert((InsertCommandExpression)command);
+                    return VisitInsert((InsertCommandExpression)command);
                 case DbExpressionType.Update:
-                    return this.VisitUpdate((UpdateCommandExpression)command);
+                    return VisitUpdate((UpdateCommandExpression)command);
                 case DbExpressionType.Delete:
-                    return this.VisitDelete((DeleteCommandExpression)command);
+                    return VisitDelete((DeleteCommandExpression)command);
                 case DbExpressionType.Block:
-                    return this.VisitBlock((BlockCommandExpression)command);
+                    return VisitBlock((BlockCommandExpression)command);
                 default:
-                    return this.VisitUnknown(command);
+                    return VisitUnknown(command);
             }
         }
 
@@ -350,7 +350,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <returns></returns>
         protected virtual Expression VisitBatch(BatchCommandExpression batch)
         {
-            var operation = (LambdaExpression)this.Visit(batch.Operation);
+            var operation = (LambdaExpression)Visit(batch.Operation);
             return batch.Update(batch.Input, operation, batch.Arguments);
         }
 
@@ -375,7 +375,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         {
             var table = Visit(update.Table);
             var where = Visit(update.Where);
-            var assignments = this.VisitColumnAssignments(update.Assignments);
+            var assignments = VisitColumnAssignments(update.Assignments);
             return update.Update(table, where, assignments);
         }
 
@@ -387,7 +387,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         protected virtual Expression VisitInsert(InsertCommandExpression insert)
         {
             var table = Visit(insert.Table);
-            var assignments = this.VisitColumnAssignments(insert.Assignments);
+            var assignments = VisitColumnAssignments(insert.Assignments);
             return insert.Update(table, assignments);
         }
 
@@ -421,7 +421,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
             List<ColumnAssignment> alternate = null;
             for (int i = 0, n = assignments.Count; i < n; i++)
             {
-                ColumnAssignment assignment = this.VisitColumnAssignment(assignments[i]);
+                ColumnAssignment assignment = VisitColumnAssignment(assignments[i]);
                 if (alternate == null && assignment != assignments[i])
                 {
                     alternate = assignments.Take(i).ToList();
@@ -469,9 +469,9 @@ namespace Fireasy.Data.Entity.Linq.Expressions
 
         protected virtual ColumnAssignment VisitColumnAssignment(ColumnAssignment ca)
         {
-            ColumnExpression c = (ColumnExpression)this.Visit(ca.Column);
-            Expression e = this.Visit(ca.Expression);
-            return this.UpdateColumnAssignment(ca, c, e);
+            ColumnExpression c = (ColumnExpression)Visit(ca.Column);
+            Expression e = Visit(ca.Expression);
+            return UpdateColumnAssignment(ca, c, e);
         }
 
         /// <summary>

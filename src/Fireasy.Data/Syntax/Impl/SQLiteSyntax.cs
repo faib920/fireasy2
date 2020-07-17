@@ -100,7 +100,7 @@ namespace Fireasy.Data.Syntax
         /// <exception cref="SegmentNotSupportedException">当前数据库或版本不支持分段时，引发该异常。</exception>
         public virtual string Segment(string commandText, IDataSegment segment)
         {
-            return  @$"{commandText}
+            return @$"{commandText}
 LIMIT {(segment.Length != 0 ? segment.Length : 1000)}{(segment.Start != null ? $" OFFSET {segment.Start - 1}" : string.Empty)}";
         }
 

@@ -42,7 +42,7 @@ namespace Fireasy.Data.Schema
             {
                 if (obj != null)
                 {
-                    value =  obj.ToString();
+                    value = obj.ToString();
                     return true;
                 }
             }

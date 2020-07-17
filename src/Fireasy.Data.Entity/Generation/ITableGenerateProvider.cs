@@ -7,7 +7,6 @@
 // -----------------------------------------------------------------------
 using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Provider;
-using System;
 using System.Collections.Generic;
 
 namespace Fireasy.Data.Entity.Generation

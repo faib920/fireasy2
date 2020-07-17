@@ -7,14 +7,11 @@
 // -----------------------------------------------------------------------
 
 using Fireasy.Common;
-using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Emit;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Properties;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
@@ -38,10 +35,10 @@ namespace Fireasy.Data.Entity.Dynamic
             internal static readonly MethodInfo TypeGetTypeFromHandle = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Public | BindingFlags.Static);
         }
 
-        private readonly DynamicAssemblyBuilder assemblyBuilder;
-        private List<DynamicFieldBuilder> fields;
-        private Dictionary<IProperty, List<Expression<Func<Attribute>>>> validations;
-        private List<Expression<Func<Attribute>>> eValidations;
+        private readonly DynamicAssemblyBuilder _assemblyBuilder;
+        private List<DynamicFieldBuilder> _fields;
+        private Dictionary<IProperty, List<Expression<Func<Attribute>>>> _validations;
+        private List<Expression<Func<Attribute>>> _valExps;
 
         /// <summary>
         /// 初始化 <see cref="EntityTypeBuilder"/> 类的新实例。
@@ -51,9 +48,9 @@ namespace Fireasy.Data.Entity.Dynamic
         /// <param name="baseType">所要继承的抽象类型，默认为 <see cref="EntityObject"/> 类。</param>
         public EntityTypeBuilder(string typeName, DynamicAssemblyBuilder assemblyBuilder = null, Type baseType = null)
         {
+            _assemblyBuilder = assemblyBuilder ?? new DynamicAssemblyBuilder($"<DynamicType>_{typeName}");
             TypeName = typeName;
-            this.assemblyBuilder = assemblyBuilder ?? new DynamicAssemblyBuilder($"<DynamicType>_{typeName}");
-            InnerBuilder = this.assemblyBuilder.DefineType(TypeName, baseType: baseType ?? typeof(EntityObject));
+            InnerBuilder = _assemblyBuilder.DefineType(TypeName, baseType: baseType ?? typeof(EntityObject));
             EntityType = InnerBuilder.UnderlyingSystemType;
             Properties = new List<IProperty>();
         }
@@ -61,7 +58,7 @@ namespace Fireasy.Data.Entity.Dynamic
         /// <summary>
         /// 获取实体类的名称。
         /// </summary>
-        public string TypeName { get; private set; }
+        public string TypeName { get; }
 
         /// <summary>
         /// 获取或设置映射对象。
@@ -76,12 +73,12 @@ namespace Fireasy.Data.Entity.Dynamic
         /// <summary>
         /// 获取实体类型。
         /// </summary>
-        public Type EntityType { get; private set; }
+        public Type EntityType { get; }
 
         /// <summary>
         /// 获取 <see cref="DynamicTypeBuilder"/> 对象。
         /// </summary>
-        public DynamicTypeBuilder InnerBuilder { get; private set; }
+        public DynamicTypeBuilder InnerBuilder { get; }
 
         /// <summary>
         /// 为属性添加验证规则。
@@ -91,12 +88,12 @@ namespace Fireasy.Data.Entity.Dynamic
         public void DefineValidateRule(IProperty property, params Expression<Func<Attribute>>[] attributes)
         {
             Guard.ArgumentNull(attributes, nameof(attributes));
-            if (validations == null)
+            if (_validations == null)
             {
-                validations = new Dictionary<IProperty, List<Expression<Func<Attribute>>>>();
+                _validations = new Dictionary<IProperty, List<Expression<Func<Attribute>>>>();
             }
 
-            var list = validations.TryGetValue(property, () => new List<Expression<Func<Attribute>>>());
+            var list = _validations.TryGetValue(property, () => new List<Expression<Func<Attribute>>>());
             list.AddRange(attributes);
         }
 
@@ -107,12 +104,12 @@ namespace Fireasy.Data.Entity.Dynamic
         public void DefineValidateRule(params Expression<Func<Attribute>>[] attributes)
         {
             Guard.ArgumentNull(attributes, nameof(attributes));
-            if (eValidations == null)
+            if (_valExps == null)
             {
-                eValidations = new List<Expression<Func<Attribute>>>();
+                _valExps = new List<Expression<Func<Attribute>>>();
             }
 
-            eValidations.AddRange(attributes);
+            _valExps.AddRange(attributes);
         }
 
         /// <summary>
@@ -150,10 +147,10 @@ namespace Fireasy.Data.Entity.Dynamic
                 InnerBuilder.SetCustomAttribute<EntityMappingAttribute>(Mapping.TableName);
             }
 
-            fields = new List<DynamicFieldBuilder>();
+            _fields = new List<DynamicFieldBuilder>();
 
-            DefineProperties(fields);
-            DefineConstructors(fields);
+            DefineProperties(_fields);
+            DefineConstructors(_fields);
 
             return InnerBuilder.CreateType();
         }
@@ -222,7 +219,7 @@ namespace Fireasy.Data.Entity.Dynamic
 
                 setMethod.DefineParameter("value");
 
-                if (validations != null && validations.TryGetValue(_property, out List<Expression<Func<Attribute>>> attribues))
+                if (_validations != null && _validations.TryGetValue(_property, out List<Expression<Func<Attribute>>> attribues))
                 {
                     attribues.ForEach(s => propertyBuider.SetCustomAttribute(s));
                 }

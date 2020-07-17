@@ -47,8 +47,8 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string IndexOf(object sourceExp, object searchExp, object startExp = null, object countExp = null)
         {
-            return startExp != null ? 
-                $"POSITION({searchExp}, {sourceExp}, {startExp})" : 
+            return startExp != null ?
+                $"POSITION({searchExp}, {sourceExp}, {startExp})" :
                 $"POSITION({searchExp}, {sourceExp})";
         }
 

@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using System;
 using System.Collections;
@@ -15,13 +16,13 @@ namespace Fireasy.Common.Serialization
 {
     internal class DeserializeBase : DisposeableBase
     {
-        private readonly SerializeContext context;
-        private readonly SerializeOption option;
+        private readonly SerializeContext _context;
+        private readonly SerializeOption _option;
 
         internal DeserializeBase(SerializeOption option)
         {
-            this.option = option;
-            context = new SerializeContext { Option = option };
+            _option = option;
+            _context = new SerializeContext { Option = option };
         }
 
         /// <summary>
@@ -31,8 +32,8 @@ namespace Fireasy.Common.Serialization
         /// <returns></returns>
         protected Dictionary<string, SerializerPropertyMetadata> GetAccessorMetadataMappers(Type type)
         {
-            var cache = context.GetProperties(type, () => option.ContractResolver.GetProperties(type));
-            return cache.ToDictionary(s => s.PropertyName);
+            var cache = _context.GetProperties(type, () => _option.ContractResolver.GetProperties(type));
+            return cache.ToDictionary(s => s.PropertyName, StringEqualityComparer.Default);
         }
 
         /// <summary>
@@ -93,7 +94,7 @@ namespace Fireasy.Common.Serialization
         protected object CreateGeneralObject(Type objType)
         {
             var obj = objType.New();
-            foreach (var acc in context.GetProperties(objType, () => option.ContractResolver.GetProperties(objType)).Where(s => s.DefaultValue != null))
+            foreach (var acc in _context.GetProperties(objType, () => _option.ContractResolver.GetProperties(objType)).Where(s => s.DefaultValue != null))
             {
                 acc.Setter(obj, acc.DefaultValue.ToType(acc.PropertyInfo.PropertyType));
             }
@@ -101,11 +102,31 @@ namespace Fireasy.Common.Serialization
             return obj;
         }
 
+        protected bool HasEmptyConstructor(Type type)
+        {
+            return type.GetConstructor(Type.EmptyTypes) != null;
+        }
+
         protected override bool Dispose(bool disposing)
         {
-            context.Dispose();
+            _context.Dispose();
 
             return base.Dispose(disposing);
+        }
+
+        private class StringEqualityComparer : IEqualityComparer<string>
+        {
+            internal static StringEqualityComparer Default = new StringEqualityComparer();
+
+            public bool Equals(string x, string y)
+            {
+                return string.Compare(x, y, true) == 0;
+            }
+
+            public int GetHashCode(string obj)
+            {
+                return 0;
+            }
         }
     }
 }

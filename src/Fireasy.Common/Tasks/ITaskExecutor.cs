@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Fireasy.Common.Tasks

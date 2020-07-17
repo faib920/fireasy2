@@ -420,7 +420,7 @@ namespace Fireasy.Data.Entity.Linq
         {
             if (sort == null)
             {
-                 return otherwise == null ? source : otherwise(source);
+                return otherwise == null ? source : otherwise(source);
             }
 
             return source.ThenBy(sort.Member, sort.Order, otherwise);
@@ -1197,9 +1197,9 @@ namespace Fireasy.Data.Entity.Linq
 
             var result = source.Provider.Execute<int>(expression);
 
-            if (primary != null && result > 0 && 
+            if (primary != null && result > 0 &&
                 primary.Type.IsNumericType() &&
-                !entity.IsModified(primary.Name) && 
+                !entity.IsModified(primary.Name) &&
                 result != (int)entity.GetValue(primary))
             {
                 entity.SetValue(primary, PropertyValue.NewValue(result, primary.Type));
@@ -1711,7 +1711,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <typeparam name="T"></typeparam>
         private class PredicateGatherer<T> : Fireasy.Common.Linq.Expressions.ExpressionVisitor
         {
-            private readonly List<Expression> exps = new List<Expression>();
+            private readonly List<Expression> _exps = new List<Expression>();
 
             internal static LambdaExpression Gather(Expression expression)
             {
@@ -1722,13 +1722,13 @@ namespace Fireasy.Data.Entity.Linq
 
             private LambdaExpression Build()
             {
-                if (exps.Count == 0)
+                if (_exps.Count == 0)
                 {
                     return null;
                 }
 
-               var parExp = Expression.Parameter(typeof(T), "s");
-               return Expression.Lambda(exps.Aggregate(Expression.And), parExp);
+                var parExp = Expression.Parameter(typeof(T), "s");
+                return Expression.Lambda(_exps.Aggregate(Expression.And), parExp);
             }
 
             protected override Expression VisitMethodCall(MethodCallExpression node)
@@ -1736,7 +1736,7 @@ namespace Fireasy.Data.Entity.Linq
                 if (node.Method.DeclaringType == typeof(Queryable) && node.Method.Name == nameof(Queryable.Where))
                 {
                     Visit(node.Arguments[0]);
-                    exps.Add(GetLambda(node.Arguments[1]).Body);
+                    _exps.Add(GetLambda(node.Arguments[1]).Body);
                 }
                 else
                 {

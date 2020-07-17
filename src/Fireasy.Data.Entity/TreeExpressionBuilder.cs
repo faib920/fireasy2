@@ -21,7 +21,10 @@ namespace Fireasy.Data.Entity
     /// </summary>
     internal class TreeExpressionBuilder
     {
-        private static MethodInfo MthLike = typeof(StringExtension).GetMethod("Like", BindingFlags.Public | BindingFlags.Static);
+        private class MethodCache
+        {
+            internal protected static MethodInfo Like = typeof(StringExtension).GetMethod(nameof(StringExtension.Like), BindingFlags.Public | BindingFlags.Static);
+        }
 
         /// <summary>
         /// 构造方法 QueryChildren 的表达式。 
@@ -41,11 +44,11 @@ namespace Fireasy.Data.Entity
             Expression condition;
             if (recurrence)
             {
-                condition = Expression.Call(null, MthLike, memberExp, Expression.Constant(string.Concat(no, "%")));
+                condition = Expression.Call(null, MethodCache.Like, memberExp, Expression.Constant(string.Concat(no, "%")));
             }
             else
             {
-                condition = Expression.Call(null, MthLike, memberExp, Expression.Constant(string.Concat(no, new string('_', metadata.SignLength))));
+                condition = Expression.Call(null, MethodCache.Like, memberExp, Expression.Constant(string.Concat(no, new string('_', metadata.SignLength))));
             }
 
             if (predicate != null)
@@ -74,7 +77,7 @@ namespace Fireasy.Data.Entity
 
             var memberExp = Expression.MakeMemberAccess(parExp, metadata.InnerSign.Info.ReflectionInfo);
             var no = parent == null ? string.Empty : (string)parent.GetValue(metadata.InnerSign);
-            var condition = (Expression)Expression.Call(null, MthLike, memberExp, Expression.Constant(string.Concat(no, new string('_', metadata.SignLength))));
+            var condition = (Expression)Expression.Call(null, MethodCache.Like, memberExp, Expression.Constant(string.Concat(no, new string('_', metadata.SignLength))));
 
             if (predicate != null)
             {
@@ -179,7 +182,7 @@ namespace Fireasy.Data.Entity
             var parExp = Expression.Parameter(typeof(T), "s");
             var memberExp = Expression.MakeMemberAccess(parExp, metadata.InnerSign.Info.ReflectionInfo);
 
-            var condition1 = Expression.Call(null, MthLike, memberExp, Expression.Constant(string.Concat(no, "_%")));
+            var condition1 = Expression.Call(null, MethodCache.Like, memberExp, Expression.Constant(string.Concat(no, "_%")));
             var condition2 = Expression.NotEqual(memberExp, Expression.Constant(no));
             var condition = Expression.And(condition1, condition2);
 

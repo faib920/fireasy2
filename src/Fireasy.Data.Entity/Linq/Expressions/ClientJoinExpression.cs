@@ -5,10 +5,10 @@
 //   (c) Copyright Faib Studio 2011. All rights reserved.
 // </copyright>
 // ---------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq.Expressions;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Data.Entity.Linq.Expressions
 {

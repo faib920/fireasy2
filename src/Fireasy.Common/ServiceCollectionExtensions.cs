@@ -19,6 +19,7 @@ using Fireasy.Common.Localization;
 using Fireasy.Common.Localization.Configuration;
 using Fireasy.Common.Logging;
 using Fireasy.Common.Logging.Configuration;
+using Fireasy.Common.Mapper;
 using Fireasy.Common.Mapper.Configuration;
 using Fireasy.Common.Options;
 using Fireasy.Common.Serialization;
@@ -31,8 +32,10 @@ using Fireasy.Common.Threading;
 using Fireasy.Common.Threading.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -51,6 +54,9 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IServiceCollection AddFireasy(this IServiceCollection services, IConfiguration configuration, Action<CoreOptions> setupAction = null)
         {
+            Guard.ArgumentNull(services, nameof(services));
+            Guard.ArgumentNull(configuration, nameof(configuration));
+
             var options = new CoreOptions();
             setupAction?.Invoke(options);
 
@@ -71,6 +77,8 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IServiceCollection AddIoc(this IServiceCollection services, string containerName = null)
         {
+            Guard.ArgumentNull(services, nameof(services));
+
             var section = ConfigurationUnity.GetSection<ContainerConfigurationSection>();
             if (section == null)
             {
@@ -98,6 +106,32 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
+        /// <summary>
+        /// 在 <paramref name="services"/> 或指定的程序集中发现 <see cref="ISubscriber{TSubject}"/> 及 <see cref="ISubscribeHandler"/> 的类型，并将它们注册为订阅器。
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="assembly">指定的程序集。如果忽略该参数，则从 <paramref name="services"/> 里筛选。</param>
+        /// <returns></returns>
+        public static IServiceCollection AddSubscribers(this IServiceCollection services, Assembly assembly = null)
+        {
+            Guard.ArgumentNull(services, nameof(services));
+
+            IEnumerable<Type> types = null;
+            if (assembly == null)
+            {
+                types = Helper.DiscoveryTypes(services);
+            }
+            else
+            {
+                types = Helper.DiscoveryTypes(assembly);
+                types.ForEach(s => services.TryAddScoped(s));
+            }
+
+            services.TryAddEnumerable(
+                ServiceDescriptor.Singleton<IHostedService, SubscribeHostedService>(sp => new SubscribeHostedService(sp, () => types)));
+
+            return services;
+        }
 
         /// <summary>
         /// 绑定所有和 fireasy 有关的配置项。
@@ -199,7 +233,8 @@ namespace Microsoft.Extensions.DependencyInjection
                     .AddLocker()
                     .AddSerializer()
                     .AddStringLocalizer()
-                    .AddTaskScheduler();
+                    .AddTaskScheduler()
+                    .AddMapper();
             }
         }
     }

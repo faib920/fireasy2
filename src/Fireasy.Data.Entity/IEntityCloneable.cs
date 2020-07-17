@@ -6,8 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-
 namespace Fireasy.Data.Entity
 {
 }

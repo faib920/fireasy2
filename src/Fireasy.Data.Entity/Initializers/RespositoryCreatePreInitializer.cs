@@ -22,7 +22,7 @@ namespace Fireasy.Data.Entity.Initializers
     public class RespositoryCreatePreInitializer : IEntityContextPreInitializer
     {
         //存放实体类型对应的表有没有创建
-        private static readonly SafetyDictionary<string, bool> cache = new SafetyDictionary<string, bool>();
+        private static readonly SafetyDictionary<string, bool> _cache = new SafetyDictionary<string, bool>();
 
         /// <summary>
         /// 获取或设置事件通知。
@@ -60,7 +60,7 @@ namespace Fireasy.Data.Entity.Initializers
             var instanceName = ContextInstanceManager.TryAdd(service.Options);
 
             var cacheKey = string.Concat(instanceName, ":", entityType.FullName);
-            return cache.GetOrAdd(cacheKey, () =>
+            return _cache.GetOrAdd(cacheKey, () =>
             {
                 //判断数据表是否已存在
                 if (tbGen.IsExists(database, tableName))

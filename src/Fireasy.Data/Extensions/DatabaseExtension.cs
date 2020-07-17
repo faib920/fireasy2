@@ -6,11 +6,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common;
+using Fireasy.Common.Extensions;
 using System;
 using System.Data;
 using System.Data.Common;
-using System.Linq;
-using Fireasy.Common;
 
 namespace Fireasy.Data.Extensions
 {
@@ -70,7 +70,10 @@ namespace Fireasy.Data.Extensions
 
             if (mode == DistributedMode.Slave && database is IDistributedDatabase distDb)
             {
-                connStr = DistributedConnectionManager.GetConnection(distDb);
+                var serviceProvider = database.TryGetServiceProvider();
+                var manager = serviceProvider.TryGetService(() => DefaultDistributedConnectionManager.Instance);
+
+                connStr = manager.GetConnection(distDb);
             }
 
             return database.Provider.CreateConnection((connStr ?? database.ConnectionString).ToString());

@@ -15,11 +15,11 @@ namespace Fireasy.Common.Localization
     /// </summary>
     public class XmlStringLocalizer : IStringLocalizer
     {
-        private readonly XmlDocument doc;
+        private readonly XmlDocument _xmlDoc;
 
-        public XmlStringLocalizer(XmlDocument doc, CultureInfo cultureInfo)
+        public XmlStringLocalizer(XmlDocument xmlDoc, CultureInfo cultureInfo)
         {
-            this.doc = doc;
+            _xmlDoc = xmlDoc;
             CultureInfo = cultureInfo;
         }
 
@@ -29,7 +29,7 @@ namespace Fireasy.Common.Localization
         {
             get
             {
-                var node = doc.SelectSingleNode($"//strings/{name}");
+                var node = _xmlDoc.SelectSingleNode($"//strings/{name}");
                 if (node == null)
                 {
                     return name;
@@ -43,7 +43,7 @@ namespace Fireasy.Common.Localization
         {
             get
             {
-                var node = doc.SelectSingleNode($"//strings/{name}");
+                var node = _xmlDoc.SelectSingleNode($"//strings/{name}");
                 if (node == null)
                 {
                     return name;

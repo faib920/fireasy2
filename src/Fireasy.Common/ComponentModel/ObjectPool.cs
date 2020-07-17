@@ -21,10 +21,25 @@ namespace Fireasy.Common.ComponentModel
     public interface IObjectPoolable
     {
         /// <summary>
+        /// 获取池标识。
+        /// </summary>
+        string PoolName { get; }
+
+        /// <summary>
         /// 设置缓冲池实例。
         /// </summary>
-        /// <param name="pool"></param>
-        void SetPool(IObjectPool pool);
+        /// <param name="poolName"></param>
+        void SetPool(string poolName);
+
+        /// <summary>
+        /// 从缓冲池拿出实例时通知。
+        /// </summary>
+        void OnRent();
+
+        /// <summary>
+        /// 将对象还回缓冲池时通知。
+        /// </summary>
+        void OnReturn();
     }
 
     /// <summary>
@@ -52,36 +67,37 @@ namespace Fireasy.Common.ComponentModel
     /// <typeparam name="T"></typeparam>
     public class ObjectPool<T> : DisposeableBase, IObjectPool where T : class, IObjectPoolable
     {
-        private readonly SafetyDictionary<string, InternalQueue> queueDict = new SafetyDictionary<string, InternalQueue>();
-        private readonly Func<T> creator;
+        private readonly SafetyDictionary<string, InternalQueue> _queueDict = new SafetyDictionary<string, InternalQueue>();
+        private readonly Func<T> _creator;
 
-        private readonly int maxSize;
-        private Timer timer = null;
-        private TimeSpan? idleTime = TimeSpan.FromMinutes(1);
-        private readonly ITenancyProvider<ObjectPoolTenancyInfo> tenancyProvider;
+        private readonly int _maxSize;
+        private Timer _timer = null;
+        private TimeSpan? _idleTime = TimeSpan.FromMinutes(1);
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ITenancyProvider<ObjectPoolTenancyInfo> _tenancyProvider;
 
         private class InternalQueue
         {
-            private DateTime? lastAccessTime = null;
-            private readonly ConcurrentQueue<T> queue = new ConcurrentQueue<T>();
-            private readonly int maxSize;
-            private int count;
+            private DateTime? _lastAccessTime = null;
+            private readonly ConcurrentQueue<T> _queue = new ConcurrentQueue<T>();
+            private readonly int _maxSize;
+            private int _count;
 
             public InternalQueue(ObjectPool<T> pool, string key)
             {
-                maxSize = pool.maxSize;
+                _maxSize = pool._maxSize;
                 Key = key;
             }
 
-            public int Count  => count;
+            public int Count => _count;
 
             public string Key { get; }
 
             public bool TryDequeue(out T obj)
             {
-                if (queue.TryDequeue(out obj))
+                if (_queue.TryDequeue(out obj))
                 {
-                    Interlocked.Decrement(ref count);
+                    Interlocked.Decrement(ref _count);
                     return true;
                 }
 
@@ -90,30 +106,35 @@ namespace Fireasy.Common.ComponentModel
 
             public bool TryEnqueue(T obj)
             {
-                if (Interlocked.Increment(ref count) <= maxSize)
+                if (Interlocked.Increment(ref _count) <= _maxSize)
                 {
-                    lastAccessTime = DateTime.Now;
+                    _lastAccessTime = DateTime.Now;
 
-                    queue.Enqueue(obj);
+                    _queue.Enqueue(obj);
 
                     return true;
                 }
 
-                Interlocked.Decrement(ref count);
+                Interlocked.Decrement(ref _count);
 
                 return false;
             }
 
             public bool TryIdle(TimeSpan? idleTime, Action<T> idleHandler)
             {
-                var _savedLastAccessTime = lastAccessTime.Value;
-                if (DateTime.Now - lastAccessTime.Value > idleTime.Value)
+                if (_lastAccessTime == null)
+                {
+                    return false;
+                }
+
+                var _savedLastAccessTime = _lastAccessTime.Value;
+                if (DateTime.Now - _lastAccessTime.Value > idleTime.Value)
                 {
                     while (TryDequeue(out T obj))
                     {
                         idleHandler?.Invoke(obj);
 
-                        if (_savedLastAccessTime != lastAccessTime)
+                        if (_savedLastAccessTime != _lastAccessTime)
                         {
                             break;
                         }
@@ -131,12 +152,12 @@ namespace Fireasy.Common.ComponentModel
         /// </summary>
         /// <param name="creator">创建对象的函数。</param>
         /// <param name="maxSize">最大对象数。</param>
-        /// <param name="tenancyProvider">多租户信息提供者。</param>
-        public ObjectPool(Func<T> creator, int maxSize = 100, ITenancyProvider<ObjectPoolTenancyInfo> tenancyProvider = null)
+        public ObjectPool(IServiceProvider serviceProvider, Func<T> creator, int maxSize = 100)
         {
-            this.creator = creator;
-            this.maxSize = maxSize;
-            this.tenancyProvider = tenancyProvider;
+            _creator = creator;
+            _maxSize = maxSize;
+            _serviceProvider = serviceProvider;
+            _tenancyProvider = serviceProvider.TryGetService<ITenancyProvider<ObjectPoolTenancyInfo>>();
 
             StartIdleCheckThread();
         }
@@ -148,19 +169,19 @@ namespace Fireasy.Common.ComponentModel
         {
             get
             {
-                return idleTime;
+                return _idleTime;
             }
             set
             {
-                idleTime = value;
+                _idleTime = value;
 
-                if (idleTime == null)
+                if (_idleTime == null)
                 {
-                    timer.Change(TimeSpan.MaxValue, TimeSpan.MaxValue);
+                    _timer.Change(TimeSpan.MaxValue, TimeSpan.MaxValue);
                 }
                 else
                 {
-                    timer.Change(idleTime.Value, idleTime.Value);
+                    _timer.Change(_idleTime.Value, _idleTime.Value);
                 }
             }
         }
@@ -171,7 +192,7 @@ namespace Fireasy.Common.ComponentModel
         /// <returns></returns>
         public virtual T Rent()
         {
-            return Rent(creator, null);
+            return Rent(_creator, null);
         }
 
         /// <summary>
@@ -188,11 +209,12 @@ namespace Fireasy.Common.ComponentModel
                 Tracer.Debug($"Rent {typeof(T).Name} from the pool (named:{queue.Key}, count:{queue.Count}).");
                 OnRent(obj);
                 initializer?.Invoke(obj);
+                obj.OnRent();
                 return obj;
             }
 
             var obj1 = creator();
-            obj1.SetPool(this);
+            obj1.SetPool(queue.Key);
             Tracer.Debug($"Generate a new object of {typeof(T).Name}.");
             return obj1;
         }
@@ -205,13 +227,13 @@ namespace Fireasy.Common.ComponentModel
         public virtual bool Return(T obj)
         {
             Guard.ArgumentNull(obj, nameof(obj));
-            var queue = GetQueue();
+            var queue = GetQueue(obj.PoolName);
 
             if (queue.TryEnqueue(obj))
             {
                 Tracer.Debug($"Return {typeof(T).Name} back to the pool (named:{queue.Key}, count:{queue.Count}).");
 
-                obj.SetPool(this);
+                obj.OnReturn();
                 OnReturn(obj);
                 return true;
             }
@@ -237,7 +259,7 @@ namespace Fireasy.Common.ComponentModel
 
         protected override bool Dispose(bool disposing)
         {
-            foreach (var q in queueDict)
+            foreach (var q in _queueDict)
             {
                 while (q.Value.TryDequeue(out T obj))
                 {
@@ -251,15 +273,20 @@ namespace Fireasy.Common.ComponentModel
 
         private InternalQueue GetQueue()
         {
-            var tenancy = tenancyProvider?.GetTenancyInfo() ?? ObjectPoolTenancyInfo.Default;
-            return queueDict.GetOrAdd(tenancy.Key, k => new InternalQueue(this, k));
+            var tenancy = _tenancyProvider?.Resolve(ObjectPoolTenancyInfo.Default) ?? ObjectPoolTenancyInfo.Default;
+            return _queueDict.GetOrAdd(tenancy.Key, k => new InternalQueue(this, k));
+        }
+
+        private InternalQueue GetQueue(string key)
+        {
+            return _queueDict.GetOrAdd(key, k => new InternalQueue(this, k));
         }
 
         private void StartIdleCheckThread()
         {
-            timer = new Timer(o =>
+            _timer = new Timer(o =>
             {
-                foreach (var q in queueDict)
+                foreach (var q in _queueDict)
                 {
                     q.Value.TryIdle(IdleTime, obj =>
                     {

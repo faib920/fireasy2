@@ -6,12 +6,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Reflection.Emit;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Common.Emit
 {
@@ -20,14 +20,14 @@ namespace Fireasy.Common.Emit
     /// </summary>
     public class DynamicTypeBuilder : DynamicBuilder, ITypeCreator
     {
-        private readonly TypeAttributes attributes;
-        private TypeBuilder typeBuilder;
-        private readonly List<Type> interfaceTypes = new List<Type>();
-        private readonly bool isNesetType;
-        private Type innserType;
-        private readonly List<ITypeCreator> nestedTypeBuilders = new List<ITypeCreator>();
+        private readonly TypeAttributes _attributes;
+        private TypeBuilder _typeBuilder;
+        private readonly List<Type> _interfaceTypes = new List<Type>();
+        private readonly bool _isNesetType;
+        private Type _innerType;
+        private readonly List<ITypeCreator> _nestedTypeBuilders = new List<ITypeCreator>();
 
-        private Type baseType;
+        private Type _baseType;
 
         /// <summary>
         /// 初始化 <see cref="DynamicTypeBuilder"/> 类的新实例。
@@ -42,19 +42,19 @@ namespace Fireasy.Common.Emit
         {
             Context = new BuildContext(context) { TypeBuilder = this };
             TypeName = typeName;
-            this.baseType = baseType;
-            attributes = GetTypeAttributes(visual, calling);
+            _baseType = baseType;
+            _attributes = GetTypeAttributes(visual, calling);
             InitBuilder();
         }
 
-        internal DynamicTypeBuilder(BuildContext context, string typeName,  VisualDecoration visual, Type baseType)
+        internal DynamicTypeBuilder(BuildContext context, string typeName, VisualDecoration visual, Type baseType)
             : base(visual, CallingDecoration.Standard)
         {
             Context = new BuildContext(context) { TypeBuilder = context.TypeBuilder };
-            isNesetType = true;
+            _isNesetType = true;
             TypeName = typeName;
-            this.baseType = baseType;
-            attributes = GetTypeAttributes(visual, CallingDecoration.Standard);
+            _baseType = baseType;
+            _attributes = GetTypeAttributes(visual, CallingDecoration.Standard);
             InitBuilder();
         }
 
@@ -65,12 +65,12 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                return baseType ?? typeof(object);
+                return _baseType ?? typeof(object);
             }
 
             set
             {
-                baseType = value;
+                _baseType = value;
                 TypeBuilder.SetParent(value);
             }
         }
@@ -87,7 +87,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                return interfaceTypes.ToReadOnly();
+                return _interfaceTypes.ToReadOnly();
             }
         }
 
@@ -108,7 +108,7 @@ namespace Fireasy.Common.Emit
         /// <returns></returns>
         public TypeBuilder TypeBuilder
         {
-            get { return typeBuilder; }
+            get { return _typeBuilder; }
         }
 
         /// <summary>
@@ -117,22 +117,22 @@ namespace Fireasy.Common.Emit
         /// <returns></returns>
         public Type CreateType()
         {
-            if (innserType != null)
+            if (_innerType != null)
             {
-                return innserType;
+                return _innerType;
             }
 
-            foreach (var builder in nestedTypeBuilders)
+            foreach (var builder in _nestedTypeBuilders)
             {
                 builder.CreateType();
             }
 
 #if !NETSTANDARD
-            innserType = TypeBuilder.CreateType();
+            _innerType = TypeBuilder.CreateType();
 #else
-            innserType = TypeBuilder.CreateTypeInfo();
+            _innerType = TypeBuilder.CreateTypeInfo();
 #endif
-            return innserType;
+            return _innerType;
         }
 
         /// <summary>
@@ -142,12 +142,12 @@ namespace Fireasy.Common.Emit
         /// <returns>当前的 <see cref="TypeBuilder"/>。</returns>
         public DynamicTypeBuilder ImplementInterface(Type type)
         {
-            if (interfaceTypes.Contains(type))
+            if (_interfaceTypes.Contains(type))
             {
                 return this;
             }
 
-            interfaceTypes.Add(type);
+            _interfaceTypes.Add(type);
             TypeBuilder.AddInterfaceImplementation(type);
 
             return this;
@@ -218,7 +218,7 @@ namespace Fireasy.Common.Emit
         public virtual DynamicTypeBuilder DefineNestedType(string typeName, VisualDecoration visual = VisualDecoration.Private, Type baseType = null)
         {
             var nestedType = new DynamicTypeBuilder(Context, typeName, visual, baseType);
-            nestedTypeBuilders.Add(nestedType);
+            _nestedTypeBuilders.Add(nestedType);
             return nestedType;
         }
 
@@ -231,7 +231,7 @@ namespace Fireasy.Common.Emit
         public DynamicInterfaceBuilder DefineNestedInterface(string typeName, VisualDecoration visual = VisualDecoration.Public)
         {
             var typeBuilder = new DynamicInterfaceBuilder(Context, typeName, visual);
-            nestedTypeBuilders.Add(typeBuilder);
+            _nestedTypeBuilders.Add(typeBuilder);
             return typeBuilder;
         }
 
@@ -245,7 +245,7 @@ namespace Fireasy.Common.Emit
         public DynamicEnumBuilder DefineNestedEnum(string enumName, Type underlyingType = null, VisualDecoration visual = VisualDecoration.Public)
         {
             var enumBuilder = new DynamicEnumBuilder(Context, enumName, underlyingType ?? typeof(int), visual);
-            nestedTypeBuilders.Add(enumBuilder);
+            _nestedTypeBuilders.Add(enumBuilder);
             return enumBuilder;
         }
 
@@ -283,21 +283,21 @@ namespace Fireasy.Common.Emit
             switch (visual)
             {
                 case VisualDecoration.Internal:
-                    if (isNesetType)
+                    if (_isNesetType)
                     {
                         attrs |= TypeAttributes.NestedAssembly;
                     }
 
-                   break;
+                    break;
                 case VisualDecoration.Private:
-                    if (isNesetType)
+                    if (_isNesetType)
                     {
                         attrs |= TypeAttributes.NestedPrivate;
                     }
 
                     break;
                 case VisualDecoration.Public:
-                    attrs |= isNesetType ? TypeAttributes.NestedPublic : TypeAttributes.Public;
+                    attrs |= _isNesetType ? TypeAttributes.NestedPublic : TypeAttributes.Public;
                     break;
             }
 
@@ -316,13 +316,13 @@ namespace Fireasy.Common.Emit
 
         private void InitBuilder()
         {
-            if (!isNesetType)
+            if (!_isNesetType)
             {
-                typeBuilder = Context.AssemblyBuilder.ModuleBuilder.DefineType(TypeName, attributes, BaseType);
+                _typeBuilder = Context.AssemblyBuilder.ModuleBuilder.DefineType(TypeName, _attributes, BaseType);
             }
             else
             {
-                typeBuilder = Context.TypeBuilder.TypeBuilder.DefineNestedType(TypeName, attributes, BaseType);
+                _typeBuilder = Context.TypeBuilder.TypeBuilder.DefineNestedType(TypeName, _attributes, BaseType);
             }
         }
     }

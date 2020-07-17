@@ -28,7 +28,7 @@ namespace Fireasy.Common.Composition
         /// </summary>
         /// <param name="searchPattern">搜索所依据的模式。</param>
         public AssemblyDirectoryCatalog(string searchPattern)
-            : base (GetWorkDirectory(), searchPattern)
+            : base(GetWorkDirectory(), searchPattern)
         {
         }
 

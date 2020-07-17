@@ -13,7 +13,7 @@ namespace Fireasy.Common.Security
     internal class RC4Crypto : SymmetricCrypto
     {
         public RC4Crypto()
-            : base ("RC4")
+            : base("RC4")
         {
         }
 

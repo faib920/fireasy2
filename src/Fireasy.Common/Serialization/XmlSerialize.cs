@@ -23,18 +23,18 @@ namespace Fireasy.Common.Serialization
 {
     internal sealed class XmlSerialize : DisposeableBase
     {
-        private readonly XmlSerializeOption option;
-        private readonly XmlSerializer serializer;
-        private XmlTextWriter xmlWriter;
-        private readonly SerializeContext context;
-        private readonly TypeConverterCache<XmlConverter> cacheConverter = new TypeConverterCache<XmlConverter>();
+        private readonly XmlSerializeOption _option;
+        private readonly XmlSerializer _serializer;
+        private readonly XmlTextWriter _xmlWriter;
+        private readonly SerializeContext _context;
+        private readonly TypeConverterCache<XmlConverter> _converters = new TypeConverterCache<XmlConverter>();
 
         internal XmlSerialize(XmlSerializer serializer, XmlTextWriter writer, XmlSerializeOption option)
         {
-            this.serializer = serializer;
-            xmlWriter = writer;
-            this.option = option;
-            context = new SerializeContext { Option = option };
+            _serializer = serializer;
+            _xmlWriter = writer;
+            _option = option;
+            _context = new SerializeContext { Option = option };
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace Fireasy.Common.Serialization
 
             if ((value == null) || DBNull.Value.Equals(value))
             {
-                xmlWriter.WriteValue(null);
+                _xmlWriter.WriteValue(null);
                 return;
             }
 
@@ -70,7 +70,7 @@ namespace Fireasy.Common.Serialization
                 type == typeof(DataTable) ||
                 type == typeof(DataRow))
             {
-                new System.Xml.Serialization.XmlSerializer(type).Serialize(xmlWriter, value);
+                new System.Xml.Serialization.XmlSerializer(type).Serialize(_xmlWriter, value);
                 return;
             }
 
@@ -113,11 +113,11 @@ namespace Fireasy.Common.Serialization
             var ser = value.As<ITextSerializable>();
             if (ser != null)
             {
-                var result = ser.Serialize(serializer);
+                var result = ser.Serialize(_serializer);
 
                 WriteXmlElement(GetElementName(type), startEle, () =>
                     {
-                        xmlWriter.WriteRaw(result);
+                        _xmlWriter.WriteRaw(result);
                     });
 
                 return true;
@@ -128,14 +128,14 @@ namespace Fireasy.Common.Serialization
 
         private bool WithConverter(Type type, object value, bool startEle)
         {
-            var converter = cacheConverter.GetWritableConverter(type, option);
+            var converter = _converters.GetWritableConverter(type, _option);
 
             if (converter == null || !converter.CanWrite)
             {
                 return false;
             }
 
-            converter.WriteXml(serializer, xmlWriter, value);
+            converter.WriteXml(_serializer, _xmlWriter, value);
 
             return true;
         }
@@ -175,7 +175,7 @@ namespace Fireasy.Common.Serialization
 
             if (startEle)
             {
-                xmlWriter.WriteStartElement("Dynamic");
+                _xmlWriter.WriteStartElement("Dynamic");
             }
 
             var queue = new PriorityActionQueue();
@@ -188,22 +188,22 @@ namespace Fireasy.Common.Serialization
                     continue;
                 }
 
-                if (option.NodeStyle == XmlNodeStyle.Attribute && value.GetType().IsStringable())
+                if (_option.NodeStyle == XmlNodeStyle.Attribute && value.GetType().IsStringable())
                 {
                     queue.Add(0, () =>
                         {
-                            context.SerializeInfo = new PropertySerialzeInfo(ObjectType.DynamicObject, typeof(object), name);
-                            xmlWriter.WriteAttributeString(name, value.ToString());
-                            context.SerializeInfo = null;
+                            _context.SerializeInfo = new PropertySerialzeInfo(ObjectType.DynamicObject, typeof(object), name);
+                            _xmlWriter.WriteAttributeString(name, value.ToString());
+                            _context.SerializeInfo = null;
                         });
                 }
                 else
                 {
                     queue.Add(1, () =>
                         {
-                            context.SerializeInfo = new PropertySerialzeInfo(ObjectType.DynamicObject, typeof(object), name);
+                            _context.SerializeInfo = new PropertySerialzeInfo(ObjectType.DynamicObject, typeof(object), name);
                             WriteXmlElement(name, true, () => Serialize(value, type: value.GetType()));
-                            context.SerializeInfo = null;
+                            _context.SerializeInfo = null;
                         });
                 }
             }
@@ -212,7 +212,7 @@ namespace Fireasy.Common.Serialization
 
             if (startEle)
             {
-                xmlWriter.WriteEndElement();
+                _xmlWriter.WriteEndElement();
             }
         }
 
@@ -222,7 +222,7 @@ namespace Fireasy.Common.Serialization
         /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
         protected override bool Dispose(bool disposing)
         {
-            context.Dispose();
+            _context.Dispose();
 
             return base.Dispose(disposing);
         }
@@ -231,7 +231,7 @@ namespace Fireasy.Common.Serialization
         {
             if (startEle)
             {
-                xmlWriter.WriteStartElement("ArrayOf" + GetElementName(type));
+                _xmlWriter.WriteStartElement("ArrayOf" + GetElementName(type));
             }
 
             foreach (var current in enumerable)
@@ -241,7 +241,7 @@ namespace Fireasy.Common.Serialization
 
             if (startEle)
             {
-                xmlWriter.WriteEndElement();
+                _xmlWriter.WriteEndElement();
             }
         }
 
@@ -254,23 +254,23 @@ namespace Fireasy.Common.Serialization
 
             if (startEle)
             {
-                xmlWriter.WriteStartElement("Dictionary");
+                _xmlWriter.WriteStartElement("Dictionary");
             }
 
             foreach (var key in dictionary.Keys)
             {
-                context.SerializeInfo = new PropertySerialzeInfo(ObjectType.Dictionary, typeof(object), key.ToString());
+                _context.SerializeInfo = new PropertySerialzeInfo(ObjectType.Dictionary, typeof(object), key.ToString());
 
-                xmlWriter.WriteStartElement(key.ToString());
+                _xmlWriter.WriteStartElement(key.ToString());
                 Serialize(dictionary[key]);
-                xmlWriter.WriteEndElement();
+                _xmlWriter.WriteEndElement();
 
-                context.SerializeInfo = null;
+                _context.SerializeInfo = null;
             }
 
             if (startEle)
             {
-                xmlWriter.WriteEndElement();
+                _xmlWriter.WriteEndElement();
             }
         }
 
@@ -284,23 +284,23 @@ namespace Fireasy.Common.Serialization
 
             if (startEle)
             {
-                xmlWriter.WriteStartElement(GetElementName(type));
+                _xmlWriter.WriteStartElement(GetElementName(type));
             }
 
             if (type.IsEnum)
             {
-                xmlWriter.WriteValue(((Enum)value).ToString("D"));
+                _xmlWriter.WriteValue(((Enum)value).ToString("D"));
             }
             else if (type == typeof(TimeSpan))
             {
-                xmlWriter.WriteString(((TimeSpan)value).ToString());
+                _xmlWriter.WriteString(((TimeSpan)value).ToString());
             }
             else
             {
                 switch (Type.GetTypeCode(type))
                 {
                     case TypeCode.Boolean:
-                        xmlWriter.WriteValue((bool)value == true ? "true" : "false");
+                        _xmlWriter.WriteValue((bool)value == true ? "true" : "false");
                         break;
                     case TypeCode.SByte:
                     case TypeCode.Byte:
@@ -313,7 +313,7 @@ namespace Fireasy.Common.Serialization
                     case TypeCode.Decimal:
                     case TypeCode.Single:
                     case TypeCode.Double:
-                        xmlWriter.WriteValue(value.As<IFormattable>().ToString(context.SerializeInfo?.Formatter ?? "G", CultureInfo.InvariantCulture));
+                        _xmlWriter.WriteValue(value.As<IFormattable>().ToString(_context.SerializeInfo?.Formatter ?? "G", CultureInfo.InvariantCulture));
                         break;
                     case TypeCode.DateTime:
                         SerializeDateTime((DateTime)value);
@@ -323,26 +323,26 @@ namespace Fireasy.Common.Serialization
                         SerializeString(value);
                         break;
                     default:
-                        context.TrySerialize(value, value => SerializeObject(value, false));
+                        _context.TrySerialize(value, value => SerializeObject(value, false));
                         break;
                 }
             }
 
             if (startEle)
             {
-                xmlWriter.WriteEndElement();
+                _xmlWriter.WriteEndElement();
             }
         }
 
         private void SerializeDateTime(DateTime value)
         {
-            if (option.DateFormatHandling == DateFormatHandling.Default)
+            if (_option.DateFormatHandling == DateFormatHandling.Default)
             {
-                xmlWriter.WriteValue(value.ToString(context.SerializeInfo?.Formatter ?? "yyyy-MM-dd", CultureInfo.InvariantCulture));
+                _xmlWriter.WriteValue(value.ToString(_context.SerializeInfo?.Formatter ?? "yyyy-MM-dd", CultureInfo.InvariantCulture));
             }
-            else if (option.DateFormatHandling == DateFormatHandling.IsoDateFormat)
+            else if (_option.DateFormatHandling == DateFormatHandling.IsoDateFormat)
             {
-                xmlWriter.WriteValue(value.GetDateTimeFormats('s')[0].ToString(option.Culture));
+                _xmlWriter.WriteValue(value.GetDateTimeFormats('s')[0].ToString(_option.Culture));
             }
         }
 
@@ -350,13 +350,13 @@ namespace Fireasy.Common.Serialization
         {
             var str = value.ToString();
 
-            if (option.CData && Regex.IsMatch(str, "<|>|/|\""))
+            if (_option.CData && Regex.IsMatch(str, "<|>|/|\""))
             {
-                xmlWriter.WriteCData(str);
+                _xmlWriter.WriteCData(str);
             }
             else
             {
-                xmlWriter.WriteString(str);
+                _xmlWriter.WriteString(str);
             }
         }
 
@@ -377,59 +377,58 @@ namespace Fireasy.Common.Serialization
 
             if (startEle)
             {
-                xmlWriter.WriteStartElement(GetElementName(type));
+                _xmlWriter.WriteStartElement(GetElementName(type));
             }
 
-            var cache = context.GetProperties(type, () => option.ContractResolver.GetProperties(type));
             var queue = new PriorityActionQueue();
 
-            foreach (var acc in cache)
+            foreach (var metadata in _context.GetProperties(type, () => _option.ContractResolver.GetProperties(type)))
             {
-                if (acc.Filter(acc.PropertyInfo, lazyMgr))
+                if (metadata.Filter(metadata.PropertyInfo, lazyMgr))
                 {
                     continue;
                 }
 
-                var value = acc.Getter.Invoke(obj);
-                if ((option.NullValueHandling == NullValueHandling.Ignore && value == null) ||
-                    (value == null && option.NodeStyle == XmlNodeStyle.Attribute))
+                var value = metadata.Getter.Invoke(obj);
+                if ((_option.NullValueHandling == NullValueHandling.Ignore && value == null) ||
+                    (value == null && _option.NodeStyle == XmlNodeStyle.Attribute))
                 {
                     continue;
                 }
 
-                var objType = acc.PropertyInfo.PropertyType == typeof(object) && value != null ? value.GetType() : acc.PropertyInfo.PropertyType;
-                if (option.NodeStyle == XmlNodeStyle.Attribute && objType.IsStringable())
+                var objType = metadata.PropertyInfo.PropertyType == typeof(object) && value != null ? value.GetType() : metadata.PropertyInfo.PropertyType;
+                if (_option.NodeStyle == XmlNodeStyle.Attribute && objType.IsStringable())
                 {
                     queue.Add(0, () =>
                         {
-                            context.SerializeInfo = new PropertySerialzeInfo(acc);
-                            if (acc.Converter != null)
+                            _context.SerializeInfo = new PropertySerialzeInfo(metadata);
+                            if (metadata.Converter != null)
                             {
-                                xmlWriter.WriteAttributeString(acc.PropertyName, acc.Converter.WriteObject(serializer, value));
+                                _xmlWriter.WriteAttributeString(metadata.PropertyName, metadata.Converter.WriteObject(_serializer, value));
                             }
                             else
                             {
-                                xmlWriter.WriteAttributeString(acc.PropertyName, value.ToString());
+                                _xmlWriter.WriteAttributeString(metadata.PropertyName, value.ToString());
                             }
 
-                            context.SerializeInfo = null;
+                            _context.SerializeInfo = null;
                         });
                 }
                 else
                 {
                     queue.Add(1, () =>
                         {
-                            context.SerializeInfo = new PropertySerialzeInfo(acc);
-                            if (acc.Converter != null && acc.Converter is XmlConverter converter)
+                            _context.SerializeInfo = new PropertySerialzeInfo(metadata);
+                            if (metadata.Converter != null && metadata.Converter is XmlConverter converter)
                             {
-                                WriteXmlElement(acc.PropertyName, true, () => converter.WriteXml(serializer, xmlWriter, value));
+                                WriteXmlElement(metadata.PropertyName, true, () => converter.WriteXml(_serializer, _xmlWriter, value));
                             }
                             else
                             {
-                                WriteXmlElement(acc.PropertyName, true, () => Serialize(value, type: objType));
+                                WriteXmlElement(metadata.PropertyName, true, () => Serialize(value, type: objType));
                             }
 
-                            context.SerializeInfo = null;
+                            _context.SerializeInfo = null;
                         });
                 }
             }
@@ -438,7 +437,7 @@ namespace Fireasy.Common.Serialization
 
             if (startEle)
             {
-                xmlWriter.WriteEndElement();
+                _xmlWriter.WriteEndElement();
             }
         }
 
@@ -446,23 +445,23 @@ namespace Fireasy.Common.Serialization
         {
             WriteXmlElement("Bytes", startEle, () =>
                 {
-                    xmlWriter.WriteString(Convert.ToBase64String(bytes));
+                    _xmlWriter.WriteString(Convert.ToBase64String(bytes));
                 });
         }
 
         private void WriteXmlElement(string name, bool startEle, Action action)
         {
-            name = option.ContractResolver.ResolvePropertyName(name);
+            name = _option.ContractResolver.ResolvePropertyName(name);
             if (startEle)
             {
-                xmlWriter.WriteStartElement(name);
+                _xmlWriter.WriteStartElement(name);
             }
 
             action?.Invoke();
 
             if (startEle)
             {
-                xmlWriter.WriteEndElement();
+                _xmlWriter.WriteEndElement();
             }
         }
 
@@ -470,7 +469,7 @@ namespace Fireasy.Common.Serialization
         {
             foreach (DataColumn column in table.Columns)
             {
-                if (!SerializerUtil.IsNoSerializable(option, column.ColumnName))
+                if (!SerializerUtil.IsNoSerializable(_option, column.ColumnName))
                 {
                     yield return column;
                 }
@@ -496,7 +495,7 @@ namespace Fireasy.Common.Serialization
                 TypeCode.Single => "float",
                 TypeCode.Decimal => "decimal",
                 TypeCode.Double => "double",
-                _ => option.ContractResolver.ResolvePropertyName(type.Name),
+                _ => _option.ContractResolver.ResolvePropertyName(type.Name),
             };
         }
     }

@@ -6,7 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Configuration;
-using Fireasy.Common.Extensions;
 using Fireasy.Common.Subscribes.Configuration;
 #if NETSTANDARD
 using Microsoft.Extensions.DependencyInjection;
@@ -71,7 +70,9 @@ namespace Fireasy.Common.Subscribes
             var section = ConfigurationUnity.GetSection<SubscribeConfigurationSection>();
             if (section != null && section.Factory != null)
             {
-                manager = ConfigurationUnity.Cached<ISubscribeManager>($"Subscribe_{configName}", () => section.Factory.CreateInstance(configName) as ISubscribeManager);
+                manager = ConfigurationUnity.Cached<ISubscribeManager>($"Subscribe_{configName}", serviceProvider,
+                    () => section.Factory.CreateInstance(serviceProvider, configName) as ISubscribeManager);
+
                 if (manager != null)
                 {
                     return manager;
@@ -82,7 +83,7 @@ namespace Fireasy.Common.Subscribes
             {
                 if (section == null || (setting = section.GetDefault()) == null)
                 {
-                    return DefaultSubscribeManager.Instance.TrySetServiceProvider(serviceProvider);
+                    return DefaultSubscribeManager.Instance;
                 }
             }
             else if (section != null)
@@ -95,7 +96,7 @@ namespace Fireasy.Common.Subscribes
                 return null;
             }
 
-            return ConfigurationUnity.Cached<ISubscribeManager>($"Subscribe_{configName}",
+            return ConfigurationUnity.Cached<ISubscribeManager>($"Subscribe_{configName}", serviceProvider,
                 () => ConfigurationUnity.CreateInstance<SubscribeConfigurationSetting, ISubscribeManager>(serviceProvider, setting, s => s.SubscriberType));
         }
     }

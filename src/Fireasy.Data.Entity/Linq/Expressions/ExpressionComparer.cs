@@ -10,11 +10,11 @@ namespace Fireasy.Data.Entity.Linq.Expressions
 {
     internal class ExpressionComparer
     {
-        private ScopedDictionary<ParameterExpression, ParameterExpression> m_parameterScope;
+        private ScopedDictionary<ParameterExpression, ParameterExpression> _parameterScope;
 
         protected ExpressionComparer(ScopedDictionary<ParameterExpression, ParameterExpression> parameterScope)
         {
-            m_parameterScope = parameterScope;
+            _parameterScope = parameterScope;
         }
 
         public static bool AreEqual(Expression a, Expression b)
@@ -143,10 +143,9 @@ namespace Fireasy.Data.Entity.Linq.Expressions
 
         protected virtual bool CompareParameter(ParameterExpression a, ParameterExpression b)
         {
-            if (m_parameterScope != null)
+            if (_parameterScope != null)
             {
-                ParameterExpression mapped;
-                if (m_parameterScope.TryGetValue(a, out mapped))
+                if (_parameterScope.TryGetValue(a, out ParameterExpression mapped))
                     return mapped == b;
             }
             return a == b;
@@ -176,19 +175,19 @@ namespace Fireasy.Data.Entity.Linq.Expressions
                 if (a.Parameters[i].Type != b.Parameters[i].Type)
                     return false;
             }
-            var save = m_parameterScope;
-            m_parameterScope = new ScopedDictionary<ParameterExpression, ParameterExpression>(m_parameterScope);
+            var save = _parameterScope;
+            _parameterScope = new ScopedDictionary<ParameterExpression, ParameterExpression>(_parameterScope);
             try
             {
                 for (int i = 0; i < n; i++)
                 {
-                    m_parameterScope.Add(a.Parameters[i], b.Parameters[i]);
+                    _parameterScope.Add(a.Parameters[i], b.Parameters[i]);
                 }
                 return Compare(a.Body, b.Body);
             }
             finally
             {
-                m_parameterScope = save;
+                _parameterScope = save;
             }
         }
 

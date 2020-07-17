@@ -17,21 +17,21 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class GroupKeyReplacer : DbExpressionVisitor
     {
-        private MemberInfo member = null;
-        private Expression finder = null;
+        private MemberInfo _member = null;
+        private Expression _finder = null;
 
         public static Expression Replace(Expression expression)
         {
             var replacer = new GroupKeyReplacer();
             replacer.Visit(expression);
-            return replacer.finder ?? expression;
+            return replacer._finder ?? expression;
         }
 
         protected override Expression VisitMember(MemberExpression memberExp)
         {
-            if (member == null)
+            if (_member == null)
             {
-                member = memberExp.Member;
+                _member = memberExp.Member;
             }
 
             Visit(memberExp.Expression);
@@ -52,9 +52,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitColumn(ColumnExpression column)
         {
-            if (member != null && (member.Name == "Key" || member.Name == column.Name))
+            if (_member != null && (_member.Name == "Key" || _member.Name == column.Name))
             {
-                finder = column;
+                _finder = column;
             }
 
             return column;

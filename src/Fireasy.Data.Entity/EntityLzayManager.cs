@@ -16,8 +16,8 @@ namespace Fireasy.Data.Entity
     /// </summary>
     internal class EntityLzayManager
     {
-        private readonly Type entityType;
-        private readonly List<string> status = new List<string>();
+        private readonly Type _entityType;
+        private readonly List<string> _status = new List<string>();
 
         /// <summary>
         /// 初始化 <see cref="EntityLzayManager"/> 类的新实例。
@@ -25,7 +25,7 @@ namespace Fireasy.Data.Entity
         /// <param name="entityType"></param>
         public EntityLzayManager(Type entityType)
         {
-            this.entityType = entityType;
+            _entityType = entityType;
         }
 
         /// <summary>
@@ -34,9 +34,9 @@ namespace Fireasy.Data.Entity
         /// <param name="propertyName">属性名称</param>
         internal void SetValueCreated(string propertyName)
         {
-            if (!status.Contains(propertyName))
+            if (!_status.Contains(propertyName))
             {
-                status.Add(propertyName);
+                _status.Add(propertyName);
             }
         }
 
@@ -47,10 +47,10 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         internal bool IsValueCreated(string propertyName)
         {
-            var property = PropertyUnity.GetProperty(entityType, propertyName);
+            var property = PropertyUnity.GetProperty(_entityType, propertyName);
             if (property is RelationProperty)
             {
-                return status.Contains(propertyName);
+                return _status.Contains(propertyName);
             }
 
             return true;

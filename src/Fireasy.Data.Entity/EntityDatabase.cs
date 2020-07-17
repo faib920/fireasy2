@@ -6,15 +6,15 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common;
+using Fireasy.Common.Extensions;
+using Fireasy.Data.Provider;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using Fireasy.Common;
-using Fireasy.Data.Provider;
 using System.Threading;
 using System.Threading.Tasks;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Data.Entity
 {
@@ -23,12 +23,12 @@ namespace Fireasy.Data.Entity
     /// </summary>
     internal sealed class EntityDatabase : IDatabase, IServiceProviderAccessor
     {
-        private readonly IDatabase database;
+        private readonly IDatabase _database;
 
         internal EntityDatabase(IDatabase database)
         {
             Guard.ArgumentNull(database, nameof(database));
-            this.database = database;
+            _database = database;
         }
 
         void IDisposable.Dispose()
@@ -36,166 +36,166 @@ namespace Fireasy.Data.Entity
             //如果IDatabase处于持久化环境中，则不销毁，否则会使事务提前回滚
             if (EntityTransactionScope.Current == null)
             {
-                database.Dispose();
+                _database.Dispose();
             }
         }
 
         ConnectionString IDatabase.ConnectionString
         {
-            get { return database.ConnectionString; }
-            set { database.ConnectionString = value; }
+            get { return _database.ConnectionString; }
+            set { _database.ConnectionString = value; }
         }
 
         IServiceProvider IServiceProviderAccessor.ServiceProvider
         {
-            get { return database.TryGetServiceProvider(); }
-            set { database.TrySetServiceProvider(value); }
+            get { return _database.TryGetServiceProvider(); }
+            set { _database.TrySetServiceProvider(value); }
         }
 
         IProvider IDatabase.Provider
         {
-            get { return database.Provider; }
+            get { return _database.Provider; }
         }
 
         int IDatabase.Timeout
         {
-            get { return database.Timeout; }
-            set { database.Timeout = value; }
+            get { return _database.Timeout; }
+            set { _database.Timeout = value; }
         }
 
         DbTransaction IDatabase.Transaction
         {
-            get { return database.Transaction; }
+            get { return _database.Transaction; }
         }
 
         DbConnection IDatabase.Connection
         {
-            get { return database.Connection; }
+            get { return _database.Connection; }
         }
         bool IDatabase.BeginTransaction(IsolationLevel level)
         {
-            return database.BeginTransaction(level);
+            return _database.BeginTransaction(level);
         }
 
         bool IDatabase.CommitTransaction()
         {
-            return database.CommitTransaction();
+            return _database.CommitTransaction();
         }
 
         bool IDatabase.RollbackTransaction()
         {
-            return database.RollbackTransaction();
+            return _database.RollbackTransaction();
         }
 
         DataTable IDatabase.ExecuteDataTable(IQueryCommand queryCommand, string tableName, IDataSegment segment, ParameterCollection parameters)
         {
-            return database.ExecuteDataTable(queryCommand, tableName, segment, parameters);
+            return _database.ExecuteDataTable(queryCommand, tableName, segment, parameters);
         }
 
         IEnumerable<T> IDatabase.ExecuteEnumerable<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper)
         {
-            return database.ExecuteEnumerable(queryCommand, segment, parameters, rowMapper);
+            return _database.ExecuteEnumerable(queryCommand, segment, parameters, rowMapper);
         }
 
         IEnumerable<object> IDatabase.ExecuteEnumerable(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters)
         {
-            return database.ExecuteEnumerable(queryCommand, segment, parameters);
+            return _database.ExecuteEnumerable(queryCommand, segment, parameters);
         }
 
         int IDatabase.ExecuteNonQuery(IQueryCommand queryCommand, ParameterCollection parameters)
         {
-            return database.ExecuteNonQuery(queryCommand, parameters);
+            return _database.ExecuteNonQuery(queryCommand, parameters);
         }
 
         IDataReader IDatabase.ExecuteReader(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CommandBehavior? behavior = null)
         {
-            return database.ExecuteReader(queryCommand, segment, parameters, behavior);
+            return _database.ExecuteReader(queryCommand, segment, parameters, behavior);
         }
 
         object IDatabase.ExecuteScalar(IQueryCommand queryCommand, ParameterCollection parameters)
         {
-            return database.ExecuteScalar(queryCommand, parameters);
+            return _database.ExecuteScalar(queryCommand, parameters);
         }
 
         T IDatabase.ExecuteScalar<T>(IQueryCommand queryCommand, ParameterCollection parameters)
         {
-            return database.ExecuteScalar<T>(queryCommand, parameters);
+            return _database.ExecuteScalar<T>(queryCommand, parameters);
         }
 
         void IDatabase.FillDataSet(DataSet dataSet, IQueryCommand queryCommand, string tableName, IDataSegment segment, ParameterCollection parameters)
         {
-            database.FillDataSet(dataSet, queryCommand, tableName, segment, parameters);
+            _database.FillDataSet(dataSet, queryCommand, tableName, segment, parameters);
         }
 
         void IDatabase.Update(DataTable dataTable)
         {
-            database.Update(dataTable);
+            _database.Update(dataTable);
         }
 
         int IDatabase.Update(DataTable dataTable, SqlCommand insertCommand, SqlCommand updateCommand, SqlCommand deleteCommand)
         {
-            return database.Update(dataTable, insertCommand, updateCommand, deleteCommand);
+            return _database.Update(dataTable, insertCommand, updateCommand, deleteCommand);
         }
 
         Task<int> IDatabase.ExecuteNonQueryAsync(IQueryCommand queryCommand, ParameterCollection parameters, CancellationToken cancellationToken)
         {
-            return database.ExecuteNonQueryAsync(queryCommand, parameters, cancellationToken);
+            return _database.ExecuteNonQueryAsync(queryCommand, parameters, cancellationToken);
         }
 
         Task<IDataReader> IDatabase.ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CommandBehavior? behavior, CancellationToken cancellationToken)
         {
-            return database.ExecuteReaderAsync(queryCommand, segment, parameters, behavior, cancellationToken);
+            return _database.ExecuteReaderAsync(queryCommand, segment, parameters, behavior, cancellationToken);
         }
 
         Task<object> IDatabase.ExecuteScalarAsync(IQueryCommand queryCommand, ParameterCollection parameters, CancellationToken cancellationToken)
         {
-            return database.ExecuteScalarAsync(queryCommand, parameters, cancellationToken);
+            return _database.ExecuteScalarAsync(queryCommand, parameters, cancellationToken);
         }
 
         Task<T> IDatabase.ExecuteScalarAsync<T>(IQueryCommand queryCommand, ParameterCollection parameters, CancellationToken cancellationToken)
         {
-            return database.ExecuteScalarAsync<T>(queryCommand, parameters, cancellationToken);
+            return _database.ExecuteScalarAsync<T>(queryCommand, parameters, cancellationToken);
         }
 
 #if NETSTANDARD && !NETSTANDARD2_0
         IAsyncEnumerable<T> IDatabase.ExecuteAsyncEnumerable<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper, CancellationToken cancellationToken)
         {
-            return database.ExecuteAsyncEnumerable<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);
+            return _database.ExecuteAsyncEnumerable<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);
         }
 
         IAsyncEnumerable<dynamic> IDatabase.ExecuteAsyncEnumerable(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CancellationToken cancellationToken)
         {
-            return database.ExecuteAsyncEnumerable(queryCommand, segment, parameters, cancellationToken);
+            return _database.ExecuteAsyncEnumerable(queryCommand, segment, parameters, cancellationToken);
         }
 #endif
         Task<IEnumerable<T>> IDatabase.ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper, CancellationToken cancellationToken)
         {
-            return database.ExecuteEnumerableAsync<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);
+            return _database.ExecuteEnumerableAsync<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);
         }
 
         Task<IEnumerable<dynamic>> IDatabase.ExecuteEnumerableAsync(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CancellationToken cancellationToken)
         {
-            return database.ExecuteEnumerableAsync(queryCommand, segment, parameters, cancellationToken);
+            return _database.ExecuteEnumerableAsync(queryCommand, segment, parameters, cancellationToken);
         }
 
         Exception IDatabase.TryConnect()
         {
-            return database.TryConnect();
+            return _database.TryConnect();
         }
 
         Task IDatabase.UpdateAsync(DataTable dataTable, CancellationToken cancellationToken)
         {
-            return database.UpdateAsync(dataTable, cancellationToken);
+            return _database.UpdateAsync(dataTable, cancellationToken);
         }
 
         Task<int> IDatabase.UpdateAsync(DataTable dataTable, SqlCommand insertCommand, SqlCommand updateCommand, SqlCommand deleteCommand, CancellationToken cancellationToken)
         {
-            return database.UpdateAsync(dataTable, insertCommand, updateCommand, deleteCommand, cancellationToken);
+            return _database.UpdateAsync(dataTable, insertCommand, updateCommand, deleteCommand, cancellationToken);
         }
 
         Task<Exception> IDatabase.TryConnectAsync(CancellationToken cancellationToken)
         {
-            return database.TryConnectAsync(cancellationToken);
+            return _database.TryConnectAsync(cancellationToken);
         }
     }
 }

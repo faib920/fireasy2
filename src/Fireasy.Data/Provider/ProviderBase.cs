@@ -22,9 +22,9 @@ namespace Fireasy.Data.Provider
     /// </summary>
     public abstract class ProviderBase : IProvider
     {
-        private DbProviderFactory factory;
-        private readonly IProviderFactoryResolver[] resolvers;
-        private readonly SafetyDictionary<Type, Lazy<IProviderService>> services = new SafetyDictionary<Type, Lazy<IProviderService>>();
+        private DbProviderFactory _factory;
+        private readonly IProviderFactoryResolver[] _resolvers;
+        private readonly SafetyDictionary<Type, Lazy<IProviderService>> _services = new SafetyDictionary<Type, Lazy<IProviderService>>();
 
         /// <summary>
         /// 初始化 <see cref="ProviderBase"/> 类的新实例。
@@ -40,7 +40,7 @@ namespace Fireasy.Data.Provider
         protected ProviderBase(params IProviderFactoryResolver[] resolvers)
             : this()
         {
-            this.resolvers = resolvers;
+            _resolvers = resolvers;
         }
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace Fireasy.Data.Provider
         {
             get
             {
-                return SingletonLocker.Lock(ref factory, this, () => InitDbProviderFactory());
+                return SingletonLocker.Lock(ref _factory, this, () => InitDbProviderFactory());
             }
         }
 
@@ -79,7 +79,7 @@ namespace Fireasy.Data.Provider
         /// <returns></returns>
         public virtual TService GetService<TService>() where TService : class, IProviderService
         {
-            if (services.TryGetValue(typeof(TService), out Lazy<IProviderService> lazy))
+            if (_services.TryGetValue(typeof(TService), out Lazy<IProviderService> lazy))
             {
                 return (TService)lazy.Value;
             }
@@ -106,7 +106,7 @@ namespace Fireasy.Data.Provider
         /// <returns></returns>
         public virtual IEnumerable<IProviderService> GetServices()
         {
-            return services.Values.Select(s => s.Value);
+            return _services.Values.Select(s => s.Value);
         }
 
         /// <summary>
@@ -127,7 +127,7 @@ namespace Fireasy.Data.Provider
         /// <param name="factory"></param>
         public virtual void RegisterService(Type definedType, Func<IProviderService> factory)
         {
-            services.AddOrUpdate(definedType, () => new Lazy<IProviderService>(factory));
+            _services.AddOrUpdate(definedType, () => new Lazy<IProviderService>(factory));
         }
 
         /// <summary>
@@ -139,7 +139,7 @@ namespace Fireasy.Data.Provider
             var providerService = serviceType.GetDirectImplementInterface(typeof(IProviderService));
             if (providerService != null)
             {
-                services.AddOrUpdate(providerService, () => new Lazy<IProviderService>(() => serviceType.New<IProviderService>()));
+                _services.AddOrUpdate(providerService, () => new Lazy<IProviderService>(() => serviceType.New<IProviderService>()));
             }
         }
 
@@ -150,7 +150,7 @@ namespace Fireasy.Data.Provider
         /// <param name="implType">实现类型。</param>
         public virtual void RegisterService(Type serviceType, Type implType)
         {
-            services.AddOrUpdate(serviceType, () => new Lazy<IProviderService>(() => implType.New<IProviderService>()));
+            _services.AddOrUpdate(serviceType, () => new Lazy<IProviderService>(() => implType.New<IProviderService>()));
         }
 
         /// <summary>
@@ -200,7 +200,7 @@ namespace Fireasy.Data.Provider
         protected virtual DbProviderFactory InitDbProviderFactory()
         {
             Exception exception = null;
-            foreach (var resolver in resolvers)
+            foreach (var resolver in _resolvers)
             {
                 var factory = resolver.Resolve();
                 if (factory != null)

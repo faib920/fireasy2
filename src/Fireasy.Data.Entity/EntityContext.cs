@@ -10,6 +10,7 @@ using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Ioc;
+using Fireasy.Common.MultiTenancy;
 using Fireasy.Data.Configuration;
 using Fireasy.Data.Entity.Query;
 using Fireasy.Data.Provider;
@@ -26,10 +27,10 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public abstract class EntityContext : DisposeableBase, IServiceProvider, IServiceProviderAccessor, IObjectPoolable
     {
-        private EntityContextOptions options;
-        private IContextService service;
-        private IObjectPool pool;
-        private IServiceProvider serviceProvider;
+        private EntityContextOptions _options;
+        private IContextService _contextService;
+        private string _poolName;
+        private IServiceProvider _serviceProvider;
 
         /// <summary>
         /// 初始化 <see cref="EntityContext"/> 类的新实例。
@@ -72,8 +73,8 @@ namespace Fireasy.Data.Entity
         /// <param name="options">选项参数。</param>
         protected EntityContext(IServiceProvider serviceProvider, EntityContextOptions options)
         {
-            this.options = options;
-            this.serviceProvider = serviceProvider;
+            _options = options;
+            _serviceProvider = serviceProvider;
 
             Initialize(options);
 
@@ -85,11 +86,11 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public IServiceProvider ServiceProvider
         {
-            get { return serviceProvider; }
-            set 
+            get { return _serviceProvider; }
+            set
             {
-                serviceProvider = value;
-                service.ServiceProvider = value;
+                _serviceProvider = value;
+                _contextService.ServiceProvider = value;
             }
         }
 
@@ -100,7 +101,7 @@ namespace Fireasy.Data.Entity
         {
             get
             {
-                if (service is IDatabaseAware aware)
+                if (_contextService is IDatabaseAware aware)
                 {
                     return aware.Database;
                 }
@@ -109,20 +110,25 @@ namespace Fireasy.Data.Entity
             }
         }
 
+        string IObjectPoolable.PoolName
+        {
+            get { return _poolName; }
+        }
+
         /// <summary>
         /// 销毁资源。
         /// </summary>
         /// <param name="disposing">如果为 true，则同时释放托管资源和非托管资源；如果为 false，则仅释放非托管资源。</param>
         protected override bool Dispose(bool disposing)
         {
-            if (pool == null)
+            if (_poolName == null)
             {
                 Tracer.Debug($"The {GetType().Name} is Disposing.");
 
-                service?.Dispose();
-                service = null;
+                _contextService?.Dispose();
+                _contextService = null;
 
-                options = null;
+                _options = null;
 
                 return true;
             }
@@ -137,7 +143,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public IRepository<TEntity> Set<TEntity>() where TEntity : IEntity
         {
-            var rep = service.CreateRepositoryProvider(typeof(TEntity)).CreateRepository(options);
+            var rep = _contextService.CreateRepositoryProvider(typeof(TEntity)).CreateRepository(_options);
             if (rep != null)
             {
                 return (IRepository<TEntity>)rep;
@@ -153,7 +159,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public IRepository Set(Type entityType)
         {
-            return service.CreateRepositoryProvider(entityType).CreateRepository(options);
+            return _contextService.CreateRepositoryProvider(entityType).CreateRepository(_options);
         }
 
         /// <summary>
@@ -164,7 +170,7 @@ namespace Fireasy.Data.Entity
         public ITreeRepository<TEntity> CreateTreeRepository<TEntity>() where TEntity : class, IEntity
         {
             var repository = Set<TEntity>();
-            return new EntityTreeRepository<TEntity>(repository, service);
+            return new EntityTreeRepository<TEntity>(repository, _contextService);
         }
 
         /// <summary>
@@ -243,7 +249,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityContext ConfigOptions(Action<EntityContextOptions> configuration)
         {
-            configuration?.Invoke(options);
+            configuration?.Invoke(_options);
 
             return this;
         }
@@ -254,8 +260,8 @@ namespace Fireasy.Data.Entity
         /// <param name="level"></param>
         public void BeginTransaction(IsolationLevel? level = null)
         {
-            level ??= options.IsolationLevel;
-            service.BeginTransaction(level.Value);
+            level ??= _options.IsolationLevel;
+            _contextService.BeginTransaction(level.Value);
         }
 
         /// <summary>
@@ -263,7 +269,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public void CommitTransaction()
         {
-            service.CommitTransaction();
+            _contextService.CommitTransaction();
         }
 
         /// <summary>
@@ -271,7 +277,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public void RollbackTransaction()
         {
-            service.RollbackTransaction();
+            _contextService.RollbackTransaction();
         }
 
         /// <summary>
@@ -284,6 +290,7 @@ namespace Fireasy.Data.Entity
             TrySetContextType(options);
             TrySetServiceProvider(options);
             TryPaserInstanceSetting(options);
+            TryHandleConnectionTenancy(options);
 
             var builder = new EntityContextOptionsBuilder(options);
             OnConfiguring(builder);
@@ -295,7 +302,7 @@ namespace Fireasy.Data.Entity
 
             var contextProvider = options.GetProviderService<IContextProvider>();
 
-            service = contextProvider.CreateContextService(new ContextServiceContext(serviceProvider, options));
+            _contextService = contextProvider.CreateContextService(new ContextServiceContext(_serviceProvider, options));
         }
 
         private void TrySetContextType(EntityContextOptions options)
@@ -314,23 +321,23 @@ namespace Fireasy.Data.Entity
         {
             if (options is IInstanceIdentifier identification)
             {
-                if (identification.ServiceProvider == null && serviceProvider != null)
+                if (identification.ServiceProvider == null && _serviceProvider != null)
                 {
-                    identification.ServiceProvider = serviceProvider;
+                    identification.ServiceProvider = _serviceProvider;
                 }
                 else if (ServiceProvider == null && identification.ServiceProvider != null)
                 {
-                    serviceProvider = identification.ServiceProvider;
+                    _serviceProvider = identification.ServiceProvider;
                 }
-                else if (identification.ServiceProvider == null && serviceProvider == null)
+                else if (identification.ServiceProvider == null && _serviceProvider == null)
                 {
-                    serviceProvider = identification.ServiceProvider = ContainerUnity.GetContainer();
+                    _serviceProvider = identification.ServiceProvider = ContainerUnity.GetContainer();
                 }
             }
 
-            if (serviceProvider == null)
+            if (_serviceProvider == null)
             {
-                serviceProvider = ContainerUnity.GetContainer();
+                _serviceProvider = ContainerUnity.GetContainer();
             }
         }
 
@@ -377,19 +384,19 @@ namespace Fireasy.Data.Entity
         {
             if (serviceType == typeof(IContextService))
             {
-                return service;
+                return _contextService;
             }
             else if (serviceType == typeof(IServiceProvider))
             {
                 return ServiceProvider;
             }
-            else if (serviceType == typeof(IDatabase) && service is IDatabaseAware aware)
+            else if (serviceType == typeof(IDatabase) && _contextService is IDatabaseAware aware)
             {
                 return aware.Database;
             }
             else if (serviceType == typeof(IProvider))
             {
-                return service.Provider;
+                return _contextService.Provider;
             }
 
             return null;
@@ -406,21 +413,47 @@ namespace Fireasy.Data.Entity
             return default;
         }
 
+        /// <summary>
+        /// 尝试处理多租户信息。
+        /// </summary>
+        /// <param name="options"></param>
+        private void TryHandleConnectionTenancy(EntityContextOptions options)
+        {
+            var tenancyProvider = ServiceProvider.TryGetService<ITenancyProvider<ConnectionTenancyInfo>>();
+            if (tenancyProvider != null)
+            {
+                var tenancy = new ConnectionTenancyInfo { Provider = options.Provider, ConnectionString = options.ConnectionString };
+                tenancy = tenancyProvider.Resolve(tenancy);
+                if (tenancy != null && tenancy.ConnectionString != options.ConnectionString)
+                {
+                    options.ConnectionString = tenancy.ConnectionString;
+                }
+            }
+        }
+
         private void InvokeQueryPolicy(Action<IQueryPolicy> action)
         {
-            if (service is IQueryPolicy policy)
+            if (_contextService is IQueryPolicy policy)
             {
                 action(policy);
             }
-            else if (service is IQueryPolicyAware aware && aware.QueryPolicy != null)
+            else if (_contextService is IQueryPolicyAware aware && aware.QueryPolicy != null)
             {
                 action(aware.QueryPolicy);
             }
         }
 
-        void IObjectPoolable.SetPool(IObjectPool pool)
+        void IObjectPoolable.SetPool(string poolName)
         {
-            this.pool = pool;
+            _poolName = poolName;
+        }
+
+        void IObjectPoolable.OnRent()
+        {
+        }
+
+        void IObjectPoolable.OnReturn()
+        {
         }
     }
 }

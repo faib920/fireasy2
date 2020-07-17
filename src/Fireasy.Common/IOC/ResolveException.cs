@@ -12,7 +12,7 @@ namespace Fireasy.Common.Ioc
     public sealed class ResolveException : Exception
     {
         public ResolveException(string message)
-            : base (message)
+            : base(message)
         {
         }
     }

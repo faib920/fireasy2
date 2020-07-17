@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System.Collections.Generic;
 using System.Xml;
 #if NETSTANDARD || NETCOREAPP
 using Microsoft.Extensions.Configuration;

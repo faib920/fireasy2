@@ -21,7 +21,7 @@ namespace Fireasy.Common.Caching
     /// <typeparam name="TValue"></typeparam>
     public sealed class MemoryHashSet<TKey, TValue> : ICacheHashSet<TKey, TValue>
     {
-        private readonly ConcurrentDictionary<TKey, HashCacheItem> dictionary = new ConcurrentDictionary<TKey, HashCacheItem>();
+        private readonly ConcurrentDictionary<TKey, HashCacheItem> _dictionary = new ConcurrentDictionary<TKey, HashCacheItem>();
 
         /// <summary>
         /// 初始化 <see cref="MemoryHashSet"/> 类的新实例。
@@ -38,16 +38,24 @@ namespace Fireasy.Common.Caching
         /// <summary>
         /// 获取集合中对象的个数。
         /// </summary>
-        public long Count => dictionary.Count;
+        public long Count => _dictionary.Count;
 
         /// <summary>
         /// 清空整个集合。
         /// </summary>
         public void Clear()
         {
-            dictionary.Clear();
+            _dictionary.Clear();
         }
 
+        /// <summary>
+        /// 异步的，清空整个集合。
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// </summary>
+        public async Task ClearAsync(CancellationToken cancellationToken = default)
+        {
+            _dictionary.Clear();
+        }
         /// <summary>
         /// 尝试从集合中获取指定 <paramref name="key"/> 的数据，如果没有则使用工厂函数添加对象到集合中。
         /// </summary>
@@ -57,7 +65,7 @@ namespace Fireasy.Common.Caching
         /// <returns></returns>
         public TValue TryGet(TKey key, Func<TValue> valueCreator, Func<ICacheItemExpiration> expiration = null)
         {
-            if (dictionary.TryGetValue(key, out HashCacheItem cache))
+            if (_dictionary.TryGetValue(key, out HashCacheItem cache))
             {
                 if (!cache.HasExpired())
                 {
@@ -65,7 +73,7 @@ namespace Fireasy.Common.Caching
                 }
             }
 
-            return dictionary.GetOrAdd(key, k => new HashCacheItem(valueCreator(), expiration == null ? NeverExpired.Instance : expiration())).Value;
+            return _dictionary.GetOrAdd(key, k => new HashCacheItem(valueCreator(), expiration == null ? NeverExpired.Instance : expiration())).Value;
         }
 
         /// <summary>
@@ -89,7 +97,7 @@ namespace Fireasy.Common.Caching
         /// <param name="expiration">判断对象过期的对象。</param>
         public void Add(TKey key, TValue value, ICacheItemExpiration expiration = null)
         {
-            dictionary.AddOrUpdate(key, k => new HashCacheItem(value, expiration), (k, v) => new HashCacheItem(value, expiration));
+            _dictionary.AddOrUpdate(key, k => new HashCacheItem(value, expiration), (k, v) => new HashCacheItem(value, expiration));
         }
 
         /// <summary>
@@ -98,7 +106,8 @@ namespace Fireasy.Common.Caching
         /// <param name="key">标识数据的 key。</param>
         /// <param name="value"></param>
         /// <param name="expiration">判断对象过期的对象。</param>
-        public async Task AddAsync(TKey key, TValue value, ICacheItemExpiration expiration = null)
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        public async Task AddAsync(TKey key, TValue value, ICacheItemExpiration expiration = null, CancellationToken cancellationToken = default)
         {
             Add(key, value, expiration);
         }
@@ -111,7 +120,7 @@ namespace Fireasy.Common.Caching
         /// <returns></returns>
         public bool TryGet(TKey key, out TValue value)
         {
-            if (dictionary.TryGetValue(key, out HashCacheItem cache))
+            if (_dictionary.TryGetValue(key, out HashCacheItem cache))
             {
                 if (!cache.HasExpired())
                 {
@@ -119,7 +128,7 @@ namespace Fireasy.Common.Caching
                     return true;
                 }
 
-                dictionary.TryRemove(key, out _);
+                _dictionary.TryRemove(key, out _);
             }
 
             value = default;
@@ -132,7 +141,7 @@ namespace Fireasy.Common.Caching
         /// <returns></returns>
         public IEnumerable<TKey> GetKeys()
         {
-            return dictionary.Keys;
+            return _dictionary.Keys;
         }
 
         /// <summary>
@@ -141,7 +150,7 @@ namespace Fireasy.Common.Caching
         /// <returns></returns>
         public IEnumerable<TValue> GetValues()
         {
-            foreach (var item in dictionary.Values)
+            foreach (var item in _dictionary.Values)
             {
                 if (!item.HasExpired())
                 {
@@ -166,7 +175,7 @@ namespace Fireasy.Common.Caching
         /// <param name="key">标识数据的 key。</param>
         public void Remove(TKey key)
         {
-            dictionary.TryRemove(key, out _);
+            _dictionary.TryRemove(key, out _);
         }
 
         /// <summary>
@@ -186,15 +195,16 @@ namespace Fireasy.Common.Caching
         /// <returns></returns>
         public bool Contains(TKey key)
         {
-            return dictionary.ContainsKey(key);
+            return _dictionary.ContainsKey(key);
         }
 
         /// <summary>
         /// 异步的，确定集合中是否包含指定的键的值。
         /// </summary>
         /// <param name="key">标识数据的 key。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns></returns>
-        public Task<bool> ContainsAsync(TKey key)
+        public Task<bool> ContainsAsync(TKey key, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(Contains(key));
         }

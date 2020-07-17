@@ -13,7 +13,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class SkipToRowNumberRewriter : DbExpressionVisitor
     {
-        private const string columnName = "ROWNUMBER";
+        private const string COLUMN_NAME = "ROWNUMBER";
 
         public static Expression Rewrite(Expression expression)
         {
@@ -32,14 +32,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     newSelect = newSelect.AddRedundantSelect(new TableAlias());
                 }
 
-                newSelect = newSelect.AddColumn(new ColumnDeclaration(columnName, new RowNumberExpression(select.OrderBy)));
+                newSelect = newSelect.AddColumn(new ColumnDeclaration(COLUMN_NAME, new RowNumberExpression(select.OrderBy)));
 
                 // add layer for WHERE clause that references new rownum column
                 newSelect = newSelect.AddRedundantSelect(new TableAlias());
-                newSelect = newSelect.RemoveColumn(newSelect.Columns.Single(c => c.Name == columnName));
+                newSelect = newSelect.RemoveColumn(newSelect.Columns.Single(c => c.Name == COLUMN_NAME));
 
                 var newAlias = ((SelectExpression)newSelect.From).Alias;
-                ColumnExpression rnCol = new ColumnExpression(typeof(int), newAlias, columnName, null);
+                ColumnExpression rnCol = new ColumnExpression(typeof(int), newAlias, COLUMN_NAME, null);
                 Expression where;
 
                 if (select.Take != null)

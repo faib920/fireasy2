@@ -17,7 +17,7 @@ namespace Fireasy.Common.Ioc
     public static class ContainerUnity
     {
         private const string DEFAULT = "_default_container";
-        private static readonly SafetyDictionary<string, Container> containers = new SafetyDictionary<string, Container>();
+        private static readonly SafetyDictionary<string, Container> _containers = new SafetyDictionary<string, Container>();
 
         /// <summary>
         /// 获取指定名称的 IOC 容器，如果该容器不存在，则创建新的容器。<paramref name="name"/> 为 null 时返回 <see cref="Container.Instance"/> 实例。
@@ -32,7 +32,7 @@ namespace Fireasy.Common.Ioc
                 name = DEFAULT;
             }
 
-            return containers.GetOrAdd(name, k =>
+            return _containers.GetOrAdd(name, k =>
                 {
                     var container = new Container();
                     ConfigureContainer(k, container);

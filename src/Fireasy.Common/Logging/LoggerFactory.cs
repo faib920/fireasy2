@@ -32,7 +32,7 @@ namespace Fireasy.Common.Logging
 
             if (setting == null)
             {
-                services.AddSingleton(typeof(ILogger), sp => CreateLogger(sp));
+                services.AddTransient(typeof(ILogger), sp => CreateLogger(sp));
             }
             else
             {
@@ -41,7 +41,7 @@ namespace Fireasy.Common.Logging
                     setting = extend.Base;
                 }
 
-                services.AddSingleton(typeof(ILogger), sp => CreateLogger(sp, ((LoggingConfigurationSetting)setting).Name));
+                services.AddTransient(typeof(ILogger), sp => CreateLogger(sp, ((LoggingConfigurationSetting)setting).Name));
             }
 
             return services;
@@ -70,7 +70,9 @@ namespace Fireasy.Common.Logging
             var section = ConfigurationUnity.GetSection<LoggingConfigurationSection>();
             if (section != null && section.Factory != null)
             {
-                logger = ConfigurationUnity.Cached<ILogger>($"Logger_{configName}", () => section.Factory.CreateInstance(configName) as ILogger);
+                logger = ConfigurationUnity.Cached<ILogger>($"Logger_{configName}", serviceProvider,
+                    () => section.Factory.CreateInstance(serviceProvider, configName) as ILogger);
+
                 if (logger != null)
                 {
                     return logger;
@@ -94,7 +96,7 @@ namespace Fireasy.Common.Logging
                 return null;
             }
 
-            return ConfigurationUnity.Cached<ILogger>($"Logger_{configName}", 
+            return ConfigurationUnity.Cached<ILogger>($"Logger_{configName}", serviceProvider,
                 () => ConfigurationUnity.CreateInstance<LoggingConfigurationSetting, ILogger>(serviceProvider, setting, s => s.LogType));
         }
     }

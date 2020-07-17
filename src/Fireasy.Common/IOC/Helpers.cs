@@ -69,6 +69,7 @@ namespace Fireasy.Common.Ioc
                 }
                 else
                 {
+                    regAct(type, type, (Lifetime)lifetime);
                     interfaceTypes.ForEach(s => regAct(s, type, (Lifetime)lifetime));
                 }
             }

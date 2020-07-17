@@ -18,8 +18,8 @@ namespace Fireasy.Common.Serialization
     /// </summary>
     public class SerializeContext : Scope<SerializeContext>
     {
-        private readonly List<object> objects = new List<object>();
-        private static readonly ConcurrentDictionary<Type, List<SerializerPropertyMetadata>> cache = new ConcurrentDictionary<Type, List<SerializerPropertyMetadata>>();
+        private readonly List<object> _objects = new List<object>();
+        private static readonly ConcurrentDictionary<Type, List<SerializerPropertyMetadata>> _cache = new ConcurrentDictionary<Type, List<SerializerPropertyMetadata>>();
 
         /// <summary>
         /// 获取或设置 <see cref="SerializeOption"/>。
@@ -39,7 +39,7 @@ namespace Fireasy.Common.Serialization
         /// <returns></returns>
         public List<SerializerPropertyMetadata> GetProperties(Type type, Func<List<SerializerPropertyMetadata>> valueCreator)
         {
-            return cache.GetOrAdd(type, k => valueCreator());
+            return _cache.GetOrAdd(type, k => valueCreator());
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace Fireasy.Common.Serialization
                 return;
             }
 
-            if (objects.IndexOf(obj) != -1)
+            if (_objects.IndexOf(obj) != -1)
             {
                 if (Option.ReferenceLoopHandling == ReferenceLoopHandling.Error)
                 {
@@ -70,12 +70,12 @@ namespace Fireasy.Common.Serialization
 
             try
             {
-                objects.Add(obj);
+                _objects.Add(obj);
                 serializeMethod(obj);
             }
             finally
             {
-                objects.Remove(obj);
+                _objects.Remove(obj);
             }
         }
 
@@ -85,7 +85,7 @@ namespace Fireasy.Common.Serialization
         /// <param name="disposing"></param>
         protected override bool Dispose(bool disposing)
         {
-            objects.Clear();
+            _objects.Clear();
 
             return base.Dispose(disposing);
         }
@@ -145,6 +145,7 @@ namespace Fireasy.Common.Serialization
         public PropertySerialzeInfo(SerializerPropertyMetadata metadata)
         {
             ObjectType = ObjectType.GeneralObject;
+            PropertyInfo = metadata.PropertyInfo;
             PropertyType = metadata.PropertyInfo.PropertyType;
             PropertyName = metadata.PropertyName;
             Formatter = metadata.Formatter;
@@ -166,6 +167,11 @@ namespace Fireasy.Common.Serialization
         /// 获取属性名称。
         /// </summary>
         public string PropertyName { get; private set; }
+
+        /// <summary>
+        /// 获取属性元数据。
+        /// </summary>
+        public PropertyInfo PropertyInfo { get; private set; }
 
         /// <summary>
         /// 获取属性的类型。

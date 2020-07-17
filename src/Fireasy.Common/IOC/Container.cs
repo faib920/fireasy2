@@ -31,15 +31,17 @@ namespace Fireasy.Common.Ioc
         , IServiceScopeFactory
 #endif
     {
-        private ParameterExpression parExp = null;
-        private readonly List<IRegistration> registrations = new List<IRegistration>();
-        private readonly List<InstanceInitializer> instanceInitializers = new List<InstanceInitializer>();
-        private readonly List<IDisposable> dispObjects = new List<IDisposable>();
+        private ParameterExpression _parExp = null;
+        private readonly List<IRegistration> _registrations = new List<IRegistration>();
+        private readonly List<InstanceInitializer> _instanceInitializers = new List<InstanceInitializer>();
+        private readonly List<IDisposable> _dispObjects = new List<IDisposable>();
 
         public Container()
         {
             Register<IServiceProvider>(this);
         }
+
+        public IServiceProvider ServiceProvider => this;
 
         /// <summary>
         /// 注册服务类型及实现类型，<typeparamref name="TImplementation"/> 是 <typeparamref name="TService"/> 的实现类。
@@ -89,15 +91,15 @@ namespace Fireasy.Common.Ioc
         {
             if (lifetime == Lifetime.Singleton)
             {
-                registrations.Add(this.CreateSingleton(serviceType, implementationType));
+                _registrations.Add(this.CreateSingleton(serviceType, implementationType));
             }
             else if (lifetime == Lifetime.Scoped)
             {
-                registrations.Add(this.CreateScoped(serviceType, implementationType));
+                _registrations.Add(this.CreateScoped(serviceType, implementationType));
             }
             else if (lifetime == Lifetime.Transient)
             {
-                registrations.Add(this.CreateTransient(serviceType, implementationType));
+                _registrations.Add(this.CreateTransient(serviceType, implementationType));
             }
 
             return this;
@@ -114,11 +116,11 @@ namespace Fireasy.Common.Ioc
         {
             if (lifetime == Lifetime.Singleton)
             {
-                registrations.Add(this.CreateSingleton(instanceCreator(this)));
+                _registrations.Add(this.CreateSingleton(instanceCreator(this)));
             }
             else
             {
-                registrations.Add(this.CreateFunc(typeof(TService), instanceCreator, lifetime));
+                _registrations.Add(this.CreateFunc(typeof(TService), instanceCreator, lifetime));
             }
 
             return this;
@@ -132,7 +134,7 @@ namespace Fireasy.Common.Ioc
         /// <returns>当前的 IOC 容器。</returns>
         public Container Register<TService>(TService instance) where TService : class
         {
-            registrations.Add(this.CreateSingleton(typeof(TService), instance));
+            _registrations.Add(this.CreateSingleton(typeof(TService), instance));
             return this;
         }
 
@@ -147,11 +149,11 @@ namespace Fireasy.Common.Ioc
         {
             if (lifetime == Lifetime.Singleton)
             {
-                registrations.Add(this.CreateSingleton(serviceType, instanceCreator(this)));
+                _registrations.Add(this.CreateSingleton(serviceType, instanceCreator(this)));
             }
             else
             {
-                registrations.Add(this.CreateFunc(serviceType, instanceCreator, lifetime));
+                _registrations.Add(this.CreateFunc(serviceType, instanceCreator, lifetime));
             }
 
             return this;
@@ -207,10 +209,10 @@ namespace Fireasy.Common.Ioc
         /// <param name="serviceType">服务类型。</param>
         public void UnRegister(Type serviceType)
         {
-            var regs = registrations.Where(s => s.ServiceType == serviceType).ToArray();
+            var regs = _registrations.Where(s => s.ServiceType == serviceType).ToArray();
             for (var i = regs.Length - 1; i >= 0; i--)
             {
-                registrations.Remove(regs[i]);
+                _registrations.Remove(regs[i]);
             }
         }
 
@@ -219,7 +221,7 @@ namespace Fireasy.Common.Ioc
         /// </summary>
         public void Clear()
         {
-            registrations.Clear();
+            _registrations.Clear();
         }
 
         /// <summary>
@@ -270,7 +272,7 @@ namespace Fireasy.Common.Ioc
         /// <returns>所有在该容器注册的注册器。</returns>
         public IEnumerable<IRegistration> GetRegistrations()
         {
-            return registrations;
+            return _registrations;
         }
 
         /// <summary>
@@ -293,10 +295,10 @@ namespace Fireasy.Common.Ioc
             if (Helpers.IsEnumerableResolve(serviceType))
             {
                 var elementType = serviceType.GetEnumerableElementType();
-                return registrations.Where(s => s.ServiceType == elementType);
+                return _registrations.Where(s => s.ServiceType == elementType);
             }
 
-            return registrations.Where(s => s.ServiceType == serviceType);
+            return _registrations.Where(s => s.ServiceType == serviceType);
         }
 
         /// <summary>
@@ -316,7 +318,7 @@ namespace Fireasy.Common.Ioc
         /// <returns></returns>
         public bool IsRegistered(Type serviceType)
         {
-            return registrations.Any(s => s.ServiceType == serviceType);
+            return _registrations.Any(s => s.ServiceType == serviceType);
         }
 
         /// <summary>
@@ -329,7 +331,7 @@ namespace Fireasy.Common.Ioc
         {
             Guard.ArgumentNull(instanceInitializer, nameof(instanceInitializer));
 
-            instanceInitializers.Add(new InstanceInitializer
+            _instanceInitializers.Add(new InstanceInitializer
             {
                 ServiceType = typeof(TService),
                 Action = instanceInitializer,
@@ -371,7 +373,7 @@ namespace Fireasy.Common.Ioc
         {
             var typeHierarchy = typeof(T).GetHierarchyTypes();
             return (
-                from instanceInitializer in instanceInitializers
+                from instanceInitializer in _instanceInitializers
                 where typeHierarchy.Contains(instanceInitializer.ServiceType)
                 select Helpers.CreateAction<T>(instanceInitializer.Action))
                 .ToArray();
@@ -419,7 +421,7 @@ namespace Fireasy.Common.Ioc
 
         internal ParameterExpression GetParameterExpression()
         {
-            return parExp ?? (parExp = Expression.Parameter(typeof(Container), "c"));
+            return _parExp ?? (_parExp = Expression.Parameter(typeof(Container), "c"));
         }
 
         private void LoadXmlConfig(string fileName)
@@ -455,44 +457,44 @@ namespace Fireasy.Common.Ioc
 
         private void TryAddDisposableObject(IDisposable dispObj)
         {
-            if (!dispObjects.Contains(dispObj))
+            if (!_dispObjects.Contains(dispObj))
             {
-                dispObjects.Add(dispObj);
+                _dispObjects.Add(dispObj);
             }
         }
 
         protected override bool Dispose(bool disposing)
         {
-            dispObjects.ForEach(s => s.Dispose());
-            dispObjects.Clear();
+            _dispObjects.ForEach(s => s.Dispose());
+            _dispObjects.Clear();
 
             return base.Dispose(disposing);
         }
 
         private class ResolveScope : DisposeableBase, IServiceProvider, IResolver
 #if NETSTANDARD
-            ,IServiceScope
+            , IServiceScope
 #endif
         {
-            private readonly IResolver root;
-            private readonly List<IDisposable> dispObjects = new List<IDisposable>();
-            private readonly SafetyDictionary<Type, object> scopeObjects = new SafetyDictionary<Type, object>();
+            private readonly IResolver _root;
+            private readonly List<IDisposable> _dispObjects = new List<IDisposable>();
+            private readonly SafetyDictionary<Type, object> _scopeObjects = new SafetyDictionary<Type, object>();
 
             public IServiceProvider ServiceProvider => this;
 
             public ResolveScope(IResolver root)
             {
-                this.root = root;
+                _root = root;
             }
 
             public IResolver CreateScope()
             {
-                return new ResolveScope(root);
+                return new ResolveScope(_root);
             }
 
             public object Resolve(Type serviceType)
             {
-                if (scopeObjects.TryGetValue(serviceType, out var obj))
+                if (_scopeObjects.TryGetValue(serviceType, out var obj))
                 {
                     return obj;
                 }
@@ -502,16 +504,16 @@ namespace Fireasy.Common.Ioc
 
                 if (lifetime == Lifetime.Scoped)
                 {
-                    scopeObjects.TryAdd(serviceType, obj);
+                    _scopeObjects.TryAdd(serviceType, obj);
                 }
 
                 if (obj is IDisposable dispObj)
                 {
                     if (lifetime != Lifetime.Singleton)
                     {
-                        dispObjects.Add(dispObj);
+                        _dispObjects.Add(dispObj);
                     }
-                    else if (root is Container container)
+                    else if (_root is Container container)
                     {
                         container.TryAddDisposableObject(dispObj);
                     }
@@ -533,7 +535,7 @@ namespace Fireasy.Common.Ioc
 
             public IEnumerable<IRegistration> GetRegistrations(Type serviceType)
             {
-                return root.GetRegistrations(serviceType);
+                return _root.GetRegistrations(serviceType);
             }
 
             object IServiceProvider.GetService(Type serviceType)
@@ -543,9 +545,9 @@ namespace Fireasy.Common.Ioc
 
             protected override bool Dispose(bool disposing)
             {
-                dispObjects.ForEach(s => s.Dispose());
-                dispObjects.Clear();
-                scopeObjects.Clear();
+                _dispObjects.ForEach(s => s.Dispose());
+                _dispObjects.Clear();
+                _scopeObjects.Clear();
 
                 return base.Dispose(disposing);
             }
@@ -591,11 +593,6 @@ namespace Fireasy.Common.Ioc
 
                     lifetime = registration.Lifetime;
                     return registration.Resolve(resolver);
-                }
-
-                if (!serviceType.IsAbstract && !serviceType.IsInterface)
-                {
-                    return serviceType.New();
                 }
 
                 return null;

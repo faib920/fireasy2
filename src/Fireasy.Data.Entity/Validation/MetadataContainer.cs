@@ -31,7 +31,7 @@ namespace Fireasy.Data.Entity.Validation
     /// <typeparam name="TEntity"></typeparam>
     public sealed class MetadataConverter<TEntity> where TEntity : IEntity
     {
-        private readonly Dictionary<string, List<ValidationAttribute>> dict = new Dictionary<string, List<ValidationAttribute>>();
+        private readonly Dictionary<string, List<ValidationAttribute>> _attrCache = new Dictionary<string, List<ValidationAttribute>>();
 
         /// <summary>
         /// 使用表达式来添加一个规则。
@@ -44,8 +44,8 @@ namespace Fireasy.Data.Entity.Validation
             var memberName = MemberVisitor.Find(expression);
             if (!string.IsNullOrEmpty(memberName))
             {
-                var attributes = dict.TryGetValue(memberName, () => new List<ValidationAttribute>());
-                attributes.Add(attribute);
+                var attrs = _attrCache.TryGetValue(memberName, () => new List<ValidationAttribute>());
+                attrs.Add(attribute);
             }
 
             return this;
@@ -57,18 +57,18 @@ namespace Fireasy.Data.Entity.Validation
         /// <returns></returns>
         public Dictionary<string, List<ValidationAttribute>> ToDictionary()
         {
-            return dict;
+            return _attrCache;
         }
 
         private class MemberVisitor : Fireasy.Common.Linq.Expressions.ExpressionVisitor
         {
-            private string memberName;
+            private string _memberName;
 
             public static string Find(Expression expression)
             {
                 var visitor = new MemberVisitor();
                 visitor.Visit(expression);
-                return visitor.memberName;
+                return visitor._memberName;
             }
 
             public override Expression Visit(Expression expression)
@@ -77,7 +77,7 @@ namespace Fireasy.Data.Entity.Validation
                 {
                     if (labda.Body is MemberExpression member && member.Member.DeclaringType == typeof(TEntity))
                     {
-                        memberName = member.Member.Name;
+                        _memberName = member.Member.Name;
                     }
                 }
 

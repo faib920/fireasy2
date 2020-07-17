@@ -6,12 +6,14 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 #if !NET45
 using System.Threading;
+#else
+using System;
 #endif
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 
 namespace Fireasy.Common
@@ -22,14 +24,14 @@ namespace Fireasy.Common
     /// <typeparam name="T"></typeparam>
     public abstract class Scope<T> : DisposeableBase where T : Scope<T>
     {
-        private readonly Dictionary<string, object> dataCache = new Dictionary<string, object>();
-        private readonly bool isSingleton;
+        private readonly Dictionary<string, object> _dataCache = new Dictionary<string, object>();
+        private readonly bool _isSingleton;
 
 #if !NET45
-        private static readonly AsyncLocal<Stack<T>> staticStack = new AsyncLocal<Stack<T>>();
+        private static readonly AsyncLocal<Stack<T>> _staticStack = new AsyncLocal<Stack<T>>();
 #else
         [ThreadStatic]
-        private static Stack<T> staticStack = new Stack<T>();
+        private static Stack<T> _staticStack = new Stack<T>();
 #endif
 
         /// <summary>
@@ -50,7 +52,7 @@ namespace Fireasy.Common
         /// <param name="singleton">是否为单例模式。</param>
         protected Scope(bool singleton = true)
         {
-            isSingleton = singleton;
+            _isSingleton = singleton;
             var stack = GetScopeStack();
 
             if (singleton)
@@ -74,7 +76,7 @@ namespace Fireasy.Common
         /// <param name="data">数据值。</param>
         public void SetData<TData>(string key, TData data)
         {
-            dataCache.AddOrReplace(key, data);
+            _dataCache.AddOrReplace(key, data);
         }
 
         /// <summary>
@@ -85,7 +87,7 @@ namespace Fireasy.Common
         /// <returns>返回附加的数据（如果存在）。</returns>
         public TData GetData<TData>(string key)
         {
-            dataCache.TryGetValue(key, out object data);
+            _dataCache.TryGetValue(key, out object data);
 
             if (data is TData)
             {
@@ -100,7 +102,7 @@ namespace Fireasy.Common
         /// </summary>
         public void ClearData()
         {
-            dataCache.Clear();
+            _dataCache.Clear();
         }
 
         /// <summary>
@@ -114,9 +116,9 @@ namespace Fireasy.Common
                 return;
             }
 
-            foreach (var key in keys.Where(key => dataCache.ContainsKey(key)))
+            foreach (var key in keys.Where(key => _dataCache.ContainsKey(key)))
             {
-                dataCache.Remove(key);
+                _dataCache.Remove(key);
             }
         }
 
@@ -129,7 +131,7 @@ namespace Fireasy.Common
             var stack = GetScopeStack();
             if (stack.Count > 0)
             {
-                if (isSingleton)
+                if (_isSingleton)
                 {
                     //单例模式下，要判断是否与 current 相等
                     var current = stack.Peek();
@@ -150,14 +152,14 @@ namespace Fireasy.Common
         private static Stack<T> GetScopeStack()
         {
 #if !NET45
-            if (staticStack.Value == null)
+            if (_staticStack.Value == null)
             {
-                staticStack.Value = new Stack<T>();
+                _staticStack.Value = new Stack<T>();
             }
 
-            return staticStack.Value;
+            return _staticStack.Value;
 #else
-            return staticStack ?? (staticStack = new Stack<T>());
+            return _staticStack ?? (_staticStack = new Stack<T>());
 #endif
         }
     }

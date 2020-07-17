@@ -29,8 +29,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 services.Configure(setupAction);
             }
 
-            services.AddSingleton<ICacheManager, CacheManager>();
-            return services;
+            return services.AddSingleton<IDistributedCacheManager, CacheManager>()
+                .AddSingleton<ICacheManager>(sp => sp.GetRequiredService<IDistributedCacheManager>());
         }
 
         /// <summary>

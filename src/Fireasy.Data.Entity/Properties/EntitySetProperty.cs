@@ -21,7 +21,7 @@ namespace Fireasy.Data.Entity.Properties
         /// 初始化 <see cref="EntitySetProperty"/> 类的新实例。
         /// </summary>
         public EntitySetProperty()
-            : base (RelationPropertyType.EntitySet)
+            : base(RelationPropertyType.EntitySet)
         {
         }
     }

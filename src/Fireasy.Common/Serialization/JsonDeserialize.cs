@@ -22,18 +22,22 @@ namespace Fireasy.Common.Serialization
 {
     internal sealed class JsonDeserialize : DeserializeBase
     {
-        private readonly JsonSerializeOption option;
-        private readonly JsonSerializer serializer;
-        private readonly JsonReader jsonReader;
-        private static readonly MethodInfo MthToArray = typeof(Enumerable).GetMethod(nameof(Enumerable.ToArray), BindingFlags.Public | BindingFlags.Static);
-        private readonly TypeConverterCache<JsonConverter> cacheConverter = new TypeConverterCache<JsonConverter>();
+        private readonly JsonSerializeOption _option;
+        private readonly JsonSerializer _serializer;
+        private readonly JsonReader _jsonReader;
+        private readonly TypeConverterCache<JsonConverter> _converters = new TypeConverterCache<JsonConverter>();
+
+        private class MethodCache
+        {
+            internal protected static readonly MethodInfo ToArray = typeof(Enumerable).GetMethod(nameof(Enumerable.ToArray), BindingFlags.Public | BindingFlags.Static);
+        }
 
         internal JsonDeserialize(JsonSerializer serializer, JsonReader reader, JsonSerializeOption option)
             : base(option)
         {
-            this.serializer = serializer;
-            jsonReader = reader;
-            this.option = option;
+            _serializer = serializer;
+            _jsonReader = reader;
+            _option = option;
         }
 
         internal T Deserialize<T>()
@@ -54,7 +58,7 @@ namespace Fireasy.Common.Serialization
                 return value;
             }
 
-            jsonReader.SkipWhiteSpaces();
+            _jsonReader.SkipWhiteSpaces();
 
             if (type == typeof(Type))
             {
@@ -118,10 +122,10 @@ namespace Fireasy.Common.Serialization
             if (typeof(ITextSerializable).IsAssignableFrom(type))
             {
                 var obj = type.New<ITextSerializable>();
-                var rawValue = jsonReader.ReadRaw();
+                var rawValue = _jsonReader.ReadRaw();
                 if (rawValue != null)
                 {
-                    obj.Deserialize(serializer, rawValue);
+                    obj.Deserialize(_serializer, rawValue);
                     value = obj;
                 }
 
@@ -133,21 +137,21 @@ namespace Fireasy.Common.Serialization
 
         private bool WithConverter(Type type, ref object value)
         {
-            var converter = cacheConverter.GetReadableConverter(type, option);
+            var converter = _converters.GetReadableConverter(type, _option);
 
             if (converter == null || !converter.CanRead)
             {
                 return false;
             }
 
-            value = converter.ReadJson(serializer, jsonReader, type);
+            value = converter.ReadJson(_serializer, _jsonReader, type);
 
             return true;
         }
 
         private object DeserializeValue(Type type)
         {
-            if (jsonReader.IsNull())
+            if (_jsonReader.IsNull())
             {
                 if ((type.GetNonNullableType().IsValueType && !type.IsNullableType()))
                 {
@@ -164,7 +168,7 @@ namespace Fireasy.Common.Serialization
                 return ParseObject(type);
             }
 
-            var value = jsonReader.ReadValue();
+            var value = _jsonReader.ReadValue();
             if (type.IsNullableType() && (value == null || string.IsNullOrEmpty(value.ToString())))
             {
                 return null;
@@ -174,7 +178,7 @@ namespace Fireasy.Common.Serialization
             {
                 case TypeCode.DateTime:
                     CheckNullString(value, type);
-                    return SerializerUtil.ParseDateTime(value.ToString(), option.Culture, option.DateTimeZoneHandling);
+                    return SerializerUtil.ParseDateTime(value.ToString(), _option.Culture, _option.DateTimeZoneHandling);
                 case TypeCode.String:
                     return value == null ? null : DeserializeString(value.ToString());
                 default:
@@ -202,20 +206,20 @@ namespace Fireasy.Common.Serialization
         private DataSet DeserializeDataSet()
         {
             var ds = new DataSet();
-            jsonReader.SkipWhiteSpaces();
-            jsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
+            _jsonReader.SkipWhiteSpaces();
+            _jsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
             while (true)
             {
-                jsonReader.SkipWhiteSpaces();
-                var name = jsonReader.ReadAsString();
-                jsonReader.SkipWhiteSpaces();
-                jsonReader.AssertAndConsume(JsonTokens.PairSeparator);
-                jsonReader.SkipWhiteSpaces();
+                _jsonReader.SkipWhiteSpaces();
+                var name = _jsonReader.ReadAsString();
+                _jsonReader.SkipWhiteSpaces();
+                _jsonReader.AssertAndConsume(JsonTokens.PairSeparator);
+                _jsonReader.SkipWhiteSpaces();
                 var tb = DeserializeDataTable();
                 tb.TableName = name;
                 ds.Tables.Add(tb);
-                jsonReader.SkipWhiteSpaces();
-                if (jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndObjectLiteralCharacter))
+                _jsonReader.SkipWhiteSpaces();
+                if (_jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndObjectLiteralCharacter))
                 {
                     break;
                 }
@@ -228,14 +232,14 @@ namespace Fireasy.Common.Serialization
         private DataTable DeserializeDataTable()
         {
             var tb = new DataTable();
-            jsonReader.SkipWhiteSpaces();
-            jsonReader.AssertAndConsume(JsonTokens.StartArrayCharacter);
+            _jsonReader.SkipWhiteSpaces();
+            _jsonReader.AssertAndConsume(JsonTokens.StartArrayCharacter);
             while (true)
             {
-                jsonReader.SkipWhiteSpaces();
+                _jsonReader.SkipWhiteSpaces();
                 DeserializeDataRow(tb);
-                jsonReader.SkipWhiteSpaces();
-                if (jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndArrayCharacter))
+                _jsonReader.SkipWhiteSpaces();
+                if (_jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndArrayCharacter))
                 {
                     break;
                 }
@@ -246,23 +250,23 @@ namespace Fireasy.Common.Serialization
 
         private void DeserializeDataRow(DataTable tb)
         {
-            if (jsonReader.Peek() != JsonTokens.StartObjectLiteralCharacter)
+            if (_jsonReader.Peek() != JsonTokens.StartObjectLiteralCharacter)
             {
                 return;
             }
 
             var noCols = tb.Columns.Count == 0;
-            jsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
+            _jsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
             var row = tb.NewRow();
             while (true)
             {
-                jsonReader.SkipWhiteSpaces();
-                var name = DeserializeString(jsonReader.ReadKey());
-                jsonReader.SkipWhiteSpaces();
-                jsonReader.AssertAndConsume(JsonTokens.PairSeparator);
-                jsonReader.SkipWhiteSpaces();
-                var obj = ParseValue(jsonReader.ReadValue());
-                jsonReader.SkipWhiteSpaces();
+                _jsonReader.SkipWhiteSpaces();
+                var name = DeserializeString(_jsonReader.ReadKey());
+                _jsonReader.SkipWhiteSpaces();
+                _jsonReader.AssertAndConsume(JsonTokens.PairSeparator);
+                _jsonReader.SkipWhiteSpaces();
+                var obj = ParseValue(_jsonReader.ReadValue());
+                _jsonReader.SkipWhiteSpaces();
                 if (noCols)
                 {
                     tb.Columns.Add(name, obj != null ? obj.GetType() : typeof(object));
@@ -273,7 +277,7 @@ namespace Fireasy.Common.Serialization
                     row[name] = obj ?? DBNull.Value;
                 }
 
-                if (jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndObjectLiteralCharacter))
+                if (_jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndObjectLiteralCharacter))
                 {
                     break;
                 }
@@ -303,31 +307,31 @@ namespace Fireasy.Common.Serialization
 
             CreateListContainer(listType, out Type elementType, out IList container);
 
-            jsonReader.SkipWhiteSpaces();
-            if (jsonReader.IsNull())
+            _jsonReader.SkipWhiteSpaces();
+            if (_jsonReader.IsNull())
             {
                 return null;
             }
 
-            jsonReader.AssertAndConsume(JsonTokens.StartArrayCharacter);
+            _jsonReader.AssertAndConsume(JsonTokens.StartArrayCharacter);
             while (true)
             {
-                if (jsonReader.Peek() == JsonTokens.EndArrayCharacter)
+                if (_jsonReader.Peek() == JsonTokens.EndArrayCharacter)
                 {
-                    jsonReader.Read();
+                    _jsonReader.Read();
                     break;
                 }
 
-                jsonReader.SkipWhiteSpaces();
+                _jsonReader.SkipWhiteSpaces();
                 var value = DeserializeIntelligently(elementType);
                 if (value != null && value.GetType() != elementType)
                 {
                     value = value.ToType(elementType);
                 }
                 container.Add(value);
-                jsonReader.SkipWhiteSpaces();
+                _jsonReader.SkipWhiteSpaces();
 
-                if (jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndArrayCharacter))
+                if (_jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndArrayCharacter))
                 {
                     break;
                 }
@@ -335,7 +339,7 @@ namespace Fireasy.Common.Serialization
 
             if (listType.IsArray)
             {
-                var invoker = ReflectionCache.GetInvoker(MthToArray.MakeGenericMethod(elementType));
+                var invoker = ReflectionCache.GetInvoker(MethodCache.ToArray.MakeGenericMethod(elementType));
                 return invoker.Invoke(null, container);
             }
 
@@ -351,25 +355,25 @@ namespace Fireasy.Common.Serialization
         {
             CreateDictionaryContainer(dictType, out Type[] keyValueTypes, out IDictionary container);
 
-            jsonReader.SkipWhiteSpaces();
-            jsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
+            _jsonReader.SkipWhiteSpaces();
+            _jsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
             while (true)
             {
-                if (jsonReader.Peek() == JsonTokens.EndObjectLiteralCharacter)
+                if (_jsonReader.Peek() == JsonTokens.EndObjectLiteralCharacter)
                 {
-                    jsonReader.Read();
+                    _jsonReader.Read();
                     return container;
                 }
 
-                jsonReader.SkipWhiteSpaces();
+                _jsonReader.SkipWhiteSpaces();
                 var key = Deserialize(keyValueTypes[0]);
-                jsonReader.SkipWhiteSpaces();
-                jsonReader.AssertAndConsume(JsonTokens.PairSeparator);
-                jsonReader.SkipWhiteSpaces();
+                _jsonReader.SkipWhiteSpaces();
+                _jsonReader.AssertAndConsume(JsonTokens.PairSeparator);
+                _jsonReader.SkipWhiteSpaces();
                 container.Add(key, Deserialize(keyValueTypes[1]));
-                jsonReader.SkipWhiteSpaces();
+                _jsonReader.SkipWhiteSpaces();
 
-                if (jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndObjectLiteralCharacter))
+                if (_jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndObjectLiteralCharacter))
                 {
                     break;
                 }
@@ -380,16 +384,16 @@ namespace Fireasy.Common.Serialization
 
         private object DeserializeIntelligently(Type type)
         {
-            if (jsonReader.IsNull())
+            if (_jsonReader.IsNull())
             {
                 return null;
             }
 
-            if (jsonReader.IsNextCharacter(JsonTokens.StartArrayCharacter))
+            if (_jsonReader.IsNextCharacter(JsonTokens.StartArrayCharacter))
             {
                 return DeserializeSingleArray();
             }
-            else if (jsonReader.IsNextCharacter(JsonTokens.StartObjectLiteralCharacter))
+            else if (_jsonReader.IsNextCharacter(JsonTokens.StartObjectLiteralCharacter))
             {
                 if (typeof(object) == type)
                 {
@@ -399,7 +403,7 @@ namespace Fireasy.Common.Serialization
                 return Deserialize(type);
             }
 
-            return jsonReader.ReadValue();
+            return _jsonReader.ReadValue();
         }
 
         private object DeserializeDynamicObject(Type type)
@@ -407,33 +411,33 @@ namespace Fireasy.Common.Serialization
             var dynamicObject = type == typeof(object) ? new ExpandoObject() :
                 type.New<IDictionary<string, object>>();
 
-            jsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
+            _jsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
 
             while (true)
             {
-                jsonReader.SkipWhiteSpaces();
-                var name = jsonReader.ReadKey();
-                jsonReader.SkipWhiteSpaces();
-                jsonReader.AssertAndConsume(JsonTokens.PairSeparator);
-                jsonReader.SkipWhiteSpaces();
+                _jsonReader.SkipWhiteSpaces();
+                var name = _jsonReader.ReadKey();
+                _jsonReader.SkipWhiteSpaces();
+                _jsonReader.AssertAndConsume(JsonTokens.PairSeparator);
+                _jsonReader.SkipWhiteSpaces();
 
                 object value;
-                if (jsonReader.IsNextCharacter(JsonTokens.StartArrayCharacter))
+                if (_jsonReader.IsNextCharacter(JsonTokens.StartArrayCharacter))
                 {
                     value = DeserializeList(typeof(List<dynamic>));
                 }
-                else if (jsonReader.IsNextCharacter(JsonTokens.StartObjectLiteralCharacter))
+                else if (_jsonReader.IsNextCharacter(JsonTokens.StartObjectLiteralCharacter))
                 {
                     value = Deserialize<dynamic>();
                 }
                 else
                 {
-                    value = jsonReader.ReadValue();
+                    value = _jsonReader.ReadValue();
                 }
 
                 dynamicObject.Add(name, value);
-                jsonReader.SkipWhiteSpaces();
-                if (jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndObjectLiteralCharacter))
+                _jsonReader.SkipWhiteSpaces();
+                if (_jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndObjectLiteralCharacter))
                 {
                     break;
                 }
@@ -444,7 +448,7 @@ namespace Fireasy.Common.Serialization
 
         private object DeserializeTuple(Type type)
         {
-            if (jsonReader.IsNull())
+            if (_jsonReader.IsNull())
             {
                 return null;
             }
@@ -452,21 +456,21 @@ namespace Fireasy.Common.Serialization
             var genericTypes = type.GetGenericArguments();
             var arguments = new object[genericTypes.Length];
 
-            jsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
+            _jsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
 
             while (true)
             {
-                jsonReader.SkipWhiteSpaces();
-                if (jsonReader.IsNextCharacter(JsonTokens.EndObjectLiteralCharacter))
+                _jsonReader.SkipWhiteSpaces();
+                if (_jsonReader.IsNextCharacter(JsonTokens.EndObjectLiteralCharacter))
                 {
                     break;
                 }
 
-                var name = jsonReader.ReadKey();
+                var name = _jsonReader.ReadKey();
 
-                jsonReader.SkipWhiteSpaces();
-                jsonReader.AssertAndConsume(JsonTokens.PairSeparator);
-                jsonReader.SkipWhiteSpaces();
+                _jsonReader.SkipWhiteSpaces();
+                _jsonReader.AssertAndConsume(JsonTokens.PairSeparator);
+                _jsonReader.SkipWhiteSpaces();
 
                 var index = GetTupleItemIndex(name);
                 if (index != -1)
@@ -474,8 +478,8 @@ namespace Fireasy.Common.Serialization
                     arguments[index] = Deserialize(genericTypes[index]);
                 }
 
-                jsonReader.SkipWhiteSpaces();
-                if (jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndObjectLiteralCharacter))
+                _jsonReader.SkipWhiteSpaces();
+                if (_jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndObjectLiteralCharacter))
                 {
                     break;
                 }
@@ -499,15 +503,15 @@ namespace Fireasy.Common.Serialization
 
         private object DeserializeEnum(Type enumType)
         {
-            jsonReader.SkipWhiteSpaces();
+            _jsonReader.SkipWhiteSpaces();
             string evalue;
-            if (jsonReader.IsNextCharacter('"'))
+            if (_jsonReader.IsNextCharacter('"'))
             {
-                evalue = jsonReader.ReadAsString();
+                evalue = _jsonReader.ReadAsString();
             }
             else
             {
-                evalue = jsonReader.ReadAsInt32().ToString(option.Culture);
+                evalue = _jsonReader.ReadAsInt32().ToString(_option.Culture);
             }
 
             return Enum.Parse(enumType, evalue);
@@ -515,7 +519,7 @@ namespace Fireasy.Common.Serialization
 
         private byte[] DeserializeBytes()
         {
-            var str = jsonReader.ReadAsString();
+            var str = _jsonReader.ReadAsString();
             if (string.IsNullOrEmpty(str))
             {
                 return null;
@@ -526,12 +530,12 @@ namespace Fireasy.Common.Serialization
 
         private TimeSpan? DeserializeTimeSpan(bool isNullable)
         {
-            if (jsonReader.IsNull())
+            if (_jsonReader.IsNull())
             {
                 return isNullable ? (TimeSpan?)null : TimeSpan.Zero;
             }
 
-            var str = jsonReader.ReadAsString();
+            var str = _jsonReader.ReadAsString();
             if (TimeSpan.TryParse(str, out TimeSpan result))
             {
                 return result;
@@ -543,16 +547,16 @@ namespace Fireasy.Common.Serialization
         private object DeserializeSingleArray()
         {
             var array = new ArrayList();
-            jsonReader.AssertAndConsume(JsonTokens.StartArrayCharacter);
+            _jsonReader.AssertAndConsume(JsonTokens.StartArrayCharacter);
 
             while (true)
             {
-                jsonReader.SkipWhiteSpaces();
+                _jsonReader.SkipWhiteSpaces();
                 var value = Deserialize(typeof(object));
                 array.Add(value);
-                jsonReader.SkipWhiteSpaces();
+                _jsonReader.SkipWhiteSpaces();
 
-                if (jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndArrayCharacter))
+                if (_jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndArrayCharacter))
                 {
                     break;
                 }
@@ -568,7 +572,7 @@ namespace Fireasy.Common.Serialization
                 return null;
             }
 
-            return SerializerUtil.ParseDateTime(value, null, option.DateTimeZoneHandling);
+            return SerializerUtil.ParseDateTime(value, null, _option.DateTimeZoneHandling);
         }
 
         private static string DeserializeString(string value)
@@ -583,7 +587,7 @@ namespace Fireasy.Common.Serialization
 
         private Type DeserializeType()
         {
-            var value = jsonReader.ReadAsString();
+            var value = _jsonReader.ReadAsString();
             if (string.IsNullOrEmpty(value))
             {
                 return null;
@@ -594,40 +598,144 @@ namespace Fireasy.Common.Serialization
 
         private object ParseObject(Type type)
         {
-            return type.IsAnonymousType() ? ParseAnonymousObject(type) : ParseGeneralObject(type);
+            return type.IsAnonymousType() ? ParseAnonymousObject(type) :
+                (HasEmptyConstructor(type) ? ParseGeneralObject(type) : ParseGeneralObjectByConstructor(type));
+        }
+
+        private object ParseGeneralObjectByConstructor(Type type)
+        {
+            if (_jsonReader.IsNull())
+            {
+                return null;
+            }
+
+            var constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)
+                .Select(s => new 
+                    { 
+                        info = s, 
+                        parameters = s.GetParameters().Select(t => t.GetCustomAttribute<TextSerializeParameterBindAttribute>()?.Name ?? t.Name).ToArray() 
+                    })
+                .OrderByDescending(s => s.parameters.Length).ToArray();
+
+            var dict = new Dictionary<string, object>();
+
+            _jsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
+
+            var mappers = GetAccessorMetadataMappers(type);
+
+            while (true)
+            {
+                _jsonReader.SkipWhiteSpaces();
+                if (_jsonReader.IsNextCharacter(JsonTokens.EndObjectLiteralCharacter))
+                {
+                    break;
+                }
+
+                var name = _jsonReader.ReadKey();
+                _jsonReader.SkipWhiteSpaces();
+                _jsonReader.AssertAndConsume(JsonTokens.PairSeparator);
+                _jsonReader.SkipWhiteSpaces();
+
+                if (!mappers.TryGetValue(name, out SerializerPropertyMetadata metadata))
+                {
+                    _jsonReader.ReadValue();
+                }
+                else
+                {
+                    var value = Deserialize(metadata.PropertyInfo.PropertyType);
+                    if (value != null)
+                    {
+                        dict.Add(name, value);
+                    }
+                }
+
+                _jsonReader.SkipWhiteSpaces();
+                if (_jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndObjectLiteralCharacter))
+                {
+                    break;
+                }
+            }
+
+            //找最匹配的构造器
+            var args = new object[constructors.Length][];
+            var mustMatchIndex = -1;
+            for (var i = 0; i < constructors.Length; i++)
+            {
+                var parameters = constructors[i].parameters;
+                args[i] = new object[parameters.Length];
+                var matchCount = 0;
+                for (var j = 0; j < parameters.Length; j++)
+                {
+                    foreach (var kvp in dict)
+                    {
+                        if (parameters[j].Equals(kvp.Key, StringComparison.CurrentCultureIgnoreCase))
+                        {
+                            args[i][j] = kvp.Value;
+                            matchCount++;
+                            break;
+                        }
+                    }
+                }
+
+                if (parameters.Length == matchCount)
+                {
+                    mustMatchIndex = i;
+                    break;
+                }
+            }
+
+            var index = Math.Min(mustMatchIndex, 0);
+            var instance = type.New(args[index]);
+
+            //属性赋值
+            foreach (var kvp in dict)
+            {
+                //忽略构造器里使用了的key
+                if (constructors[index].parameters.Any(s => s.Equals(kvp.Key, StringComparison.CurrentCultureIgnoreCase)))
+                {
+                    continue;
+                }
+
+                if (mappers.TryGetValue(kvp.Key, out SerializerPropertyMetadata metadata))
+                {
+                    metadata.Setter?.Invoke(instance, kvp.Value);
+                }
+            }
+
+            return instance;
         }
 
         private object ParseGeneralObject(Type type)
         {
-            if (jsonReader.IsNull())
+            if (_jsonReader.IsNull())
             {
                 return null;
             }
 
 
-            jsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
+            _jsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
 
             var instance = CreateGeneralObject(type);
-            var mappers = GetAccessorMetadataMappers(instance.GetType());
+            var mappers = GetAccessorMetadataMappers(type);
             var processor = instance as IDeserializeProcessor;
             processor?.PreDeserialize();
 
             while (true)
             {
-                jsonReader.SkipWhiteSpaces();
-                if (jsonReader.IsNextCharacter(JsonTokens.EndObjectLiteralCharacter))
+                _jsonReader.SkipWhiteSpaces();
+                if (_jsonReader.IsNextCharacter(JsonTokens.EndObjectLiteralCharacter))
                 {
                     break;
                 }
 
-                var name = jsonReader.ReadKey();
-                jsonReader.SkipWhiteSpaces();
-                jsonReader.AssertAndConsume(JsonTokens.PairSeparator);
-                jsonReader.SkipWhiteSpaces();
+                var name = _jsonReader.ReadKey();
+                _jsonReader.SkipWhiteSpaces();
+                _jsonReader.AssertAndConsume(JsonTokens.PairSeparator);
+                _jsonReader.SkipWhiteSpaces();
 
                 if (!mappers.TryGetValue(name, out SerializerPropertyMetadata metadata))
                 {
-                    jsonReader.ReadValue();
+                    _jsonReader.ReadValue();
                 }
                 else
                 {
@@ -641,8 +749,8 @@ namespace Fireasy.Common.Serialization
                     }
                 }
 
-                jsonReader.SkipWhiteSpaces();
-                if (jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndObjectLiteralCharacter))
+                _jsonReader.SkipWhiteSpaces();
+                if (_jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndObjectLiteralCharacter))
                 {
                     break;
                 }
@@ -655,7 +763,7 @@ namespace Fireasy.Common.Serialization
 
         private object ParseAnonymousObject(Type type)
         {
-            jsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
+            _jsonReader.AssertAndConsume(JsonTokens.StartObjectLiteralCharacter);
             var dic = new Dictionary<string, object>();
 
             var constructor = type.GetConstructors()[0];
@@ -666,27 +774,27 @@ namespace Fireasy.Common.Serialization
 
             while (true)
             {
-                jsonReader.SkipWhiteSpaces();
-                var name = jsonReader.ReadKey();
+                _jsonReader.SkipWhiteSpaces();
+                var name = _jsonReader.ReadKey();
 
-                jsonReader.SkipWhiteSpaces();
-                jsonReader.AssertAndConsume(JsonTokens.PairSeparator);
-                jsonReader.SkipWhiteSpaces();
+                _jsonReader.SkipWhiteSpaces();
+                _jsonReader.AssertAndConsume(JsonTokens.PairSeparator);
+                _jsonReader.SkipWhiteSpaces();
 
                 var par = mapper.FirstOrDefault(s => s.Key == name);
 
                 if (string.IsNullOrEmpty(par.Key))
                 {
-                    jsonReader.ReadRaw();
+                    _jsonReader.ReadRaw();
                 }
                 else
                 {
                     values[name] = Deserialize(par.Value);
                 }
 
-                jsonReader.SkipWhiteSpaces();
+                _jsonReader.SkipWhiteSpaces();
 
-                if (jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndObjectLiteralCharacter))
+                if (_jsonReader.AssertNextIsDelimiterOrSeparator(JsonTokens.EndObjectLiteralCharacter))
                 {
                     break;
                 }

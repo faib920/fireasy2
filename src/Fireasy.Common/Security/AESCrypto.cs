@@ -13,7 +13,7 @@ namespace Fireasy.Common.Security
     internal class AESCrypto : SymmetricCrypto
     {
         public AESCrypto()
-            : base ("AES")
+            : base("AES")
         {
         }
 

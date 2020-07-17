@@ -81,19 +81,19 @@ namespace Fireasy.Data.Entity
 
     internal sealed class SR
     {
-        private static readonly StringResource resource;
+        private static readonly StringResource _resource;
 
         static SR()
         {
-            if (resource == null)
+            if (_resource == null)
             {
-                resource = StringResource.Create("Strings", typeof(SR).Assembly);
+                _resource = StringResource.Create("Strings", typeof(SR).Assembly);
             }
         }
 
         internal static string GetString(string kind, params object[] args)
         {
-            return resource.GetString(kind, args);
+            return _resource.GetString(kind, args);
         }
     }
 }

@@ -7,20 +7,21 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Caching;
 using Fireasy.Common.Configuration;
-using Fireasy.Common.Caching.Configuration;
 #if NETSTANDARD
+using Fireasy.Common.Caching.Configuration;
 using Fireasy.Common.Options;
 using Microsoft.Extensions.Options;
+using System.Linq;
 #endif
 using CSRedis;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using System.Threading;
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using Fireasy.Common;
-using System.Linq;
 
 namespace Fireasy.Redis
 {
@@ -28,15 +29,25 @@ namespace Fireasy.Redis
     /// 基于 Redis 的缓存管理器。
     /// </summary>
     [ConfigurationSetting(typeof(RedisConfigurationSetting))]
-    public class CacheManager : RedisComponent, IEnhancedCacheManager
+    public class CacheManager : RedisComponent, IDistributedCacheManager, IEnhancedCacheManager
     {
-        private static readonly SafetyDictionary<string, object> hashSet = new SafetyDictionary<string, object>();
-        private Random random = new Random();
+        private static readonly SafetyDictionary<string, object> _hashSet = new SafetyDictionary<string, object>();
+        private readonly Random _random = new Random();
 
         /// <summary>
         /// 初始化 <see cref="CacheManager"/> 类的新实例。
         /// </summary>
         public CacheManager()
+            : base()
+        {
+        }
+
+        /// <summary>
+        /// 初始化 <see cref="CacheManager"/> 类的新实例。
+        /// </summary>
+        /// <param name="serviceProvider"></param>
+        public CacheManager(IServiceProvider serviceProvider)
+            : base(serviceProvider)
         {
         }
 
@@ -44,19 +55,10 @@ namespace Fireasy.Redis
         /// <summary>
         /// 初始化 <see cref="CacheManager"/> 类的新实例。
         /// </summary>
-        /// <param name="ServiceProvider"></param>
-        public CacheManager(IServiceProvider serviceProvider)
-        {
-            ServiceProvider = serviceProvider;
-        }
-
-        /// <summary>
-        /// 初始化 <see cref="CacheManager"/> 类的新实例。
-        /// </summary>
-        /// <param name="ServiceProvider"></param>
+        /// <param name="serviceProvider"></param>
         /// <param name="options"></param>
         public CacheManager(IServiceProvider serviceProvider, IOptionsMonitor<RedisCachingOptions> options)
-            : this(serviceProvider)
+            : base(serviceProvider)
         {
             RedisConfigurationSetting setting = null;
             var optValue = options.CurrentValue;
@@ -104,7 +106,8 @@ namespace Fireasy.Redis
                         SerializerType = optValue.SerializerType,
                         Ssl = optValue.Ssl,
                         Twemproxy = optValue.Twemproxy,
-                        SlidingTime = optValue.SlidingTime
+                        SlidingTime = optValue.SlidingTime,
+                        IgnoreException = optValue.IgnoreException
                     };
 
                     RedisHelper.ParseHosts(setting, optValue.Hosts);
@@ -145,6 +148,8 @@ namespace Fireasy.Redis
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task<T> AddAsync<T>(string cacheKey, T value, TimeSpan? expire = null, CacheItemRemovedCallback removeCallback = null, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             var client = GetConnection(cacheKey);
             await client.SetAsync(cacheKey, Serialize(value), expire == null ? -1 : (int)expire.Value.TotalSeconds);
@@ -180,6 +185,8 @@ namespace Fireasy.Redis
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task<T> AddAsync<T>(string cacheKey, T value, ICacheItemExpiration expiration, CacheItemRemovedCallback removeCallback = null, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             var expiry = GetExpirationTime(expiration);
 
@@ -198,7 +205,7 @@ namespace Fireasy.Redis
                 client.Del(client.Keys("*"));
             }
 
-            hashSet.Clear();
+            _hashSet.Clear();
         }
 
         /// <summary>
@@ -207,12 +214,14 @@ namespace Fireasy.Redis
         /// </summary>
         public async Task ClearAsync(CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             foreach (var client in GetConnections())
             {
                 await client.DelAsync(client.Keys("*"));
             }
 
-            hashSet.Clear();
+            _hashSet.Clear();
         }
 
         /// <summary>
@@ -236,6 +245,8 @@ namespace Fireasy.Redis
         /// <returns>如果缓存中包含指定缓存键的对象，则为 true，否则为 false。</returns>
         public async Task<bool> ContainsAsync(string cacheKey, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             var client = GetConnection(cacheKey);
             return await client.ExistsAsync(cacheKey);
@@ -262,6 +273,8 @@ namespace Fireasy.Redis
         /// <returns></returns>
         public async Task<TimeSpan?> GetExpirationTimeAsync(string cacheKey, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             var client = GetConnection(cacheKey);
             var time = await client.TtlAsync(cacheKey);
@@ -288,6 +301,8 @@ namespace Fireasy.Redis
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task SetExpirationTimeAsync(string cacheKey, Func<ICacheItemExpiration> expiration, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             var client = GetConnection(cacheKey);
             await SetKeyExpirationAsync(client, cacheKey, expiration);
@@ -319,6 +334,8 @@ namespace Fireasy.Redis
         /// <returns>检索到的缓存对象，未找到时为 null。</returns>
         public async Task<object> GetAsync(string cacheKey, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             var client = GetConnection(cacheKey);
             var value = await client.GetAsync(cacheKey);
@@ -358,6 +375,8 @@ namespace Fireasy.Redis
         /// <returns>检索到的缓存对象，未找到时为 null。</returns>
         public async Task<T> GetAsync<T>(string cacheKey, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             var client = GetConnection(cacheKey);
             var value = await client.GetAsync(cacheKey);
@@ -393,6 +412,8 @@ namespace Fireasy.Redis
         /// <returns></returns>
         public async Task<IEnumerable<string>> GetKeysAsync(string pattern, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var keys = new List<string>();
             foreach (var client in GetConnections())
             {
@@ -411,9 +432,9 @@ namespace Fireasy.Redis
             var client = GetConnection(cacheKey);
             var success = client.Del(cacheKey) > 0;
 
-            if (success && hashSet.ContainsKey(cacheKey))
+            if (success && _hashSet.ContainsKey(cacheKey))
             {
-                hashSet.TryRemove(cacheKey, out object _);
+                _hashSet.TryRemove(cacheKey, out object _);
             }
         }
 
@@ -424,13 +445,15 @@ namespace Fireasy.Redis
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task RemoveAsync(string cacheKey, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             var client = GetConnection(cacheKey);
             var success = await client.DelAsync(cacheKey) > 0;
 
-            if (success && hashSet.ContainsKey(cacheKey))
+            if (success && _hashSet.ContainsKey(cacheKey))
             {
-                hashSet.TryRemove(cacheKey, out object _);
+                _hashSet.TryRemove(cacheKey, out object _);
             }
         }
 
@@ -486,10 +509,15 @@ namespace Fireasy.Redis
                         return value;
                     });
             }
-            catch (Exception exp)
+            catch (IOException exp)
             {
-                Tracer.Error($"RedisCache TryGetValue throw exception:\n{exp.Output()}");
-                return valueCreator();
+                if (Setting.IgnoreException)
+                {
+                    Tracer.Error($"RedisCache TryGetValue throw exception:\n{exp.Output()}");
+                    return valueCreator();
+                }
+
+                throw exp;
             }
         }
 
@@ -504,6 +532,8 @@ namespace Fireasy.Redis
         /// <returns></returns>
         public async Task<T> TryGetAsync<T>(string cacheKey, Func<Task<T>> valueCreator, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             var client = GetConnection(cacheKey);
             try
@@ -546,10 +576,15 @@ namespace Fireasy.Redis
                         return value;
                     });
             }
-            catch (Exception exp)
+            catch (IOException exp)
             {
-                Tracer.Error($"RedisCache TryGetValue throw exception:\n{exp.Output()}");
-                return await valueCreator();
+                if (Setting.IgnoreException)
+                {
+                    Tracer.Error($"RedisCache TryGetValue throw exception:\n{exp.Output()}");
+                    return await valueCreator();
+                }
+
+                throw exp;
             }
         }
 
@@ -605,10 +640,15 @@ namespace Fireasy.Redis
                         return value;
                     });
             }
-            catch (Exception exp)
+            catch (IOException exp)
             {
-                Tracer.Error($"RedisCache TryGetValue throw exception:\n{exp.Output()}");
-                return valueCreator();
+                if (Setting.IgnoreException)
+                {
+                    Tracer.Error($"RedisCache TryGetValue throw exception:\n{exp.Output()}");
+                    return valueCreator();
+                }
+
+                throw exp;
             }
         }
 
@@ -623,6 +663,8 @@ namespace Fireasy.Redis
         /// <returns></returns>
         public async Task<object> TryGetAsync(Type dataType, string cacheKey, Func<Task<object>> valueCreator, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             var client = GetConnection(cacheKey);
             try
@@ -665,10 +707,15 @@ namespace Fireasy.Redis
                         return value;
                     });
             }
-            catch (Exception exp)
+            catch (IOException exp)
             {
-                Tracer.Error($"RedisCache TryGetValue throw exception:\n{exp.Output()}");
-                return await valueCreator();
+                if (Setting.IgnoreException)
+                {
+                    Tracer.Error($"RedisCache TryGetValue throw exception:\n{exp.Output()}");
+                    return await valueCreator();
+                }
+
+                throw exp;
             }
         }
 
@@ -738,6 +785,8 @@ namespace Fireasy.Redis
         /// <returns></returns>
         public async Task<long> TryIncrementAsync(string cacheKey, Func<long> valueCreator, int step = 1, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             var client = GetConnection(cacheKey);
             return await RedisHelper.LockAsync(client, GetLockToken(cacheKey), Setting.LockTimeout, async () =>
@@ -800,6 +849,8 @@ namespace Fireasy.Redis
         /// <returns></returns>
         public async Task<long> TryDecrementAsync(string cacheKey, Func<long> valueCreator, int step = 1, Func<ICacheItemExpiration> expiration = null, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             cacheKey = ServiceProvider.GetCacheKey(cacheKey);
             var client = GetConnection(cacheKey);
             return await RedisHelper.LockAsync(client, GetLockToken(cacheKey), Setting.LockTimeout, async () =>
@@ -835,7 +886,7 @@ namespace Fireasy.Redis
             cacheKey = ServiceProvider.GetCacheKey(cacheKey);
 
             var client = GetConnection(cacheKey);
-            return (ICacheHashSet<TKey, TValue>)hashSet.GetOrAdd(cacheKey, () =>
+            return (ICacheHashSet<TKey, TValue>)_hashSet.GetOrAdd(cacheKey, () =>
                     new RedisHashSet<TKey, TValue>(Setting, cacheKey, initializeSet, client, v => Serialize(v), s => Deserialize<RedisCacheItem<TValue>>(s), checkExpiration)
                 );
         }
@@ -865,6 +916,8 @@ namespace Fireasy.Redis
         /// <returns></returns>
         public async Task UseTransactionAsync(string token, Func<Task> func, TimeSpan timeout, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (RedisTransactionContext.Current != null)
             {
                 await func();
@@ -976,7 +1029,7 @@ namespace Fireasy.Redis
         {
             if (expiration is IExpirationTime relative)
             {
-                var sec = random.Next(0, 10);
+                var sec = _random.Next(0, 10);
                 return relative.Expiration.Add(TimeSpan.FromSeconds(sec));
             }
 

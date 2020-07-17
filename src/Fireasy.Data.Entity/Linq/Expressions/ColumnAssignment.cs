@@ -23,11 +23,11 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取列表达式。
         /// </summary>
-        public ColumnExpression Column { get; private set; }
+        public ColumnExpression Column { get; }
 
         /// <summary>
         /// 获取值表达式。
         /// </summary>
-        public Expression Expression { get; private set; }
+        public Expression Expression { get; }
     }
 }

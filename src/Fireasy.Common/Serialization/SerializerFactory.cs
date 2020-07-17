@@ -67,7 +67,9 @@ namespace Fireasy.Common.Serialization
             var section = ConfigurationUnity.GetSection<SerializerConfigurationSection>();
             if (section != null && section.Factory != null)
             {
-                serializer = ConfigurationUnity.Cached<ISerializer>($"Serializer_{configName}", () => section.Factory.CreateInstance(configName) as ISerializer);
+                serializer = ConfigurationUnity.Cached<ISerializer>($"Serializer_{configName}", serviceProvider,
+                    () => section.Factory.CreateInstance(serviceProvider, configName) as ISerializer);
+
                 if (serializer != null)
                 {
                     return serializer;
@@ -91,7 +93,7 @@ namespace Fireasy.Common.Serialization
                 return null;
             }
 
-            return ConfigurationUnity.Cached<ISerializer>($"Serializer_{configName}",
+            return ConfigurationUnity.Cached<ISerializer>($"Serializer_{configName}", serviceProvider,
                 () => ConfigurationUnity.CreateInstance<SerializerConfigurationSetting, ISerializer>(serviceProvider, setting, s => s.SerializerType));
         }
     }

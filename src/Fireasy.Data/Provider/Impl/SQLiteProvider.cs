@@ -6,12 +6,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Data;
 using Fireasy.Data.Batcher;
 using Fireasy.Data.Identity;
 using Fireasy.Data.RecordWrapper;
 using Fireasy.Data.Schema;
 using Fireasy.Data.Syntax;
+using System.Data;
 
 namespace Fireasy.Data.Provider
 {
@@ -75,7 +75,7 @@ namespace Fireasy.Data.Provider
         /// <returns></returns>
         public override IsolationLevel AmendIsolationLevel(IsolationLevel level)
         {
-            return level == IsolationLevel.ReadUncommitted ? 
+            return level == IsolationLevel.ReadUncommitted ?
                 IsolationLevel.ReadCommitted : base.AmendIsolationLevel(level);
         }
     }

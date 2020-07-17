@@ -39,7 +39,7 @@ namespace Fireasy.Common.Serialization
         /// <param name="reader"><see cref="JsonReader"/> 对象。</param>
         /// <param name="dataType">要反序列化的对象类型。</param>
         /// <returns></returns>
-        public override object ReadJson(JsonSerializer serializer, JsonReader reader,Type dataType)
+        public override object ReadJson(JsonSerializer serializer, JsonReader reader, Type dataType)
         {
             var json = reader.ReadRaw();
             return new ExpressionJsonReader(serializer, json).GetExpression();

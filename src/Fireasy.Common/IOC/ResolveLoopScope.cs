@@ -15,7 +15,7 @@ namespace Fireasy.Common.Ioc
     /// </summary>
     internal class ResolveLoopScope : Scope<ResolveLoopScope>
     {
-        private readonly List<Type> types = new List<Type>();
+        private readonly List<Type> _types = new List<Type>();
 
         /// <summary>
         /// 尝试添加正在反转的类型，如果返回 false 则表示之前已经进行了反转。
@@ -24,12 +24,12 @@ namespace Fireasy.Common.Ioc
         /// <returns></returns>
         public bool TryAddType(Type type)
         {
-            if (types.Contains(type))
+            if (_types.Contains(type))
             {
                 return false;
             }
 
-            types.Add(type);
+            _types.Add(type);
             return true;
         }
     }

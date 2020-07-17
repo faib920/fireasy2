@@ -22,30 +22,29 @@ namespace Fireasy.Common.Threading
         /// </summary>
         public struct Releaser : IDisposable
         {
-            private readonly AsyncLocker toRelease;
+            private readonly AsyncLocker _toRelease;
 
             internal Releaser(AsyncLocker toRelease)
             {
-                this.toRelease = toRelease;
+                _toRelease = toRelease;
             }
 
             public void Dispose()
             {
-                if (toRelease != null)
+                if (_toRelease != null)
                 {
-                    toRelease.semaphore.Release();
+                    _toRelease._semaphore.Release();
                 }
             }
         }
 
-        private readonly AsyncSemaphore semaphore;
-
-        private readonly Task<Releaser> releaser;
+        private readonly AsyncSemaphore _semaphore;
+        private readonly Task<Releaser> _releaser;
 
         public AsyncLocker()
         {
-            semaphore = new AsyncSemaphore(1);
-            releaser = Task.FromResult(new Releaser(this));
+            _semaphore = new AsyncSemaphore(1);
+            _releaser = Task.FromResult(new Releaser(this));
         }
 
         /// <summary>
@@ -54,13 +53,13 @@ namespace Fireasy.Common.Threading
         /// <returns></returns>
         public Task<Releaser> LockAsync()
         {
-            var task = semaphore.WaitAsync();
+            var task = _semaphore.WaitAsync();
             if (!task.IsCompleted)
             {
                 return task.ContinueWith((Task _, object state) => new Releaser((AsyncLocker)state), this, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
             }
 
-            return releaser;
+            return _releaser;
         }
 
         /// <summary>
@@ -80,11 +79,9 @@ namespace Fireasy.Common.Threading
     /// </summary>
     internal class AsyncSemaphore
     {
-        private static readonly Task completed = Task.FromResult(result: true);
-
-        private readonly Queue<TaskCompletionSource<bool>> waiters = new Queue<TaskCompletionSource<bool>>();
-
-        private int currentCount;
+        private static readonly Task _completed = Task.FromResult(result: true);
+        private readonly Queue<TaskCompletionSource<bool>> _waiters = new Queue<TaskCompletionSource<bool>>();
+        private int _currentCount;
 
         public AsyncSemaphore(int initialCount)
         {
@@ -93,21 +90,21 @@ namespace Fireasy.Common.Threading
                 throw new ArgumentOutOfRangeException(nameof(initialCount));
             }
 
-            currentCount = initialCount;
+            _currentCount = initialCount;
         }
 
         public Task WaitAsync()
         {
-            lock (waiters)
+            lock (_waiters)
             {
-                if (currentCount > 0)
+                if (_currentCount > 0)
                 {
-                    currentCount--;
-                    return completed;
+                    _currentCount--;
+                    return _completed;
                 }
 
                 TaskCompletionSource<bool> taskCompletionSource = new TaskCompletionSource<bool>();
-                waiters.Enqueue(taskCompletionSource);
+                _waiters.Enqueue(taskCompletionSource);
                 return taskCompletionSource.Task;
             }
         }
@@ -115,15 +112,15 @@ namespace Fireasy.Common.Threading
         public void Release()
         {
             TaskCompletionSource<bool> taskCompletionSource = null;
-            lock (waiters)
+            lock (_waiters)
             {
-                if (waiters.Count > 0)
+                if (_waiters.Count > 0)
                 {
-                    taskCompletionSource = waiters.Dequeue();
+                    taskCompletionSource = _waiters.Dequeue();
                 }
                 else
                 {
-                    currentCount++;
+                    _currentCount++;
                 }
             }
 

@@ -21,11 +21,11 @@ namespace Fireasy.Data.Entity.Linq.Expressions
             IsAsync = isAsync;
         }
 
-        public ConstantExpression Input { get; private set; }
+        public ConstantExpression Input { get; }
 
-        public LambdaExpression Operation { get; private set; }
+        public LambdaExpression Operation { get; }
 
-        public List<string> Arguments { get; private set; }
+        public List<string> Arguments { get; }
 
         public bool IsAsync { get; set; }
 

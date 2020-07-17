@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
-using System.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Expressions;
 using System;
+using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
@@ -12,9 +12,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public sealed class DbExpressionReplacer : DbExpressionVisitor
     {
-        private readonly Expression m_searchFor;
-        private readonly Expression m_replaceWith;
-        private readonly Func<Expression, Expression> m_replaceWithFunc;
+        private readonly Expression _searchFor;
+        private readonly Expression _replaceWith;
+        private readonly Func<Expression, Expression> _replaceWithFunc;
 
         /// <summary>
         /// 初始化 <see cref="DbExpressionReplacer"/> 类的新实例。
@@ -23,8 +23,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <param name="replaceWith">替换的表达式。</param>
         private DbExpressionReplacer(Expression searchFor, Expression replaceWith)
         {
-            m_searchFor = searchFor;
-            m_replaceWith = replaceWith;
+            _searchFor = searchFor;
+            _replaceWith = replaceWith;
         }
 
         /// <summary>
@@ -34,8 +34,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <param name="replaceWithFunc">替换的表达式。</param>
         private DbExpressionReplacer(Expression searchFor, Func<Expression, Expression> replaceWithFunc)
         {
-            m_searchFor = searchFor;
-            m_replaceWithFunc = replaceWithFunc;
+            _searchFor = searchFor;
+            _replaceWithFunc = replaceWithFunc;
         }
 
         /// <summary>
@@ -79,9 +79,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         public override Expression Visit(Expression exp)
         {
-            if (exp == m_searchFor)
+            if (exp == _searchFor)
             {
-                return m_replaceWithFunc == null ? m_replaceWith : m_replaceWithFunc(exp);
+                return _replaceWithFunc == null ? _replaceWith : _replaceWithFunc(exp);
             }
 
             return base.Visit(exp);

@@ -6,7 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
+using Fireasy.Common.ComponentModel;
 using System.IO;
 using System.Text;
 
@@ -17,9 +17,9 @@ namespace Fireasy.Common.Serialization
     /// </summary>
     public sealed class JsonWriter : DisposeableBase
     {
-        private TextWriter writer;
-        private int level;
-        private readonly bool[] flags = new bool[3] { false, false, false };
+        private TextWriter _writer;
+        private int _level;
+        private readonly bool[] _flags = new bool[3] { false, false, false };
 
         /// <summary>
         /// 初始化 <see cref="JsonWriter"/> 类的新实例。
@@ -27,7 +27,7 @@ namespace Fireasy.Common.Serialization
         /// <param name="writer">一个 <see cref="TextWriter"/> 对象。</param>
         public JsonWriter(TextWriter writer)
         {
-            this.writer = writer;
+            _writer = writer;
         }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace Fireasy.Common.Serialization
         {
             SetFlags(false, 0, 1, 2);
 
-            writer.Write("null");
+            _writer.Write("null");
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace Fireasy.Common.Serialization
         {
             SetFlags(false, 0, 1, 2);
 
-            writer.Write(value);
+            _writer.Write(value);
         }
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace Fireasy.Common.Serialization
         /// <param name="json"></param>
         public void WriteRaw(string json)
         {
-            writer.Write(json);
+            _writer.Write(json);
         }
 
         /// <summary>
@@ -75,12 +75,12 @@ namespace Fireasy.Common.Serialization
 
             WriteLine();
             WriteIndent();
-            writer.Write(key);
-            writer.Write(JsonTokens.PairSeparator);
+            _writer.Write(key);
+            _writer.Write(JsonTokens.PairSeparator);
 
             if (Indent != 0)
             {
-                writer.Write(' ');
+                _writer.Write(' ');
             }
         }
 
@@ -132,7 +132,7 @@ namespace Fireasy.Common.Serialization
             }
 
             sb.Append(JsonTokens.StringDelimiter);
-            writer.Write(sb.ToString());
+            _writer.Write(sb.ToString());
         }
 
         /// <summary>
@@ -143,7 +143,7 @@ namespace Fireasy.Common.Serialization
             SetFlags(true, 1);
             SetFlags(false, 0, 2);
 
-            writer.Write(JsonTokens.ElementSeparator);
+            _writer.Write(JsonTokens.ElementSeparator);
         }
 
         /// <summary>
@@ -160,8 +160,8 @@ namespace Fireasy.Common.Serialization
             SetFlags(true, 0);
             SetFlags(false, 1, 2);
 
-            writer.Write(JsonTokens.StartArrayCharacter);
-            level++;
+            _writer.Write(JsonTokens.StartArrayCharacter);
+            _level++;
         }
 
         /// <summary>
@@ -169,14 +169,14 @@ namespace Fireasy.Common.Serialization
         /// </summary>
         public void WriteEndArray()
         {
-            level--;
+            _level--;
             if (!GetFlags(0) && GetFlags(2))
             {
                 WriteLine();
                 WriteIndent();
             }
 
-            writer.Write(JsonTokens.EndArrayCharacter);
+            _writer.Write(JsonTokens.EndArrayCharacter);
 
             SetFlags(false, 0, 1, 2);
         }
@@ -192,8 +192,8 @@ namespace Fireasy.Common.Serialization
                 WriteIndent();
             }
 
-            writer.Write(JsonTokens.StartObjectLiteralCharacter);
-            level++;
+            _writer.Write(JsonTokens.StartObjectLiteralCharacter);
+            _level++;
 
             SetFlags(false, 0, 1, 2);
         }
@@ -204,9 +204,9 @@ namespace Fireasy.Common.Serialization
         public void WriteEndObject()
         {
             WriteLine();
-            level--;
+            _level--;
             WriteIndent();
-            writer.Write(JsonTokens.EndObjectLiteralCharacter);
+            _writer.Write(JsonTokens.EndObjectLiteralCharacter);
 
             SetFlags(false, 0, 1);
             SetFlags(true, 2);
@@ -217,7 +217,7 @@ namespace Fireasy.Common.Serialization
         /// </summary>
         public void Flush()
         {
-            writer.Flush();
+            _writer.Flush();
         }
 
         /// <summary>
@@ -235,7 +235,7 @@ namespace Fireasy.Common.Serialization
         {
             if (Indent != 0)
             {
-                writer.Write(new string(' ', Indent * level));
+                _writer.Write(new string(' ', Indent * _level));
             }
         }
 
@@ -246,7 +246,7 @@ namespace Fireasy.Common.Serialization
         {
             if (Indent != 0)
             {
-                writer.WriteLine();
+                _writer.WriteLine();
             }
         }
 
@@ -256,14 +256,14 @@ namespace Fireasy.Common.Serialization
             {
                 foreach (var b in bits)
                 {
-                    flags[b] = flag;
+                    _flags[b] = flag;
                 }
             }
         }
 
         private bool GetFlags(int bit)
         {
-            return Indent != 0 ? flags[bit] : false;
+            return Indent != 0 ? _flags[bit] : false;
         }
 
         /// <summary>
@@ -272,11 +272,11 @@ namespace Fireasy.Common.Serialization
         /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
         protected override bool Dispose(bool disposing)
         {
-            if (writer != null)
+            if (_writer != null)
             {
                 Flush();
-                writer.Close();
-                writer = null;
+                _writer.Close();
+                _writer = null;
             }
 
             return base.Dispose(disposing);

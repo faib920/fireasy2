@@ -17,7 +17,7 @@ namespace Fireasy.Common.Localization
     /// </summary>
     public class DefaultStringLocalizerManager : IStringLocalizerManager
     {
-        private static readonly ConcurrentDictionary<string, IStringLocalizer> localizers = new ConcurrentDictionary<string, IStringLocalizer>();
+        private static readonly ConcurrentDictionary<string, IStringLocalizer> _localizers = new ConcurrentDictionary<string, IStringLocalizer>();
 
         /// <summary>
         /// <see cref="DefaultStringLocalizerManager"/> 的默认实例。
@@ -62,7 +62,7 @@ namespace Fireasy.Common.Localization
 
             var baseName = string.Concat(assembly.GetName().Name, ".", name);
             var cacheKey = string.Concat(baseName, ".", cultureInfo.Name);
-            return localizers.GetOrAdd(cacheKey, k => new DefaultStringLocalizer(new ResourceManager(baseName, assembly), cultureInfo));
+            return _localizers.GetOrAdd(cacheKey, k => new DefaultStringLocalizer(new ResourceManager(baseName, assembly), cultureInfo));
         }
     }
 }

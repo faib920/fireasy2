@@ -30,10 +30,10 @@ namespace Fireasy.Data.Entity
     public sealed class DefaultRepositoryProvider<TEntity> : IQueryPolicyExecutor<TEntity>,
         IRepositoryProvider<TEntity> where TEntity : IEntity
     {
-        private IRepository repository;
-        private readonly DefaultContextService contextService;
-        private readonly IProvider provider;
-        private readonly IDatabase database;
+        private IRepository _repository;
+        private readonly DefaultContextService _contextService;
+        private readonly IProvider _provider;
+        private readonly IDatabase _database;
 
         /// <summary>
         /// 初始化 <see cref="DefaultRepositoryProvider{TEntity}"/> 类的新实例。
@@ -41,9 +41,9 @@ namespace Fireasy.Data.Entity
         /// <param name="contextService"></param>
         public DefaultRepositoryProvider(DefaultContextService contextService)
         {
-            this.contextService = contextService;
-            provider = contextService.Provider;
-            database = contextService.Database;
+            _contextService = contextService;
+            _provider = contextService.Provider;
+            _database = contextService.Database;
 
             QueryProvider = new QueryProvider(new EntityQueryProvider(contextService));
             Queryable = new QuerySet<TEntity>(QueryProvider);
@@ -51,18 +51,18 @@ namespace Fireasy.Data.Entity
 
         IRepository IRepositoryProvider.CreateRepository(EntityContextOptions options)
         {
-            return repository ?? (repository = new EntityRepository<TEntity>(contextService, this, options));
+            return _repository ?? (_repository = new EntityRepository<TEntity>(_contextService, this, options));
         }
 
         /// <summary>
         /// 获取 <see cref="IQueryable"/> 实例。
         /// </summary>
-        public IQueryable Queryable { get; private set; }
+        public IQueryable Queryable { get; }
 
         /// <summary>
         /// 获取 <see cref="IQueryProvider"/> 实例。
         /// </summary>
-        public IQueryProvider QueryProvider { get; private set; }
+        public IQueryProvider QueryProvider { get; }
 
         /// <summary>
         /// 将一个新的实体对象插入到库。
@@ -138,19 +138,19 @@ namespace Fireasy.Data.Entity
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
         public void BatchInsert(IEnumerable<TEntity> entities, int batchSize = 1000, Action<int> completePercentage = null)
         {
-            var batcher = provider.GetService<IBatcherProvider>();
+            var batcher = _provider.GetService<IBatcherProvider>();
             if (batcher == null)
             {
                 throw new EntityPersistentException(SR.GetString(SRKind.NotSupportBatcher), null);
             }
 
-            var syntax = provider.GetService<ISyntaxProvider>();
+            var syntax = _provider.GetService<ISyntaxProvider>();
             var rootType = typeof(TEntity).GetRootEntityType();
             string tableName;
 
-            if (contextService.Environment != null)
+            if (_contextService.Environment != null)
             {
-                tableName = DbUtility.FormatByQuote(syntax, contextService.Environment.GetVariableTableName(rootType));
+                tableName = DbUtility.FormatByQuote(syntax, _contextService.Environment.GetVariableTableName(rootType));
             }
             else
             {
@@ -158,7 +158,7 @@ namespace Fireasy.Data.Entity
                 tableName = DbUtility.FormatByQuote(syntax, metadata.TableName);
             }
 
-            batcher.Insert(database, entities, tableName, batchSize, completePercentage);
+            batcher.Insert(_database, entities, tableName, batchSize, completePercentage);
         }
 
         /// <summary>
@@ -170,19 +170,19 @@ namespace Fireasy.Data.Entity
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task BatchInsertAsync(IEnumerable<TEntity> entities, int batchSize = 1000, Action<int> completePercentage = null, CancellationToken cancellationToken = default)
         {
-            var batcher = provider.GetService<IBatcherProvider>();
+            var batcher = _provider.GetService<IBatcherProvider>();
             if (batcher == null)
             {
                 throw new EntityPersistentException(SR.GetString(SRKind.NotSupportBatcher), null);
             }
 
-            var syntax = provider.GetService<ISyntaxProvider>();
+            var syntax = _provider.GetService<ISyntaxProvider>();
             var rootType = typeof(TEntity).GetRootEntityType();
             string tableName;
 
-            if (contextService.Environment != null)
+            if (_contextService.Environment != null)
             {
-                tableName = DbUtility.FormatByQuote(syntax, contextService.Environment.GetVariableTableName(rootType));
+                tableName = DbUtility.FormatByQuote(syntax, _contextService.Environment.GetVariableTableName(rootType));
             }
             else
             {
@@ -190,7 +190,7 @@ namespace Fireasy.Data.Entity
                 tableName = DbUtility.FormatByQuote(syntax, metadata.TableName);
             }
 
-            await batcher.InsertAsync(database, entities, tableName, batchSize, completePercentage, cancellationToken);
+            await batcher.InsertAsync(_database, entities, tableName, batchSize, completePercentage, cancellationToken);
         }
 
         /// <summary>
@@ -401,7 +401,7 @@ namespace Fireasy.Data.Entity
             var trans = CheckRelationHasModified(entity);
             if (trans)
             {
-                database.BeginTransaction();
+                _database.BeginTransaction();
             }
 
             var result = default(T);
@@ -413,21 +413,21 @@ namespace Fireasy.Data.Entity
                 var ret = result is Task<int> ? (result as Task<int>).Result : result.To<int>();
                 if (ret > 0)
                 {
-                    entity.InitializeEnvironment(contextService.Environment).InitializeInstanceName(contextService.InstanceName);
+                    entity.InitializeEnvironment(_contextService.Environment).InitializeInstanceName(_contextService.InstanceName);
 
                     HandleRelationProperties(entity, opContext);
                 }
 
                 if (trans)
                 {
-                    database.CommitTransaction();
+                    _database.CommitTransaction();
                 }
             }
             catch (Exception exp)
             {
                 if (trans)
                 {
-                    database.RollbackTransaction();
+                    _database.RollbackTransaction();
                 }
 
                 throw exp;
@@ -441,7 +441,7 @@ namespace Fireasy.Data.Entity
             var trans = CheckRelationHasModified(entity);
             if (trans)
             {
-                database.BeginTransaction();
+                _database.BeginTransaction();
             }
 
             T result;
@@ -453,14 +453,14 @@ namespace Fireasy.Data.Entity
 
                 if (trans)
                 {
-                    database.CommitTransaction();
+                    _database.CommitTransaction();
                 }
             }
             catch (Exception exp)
             {
                 if (trans)
                 {
-                    database.RollbackTransaction();
+                    _database.RollbackTransaction();
                 }
 
                 throw exp;
@@ -493,7 +493,7 @@ namespace Fireasy.Data.Entity
         {
             foreach (RelationProperty property in properties)
             {
-                var queryable = (IQueryable)contextService.CreateRepository(property.RelationalType);
+                var queryable = (IQueryable)_contextService.CreateRepository(property.RelationalType);
 
                 switch (property.RelationalPropertyType)
                 {
@@ -599,7 +599,7 @@ namespace Fireasy.Data.Entity
 
         private void InvokeQueryPolicy(Action<IQueryPolicy> action)
         {
-            if (contextService is IQueryPolicyAware aware && aware.QueryPolicy != null)
+            if (_contextService is IQueryPolicyAware aware && aware.QueryPolicy != null)
             {
                 action(aware.QueryPolicy);
             }

@@ -5,10 +5,10 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Data.Extensions;
 using System;
 using System.Data;
 using System.Diagnostics;
-using Fireasy.Data.Extensions;
 
 namespace Fireasy.Data
 {
@@ -19,7 +19,7 @@ namespace Fireasy.Data
     [Serializable]
     public class Parameter : ICloneable
     {
-        private object parValue;
+        private object _parValue;
 
         /// <summary>
         /// 初始化 <see cref="Parameter"/> 类的新实例。
@@ -69,15 +69,15 @@ namespace Fireasy.Data
         {
             get
             {
-                return parValue;
+                return _parValue;
             }
 
             set
             {
-                parValue = value;
+                _parValue = value;
                 DbType dbType;
-                if (value != null && 
-                    value != DBNull.Value && 
+                if (value != null &&
+                    value != DBNull.Value &&
                     DbType != (dbType = value.GetType().GetDbType()))
                 {
                     DbType = dbType;

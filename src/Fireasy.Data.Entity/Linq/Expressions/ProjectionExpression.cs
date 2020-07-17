@@ -17,9 +17,9 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         }
 
         public ProjectionExpression(SelectExpression source, Expression projector, LambdaExpression aggregator, bool isAsync, bool isNoTracking)
-            : base(DbExpressionType.Projection, 
-                  aggregator != null ? 
-                    (isAsync && aggregator.Body.Type.IsGenericType ? 
+            : base(DbExpressionType.Projection,
+                  aggregator != null ?
+                    (isAsync && aggregator.Body.Type.IsGenericType ?
                         aggregator.Body.Type.GetGenericArguments()[0] : aggregator.Body.Type) :
                         typeof(IEnumerable<>).MakeGenericType(projector.Type))
         {
@@ -33,17 +33,17 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取查询表达式。
         /// </summary>
-        public SelectExpression Select { get; private set; }
+        public SelectExpression Select { get; }
 
         /// <summary>
         /// 获取 Linq 表达式。
         /// </summary>
-        public Expression Projector { get; private set; }
+        public Expression Projector { get; }
 
         /// <summary>
         /// 获取聚合表达式。
         /// </summary>
-        public LambdaExpression Aggregator { get; private set; }
+        public LambdaExpression Aggregator { get; }
 
         /// <summary>
         /// 获取是否返回单列。
@@ -52,16 +52,16 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         {
             get
             {
-                return Aggregator != null && 
+                return Aggregator != null &&
                     (IsAsync && Aggregator.Body.Type.IsGenericType ?
-                        Aggregator.Body.Type.GetGenericArguments()[0] == Projector.Type : 
+                        Aggregator.Body.Type.GetGenericArguments()[0] == Projector.Type :
                         Aggregator.Body.Type == Projector.Type);
             }
         }
 
-        public bool IsAsync { get; private set; }
+        public bool IsAsync { get; }
 
-        public bool IsNoTracking { get; private set; }
+        public bool IsNoTracking { get; }
 
         public ProjectionExpression Update(SelectExpression select, Expression projector, LambdaExpression aggregator)
         {

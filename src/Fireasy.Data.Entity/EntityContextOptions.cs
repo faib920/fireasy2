@@ -17,7 +17,7 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public class EntityContextOptions : IInstanceIdentifier
     {
-        private IServiceProvider serviceProvider;
+        private IServiceProvider _serviceProvider;
 
         /// <summary>
         /// 初始化 <see cref="EntityContextOptions"/> 类的新实例。
@@ -45,7 +45,7 @@ namespace Fireasy.Data.Entity
         internal EntityContextOptions(IServiceProvider serviceProvider)
             : this()
         {
-            this.serviceProvider = serviceProvider;
+            _serviceProvider = serviceProvider;
         }
 
         /// <summary>
@@ -101,7 +101,7 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 获取初始化方法。
         /// </summary>
-        public EntityContextPreInitializerCollection Initializers { get; private set; }
+        public EntityContextPreInitializerCollection Initializers { get; }
 
         /// <summary>
         /// 获取或设置数据库提供者。
@@ -110,8 +110,8 @@ namespace Fireasy.Data.Entity
 
         IServiceProvider IInstanceIdentifier.ServiceProvider
         {
-            get { return serviceProvider; }
-            set { serviceProvider = value; }
+            get { return _serviceProvider; }
+            set { _serviceProvider = value; }
         }
 
         Type IInstanceIdentifier.ContextType { get; set; }
@@ -154,7 +154,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="serviceProvider">应用程序服务提供者实例。</param>
         internal EntityContextOptions(IServiceProvider serviceProvider)
-            : base (serviceProvider)
+            : base(serviceProvider)
         {
             (this as IInstanceIdentifier).ContextType = typeof(TContext);
         }

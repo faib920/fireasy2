@@ -5,6 +5,8 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
+
 namespace Fireasy.Common.Configuration
 {
     /// <summary>
@@ -15,8 +17,9 @@ namespace Fireasy.Common.Configuration
         /// <summary>
         /// 创建实例。
         /// </summary>
+        /// <param name="serviceProvider"></param>
         /// <param name="name">配置名称。</param>
         /// <returns></returns>
-        object CreateInstance(string name);
+        object CreateInstance(IServiceProvider serviceProvider, string name);
     }
 }

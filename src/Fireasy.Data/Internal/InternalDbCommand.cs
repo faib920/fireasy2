@@ -15,106 +15,106 @@ namespace Fireasy.Data.Internal
 {
     internal class InternalDbCommand : IDbCommand
     {
-        private readonly IDbCommand command;
-        private readonly ReaderNestedlocked locker;
+        private readonly IDbCommand _command;
+        private readonly ReaderNestedlocked _locker;
 
         public InternalDbCommand(IDbCommand command, ReaderNestedlocked locker)
         {
-            this.command = command;
-            this.locker = locker;
+            _command = command;
+            _locker = locker;
         }
 
         public string CommandText
         {
-            get { return command.CommandText; }
-            set { command.CommandText = value; }
+            get { return _command.CommandText; }
+            set { _command.CommandText = value; }
         }
 
         public int CommandTimeout
         {
-            get { return command.CommandTimeout; }
-            set { command.CommandTimeout = value; }
+            get { return _command.CommandTimeout; }
+            set { _command.CommandTimeout = value; }
         }
 
         public CommandType CommandType
         {
-            get { return command.CommandType; }
-            set { command.CommandType = value; }
+            get { return _command.CommandType; }
+            set { _command.CommandType = value; }
         }
 
         public IDbConnection Connection
         {
-            get { return command.Connection; }
-            set { command.Connection = value; }
+            get { return _command.Connection; }
+            set { _command.Connection = value; }
         }
 
         public IDataParameterCollection Parameters
         {
-            get { return command.Parameters; }
+            get { return _command.Parameters; }
         }
 
         public IDbTransaction Transaction
         {
-            get { return command.Transaction; }
-            set { command.Transaction = value; }
+            get { return _command.Transaction; }
+            set { _command.Transaction = value; }
         }
 
         public UpdateRowSource UpdatedRowSource
         {
-            get { return command.UpdatedRowSource; }
-            set { command.UpdatedRowSource = value; }
+            get { return _command.UpdatedRowSource; }
+            set { _command.UpdatedRowSource = value; }
         }
 
         public void Cancel()
         {
-            command.Cancel();
+            _command.Cancel();
         }
 
         public IDbDataParameter CreateParameter()
         {
-            return command.CreateParameter();
+            return _command.CreateParameter();
         }
 
         void IDisposable.Dispose()
         {
-            command.Dispose();
+            _command.Dispose();
         }
 
         public int ExecuteNonQuery()
         {
-            return command.ExecuteNonQuery();
+            return _command.ExecuteNonQuery();
         }
 
         public IDataReader ExecuteReader()
         {
-            return new InternalDataReader(command.Connection, command.ExecuteReader(), false, locker);
+            return new InternalDataReader(_command.Connection, _command.ExecuteReader(), false, _locker);
         }
 
         public async Task<IDataReader> ExecuteReaderAsync(CancellationToken cancellationToken)
         {
-            var reader = await ((DbCommand)command).ExecuteReaderAsync(cancellationToken);
-            return new InternalDataReader(command.Connection, reader, false, locker);
+            var reader = await ((DbCommand)_command).ExecuteReaderAsync(cancellationToken);
+            return new InternalDataReader(_command.Connection, reader, false, _locker);
         }
 
         public IDataReader ExecuteReader(CommandBehavior behavior)
         {
-            return new InternalDataReader(command.Connection, command.ExecuteReader(), behavior == CommandBehavior.CloseConnection, locker);
+            return new InternalDataReader(_command.Connection, _command.ExecuteReader(), behavior == CommandBehavior.CloseConnection, _locker);
         }
 
         public async Task<IDataReader> ExecuteReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
         {
-            var reader = await ((DbCommand)command).ExecuteReaderAsync(cancellationToken);
-            return new InternalDataReader(command.Connection, reader, behavior == CommandBehavior.CloseConnection, locker);
+            var reader = await ((DbCommand)_command).ExecuteReaderAsync(cancellationToken);
+            return new InternalDataReader(_command.Connection, reader, behavior == CommandBehavior.CloseConnection, _locker);
         }
 
         public object ExecuteScalar()
         {
-            return command.ExecuteScalar();
+            return _command.ExecuteScalar();
         }
 
         void IDbCommand.Prepare()
         {
-            command.Prepare();
+            _command.Prepare();
         }
     }
 }

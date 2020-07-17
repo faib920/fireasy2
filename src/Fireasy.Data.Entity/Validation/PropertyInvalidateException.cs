@@ -23,7 +23,7 @@ namespace Fireasy.Data.Entity.Validation
         /// <param name="property">所验证的实体属性。</param>
         /// <param name="errors">验证器产生的错误信息列表。</param>
         public PropertyInvalidateException(IProperty property, IList<ValidationErrorResult> errors)
-            : base (GetMessage(property, errors))
+            : base(GetMessage(property, errors))
         {
             Property = property;
             Errors = new ReadOnlyCollection<ValidationErrorResult>(errors);
@@ -35,7 +35,7 @@ namespace Fireasy.Data.Entity.Validation
         /// <param name="property">所验证的实体属性。</param>
         /// <param name="exp">验证器产生的错误信息列表。</param>
         public PropertyInvalidateException(IProperty property, Exception exp)
-            : base (property.Name + " : " + exp.Message, exp)
+            : base(property.Name + " : " + exp.Message, exp)
         {
             Property = property;
         }
@@ -43,12 +43,12 @@ namespace Fireasy.Data.Entity.Validation
         /// <summary>
         /// 获取所验证的实体属性。
         /// </summary>
-        public IProperty Property { get; private set; }
+        public IProperty Property { get; }
 
         /// <summary>
         /// 获取错误验证器产生的信息列表。
         /// </summary>
-        public ReadOnlyCollection<ValidationErrorResult> Errors { get; private set; }
+        public ReadOnlyCollection<ValidationErrorResult> Errors { get; }
 
         private static string GetMessage(IProperty property, IList<ValidationErrorResult> errors)
         {

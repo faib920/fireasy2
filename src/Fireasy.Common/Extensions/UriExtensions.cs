@@ -132,7 +132,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static string AddQueryString(this string url, string name, string value)
         {
-            return url.AddQueryString(string.Concat(name, "=" , Uri.EscapeUriString(value)));
+            return url.AddQueryString(string.Concat(name, "=", Uri.EscapeUriString(value)));
         }
     }
 }

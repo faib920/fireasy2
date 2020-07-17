@@ -8,9 +8,6 @@
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Security;
-#if NETSTANDARD
-using Microsoft.Extensions.DependencyInjection;
-#endif
 using System;
 using System.Linq;
 
@@ -21,22 +18,22 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public class ContextInstanceManager
     {
-        private static readonly SafetyDictionary<string, IInstanceIdentifier> instances = new SafetyDictionary<string, IInstanceIdentifier>();
+        private static readonly SafetyDictionary<string, IInstanceIdentifier> _instances = new SafetyDictionary<string, IInstanceIdentifier>();
 
         /// <summary>
         /// 析构函数。
         /// </summary>
         ~ContextInstanceManager()
         {
-            foreach (var key in instances)
+            foreach (var ident in _instances)
             {
-                if (key.Value.ServiceProvider != null)
+                if (ident.Value.ServiceProvider != null)
                 {
-                    key.Value.ServiceProvider.TryDispose();
+                    ident.Value.ServiceProvider.TryDispose();
                 }
             }
 
-            instances.Clear();
+            _instances.Clear();
         }
 
         /// <summary>
@@ -51,7 +48,7 @@ namespace Fireasy.Data.Entity
                 return null;
             }
 
-            if (instances.TryGetValue(instanceName, out IInstanceIdentifier value))
+            if (_instances.TryGetValue(instanceName, out IInstanceIdentifier value))
             {
                 return value;
             }
@@ -66,28 +63,17 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public static string TryAdd(IInstanceIdentifier identification)
         {
-            lock (instances)
+            lock (_instances)
             {
-                var item = instances.FirstOrDefault(s => s.Value.Equals(identification));
+                var item = _instances.FirstOrDefault(s => s.Value.Equals(identification));
                 if (!string.IsNullOrEmpty(item.Key))
                 {
                     return item.Key;
                 }
 
                 var key = RandomGenerator.Create();
+                _instances.TryAdd(key, identification);
 
-#if NETSTANDARD
-                if (identification.ServiceProvider != null)
-                {
-                    var factory = identification.ServiceProvider.GetService<IServiceScopeFactory>();
-                    if (factory != null)
-                    {
-                        identification.ServiceProvider = factory.CreateScope() as IServiceProvider;
-                    }
-                }
-#endif
-
-                instances.TryAdd(key, identification);
                 return key;
             }
         }

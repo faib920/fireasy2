@@ -6,8 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-
 namespace Fireasy.Data.Entity
 {
     /// <summary>
@@ -43,13 +41,13 @@ namespace Fireasy.Data.Entity
         internal EntityTreeUpdatingBag Clone()
         {
             return new EntityTreeUpdatingBag
-                {
-                    Level = Level, 
-                    Order = Order, 
-                    InnerId = InnerId, 
-                    Name = Name,
-                    FullName = FullName
-                };
+            {
+                Level = Level,
+                Order = Order,
+                InnerId = InnerId,
+                Name = Name,
+                FullName = FullName
+            };
         }
     }
 

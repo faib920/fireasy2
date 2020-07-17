@@ -11,19 +11,19 @@ namespace Fireasy.Common.Security
 {
     internal class RC4CryptoTransform : ICryptoTransform
     {
-        private readonly byte[] key;
-        private readonly int kenLength;
-        private readonly byte[] permutation;
-        private byte index1;
-        private byte index2;
+        private readonly byte[] _key;
+        private readonly int _length;
+        private readonly byte[] _permutation;
+        private byte _index1;
+        private byte _index2;
 
         public RC4CryptoTransform(byte[] key)
         {
-			this.key = (byte[])key.Clone();
-			kenLength = key.Length;
-			permutation = new byte[256];
-			Init();
-		}
+            _key = (byte[])key.Clone();
+            _length = key.Length;
+            _permutation = new byte[256];
+            Init();
+        }
 
         public bool CanReuseTransform
         {
@@ -51,15 +51,15 @@ namespace Fireasy.Common.Security
             var length = inputOffset + inputCount;
             for (; inputOffset < length; inputOffset++, outputOffset++)
             {
-                index1 = (byte)((index1 + 1) % 256);
-                index2 = (byte)((index2 + permutation[index1]) % 256);
+                _index1 = (byte)((_index1 + 1) % 256);
+                _index2 = (byte)((_index2 + _permutation[_index1]) % 256);
 
-                temp = permutation[index1];
-                permutation[index1] = permutation[index2];
-                permutation[index2] = temp;
+                temp = _permutation[_index1];
+                _permutation[_index1] = _permutation[_index2];
+                _permutation[_index2] = temp;
 
-                j = (byte)((permutation[index1] + permutation[index2]) % 256);
-                outputBuffer[outputOffset] = (byte)(inputBuffer[inputOffset] ^ permutation[j]);
+                j = (byte)((_permutation[_index1] + _permutation[_index2]) % 256);
+                outputBuffer[outputOffset] = (byte)(inputBuffer[inputOffset] ^ _permutation[j]);
             }
             return inputCount;
         }
@@ -83,19 +83,19 @@ namespace Fireasy.Common.Security
 
             for (int i = 0; i < 256; i++)
             {
-                permutation[i] = (byte)i;
+                _permutation[i] = (byte)i;
             }
 
-            index1 = 0;
-            index2 = 0;
+            _index1 = 0;
+            _index2 = 0;
 
             for (int j = 0, i = 0; i < 256; i++)
             {
-                j = (j + permutation[i] + key[i % kenLength]) % 256;
+                j = (j + _permutation[i] + _key[i % _length]) % 256;
 
-                temp = permutation[i];
-                permutation[i] = permutation[j];
-                permutation[j] = temp;
+                temp = _permutation[i];
+                _permutation[i] = _permutation[j];
+                _permutation[j] = temp;
             }
         }
     }

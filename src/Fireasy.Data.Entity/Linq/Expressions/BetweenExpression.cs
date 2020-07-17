@@ -27,17 +27,17 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取参数表达式。
         /// </summary>
-        public Expression Argument { get; private set; }
+        public Expression Argument { get; }
 
         /// <summary>
         /// 获取条件中小的一边的表达式。
         /// </summary>
-        public Expression Lower { get; private set; }
+        public Expression Lower { get; }
 
         /// <summary>
         /// 获取条件中大的一边的表达式。
         /// </summary>
-        public Expression Upper { get; private set; }
+        public Expression Upper { get; }
 
         /// <summary>
         /// 更新 <see cref="BetweenExpression"/> 对象。

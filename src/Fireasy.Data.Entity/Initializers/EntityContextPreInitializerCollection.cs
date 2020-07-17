@@ -16,15 +16,15 @@ namespace Fireasy.Data.Entity.Initializers
 {
     public sealed class EntityContextPreInitializerCollection
     {
-        private readonly List<IEntityContextPreInitializer> initializers = new List<IEntityContextPreInitializer>();
+        private readonly List<IEntityContextPreInitializer> _initializers = new List<IEntityContextPreInitializer>();
 
         public EntityContextPreInitializerCollection Add<T>(Action<T> setupAction = null) where T : IEntityContextPreInitializer
         {
-            var initer = initializers.FirstOrDefault(s => s is T);
+            var initer = _initializers.FirstOrDefault(s => s is T);
             if (initer == null)
             {
                 initer = typeof(T).New<T>();
-                initializers.Add(initer);
+                _initializers.Add(initer);
             }
 
             setupAction?.Invoke((T)initer);
@@ -34,10 +34,10 @@ namespace Fireasy.Data.Entity.Initializers
 
         public EntityContextPreInitializerCollection Remove<T>() where T : IEntityContextPreInitializer
         {
-            var initer = initializers.FirstOrDefault(s => s is T);
+            var initer = _initializers.FirstOrDefault(s => s is T);
             if (initer != null)
             {
-                initializers.Remove(initer);
+                _initializers.Remove(initer);
             }
 
             return this;
@@ -45,7 +45,7 @@ namespace Fireasy.Data.Entity.Initializers
 
         public void PreInitialize(EntityContextPreInitializeContext context)
         {
-            initializers.ForEach(s =>
+            _initializers.ForEach(s =>
             {
                 var watch = Stopwatch.StartNew();
                 s.PreInitialize(context);

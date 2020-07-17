@@ -15,24 +15,24 @@ namespace Fireasy.Data.Entity.Metadata
     /// </summary>
     public sealed class EntityTreeMetadata
     {
-        private EntityTreeMappingAttribute attribute;
-        private int[] lengthBits;
+        private readonly EntityTreeMappingAttribute _attribute;
+        private readonly int[] _lengthBits;
 
         internal EntityTreeMetadata(EntityMetadata parent, EntityTreeMappingAttribute attribute)
         {
             Parent = parent;
-            this.attribute = attribute;
+            _attribute = attribute;
 
             if (attribute.SignStyle == SignStyle.Variable && attribute.SignBits != null)
             {
-                lengthBits = new int[attribute.SignBits.Length];
+                _lengthBits = new int[attribute.SignBits.Length];
                 var total = attribute.SignBits[0];
-                lengthBits[0] = total;
+                _lengthBits[0] = total;
 
                 for (var i = 1; i < attribute.SignBits.Length; i++)
                 {
                     total += attribute.SignBits[i];
-                    lengthBits[i] = total;
+                    _lengthBits[i] = total;
                 }
             }
         }
@@ -70,27 +70,27 @@ namespace Fireasy.Data.Entity.Metadata
         /// <summary>
         /// 获取标识是否有孩子的属性。
         /// </summary>
-        public IProperty HasChildren { get; private set; }
+        public IProperty HasChildren { get; }
 
         /// <summary>
         /// 获取或设置全名的名称分隔符。
         /// </summary>
-        public string NameSeparator { get { return attribute.NameSeparator; } }
+        public string NameSeparator { get { return _attribute.NameSeparator; } }
 
         /// <summary>
         /// 获取或设置标记的长度。
         /// </summary>
-        public int SignLength { get { return attribute.SignLength; } }
+        public int SignLength { get { return _attribute.SignLength; } }
 
         /// <summary>
         /// 获取或设置每一级标记的位数。
         /// </summary>
-        public int[] SignBits { get { return attribute.SignBits; } }
+        public int[] SignBits { get { return _attribute.SignBits; } }
 
         /// <summary>
         /// 获取或设置标记的编码方式。
         /// </summary>
-        public SignStyle SignStyle { get { return attribute.SignStyle; } }
+        public SignStyle SignStyle { get { return _attribute.SignStyle; } }
 
         /// <summary>
         /// 通过属性初始元数据结构。
@@ -98,23 +98,23 @@ namespace Fireasy.Data.Entity.Metadata
         /// <param name="property"></param>
         internal void InitTreeMetadata(IProperty property)
         {
-            if (property.Name.Equals(attribute.InnerSign))
+            if (property.Name.Equals(_attribute.InnerSign))
             {
                 InnerSign = property;
             }
-            else if (property.Name.Equals(attribute.Level))
+            else if (property.Name.Equals(_attribute.Level))
             {
                 Level = property;
             }
-            else if (property.Name.Equals(attribute.Order))
+            else if (property.Name.Equals(_attribute.Order))
             {
                 Order = property;
             }
-            else if (property.Name.Equals(attribute.Name))
+            else if (property.Name.Equals(_attribute.Name))
             {
                 Name = property;
             }
-            else if (property.Name.Equals(attribute.FullName))
+            else if (property.Name.Equals(_attribute.FullName))
             {
                 FullName = property;
             }
@@ -127,13 +127,13 @@ namespace Fireasy.Data.Entity.Metadata
         /// <returns></returns>
         internal int GetNextLevelLength(int signLength)
         {
-            if (SignStyle == SignStyle.Fixed || lengthBits == null || lengthBits.Length <= 1)
+            if (SignStyle == SignStyle.Fixed || _lengthBits == null || _lengthBits.Length <= 1)
             {
                 return SignLength;
             }
 
-            var index = Array.IndexOf(lengthBits, signLength);
-            if (index != -1 && index < lengthBits.Length - 1)
+            var index = Array.IndexOf(_lengthBits, signLength);
+            if (index != -1 && index < _lengthBits.Length - 1)
             {
                 return SignBits[index + 1];
             }
@@ -148,12 +148,12 @@ namespace Fireasy.Data.Entity.Metadata
         /// <returns></returns>
         internal int GetCurrentLevelLength(int signLength)
         {
-            if (SignStyle == SignStyle.Fixed || lengthBits == null || lengthBits.Length <= 1)
+            if (SignStyle == SignStyle.Fixed || _lengthBits == null || _lengthBits.Length <= 1)
             {
                 return SignLength;
             }
 
-            var index = Array.IndexOf(lengthBits, signLength);
+            var index = Array.IndexOf(_lengthBits, signLength);
             if (index != -1)
             {
                 return SignBits[index];
@@ -169,12 +169,12 @@ namespace Fireasy.Data.Entity.Metadata
         /// <returns></returns>
         internal int GetPreviousLevelLength(int signLength)
         {
-            if (SignStyle == SignStyle.Fixed || lengthBits == null || lengthBits.Length <= 1)
+            if (SignStyle == SignStyle.Fixed || _lengthBits == null || _lengthBits.Length <= 1)
             {
                 return SignLength;
             }
 
-            var index = Array.IndexOf(lengthBits, signLength);
+            var index = Array.IndexOf(_lengthBits, signLength);
             if (index > 0)
             {
                 return SignBits[index - 1];

@@ -17,13 +17,13 @@ namespace Fireasy.Common.Options
     /// <typeparam name="TOptions"></typeparam>
     public sealed class ConfiguredOptionsFactory<TOptions> : IOptionsFactory<TOptions> where TOptions : class, new()
     {
-        private readonly IEnumerable<IConfigureOptions<TOptions>> setups;
-        private readonly IEnumerable<IPostConfigureOptions<TOptions>> postConfigures;
+        private readonly IEnumerable<IConfigureOptions<TOptions>> _setups;
+        private readonly IEnumerable<IPostConfigureOptions<TOptions>> _postConfigures;
 
         public ConfiguredOptionsFactory(IEnumerable<IConfigureOptions<TOptions>> setups, IEnumerable<IPostConfigureOptions<TOptions>> postConfigures)
         {
-            this.setups = setups;
-            this.postConfigures = postConfigures;
+            _setups = setups;
+            _postConfigures = postConfigures;
         }
 
         TOptions IOptionsFactory<TOptions>.Create(string name)
@@ -32,7 +32,7 @@ namespace Fireasy.Common.Options
 
             var isConfigured = false;
 
-            foreach (var setup in setups)
+            foreach (var setup in _setups)
             {
                 if (setup is IConfigureNamedOptions<TOptions> namedSetup)
                 {
@@ -46,7 +46,7 @@ namespace Fireasy.Common.Options
                 }
             }
 
-            foreach (var post in postConfigures)
+            foreach (var post in _postConfigures)
             {
                 post.PostConfigure(name, options);
                 isConfigured = true;

@@ -16,7 +16,7 @@ namespace Fireasy.Common.Subscribes
     /// </summary>
     public class SubscriberCollection
     {
-        private readonly SafetyDictionary<string, List<SubscribeDelegate>> subscribers = new SafetyDictionary<string, List<SubscribeDelegate>>();
+        private readonly SafetyDictionary<string, List<SubscribeDelegate>> _subscribers = new SafetyDictionary<string, List<SubscribeDelegate>>();
 
         /// <summary>
         /// 接收订阅的数据。
@@ -25,7 +25,7 @@ namespace Fireasy.Common.Subscribes
         /// <param name="data"></param>
         public void Accept(string name, object data)
         {
-            if (subscribers.TryGetValue(name, out List<SubscribeDelegate> list) && list != null)
+            if (_subscribers.TryGetValue(name, out List<SubscribeDelegate> list) && list != null)
             {
                 list.ForEach(s => s.Invoke(data));
             }
@@ -39,7 +39,7 @@ namespace Fireasy.Common.Subscribes
         /// <param name="subscriber"></param>
         public void AddSyncSubscriber(Type type, string name, Delegate subscriber)
         {
-            var list = subscribers.GetOrAdd(name, () => new List<SubscribeDelegate>());
+            var list = _subscribers.GetOrAdd(name, () => new List<SubscribeDelegate>());
             if (list != null)
             {
                 list.Add(new SyncSubscribeDelegate(type, subscriber));
@@ -54,7 +54,7 @@ namespace Fireasy.Common.Subscribes
         /// <param name="subscriber"></param>
         public void AddAsyncSubscriber(Type type, string name, Delegate subscriber)
         {
-            var list = subscribers.GetOrAdd(name, () => new List<SubscribeDelegate>());
+            var list = _subscribers.GetOrAdd(name, () => new List<SubscribeDelegate>());
             if (list != null)
             {
                 list.Add(new AsyncSubscribeDelegate(type, subscriber));
@@ -67,7 +67,7 @@ namespace Fireasy.Common.Subscribes
         /// <param name="name">名称。</param>
         public void Remove(string name)
         {
-            subscribers.TryRemove(name, out _);
+            _subscribers.TryRemove(name, out _);
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace Fireasy.Common.Subscribes
         /// </summary>
         public void Clear()
         {
-            subscribers.Clear();
+            _subscribers.Clear();
         }
     }
 }

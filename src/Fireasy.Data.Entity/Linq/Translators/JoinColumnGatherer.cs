@@ -6,19 +6,19 @@ namespace Fireasy.Data.Entity.Linq.Translators
 {
     public class JoinColumnGatherer
     {
-        private readonly HashSet<TableAlias> aliases;
-        private readonly HashSet<ColumnExpression> columns = new HashSet<ColumnExpression>();
+        private readonly HashSet<TableAlias> _aliases;
+        private readonly HashSet<ColumnExpression> _columns = new HashSet<ColumnExpression>();
 
         private JoinColumnGatherer(HashSet<TableAlias> aliases)
         {
-            this.aliases = aliases;
+            _aliases = aliases;
         }
 
         public static HashSet<ColumnExpression> Gather(HashSet<TableAlias> aliases, SelectExpression select)
         {
             var gatherer = new JoinColumnGatherer(aliases);
             gatherer.Gather(select.Where);
-            return gatherer.columns;
+            return gatherer._columns;
         }
 
         private void Gather(Expression expression)
@@ -31,19 +31,19 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     case ExpressionType.NotEqual:
                         if (IsExternalColumn(bin.Left) && GetColumn(bin.Right) != null)
                         {
-                            this.columns.Add(GetColumn(bin.Right));
+                            _columns.Add(GetColumn(bin.Right));
                         }
                         else if (IsExternalColumn(bin.Right) && GetColumn(bin.Left) != null)
                         {
-                            this.columns.Add(GetColumn(bin.Left));
+                            _columns.Add(GetColumn(bin.Left));
                         }
                         break;
                     case ExpressionType.And:
                     case ExpressionType.AndAlso:
                         if (bin.Type == typeof(bool) || bin.Type == typeof(bool?))
                         {
-                            this.Gather(bin.Left);
-                            this.Gather(bin.Right);
+                            Gather(bin.Left);
+                            Gather(bin.Right);
                         }
                         break;
                 }
@@ -60,7 +60,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         private bool IsExternalColumn(Expression exp)
         {
             var col = GetColumn(exp);
-            if (col != null && !this.aliases.Contains(col.Alias))
+            if (col != null && !_aliases.Contains(col.Alias))
                 return true;
             return false;
         }

@@ -52,7 +52,8 @@ namespace Fireasy.Common.Caching
         /// <param name="key">标识数据的 key。</param>
         /// <param name="value"></param>
         /// <param name="expiration">判断对象过期的对象。</param>
-        Task AddAsync(TKey key, TValue value, ICacheItemExpiration expiration = null);
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        Task AddAsync(TKey key, TValue value, ICacheItemExpiration expiration = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 尝试从集合中获取指定 <paramref name="key"/> 的数据。
@@ -105,8 +106,9 @@ namespace Fireasy.Common.Caching
         /// 异步的，确定集合中是否包含指定的键的值。
         /// </summary>
         /// <param name="key">标识数据的 key。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns></returns>
-        Task<bool> ContainsAsync(TKey key);
+        Task<bool> ContainsAsync(TKey key, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 获取集合中对象的个数。
@@ -117,5 +119,11 @@ namespace Fireasy.Common.Caching
         /// 清空整个集合。
         /// </summary>
         void Clear();
+
+        /// <summary>
+        /// 异步的，清空整个集合。
+        /// </summary>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        Task ClearAsync(CancellationToken cancellationToken = default);
     }
 }

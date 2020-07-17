@@ -2,18 +2,18 @@
 
   <PropertyGroup>
     <TargetFrameworks>net45;netstandard2.0;netstandard2.1</TargetFrameworks>
-    <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
-    <FileVersion>2.1.2.02</FileVersion>
     <Copyright>Copyright © Fireasy 2013-2020</Copyright>
-    <AssemblyVersion>2.1.2.02</AssemblyVersion>
-    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>True</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Data Library</Product>
-    <Version>2.1.2.7</Version>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <FileVersion>2.2.0</FileVersion>
+    <AssemblyVersion>2.2.0</AssemblyVersion>
+    <Version>2.2.0-beta1</Version>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Description>数据库访问库，提供 SqlServer, MySql, Oracle, SQLite, PostgreSql 等数据库的驱动适配，以及插件服务，如SQL语法、数据库架构、批量插入、记录包装等。
 
 示例源码：https://github.com/faib920/zero</Description>
@@ -21,6 +21,7 @@
     <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>
     <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
     <PackageReleaseNotes></PackageReleaseNotes>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
@@ -36,11 +37,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.1|AnyCPU'">
     <DocumentationFile>..\..\Release\netstandard2.1\Fireasy.Data.xml</DocumentationFile>
     <OutputPath>..\..\Release\</OutputPath>
-  </PropertyGroup>
-    
-  <PropertyGroup>
-    <LangVersion>latest</LangVersion>
-    <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
   </PropertyGroup>
     
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">

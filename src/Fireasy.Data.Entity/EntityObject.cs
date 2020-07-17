@@ -37,14 +37,18 @@ namespace Fireasy.Data.Entity
         IHashKeyObject,
         IDeserializeProcessor
     {
-        private EntityEntryDictionary valueEntry;
-        private EntityOwner owner;
+        private EntityEntryDictionary _valueEntry;
+        private EntityOwner _owner;
         [NonSerialized]
-        private bool isModifing;
+        private bool _isModifing;
         [NonSerialized]
-        private EntityPersistentEnvironment environment;
+        private EntityPersistentEnvironment _environment;
         [NonSerialized]
-        private EntityLzayManager lazyMgr;
+        private EntityLzayManager _lazyMgr;
+        private readonly Type _entityType;
+        private EntityState _state;
+        private bool _isInitialized;
+        private object _hashKey;
 
         /// <summary>
         /// 在属性即将修改时，通知客户端应用程序。
@@ -61,25 +65,20 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public event EventHandler Initialized;
 
-        private readonly Type entityType;
-        private EntityState state;
-        private bool isInitialized;
-        private object hashKey;
-
         /// <summary>
         /// 初始化 <see cref="T:Fireasy.Data.Entity.EntityObject"/> 类的新实例。对象的初始状态为 Attached。
         /// </summary>
         protected EntityObject()
         {
-            entityType = GetType();
-            state = EntityState.Attached;
+            _entityType = GetType();
+            _state = EntityState.Attached;
         }
 
         private EntityLzayManager InnerLazyMgr
         {
             get
             {
-                return lazyMgr ?? (lazyMgr = new EntityLzayManager(entityType));
+                return _lazyMgr ?? (_lazyMgr = new EntityLzayManager(_entityType));
             }
         }
 
@@ -87,7 +86,7 @@ namespace Fireasy.Data.Entity
         {
             get
             {
-                return valueEntry ?? (valueEntry = new EntityEntryDictionary());
+                return _valueEntry ?? (_valueEntry = new EntityEntryDictionary());
             }
         }
 
@@ -130,9 +129,8 @@ namespace Fireasy.Data.Entity
         /// <param name="value">要设置的值。</param>
         public virtual void SetValue(IProperty property, PropertyValue value)
         {
-            PropertyValue oldValue;
             //如果赋值相同则忽略更改
-            if (CheckValueEquals(property, value, out oldValue))
+            if (CheckValueEquals(property, value, out PropertyValue oldValue))
             {
                 return;
             }
@@ -207,7 +205,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         PropertyValue IEntity.GetValue(string propertyName)
         {
-            var property = PropertyUnity.GetProperty(entityType, propertyName);
+            var property = PropertyUnity.GetProperty(_entityType, propertyName);
             if (property == null)
             {
                 throw new PropertyNotFoundException(propertyName);
@@ -223,7 +221,7 @@ namespace Fireasy.Data.Entity
         /// <param name="value">要设置的值。</param>
         void IEntity.SetValue(string propertyName, PropertyValue value)
         {
-            var property = PropertyUnity.GetProperty(entityType, propertyName);
+            var property = PropertyUnity.GetProperty(_entityType, propertyName);
             if (property == null)
             {
                 throw new PropertyNotFoundException(propertyName);
@@ -237,8 +235,8 @@ namespace Fireasy.Data.Entity
         /// </summary>
         EntityPersistentEnvironment IEntityPersistentEnvironment.Environment
         {
-            get { return environment; }
-            set { environment = value; }
+            get { return _environment; }
+            set { _environment = value; }
         }
 
         string IEntityPersistentInstanceContainer.InstanceName { get; set; }
@@ -255,29 +253,29 @@ namespace Fireasy.Data.Entity
         /// </remarks>
         EntityState IEntity.EntityState
         {
-            get { return state; }
+            get { return _state; }
         }
 
         Type IEntity.EntityType
         {
-            get { return entityType; }
+            get { return _entityType; }
         }
 
         void IEntity.SetState(EntityState state)
         {
-            this.state = state;
+            _state = state;
         }
 
         void IEntity.ResetUnchanged()
         {
-            state = EntityState.Unchanged;
+            _state = EntityState.Unchanged;
             InnerEntry.Reset();
         }
 
         string[] IEntity.GetModifiedProperties()
         {
             return (from s in InnerEntry.GetModifiedProperties()
-                    let p = PropertyUnity.GetProperty(entityType, s)
+                    let p = PropertyUnity.GetProperty(_entityType, s)
                     where p != null && (!p.Info.IsPrimaryKey || (p.Info.IsPrimaryKey && p.Info.GenerateType == IdentityGenerateType.None))
                     select s).ToArray();
         }
@@ -294,8 +292,8 @@ namespace Fireasy.Data.Entity
 
         bool IEntity.IsModifyLocked
         {
-            get { return isModifing; }
-            set { isModifing = value; }
+            get { return _isModifing; }
+            set { _isModifing = value; }
         }
 
         void IEntity.NotifyModified(string propertyName, bool modified)
@@ -308,14 +306,14 @@ namespace Fireasy.Data.Entity
 
             InnerEntry.Modify(propertyName, modified);
 
-            if (state == EntityState.Unchanged)
+            if (_state == EntityState.Unchanged)
             {
-                state = EntityState.Modified;
+                _state = EntityState.Modified;
             }
 
-            if (owner != null)
+            if (_owner != null)
             {
-                owner.Parent.As<IEntity>(s => s.NotifyModified(owner.Property == null ? string.Empty : owner.Property.Name));
+                _owner.Parent.As<IEntity>(s => s.NotifyModified(_owner.Property == null ? string.Empty : _owner.Property.Name));
             }
         }
 
@@ -328,8 +326,8 @@ namespace Fireasy.Data.Entity
         #region 实现IEntityRelation
         EntityOwner IEntityRelation.Owner
         {
-            get { return owner; }
-            set { owner = value; }
+            get { return _owner; }
+            set { _owner = value; }
         }
 
         void IEntityRelation.NotifyModified(string propertyName)
@@ -339,15 +337,15 @@ namespace Fireasy.Data.Entity
                 InnerEntry.Modify(propertyName);
             }
 
-            if (state == EntityState.Unchanged)
+            if (_state == EntityState.Unchanged)
             {
-                state = EntityState.Modified;
+                _state = EntityState.Modified;
             }
 
             //修改父对象的状态
-            if (owner != null)
+            if (_owner != null)
             {
-                owner.Parent.As<IEntityRelation>(s => s.NotifyModified(owner.Property == null ? string.Empty : owner.Property.Name));
+                _owner.Parent.As<IEntityRelation>(s => s.NotifyModified(_owner.Property == null ? string.Empty : _owner.Property.Name));
             }
         }
         #endregion
@@ -358,7 +356,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public virtual void BeginInit()
         {
-            isInitialized = false;
+            _isInitialized = false;
         }
 
         /// <summary>
@@ -366,7 +364,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public virtual void EndInit()
         {
-            isInitialized = true;
+            _isInitialized = true;
 
             if (Initialized != null)
             {
@@ -379,7 +377,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         bool ISupportInitializeNotification.IsInitialized
         {
-            get { return isInitialized; }
+            get { return _isInitialized; }
         }
         #endregion
 
@@ -388,21 +386,21 @@ namespace Fireasy.Data.Entity
         {
             get
             {
-                if (hashKey == null)
+                if (_hashKey == null)
                 {
-                    var properties = PropertyUnity.GetPrimaryProperties(entityType);
+                    var properties = PropertyUnity.GetPrimaryProperties(_entityType);
                     if (properties.Count() == 1)
                     {
                         var value = GetValue(properties.FirstOrDefault());
                         if (!PropertyValue.IsEmpty(value))
                         {
-                            hashKey = value.GetValue();
+                            _hashKey = value.GetValue();
                         }
                     }
                     else if (properties.Count() > 1)
                     {
                         var sb = new StringBuilder();
-                        foreach (var prop in PropertyUnity.GetPrimaryProperties(entityType))
+                        foreach (var prop in PropertyUnity.GetPrimaryProperties(_entityType))
                         {
                             var value = GetValue(prop);
                             if (sb.Length > 0)
@@ -413,11 +411,11 @@ namespace Fireasy.Data.Entity
                             sb.Append((PropertyValue.IsEmpty(value) ? "N" : value));
                         }
 
-                        hashKey = sb.ToString();
+                        _hashKey = sb.ToString();
                     }
                 }
 
-                return hashKey;
+                return _hashKey;
             }
         }
         #endregion
@@ -476,16 +474,16 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public object Clone()
         {
-            var entity = entityType.New<EntityObject>();
+            var entity = _entityType.New<EntityObject>();
 
             entity.InitializeInstanceName((this.As<IEntityPersistentInstanceContainer>().InstanceName));
-            entity.InitializeEnvironment(environment);
+            entity.InitializeEnvironment(_environment);
 
-            if (entityType.IsNotCompiled())
+            if (_entityType.IsNotCompiled())
             {
-                foreach (var property in PropertyUnity.GetProperties(entityType))
+                foreach (var property in PropertyUnity.GetProperties(_entityType))
                 {
-                    var pv = this.GetValue(property);
+                    var pv = GetValue(property);
                     entity.SetValue(property, pv);
                 }
             }
@@ -495,7 +493,7 @@ namespace Fireasy.Data.Entity
                 {
                     InnerEntry.ForEach(k =>
                     {
-                        var property = PropertyUnity.GetProperty(entityType, k.Key);
+                        var property = PropertyUnity.GetProperty(_entityType, k.Key);
                         if (property?.Info.IsPrimaryKey == true)
                         {
                             entity.InnerEntry.Initializate(k.Key, k.Value.GetCurrentValue());
@@ -528,7 +526,7 @@ namespace Fireasy.Data.Entity
                 if (value != null && !PropertyValue.IsEmpty(value))
                 {
                     InnerLazyMgr.SetValueCreated(property.Name);
-                    value.dataType = property.Info.DataType;
+                    value._dataType = property.Info.DataType;
                     InnerEntry.Initializate(property.Name, value);
                 }
 
@@ -694,7 +692,7 @@ namespace Fireasy.Data.Entity
         #region 实现IPropertyFieldMappingResolver
         IEnumerable<PropertyFieldMapping> IPropertyFieldMappingResolver.GetDbMapping()
         {
-            return EntityPropertyFieldMappingResolver.GetDbMapping(entityType);
+            return EntityPropertyFieldMappingResolver.GetDbMapping(_entityType);
         }
         #endregion
 
@@ -716,7 +714,7 @@ namespace Fireasy.Data.Entity
                 return false;
             }
 
-            var property = PropertyUnity.GetProperty(entityType, name);
+            var property = PropertyUnity.GetProperty(_entityType, name);
             if (property != null)
             {
                 InitializeValue(property, PropertyValue.NewValue(value, property.Type));

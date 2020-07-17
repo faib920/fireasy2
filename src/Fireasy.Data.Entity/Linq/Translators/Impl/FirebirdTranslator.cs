@@ -12,6 +12,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
 {
     public class FirebirdTranslator : TranslatorBase
     {
+        public FirebirdTranslator(TranslateContext transContext)
+            : base(transContext)
+        {
+        }
+
         protected override Expression VisitSelect(SelectExpression select)
         {
             if (Options.WhereOnly)

@@ -5,10 +5,10 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq.Expressions;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Data.Entity.Linq.Expressions
 {
@@ -35,17 +35,17 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取操作的表的表达式。
         /// </summary>
-        public Expression Table { get; private set; }
+        public Expression Table { get; }
 
         /// <summary>
         /// 获取条件表达式。
         /// </summary>
-        public Expression Where { get; private set; }
+        public Expression Where { get; }
 
         /// <summary>
         /// 获取需要更新的列表达式集合。
         /// </summary>
-        public ReadOnlyCollection<ColumnAssignment> Assignments { get; private set; }
+        public ReadOnlyCollection<ColumnAssignment> Assignments { get; }
 
         /// <summary>
         /// 更新 <see cref="UpdateCommandExpression"/> 对象。

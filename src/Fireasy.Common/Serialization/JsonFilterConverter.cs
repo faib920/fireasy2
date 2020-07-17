@@ -16,7 +16,7 @@ namespace Fireasy.Common.Serialization
     /// </summary>
     public class JsonFilterConverter<T> : JsonConverter<T>
     {
-        private readonly string[] exclusiveNames = null;
+        private readonly string[] _exclusiveNames = null;
 
         /// <summary>
         /// 初始化 <see cref="JsonFilterConverter"/> 类的新实例。
@@ -24,7 +24,7 @@ namespace Fireasy.Common.Serialization
         /// <param name="filterExps"></param>
         public JsonFilterConverter(params Expression<Func<T, object>>[] filterExps)
         {
-            exclusiveNames = filterExps == null ? null : ExclusiveNameFinder.Find(filterExps);
+            _exclusiveNames = filterExps == null ? null : ExclusiveNameFinder.Find(filterExps);
         }
 
         /// <summary>
@@ -40,13 +40,13 @@ namespace Fireasy.Common.Serialization
         /// <param name="obj">要序列化的 <see cref="DateTime"/> 值。</param>
         public override void WriteJson(JsonSerializer serializer, JsonWriter writer, object obj)
         {
-            if (exclusiveNames == null)
+            if (_exclusiveNames == null)
             {
                 serializer.Serialize(obj);
             }
             else
             {
-                serializer.Option.ExclusiveNames = exclusiveNames;
+                serializer.Option.ExclusiveNames = _exclusiveNames;
                 serializer.Option.Converters.RemoveAll(s => s is JsonFilterConverter<T>);
                 serializer.Serialize(obj);
             }

@@ -31,18 +31,23 @@ namespace Fireasy.Data.Entity.Query
     /// </summary>
     internal class DefaultExecuteCache : IExecuteCache
     {
-        internal static readonly IExecuteCache Instance = new DefaultExecuteCache(ContainerUnity.GetContainer());
+        internal static readonly IExecuteCache Instance = new DefaultExecuteCache();
 
         private const string CACHE_KEY = "fireasy.exec";
-        private static readonly ReadWriteLocker locker = new ReadWriteLocker();
-        private static List<string> barriers = new List<string>();
-        private readonly IServiceProvider serviceProvider;
-        private readonly ICacheManager cacheMgr;
+        private static readonly ReadWriteLocker _locker = new ReadWriteLocker();
+        private static readonly List<string> _barriers = new List<string>();
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ICacheManager _cacheMgr;
+
+        public DefaultExecuteCache()
+            : this(ContainerUnity.GetContainer())
+        {
+        }
 
         public DefaultExecuteCache(IServiceProvider serviceProvider)
         {
-            this.serviceProvider = serviceProvider;
-            this.cacheMgr = serviceProvider.TryGetService<ICacheManager>(() => CacheManagerFactory.CreateManager());
+            _serviceProvider = serviceProvider;
+            _cacheMgr = serviceProvider.TryGetService<ICacheManager>(() => CacheManagerFactory.CreateManager());
         }
 
         /// <summary>
@@ -55,21 +60,25 @@ namespace Fireasy.Data.Entity.Query
         /// <returns></returns>
         T IExecuteCache.TryGet<T>(Expression expression, ExecuteCacheContext context, Func<T> creator)
         {
-            TryExpire(expression);
-
             var section = ConfigurationUnity.GetSection<TranslatorConfigurationSection>();
             var option = section == null ? TranslateOptions.Default : section.Options;
+
+            if (context.Enabled == true || (context.Enabled == null && option.CacheExecution))
+            {
+                TryExpire(expression);
+            }
+
             var result = CacheableChecker.Check(expression);
 
             //没有开启数据缓存
             if ((result.Enabled == null && (context.Enabled == false || (context.Enabled == null && !option.CacheExecution))) ||
-                result.Enabled == false || cacheMgr == null)
+                result.Enabled == false || _cacheMgr == null)
             {
                 return creator();
             }
 
-            var generator = serviceProvider.TryGetService<IExecuteCacheKeyGenerator>(() => ExpressionKeyGenerator.Instance);
-            var cacheKey = serviceProvider.GetCacheKey(generator.Generate(expression, CACHE_KEY));
+            var generator = _serviceProvider.TryGetService<IExecuteCacheKeyGenerator>(() => ExpressionKeyGenerator.Instance);
+            var cacheKey = _serviceProvider.GetCacheKey(generator.Generate(expression, CACHE_KEY));
 
             Tracer.Debug($"ExecuteCache access to '{cacheKey}'");
 
@@ -77,7 +86,7 @@ namespace Fireasy.Data.Entity.Query
             var pager = segment as DataPager;
 
             using var edps = new EntityDeserializeProcessorScope();
-            var cacheItem = cacheMgr.TryGet(cacheKey,
+            var cacheItem = _cacheMgr.TryGet(cacheKey,
                 () => HandleCacheItem(cacheKey, expression, creator(), pager),
                 () => new RelativeTime(GetExpire(result, option, context)));
 
@@ -102,21 +111,25 @@ namespace Fireasy.Data.Entity.Query
         /// <returns></returns>
         async Task<T> IExecuteCache.TryGetAsync<T>(Expression expression, ExecuteCacheContext context, Func<CancellationToken, Task<T>> creator, CancellationToken cancellationToken)
         {
-            TryExpire(expression);
-
             var section = ConfigurationUnity.GetSection<TranslatorConfigurationSection>();
             var option = section == null ? TranslateOptions.Default : section.Options;
+
+            if (context.Enabled == true || (context.Enabled == null && option.CacheExecution))
+            {
+                TryExpire(expression);
+            }
+
             var result = CacheableChecker.Check(expression);
 
             //没有开启数据缓存
             if ((result.Enabled == null && (context.Enabled == false || (context.Enabled == null && !option.CacheExecution))) ||
-                result.Enabled == false || cacheMgr == null)
+                result.Enabled == false || _cacheMgr == null)
             {
                 return await creator(cancellationToken);
             }
 
-            var generator = serviceProvider.TryGetService<IExecuteCacheKeyGenerator>(() => ExpressionKeyGenerator.Instance);
-            var cacheKey = serviceProvider.GetCacheKey(generator.Generate(expression, CACHE_KEY));
+            var generator = _serviceProvider.TryGetService<IExecuteCacheKeyGenerator>(() => ExpressionKeyGenerator.Instance);
+            var cacheKey = _serviceProvider.GetCacheKey(generator.Generate(expression, CACHE_KEY));
 
             Tracer.Debug($"DefaultExecuteCache access to '{cacheKey}'");
 
@@ -124,7 +137,7 @@ namespace Fireasy.Data.Entity.Query
             var pager = segment as DataPager;
 
             using var edps = new EntityDeserializeProcessorScope();
-            var cacheItem = cacheMgr.TryGet(cacheKey,
+            var cacheItem = _cacheMgr.TryGet(cacheKey,
                 () => HandleCacheItem(cacheKey, expression, creator(cancellationToken).AsSync(), pager),
                 () => new RelativeTime(GetExpire(result, option, context)));
 
@@ -181,21 +194,21 @@ namespace Fireasy.Data.Entity.Query
 
         private void TryStartRunner()
         {
-            var tenancyProvider = serviceProvider.TryGetService<ITenancyProvider<CacheTenancyInfo>>();
-            var barrier = tenancyProvider == null ? "default" : tenancyProvider.GetTenancyInfo().Key;
-            if (barriers.Contains(barrier))
+            var tenancyProvider = _serviceProvider.TryGetService<ITenancyProvider<CacheTenancyInfo>>();
+            var barrier = tenancyProvider == null ? "default" : tenancyProvider.Resolve(null).Key;
+            if (_barriers.Contains(barrier))
             {
                 return;
             }
 
             lock (this)
             {
-                if (barriers.Contains(barrier))
+                if (_barriers.Contains(barrier))
                 {
                     return;
                 }
 
-                var scheduler = TaskSchedulerFactory.CreateScheduler();
+                var scheduler = _serviceProvider.TryGetService<ITaskScheduler>();
                 if (scheduler != null)
                 {
                     var random = new Random();
@@ -207,7 +220,7 @@ namespace Fireasy.Data.Entity.Query
                     scheduler.StartExecutor(startOption);
                 }
 
-                barriers.Add(barrier);
+                _barriers.Add(barrier);
             }
         }
 
@@ -252,7 +265,7 @@ namespace Fireasy.Data.Entity.Query
         {
             var types = RelationshipFinder.Find(expression);
             var rootKey = $"{CACHE_KEY}.keys";
-            var hashSet = cacheMgr.GetHashSet<string, List<string>>(rootKey);
+            var hashSet = _cacheMgr.GetHashSet<string, List<string>>(rootKey, checkExpiration: false);
 
             void process(string key, string subKey)
             {
@@ -267,13 +280,13 @@ namespace Fireasy.Data.Entity.Query
 
             types.ForEach(s =>
             {
-                if (cacheMgr is IEnhancedCacheManager ehCache)
+                if (_cacheMgr is IEnhancedCacheManager ehCache)
                 {
-                    ehCache.UseTransaction(string.Concat(rootKey, ":", s.FullName), () => process(key, s.FullName), TimeSpan.FromSeconds(10));
+                    ehCache.UseTransaction(string.Concat(rootKey, ":", s.FullName, ":Execute"), () => process(key, s.FullName), TimeSpan.FromSeconds(10));
                 }
                 else
                 {
-                    locker.LockWrite(() => process(key, s.FullName));
+                    _locker.LockWrite(() => process(key, s.FullName));
                 }
             });
         }
@@ -284,13 +297,13 @@ namespace Fireasy.Data.Entity.Query
         /// <param name="types"></param>
         private void ClearKeys(params Type[] types)
         {
-            if (cacheMgr == null || types == null || types.Length == 0)
+            if (_cacheMgr == null || types == null || types.Length == 0)
             {
                 return;
             }
 
             var rootKey = $"{CACHE_KEY}.keys";
-            var hashSet = cacheMgr.GetHashSet<string, List<string>>(rootKey);
+            var hashSet = _cacheMgr.GetHashSet<string, List<string>>(rootKey, checkExpiration: false);
 
             void process(string key)
             {
@@ -298,7 +311,7 @@ namespace Fireasy.Data.Entity.Query
                 {
                     if (hashSet.TryGet(key, out List<string> keys) && keys != null)
                     {
-                        keys.ForEach(s => cacheMgr.Remove(s));
+                        keys.ForEach(s => _cacheMgr.Remove(s));
                         hashSet.Remove(key);
                     }
                 }
@@ -312,13 +325,13 @@ namespace Fireasy.Data.Entity.Query
                 {
                     Tracer.Debug($"Now clear the reference-keys of '{string.Concat(rootKey, ":", type.FullName)}'");
 
-                    if (cacheMgr is IEnhancedCacheManager ehCache)
+                    if (_cacheMgr is IEnhancedCacheManager ehCache)
                     {
-                        ehCache.UseTransaction(string.Concat(rootKey, ":", type.FullName), () => process(type.FullName), TimeSpan.FromSeconds(10));
+                        ehCache.UseTransaction(string.Concat(rootKey, ":", type.FullName, ":Execute"), () => process(type.FullName), TimeSpan.FromSeconds(10));
                     }
                     else
                     {
-                        locker.LockWrite(() => process(type.FullName));
+                        _locker.LockWrite(() => process(type.FullName));
                     }
                 });
         }
@@ -520,7 +533,7 @@ namespace Fireasy.Data.Entity.Query
         {
             public void Execute(TaskExecuteContext context)
             {
-                var cacheMgr = context.ServiceProvider.TryGetService(() => CacheManagerFactory.CreateManager());
+                var cacheMgr = context.ServiceProvider.TryGetService<ICacheManager>();
                 if (cacheMgr == null)
                 {
                     return;
@@ -530,7 +543,7 @@ namespace Fireasy.Data.Entity.Query
                 Tracer.Debug($"CacheClearTaskExecutor is executing for '{barrier}'.");
 
                 var rootKey = barrier == null ? $"{CACHE_KEY}.keys" : CacheHelper.GetCacheKey(context.ServiceProvider, $"{CACHE_KEY}.keys", barrier);
-                var hashSet = cacheMgr.GetHashSet<string, List<string>>(rootKey);
+                var hashSet = cacheMgr.GetHashSet<string, List<string>>(rootKey, checkExpiration: false);
 
                 void clearKeys(string key)
                 {
@@ -559,11 +572,11 @@ namespace Fireasy.Data.Entity.Query
                 {
                     if (cacheMgr is IEnhancedCacheManager ehCache)
                     {
-                        ehCache.UseTransaction(string.Concat(rootKey, ":", s), () => clearKeys(s), TimeSpan.FromSeconds(10));
+                        ehCache.UseTransaction(string.Concat(rootKey, ":", s, ":Execute"), () => clearKeys(s), TimeSpan.FromSeconds(10));
                     }
                     else
                     {
-                        locker.LockWrite(() => clearKeys(s));
+                        _locker.LockWrite(() => clearKeys(s));
                     }
                 });
             }

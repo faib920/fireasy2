@@ -5,11 +5,11 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System.Collections.Concurrent;
-using System.Reflection;
 using Fireasy.Common.Extensions;
-using System.Linq;
 using System;
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Reflection;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
@@ -18,9 +18,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public static class TranslateUtils
     {
-        private readonly static ConcurrentDictionary<MethodInfo, IMethodCallBinder> defBinders = new ConcurrentDictionary<MethodInfo, IMethodCallBinder>();
-        private readonly static ConcurrentDictionary<Func<MethodInfo, bool>, IMethodCallBinder> matchBinders = new ConcurrentDictionary<Func<MethodInfo, bool>, IMethodCallBinder>();
-        private readonly static ConcurrentDictionary<MethodInfo, string> functions = new ConcurrentDictionary<MethodInfo, string>();
+        private readonly static ConcurrentDictionary<MethodInfo, IMethodCallBinder> _defBinders = new ConcurrentDictionary<MethodInfo, IMethodCallBinder>();
+        private readonly static ConcurrentDictionary<Func<MethodInfo, bool>, IMethodCallBinder> _matchBinders = new ConcurrentDictionary<Func<MethodInfo, bool>, IMethodCallBinder>();
+        private readonly static ConcurrentDictionary<MethodInfo, string> _functions = new ConcurrentDictionary<MethodInfo, string>();
 
         /// <summary>
         /// 添加方法调用的绑定。
@@ -29,7 +29,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <param name="binder"></param>
         public static void AddMethodBinder(MethodInfo method, IMethodCallBinder binder)
         {
-            defBinders.TryAdd(method, binder);
+            _defBinders.TryAdd(method, binder);
         }
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <param name="binder"></param>
         public static void AddMethodBinder(Func<MethodInfo, bool> matcher, IMethodCallBinder binder)
         {
-            matchBinders.TryAdd(matcher, binder);
+            _matchBinders.TryAdd(matcher, binder);
         }
 
         /// <summary>
@@ -69,11 +69,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         public static string GetCustomFunction(MethodInfo method)
         {
-            if (!functions.TryGetValue(method, out string funcName) && method.IsDefined<FunctionBindAttribute>())
+            if (!_functions.TryGetValue(method, out string funcName) && method.IsDefined<FunctionBindAttribute>())
             {
                 var attr = method.GetCustomAttributes<FunctionBindAttribute>().FirstOrDefault();
                 funcName = attr.FunctionName;
-                functions.TryAdd(method, funcName);
+                _functions.TryAdd(method, funcName);
             }
 
             return funcName;
@@ -86,15 +86,15 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         public static IMethodCallBinder GetMethodBinder(MethodInfo method)
         {
-            foreach (var kvp in matchBinders)
+            foreach (var kvp in _matchBinders)
             {
                 if (kvp.Key.Invoke(method))
                 {
-                    return matchBinders[kvp.Key];
+                    return _matchBinders[kvp.Key];
                 }
             }
 
-            if (!defBinders.TryGetValue(method, out IMethodCallBinder binder) && method.IsDefined<MethodCallBindAttribute>())
+            if (!_defBinders.TryGetValue(method, out IMethodCallBinder binder) && method.IsDefined<MethodCallBindAttribute>())
             {
                 var attr = method.GetCustomAttributes<MethodCallBindAttribute>().FirstOrDefault();
                 if (attr.BinderType == null)
@@ -108,7 +108,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     throw new ArgumentException(SR.GetString(SRKind.ClassNotImplInterface, "IMethodCallBinder"));
                 }
 
-                defBinders.TryAdd(method, binder);
+                _defBinders.TryAdd(method, binder);
             }
 
             return binder;

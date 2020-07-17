@@ -12,34 +12,34 @@ namespace Fireasy.Common.Ioc.Registrations
 {
     internal class SingletonRegistration : AbstractRegistration
     {
-        private static readonly object locker = new object();
-        private object instance;
-        private readonly Func<IResolver, object> instanceCreator;
+        private static readonly object _locker = new object();
+        private object _instance;
+        private readonly Func<IResolver, object> _instanceCreator;
 
         internal SingletonRegistration(Container container, Type serviceType, object instance) :
             base(container, serviceType, instance.GetType())
         {
-            this.instance = instance;
+            _instance = instance;
         }
 
         internal SingletonRegistration(Container container, Type serviceType, Func<IResolver, object> instanceCreator) :
             base(container, serviceType, (Type)null)
         {
-            this.instanceCreator = instanceCreator;
+            _instanceCreator = instanceCreator;
         }
         public override Lifetime Lifetime => Lifetime.Singleton;
 
         internal override Expression BuildExpression()
         {
-            lock (locker)
+            lock (_locker)
             {
-                if (instance == null && instanceCreator != null)
+                if (_instance == null && _instanceCreator != null)
                 {
-                    instance = instanceCreator(container);
+                    _instance = _instanceCreator(_container);
                 }
             }
 
-            return Expression.Constant(instance, ServiceType);
+            return Expression.Constant(_instance, ServiceType);
         }
     }
 }

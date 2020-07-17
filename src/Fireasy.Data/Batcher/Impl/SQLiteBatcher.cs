@@ -5,19 +5,19 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
+using Fireasy.Data.Extensions;
+using Fireasy.Data.Provider;
+using Fireasy.Data.Syntax;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Linq;
-using Fireasy.Data.Extensions;
-using Fireasy.Data.Syntax;
 using System.Diagnostics.CodeAnalysis;
-using Fireasy.Data.Provider;
-using System.Threading.Tasks;
-using Fireasy.Common.Extensions;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fireasy.Data.Batcher
 {
@@ -146,7 +146,7 @@ namespace Fireasy.Data.Batcher
                     var count = collection.Count;
 
                     await BatchSplitDataAsync(collection, batchSize,
-                        (index, batch, item) => 
+                        (index, batch, item) =>
                             {
                                 if (mapping == null)
                                 {
@@ -155,7 +155,7 @@ namespace Fireasy.Data.Batcher
 
                                 valueSeg.Add(string.Format("({0})", valueFunc(mapping, command, batch, item)));
                             },
-                        async (index, batch, surplus, lastBatch) => 
+                        async (index, batch, surplus, lastBatch) =>
                             {
                                 var sql = string.Format("INSERT INTO {0}({1}) VALUES {2}",
                                     DbUtility.FormatByQuote(syntax, tableName),

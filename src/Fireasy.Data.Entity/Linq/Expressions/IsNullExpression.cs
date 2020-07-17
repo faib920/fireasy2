@@ -23,7 +23,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取要判断的表达式。
         /// </summary>
-        public Expression Expression { get; private set; }
+        public Expression Expression { get; }
 
         /// <summary>
         /// 更新 <see cref="IsNullExpression"/> 对象。

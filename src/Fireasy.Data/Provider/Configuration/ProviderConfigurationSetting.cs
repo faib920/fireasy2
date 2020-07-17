@@ -6,11 +6,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.Configuration;
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Fireasy.Common.Configuration;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Data.Provider.Configuration
 {

@@ -16,10 +16,10 @@ namespace Fireasy.Data.Schema.Linq
 {
     internal sealed class SchemaQueryTranslator : Common.Linq.Expressions.ExpressionVisitor
     {
-        private Type metadataType;
-        private string memberName;
-        private List<MemberInfo> mbrRestrs = null;
-        private readonly RestrictionDictionary dicRestr = new RestrictionDictionary();
+        private Type _metadataType;
+        private string _memberName;
+        private List<MemberInfo> _members = null;
+        private readonly RestrictionDictionary _restrDict = new RestrictionDictionary();
 
         /// <summary>
         /// 对表达式进行解析，并返回限制值字典。
@@ -34,17 +34,17 @@ namespace Fireasy.Data.Schema.Linq
                 return RestrictionDictionary.Empty;
             }
 
-            var translator = new SchemaQueryTranslator { metadataType = typeof(T) };
+            var translator = new SchemaQueryTranslator { _metadataType = typeof(T) };
 
             if (!dicRestrMbrs.TryGetValue(typeof(T), out List<MemberInfo> properties))
             {
                 throw new SchemaQueryTranslateException(typeof(T));
             }
 
-            translator.mbrRestrs = properties;
+            translator._members = properties;
             expression = PartialEvaluator.Eval(expression);
             translator.Visit(expression);
-            return translator.dicRestr;
+            return translator._restrDict;
         }
 
         /// <summary>
@@ -70,14 +70,14 @@ namespace Fireasy.Data.Schema.Linq
         /// <returns></returns>
         protected override Expression VisitBinary(BinaryExpression binaryExp)
         {
-            memberName = string.Empty;
+            _memberName = string.Empty;
 
-            if (binaryExp.Right is MemberExpression rmbr && rmbr.Member.DeclaringType == metadataType)
+            if (binaryExp.Right is MemberExpression rmbr && rmbr.Member.DeclaringType == _metadataType)
             {
                 Visit(binaryExp.Right);
                 Visit(binaryExp.Left);
             }
-            else if (binaryExp.Left is MemberExpression lmbr && lmbr.Member.DeclaringType == metadataType)
+            else if (binaryExp.Left is MemberExpression lmbr && lmbr.Member.DeclaringType == _metadataType)
             {
                 Visit(binaryExp.Left);
                 Visit(binaryExp.Right);
@@ -94,14 +94,14 @@ namespace Fireasy.Data.Schema.Linq
         protected override Expression VisitMember(MemberExpression memberExp)
         {
             //如果属性是架构元数据类的成员
-            if (memberExp.Member.DeclaringType == metadataType)
+            if (memberExp.Member.DeclaringType == _metadataType)
             {
-                if (!mbrRestrs.Contains(memberExp.Member))
+                if (!_members.Contains(memberExp.Member))
                 {
-                    throw new SchemaQueryTranslateException(memberExp.Member, mbrRestrs);
+                    throw new SchemaQueryTranslateException(memberExp.Member, _members);
                 }
 
-                memberName = memberExp.Member.Name;
+                _memberName = memberExp.Member.Name;
                 return memberExp;
             }
 
@@ -121,9 +121,9 @@ namespace Fireasy.Data.Schema.Linq
 
         protected override Expression VisitConstant(ConstantExpression constExp)
         {
-            if (!string.IsNullOrEmpty(memberName))
+            if (!string.IsNullOrEmpty(_memberName))
             {
-                dicRestr[memberName] = constExp.Value;
+                _restrDict[_memberName] = constExp.Value;
             }
 
             return constExp;

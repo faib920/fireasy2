@@ -21,7 +21,7 @@ namespace Fireasy.Common.Caching
         /// <summary>
         /// 记录文件最后修改的时间。
         /// </summary>
-        private readonly DateTime lastModifiedTime;
+        private readonly DateTime _lastModifiedTime;
 
         /// <summary>
         /// 初始化 <see cref="FileDependency"/> 类的新实例。
@@ -35,7 +35,7 @@ namespace Fireasy.Common.Caching
                 throw new ArgumentException(FilePath, nameof(filePath));
             }
 
-            lastModifiedTime = File.GetLastWriteTime(FilePath);
+            _lastModifiedTime = File.GetLastWriteTime(FilePath);
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace Fireasy.Common.Caching
             }
 
             var currentModifiedTime = File.GetLastWriteTime(FilePath);
-            return DateTime.Compare(lastModifiedTime, currentModifiedTime) != 0;
+            return DateTime.Compare(_lastModifiedTime, currentModifiedTime) != 0;
         }
 
         /// <summary>

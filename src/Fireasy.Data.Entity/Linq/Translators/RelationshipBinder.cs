@@ -13,17 +13,18 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class RelationshipBinder : DbExpressionVisitor
     {
-        private Expression currentFrom;
+        private TranslateContext _transContext;
+        private Expression _currentFrom;
 
-        public static Expression Bind(Expression expression)
+        public static Expression Bind(TranslateContext transContext, Expression expression)
         {
-            return new RelationshipBinder().Visit(expression);
+            return new RelationshipBinder { _transContext = transContext }.Visit(expression);
         }
 
         protected override Expression VisitSelect(SelectExpression select)
         {
-            var saveCurrentFrom = currentFrom;
-            currentFrom = VisitSource(select.From);
+            var saveCurrentFrom = _currentFrom;
+            _currentFrom = VisitSource(select.From);
             try
             {
                 var where = Visit(select.Where);
@@ -33,7 +34,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 var take = Visit(select.Take);
                 var columns = VisitColumnDeclarations(select.Columns);
 
-                if (currentFrom != select.From
+                if (_currentFrom != select.From
                     || where != select.Where
                     || orderBy != select.OrderBy
                     || groupBy != select.GroupBy
@@ -42,14 +43,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     || columns != select.Columns
                     )
                 {
-                    return new SelectExpression(select.Alias, columns, currentFrom, where, orderBy, groupBy, select.IsDistinct, skip, take, select.Segment, select.Having, select.IsReverse);
+                    return new SelectExpression(select.Alias, columns, _currentFrom, where, orderBy, groupBy, select.IsDistinct, skip, take, select.Segment, select.Having, select.IsReverse);
                 }
 
                 return select;
             }
             finally
             {
-                currentFrom = saveCurrentFrom;
+                _currentFrom = saveCurrentFrom;
             }
         }
 
@@ -64,13 +65,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
             if ((property = PropertyUnity.GetProperty(m.Expression.Type, m.Member.Name)) != null &&
                 property is RelationProperty)
             {
-                var projection = (ProjectionExpression)Visit(QueryUtility.GetMemberExpression(source, property));
-                if (currentFrom != null && m.Member.GetMemberType().GetEnumerableType() == null)
+                var projection = (ProjectionExpression)Visit(QueryUtility.GetMemberExpression(_transContext, source, property));
+                if (_currentFrom != null && m.Member.GetMemberType().GetEnumerableType() == null)
                 {
                     // convert singleton associations directly to OUTER APPLY
                     projection = projection.AddOuterJoinTest();
-                    var newFrom = new JoinExpression(JoinType.OuterApply, currentFrom, projection.Select, null);
-                    currentFrom = newFrom;
+                    var newFrom = new JoinExpression(JoinType.OuterApply, _currentFrom, projection.Select, null);
+                    _currentFrom = newFrom;
                     return projection.Projector;
                 }
 

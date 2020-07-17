@@ -5,12 +5,12 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
-using System.Data;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Extensions;
 using Fireasy.Data.Provider;
 using Fireasy.Data.Syntax;
+using System;
+using System.Data;
 
 namespace Fireasy.Data.Identity
 {

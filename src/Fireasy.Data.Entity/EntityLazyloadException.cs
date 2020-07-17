@@ -31,11 +31,11 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 获取当前的实体对象。
         /// </summary>
-        public IEntity Entity { get; private set; }
+        public IEntity Entity { get; }
 
         /// <summary>
         /// 获取当前加载的属性。
         /// </summary>
-        public IProperty Property { get; private set; }
+        public IProperty Property { get; }
     }
 }

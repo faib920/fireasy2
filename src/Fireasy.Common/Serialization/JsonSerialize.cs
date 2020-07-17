@@ -6,32 +6,32 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.ComponentModel;
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections;
-using System.Data;
-using System.Linq;
-using Fireasy.Common.Extensions;
-using System.Dynamic;
-using Fireasy.Common.ComponentModel;
 using System.Collections.Generic;
+using System.Data;
+using System.Dynamic;
+using System.Linq;
 using System.Text;
 
 namespace Fireasy.Common.Serialization
 {
     internal sealed class JsonSerialize : DisposeableBase
     {
-        private readonly JsonSerializeOption option;
-        private readonly JsonSerializer serializer;
-        private JsonWriter jsonWriter;
-        private readonly SerializeContext context;
-        private readonly TypeConverterCache<JsonConverter> cacheConverter = new TypeConverterCache<JsonConverter>();
+        private readonly JsonSerializeOption _option;
+        private readonly JsonSerializer _serializer;
+        private readonly JsonWriter _jsonWriter;
+        private readonly SerializeContext _context;
+        private readonly TypeConverterCache<JsonConverter> _converters = new TypeConverterCache<JsonConverter>();
 
         internal JsonSerialize(JsonSerializer serializer, JsonWriter writer, JsonSerializeOption option)
         {
-            this.serializer = serializer;
-            jsonWriter = writer;
-            this.option = option;
-            context = new SerializeContext { Option = option };
+            _serializer = serializer;
+            _jsonWriter = writer;
+            _option = option;
+            _context = new SerializeContext { Option = option };
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace Fireasy.Common.Serialization
 
             if ((value == null) || DBNull.Value.Equals(value))
             {
-                jsonWriter.WriteNull();
+                _jsonWriter.WriteNull();
                 return;
             }
 
@@ -119,8 +119,8 @@ namespace Fireasy.Common.Serialization
             var ser = value.As<ITextSerializable>();
             if (ser != null)
             {
-                var result = ser.Serialize(serializer);
-                jsonWriter.WriteValue(result);
+                var result = ser.Serialize(_serializer);
+                _jsonWriter.WriteValue(result);
                 return true;
             }
 
@@ -129,14 +129,14 @@ namespace Fireasy.Common.Serialization
 
         private bool WithConverter(Type type, object value)
         {
-            var converter = cacheConverter.GetWritableConverter(type, option);
+            var converter = _converters.GetWritableConverter(type, _option);
 
             if (converter == null || !converter.CanWrite)
             {
                 return false;
             }
 
-            converter.WriteJson(serializer, jsonWriter, value);
+            converter.WriteJson(_serializer, _jsonWriter, value);
 
             return true;
         }
@@ -144,39 +144,39 @@ namespace Fireasy.Common.Serialization
         private void SerializeDataSet(DataSet set)
         {
             var flag = new AssertFlag();
-            jsonWriter.WriteStartObject();
+            _jsonWriter.WriteStartObject();
             var index = 0;
             foreach (DataTable table in set.Tables)
             {
                 if (!flag.AssertTrue())
                 {
-                    jsonWriter.WriteComma();
+                    _jsonWriter.WriteComma();
                 }
 
                 var name = string.IsNullOrEmpty(table.TableName) ? "Table" + (index++) : table.TableName;
-                jsonWriter.WriteKey(SerializeName(name));
+                _jsonWriter.WriteKey(SerializeName(name));
                 SerializeDataTable(table);
             }
 
-            jsonWriter.WriteEndObject();
+            _jsonWriter.WriteEndObject();
         }
 
         private void SerializeDataTable(DataTable table)
         {
             var flag = new AssertFlag();
-            jsonWriter.WriteStartArray();
+            _jsonWriter.WriteStartArray();
             var columns = GetDataColumns(table).ToList();
             foreach (DataRow row in table.Rows)
             {
                 if (!flag.AssertTrue())
                 {
-                    jsonWriter.WriteComma();
+                    _jsonWriter.WriteComma();
                 }
 
                 SerializeDataRow(row, columns);
             }
 
-            jsonWriter.WriteEndArray();
+            _jsonWriter.WriteEndArray();
         }
 
         private void SerializeDataRow(DataRow row, List<DataColumn> columns)
@@ -187,88 +187,87 @@ namespace Fireasy.Common.Serialization
             }
 
             var flag = new AssertFlag();
-            jsonWriter.WriteStartObject();
+            _jsonWriter.WriteStartObject();
             foreach (var column in columns)
             {
                 if (!flag.AssertTrue())
                 {
-                    jsonWriter.WriteComma();
+                    _jsonWriter.WriteComma();
                 }
 
-                jsonWriter.WriteKey(SerializeName(column.ColumnName));
+                _jsonWriter.WriteKey(SerializeName(column.ColumnName));
                 SerializeValue(row[column]);
             }
 
-            jsonWriter.WriteEndObject();
+            _jsonWriter.WriteEndObject();
         }
 
         private void SerializeEnumerable(IEnumerable enumerable)
         {
             var flag = new AssertFlag();
-            jsonWriter.WriteStartArray();
+            _jsonWriter.WriteStartArray();
 
             foreach (var current in enumerable)
             {
                 if (!flag.AssertTrue())
                 {
-                    jsonWriter.WriteComma();
+                    _jsonWriter.WriteComma();
                 }
 
                 Serialize(current);
             }
 
-            jsonWriter.WriteEndArray();
+            _jsonWriter.WriteEndArray();
         }
 
         private void SerializeDictionary(IDictionary dictionary)
         {
             var flag = new AssertFlag();
-            jsonWriter.WriteStartObject();
+            _jsonWriter.WriteStartObject();
             foreach (DictionaryEntry entry in dictionary)
             {
                 if (!flag.AssertTrue())
                 {
-                    jsonWriter.WriteComma();
+                    _jsonWriter.WriteComma();
                 }
 
-                context.SerializeInfo = new PropertySerialzeInfo(ObjectType.Dictionary, typeof(object), entry.Key.ToString());
+                _context.SerializeInfo = new PropertySerialzeInfo(ObjectType.Dictionary, typeof(object), entry.Key.ToString());
 
                 SerializeKeyValue(entry.Key, entry.Value);
 
-                context.SerializeInfo = null;
-
+                _context.SerializeInfo = null;
             }
 
-            jsonWriter.WriteEndObject();
+            _jsonWriter.WriteEndObject();
         }
 
         private void SerializeDynamicObject(IDictionary<string, object> dynamicObject)
         {
             var flag = new AssertFlag();
 
-            jsonWriter.WriteStartObject();
+            _jsonWriter.WriteStartObject();
             foreach (var name in dynamicObject.Keys)
             {
                 dynamicObject.TryGetValue(name, out object value);
-                if (option.NullValueHandling == NullValueHandling.Ignore && value == null)
+                if (_option.NullValueHandling == NullValueHandling.Ignore && value == null)
                 {
                     continue;
                 }
 
                 if (!flag.AssertTrue())
                 {
-                    jsonWriter.WriteComma();
+                    _jsonWriter.WriteComma();
                 }
 
-                context.SerializeInfo = new PropertySerialzeInfo(ObjectType.DynamicObject, typeof(object), name);
+                _context.SerializeInfo = new PropertySerialzeInfo(ObjectType.DynamicObject, typeof(object), name);
 
-                jsonWriter.WriteKey(SerializeName(name));
+                _jsonWriter.WriteKey(SerializeName(name));
                 Serialize(value);
 
-                context.SerializeInfo = null;
+                _context.SerializeInfo = null;
             }
 
-            jsonWriter.WriteEndObject();
+            _jsonWriter.WriteEndObject();
         }
 
         private void SerializeObject(object obj)
@@ -276,57 +275,57 @@ namespace Fireasy.Common.Serialization
             var lazyMgr = obj.As<ILazyManager>();
             var flag = new AssertFlag();
             var type = obj.GetType();
-            jsonWriter.WriteStartObject();
+            _jsonWriter.WriteStartObject();
 
-            foreach (var acc in context.GetProperties(type, () => option.ContractResolver.GetProperties(type)))
+            foreach (var metadata in _context.GetProperties(type, () => _option.ContractResolver.GetProperties(type)))
             {
-                if (acc.Filter(acc.PropertyInfo, lazyMgr))
+                if (metadata.Filter(metadata.PropertyInfo, lazyMgr))
                 {
                     continue;
                 }
 
-                var value = acc.Getter.Invoke(obj);
-                if (option.NullValueHandling == NullValueHandling.Ignore && value == null)
+                var value = metadata.Getter.Invoke(obj);
+                if (_option.NullValueHandling == NullValueHandling.Ignore && value == null)
                 {
                     continue;
                 }
 
                 if (!flag.AssertTrue())
                 {
-                    jsonWriter.WriteComma();
+                    _jsonWriter.WriteComma();
                 }
 
-                jsonWriter.WriteKey(SerializeName(acc.PropertyName));
+                _jsonWriter.WriteKey(SerializeName(metadata.PropertyName));
 
-                context.SerializeInfo = new PropertySerialzeInfo(acc);
+                _context.SerializeInfo = new PropertySerialzeInfo(metadata);
 
                 if (value == null)
                 {
-                    jsonWriter.WriteNull();
+                    _jsonWriter.WriteNull();
                 }
                 else
                 {
                     //如果在属性上指定了 JsonConverter
-                    if (acc.Converter is JsonConverter converter)
+                    if (metadata.Converter is JsonConverter converter)
                     {
-                        converter.WriteJson(serializer, jsonWriter, value);
+                        converter.WriteJson(_serializer, _jsonWriter, value);
                     }
                     else
                     {
-                        var objType = acc.PropertyInfo.PropertyType == typeof(object) ? value.GetType() : acc.PropertyInfo.PropertyType;
+                        var objType = metadata.PropertyInfo.PropertyType == typeof(object) ? value.GetType() : metadata.PropertyInfo.PropertyType;
                         Serialize(value, objType);
                     }
                 }
 
-                context.SerializeInfo = null;
+                _context.SerializeInfo = null;
             }
 
-            jsonWriter.WriteEndObject();
+            _jsonWriter.WriteEndObject();
         }
 
         private void SerializeBytes(byte[] bytes)
         {
-            jsonWriter.WriteString(Convert.ToBase64String(bytes, 0, bytes.Length));
+            _jsonWriter.WriteString(Convert.ToBase64String(bytes, 0, bytes.Length));
         }
 
         private void SerializeValue(object value)
@@ -339,19 +338,19 @@ namespace Fireasy.Common.Serialization
 
             if (type.IsEnum)
             {
-                jsonWriter.WriteValue(((Enum)value).ToString(context.SerializeInfo?.Formatter ?? "D"));
+                _jsonWriter.WriteValue(((Enum)value).ToString(_context.SerializeInfo?.Formatter ?? "D"));
                 return;
             }
             else if (type == typeof(TimeSpan))
             {
-                jsonWriter.WriteString(((TimeSpan)value).ToString());
+                _jsonWriter.WriteString(((TimeSpan)value).ToString());
                 return;
             }
 
             switch (Type.GetTypeCode(type))
             {
                 case TypeCode.Boolean:
-                    jsonWriter.WriteValue((bool)value ? "true" : "false");
+                    _jsonWriter.WriteValue((bool)value ? "true" : "false");
                     break;
                 case TypeCode.SByte:
                 case TypeCode.Byte:
@@ -374,24 +373,24 @@ namespace Fireasy.Common.Serialization
                     SerializeString(value);
                     break;
                 default:
-                    context.TrySerialize(value, value => SerializeObject(value));
+                    _context.TrySerialize(value, value => SerializeObject(value));
                     break;
             }
         }
 
         private void SerializeDateTime(DateTime value)
         {
-            value = SerializerUtil.EnsureDateTime(value, option.DateTimeZoneHandling);
+            value = SerializerUtil.EnsureDateTime(value, _option.DateTimeZoneHandling);
 
-            if (option.DateFormatHandling == DateFormatHandling.Default)
+            if (_option.DateFormatHandling == DateFormatHandling.Default)
             {
-                jsonWriter.WriteValue(string.Concat(JsonTokens.StringDelimiter, (value.Year <= 1 ? string.Empty : value.ToString(context.SerializeInfo?.Formatter ?? "yyyy-MM-dd")), JsonTokens.StringDelimiter));
+                _jsonWriter.WriteValue(string.Concat(JsonTokens.StringDelimiter, (value.Year <= 1 ? string.Empty : value.ToString(_context.SerializeInfo?.Formatter ?? "yyyy-MM-dd")), JsonTokens.StringDelimiter));
             }
-            else if (option.DateFormatHandling == DateFormatHandling.IsoDateFormat)
+            else if (_option.DateFormatHandling == DateFormatHandling.IsoDateFormat)
             {
-                jsonWriter.WriteValue(string.Concat(JsonTokens.StringDelimiter, value.GetDateTimeFormats('s')[0].ToString(option.Culture), JsonTokens.StringDelimiter));
+                _jsonWriter.WriteValue(string.Concat(JsonTokens.StringDelimiter, value.GetDateTimeFormats('s')[0].ToString(_option.Culture), JsonTokens.StringDelimiter));
             }
-            else if (option.DateFormatHandling == DateFormatHandling.MicrosoftDateFormat)
+            else if (_option.DateFormatHandling == DateFormatHandling.MicrosoftDateFormat)
             {
                 var offset = TimeZoneInfo.Local.GetUtcOffset(value);
                 var time = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -420,36 +419,36 @@ namespace Fireasy.Common.Serialization
                 }
 
                 sb.Append(")\\/\"");
-                jsonWriter.WriteValue(sb);
+                _jsonWriter.WriteValue(sb);
             }
         }
 
         private void SerializeNumeric(object value)
         {
-            if (context.SerializeInfo == null || string.IsNullOrEmpty(context.SerializeInfo.Formatter))
+            if (_context.SerializeInfo == null || string.IsNullOrEmpty(_context.SerializeInfo.Formatter))
             {
-                jsonWriter.WriteValue(value);
+                _jsonWriter.WriteValue(value);
             }
             else
             {
-                jsonWriter.WriteValue(string.Concat(JsonTokens.StringDelimiter, value.As<IFormattable>().ToString(context.SerializeInfo.Formatter, option.Culture), JsonTokens.StringDelimiter));
+                _jsonWriter.WriteValue(string.Concat(JsonTokens.StringDelimiter, value.As<IFormattable>().ToString(_context.SerializeInfo.Formatter, _option.Culture), JsonTokens.StringDelimiter));
             }
         }
 
         private void SerializeString<T>(T value)
         {
             var str = value.ToString();
-            jsonWriter.WriteString(str);
+            _jsonWriter.WriteString(str);
         }
 
         private void SerializeKeyValue(object key, object value)
         {
-            if (option.NullValueHandling == NullValueHandling.Ignore && value == null)
+            if (_option.NullValueHandling == NullValueHandling.Ignore && value == null)
             {
                 return;
             }
 
-            jsonWriter.WriteKey(SerializeName(key.ToString()));
+            _jsonWriter.WriteKey(SerializeName(key.ToString()));
             Serialize(value);
         }
 
@@ -460,9 +459,9 @@ namespace Fireasy.Common.Serialization
                 return string.Empty;
             }
 
-            name = option.ContractResolver.ResolvePropertyName(name);
+            name = _option.ContractResolver.ResolvePropertyName(name);
 
-            if (option.KeyHandling == JsonKeyHandling.None)
+            if (_option.KeyHandling == JsonKeyHandling.None)
             {
                 return name;
             }
@@ -472,7 +471,7 @@ namespace Fireasy.Common.Serialization
 
         private void SerializeType(Type type)
         {
-            jsonWriter.WriteString(type.FullName + ", " + type.Assembly.FullName);
+            _jsonWriter.WriteString(type.FullName + ", " + type.Assembly.FullName);
         }
 
         /// <summary>
@@ -481,7 +480,7 @@ namespace Fireasy.Common.Serialization
         /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
         protected override bool Dispose(bool disposing)
         {
-            context.Dispose();
+            _context.Dispose();
 
             return base.Dispose(disposing);
         }
@@ -490,7 +489,7 @@ namespace Fireasy.Common.Serialization
         {
             foreach (DataColumn column in table.Columns)
             {
-                if (!SerializerUtil.IsNoSerializable(option, column.ColumnName))
+                if (!SerializerUtil.IsNoSerializable(_option, column.ColumnName))
                 {
                     yield return column;
                 }

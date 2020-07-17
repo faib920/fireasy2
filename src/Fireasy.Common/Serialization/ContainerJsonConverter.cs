@@ -16,7 +16,7 @@ namespace Fireasy.Common.Serialization
     /// </summary>
     public class ContainerJsonConverter : JsonConverter
     {
-        private readonly Container container;
+        private readonly Container _container;
 
         /// <summary>
         /// 初始化 <see cref="ContainerJsonConverter"/> 类的新实例。
@@ -24,7 +24,7 @@ namespace Fireasy.Common.Serialization
         /// <param name="container"></param>
         public ContainerJsonConverter(Container container)
         {
-            this.container = container;
+            _container = container;
         }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace Fireasy.Common.Serialization
         /// <returns>可以转换则为 true。</returns>
         public override bool CanConvert(Type type)
         {
-            return container.IsRegistered(type);
+            return _container.IsRegistered(type);
         }
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace Fireasy.Common.Serialization
         /// <returns></returns>
         public override object ReadJson(JsonSerializer serializer, JsonReader reader, Type dataType)
         {
-            var registration = container.GetRegistrations(dataType).FirstOrDefault();
+            var registration = _container.GetRegistrations(dataType).FirstOrDefault();
             if (registration == null)
             {
                 return null;

@@ -28,8 +28,8 @@ namespace Fireasy.Common.Configuration
     public static class ConfigurationUnity
     {
         private const string CUSTOM_CONFIG_NAME = "my-config-file";
-        private static readonly SafetyDictionary<string, IConfigurationSection> cfgCache = new SafetyDictionary<string, IConfigurationSection>();
-        private static readonly SafetyDictionary<string, object> objCache = new SafetyDictionary<string, object>();
+        private static readonly SafetyDictionary<string, IConfigurationSection> _cfgCache = new SafetyDictionary<string, IConfigurationSection>();
+        private static readonly SafetyDictionary<string, object> _objCache = new SafetyDictionary<string, object>();
 
         /// <summary>
         /// 获取配置节实例。
@@ -45,7 +45,7 @@ namespace Fireasy.Common.Configuration
             }
 
 #if NETSTANDARD
-            if (cfgCache.TryGetValue(attribute.Name, out IConfigurationSection value))
+            if (_cfgCache.TryGetValue(attribute.Name, out IConfigurationSection value))
             {
                 return (T)value;
             }
@@ -84,7 +84,7 @@ namespace Fireasy.Common.Configuration
                 return default;
             }
 
-            return (T)cfgCache.GetOrAdd(attribute.Name, key =>
+            return (T)_cfgCache.GetOrAdd(attribute.Name, key =>
                 {
                     var section = new T();
                     section.Bind(configuration.GetSection(key.Replace("/", ":")));
@@ -110,11 +110,11 @@ namespace Fireasy.Common.Configuration
             var configFileName = ConfigurationManager.AppSettings[CUSTOM_CONFIG_NAME];
             if (string.IsNullOrEmpty(configFileName))
             {
-                return cfgCache.GetOrAdd(sectionName, key => ConfigurationManager.GetSection(key) as IConfigurationSection);
+                return _cfgCache.GetOrAdd(sectionName, key => ConfigurationManager.GetSection(key) as IConfigurationSection);
             }
 
             configFileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, configFileName);
-            return cfgCache.GetOrAdd(sectionName, () => GetCustomConfiguration(sectionName, configFileName));
+            return _cfgCache.GetOrAdd(sectionName, () => GetCustomConfiguration(sectionName, configFileName));
         }
 
         /// <summary>
@@ -212,9 +212,14 @@ namespace Fireasy.Common.Configuration
         /// <param name="cacheKey"></param>
         /// <param name="valueCreator"></param>
         /// <returns></returns>
-        public static TInstance Cached<TInstance>(string cacheKey, Func<object> valueCreator)
+        public static TInstance Cached<TInstance>(string cacheKey, IServiceProvider serviceProvider, Func<object> valueCreator)
         {
-            var obj = objCache.GetOrAdd(cacheKey, valueCreator);
+            if (serviceProvider != null)
+            {
+                return (TInstance)valueCreator();
+            }
+
+            var obj = _objCache.GetOrAdd(cacheKey, valueCreator);
             if (obj != null)
             {
                 return (TInstance)obj;

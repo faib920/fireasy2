@@ -15,11 +15,12 @@ namespace Fireasy.Data.Entity.Query
 {
     internal class QueryProviderCache
     {
-        private static readonly ConcurrentDictionary<Type, Func<IQueryProvider, Expression, IQueryable>> cache = new ConcurrentDictionary<Type, Func<IQueryProvider, Expression, IQueryable>>();
+        private static readonly ConcurrentDictionary<Type, Func<IQueryProvider, Expression, IQueryable>> _cache =
+            new ConcurrentDictionary<Type, Func<IQueryProvider, Expression, IQueryable>>();
 
         internal static IQueryable Create(Type type, IQueryProvider queryProvider, Expression expression)
         {
-            var func = cache.GetOrAdd(type, key =>
+            var func = _cache.GetOrAdd(type, key =>
                 {
                     var rcons = typeof(QuerySet<>).MakeGenericType(key).GetConstructors()[1];
                     var parExp1 = Expression.Parameter(typeof(IQueryProvider));

@@ -14,9 +14,9 @@ namespace Fireasy.Data.Entity.Linq.Expressions
             Expression = expression;
         }
 
-        public Expression Test { get; private set; }
+        public Expression Test { get; }
 
-        public Expression Expression { get; private set; }
+        public Expression Expression { get; }
 
         public OuterJoinedExpression Update(Expression test, Expression expression)
         {

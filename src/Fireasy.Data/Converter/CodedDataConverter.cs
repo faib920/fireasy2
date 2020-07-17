@@ -5,9 +5,9 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Data.Extensions;
 using System;
 using System.Data;
-using Fireasy.Data.Extensions;
 
 namespace Fireasy.Data.Converter
 {

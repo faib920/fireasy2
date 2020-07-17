@@ -75,11 +75,11 @@ namespace Fireasy.Common.Emit
 
         private class CustomAttributeConstructorVisitor : ExpressionVisitor
         {
-            private ConstructorInfo constructor;
-            private readonly List<object> constructorArgs = new List<object>();
-            private readonly List<PropertyInfo> properties = new List<PropertyInfo>();
-            private readonly List<object> values = new List<object>();
-            private VisitType flags = VisitType.None;
+            private ConstructorInfo _constructor;
+            private readonly List<object> _constructorArgs = new List<object>();
+            private readonly List<PropertyInfo> _properties = new List<PropertyInfo>();
+            private readonly List<object> _values = new List<object>();
+            private VisitType _flags = VisitType.None;
 
             private enum VisitType
             {
@@ -92,16 +92,16 @@ namespace Fireasy.Common.Emit
             {
                 var s = new CustomAttributeConstructorVisitor();
                 s.Visit(expression);
-                if (s.properties.Count != s.values.Count)
+                if (s._properties.Count != s._values.Count)
                 {
                     throw new Exception(SR.GetString(SRKind.PropertyValueLengthNotMatch));
                 }
 
                 return new CustomAttributeBuilder(
-                    s.constructor, 
-                    s.constructorArgs.ToArray(), 
-                    s.properties.ToArray(), 
-                    s.values.ToArray());
+                    s._constructor,
+                    s._constructorArgs.ToArray(),
+                    s._properties.ToArray(),
+                    s._values.ToArray());
             }
 
             protected override Expression VisitMember(MemberExpression memberExp)
@@ -122,9 +122,9 @@ namespace Fireasy.Common.Emit
 
             protected override Expression VisitMemberInit(MemberInitExpression memberInitExp)
             {
-                flags = VisitType.MemberInit;
+                _flags = VisitType.MemberInit;
                 var count = memberInitExp.Bindings.Count;
-                for (var i = 0; i < count; i++ )
+                for (var i = 0; i < count; i++)
                 {
                     var pro = memberInitExp.Bindings[i].Member as PropertyInfo;
                     if (pro == null)
@@ -132,12 +132,12 @@ namespace Fireasy.Common.Emit
                         continue;
                     }
 
-                    properties.Add(pro);
+                    _properties.Add(pro);
 
                     switch (memberInitExp.Bindings[i].BindingType)
                     {
                         case MemberBindingType.Assignment:
-                            if (memberInitExp.Bindings[i] is MemberAssignment assign && 
+                            if (memberInitExp.Bindings[i] is MemberAssignment assign &&
                                 CheckArgumentExpression(assign.Expression))
                             {
                                 Visit(assign.Expression);
@@ -153,8 +153,8 @@ namespace Fireasy.Common.Emit
 
             protected override Expression VisitNew(NewExpression newExp)
             {
-                flags = VisitType.ConstructorArgument;
-                constructor = newExp.Constructor;
+                _flags = VisitType.ConstructorArgument;
+                _constructor = newExp.Constructor;
                 foreach (var arg in newExp.Arguments)
                 {
                     if (CheckArgumentExpression(arg))
@@ -168,13 +168,13 @@ namespace Fireasy.Common.Emit
 
             protected override Expression VisitConstant(ConstantExpression constExp)
             {
-                if (flags == VisitType.MemberInit)
+                if (_flags == VisitType.MemberInit)
                 {
-                    values.Add(constExp.Value);
+                    _values.Add(constExp.Value);
                 }
-                else if (flags == VisitType.ConstructorArgument)
+                else if (_flags == VisitType.ConstructorArgument)
                 {
-                    constructorArgs.Add(constExp.Value);
+                    _constructorArgs.Add(constExp.Value);
                 }
 
                 return constExp;
@@ -187,7 +187,7 @@ namespace Fireasy.Common.Emit
             /// <returns>能够被解析，则为 true。</returns>
             private bool CheckArgumentExpression(Expression expression)
             {
-                if (expression.NodeType == ExpressionType.Constant || 
+                if (expression.NodeType == ExpressionType.Constant ||
                     expression.NodeType == ExpressionType.MemberAccess)
                 {
                     return true;

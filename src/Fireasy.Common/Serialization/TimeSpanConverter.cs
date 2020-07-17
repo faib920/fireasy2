@@ -22,8 +22,7 @@ namespace Fireasy.Common.Serialization
                 return null;
             }
 
-            var l = 0L;
-            if (long.TryParse(text, out l))
+            if (long.TryParse(text, out long l))
             {
                 return new TimeSpan(l);
             }

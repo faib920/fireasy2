@@ -12,7 +12,7 @@ namespace Fireasy.Data.Entity
     /// <summary>
     /// 一个标识实体如何与数据表进行映射的特性。无法继承此类。
     /// </summary>
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, AllowMultiple=false)]
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, AllowMultiple = false)]
     public sealed class EntityMappingAttribute : Attribute
     {
         /// <summary>

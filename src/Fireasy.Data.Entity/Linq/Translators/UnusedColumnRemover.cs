@@ -1,11 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Expressions;
-using System.Collections.ObjectModel;
+using System.Collections.Generic;
+using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
@@ -14,8 +12,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class UnusedColumnRemover : DbExpressionVisitor
     {
-        private readonly Dictionary<TableAlias, HashSet<string>> allColumnsUsed = new Dictionary<TableAlias,HashSet<string>>();
-        private bool retainAllColumns;
+        private readonly Dictionary<TableAlias, HashSet<string>> _allColumnsUsed = new Dictionary<TableAlias, HashSet<string>>();
+        private bool _retainAllColumns;
 
         public static Expression Remove(Expression expression)
         {
@@ -24,10 +22,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private void MarkColumnAsUsed(TableAlias alias, string name)
         {
-            if (!allColumnsUsed.TryGetValue(alias, out HashSet<string> columns))
+            if (!_allColumnsUsed.TryGetValue(alias, out HashSet<string> columns))
             {
                 columns = new HashSet<string>();
-                allColumnsUsed.Add(alias, columns);
+                _allColumnsUsed.Add(alias, columns);
             }
 
             columns.Add(name);
@@ -35,7 +33,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private bool IsColumnUsed(TableAlias alias, string name)
         {
-            if (allColumnsUsed.TryGetValue(alias, out HashSet<string> columnsUsed))
+            if (_allColumnsUsed.TryGetValue(alias, out HashSet<string> columnsUsed))
             {
                 if (columnsUsed != null)
                 {
@@ -48,7 +46,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private void ClearColumnsUsed(TableAlias alias)
         {
-            allColumnsUsed[alias] = new HashSet<string>();
+            _allColumnsUsed[alias] = new HashSet<string>();
         }
 
         protected override Expression VisitColumn(ColumnExpression column)
@@ -75,8 +73,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
             // visit column projection first
             var columns = select.Columns;
 
-            var wasRetained = retainAllColumns;
-            retainAllColumns = false;
+            var wasRetained = _retainAllColumns;
+            _retainAllColumns = false;
 
             List<ColumnDeclaration> alternate = null;
             for (int i = 0, n = select.Columns.Count; i < n; i++)
@@ -129,7 +127,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             //构成新的查询表达式
             select = select.Update(from, where, orderbys, groupbys, skip, take, select.Segment, select.IsDistinct, columns, having, select.IsReverse);
 
-            retainAllColumns = wasRetained;
+            _retainAllColumns = wasRetained;
 
             return select;
         }
@@ -139,7 +137,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             // COUNT(*) forces all columns to be retained in subquery
             if (aggregate.AggregateType == AggregateType.Count && aggregate.Argument == null)
             {
-                retainAllColumns = true;
+                _retainAllColumns = true;
             }
 
             return base.VisitAggregate(aggregate);
@@ -150,7 +148,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             // visit mapping in reverse order
             var projector = Visit(projection.Projector);
             var select = (SelectExpression)Visit(projection.Select);
-            
+
             return projection.Update(select, projector, projection.Aggregator);
         }
 
@@ -173,7 +171,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 // first visit right side w/o looking at condition
                 var right = Visit(join.Right);
-                if (right is AliasedExpression ax && !allColumnsUsed.ContainsKey(ax.Alias))
+                if (right is AliasedExpression ax && !_allColumnsUsed.ContainsKey(ax.Alias))
                 {
                     // if nothing references the alias on the right, then the join is redundant
                     return Visit(join.Left);

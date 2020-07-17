@@ -41,14 +41,14 @@ namespace Fireasy.Data.Batcher
             table.EachColumn((c, i) =>
                 {
                     result.Add(new PropertyFieldMapping(c.ColumnName, c.ColumnName, c.DataType, c.DataType.GetDbType())
-                        {
-                            ValueFunc = o => ((DataRow)o)[c.ColumnName]
-                        });
+                    {
+                        ValueFunc = o => ((DataRow)o)[c.ColumnName]
+                    });
                 });
 
             return result;
         }
-        
+
         /// <summary>
         /// 获取 List 中属性名和 DbType 的映射。
         /// </summary>
@@ -71,9 +71,9 @@ namespace Fireasy.Data.Batcher
                 }
 
                 result.Add(new PropertyFieldMapping(pd.Name, pd.Name, pd.PropertyType, pd.PropertyType.GetDbType())
-                    {
-                        ValueFunc = o => pd.GetValue(o)
-                    });
+                {
+                    ValueFunc = o => pd.GetValue(o)
+                });
             }
 
             return result;
@@ -227,7 +227,7 @@ namespace Fireasy.Data.Batcher
         /// <returns></returns>
         private bool NeedPutParameters(DbType dbType, object value)
         {
-            switch(dbType)
+            switch (dbType)
             {
                 case DbType.Binary:
                 case DbType.Object:

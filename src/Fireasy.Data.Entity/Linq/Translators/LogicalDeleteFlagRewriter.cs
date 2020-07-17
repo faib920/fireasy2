@@ -6,10 +6,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using System.Linq.Expressions;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Linq.Expressions;
+using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
@@ -18,7 +17,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class LogicalDeleteFlagRewriter : DbExpressionVisitor
     {
-        private ColumnExpression fakeColumn;
+        private ColumnExpression _deleteColumn;
 
         public static Expression Rewrite(Expression expression)
         {
@@ -41,11 +40,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     base.Visit(column.Expression);
                 }
 
-                if (fakeColumn != null && fakeColumn.Alias.Equals(table.Alias))
+                if (_deleteColumn != null && _deleteColumn.Alias.Equals(table.Alias))
                 {
                     var where = select.Where;
 
-                    var condExp = fakeColumn.Equal(Expression.Constant(0.ToType(fakeColumn.Type)));
+                    var condExp = _deleteColumn.Equal(Expression.Constant(0.ToType(_deleteColumn.Type)));
                     return select.Update(select.From,
                         where != null ? Expression.And(where, condExp) : condExp,
                         select.OrderBy, select.GroupBy, select.Skip, select.Take,
@@ -70,9 +69,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
         protected override Expression VisitColumn(ColumnExpression column)
         {
             //记录下具有假删除标记的列表达式。
-            if (fakeColumn == null && column.MapInfo != null && column.MapInfo.IsDeletedKey)
+            if (_deleteColumn == null && column.MapInfo != null && column.MapInfo.IsDeletedKey)
             {
-                fakeColumn = column;
+                _deleteColumn = column;
             }
 
             return column;

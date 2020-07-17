@@ -6,10 +6,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Data.Provider;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using Fireasy.Data.Provider;
 
 namespace Fireasy.Data.Schema
 {

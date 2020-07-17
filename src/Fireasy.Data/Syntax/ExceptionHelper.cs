@@ -6,7 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Data;
-using Fireasy.Data.Syntax;
 
 namespace Fireasy.Data.Syntax
 {

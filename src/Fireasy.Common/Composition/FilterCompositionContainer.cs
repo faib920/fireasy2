@@ -17,7 +17,7 @@ namespace Fireasy.Common.Composition
     /// </summary>
     public class FilterCompositionContainer : CompositionContainer
     {
-        private readonly Func<IEnumerable<Export>, Export> filterFunc;
+        private readonly Func<IEnumerable<Export>, Export> _filterFunc;
 
         /// <summary>
         /// 初始化 <see cref="FilterCompositionContainer"/> 类的新实例。
@@ -28,7 +28,7 @@ namespace Fireasy.Common.Composition
         public FilterCompositionContainer(ComposablePartCatalog catalog, Func<IEnumerable<Export>, Export> filter, params ExportProvider[] providers)
             : base(catalog, providers)
         {
-            filterFunc = filter;
+            _filterFunc = filter;
         }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace Fireasy.Common.Composition
             var exports = base.GetExportsCore(definition, atomicComposition);
             if (exports != null)
             {
-                yield return filterFunc(exports);
+                yield return _filterFunc(exports);
             }
         }
     }

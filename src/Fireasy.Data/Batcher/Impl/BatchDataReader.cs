@@ -22,22 +22,22 @@ namespace Fireasy.Data.Batcher
     /// </summary>
     public class DataTableBatchReader : DbDataReader
     {
-        private readonly DataTable table;
-        private DataRow current;
-        private int index;
+        private readonly DataTable _table;
+        private DataRow _current;
+        private int _index;
 
         /// <summary>
         /// 初始化 <see cref="DataTableBatchReader"/> 类的新实例。
         /// </summary>
-        /// <param name="bulk"></param>
+        /// <param name="bulkCopy"></param>
         /// <param name="table"></param>
-        public DataTableBatchReader(SqlBulkCopy bulk, DataTable table)
+        public DataTableBatchReader(SqlBulkCopy bulkCopy, DataTable table)
         {
-            this.table = table;
+            _table = table;
 
-            for (var i = 0; i < table.Columns.Count; i++)
+            for (int i = 0, n = table.Columns.Count; i < n; i++)
             {
-                bulk.ColumnMappings.Add(i, table.Columns[i].ColumnName);
+                bulkCopy.ColumnMappings.Add(i, table.Columns[i].ColumnName);
             }
         }
 
@@ -51,9 +51,9 @@ namespace Fireasy.Data.Batcher
 
         public override int RecordsAffected => 0;
 
-        public override int FieldCount => table.Columns.Count;
+        public override int FieldCount => _table.Columns.Count;
 
-        public override bool HasRows => table.Rows.Count > 0;
+        public override bool HasRows => _table.Rows.Count > 0;
 
         public override void Close()
         {
@@ -111,7 +111,7 @@ namespace Fireasy.Data.Batcher
 
         public override Type GetFieldType(int i)
         {
-            return table.Columns[i].DataType;
+            return _table.Columns[i].DataType;
         }
 
         public override float GetFloat(int i)
@@ -161,7 +161,7 @@ namespace Fireasy.Data.Batcher
 
         public override object GetValue(int i)
         {
-            return current[i];
+            return _current[i];
         }
 
         public override int GetValues(object[] values)
@@ -171,7 +171,7 @@ namespace Fireasy.Data.Batcher
 
         public override bool IsDBNull(int i)
         {
-            return current[i] == DBNull.Value;
+            return _current[i] == DBNull.Value;
         }
 
         public override bool NextResult()
@@ -181,12 +181,12 @@ namespace Fireasy.Data.Batcher
 
         public override bool Read()
         {
-            if (index >= table.Rows.Count)
+            if (_index >= _table.Rows.Count)
             {
                 return false;
             }
 
-            current = table.Rows[index++];
+            _current = _table.Rows[_index++];
 
             return true;
         }
@@ -198,10 +198,10 @@ namespace Fireasy.Data.Batcher
     /// <typeparam name="T"></typeparam>
     public class EnumerableBatchReader<T> : DbDataReader
     {
-        private IEnumerator<T> enumerator;
-        private T current;
-        private bool hasRows;
-        private readonly List<Func<object, object>> values = new List<Func<object, object>>();
+        private IEnumerator<T> _enumerator;
+        private T _current;
+        private bool _hasRows;
+        private readonly List<Func<object, object>> _values = new List<Func<object, object>>();
 
         /// <summary>
         /// 初始化 <see cref="EnumerableBatchReader"/> 类的新实例。
@@ -211,7 +211,7 @@ namespace Fireasy.Data.Batcher
         public EnumerableBatchReader(SqlBulkCopy bulk, IEnumerable<T> enumerable)
         {
             InitAccessories(bulk, enumerable);
-            enumerator = enumerable.GetEnumerator();
+            _enumerator = enumerable.GetEnumerator();
         }
 
         public override object this[int i] => throw new NotSupportedException();
@@ -224,9 +224,9 @@ namespace Fireasy.Data.Batcher
 
         public override int RecordsAffected => 0;
 
-        public override int FieldCount => values.Count;
+        public override int FieldCount => _values.Count;
 
-        public override bool HasRows => hasRows;
+        public override bool HasRows => _hasRows;
 
         public override void Close()
         {
@@ -236,10 +236,10 @@ namespace Fireasy.Data.Batcher
         {
             if (disposing)
             {
-                if (enumerator != null)
+                if (_enumerator != null)
                 {
-                    enumerator.Dispose();
-                    enumerator = null;
+                    _enumerator.Dispose();
+                    _enumerator = null;
                 }
             }
         }
@@ -346,7 +346,7 @@ namespace Fireasy.Data.Batcher
 
         public override object GetValue(int i)
         {
-            return values[i](current);
+            return _values[i](_current);
         }
 
         public override int GetValues(object[] values)
@@ -366,9 +366,9 @@ namespace Fireasy.Data.Batcher
 
         public override bool Read()
         {
-            if (enumerator.MoveNext())
+            if (_enumerator.MoveNext())
             {
-                current = enumerator.Current;
+                _current = _enumerator.Current;
                 return true;
             }
 
@@ -387,14 +387,14 @@ namespace Fireasy.Data.Batcher
                 return;
             }
 
-            hasRows = true;
+            _hasRows = true;
 
             if (e.Current is IPropertyFieldMappingResolver resolver)
             {
                 foreach (var map in resolver.GetDbMapping())
                 {
-                    bulk.ColumnMappings.Add(values.Count, map.FieldName);
-                    values.Add(map.ValueFunc);
+                    bulk.ColumnMappings.Add(_values.Count, map.FieldName);
+                    _values.Add(map.ValueFunc);
 
                 }
             }
@@ -405,8 +405,8 @@ namespace Fireasy.Data.Batcher
                 {
                     if (property.PropertyType.IsDbTypeSupported())
                     {
-                        bulk.ColumnMappings.Add(values.Count, property.Name);
-                        values.Add(o => property.GetValue(o));
+                        bulk.ColumnMappings.Add(_values.Count, property.Name);
+                        _values.Add(o => property.GetValue(o));
                     }
                 }
             }

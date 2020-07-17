@@ -23,30 +23,30 @@ namespace Fireasy.Data.Entity.Query
 {
     public class DefaultQueryPolicy : IQueryPolicy
     {
-        private readonly HashSet<MemberInfo> included = new HashSet<MemberInfo>();
-        private readonly Dictionary<MemberInfo, List<LambdaExpression>> operations = new Dictionary<MemberInfo, List<LambdaExpression>>();
-        private IProvider provider;
+        private readonly HashSet<MemberInfo> _includedSet = new HashSet<MemberInfo>();
+        private readonly Dictionary<MemberInfo, List<LambdaExpression>> _operations = new Dictionary<MemberInfo, List<LambdaExpression>>();
+        private readonly IProvider _provider;
 
         public DefaultQueryPolicy(IProvider provider)
         {
-            this.provider = provider;
+            _provider = provider;
         }
 
         public bool IsIncluded(MemberInfo member)
         {
-            return included.Contains(member);
+            return _includedSet.Contains(member);
         }
 
-        public Expression ApplyPolicy(Expression expression, MemberInfo member)
+        public Expression ApplyPolicy(Expression expression, MemberInfo member, Func<Expression, Expression> builder)
         {
-            if (operations.TryGetValue(member, out List<LambdaExpression> ops))
+            if (_operations.TryGetValue(member, out List<LambdaExpression> ops))
             {
-                var syntax = provider.GetService<ISyntaxProvider>();
+                var syntax = _provider.GetService<ISyntaxProvider>();
                 var result = expression;
                 foreach (var fnOp in ops)
                 {
                     var pop = PartialEvaluator.Eval(fnOp);
-                    result = QueryBinder.Bind(Expression.Invoke(pop, result), syntax);
+                    result = builder(Expression.Invoke(pop, result));
                 }
 
                 var projection = (ProjectionExpression)result;
@@ -66,7 +66,7 @@ namespace Fireasy.Data.Entity.Query
         {
             foreach (var member in MemberFinder.Find(fnMember))
             {
-                included.Add(member);
+                _includedSet.Add(member);
             }
         }
 
@@ -99,10 +99,10 @@ namespace Fireasy.Data.Entity.Query
 
         private void AddOperation(MemberInfo member, LambdaExpression operation)
         {
-            if (!operations.TryGetValue(member, out List<LambdaExpression> memberOps))
+            if (!_operations.TryGetValue(member, out List<LambdaExpression> memberOps))
             {
                 memberOps = new List<LambdaExpression>();
-                operations.Add(member, memberOps);
+                _operations.Add(member, memberOps);
             }
 
             memberOps.Add(operation);
@@ -135,7 +135,7 @@ namespace Fireasy.Data.Entity.Query
 
             protected override Expression VisitMember(MemberExpression m)
             {
-                if (m.Expression == this.parameter)
+                if (m.Expression == parameter)
                 {
                     found = m;
                     return m;
@@ -150,7 +150,7 @@ namespace Fireasy.Data.Entity.Query
 
         private class MemberFinder : Common.Linq.Expressions.ExpressionVisitor
         {
-            private List<MemberInfo> members = new List<MemberInfo>();
+            private readonly List<MemberInfo> members = new List<MemberInfo>();
 
             public static IEnumerable<MemberInfo> Find(Expression expression)
             {

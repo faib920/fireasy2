@@ -5,13 +5,13 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common;
+using Fireasy.Data.Extensions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data;
-using Fireasy.Data.Extensions;
 using System.ComponentModel;
-using Fireasy.Common;
+using System.Data;
 
 namespace Fireasy.Data
 {
@@ -22,7 +22,7 @@ namespace Fireasy.Data
     public sealed class ParameterCollection : IList<Parameter>,
         ICloneable
     {
-        private readonly ArrayList arrayList;
+        private readonly List<Parameter> _arrayList;
 
         /// <summary>
         /// 使用对象数组实例化参数集合，该实例化方法产生的参数将以'p'及索引进行命名。
@@ -30,7 +30,7 @@ namespace Fireasy.Data
         /// <param name="parameters">参数值数组。</param>
         public ParameterCollection(params object[] parameters)
         {
-            arrayList = new ArrayList();
+            _arrayList = new List<Parameter>();
 
             if (parameters != null)
             {
@@ -47,7 +47,7 @@ namespace Fireasy.Data
         /// <param name="parameters">一个 <see cref="ParameterCollection"/> 对象。</param>
         public ParameterCollection(IEnumerable<Parameter> parameters)
         {
-            arrayList = new ArrayList();
+            _arrayList = new List<Parameter>();
 
             if (parameters != null)
             {
@@ -66,7 +66,8 @@ namespace Fireasy.Data
         public ParameterCollection(object paramters)
         {
             Guard.ArgumentNull(paramters, nameof(paramters));
-            arrayList = new ArrayList();
+
+            _arrayList = new List<Parameter>();
 
             foreach (PropertyDescriptor property in TypeDescriptor.GetProperties(paramters))
             {
@@ -82,7 +83,8 @@ namespace Fireasy.Data
         public ParameterCollection(IDictionary<string, object> dic)
         {
             Guard.ArgumentNull(dic, nameof(dic));
-            arrayList = new ArrayList();
+
+            _arrayList = new List<Parameter>();
 
             foreach (var kvp in dic)
             {
@@ -225,7 +227,7 @@ namespace Fireasy.Data
         /// </summary>
         public void Clear()
         {
-            arrayList.Clear();
+            _arrayList.Clear();
         }
 
         /// <summary>
@@ -235,7 +237,7 @@ namespace Fireasy.Data
         /// <returns>如果存在返回 true，否则返回 false。</returns>
         public bool Contains(Parameter parameter)
         {
-            return arrayList.Contains(parameter);
+            return _arrayList.Contains(parameter);
         }
 
         /// <summary>
@@ -252,7 +254,7 @@ namespace Fireasy.Data
         {
             if (IndexOf(item) != -1)
             {
-                arrayList.Remove(item);
+                _arrayList.Remove(item);
                 return true;
             }
 
@@ -264,7 +266,7 @@ namespace Fireasy.Data
         /// </summary>
         public int Count
         {
-            get { return arrayList.Count; }
+            get { return _arrayList.Count; }
         }
 
         bool ICollection<Parameter>.IsReadOnly
@@ -317,7 +319,7 @@ namespace Fireasy.Data
         /// <param name="parameter"></param>
         public void Add(Parameter parameter)
         {
-            arrayList.Add(parameter);
+            _arrayList.Add(parameter);
         }
 
         /// <summary>
@@ -475,7 +477,7 @@ namespace Fireasy.Data
             }
             #endregion
 
-            arrayList.Add(parameter);
+            _arrayList.Add(parameter);
             return parameter;
         }
 
@@ -519,7 +521,7 @@ namespace Fireasy.Data
         /// <param name="parameter">要移除的参数对象。</param>
         public void Remove(Parameter parameter)
         {
-            arrayList.Remove(parameter);
+            _arrayList.Remove(parameter);
         }
 
         /// <summary>
@@ -542,7 +544,7 @@ namespace Fireasy.Data
         /// <returns></returns>
         public int IndexOf(Parameter item)
         {
-            return arrayList.IndexOf(item);
+            return _arrayList.IndexOf(item);
         }
 
         /// <summary>
@@ -575,7 +577,7 @@ namespace Fireasy.Data
                 throw new IndexOutOfRangeException();
             }
 
-            arrayList.Insert(index, item);
+            _arrayList.Insert(index, item);
         }
 
         /// <summary>
@@ -589,7 +591,7 @@ namespace Fireasy.Data
                 throw new IndexOutOfRangeException();
             }
 
-            arrayList.RemoveAt(index);
+            _arrayList.RemoveAt(index);
         }
 
         /// <summary>
@@ -605,7 +607,7 @@ namespace Fireasy.Data
                     throw new IndexOutOfRangeException();
                 }
 
-                return arrayList[index] as Parameter;
+                return _arrayList[index] as Parameter;
             }
 
             set
@@ -615,7 +617,7 @@ namespace Fireasy.Data
                     throw new IndexOutOfRangeException();
                 }
 
-                arrayList[index] = value;
+                _arrayList[index] = value;
             }
         }
 
@@ -649,7 +651,7 @@ namespace Fireasy.Data
         /// <returns></returns>
         public IEnumerator<Parameter> GetEnumerator()
         {
-            var tor = arrayList.GetEnumerator();
+            var tor = _arrayList.GetEnumerator();
             while (tor.MoveNext())
             {
                 yield return (Parameter)tor.Current;

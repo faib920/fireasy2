@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 
 
+using Fireasy.Common.ComponentModel;
 using System;
 using System.Threading;
 
@@ -17,7 +18,7 @@ namespace Fireasy.Common.Caching
     /// </summary>
     internal class CacheOptimizer : DisposeableBase
     {
-        private readonly Timer timer;
+        private readonly Timer _timer;
 
         /// <summary>
         /// 获取当前最大的代。
@@ -31,7 +32,7 @@ namespace Fireasy.Common.Caching
         /// <param name="period">检查周期（以毫秒为单位）。</param>
         public CacheOptimizer(Action checkExpired, int period = 60000)
         {
-            timer = new Timer(state => checkExpired(), null, 3000, period);
+            _timer = new Timer(state => checkExpired(), null, 3000, period);
         }
 
         /// <summary>
@@ -66,7 +67,7 @@ namespace Fireasy.Common.Caching
 
         protected override bool Dispose(bool disposing)
         {
-            timer?.Dispose();
+            _timer?.Dispose();
 
             return base.Dispose(disposing);
         }

@@ -20,8 +20,8 @@ namespace Fireasy.Common.Logging
     /// </summary>
     public class DefaultLogger : ILogger
     {
-        protected static readonly string logFilePath;
-        private static readonly ISubscribeManager subscribeMgr = DefaultSubscribeManager.Instance;
+        protected static readonly string _logFilePath;
+        private static readonly ISubscribeManager _subscribeMgr = DefaultSubscribeManager.Instance;
 
         /// <summary>
         /// 获取 <see cref="DefaultLogger"/> 的静态实例。
@@ -33,8 +33,8 @@ namespace Fireasy.Common.Logging
         /// </summary>
         static DefaultLogger()
         {
-            logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log");
-            subscribeMgr.AddSubscriber<DefaultLoggerSubject>(s =>
+            _logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log");
+            _subscribeMgr.AddSubscriber<DefaultLoggerSubject>(s =>
                {
                    using var writer = new StreamWriter(s.FileName, true, Encoding.Default);
                    writer.WriteLine(s.Content);
@@ -171,9 +171,19 @@ namespace Fireasy.Common.Logging
             }
         }
 
+        /// <summary>
+        /// 创建一个泛型的日志管理器。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public ILogger<T> Create<T>() where T : class
+        {
+            return DefaultLogger<T>.Instance;
+        }
+
         protected virtual string CreateLogFileName(string logType)
         {
-            var path = Path.Combine(logFilePath, logType);
+            var path = Path.Combine(_logFilePath, logType);
             if (!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
@@ -193,7 +203,7 @@ namespace Fireasy.Common.Logging
             var content = GetLogContent(message, exception);
             var fileName = CreateLogFileName(logType);
 
-            subscribeMgr.Publish(new DefaultLoggerSubject { FileName = fileName, Content = content });
+            _subscribeMgr.Publish(new DefaultLoggerSubject { FileName = fileName, Content = content });
         }
 
         /// <summary>
@@ -207,7 +217,7 @@ namespace Fireasy.Common.Logging
             var content = GetLogContent(message, exception);
             var fileName = CreateLogFileName(logType);
 
-            await subscribeMgr.PublishAsync(new DefaultLoggerSubject { FileName = fileName, Content = content }, cancellationToken);
+            await _subscribeMgr.PublishAsync(new DefaultLoggerSubject { FileName = fileName, Content = content }, cancellationToken);
         }
 
         private string GetLogContent(object message, Exception exception)
@@ -278,5 +288,17 @@ namespace Fireasy.Common.Logging
 
             public string Content { get; set; }
         }
+    }
+
+    /// <summary>
+    /// 默认的日志管理器，将日志记录到文本文件中。
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class DefaultLogger<T> : DefaultLogger, ILogger<T> where T : class
+    {
+        /// <summary>
+        /// 获取 <see cref="DefaultLogger{T}"/> 的静态实例。
+        /// </summary>
+        public static readonly DefaultLogger<T> Instance = new DefaultLogger<T>();
     }
 }

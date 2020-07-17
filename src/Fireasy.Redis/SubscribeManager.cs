@@ -6,23 +6,24 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.ComponentModel;
-using Fireasy.Common.Subscribes.Configuration;
 using System.Collections.Generic;
 using CSRedis;
 #if NETSTANDARD
 using Fireasy.Common.Options;
 using Microsoft.Extensions.Options;
+using Fireasy.Common.Subscribes.Configuration;
+using System.Linq;
 #endif
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Subscribes;
 using System;
-using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
-using System.Diagnostics;
 using Fireasy.Common.Extensions;
 using Fireasy.Common;
-using System.Linq;
+using Fireasy.Common.Subscribes.Persistance;
+using Fireasy.Common.Ioc;
+using Fireasy.Common.Threading;
 
 namespace Fireasy.Redis
 {
@@ -32,21 +33,38 @@ namespace Fireasy.Redis
     [ConfigurationSetting(typeof(RedisConfigurationSetting))]
     public class SubscribeManager : RedisComponent, ISubscribeManager
     {
-        private readonly SafetyDictionary<string, List<CSRedisClient.SubscribeObject>> channels = new SafetyDictionary<string, List<CSRedisClient.SubscribeObject>>();
+        private readonly SafetyDictionary<string, List<CSRedisClient.SubscribeObject>> _channels = new SafetyDictionary<string, List<CSRedisClient.SubscribeObject>>();
+        private readonly ISubjectPersistance _persistance;
+        private readonly ISubscribeNotification _notification;
+        private PersistentTimer _timer;
 
         /// <summary>
         /// 初始化 <see cref="SubscribeManager"/> 类的新实例。
         /// </summary>
         public SubscribeManager()
+            : this(ContainerUnity.GetContainer())
         {
+        }
+
+        /// <summary>
+        /// 初始化 <see cref="SubscribeManager"/> 类的新实例。
+        /// </summary>
+        /// <param name="serviceProvider"></param>
+        public SubscribeManager(IServiceProvider serviceProvider)
+            : base(serviceProvider)
+        {
+            _persistance = serviceProvider.TryGetService<ISubjectPersistance>(() => LocalFilePersistance.Default);
+            _notification = serviceProvider.TryGetService<ISubscribeNotification>();
         }
 
 #if NETSTANDARD
         /// <summary>
         /// 初始化 <see cref="SubscribeManager"/> 类的新实例。
         /// </summary>
+        /// <param name="serviceProvider"></param>
         /// <param name="options"></param>
-        public SubscribeManager(IOptionsMonitor<RedisSubscribeOptions> options)
+        public SubscribeManager(IServiceProvider serviceProvider, IOptionsMonitor<RedisSubscribeOptions> options)
+            : this(serviceProvider)
         {
             RedisConfigurationSetting setting = null;
             var optValue = options.CurrentValue;
@@ -92,7 +110,8 @@ namespace Fireasy.Redis
                         SerializerType = optValue.SerializerType,
                         Ssl = optValue.Ssl,
                         Twemproxy = optValue.Twemproxy,
-                        RequeueDelayTime = optValue.RequeueDelayTime
+                        RetryDelayTime = optValue.RetryDelayTime,
+                        RetryTimes = optValue.RetryTimes
                     };
 
                     RedisHelper.ParseHosts(setting, optValue.Hosts);
@@ -117,7 +136,9 @@ namespace Fireasy.Redis
         {
             var client = GetConnection(null);
             var name = TopicHelper.GetTopicName(typeof(TSubject));
-            client.Publish(name, Serialize(subject));
+            var body = SerializeToBytes(subject);
+
+            Publish(client, name, body);
         }
 
         /// <summary>
@@ -129,7 +150,9 @@ namespace Fireasy.Redis
         public void Publish<TSubject>(string name, TSubject subject) where TSubject : class
         {
             var client = GetConnection(null);
-            client.Publish(name, Serialize(subject));
+            var body = SerializeToBytes(subject);
+
+            Publish(client, name, body);
         }
 
         /// <summary>
@@ -140,16 +163,12 @@ namespace Fireasy.Redis
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task PublishAsync<TSubject>(TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var client = GetConnection(null);
             var name = TopicHelper.GetTopicName(typeof(TSubject));
-            try
-            {
-                await client.PublishAsync(name, Serialize(subject));
-            }
-            catch (AggregateException exp)
-            {
-                Tracer.Error($"RedisMQ PublishAsync throw exception:\n{exp.Output()}");
-            }
+            var body = SerializeToBytes(subject);
+            await PublishAsync(client, name, body);
         }
 
         /// <summary>
@@ -160,40 +179,11 @@ namespace Fireasy.Redis
         /// <param name="cancellationToken">取消操作的通知。</param>
         public async Task PublishAsync<TSubject>(string name, TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var client = GetConnection(null);
-            try
-            {
-                await client.PublishAsync(name, Serialize(subject));
-            }
-            catch (AggregateException exp)
-            {
-                Tracer.Error($"RedisMQ PublishAsync throw exception:\n{exp.Output()}");
-            }
-
-        }
-
-        /// <summary>
-        /// 向指定的 Redis 通道发送数据。
-        /// </summary>
-        /// <param name="name">主题名称。</param>
-        /// <param name="data">发送的数据。</param>
-        public void Publish(string name, byte[] data)
-        {
-            var client = GetConnection();
-            client.Publish(name, Encoding.UTF8.GetString(data));
-        }
-
-        /// <summary>
-        /// 异步的，向 Redis 服务器发送消息主题。
-        /// </summary>
-        /// <param name="name">主题名称。</param>
-        /// <param name="data">发送的数据。</param>
-        /// <returns></returns>
-        /// <param name="cancellationToken">取消操作的通知。</param>
-        public async Task PublishAsync(string name, byte[] data, CancellationToken cancellationToken = default)
-        {
-            var client = GetConnection();
-            await client.PublishAsync(name, Encoding.UTF8.GetString(data));
+            var body = SerializeToBytes(subject);
+            await PublishAsync(client, name, body);
         }
 
         /// <summary>
@@ -229,32 +219,23 @@ namespace Fireasy.Redis
         public void AddSubscriber<TSubject>(string name, Action<TSubject> subscriber) where TSubject : class
         {
             var client = GetConnection(null);
-            channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
+            _channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((name, msg =>
                     {
-                        Tracer.Debug($"RedisSubscribeManager received the message of '{name}'.");
-
-                        TSubject subject = null;
+                        StoredSubject subject = null;
                         try
                         {
-                            subject = Deserialize<TSubject>(msg.Body);
-                            subscriber(subject);
+                            subject = Deserialize<StoredSubject>(msg.Body);
+                            subscriber(Deserialize<TSubject>(subject.Body));
                         }
                         catch (Exception exp)
                         {
-                            Tracer.Error($"Redis Consume the Topic of '{name}' throw exception:\n{exp.Output()}");
+                            Tracer.Error($"Throw exception when consume message of '{name}':\n{exp.Output()}");
 
-                            if (Setting.RequeueDelayTime != null && subject != null)
-                            {
-                                Task.Run(() =>
-                                    {
-                                        Thread.Sleep(Setting.RequeueDelayTime.Value);
-                                        Publish(name, subject);
-                                    });
-                            }
+                            RetryPublishData(subject, exp);
                         }
                     }
-                )));
+            )));
         }
 
 
@@ -267,32 +248,23 @@ namespace Fireasy.Redis
         public void AddAsyncSubscriber<TSubject>(string name, Func<TSubject, Task> subscriber) where TSubject : class
         {
             var client = GetConnection(null);
-            channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
+            _channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((name, msg =>
                     {
-                        Tracer.Debug($"RedisSubscribeManager received the message of '{name}'.");
-
-                        TSubject subject = null;
+                        StoredSubject subject = null;
                         try
                         {
-                            subject = Deserialize<TSubject>(msg.Body);
-                            subscriber(subject).AsSync();
+                            subject = Deserialize<StoredSubject>(msg.Body);
+                            subscriber(Deserialize<TSubject>(subject.Body)).AsSync();
                         }
                         catch (Exception exp)
                         {
-                            Tracer.Error($"Redis Consume the Topic of '{name}' throw exception:\n{exp.Output()}");
+                            Tracer.Error($"Throw exception when consume message of '{name}':\n{exp.Output()}");
 
-                            if (Setting.RequeueDelayTime != null && subject != null)
-                            {
-                                Task.Run(() =>
-                                    {
-                                        Thread.Sleep(Setting.RequeueDelayTime.Value);
-                                        Publish(name, subject);
-                                    });
-                            }
+                            RetryPublishData(subject, exp);
                         }
                     }
-                )));
+            )));
         }
 
         /// <summary>
@@ -304,67 +276,20 @@ namespace Fireasy.Redis
         {
             var client = GetConnection();
             var name = TopicHelper.GetTopicName(subjectType);
-            channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
+            _channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((name, msg =>
                     {
-                        Tracer.Debug($"RedisSubscribeManager received the message of '{name}'.");
-
-                        object subject = null;
+                        StoredSubject subject = null;
                         try
                         {
-                            subject = Deserialize(subjectType, msg.Body);
-                            if (subject != null)
-                            {
-                                subscriber.DynamicInvoke(subject);
-                            }
+                            subject = Deserialize<StoredSubject>(msg.Body);
+                            subscriber.DynamicInvoke(Deserialize(subjectType, subject.Body));
                         }
                         catch (Exception exp)
                         {
-                            Tracer.Error($"Redis Consume the Topic of '{name}' throw exception:\n{exp.Output()}");
-                            
-                            if (Setting.RequeueDelayTime != null)
-                            {
-                                Task.Run(() =>
-                                    {
-                                        Thread.Sleep(Setting.RequeueDelayTime.Value);
-                                        Publish(name, msg.Body);
-                                    });
-                            }
-                        }
-                    }
-                )));
-        }
+                            Tracer.Error($"Throw exception when consume message of '{name}':\n{exp.Output()}");
 
-        /// <summary>
-        /// 在 Redis 服务器中添加一个订阅方法。
-        /// </summary>
-        /// <param name="name">主题名称。</param>
-        /// <param name="subscriber">读取数据的方法。</param>
-        public void AddSubscriber(string name, Action<byte[]> subscriber)
-        {
-            var client = GetConnection();
-            channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
-                .Add(client.Subscribe((name, msg =>
-                    {
-                        Tracer.Debug($"RedisSubscribeManager received the message of '{name}'.");
-
-                        var bytes = Encoding.UTF8.GetBytes(msg.Body);
-                        try
-                        {
-                            subscriber.DynamicInvoke(bytes);
-                        }
-                        catch (Exception exp)
-                        {
-                            Tracer.Error($"Redis Consume the Topic of '{name}' throw exception:\n{exp.Output()}");
-                            
-                            if (Setting.RequeueDelayTime != null)
-                            {
-                                Task.Run(() =>
-                                    {
-                                        Thread.Sleep(Setting.RequeueDelayTime.Value);
-                                        Publish(name, bytes);
-                                    });
-                            }
+                            RetryPublishData(subject, exp);
                         }
                     }
             )));
@@ -396,21 +321,174 @@ namespace Fireasy.Redis
         public void RemoveSubscriber(string name)
         {
             var client = GetConnection();
-            if (channels.TryRemove(name, out List<CSRedisClient.SubscribeObject> subs) && subs != null)
+            if (_channels.TryRemove(name, out List<CSRedisClient.SubscribeObject> subs) && subs != null)
             {
                 subs.ForEach(s => s.Dispose());
             }
         }
 
+        protected override void OnInitialize()
+        {
+            StartPersistentTimer();
+            base.OnInitialize();
+        }
+
+        private void RetryPublishData(StoredSubject subject, Exception exception)
+        {
+            try
+            {
+                if (subject != null && Setting.RetryTimes > 0 && subject.AcceptRetries < Setting.RetryTimes)
+                {
+                    if (_notification != null)
+                    {
+                        var context = new SubscribeNotificationContext(subject.Name, subject.Body, exception);
+                        _notification.OnConsumeError(context);
+                        if (!context.CanRetry)
+                        {
+                            return;
+                        }
+                    }
+
+                    Task.Run(() =>
+                    {
+                        Thread.Sleep((int)Setting.RetryDelayTime.TotalMilliseconds);
+                        try
+                        {
+                            var client = GetConnection(null);
+                            subject.AcceptRetries++;
+                            PublishSubject(client, subject);
+                        }
+                        catch (Exception exp)
+                        {
+                            PersistSubject(subject, exp);
+                        }
+                    });
+                }
+            }
+            catch { }
+        }
+
+        private void Publish(CSRedisClient client, string name, byte[] data)
+        {
+            var pdata = new StoredSubject(name, data);
+
+            try
+            {
+                PublishSubject(client, pdata);
+            }
+            catch (Exception exp)
+            {
+                if (Setting.RetryTimes > 0)
+                {
+                    PersistSubject(pdata, exp);
+                }
+                else
+                {
+                    throw exp;
+                }
+            }
+        }
+
+        private async Task PublishAsync(CSRedisClient client, string name, byte[] data)
+        {
+            var pdata = new StoredSubject(name, data);
+
+            try
+            {
+                await PublishSubjectAsync(client, pdata);
+            }
+            catch (Exception exp)
+            {
+                if (Setting.RetryTimes > 0)
+                {
+                    PersistSubject(pdata, exp);
+                }
+                else
+                {
+                    throw exp;
+                }
+            }
+        }
+
+        private void PublishSubject(CSRedisClient client, StoredSubject subject)
+        {
+            client.Publish(subject.Name, Serialize(subject));
+        }
+
+        private async Task PublishSubjectAsync(CSRedisClient client, StoredSubject subject)
+        {
+            await client.PublishAsync(subject.Name, Serialize(subject));
+        }
+
+        private void PersistSubject(StoredSubject subject, Exception exception)
+        {
+            if (_persistance != null && subject.PublishRetries == 0)
+            {
+                if (_notification != null)
+                {
+                    var context = new SubscribeNotificationContext(subject.Name, subject.Body, exception);
+                    _notification.OnPublishError(context);
+                    if (!context.CanRetry)
+                    {
+                        return;
+                    }
+                }
+
+                if (_persistance.SaveSubject("redis", subject))
+                {
+                    Tracer.Debug($"{_persistance} was persisted of '{subject.Name}'.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 开启重新发送的定时器。
+        /// </summary>
+        private void StartPersistentTimer()
+        {
+            if (_persistance == null || Setting.RetryTimes == null || Setting.RetryTimes == 0)
+            {
+                return;
+            }
+
+            SingletonLocker.Lock(ref _timer, () =>
+            {
+                return new PersistentTimer(Setting.RetryDelayTime, () =>
+                {
+                    _persistance.ReadSubjects("redis", subject =>
+                    {
+                        //如果超出重试次数
+                        if (Setting.RetryTimes != null && subject.PublishRetries > Setting.RetryTimes)
+                        {
+                            return true;
+                        }
+
+                        try
+                        {
+                            Tracer.Debug($"Republish message of '{subject.Name}'.");
+                            var client = GetConnection(null);
+                            PublishSubject(client, subject);
+                            return true;
+                        }
+                        catch (Exception)
+                        {
+                            return false;
+                        }
+                    });
+                });
+            });
+        }
+
         protected override bool Dispose(bool disposing)
         {
-            foreach (var kvp in channels)
+            foreach (var kvp in _channels)
             {
                 kvp.Value.ForEach(s => s.Dispose());
                 kvp.Value.Clear();
             }
 
-            channels.Clear();
+            _channels.Clear();
+
             return base.Dispose(disposing);
         }
     }

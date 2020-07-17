@@ -21,7 +21,7 @@ namespace Fireasy.Common.Emit
     [SuppressMessage("Style", "IDE1006")]
     public sealed class EmitHelper
     {
-        private readonly MethodBuilder methodBuilder;
+        private readonly MethodBuilder _methodBuilder;
 
         /// <summary>
         /// 初始化 <see cref="EmitHelper"/> 类的新实例。
@@ -35,7 +35,7 @@ namespace Fireasy.Common.Emit
         /// </summary>
         /// <param name="generator">MSIL 指令器。</param>
         public EmitHelper(ILGenerator generator)
-            : this (generator, null)
+            : this(generator, null)
         {
         }
 
@@ -43,11 +43,11 @@ namespace Fireasy.Common.Emit
         /// 使用指令器和方法初始化 <see cref="EmitHelper"/> 类的新实例。
         /// </summary>
         /// <param name="generator">MSIL 指令器。</param>
-        /// <param name="method">编写指令的方法。</param>
-        public EmitHelper(ILGenerator generator, MethodBuilder method)
+        /// <param name="methodBuilder">编写指令的方法。</param>
+        public EmitHelper(ILGenerator generator, MethodBuilder methodBuilder)
         {
             ILGenerator = generator;
-            methodBuilder = method;
+            _methodBuilder = methodBuilder;
         }
 
         /// <summary>
@@ -74,7 +74,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper BeginCatchBlock(Type exceptionType)
         {
-            ILGenerator.BeginCatchBlock(exceptionType); 
+            ILGenerator.BeginCatchBlock(exceptionType);
             return this;
         }
 
@@ -84,7 +84,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper BeginExceptFilterBlock()
         {
-            ILGenerator.BeginExceptFilterBlock(); 
+            ILGenerator.BeginExceptFilterBlock();
             return this;
         }
 
@@ -103,7 +103,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper BeginFaultBlock()
         {
-            ILGenerator.BeginFaultBlock(); 
+            ILGenerator.BeginFaultBlock();
             return this;
         }
 
@@ -173,7 +173,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper EndScope()
         {
-            ILGenerator.EndScope(); 
+            ILGenerator.EndScope();
             return this;
         }
 
@@ -184,7 +184,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper MarkLabel(Label loc)
         {
-            ILGenerator.MarkLabel(loc); 
+            ILGenerator.MarkLabel(loc);
             return this;
         }
 
@@ -217,7 +217,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ThrowException(Type exceptionType)
         {
-            ILGenerator.ThrowException(exceptionType); 
+            ILGenerator.ThrowException(exceptionType);
             return this;
         }
 
@@ -228,13 +228,13 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper UsingNamespace(string namespaceName)
         {
-            ILGenerator.UsingNamespace(namespaceName); 
+            ILGenerator.UsingNamespace(namespaceName);
             return this;
         }
 
-#endregion
+        #endregion
 
-#region Emit Wrappers
+        #region Emit Wrappers
 
         /// <summary>
         /// 将两个值相加并将结果推送到计算堆栈上。
@@ -244,7 +244,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Add); 
+                ILGenerator.Emit(OpCodes.Add);
                 return this;
             }
         }
@@ -257,7 +257,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Add_Ovf); 
+                ILGenerator.Emit(OpCodes.Add_Ovf);
                 return this;
             }
         }
@@ -270,7 +270,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Add_Ovf_Un); 
+                ILGenerator.Emit(OpCodes.Add_Ovf_Un);
                 return this;
             }
         }
@@ -284,7 +284,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.And); 
+                ILGenerator.Emit(OpCodes.And);
                 return this;
             }
         }
@@ -297,7 +297,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Arglist); 
+                ILGenerator.Emit(OpCodes.Arglist);
                 return this;
             }
         }
@@ -320,7 +320,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper beq_s(Label label)
         {
-            ILGenerator.Emit(OpCodes.Beq_S, label); 
+            ILGenerator.Emit(OpCodes.Beq_S, label);
             return this;
         }
 
@@ -331,7 +331,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper bge(Label label)
         {
-            ILGenerator.Emit(OpCodes.Bge, label); 
+            ILGenerator.Emit(OpCodes.Bge, label);
             return this;
         }
 
@@ -342,7 +342,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper bge_s(Label label)
         {
-            ILGenerator.Emit(OpCodes.Bge_S, label); 
+            ILGenerator.Emit(OpCodes.Bge_S, label);
             return this;
         }
 
@@ -353,7 +353,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper bge_un(Label label)
         {
-            ILGenerator.Emit(OpCodes.Bge_Un, label); 
+            ILGenerator.Emit(OpCodes.Bge_Un, label);
             return this;
         }
 
@@ -364,7 +364,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper bge_un_s(Label label)
         {
-            ILGenerator.Emit(OpCodes.Bge_Un_S, label); 
+            ILGenerator.Emit(OpCodes.Bge_Un_S, label);
             return this;
         }
 
@@ -375,7 +375,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper bgt(Label label)
         {
-            ILGenerator.Emit(OpCodes.Bgt, label); 
+            ILGenerator.Emit(OpCodes.Bgt, label);
             return this;
         }
 
@@ -397,7 +397,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper bgt_un(Label label)
         {
-            ILGenerator.Emit(OpCodes.Bgt_Un, label); 
+            ILGenerator.Emit(OpCodes.Bgt_Un, label);
             return this;
         }
 
@@ -408,7 +408,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper bgt_un_s(Label label)
         {
-            ILGenerator.Emit(OpCodes.Bgt_Un_S, label); 
+            ILGenerator.Emit(OpCodes.Bgt_Un_S, label);
             return this;
         }
 
@@ -419,7 +419,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ble(Label label)
         {
-            ILGenerator.Emit(OpCodes.Ble, label); 
+            ILGenerator.Emit(OpCodes.Ble, label);
             return this;
         }
 
@@ -430,7 +430,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ble_s(Label label)
         {
-            ILGenerator.Emit(OpCodes.Ble_S, label); 
+            ILGenerator.Emit(OpCodes.Ble_S, label);
             return this;
         }
 
@@ -441,7 +441,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ble_un(Label label)
         {
-            ILGenerator.Emit(OpCodes.Ble_Un, label); 
+            ILGenerator.Emit(OpCodes.Ble_Un, label);
             return this;
         }
 
@@ -452,7 +452,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ble_un_s(Label label)
         {
-            ILGenerator.Emit(OpCodes.Ble_Un_S, label); 
+            ILGenerator.Emit(OpCodes.Ble_Un_S, label);
             return this;
         }
 
@@ -573,10 +573,10 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper @break
         {
-            get 
-            { 
+            get
+            {
                 ILGenerator.Emit(OpCodes.Break);
-                return this; 
+                return this;
             }
         }
 
@@ -587,7 +587,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper brfalse(Label label)
         {
-            ILGenerator.Emit(OpCodes.Brfalse, label); 
+            ILGenerator.Emit(OpCodes.Brfalse, label);
             return this;
         }
 
@@ -609,7 +609,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper brtrue(Label label)
         {
-            ILGenerator.Emit(OpCodes.Brtrue, label); 
+            ILGenerator.Emit(OpCodes.Brtrue, label);
             return this;
         }
 
@@ -620,7 +620,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper brtrue_s(Label label)
         {
-            ILGenerator.Emit(OpCodes.Brtrue_S, label); 
+            ILGenerator.Emit(OpCodes.Brtrue_S, label);
             return this;
         }
 
@@ -630,7 +630,7 @@ namespace Fireasy.Common.Emit
         /// <param name="methodInfo">The method to be called.</param>
         public EmitHelper call(MethodInfo methodInfo)
         {
-            ILGenerator.Emit(OpCodes.Call, methodInfo); 
+            ILGenerator.Emit(OpCodes.Call, methodInfo);
             return this;
         }
 
@@ -653,7 +653,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper call(MethodInfo methodInfo, Type[] optionalParameterTypes)
         {
-            ILGenerator.EmitCall(OpCodes.Call, methodInfo, optionalParameterTypes); 
+            ILGenerator.EmitCall(OpCodes.Call, methodInfo, optionalParameterTypes);
             return this;
         }
 
@@ -714,7 +714,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper callvirt(MethodInfo methodInfo, Type[] optionalParameterTypes)
         {
-            ILGenerator.EmitCall(OpCodes.Callvirt, methodInfo, optionalParameterTypes); 
+            ILGenerator.EmitCall(OpCodes.Callvirt, methodInfo, optionalParameterTypes);
             return this;
         }
 
@@ -800,7 +800,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ceq); 
+                ILGenerator.Emit(OpCodes.Ceq);
                 return this;
             }
         }
@@ -813,7 +813,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Cgt); 
+                ILGenerator.Emit(OpCodes.Cgt);
                 return this;
             }
         }
@@ -826,7 +826,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Cgt_Un); 
+                ILGenerator.Emit(OpCodes.Cgt_Un);
                 return this;
             }
         }
@@ -850,7 +850,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ckfinite); 
+                ILGenerator.Emit(OpCodes.Ckfinite);
                 return this;
             }
         }
@@ -863,7 +863,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Clt); 
+                ILGenerator.Emit(OpCodes.Clt);
                 return this;
             }
         }
@@ -876,7 +876,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Clt_Un); 
+                ILGenerator.Emit(OpCodes.Clt_Un);
                 return this;
             }
         }
@@ -902,7 +902,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_I1); 
+                ILGenerator.Emit(OpCodes.Conv_I1);
                 return this;
             }
         }
@@ -915,7 +915,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_I2); 
+                ILGenerator.Emit(OpCodes.Conv_I2);
                 return this;
             }
         }
@@ -941,7 +941,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_I8); 
+                ILGenerator.Emit(OpCodes.Conv_I8);
                 return this;
             }
         }
@@ -958,33 +958,33 @@ namespace Fireasy.Common.Emit
             switch (Type.GetTypeCode(type))
             {
                 case TypeCode.Boolean:
-                case TypeCode.SByte: 
-                    conv_i1.end(); 
+                case TypeCode.SByte:
+                    conv_i1.end();
                     break;
-                case TypeCode.Int16: 
+                case TypeCode.Int16:
                     conv_i2.end();
                     break;
-                case TypeCode.Int32: 
-                    conv_i4.end(); 
+                case TypeCode.Int32:
+                    conv_i4.end();
                     break;
-                case TypeCode.Int64: 
-                    conv_i8.end(); 
+                case TypeCode.Int64:
+                    conv_i8.end();
                     break;
-                case TypeCode.Byte: 
-                    conv_u1.end(); 
+                case TypeCode.Byte:
+                    conv_u1.end();
                     break;
                 case TypeCode.Char:
-                case TypeCode.UInt16: 
-                    conv_u2.end(); 
+                case TypeCode.UInt16:
+                    conv_u2.end();
                     break;
-                case TypeCode.UInt32: 
-                    conv_u4.end(); 
+                case TypeCode.UInt32:
+                    conv_u4.end();
                     break;
                 case TypeCode.UInt64:
-                    conv_u8.end(); 
+                    conv_u8.end();
                     break;
-                case TypeCode.Single: 
-                    conv_r4.end(); 
+                case TypeCode.Single:
+                    conv_r4.end();
                     break;
                 case TypeCode.Double:
                     conv_r8.end();
@@ -1017,7 +1017,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_Ovf_I); 
+                ILGenerator.Emit(OpCodes.Conv_Ovf_I);
                 return this;
             }
         }
@@ -1030,7 +1030,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_Ovf_I1); 
+                ILGenerator.Emit(OpCodes.Conv_Ovf_I1);
                 return this;
             }
         }
@@ -1043,7 +1043,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_Ovf_I_Un); 
+                ILGenerator.Emit(OpCodes.Conv_Ovf_I_Un);
                 return this;
             }
         }
@@ -1056,7 +1056,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_Ovf_I1_Un); 
+                ILGenerator.Emit(OpCodes.Conv_Ovf_I1_Un);
                 return this;
             }
         }
@@ -1069,7 +1069,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_Ovf_I2); 
+                ILGenerator.Emit(OpCodes.Conv_Ovf_I2);
                 return this;
             }
         }
@@ -1082,7 +1082,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_Ovf_I2_Un); 
+                ILGenerator.Emit(OpCodes.Conv_Ovf_I2_Un);
                 return this;
             }
         }
@@ -1095,7 +1095,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_Ovf_I2_Un); 
+                ILGenerator.Emit(OpCodes.Conv_Ovf_I2_Un);
                 return this;
             }
         }
@@ -1108,7 +1108,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_Ovf_I4_Un); 
+                ILGenerator.Emit(OpCodes.Conv_Ovf_I4_Un);
                 return this;
             }
         }
@@ -1121,7 +1121,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_Ovf_I8); 
+                ILGenerator.Emit(OpCodes.Conv_Ovf_I8);
                 return this;
             }
         }
@@ -1134,7 +1134,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_Ovf_I8_Un); 
+                ILGenerator.Emit(OpCodes.Conv_Ovf_I8_Un);
                 return this;
             }
         }
@@ -1147,7 +1147,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_Ovf_U); 
+                ILGenerator.Emit(OpCodes.Conv_Ovf_U);
                 return this;
             }
         }
@@ -1160,7 +1160,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_Ovf_U_Un); 
+                ILGenerator.Emit(OpCodes.Conv_Ovf_U_Un);
                 return this;
             }
         }
@@ -1173,7 +1173,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_Ovf_U1); 
+                ILGenerator.Emit(OpCodes.Conv_Ovf_U1);
                 return this;
             }
         }
@@ -1186,7 +1186,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_Ovf_U1_Un); 
+                ILGenerator.Emit(OpCodes.Conv_Ovf_U1_Un);
                 return this;
             }
         }
@@ -1199,7 +1199,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_Ovf_U2); 
+                ILGenerator.Emit(OpCodes.Conv_Ovf_U2);
                 return this;
             }
         }
@@ -1212,7 +1212,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_Ovf_U2_Un); 
+                ILGenerator.Emit(OpCodes.Conv_Ovf_U2_Un);
                 return this;
             }
         }
@@ -1251,7 +1251,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_Ovf_U8); 
+                ILGenerator.Emit(OpCodes.Conv_Ovf_U8);
                 return this;
             }
         }
@@ -1277,7 +1277,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_R4); 
+                ILGenerator.Emit(OpCodes.Conv_R4);
                 return this;
             }
         }
@@ -1290,7 +1290,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_R8); 
+                ILGenerator.Emit(OpCodes.Conv_R8);
                 return this;
             }
         }
@@ -1303,7 +1303,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_R_Un); 
+                ILGenerator.Emit(OpCodes.Conv_R_Un);
                 return this;
             }
         }
@@ -1316,7 +1316,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_U); 
+                ILGenerator.Emit(OpCodes.Conv_U);
                 return this;
             }
         }
@@ -1342,7 +1342,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_U2); 
+                ILGenerator.Emit(OpCodes.Conv_U2);
                 return this;
             }
         }
@@ -1355,7 +1355,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_U4); 
+                ILGenerator.Emit(OpCodes.Conv_U4);
                 return this;
             }
         }
@@ -1368,7 +1368,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Conv_U8); 
+                ILGenerator.Emit(OpCodes.Conv_U8);
                 return this;
             }
         }
@@ -1381,7 +1381,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Cpblk); 
+                ILGenerator.Emit(OpCodes.Cpblk);
                 return this;
             }
         }
@@ -1405,7 +1405,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Div); 
+                ILGenerator.Emit(OpCodes.Div);
                 return this;
             }
         }
@@ -1418,7 +1418,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Div_Un); 
+                ILGenerator.Emit(OpCodes.Div_Un);
                 return this;
             }
         }
@@ -1431,7 +1431,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Dup); 
+                ILGenerator.Emit(OpCodes.Dup);
                 return this;
             }
         }
@@ -1444,7 +1444,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Endfilter); 
+                ILGenerator.Emit(OpCodes.Endfilter);
                 return this;
             }
         }
@@ -1457,7 +1457,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Endfinally); 
+                ILGenerator.Emit(OpCodes.Endfinally);
                 return this;
             }
         }
@@ -1470,7 +1470,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Initblk); 
+                ILGenerator.Emit(OpCodes.Initblk);
                 return this;
             }
         }
@@ -1482,7 +1482,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper initobj(Type type)
         {
-            ILGenerator.Emit(OpCodes.Initobj, type); 
+            ILGenerator.Emit(OpCodes.Initobj, type);
             return this;
         }
 
@@ -1528,16 +1528,16 @@ namespace Fireasy.Common.Emit
         {
             switch (index)
             {
-                case 0: 
-                    ldarg_0.end(); 
+                case 0:
+                    ldarg_0.end();
                     break;
-                case 1: 
-                    ldarg_1.end(); 
+                case 1:
+                    ldarg_1.end();
                     break;
                 case 2:
-                    ldarg_2.end(); 
+                    ldarg_2.end();
                     break;
-                case 3: 
+                case 3:
                     ldarg_3.end();
                     break;
                 default:
@@ -1567,7 +1567,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldarga(short index)
         {
-            ILGenerator.Emit(OpCodes.Ldarga, index); 
+            ILGenerator.Emit(OpCodes.Ldarga, index);
             return this;
         }
 
@@ -1626,7 +1626,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldarg_1); 
+                ILGenerator.Emit(OpCodes.Ldarg_1);
                 return this;
             }
         }
@@ -1639,7 +1639,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldarg_2); 
+                ILGenerator.Emit(OpCodes.Ldarg_2);
                 return this;
             }
         }
@@ -1652,7 +1652,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldarg_3); 
+                ILGenerator.Emit(OpCodes.Ldarg_3);
                 return this;
             }
         }
@@ -1664,7 +1664,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldarg_s(byte index)
         {
-            ILGenerator.Emit(OpCodes.Ldarg_S, index); 
+            ILGenerator.Emit(OpCodes.Ldarg_S, index);
             return this;
         }
 
@@ -1698,7 +1698,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldc_I4_0); 
+                ILGenerator.Emit(OpCodes.Ldc_I4_0);
                 return this;
             }
         }
@@ -1711,7 +1711,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldc_I4_1); 
+                ILGenerator.Emit(OpCodes.Ldc_I4_1);
                 return this;
             }
         }
@@ -1724,7 +1724,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldc_I4_2); 
+                ILGenerator.Emit(OpCodes.Ldc_I4_2);
                 return this;
             }
         }
@@ -1737,7 +1737,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldc_I4_3); 
+                ILGenerator.Emit(OpCodes.Ldc_I4_3);
                 return this;
             }
         }
@@ -1750,7 +1750,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldc_I4_4); 
+                ILGenerator.Emit(OpCodes.Ldc_I4_4);
                 return this;
             }
         }
@@ -1763,7 +1763,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldc_I4_5); 
+                ILGenerator.Emit(OpCodes.Ldc_I4_5);
                 return this;
             }
         }
@@ -1776,7 +1776,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldc_I4_6); 
+                ILGenerator.Emit(OpCodes.Ldc_I4_6);
                 return this;
             }
         }
@@ -1789,7 +1789,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldc_I4_7); 
+                ILGenerator.Emit(OpCodes.Ldc_I4_7);
                 return this;
             }
         }
@@ -1802,7 +1802,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldc_I4_8); 
+                ILGenerator.Emit(OpCodes.Ldc_I4_8);
                 return this;
             }
         }
@@ -1815,7 +1815,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldc_I4_M1); 
+                ILGenerator.Emit(OpCodes.Ldc_I4_M1);
                 return this;
             }
         }
@@ -1829,33 +1829,34 @@ namespace Fireasy.Common.Emit
         {
             switch (num)
             {
-                case -1: 
+                case -1:
                     ldc_i4_m1.end();
                     break;
-                case 0: 
+                case 0:
                     ldc_i4_0.end();
                     break;
-                case 1: 
+                case 1:
                     ldc_i4_1.end();
                     break;
-                case 2: 
+                case 2:
                     ldc_i4_2.end();
                     break;
-                case 3: 
-                    ldc_i4_3.end(); 
+                case 3:
+                    ldc_i4_3.end();
                     break;
-                case 4: 
+                case 4:
                     ldc_i4_4.end();
                     break;
-                case 5: ldc_i4_5.end(); 
+                case 5:
+                    ldc_i4_5.end();
                     break;
-                case 6: 
+                case 6:
                     ldc_i4_6.end();
                     break;
-                case 7: 
-                    ldc_i4_7.end(); 
+                case 7:
+                    ldc_i4_7.end();
                     break;
-                case 8: 
+                case 8:
                     ldc_i4_8.end();
                     break;
                 default:
@@ -1893,7 +1894,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldc_i8(long num)
         {
-            ILGenerator.Emit(OpCodes.Ldc_I8, num); 
+            ILGenerator.Emit(OpCodes.Ldc_I8, num);
             return this;
         }
 
@@ -1915,7 +1916,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldc_r8(double num)
         {
-            ILGenerator.Emit(OpCodes.Ldc_R8, num); 
+            ILGenerator.Emit(OpCodes.Ldc_R8, num);
             return this;
         }
 
@@ -1938,7 +1939,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldelem_I); 
+                ILGenerator.Emit(OpCodes.Ldelem_I);
                 return this;
             }
         }
@@ -1951,7 +1952,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldelem_I1); 
+                ILGenerator.Emit(OpCodes.Ldelem_I1);
                 return this;
             }
         }
@@ -1964,7 +1965,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldelem_I2); 
+                ILGenerator.Emit(OpCodes.Ldelem_I2);
                 return this;
             }
         }
@@ -1977,7 +1978,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldelem_I4); 
+                ILGenerator.Emit(OpCodes.Ldelem_I4);
                 return this;
             }
         }
@@ -1990,7 +1991,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldelem_I8); 
+                ILGenerator.Emit(OpCodes.Ldelem_I8);
                 return this;
             }
         }
@@ -2029,7 +2030,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldelem_Ref); 
+                ILGenerator.Emit(OpCodes.Ldelem_Ref);
                 return this;
             }
         }
@@ -2042,7 +2043,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldelem_U1); 
+                ILGenerator.Emit(OpCodes.Ldelem_U1);
                 return this;
             }
         }
@@ -2055,7 +2056,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldelem_U2); 
+                ILGenerator.Emit(OpCodes.Ldelem_U2);
                 return this;
             }
         }
@@ -2068,7 +2069,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldelem_U4); 
+                ILGenerator.Emit(OpCodes.Ldelem_U4);
                 return this;
             }
         }
@@ -2091,7 +2092,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldfld(FieldInfo fieldInfo)
         {
-            ILGenerator.Emit(OpCodes.Ldfld, fieldInfo); 
+            ILGenerator.Emit(OpCodes.Ldfld, fieldInfo);
             return this;
         }
 
@@ -2124,7 +2125,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldflda(DynamicFieldBuilder fieldInfo)
         {
-            ILGenerator.Emit(OpCodes.Ldflda, fieldInfo.FieldBuilder); 
+            ILGenerator.Emit(OpCodes.Ldflda, fieldInfo.FieldBuilder);
             return this;
         }
 
@@ -2135,7 +2136,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldftn(MethodInfo methodInfo)
         {
-            ILGenerator.Emit(OpCodes.Ldftn, methodInfo); 
+            ILGenerator.Emit(OpCodes.Ldftn, methodInfo);
             return this;
         }
 
@@ -2145,10 +2146,10 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldind_i
         {
-            get 
-            { 
-                ILGenerator.Emit(OpCodes.Ldind_I); 
-                return this; 
+            get
+            {
+                ILGenerator.Emit(OpCodes.Ldind_I);
+                return this;
             }
         }
 
@@ -2160,7 +2161,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldind_I1); 
+                ILGenerator.Emit(OpCodes.Ldind_I1);
                 return this;
             }
         }
@@ -2173,7 +2174,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldind_I2); 
+                ILGenerator.Emit(OpCodes.Ldind_I2);
                 return this;
             }
         }
@@ -2186,7 +2187,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldind_I4); 
+                ILGenerator.Emit(OpCodes.Ldind_I4);
                 return this;
             }
         }
@@ -2199,7 +2200,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldind_I8); 
+                ILGenerator.Emit(OpCodes.Ldind_I8);
                 return this;
             }
         }
@@ -2212,7 +2213,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldind_R4); 
+                ILGenerator.Emit(OpCodes.Ldind_R4);
                 return this;
             }
         }
@@ -2225,7 +2226,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldind_R8); 
+                ILGenerator.Emit(OpCodes.Ldind_R8);
                 return this;
             }
         }
@@ -2238,7 +2239,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldind_Ref); 
+                ILGenerator.Emit(OpCodes.Ldind_Ref);
                 return this;
             }
         }
@@ -2264,7 +2265,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldind_U2); 
+                ILGenerator.Emit(OpCodes.Ldind_U2);
                 return this;
             }
         }
@@ -2277,7 +2278,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldind_U4); 
+                ILGenerator.Emit(OpCodes.Ldind_U4);
                 return this;
             }
         }
@@ -2300,19 +2301,19 @@ namespace Fireasy.Common.Emit
                     break;
                 case TypeCode.Char:
                 case TypeCode.Int16:
-                case TypeCode.UInt16: 
-                    ldind_i2.end(); 
+                case TypeCode.UInt16:
+                    ldind_i2.end();
                     break;
                 case TypeCode.Int32:
-                case TypeCode.UInt32: 
-                    ldind_i4.end(); 
+                case TypeCode.UInt32:
+                    ldind_i4.end();
                     break;
                 case TypeCode.Int64:
                 case TypeCode.UInt64:
                     ldind_i8.end();
                     break;
                 case TypeCode.Single:
-                    ldind_r4.end(); 
+                    ldind_r4.end();
                     break;
                 case TypeCode.Double:
                     ldind_r8.end();
@@ -2345,7 +2346,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldlen); 
+                ILGenerator.Emit(OpCodes.Ldlen);
                 return this;
             }
         }
@@ -2368,7 +2369,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldloc(LocalBuilder localBuilder)
         {
-            ILGenerator.Emit(OpCodes.Ldloc, localBuilder); 
+            ILGenerator.Emit(OpCodes.Ldloc, localBuilder);
             return this;
         }
 
@@ -2379,7 +2380,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldloca(short index)
         {
-            ILGenerator.Emit(OpCodes.Ldloca, index); 
+            ILGenerator.Emit(OpCodes.Ldloca, index);
             return this;
         }
 
@@ -2390,7 +2391,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldloca(LocalBuilder local)
         {
-            ILGenerator.Emit(OpCodes.Ldloca, local); 
+            ILGenerator.Emit(OpCodes.Ldloca, local);
             return this;
         }
 
@@ -2401,7 +2402,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldloca_s(byte index)
         {
-            ILGenerator.Emit(OpCodes.Ldloca_S, index); 
+            ILGenerator.Emit(OpCodes.Ldloca_S, index);
             return this;
         }
 
@@ -2411,10 +2412,10 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldloc_0
         {
-            get 
-            { 
+            get
+            {
                 ILGenerator.Emit(OpCodes.Ldloc_0);
-                return this; 
+                return this;
             }
         }
 
@@ -2426,7 +2427,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldloc_1); 
+                ILGenerator.Emit(OpCodes.Ldloc_1);
                 return this;
             }
         }
@@ -2439,7 +2440,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldloc_2); 
+                ILGenerator.Emit(OpCodes.Ldloc_2);
                 return this;
             }
         }
@@ -2452,7 +2453,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldloc_3); 
+                ILGenerator.Emit(OpCodes.Ldloc_3);
                 return this;
             }
         }
@@ -2464,7 +2465,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldloc_s(byte index)
         {
-            ILGenerator.Emit(OpCodes.Ldloca_S, index); 
+            ILGenerator.Emit(OpCodes.Ldloca_S, index);
             return this;
         }
 
@@ -2476,7 +2477,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Ldnull); 
+                ILGenerator.Emit(OpCodes.Ldnull);
                 return this;
             }
         }
@@ -2488,7 +2489,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldobj(Type type)
         {
-            ILGenerator.Emit(OpCodes.Ldobj, type); 
+            ILGenerator.Emit(OpCodes.Ldobj, type);
             return this;
         }
 
@@ -2499,7 +2500,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldsfld(FieldInfo fieldInfo)
         {
-            ILGenerator.Emit(OpCodes.Ldsfld, fieldInfo); 
+            ILGenerator.Emit(OpCodes.Ldsfld, fieldInfo);
             return this;
         }
 
@@ -2521,7 +2522,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldstr(string str)
         {
-            ILGenerator.Emit(OpCodes.Ldstr, str); 
+            ILGenerator.Emit(OpCodes.Ldstr, str);
             return this;
         }
 
@@ -2543,7 +2544,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldtoken(FieldInfo fieldInfo)
         {
-            ILGenerator.Emit(OpCodes.Ldtoken, fieldInfo); 
+            ILGenerator.Emit(OpCodes.Ldtoken, fieldInfo);
             return this;
         }
 
@@ -2554,7 +2555,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldtoken(Type type)
         {
-            ILGenerator.Emit(OpCodes.Ldtoken, type); 
+            ILGenerator.Emit(OpCodes.Ldtoken, type);
             return this;
         }
 
@@ -2565,7 +2566,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper ldvirtftn(MethodInfo methodInfo)
         {
-            ILGenerator.Emit(OpCodes.Ldvirtftn, methodInfo); 
+            ILGenerator.Emit(OpCodes.Ldvirtftn, methodInfo);
             return this;
         }
 
@@ -2576,7 +2577,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper leave(Label label)
         {
-            ILGenerator.Emit(OpCodes.Leave, label); 
+            ILGenerator.Emit(OpCodes.Leave, label);
             return this;
         }
 
@@ -2587,7 +2588,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper leave_s(Label label)
         {
-            ILGenerator.Emit(OpCodes.Leave_S, label); 
+            ILGenerator.Emit(OpCodes.Leave_S, label);
             return this;
         }
 
@@ -2597,8 +2598,11 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper localloc
         {
-            get { ILGenerator.Emit(OpCodes.Localloc); 
-                return this; }
+            get
+            {
+                ILGenerator.Emit(OpCodes.Localloc);
+                return this;
+            }
         }
 
         /// <summary>
@@ -2608,7 +2612,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper mkrefany(Type type)
         {
-            ILGenerator.Emit(OpCodes.Mkrefany, type); 
+            ILGenerator.Emit(OpCodes.Mkrefany, type);
             return this;
         }
 
@@ -2620,7 +2624,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Mul); 
+                ILGenerator.Emit(OpCodes.Mul);
                 return this;
             }
         }
@@ -2633,7 +2637,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Mul_Ovf); 
+                ILGenerator.Emit(OpCodes.Mul_Ovf);
                 return this;
             }
         }
@@ -2646,7 +2650,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Mul_Ovf_Un); 
+                ILGenerator.Emit(OpCodes.Mul_Ovf_Un);
                 return this;
             }
         }
@@ -2659,7 +2663,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Neg); 
+                ILGenerator.Emit(OpCodes.Neg);
                 return this;
             }
         }
@@ -2671,7 +2675,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper newarr(Type type)
         {
-            ILGenerator.Emit(OpCodes.Newarr, type); 
+            ILGenerator.Emit(OpCodes.Newarr, type);
             return this;
         }
 
@@ -2708,7 +2712,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Nop); 
+                ILGenerator.Emit(OpCodes.Nop);
                 return this;
             }
         }
@@ -2721,7 +2725,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Not); 
+                ILGenerator.Emit(OpCodes.Not);
                 return this;
             }
         }
@@ -2747,7 +2751,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Pop); 
+                ILGenerator.Emit(OpCodes.Pop);
                 return this;
             }
         }
@@ -2773,7 +2777,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Refanytype); 
+                ILGenerator.Emit(OpCodes.Refanytype);
                 return this;
             }
         }
@@ -2797,7 +2801,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Rem); 
+                ILGenerator.Emit(OpCodes.Rem);
                 return this;
             }
         }
@@ -2810,7 +2814,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Rem_Un); 
+                ILGenerator.Emit(OpCodes.Rem_Un);
                 return this;
             }
         }
@@ -2832,9 +2836,9 @@ namespace Fireasy.Common.Emit
         public EmitHelper rethrow
         {
             get
-            { 
-                ILGenerator.Emit(OpCodes.Rethrow); 
-                return this; 
+            {
+                ILGenerator.Emit(OpCodes.Rethrow);
+                return this;
             }
         }
 
@@ -2846,7 +2850,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Shl); 
+                ILGenerator.Emit(OpCodes.Shl);
                 return this;
             }
         }
@@ -2859,7 +2863,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Shr); 
+                ILGenerator.Emit(OpCodes.Shr);
                 return this;
             }
         }
@@ -2872,7 +2876,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Shr_Un); 
+                ILGenerator.Emit(OpCodes.Shr_Un);
                 return this;
             }
         }
@@ -2884,7 +2888,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper @sizeof(Type type)
         {
-            ILGenerator.Emit(OpCodes.Sizeof, type); 
+            ILGenerator.Emit(OpCodes.Sizeof, type);
             return this;
         }
 
@@ -2906,7 +2910,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper starg_s(byte index)
         {
-            ILGenerator.Emit(OpCodes.Starg_S, index); 
+            ILGenerator.Emit(OpCodes.Starg_S, index);
             return this;
         }
 
@@ -2941,7 +2945,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Stelem_I); 
+                ILGenerator.Emit(OpCodes.Stelem_I);
                 return this;
             }
         }
@@ -2954,7 +2958,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Stelem_I1); 
+                ILGenerator.Emit(OpCodes.Stelem_I1);
                 return this;
             }
         }
@@ -3006,7 +3010,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Stelem_R4); 
+                ILGenerator.Emit(OpCodes.Stelem_R4);
                 return this;
             }
         }
@@ -3056,7 +3060,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Stind_I); 
+                ILGenerator.Emit(OpCodes.Stind_I);
                 return this;
             }
         }
@@ -3121,7 +3125,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Stind_R4); 
+                ILGenerator.Emit(OpCodes.Stind_R4);
                 return this;
             }
         }
@@ -3134,7 +3138,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Stind_R8); 
+                ILGenerator.Emit(OpCodes.Stind_R8);
                 return this;
             }
         }
@@ -3147,7 +3151,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Stind_Ref); 
+                ILGenerator.Emit(OpCodes.Stind_Ref);
                 return this;
             }
         }
@@ -3170,7 +3174,7 @@ namespace Fireasy.Common.Emit
                     break;
                 case TypeCode.Char:
                 case TypeCode.Int16:
-                case TypeCode.UInt16: 
+                case TypeCode.UInt16:
                     stind_i2.end();
                     break;
                 case TypeCode.Int32:
@@ -3178,14 +3182,14 @@ namespace Fireasy.Common.Emit
                     stind_i4.end();
                     break;
                 case TypeCode.Int64:
-                case TypeCode.UInt64: 
-                    stind_i8.end(); 
+                case TypeCode.UInt64:
+                    stind_i8.end();
                     break;
-                case TypeCode.Single: 
-                    stind_r4.end(); 
+                case TypeCode.Single:
+                    stind_r4.end();
                     break;
                 case TypeCode.Double:
-                    stind_r8.end(); 
+                    stind_r8.end();
                     break;
                 default:
                     if (type.IsClass)
@@ -3214,7 +3218,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper stloc(LocalBuilder local)
         {
-            ILGenerator.Emit(OpCodes.Stloc, local); 
+            ILGenerator.Emit(OpCodes.Stloc, local);
             return this;
         }
 
@@ -3255,7 +3259,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Stloc_1); 
+                ILGenerator.Emit(OpCodes.Stloc_1);
                 return this;
             }
         }
@@ -3281,7 +3285,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Stloc_3); 
+                ILGenerator.Emit(OpCodes.Stloc_3);
                 return this;
             }
         }
@@ -3306,19 +3310,20 @@ namespace Fireasy.Common.Emit
         {
             switch (index)
             {
-                case 0: 
-                    stloc_0.end(); 
+                case 0:
+                    stloc_0.end();
                     break;
-                case 1: 
-                    stloc_1.end(); 
+                case 1:
+                    stloc_1.end();
                     break;
-                case 2: 
-                    stloc_2.end(); 
+                case 2:
+                    stloc_2.end();
                     break;
-                case 3: stloc_3.end();
+                case 3:
+                    stloc_3.end();
                     break;
                 default:
-                    ILGenerator.Emit(OpCodes.Stloc_S, index); 
+                    ILGenerator.Emit(OpCodes.Stloc_S, index);
                     break;
             }
 
@@ -3332,7 +3337,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper stobj(Type type)
         {
-            ILGenerator.Emit(OpCodes.Stobj, type); 
+            ILGenerator.Emit(OpCodes.Stobj, type);
             return this;
         }
 
@@ -3355,7 +3360,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Sub); 
+                ILGenerator.Emit(OpCodes.Sub);
                 return this;
             }
         }
@@ -3368,7 +3373,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Sub_Ovf); 
+                ILGenerator.Emit(OpCodes.Sub_Ovf);
                 return this;
             }
         }
@@ -3393,7 +3398,7 @@ namespace Fireasy.Common.Emit
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper @switch(Label[] labels)
         {
-            ILGenerator.Emit(OpCodes.Switch, labels); 
+            ILGenerator.Emit(OpCodes.Switch, labels);
             return this;
         }
 
@@ -3405,7 +3410,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Tailcall); 
+                ILGenerator.Emit(OpCodes.Tailcall);
                 return this;
             }
         }
@@ -3418,7 +3423,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Throw); 
+                ILGenerator.Emit(OpCodes.Throw);
                 return this;
             }
         }
@@ -3487,7 +3492,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Volatile); 
+                ILGenerator.Emit(OpCodes.Volatile);
                 return this;
             }
         }
@@ -3500,7 +3505,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                ILGenerator.Emit(OpCodes.Xor); 
+                ILGenerator.Emit(OpCodes.Xor);
                 return this;
             }
         }
@@ -3580,7 +3585,7 @@ namespace Fireasy.Common.Emit
             return this;
         }
 
-#endregion
+        #endregion
 
         private static Exception ThrowNoMethodException(Type type, string methodName)
         {

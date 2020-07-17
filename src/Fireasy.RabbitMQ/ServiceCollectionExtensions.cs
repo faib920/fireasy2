@@ -27,8 +27,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 services.Configure(setupAction);
             }
 
-            services.AddSingleton<ISubscribeManager, SubscribeManager>();
-            return services;
+            return services.AddSingleton<ISubscribeManager, SubscribeManager>();
         }
     }
 }

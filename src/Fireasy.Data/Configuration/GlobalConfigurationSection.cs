@@ -5,9 +5,9 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System.Xml;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
+using System.Xml;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
@@ -26,9 +26,9 @@ namespace Fireasy.Data.Configuration
             if (ndOption != null)
             {
                 Options = new GlobalOptions
-                    {
-                        AttachQuote = ndOption.GetAttributeValue("attachQuote", false)
-                    };
+                {
+                    AttachQuote = ndOption.GetAttributeValue("attachQuote", false)
+                };
             }
         }
 

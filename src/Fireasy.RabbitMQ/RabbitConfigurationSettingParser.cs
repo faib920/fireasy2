@@ -10,6 +10,7 @@ using Fireasy.Common.Extensions;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
+using System;
 using System.Xml;
 
 namespace Fireasy.RabbitMQ
@@ -34,7 +35,8 @@ namespace Fireasy.RabbitMQ
                 setting.Password = configNode.GetAttributeValue("password");
                 setting.ExchangeType = configNode.GetAttributeValue("exchangeType");
                 setting.VirtualHost = configNode.GetAttributeValue("virtualHost");
-                setting.RequeueDelayTime = configNode.GetAttributeValue("requeueDelayTime").To<int?>();
+                setting.RetryDelayTime = configNode.GetAttributeValue("retryDelayTime").ToTimeSpan(TimeSpan.FromSeconds(20));
+                setting.RetryTimes = configNode.GetAttributeValue("retryTimes").To<int?>();
             }
 
             return setting;
@@ -59,7 +61,8 @@ namespace Fireasy.RabbitMQ
                 setting.Password = configNode["password"];
                 setting.ExchangeType = configNode["exchangeType"];
                 setting.VirtualHost = configNode["virtualHost"];
-                setting.RequeueDelayTime = configNode["requeueDelayTime"].To<int?>();
+                setting.RetryDelayTime = configNode["retryDelayTime"].ToTimeSpan(TimeSpan.FromSeconds(20));
+                setting.RetryTimes = configNode["retryTimes"].To<int?>();
             }
 
             return setting;

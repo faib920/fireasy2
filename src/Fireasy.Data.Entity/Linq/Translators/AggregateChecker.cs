@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
-using System.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Expressions;
+using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
@@ -11,18 +11,18 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class AggregateChecker : DbExpressionVisitor
     {
-        private bool hasAggregate;
+        private bool _hasAggregate;
 
         public static bool HasAggregates(SelectExpression expression)
         {
             var checker = new AggregateChecker();
             checker.Visit(expression);
-            return checker.hasAggregate;
+            return checker._hasAggregate;
         }
 
         protected override Expression VisitAggregate(AggregateExpression aggregate)
         {
-            hasAggregate = true;
+            _hasAggregate = true;
             return aggregate;
         }
 

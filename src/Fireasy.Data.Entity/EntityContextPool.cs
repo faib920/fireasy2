@@ -4,7 +4,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common;
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.MultiTenancy;
@@ -20,23 +19,24 @@ namespace Fireasy.Data.Entity
     /// <typeparam name="TContext"></typeparam>
     public class EntityContextPool<TContext> : ObjectPool<TContext> where TContext : EntityContext
     {
-        private readonly EntityContextOptions<TContext> options;
-
         /// <summary>
         /// 初始化 <see cref="EntityContextPool{TContext}"/> 类的新实例。
         /// </summary>
         /// <param name="serviceProvider"></param>
-        /// <param name="options"></param>
         /// <param name="maxSize">缓冲池的最大数量。</param>
-        public EntityContextPool(IServiceProvider serviceProvider, EntityContextOptions<TContext> options, int maxSize)
-            : base(null, maxSize, serviceProvider.TryGetService<ITenancyProvider<ObjectPoolTenancyInfo>>())
+        public EntityContextPool(IServiceProvider serviceProvider, int maxSize)
+            : base(serviceProvider, null, maxSize)
         {
-            this.options = options;
         }
 
+        /// <summary>
+        /// 从缓冲池拿出一个 <typeparamref name="TContext"/> 对象。
+        /// </summary>
+        /// <param name="serviceProvider"></param>
+        /// <returns></returns>
         public TContext Rent(IServiceProvider serviceProvider)
         {
-            return base.Rent(() => CreateInstance(serviceProvider, options), s => s.TrySetServiceProvider(serviceProvider));
+            return base.Rent(() => CreateInstance(serviceProvider), s => s.TrySetServiceProvider(serviceProvider));
         }
 
         /// <summary>
@@ -44,8 +44,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public sealed class Lease : DisposeableBase
         {
-            private EntityContextPool<TContext> pool;
-            private readonly IServiceProvider serviceProvider;
+            private EntityContextPool<TContext> _pool;
 
             /// <summary>
             /// 初始化 <see cref="Lease"/> 类的新实例。
@@ -53,10 +52,9 @@ namespace Fireasy.Data.Entity
             /// <param name="pool"></param>
             public Lease(IServiceProvider serviceProvider, EntityContextPool<TContext> pool)
             {
-                this.serviceProvider = serviceProvider;
-                this.pool = pool;
+                _pool = pool;
 
-                Context = this.pool.Rent(serviceProvider);
+                Context = _pool.Rent(serviceProvider);
             }
 
             /// <summary>
@@ -66,16 +64,16 @@ namespace Fireasy.Data.Entity
 
             protected override bool Dispose(bool disposing)
             {
-                if (pool != null)
+                if (_pool != null)
                 {
                     //归还时如果缓冲池已满，则要进行销毁
-                    if (!pool.Return(Context))
+                    if (!_pool.Return(Context))
                     {
                         ((IObjectPoolable)Context).SetPool(null);
                         Context.TryDispose();
                     }
 
-                    pool = null;
+                    _pool = null;
                     Context = null;
                 }
 
@@ -87,16 +85,17 @@ namespace Fireasy.Data.Entity
         /// 创建一个新实例。
         /// </summary>
         /// <param name="serviceProvider"></param>
-        /// <param name="options"></param>
         /// <returns></returns>
-        private static TContext CreateInstance(IServiceProvider serviceProvider, EntityContextOptions<TContext> options)
+        private static TContext CreateInstance(IServiceProvider serviceProvider)
         {
+            var options = serviceProvider.TryGetService<EntityContextOptions<TContext>>();
+
             var constructors = from s in typeof(TContext).GetTypeInfo().DeclaredConstructors
                                where !s.IsStatic && s.IsPublic
                                let pars = s.GetParameters()
                                orderby pars.Length descending
                                select new { info = s, pars };
-            
+
             foreach (var cons in constructors)
             {
                 var length = cons.pars.Length;

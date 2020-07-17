@@ -10,7 +10,6 @@ using Fireasy.Common.Emit;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Reflection;
 using Fireasy.Common.Security;
-using Fireasy.Data.Provider;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,7 +22,7 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public static class EntityProxyManager
     {
-        private static readonly SafetyDictionary<EntityAssemblyKey, Assembly> cache = new SafetyDictionary<EntityAssemblyKey, Assembly>(new EntityAssemblyKeyEqualityComparer());
+        private static readonly SafetyDictionary<EntityAssemblyKey, Assembly> _cache = new SafetyDictionary<EntityAssemblyKey, Assembly>(new EntityAssemblyKeyEqualityComparer());
 
         private class EntityAssemblyKey
         {
@@ -76,7 +75,7 @@ namespace Fireasy.Data.Entity
 
             if (contextType == null)
             {
-                return ReflectionCache.GetMember("EntityProxyType", entityType, cache, (k, c) =>
+                return ReflectionCache.GetMember("EntityProxyType", entityType, _cache, (k, c) =>
                 {
                     foreach (var assm in c.Values)
                     {
@@ -109,7 +108,7 @@ namespace Fireasy.Data.Entity
         public static Assembly CompileAll(Type contextType, Assembly assembly, Type[] types, IInjectionProvider injection)
         {
             var assemblyKey = new EntityAssemblyKey { ContextType = contextType, Assembly = assembly };
-            return cache.GetOrAdd(assemblyKey, key =>
+            return _cache.GetOrAdd(assemblyKey, key =>
                 {
                     var rndNo = RandomGenerator.Create();
                     var assemblyName = string.Concat(key.Assembly.GetName().Name, ".", rndNo);

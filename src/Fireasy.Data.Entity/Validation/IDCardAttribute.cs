@@ -19,7 +19,7 @@ namespace Fireasy.Data.Entity.Validation
         /// 初始化 <see cref="IDCardAttribute"/> 类的新实例。
         /// </summary>
         public IDCardAttribute()
-            : base (SR.GetString(SRKind.IDCardValideError))
+            : base(SR.GetString(SRKind.IDCardValideError))
         {
         }
 
@@ -45,8 +45,8 @@ namespace Fireasy.Data.Entity.Validation
         /// <returns></returns>
         private static bool CheckIDCard18(string idcard)
         {
-            if (long.TryParse(idcard.Remove(17), out long n) == false || 
-                n < Math.Pow(10, 16) || 
+            if (long.TryParse(idcard.Remove(17), out long n) == false ||
+                n < Math.Pow(10, 16) ||
                 long.TryParse(idcard.Replace('x', '0').Replace('X', '0'), out _) == false)
             {
                 return false;//数字验证

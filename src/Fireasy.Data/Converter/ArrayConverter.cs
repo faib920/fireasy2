@@ -16,11 +16,11 @@ namespace Fireasy.Data.Converter
 {
     public class ArrayConverter : IValueConverter
     {
-        private readonly Type elementType;
+        private readonly Type _elementType;
 
         public ArrayConverter(Type elementType)
         {
-            this.elementType = elementType;
+            _elementType = elementType;
         }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace Fireasy.Data.Converter
 
             if (dbType.IsStringDbType())
             {
-                if (elementType == typeof(byte))
+                if (_elementType == typeof(byte))
                 {
                     try
                     {
@@ -52,8 +52,8 @@ namespace Fireasy.Data.Converter
                 }
                 else
                 {
-                    var array = value.ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.ToType(elementType)).ToArray();
-                    var result = Array.CreateInstance(elementType, array.Length);
+                    var array = value.ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.ToType(_elementType)).ToArray();
+                    var result = Array.CreateInstance(_elementType, array.Length);
                     Array.Copy(array, result, array.Length);
 
                     return result;
@@ -74,7 +74,7 @@ namespace Fireasy.Data.Converter
         {
             if (dbType.IsStringDbType() && value != null)
             {
-                if (elementType == typeof(byte))
+                if (_elementType == typeof(byte))
                 {
                     return Convert.ToBase64String((byte[])value);
                 }

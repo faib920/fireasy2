@@ -28,7 +28,7 @@ namespace Fireasy.Data.Entity.Query
         , IAsyncEnumerable<T>
 #endif
     {
-        private IList list;
+        private IList _list;
 
         protected QuerySet()
         {
@@ -69,7 +69,7 @@ namespace Fireasy.Data.Entity.Query
         /// <summary>
         /// 获取 <see cref="EntityContext"/> 的类型。
         /// </summary>
-        public Type ContextType { get; private set; }
+        public Type ContextType { get; }
 
         /// <summary>
         /// 获取查询解释文本。
@@ -111,7 +111,7 @@ namespace Fireasy.Data.Entity.Query
 
         IList IListSource.GetList()
         {
-            return list ?? (list = Provider.Execute<IEnumerable<T>>(Expression).ToList());
+            return _list ?? (_list = Provider.Execute<IEnumerable<T>>(Expression).ToList());
         }
 
         #endregion 实现IListSource接口
@@ -138,14 +138,17 @@ namespace Fireasy.Data.Entity.Query
 
     internal static class QueryHelper
     {
-        private static MethodInfo MthWhere = typeof(Queryable).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Queryable.Where));
+        private class MethodCache
+        {
+            internal protected static readonly MethodInfo Where = typeof(Queryable).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Queryable.Where));
+        }
 
         internal static QuerySet<T> CreateQuery<T>(IQueryProvider provider, Expression expression)
         {
             var querySet = new QuerySet<T>(provider);
             if (expression != null)
             {
-                expression = Expression.Call(MthWhere.MakeGenericMethod(typeof(T)), querySet.Expression, expression);
+                expression = Expression.Call(MethodCache.Where.MakeGenericMethod(typeof(T)), querySet.Expression, expression);
                 querySet.Expression = expression;
             }
 

@@ -15,8 +15,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public sealed class ParameterRewriter : Common.Linq.Expressions.ExpressionVisitor
     {
-        private readonly object obj;
-        private readonly ParameterExpression parExp;
+        private readonly object _obj;
+        private readonly ParameterExpression _parExp;
 
         /// <summary>
         /// 初始化 <see cref="T:Fireasy.Data.Entity.Linq.Translators.ParameterRewriter`2"/> 类的新实例。
@@ -25,8 +25,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <param name="obj"></param>
         private ParameterRewriter(ParameterExpression parExp, object obj)
         {
-            this.obj = obj;
-            this.parExp = parExp;
+            _obj = obj;
+            _parExp = parExp;
         }
 
         /// <summary>
@@ -48,14 +48,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         protected override Expression VisitParameter(ParameterExpression p)
         {
-            if (obj != null && p.Type.IsAssignableFrom(obj.GetType()))
+            if (_obj != null && p.Type.IsAssignableFrom(_obj.GetType()))
             {
-                return Expression.Constant(obj);
+                return Expression.Constant(_obj);
             }
 
-            if (p.Type == parExp.Type)
+            if (p.Type == _parExp.Type)
             {
-                return parExp;
+                return _parExp;
             }
 
             return base.VisitParameter(p);

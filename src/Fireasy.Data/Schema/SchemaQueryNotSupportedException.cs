@@ -22,7 +22,7 @@ namespace Fireasy.Data.Schema
         public SchemaQueryNotSupportedException(string metadataName)
             : base(SR.GetString(SRKind.SchemaQueryNotSupported))
         {
-            
+
         }
     }
 }

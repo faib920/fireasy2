@@ -5,17 +5,17 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Caching;
+using Fireasy.Common.Composition.Configuration;
+using Fireasy.Common.Configuration;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
 using System.ComponentModel.Composition.Primitives;
 using System.Linq;
 using System.Reflection;
-using Fireasy.Common.Caching;
-using Fireasy.Common.Composition.Configuration;
-using Fireasy.Common.Configuration;
-using System.Collections.ObjectModel;
-using System.Collections.Generic;
 
 namespace Fireasy.Common.Composition
 {
@@ -24,8 +24,8 @@ namespace Fireasy.Common.Composition
     /// </summary>
     public class ConfigurationCatalog : ComposablePartCatalog
     {
-        private IQueryable<ComposablePartDefinition> partsQuery;
-        private List<string> files = null;
+        private IQueryable<ComposablePartDefinition> _partsQuery;
+        private List<string> _files = null;
 
         /// <summary>
         /// 获取目录中包含的部件定义。
@@ -34,7 +34,7 @@ namespace Fireasy.Common.Composition
         {
             get
             {
-                return partsQuery ?? (partsQuery = CreateDefinitions());
+                return _partsQuery ?? (_partsQuery = CreateDefinitions());
             }
         }
 
@@ -42,12 +42,12 @@ namespace Fireasy.Common.Composition
         {
             get
             {
-                if (files == null)
+                if (_files == null)
                 {
-                    partsQuery = CreateDefinitions();
+                    _partsQuery = CreateDefinitions();
                 }
 
-                return files.AsReadOnly();
+                return _files.AsReadOnly();
             }
         }
 
@@ -60,14 +60,14 @@ namespace Fireasy.Common.Composition
         {
             if (!string.IsNullOrEmpty(setting.Assembly))
             {
-                files = new List<string>();
+                _files = new List<string>();
                 var cacheMgr = MemoryCacheManager.Instance;
                 return cacheMgr.TryGet(setting.Assembly, () =>
                     {
                         try
                         {
                             var assembly = Assembly.Load(new AssemblyName(setting.Assembly));
-                            files.Add(assembly.Location);
+                            _files.Add(assembly.Location);
                             return new AssemblyCatalog(assembly);
                         }
                         catch (Exception ex)

@@ -7,7 +7,6 @@
 // -----------------------------------------------------------------------
 using Fireasy.Data.Provider;
 using System.Data;
-using System.Linq;
 using System.Text;
 
 namespace Fireasy.Data.Syntax

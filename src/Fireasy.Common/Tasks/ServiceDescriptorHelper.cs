@@ -16,11 +16,14 @@ namespace Fireasy.Common.Tasks
 {
     internal static class ServiceDescriptorHelper
     {
-        private static readonly MethodInfo SingletonMethod = typeof(ServiceDescriptor).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(ServiceDescriptor.Singleton) && s.IsGenericMethod && s.GetGenericArguments().Length == 2 && s.GetParameters().Length == 1);
+        private class MethodCache
+        {
+            internal protected static readonly MethodInfo Singleton = typeof(ServiceDescriptor).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(ServiceDescriptor.Singleton) && s.IsGenericMethod && s.GetGenericArguments().Length == 2 && s.GetParameters().Length == 1);
+        }
 
         internal static ServiceDescriptor CreateSingleton(Type serviceType, Type implType, Func<Delegate> creator)
         {
-            var method = SingletonMethod.MakeGenericMethod(serviceType, implType);
+            var method = MethodCache.Singleton.MakeGenericMethod(serviceType, implType);
             return (ServiceDescriptor)method.FastInvoke(null, new[] { creator() });
         }
     }

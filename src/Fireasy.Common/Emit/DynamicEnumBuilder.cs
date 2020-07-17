@@ -6,10 +6,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.Extensions;
 using System;
 using System.Reflection;
 using System.Reflection.Emit;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Common.Emit
 {
@@ -18,9 +18,9 @@ namespace Fireasy.Common.Emit
     /// </summary>
     public class DynamicEnumBuilder : DynamicBuilder, ITypeCreator
     {
-        private readonly TypeAttributes attributes;
-        private EnumBuilder enumBuilder;
-        private Type innerType;
+        private readonly TypeAttributes _attributes;
+        private EnumBuilder _enumBuilder;
+        private Type _innerType;
 
         internal DynamicEnumBuilder(BuildContext context, string enumName, Type underlyingType, VisualDecoration visual = VisualDecoration.Public)
              : base(visual, CallingDecoration.Standard)
@@ -28,7 +28,7 @@ namespace Fireasy.Common.Emit
             Context = new BuildContext(context) { EnumBuilder = this };
             EnumName = enumName;
             UnderlyingType = underlyingType;
-            attributes = GetTypeAttributes(visual);
+            _attributes = GetTypeAttributes(visual);
             InitBuilder();
         }
 
@@ -48,7 +48,7 @@ namespace Fireasy.Common.Emit
         /// <returns></returns>
         public EnumBuilder EnumBuilder
         {
-            get { return enumBuilder; }
+            get { return _enumBuilder; }
         }
 
         /// <summary>
@@ -68,16 +68,16 @@ namespace Fireasy.Common.Emit
         /// <returns></returns>
         public Type CreateType()
         {
-            if (innerType != null)
+            if (_innerType != null)
             {
-                return innerType;
+                return _innerType;
             }
 #if !NETSTANDARD
-            innerType = enumBuilder.CreateType();
+            _innerType = _enumBuilder.CreateType();
 #else
-            innerType = enumBuilder.CreateTypeInfo();
+            _innerType = _enumBuilder.CreateTypeInfo();
 #endif
-            return innerType;
+            return _innerType;
         }
 
         /// <summary>
@@ -86,7 +86,7 @@ namespace Fireasy.Common.Emit
         /// <param name="customBuilder">一个 <see cref="CustomAttributeBuilder"/> 对象。</param>
         protected override void SetCustomAttribute(CustomAttributeBuilder customBuilder)
         {
-            enumBuilder.SetCustomAttribute(customBuilder);
+            _enumBuilder.SetCustomAttribute(customBuilder);
         }
 
         private TypeAttributes GetTypeAttributes(VisualDecoration visual)
@@ -106,7 +106,7 @@ namespace Fireasy.Common.Emit
 
         private void InitBuilder()
         {
-            enumBuilder = Context.AssemblyBuilder.ModuleBuilder.DefineEnum(EnumName, attributes, UnderlyingType);
+            _enumBuilder = Context.AssemblyBuilder.ModuleBuilder.DefineEnum(EnumName, _attributes, UnderlyingType);
         }
     }
 }

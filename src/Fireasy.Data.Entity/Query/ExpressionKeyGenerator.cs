@@ -8,7 +8,6 @@
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Translators;
-using System;
 using System.Linq.Expressions;
 using System.Security.Cryptography;
 using System.Text;

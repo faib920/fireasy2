@@ -22,8 +22,8 @@ namespace Fireasy.Common.Logging
     [ConfigurationSetting(typeof(ComplexLoggingSetting))]
     public class ComplexLogger : ILogger, IConfigurationSettingHostService
     {
-        private ComplexLoggingSetting setting;
-        private readonly List<ComplexLoggerPair> logPairs = new List<ComplexLoggerPair>();
+        private ComplexLoggingSetting _setting;
+        private readonly List<ComplexLoggerPair> _logPairs = new List<ComplexLoggerPair>();
 
         public ILogger GetLogger<T>() where T : class
         {
@@ -32,12 +32,12 @@ namespace Fireasy.Common.Logging
 
         void ILogger.Debug(object message, Exception exception)
         {
-            logPairs.Where(s => IsConfigured(s.Level, LogLevel.Debug)).ForEach(s => s.Logger.Debug(message, exception));
+            _logPairs.Where(s => IsConfigured(s.Level, LogLevel.Debug)).ForEach(s => s.Logger.Debug(message, exception));
         }
 
         Task ILogger.DebugAsync(object message, Exception exception, CancellationToken cancellationToken)
         {
-            foreach (var log in logPairs.Where(s => IsConfigured(s.Level, LogLevel.Debug)))
+            foreach (var log in _logPairs.Where(s => IsConfigured(s.Level, LogLevel.Debug)))
             {
                 log.Logger.DebugAsync(message, exception, cancellationToken);
             }
@@ -47,12 +47,12 @@ namespace Fireasy.Common.Logging
 
         void ILogger.Error(object message, Exception exception)
         {
-            logPairs.Where(s => IsConfigured(s.Level, LogLevel.Error)).ForEach(s => s.Logger.Error(message, exception));
+            _logPairs.Where(s => IsConfigured(s.Level, LogLevel.Error)).ForEach(s => s.Logger.Error(message, exception));
         }
 
         Task ILogger.ErrorAsync(object message, Exception exception, CancellationToken cancellationToken)
         {
-            foreach (var log in logPairs.Where(s => IsConfigured(s.Level, LogLevel.Error)))
+            foreach (var log in _logPairs.Where(s => IsConfigured(s.Level, LogLevel.Error)))
             {
                 log.Logger.DebugAsync(message, exception, cancellationToken);
             }
@@ -62,12 +62,12 @@ namespace Fireasy.Common.Logging
 
         void ILogger.Fatal(object message, Exception exception)
         {
-            logPairs.Where(s => IsConfigured(s.Level, LogLevel.Fatal)).ForEach(s => s.Logger.Fatal(message, exception));
+            _logPairs.Where(s => IsConfigured(s.Level, LogLevel.Fatal)).ForEach(s => s.Logger.Fatal(message, exception));
         }
 
         Task ILogger.FatalAsync(object message, Exception exception, CancellationToken cancellationToken)
         {
-            foreach (var log in logPairs.Where(s => IsConfigured(s.Level, LogLevel.Fatal)))
+            foreach (var log in _logPairs.Where(s => IsConfigured(s.Level, LogLevel.Fatal)))
             {
                 log.Logger.DebugAsync(message, exception, cancellationToken);
             }
@@ -77,12 +77,12 @@ namespace Fireasy.Common.Logging
 
         void ILogger.Info(object message, Exception exception)
         {
-            logPairs.Where(s => IsConfigured(s.Level, LogLevel.Info)).ForEach(s => s.Logger.Info(message, exception));
+            _logPairs.Where(s => IsConfigured(s.Level, LogLevel.Info)).ForEach(s => s.Logger.Info(message, exception));
         }
 
         Task ILogger.InfoAsync(object message, Exception exception, CancellationToken cancellationToken)
         {
-            foreach (var log in logPairs.Where(s => IsConfigured(s.Level, LogLevel.Info)))
+            foreach (var log in _logPairs.Where(s => IsConfigured(s.Level, LogLevel.Info)))
             {
                 log.Logger.DebugAsync(message, exception, cancellationToken);
             }
@@ -92,17 +92,22 @@ namespace Fireasy.Common.Logging
 
         void ILogger.Warn(object message, Exception exception)
         {
-            logPairs.Where(s => IsConfigured(s.Level, LogLevel.Warn)).ForEach(s => s.Logger.Info(message, exception));
+            _logPairs.Where(s => IsConfigured(s.Level, LogLevel.Warn)).ForEach(s => s.Logger.Info(message, exception));
         }
 
         Task ILogger.WarnAsync(object message, Exception exception, CancellationToken cancellationToken)
         {
-            foreach (var log in logPairs.Where(s => IsConfigured(s.Level, LogLevel.Warn)))
+            foreach (var log in _logPairs.Where(s => IsConfigured(s.Level, LogLevel.Warn)))
             {
                 log.Logger.DebugAsync(message, exception, cancellationToken);
             }
 
             return null;
+        }
+
+        ILogger<T> ILogger.Create<T>() where T : class
+        {
+            throw new NotImplementedException();
         }
 
         private bool IsConfigured(LogLevel current, LogLevel standard)
@@ -117,16 +122,16 @@ namespace Fireasy.Common.Logging
 
         void IConfigurationSettingHostService.Attach(IConfigurationSettingItem setting)
         {
-            this.setting = (ComplexLoggingSetting)setting;
-            foreach (var item in this.setting.Pairs)
+            _setting = (ComplexLoggingSetting)setting;
+            foreach (var item in _setting.Pairs)
             {
-                logPairs.Add(new ComplexLoggerPair { Level = item.Level, Logger = item.LogType.New<ILogger>() });
+                _logPairs.Add(new ComplexLoggerPair { Level = item.Level, Logger = item.LogType.New<ILogger>() });
             }
         }
 
         IConfigurationSettingItem IConfigurationSettingHostService.GetSetting()
         {
-            return setting;
+            return _setting;
         }
     }
 }

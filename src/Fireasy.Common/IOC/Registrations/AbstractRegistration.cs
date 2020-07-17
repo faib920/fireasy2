@@ -13,23 +13,23 @@ namespace Fireasy.Common.Ioc.Registrations
 {
     internal abstract class AbstractRegistration : IRegistration
     {
-        private static readonly object locker = new object();
-        private Func<IResolver, object> instanceCreator;
-        protected readonly Container container;
-        protected readonly ParameterExpression parameter = Expression.Parameter(typeof(IResolver), "r");
+        private static readonly object _locker = new object();
+        private Func<IResolver, object> _instanceCreator;
+        protected readonly Container _container;
+        protected readonly ParameterExpression _parameter = Expression.Parameter(typeof(IResolver), "r");
 
         protected AbstractRegistration(Container container, Type serviceType, Type implementationType)
         {
-            this.container = container;
+            _container = container;
             ServiceType = serviceType;
             ImplementationType = implementationType;
         }
 
         protected AbstractRegistration(Container container, Type serviceType, Func<IResolver, object> instanceCreator)
         {
-            this.container = container;
+            _container = container;
             ServiceType = serviceType;
-            this.instanceCreator = instanceCreator;
+            _instanceCreator = instanceCreator;
         }
 
         public virtual Lifetime Lifetime { get; }
@@ -40,21 +40,21 @@ namespace Fireasy.Common.Ioc.Registrations
 
         public object Resolve(IResolver resolver)
         {
-            lock (locker)
+            lock (_locker)
             {
-                if (instanceCreator == null)
+                if (_instanceCreator == null)
                 {
-                    instanceCreator = BuildInstanceCreator();
+                    _instanceCreator = BuildInstanceCreator();
                 }
             }
 
-            return instanceCreator(resolver);
+            return _instanceCreator(resolver);
         }
 
         private Func<IResolver, object> BuildInstanceCreator()
         {
             var expression = BuildExpression();
-            var newInstanceMethod = Expression.Lambda<Func<IResolver, object>>(expression, parameter);
+            var newInstanceMethod = Expression.Lambda<Func<IResolver, object>>(expression, _parameter);
             return newInstanceMethod.Compile();
         }
 

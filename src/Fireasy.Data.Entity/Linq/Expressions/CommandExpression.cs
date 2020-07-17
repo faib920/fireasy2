@@ -22,8 +22,8 @@ namespace Fireasy.Data.Entity.Linq.Expressions
             IsAsync = isAsync;
         }
 
-        public List<CommandExpression> AssociatedCommands { get; private set; }
+        public List<CommandExpression> AssociatedCommands { get; }
 
-        public bool IsAsync { get; private set; }
+        public bool IsAsync { get; }
     }
 }

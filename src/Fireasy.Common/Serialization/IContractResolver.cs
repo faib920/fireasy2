@@ -47,8 +47,8 @@ namespace Fireasy.Common.Serialization
     /// </summary>
     public class DefaultContractResolver : IContractResolver
     {
-        private SerializeOption option;
-        private readonly ConcurrentDictionary<Type, List<SerializerPropertyMetadata>> cache = new ConcurrentDictionary<Type, List<SerializerPropertyMetadata>>();
+        private readonly SerializeOption _option;
+        private readonly ConcurrentDictionary<Type, List<SerializerPropertyMetadata>> _cache = new ConcurrentDictionary<Type, List<SerializerPropertyMetadata>>();
 
         /// <summary>
         /// 初始化 <see cref="DefaultContractResolver"/> 类的新实例。
@@ -56,7 +56,7 @@ namespace Fireasy.Common.Serialization
         /// <param name="option"></param>
         public DefaultContractResolver(SerializeOption option)
         {
-            this.option = option;
+            _option = option;
         }
 
         /// <summary>
@@ -66,10 +66,10 @@ namespace Fireasy.Common.Serialization
         /// <returns></returns>
         public virtual List<SerializerPropertyMetadata> GetProperties(Type type)
         {
-            return cache.GetOrAdd(type, k =>
+            return _cache.GetOrAdd(type, k =>
             {
                 return k.GetProperties()
-                    .Where(s => s.CanRead && !SerializerUtil.IsNoSerializable(option, s))
+                    .Where(s => s.CanRead && !SerializerUtil.IsNoSerializable(_option, s))
                     .Distinct(new SerializerUtil.PropertyEqualityComparer())
                     .Select(s => new SerializerPropertyMetadata
                     {
@@ -113,7 +113,7 @@ namespace Fireasy.Common.Serialization
         /// <returns></returns>
         public virtual string ResolvePropertyName(string propertyName)
         {
-            if (option.NamingHandling == NamingHandling.Camel && char.IsUpper(propertyName[0]))
+            if (_option.NamingHandling == NamingHandling.Camel && char.IsUpper(propertyName[0]))
             {
                 return char.ToLower(propertyName[0]) + propertyName.Substring(1);
             }

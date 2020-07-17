@@ -16,7 +16,7 @@ namespace Fireasy.Data.Entity.Metadata
     /// </summary>
     public static class EntityMetadataUnity
     {
-        private static readonly SafetyDictionary<Type, EntityMetadata> cache = new SafetyDictionary<Type, EntityMetadata>();
+        private static readonly SafetyDictionary<Type, EntityMetadata> _cache = new SafetyDictionary<Type, EntityMetadata>();
 
         /// <summary>
         /// 获取指定类型的实体元数据。
@@ -29,7 +29,7 @@ namespace Fireasy.Data.Entity.Metadata
 
             var mapType = entityType.GetMapEntityType();
 
-            var result = cache.GetOrAdd(mapType, key =>
+            var result = _cache.GetOrAdd(mapType, key =>
             {
                 var metadata = new EntityMetadata(key);
 

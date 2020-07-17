@@ -11,9 +11,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
 {
     public class FirebirdTranslateProvider : TranslateProviderBase
     {
-        public override TranslatorBase CreateTranslator()
+        public override TranslatorBase CreateTranslator(TranslateContext transContext)
         {
-            return new FirebirdTranslator();
+            return new FirebirdTranslator(transContext);
         }
 
         protected override Expression BuildExpression(Expression expression)

@@ -25,7 +25,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取表的别名。
         /// </summary>
-        public TableAlias Alias { get; private set; }
+        public TableAlias Alias { get; }
 
     }
 }

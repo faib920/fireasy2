@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Data.Entity.Linq.Translators;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -30,8 +31,9 @@ namespace Fireasy.Data.Entity.Query
         /// </summary>
         /// <param name="expression"></param>
         /// <param name="member"></param>
+        /// <param name="builder"></param>
         /// <returns></returns>
-        Expression ApplyPolicy(Expression expression, MemberInfo member);
+        Expression ApplyPolicy(Expression expression, MemberInfo member, Func<Expression, Expression> builder);
 
         void IncludeWith<TEntity>(Expression<Func<TEntity, object>> fnMember) where TEntity : IEntity;
 

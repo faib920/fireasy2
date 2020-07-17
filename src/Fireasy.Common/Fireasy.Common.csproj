@@ -5,15 +5,15 @@
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
-    <FileVersion>2.1.2.02</FileVersion>
     <Copyright>Copyright © Fireasy 2013-2020</Copyright>
-    <AssemblyVersion>2.1.2.02</AssemblyVersion>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Common Library</Product>
-    <Version>2.1.2.7</Version>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <FileVersion>2.2.0</FileVersion>
+    <AssemblyVersion>2.2.0</AssemblyVersion>
+    <Version>2.2.0-beta1</Version>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Description>通用类库，提供配置、缓存、日志、AOP、IOC、JSON序列化、扩展方法、Emit、加解密、定时任务、本地化等等基础方法。
 
 示例源码：https://github.com/faib920/zero</Description>
@@ -113,6 +113,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.0.0" />
     <PackageReference Include="System.Security.Cryptography.Algorithms">
       <Version>4.3.1</Version>
     </PackageReference>
@@ -135,6 +136,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.0.0" />
     <PackageReference Include="Microsoft.CSharp">
       <Version>4.6.0</Version>
     </PackageReference>

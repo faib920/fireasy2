@@ -6,12 +6,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using System.Data;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Converter;
 using Fireasy.Data.Extensions;
 using Fireasy.Data.RecordWrapper;
+using System;
+using System.Data;
 
 namespace Fireasy.Data
 {
@@ -29,11 +29,11 @@ namespace Fireasy.Data
         /// <returns>由当前 <see cref="IDataReader"/> 对象中的数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
         public virtual T Map(IDatabase database, IDataReader reader)
         {
-            var value = RecordWrapper == null ? reader[0] : 
+            var value = RecordWrapper == null ? reader[0] :
                 RecordWrapper.GetValue(reader, 0);
 
             var converter = ConvertManager.GetConverter(typeof(T));
-            return converter != null ? (T)converter.ConvertFrom(value, reader.GetFieldType(0).GetDbType()) : 
+            return converter != null ? (T)converter.ConvertFrom(value, reader.GetFieldType(0).GetDbType()) :
                 value.To<object, T>();
         }
 
@@ -46,7 +46,7 @@ namespace Fireasy.Data
         public virtual T Map(IDatabase database, DataRow row)
         {
             var converter = ConvertManager.GetConverter(typeof(T));
-            return converter != null ? (T)converter.ConvertFrom(row[0], row.Table.Columns[0].DataType.GetDbType()) : 
+            return converter != null ? (T)converter.ConvertFrom(row[0], row.Table.Columns[0].DataType.GetDbType()) :
                 row[0].To<object, T>();
         }
 

@@ -18,9 +18,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// 获取一个 ELinq 翻译器。
         /// </summary>
         /// <returns></returns>
-        public override TranslatorBase CreateTranslator()
+        public override TranslatorBase CreateTranslator(TranslateContext transContext)
         {
-            return new SQLiteTranslator();
+            return new SQLiteTranslator(transContext);
         }
 
         protected override Expression BuildExpression(Expression expression)

@@ -5,13 +5,11 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
-using Fireasy.Common.Configuration;
-using Fireasy.Common.Caching.Configuration;
 using CSRedis;
+using Fireasy.Common.Extensions;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Redis
 {

@@ -19,13 +19,13 @@ namespace Fireasy.Common.Emit
     /// </summary>
     public class DynamicMethodBuilder : DynamicBuilder
     {
-        private MethodBuilder methodBuilder;
-        private readonly MethodAttributes attributes;
-        private readonly Action<BuildContext> action;
-        private readonly List<string> parameters = new List<string>();
-        private Type returnType;
-        private Type[] parameterTypes;
-        private string[] genericTypeNames;
+        private MethodBuilder _methodBuilder;
+        private readonly MethodAttributes _attributes;
+        private readonly Action<BuildContext> _buildAction;
+        private readonly List<string> _parameters = new List<string>();
+        private Type _returnType;
+        private Type[] _parameterTypes;
+        private string[] _genericTypeNames;
 
         internal DynamicMethodBuilder(BuildContext context, string methodName, Type returnType = null, Type[] parameterTypes = null, VisualDecoration visual = VisualDecoration.Public, CallingDecoration calling = CallingDecoration.Standard, Action<BuildContext> ilCoding = null)
              : base(visual, calling)
@@ -34,8 +34,8 @@ namespace Fireasy.Common.Emit
             Name = methodName;
             ReturnType = returnType;
             ParameterTypes = parameterTypes;
-            this.action = ilCoding;
-            attributes = GetMethodAttributes(methodName, parameterTypes, visual, calling);
+            _buildAction = ilCoding;
+            _attributes = GetMethodAttributes(methodName, parameterTypes, visual, calling);
             InitBuilder();
         }
 
@@ -55,13 +55,13 @@ namespace Fireasy.Common.Emit
                 attr |= ParameterAttributes.Out;
             }
 
-            var parameter = MethodBuilder.DefineParameter(parameters.Count + 1, attr, name);
+            var parameter = MethodBuilder.DefineParameter(_parameters.Count + 1, attr, name);
             if (hasDefaultValue)
             {
                 parameter.SetConstant(defaultValue);
             }
 
-            parameters.Add(name);
+            _parameters.Add(name);
             return this;
         }
 
@@ -77,15 +77,15 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                return returnType;
+                return _returnType;
             }
 
             set
             {
-                returnType = value;
-                if (methodBuilder != null)
+                _returnType = value;
+                if (_methodBuilder != null)
                 {
-                    methodBuilder.SetReturnType(returnType);
+                    _methodBuilder.SetReturnType(_returnType);
                 }
             }
         }
@@ -97,15 +97,15 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                return parameterTypes;
+                return _parameterTypes;
             }
 
             set
             {
-                parameterTypes = value;
-                if (methodBuilder != null)
+                _parameterTypes = value;
+                if (_methodBuilder != null)
                 {
-                    methodBuilder.SetParameters(parameterTypes);
+                    _methodBuilder.SetParameters(_parameterTypes);
                 }
             }
         }
@@ -117,12 +117,12 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                return genericTypeNames;
+                return _genericTypeNames;
             }
 
             set
             {
-                genericTypeNames = value;
+                _genericTypeNames = value;
                 ProcessGenericMethod();
             }
         }
@@ -133,7 +133,7 @@ namespace Fireasy.Common.Emit
         /// <returns></returns>
         public MethodBuilder MethodBuilder
         {
-            get { return methodBuilder; }
+            get { return _methodBuilder; }
         }
 
         /// <summary>
@@ -159,8 +159,8 @@ namespace Fireasy.Common.Emit
             if (field != null)
             {
                 var cons = typeof(ILGenerator).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)[0];
-                field.SetValue(methodBuilder, cons.Invoke(new [] { methodBuilder }));
-                Context.Emitter = new EmitHelper(methodBuilder.GetILGenerator(), methodBuilder);
+                field.SetValue(_methodBuilder, cons.Invoke(new[] { _methodBuilder }));
+                Context.Emitter = new EmitHelper(_methodBuilder.GetILGenerator(), _methodBuilder);
             }
 
             return AppendCode(ilCoding);
@@ -275,7 +275,7 @@ namespace Fireasy.Common.Emit
                 attrs |= MethodAttributes.Virtual;
 
                 //去掉 NewSlot
-                if (isBaseType && attributes.HasFlag(MethodAttributes.NewSlot))
+                if (isBaseType && _attributes.HasFlag(MethodAttributes.NewSlot))
                 {
                     attrs &= ~MethodAttributes.NewSlot;
                 }
@@ -313,7 +313,7 @@ namespace Fireasy.Common.Emit
                 }
 
                 GenericArguments = list.ToArray();
-                if (methodBuilder != null)
+                if (_methodBuilder != null)
                 {
                     ProcessGenericMethod();
                 }
@@ -322,7 +322,7 @@ namespace Fireasy.Common.Emit
 
         private void ProcessGenericMethod()
         {
-            if (GenericArguments == null || methodBuilder == null)
+            if (GenericArguments == null || _methodBuilder == null)
             {
                 return;
             }
@@ -340,7 +340,7 @@ namespace Fireasy.Common.Emit
                 }
             }
 
-            var gpas = methodBuilder.DefineGenericParameters(list.ToArray());
+            var gpas = _methodBuilder.DefineGenericParameters(list.ToArray());
             foreach (var kvp in array)
             {
                 ParameterTypes[kvp.Key] = gpas[kvp.Value];
@@ -360,28 +360,28 @@ namespace Fireasy.Common.Emit
 
             if (isOverride)
             {
-                methodBuilder = Context.TypeBuilder.TypeBuilder.DefineMethod(string.Concat(Context.BaseMethod.DeclaringType.Name, ".", Name), attributes);
+                _methodBuilder = Context.TypeBuilder.TypeBuilder.DefineMethod(string.Concat(Context.BaseMethod.DeclaringType.Name, ".", Name), _attributes);
             }
             else
             {
-                methodBuilder = Context.TypeBuilder.TypeBuilder.DefineMethod(Name, attributes);
+                _methodBuilder = Context.TypeBuilder.TypeBuilder.DefineMethod(Name, _attributes);
             }
 
-            Context.Emitter = new EmitHelper(methodBuilder.GetILGenerator(), methodBuilder);
+            Context.Emitter = new EmitHelper(_methodBuilder.GetILGenerator(), _methodBuilder);
             if (ParameterTypes != null)
             {
                 ProcessGenericMethod();
-                methodBuilder.SetParameters(ParameterTypes);
+                _methodBuilder.SetParameters(ParameterTypes);
             }
 
             if (ReturnType != null)
             {
-                methodBuilder.SetReturnType(ReturnType);
+                _methodBuilder.SetReturnType(ReturnType);
             }
 
-            if (action != null)
+            if (_buildAction != null)
             {
-                action(Context);
+                _buildAction(Context);
             }
             else
             {
@@ -390,7 +390,7 @@ namespace Fireasy.Common.Emit
 
             if (isOverride)
             {
-                Context.TypeBuilder.TypeBuilder.DefineMethodOverride(methodBuilder, Context.BaseMethod);
+                Context.TypeBuilder.TypeBuilder.DefineMethodOverride(_methodBuilder, Context.BaseMethod);
             }
         }
 

@@ -7,12 +7,16 @@
 // -----------------------------------------------------------------------
 using Fireasy.Data.Entity.Linq.Expressions;
 using System.Linq.Expressions;
-using Fireasy.Data.Provider;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
     public class OracleTranslator : TranslatorBase
     {
+        public OracleTranslator(TranslateContext transContext)
+            : base(transContext)
+        {
+        }
+
         protected override Expression VisitSelect(SelectExpression select)
         {
             if (Options.WhereOnly)
@@ -96,7 +100,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     OrderExpression exp = rowNumber.OrderBy[i];
                     if (i > 0)
                         Write(", ");
-                    this.VisitValue(exp.Expression);
+                    VisitValue(exp.Expression);
                     if (exp.OrderType != OrderType.Ascending)
                         Write(" DESC");
                 }

@@ -17,7 +17,7 @@ namespace Fireasy.Common.Caching
         /// <summary>
         /// 记录访问次数的变量。
         /// </summary>
-        private int times = 0;
+        private int _times = 0;
 
         /// <summary>
         /// 检查缓存项是否达到过期时间。
@@ -25,7 +25,7 @@ namespace Fireasy.Common.Caching
         /// <returns>过期为 true，有效为 false。</returns>
         public bool HasExpired()
         {
-            return times++ >= 1;//OK
+            return _times++ >= 1;//OK
         }
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace Fireasy.Common.Caching
         /// <returns></returns>
         public TimeSpan? GetExpirationTime()
         {
-            return times < 1 ? TimeSpan.MaxValue : (TimeSpan?)null;
+            return _times < 1 ? TimeSpan.MaxValue : (TimeSpan?)null;
         }
     }
 }

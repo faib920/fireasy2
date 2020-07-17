@@ -33,14 +33,14 @@ namespace Fireasy.Data.Entity.Validation
         /// </summary>
         /// <param name="exception"></param>
         public EntityInvalidateException(Exception exception)
-            : base (string.Empty, exception)
+            : base(string.Empty, exception)
         {
         }
 
         /// <summary>
         /// 获取实体全局验证的错误信息。
         /// </summary>
-        public IList<string> Errors { get; private set; }
+        public IList<string> Errors { get; }
 
         /// <summary>
         /// 获取每一个属性验证的错误信息。

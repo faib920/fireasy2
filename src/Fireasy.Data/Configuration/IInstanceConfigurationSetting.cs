@@ -6,9 +6,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.Configuration;
 using System;
 using System.Collections.Generic;
-using Fireasy.Common.Configuration;
 
 namespace Fireasy.Data.Configuration
 {

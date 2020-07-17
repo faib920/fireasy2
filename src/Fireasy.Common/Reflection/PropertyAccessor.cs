@@ -37,8 +37,8 @@ namespace Fireasy.Common.Reflection
     /// </summary>
     public class PropertyAccessor : IPropertyAccessor
     {
-        private readonly Func<object, object> getter;
-        private readonly Action<object, object> setter;
+        private readonly Func<object, object> _getter;
+        private readonly Action<object, object> _setter;
 
         /// <summary>
         /// 获取要包装的 <see cref="PropertyInfo"/> 对象。
@@ -52,8 +52,8 @@ namespace Fireasy.Common.Reflection
         public PropertyAccessor(PropertyInfo propertyInfo)
         {
             PropertyInfo = propertyInfo;
-            getter = CreateGetterDelegate(propertyInfo);
-            setter = CreateSetterDelegate(propertyInfo);
+            _getter = CreateGetterDelegate(propertyInfo);
+            _setter = CreateSetterDelegate(propertyInfo);
         }
 
         private Func<object, object> CreateGetterDelegate(PropertyInfo propertyInfo)
@@ -87,15 +87,15 @@ namespace Fireasy.Common.Reflection
             }
 
             var setMethod = propertyInfo.GetSetMethod(true);
-            var dm = new DynamicMethod("PropertySetter", null, 
+            var dm = new DynamicMethod("PropertySetter", null,
                 new Type[] { typeof(object), typeof(object) }, propertyInfo.DeclaringType, true);
 
             var emiter = new EmitHelper(dm.GetILGenerator());
             emiter.Assert(!setMethod.IsStatic, e => e.ldarg_0.end())
                 .ldarg_1
-                .Assert(propertyInfo.PropertyType.IsValueType, 
+                .Assert(propertyInfo.PropertyType.IsValueType,
                     e => e.unbox_any(propertyInfo.PropertyType), e => e.castclass(propertyInfo.PropertyType))
-                .Assert(!setMethod.IsStatic && !propertyInfo.DeclaringType.IsValueType, 
+                .Assert(!setMethod.IsStatic && !propertyInfo.DeclaringType.IsValueType,
                     e => e.callvirt(setMethod), e => e.call(setMethod))
                 .ret();
 
@@ -109,12 +109,12 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public object GetValue(object instance)
         {
-            if (getter == null)
+            if (_getter == null)
             {
                 throw new NotSupportedException(SR.GetString(SRKind.UnableCreateCachedDelegate));
             }
 
-            return getter(instance);
+            return _getter(instance);
         }
 
         /// <summary>
@@ -124,12 +124,12 @@ namespace Fireasy.Common.Reflection
         /// <param name="value">属性的值。</param>
         public void SetValue(object instance, object value)
         {
-            if (setter == null)
+            if (_setter == null)
             {
                 throw new NotSupportedException(SR.GetString(SRKind.UnableCreateCachedDelegate));
             }
 
-            setter(instance, value);
+            _setter(instance, value);
         }
     }
 

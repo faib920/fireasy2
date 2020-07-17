@@ -5,11 +5,11 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
+using Fireasy.Common.Linq.Expressions;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
-using Fireasy.Common.Extensions;
-using Fireasy.Common.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
@@ -19,7 +19,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
     public class DbExpressionWriter : ExpressionWriter
     {
         protected DbExpressionWriter(TextWriter writer)
-            : base (writer)
+            : base(writer)
         {
         }
 
@@ -51,7 +51,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 var queryable = c.Value as IQueryable;
                 var elementType = queryable.Expression.Type.GetEnumerableElementType();
-                if (typeof (IEntity).IsAssignableFrom(elementType))
+                if (typeof(IEntity).IsAssignableFrom(elementType))
                 {
                     Write(c.Value.ToString());
                 }

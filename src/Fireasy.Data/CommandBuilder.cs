@@ -6,10 +6,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System.Data;
-using System.Data.Common;
 using Fireasy.Common;
 using Fireasy.Data.Provider;
+using System.Data;
+using System.Data.Common;
 
 namespace Fireasy.Data
 {
@@ -32,7 +32,7 @@ namespace Fireasy.Data
             Guard.ArgumentNull(connection, nameof(connection));
 
             var proxy = table.PrimaryKey.Length > 0
-                        ? (CommandBuildProxy) new CommandBuildProxyWithPrimaryKey()
+                        ? (CommandBuildProxy)new CommandBuildProxyWithPrimaryKey()
                         : new CommandBuildProxyWithoutPrimaryKey();
 
             proxy.BuildCommands(provider, table, connection, transaction);

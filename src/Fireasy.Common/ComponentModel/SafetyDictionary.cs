@@ -296,30 +296,30 @@ namespace Fireasy.Common.ComponentModel
         /// </summary>
         private class SafetyDictionaryEnumerator : IEnumerator<KeyValuePair<TKey, TValue>>
         {
-            private readonly IEnumerator<KeyValuePair<TKey, Lazy<TValue>>> enumerator;
+            private readonly IEnumerator<KeyValuePair<TKey, Lazy<TValue>>> _enumerator;
 
             public SafetyDictionaryEnumerator(IEnumerator<KeyValuePair<TKey, Lazy<TValue>>> enumerator)
             {
-                this.enumerator = enumerator;
+                _enumerator = enumerator;
             }
 
-            public KeyValuePair<TKey, TValue> Current => new KeyValuePair<TKey, TValue>(enumerator.Current.Key, enumerator.Current.Value.Value);
+            public KeyValuePair<TKey, TValue> Current => new KeyValuePair<TKey, TValue>(_enumerator.Current.Key, _enumerator.Current.Value.Value);
 
             object IEnumerator.Current => Current;
 
             public void Dispose()
             {
-                enumerator.Dispose();
+                _enumerator.Dispose();
             }
 
             public bool MoveNext()
             {
-                return enumerator.MoveNext();
+                return _enumerator.MoveNext();
             }
 
             public void Reset()
             {
-                enumerator.Reset();
+                _enumerator.Reset();
             }
         }
     }

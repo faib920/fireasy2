@@ -49,8 +49,13 @@ namespace Fireasy.RabbitMQ
         public string VirtualHost { get; set; }
 
         /// <summary>
-        /// 获取或设置异常时重入队列的延迟时间（毫秒）。未指定表示不重入队列。
+        /// 获取或设置异常时重入队列的延迟时间。默认为 20 秒，未指定表示不重入队列。
         /// </summary>
-        public int? RequeueDelayTime { get; set; }
+        public TimeSpan RetryDelayTime { get; set; }
+
+        /// <summary>
+        /// 获取或设置可重试的次数。未指定表示不受限制。
+        /// </summary>
+        public int? RetryTimes { get; set; }
     }
 }

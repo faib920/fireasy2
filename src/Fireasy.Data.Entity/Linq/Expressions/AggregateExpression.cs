@@ -29,17 +29,17 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取聚合函数的类型。
         /// </summary>
-        public AggregateType AggregateType { get; private set; }
+        public AggregateType AggregateType { get; }
 
         /// <summary>
         /// 获取聚合函数所包含的参数表达式。
         /// </summary>
-        public Expression Argument { get; private set; }
+        public Expression Argument { get; }
 
         /// <summary>
         /// 获取是否使用 DISTINCT 关键字。
         /// </summary>
-        public bool IsDistinct { get; private set; }
+        public bool IsDistinct { get; }
 
         /// <summary>
         /// 更新 <see cref="AggregateExpression"/> 对象。

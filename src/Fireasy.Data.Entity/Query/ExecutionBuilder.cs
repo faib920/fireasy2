@@ -27,41 +27,41 @@ namespace Fireasy.Data.Entity.Query
     /// </summary>
     public class ExecutionBuilder : DbExpressionVisitor
     {
-        private Scope scope;
-        private bool isTop = true;
-        private bool isAsync = false;
-        private bool isNoTracking = false;
-        private MemberInfo receivingMember;
-        private int nReaders = 0;
-        private int nLookup = 0;
-        private ParameterExpression executor;
-        private ParameterExpression cancelToken;
-        private readonly List<ParameterExpression> variables = new List<ParameterExpression>();
-        private readonly List<Expression> initializers = new List<Expression>();
-        private Dictionary<string, Expression> variableMap = new Dictionary<string, Expression>();
+        private Scope _scope;
+        private bool _isTop = true;
+        private bool _isAsync = false;
+        private bool _isNoTracking = false;
+        private MemberInfo _receivingMember;
+        private int _readers = 0;
+        private int _lookup = 0;
+        private ParameterExpression _executor;
+        private ParameterExpression _cancelToken;
+        private readonly List<ParameterExpression> _variables = new List<ParameterExpression>();
+        private readonly List<Expression> _initializers = new List<Expression>();
+        private Dictionary<string, Expression> _variableMap = new Dictionary<string, Expression>();
+        private TranslatorBase _translator;
+        private TranslateContext _transContext;
 
         private class MethodCache
         {
-            internal static readonly MethodInfo DbExecuteNoQuery = typeof(IDatabase).GetMethod(nameof(IDatabase.ExecuteNonQuery));
-            internal static readonly MethodInfo DbExecuteScalar = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.ExecuteScalar) && s.IsGenericMethod);
-            internal static readonly MethodInfo DbExecuteEnumerable = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.ExecuteEnumerable) && s.IsGenericMethod);
-            internal static readonly MethodInfo DbExecuteNoQueryAsync = typeof(IDatabase).GetMethod(nameof(IDatabase.ExecuteNonQueryAsync));
-            internal static readonly MethodInfo DbExecuteScalarAsync = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.ExecuteScalarAsync) && s.IsGenericMethod);
-            internal static readonly MethodInfo DbExecuteEnumerableAsync = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.ExecuteEnumerableAsync) && s.IsGenericMethod);
-            internal static readonly MethodInfo DbUpdate = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.Update) && s.GetParameters().Length == 4);
-            internal static readonly MethodInfo DbUpdateAsync = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.UpdateAsync) && s.GetParameters().Length == 5);
-            internal static readonly MethodInfo ConstructEntity = typeof(ExecutionBuilder).GetMethod(nameof(ExecutionBuilder.ConstructEntity), BindingFlags.Static | BindingFlags.NonPublic);
-            internal static readonly MethodInfo NewPropertyValue = typeof(PropertyValue).GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(s => s.Name == nameof(PropertyValue.NewValue));
-            internal static readonly MethodInfo IsDbNull = typeof(IRecordWrapper).GetMethod(nameof(IRecordWrapper.IsDbNull), new[] { typeof(IDataReader), typeof(int) });
-            internal static readonly MethodInfo ConvertFrom = typeof(IValueConverter).GetMethod(nameof(IValueConverter.ConvertFrom));
-            internal static readonly MethodInfo ConvertTo = typeof(IValueConverter).GetMethod(nameof(IValueConverter.ConvertTo));
-            internal static readonly MethodInfo GetConverter = typeof(ConvertManager).GetMethod(nameof(ConvertManager.GetConverter));
-            internal static readonly MethodInfo GenerateIdentityValue = typeof(ExecutionBuilder).GetMethod(nameof(ExecutionBuilder.GenerateIdentityValue), BindingFlags.Static | BindingFlags.NonPublic);
-            internal static readonly MethodInfo GenerateGuidValue = typeof(ExecutionBuilder).GetMethod(nameof(ExecutionBuilder.GenerateGuidValue), BindingFlags.Static | BindingFlags.NonPublic);
-            internal static readonly Expression ExpNullParameter = Expression.Constant(null, typeof(ParameterCollection));
+            internal protected static readonly MethodInfo DbExecuteNoQuery = typeof(IDatabase).GetMethod(nameof(IDatabase.ExecuteNonQuery));
+            internal protected static readonly MethodInfo DbExecuteScalar = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.ExecuteScalar) && s.IsGenericMethod);
+            internal protected static readonly MethodInfo DbExecuteEnumerable = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.ExecuteEnumerable) && s.IsGenericMethod);
+            internal protected static readonly MethodInfo DbExecuteNoQueryAsync = typeof(IDatabase).GetMethod(nameof(IDatabase.ExecuteNonQueryAsync));
+            internal protected static readonly MethodInfo DbExecuteScalarAsync = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.ExecuteScalarAsync) && s.IsGenericMethod);
+            internal protected static readonly MethodInfo DbExecuteEnumerableAsync = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.ExecuteEnumerableAsync) && s.IsGenericMethod);
+            internal protected static readonly MethodInfo DbUpdate = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.Update) && s.GetParameters().Length == 4);
+            internal protected static readonly MethodInfo DbUpdateAsync = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.UpdateAsync) && s.GetParameters().Length == 5);
+            internal protected static readonly MethodInfo ConstructEntity = typeof(ExecutionBuilder).GetMethod(nameof(ExecutionBuilder.ConstructEntity), BindingFlags.Static | BindingFlags.NonPublic);
+            internal protected static readonly MethodInfo NewPropertyValue = typeof(PropertyValue).GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(s => s.Name == nameof(PropertyValue.NewValue));
+            internal protected static readonly MethodInfo IsDbNull = typeof(IRecordWrapper).GetMethod(nameof(IRecordWrapper.IsDbNull), new[] { typeof(IDataReader), typeof(int) });
+            internal protected static readonly MethodInfo ConvertFrom = typeof(IValueConverter).GetMethod(nameof(IValueConverter.ConvertFrom));
+            internal protected static readonly MethodInfo ConvertTo = typeof(IValueConverter).GetMethod(nameof(IValueConverter.ConvertTo));
+            internal protected static readonly MethodInfo GetConverter = typeof(ConvertManager).GetMethod(nameof(ConvertManager.GetConverter));
+            internal protected static readonly MethodInfo GenerateIdentityValue = typeof(ExecutionBuilder).GetMethod(nameof(ExecutionBuilder.GenerateIdentityValue), BindingFlags.Static | BindingFlags.NonPublic);
+            internal protected static readonly MethodInfo GenerateGuidValue = typeof(ExecutionBuilder).GetMethod(nameof(ExecutionBuilder.GenerateGuidValue), BindingFlags.Static | BindingFlags.NonPublic);
+            internal protected static readonly Expression ExpNullParameter = Expression.Constant(null, typeof(ParameterCollection));
         }
-
-        private TranslatorBase translator;
 
         /// <summary>
         /// 构造最终执行的表达式。
@@ -70,36 +70,34 @@ namespace Fireasy.Data.Entity.Query
         /// <param name="translator">翻译器。</param>
         /// <param name="options"></param>
         /// <returns></returns>
-        public static Expression Build(Expression expression, BuildOptions options)
+        public static Expression Build(TranslateContext transContext, Expression expression, BuildOptions options)
         {
-            var scope = TranslateScope.Current;
-            var translator = scope.TranslateProvider.CreateTranslator();
-
             var builder = new ExecutionBuilder()
             {
-                executor = Expression.Parameter(typeof(IDatabase), "db"),
-                translator = translator
+                _transContext = transContext,
+                _executor = Expression.Parameter(typeof(IDatabase), "db"),
+                _translator = transContext.Translator
             };
 
             if (options.IsAsync != null)
             {
-                builder.isAsync = (bool)options.IsAsync;
+                builder._isAsync = (bool)options.IsAsync;
             }
 
             if (options.IsNoTracking == true)
             {
-                builder.isNoTracking = true;
+                builder._isNoTracking = true;
             }
 
             var newExpression = builder.Bind(expression);
 
-            if (builder.isAsync)
+            if (builder._isAsync)
             {
-                var cancelToken = builder.cancelToken ?? Expression.Parameter(typeof(CancellationToken), "token");
-                return Expression.Lambda(newExpression, builder.executor, cancelToken);
+                var cancelToken = builder._cancelToken ?? Expression.Parameter(typeof(CancellationToken), "token");
+                return Expression.Lambda(newExpression, builder._executor, cancelToken);
             }
 
-            return Expression.Lambda(newExpression, builder.executor);
+            return Expression.Lambda(newExpression, builder._executor);
         }
 
         private Expression Bind(Expression expression)
@@ -112,22 +110,22 @@ namespace Fireasy.Data.Entity.Query
         private Expression AddVariables(Expression expression)
         {
             // add variable assignments up front
-            if (variables.Count > 0)
+            if (_variables.Count > 0)
             {
                 var exprs = new List<Expression>();
-                for (int i = 0, n = variables.Count; i < n; i++)
+                for (int i = 0, n = _variables.Count; i < n; i++)
                 {
-                    exprs.Add(MakeAssign(variables[i], initializers[i]));
+                    exprs.Add(MakeAssign(_variables[i], _initializers[i]));
                 }
 
                 exprs.Add(expression);
 
                 expression = MakeSequence(exprs);  // yields last expression value
 
-                var nulls = variables.Select(v => Expression.Constant(null, v.Type)).ToArray();
+                var nulls = _variables.Select(v => Expression.Constant(null, v.Type)).ToArray();
 
                 // use invoke/lambda to create variables via parameters in scope
-                expression = Expression.Invoke(Expression.Lambda(expression, variables.ToArray()), nulls);
+                expression = Expression.Invoke(Expression.Lambda(expression, _variables.ToArray()), nulls);
             }
 
             return expression;
@@ -165,12 +163,12 @@ namespace Fireasy.Data.Entity.Query
         /// <returns></returns>
         protected override Expression VisitInsert(InsertCommandExpression insert)
         {
-            isAsync = isAsync || insert.IsAsync;
+            _isAsync = _isAsync || insert.IsAsync;
 
             //如果没有更新参数，则返回-1
             if (insert.Assignments.Count == 0)
             {
-                return isAsync ? Expression.Constant(Task.FromResult(-1)) : Expression.Constant(-1);
+                return _isAsync ? Expression.Constant(Task.FromResult(-1)) : Expression.Constant(-1);
             }
 
             var arguments = VisitColumnAssignments(insert.Assignments);
@@ -187,7 +185,7 @@ namespace Fireasy.Data.Entity.Query
         /// <returns></returns>
         protected override Expression VisitDelete(DeleteCommandExpression delete)
         {
-            isAsync = isAsync || delete.IsAsync;
+            _isAsync = _isAsync || delete.IsAsync;
 
             return BuildExecuteNoQueryCommand(delete);
         }
@@ -199,12 +197,12 @@ namespace Fireasy.Data.Entity.Query
         /// <returns></returns>
         protected override Expression VisitUpdate(UpdateCommandExpression update)
         {
-            isAsync = isAsync || update.IsAsync;
+            _isAsync = _isAsync || update.IsAsync;
 
             //如果没有更新参数，则返回-1
             if (update.Assignments.Count == 0)
             {
-                return isAsync ? Expression.Constant(Task.FromResult(-1)) : Expression.Constant(-1);
+                return _isAsync ? Expression.Constant(Task.FromResult(-1)) : Expression.Constant(-1);
             }
 
             return BuildExecuteNoQueryCommand(update);
@@ -217,14 +215,14 @@ namespace Fireasy.Data.Entity.Query
         /// <returns></returns>
         protected override Expression VisitBatch(BatchCommandExpression batch)
         {
-            isAsync = isAsync || batch.IsAsync;
+            _isAsync = _isAsync || batch.IsAsync;
 
             var operation = batch.Operation;
             if (operation.Body is InsertCommandExpression insert)
             {
                 if (batch.Arguments.Count == 0)
                 {
-                    return isAsync ? Expression.Constant(Task.FromResult(-1)) : Expression.Constant(-1);
+                    return _isAsync ? Expression.Constant(Task.FromResult(-1)) : Expression.Constant(-1);
                 }
 
                 var rewriter = insert.Update(insert.Table, VisitColumnAssignments(insert.Assignments));
@@ -247,13 +245,13 @@ namespace Fireasy.Data.Entity.Query
         /// <returns></returns>
         protected override Expression VisitProjection(ProjectionExpression proj)
         {
-            if (isTop)
+            if (_isTop)
             {
-                isTop = false;
-                isAsync = isAsync || proj.IsAsync;
-                isNoTracking = isNoTracking || proj.IsNoTracking;
+                _isTop = false;
+                _isAsync = _isAsync || proj.IsAsync;
+                _isNoTracking = _isNoTracking || proj.IsNoTracking;
 
-                return ExecuteProjection(proj, scope != null);
+                return ExecuteProjection(proj, _scope != null);
             }
             else
             {
@@ -284,7 +282,7 @@ namespace Fireasy.Data.Entity.Query
 
             if (typeof(IEntity).IsAssignableFrom(elementType) && elementType.IsNotCompiled())
             {
-                var contextType = TranslateScope.Current?.ContextType;
+                var contextType = _transContext.ContextType;
                 elementType = EntityProxyManager.GetType(contextType, elementType);
             }
 
@@ -301,10 +299,10 @@ namespace Fireasy.Data.Entity.Query
 
         protected override MemberBinding VisitBinding(MemberBinding binding)
         {
-            var save = receivingMember;
-            receivingMember = binding.Member;
+            var save = _receivingMember;
+            _receivingMember = binding.Member;
             var bindings = base.VisitBinding(binding);
-            receivingMember = save;
+            _receivingMember = save;
             return bindings;
         }
 
@@ -332,7 +330,7 @@ namespace Fireasy.Data.Entity.Query
             var expr = Visit(outer.Expression);
             var column = (ColumnExpression)outer.Test;
 
-            if (scope.TryGetValue(column, out ParameterExpression recordWrapper, out ParameterExpression dataReader, out int ordinal))
+            if (_scope.TryGetValue(column, out ParameterExpression recordWrapper, out ParameterExpression dataReader, out int ordinal))
             {
                 return Expression.Condition(
                     Expression.Call(recordWrapper, MethodCache.IsDbNull, dataReader, Expression.Constant(ordinal)),
@@ -346,7 +344,7 @@ namespace Fireasy.Data.Entity.Query
 
         protected override Expression VisitColumn(ColumnExpression column)
         {
-            if (scope != null && scope.TryGetValue(column, out ParameterExpression recordWrapper, out ParameterExpression dataReader, out int ordinal))
+            if (_scope != null && _scope.TryGetValue(column, out ParameterExpression recordWrapper, out ParameterExpression dataReader, out int ordinal))
             {
                 if (!column.Type.IsDbTypeSupported())
                 {
@@ -403,7 +401,7 @@ namespace Fireasy.Data.Entity.Query
                 return Expression.Call(null, MethodCache.GenerateGuidValue, generator.Entity, Expression.Constant(generator.Property));
             }
 
-            return Expression.Call(null, MethodCache.GenerateIdentityValue, executor, generator.Entity, Expression.Constant(generator.Property));
+            return Expression.Call(null, MethodCache.GenerateIdentityValue, _executor, generator.Entity, Expression.Constant(generator.Property));
         }
 
         protected override Expression VisitNamedValue(NamedValueExpression value)
@@ -413,9 +411,9 @@ namespace Fireasy.Data.Entity.Query
 
         protected virtual Expression Parameterize(Expression expression)
         {
-            if (variableMap.Count > 0)
+            if (_variableMap.Count > 0)
             {
-                expression = VariableSubstitutor.Substitute(variableMap, expression);
+                expression = VariableSubstitutor.Substitute(_variableMap, expression);
             }
 
             return Parameterizer.Parameterize(expression);
@@ -431,9 +429,9 @@ namespace Fireasy.Data.Entity.Query
 
             var kvpConstructor = ReflectionCache.GetMember("KeyValueConstructor", new[] { innerKey.Type, join.Projection.Projector.Type }, pars => typeof(KeyValuePair<,>).MakeGenericType(pars).GetConstructor(pars));
             Expression constructKVPair = Expression.New(kvpConstructor, innerKey, join.Projection.Projector);
-            ProjectionExpression newProjection = new ProjectionExpression(join.Projection.Select, constructKVPair, isAsync, join.Projection.IsNoTracking);
+            ProjectionExpression newProjection = new ProjectionExpression(join.Projection.Select, constructKVPair, _isAsync, join.Projection.IsNoTracking);
 
-            int iLookup = ++nLookup;
+            int iLookup = ++_lookup;
             Expression execution = ExecuteProjection(newProjection, false);
 
             ParameterExpression kvp = Expression.Parameter(constructKVPair.Type, "kvp");
@@ -464,8 +462,8 @@ namespace Fireasy.Data.Entity.Query
                 access = DbExpressionReplacer.Replace(join.Projection.Aggregator.Body, join.Projection.Aggregator.Parameters[0], access);
             }
 
-            variables.Add(lookup);
-            initializers.Add(toLookup);
+            _variables.Add(lookup);
+            _initializers.Add(toLookup);
 
             return access;
         }
@@ -474,13 +472,13 @@ namespace Fireasy.Data.Entity.Query
         {
             var eb = new ExecutionBuilder
             {
-                executor = executor,
-                scope = scope,
-                receivingMember = receivingMember,
-                nReaders = nReaders,
-                nLookup = nLookup,
-                translator = translator,
-                variableMap = variableMap
+                _executor = _executor,
+                _scope = _scope,
+                _receivingMember = _receivingMember,
+                _readers = _readers,
+                _lookup = _lookup,
+                _translator = _translator,
+                _variableMap = _variableMap
             };
             return eb.Visit(expression);
         }
@@ -489,9 +487,9 @@ namespace Fireasy.Data.Entity.Query
         {
             projection = (ProjectionExpression)Parameterize(projection);
 
-            if (scope != null)
+            if (_scope != null)
             {
-                projection = (ProjectionExpression)OuterParameterizer.Parameterize(scope.Alias, projection);
+                projection = (ProjectionExpression)OuterParameterizer.Parameterize(_scope.Alias, projection);
             }
 
             return BuildExecuteEnumerableCommand(projection, okayToDefer);
@@ -506,36 +504,36 @@ namespace Fireasy.Data.Entity.Query
         {
             var elementType = projection.IsSingleton ? projection.Type : ReflectionCache.GetMember("EnumerableElementType", projection.Type, k => k.GetEnumerableElementType());
 
-            var saveScope = scope;
-            var recordWrapper = Expression.Parameter(typeof(IRecordWrapper), $"rw{nReaders}");
-            var dataReader = Expression.Parameter(typeof(IDataReader), $"dr{nReaders}");
-            nReaders++;
+            var saveScope = _scope;
+            var recordWrapper = Expression.Parameter(typeof(IRecordWrapper), $"rw{_readers}");
+            var dataReader = Expression.Parameter(typeof(IDataReader), $"dr{_readers}");
+            _readers++;
 
-            scope = new Scope(scope, recordWrapper, dataReader, projection.Select.Alias, projection.Select.Columns);
+            _scope = new Scope(_scope, recordWrapper, dataReader, projection.Select.Alias, projection.Select.Columns);
 
             var projector = Visit(projection.Projector);
             var rowMapper = CreateDataRowWrapper(projector, elementType);
-            scope = saveScope;
+            _scope = saveScope;
 
-            var result = translator.Translate(projection.Select);
+            var result = _translator.Translate(projection.Select);
 
             Expression plan;
-            if (isAsync)
+            if (_isAsync)
             {
                 var method = ReflectionCache.GetMember("ExecuteEnumerableAsync", elementType, k => MethodCache.DbExecuteEnumerableAsync.MakeGenericMethod(k));
-                cancelToken = Expression.Parameter(typeof(CancellationToken), "token");
-                plan = Expression.Call(executor, method,
+                _cancelToken = Expression.Parameter(typeof(CancellationToken), "token");
+                plan = Expression.Call(_executor, method,
                     Expression.Constant((SqlCommand)result.QueryText),
                     Expression.Constant(result.DataSegment, typeof(IDataSegment)),
                     CreateParameterCollectionExpression(projection.Select),
                     Expression.Constant(rowMapper),
-                    cancelToken
+                    _cancelToken
                     );
             }
             else
             {
                 var method = ReflectionCache.GetMember("ExecuteEnumerable", elementType, k => MethodCache.DbExecuteEnumerable.MakeGenericMethod(k));
-                plan = Expression.Call(executor, method,
+                plan = Expression.Call(_executor, method,
                     Expression.Constant((SqlCommand)result.QueryText),
                     Expression.Constant(result.DataSegment, typeof(IDataSegment)),
                     CreateParameterCollectionExpression(projection.Select),
@@ -559,20 +557,20 @@ namespace Fireasy.Data.Entity.Query
         private Expression BuildExecuteNoQueryCommand(CommandExpression command)
         {
             var expression = Parameterize(command);
-            var result = translator.Translate(expression);
+            var result = _translator.Translate(expression);
 
-            if (isAsync)
+            if (_isAsync)
             {
-                cancelToken = Expression.Parameter(typeof(CancellationToken), "token");
-                return Expression.Call(executor, MethodCache.DbExecuteNoQueryAsync,
+                _cancelToken = Expression.Parameter(typeof(CancellationToken), "token");
+                return Expression.Call(_executor, MethodCache.DbExecuteNoQueryAsync,
                         Expression.Constant((SqlCommand)result.QueryText),
                         CreateParameterCollectionExpression(expression),
-                        cancelToken
+                        _cancelToken
                     );
             }
             else
             {
-                return Expression.Call(executor, MethodCache.DbExecuteNoQuery,
+                return Expression.Call(_executor, MethodCache.DbExecuteNoQuery,
                         Expression.Constant((SqlCommand)result.QueryText),
                         CreateParameterCollectionExpression(expression)
                     );
@@ -587,22 +585,22 @@ namespace Fireasy.Data.Entity.Query
         private Expression BuildExecuteScalarCommand(CommandExpression command)
         {
             var expression = Parameterize(command);
-            var result = translator.Translate(expression);
+            var result = _translator.Translate(expression);
 
-            if (isAsync)
+            if (_isAsync)
             {
                 var method = ReflectionCache.GetMember("ExecuteScalarAsync", command.Type, k => MethodCache.DbExecuteScalarAsync.MakeGenericMethod(k));
-                cancelToken = Expression.Parameter(typeof(CancellationToken), "token");
-                return Expression.Call(executor, method,
+                _cancelToken = Expression.Parameter(typeof(CancellationToken), "token");
+                return Expression.Call(_executor, method,
                         Expression.Constant((SqlCommand)result.QueryText),
                         CreateParameterCollectionExpression(expression),
-                        cancelToken
+                        _cancelToken
                     );
             }
             else
             {
                 var method = ReflectionCache.GetMember("ExecuteScalar", command.Type, k => MethodCache.DbExecuteScalar.MakeGenericMethod(k));
-                return Expression.Call(executor, method,
+                return Expression.Call(_executor, method,
                         Expression.Constant((SqlCommand)result.QueryText),
                         CreateParameterCollectionExpression(expression)
                     );
@@ -613,7 +611,7 @@ namespace Fireasy.Data.Entity.Query
         {
             var operation = Parameterize(batch.Operation.Body);
 
-            var result = translator.Translate(operation);
+            var result = _translator.Translate(operation);
             var namedValues = NamedValueGatherer.Gather(operation);
 
             var table = new DataTable();
@@ -662,7 +660,7 @@ namespace Fireasy.Data.Entity.Query
                     else if (nv.Value is Expression exp)
                     {
                         exp = ParameterRewriter.Rewrite(exp, batch.Operation.Parameters[1], entity);
-                        var setter = Expression.Lambda(exp, executor).Compile();
+                        var setter = Expression.Lambda(exp, _executor).Compile();
                         row[nv.Key] = DataExpressionRow.Create(exp.Type, setter);
                     }
                 }
@@ -671,20 +669,20 @@ namespace Fireasy.Data.Entity.Query
             }
 
             Expression plan;
-            if (isAsync)
+            if (_isAsync)
             {
-                cancelToken = Expression.Parameter(typeof(CancellationToken), "token");
-                plan = Expression.Call(executor, MethodCache.DbUpdateAsync,
+                _cancelToken = Expression.Parameter(typeof(CancellationToken), "token");
+                plan = Expression.Call(_executor, MethodCache.DbUpdateAsync,
                     Expression.Constant(table),
                     Expression.Constant((SqlCommand)result.QueryText),
                     Expression.Constant(null, typeof(SqlCommand)),
                     Expression.Constant(null, typeof(SqlCommand)),
-                    cancelToken
+                    _cancelToken
                     );
             }
             else
             {
-                plan = Expression.Call(executor, MethodCache.DbUpdate,
+                plan = Expression.Call(_executor, MethodCache.DbUpdate,
                     Expression.Constant(table),
                     Expression.Constant((SqlCommand)result.QueryText),
                     Expression.Constant(null, typeof(SqlCommand)),
@@ -698,7 +696,7 @@ namespace Fireasy.Data.Entity.Query
             }
 
             return Expression.Call(typeof(ExecutionBuilder),
-                isAsync ? nameof(ExecutionBuilder.UpdateEntitiesAsync) : nameof(ExecutionBuilder.UpdateEntities), null,
+                _isAsync ? nameof(ExecutionBuilder.UpdateEntitiesAsync) : nameof(ExecutionBuilder.UpdateEntities), null,
                 plan,
                 Expression.Constant(table, typeof(DataTable)),
                 Expression.Constant(entities, typeof(IEnumerable)));
@@ -731,8 +729,8 @@ namespace Fireasy.Data.Entity.Query
             var namedValues = NamedValueGatherer.Gather(expression);
 
             var values = (from v in namedValues
-             let nex = Visit(v.Value)
-             select nex.NodeType == ExpressionType.Convert ? nex : Expression.Convert(nex, typeof(object))).ToArray();
+                          let nex = Visit(v.Value)
+                          select nex.NodeType == ExpressionType.Convert ? nex : Expression.Convert(nex, typeof(object))).ToArray();
 
             if (values.Length > 0)
             {
@@ -769,8 +767,8 @@ namespace Fireasy.Data.Entity.Query
         {
             var funcType = ReflectionCache.GetMember("FuncType", elementType, k => typeof(Func<,>).MakeGenericType(typeof(IDataReader), k));
             var mapperType = ReflectionCache.GetMember("ProjectionRowMapperType", elementType, k => typeof(ProjectionRowMapper<>).MakeGenericType(k));
-            var lambda = Expression.Lambda(funcType, projector, scope.dataReader);
-            return mapperType.New<IDataRowMapper>(executor, lambda, scope.recordWrapper);
+            var lambda = Expression.Lambda(funcType, projector, _scope._dataReader);
+            return mapperType.New<IDataRowMapper>(_executor, lambda, _scope._recordWrapper);
         }
 
         /// <summary>
@@ -931,7 +929,7 @@ namespace Fireasy.Data.Entity.Query
 
         private Expression ConvertEntityExpression(MemberInitExpression mbmInitExp)
         {
-            if (isNoTracking == true)
+            if (_isNoTracking == true)
             {
                 return mbmInitExp.Update(mbmInitExp.NewExpression, mbmInitExp.Bindings.Select(s => VisitBinding(s)));
             }
@@ -983,37 +981,38 @@ namespace Fireasy.Data.Entity.Query
                 newExp,
                 Expression.NewArrayInit(typeof(IProperty), properties.ToArray()),
                 Expression.NewArrayInit(typeof(PropertyValue), values.ToArray()),
-                Expression.Constant(TranslateScope.Current.InstanceName, typeof(string)),
-                Expression.Constant(TranslateScope.Current.PersistentEnvironment, typeof(EntityPersistentEnvironment)));
+                Expression.Constant(_transContext.InstanceName, typeof(string)),
+                Expression.Constant(_transContext.PersistentEnvironment, typeof(EntityPersistentEnvironment)));
 
             return Expression.Convert(constCall, mbmInitExp.Type);
         }
 
         private class Scope
         {
-            internal Scope outer;
-            internal ParameterExpression recordWrapper;
-            internal ParameterExpression dataReader;
-            internal TableAlias Alias { get; private set; }
-            private readonly Dictionary<string, int> nameMap;
+            internal Scope _outer;
+            internal ParameterExpression _recordWrapper;
+            internal ParameterExpression _dataReader;
+            private readonly Dictionary<string, int> _nameMap;
+            internal TableAlias Alias { get; }
 
             internal Scope(Scope outer, ParameterExpression recordWrapper, ParameterExpression dataReader, TableAlias alias, IEnumerable<ColumnDeclaration> columns)
             {
-                this.outer = outer;
-                this.recordWrapper = recordWrapper;
-                this.dataReader = dataReader;
+                _outer = outer;
+                _recordWrapper = recordWrapper;
+                _dataReader = dataReader;
+                _nameMap = columns.Select((c, i) => new { c, i }).ToDictionary(x => x.c.Name, x => x.i);
+
                 Alias = alias;
-                nameMap = columns.Select((c, i) => new { c, i }).ToDictionary(x => x.c.Name, x => x.i);
             }
 
             internal bool TryGetValue(ColumnExpression column, out ParameterExpression recordWrapper, out ParameterExpression dataReader, out int ordinal)
             {
-                for (Scope s = this; s != null; s = s.outer)
+                for (Scope s = this; s != null; s = s._outer)
                 {
-                    if (column.Alias == s.Alias && nameMap.TryGetValue(column.Name, out ordinal))
+                    if (column.Alias == s.Alias && _nameMap.TryGetValue(column.Name, out ordinal))
                     {
-                        recordWrapper = this.recordWrapper;
-                        dataReader = this.dataReader;
+                        recordWrapper = this._recordWrapper;
+                        dataReader = this._dataReader;
                         return true;
                     }
                 }
@@ -1030,15 +1029,15 @@ namespace Fireasy.Data.Entity.Query
         /// </summary>
         private class OuterParameterizer : DbExpressionVisitor
         {
-            private int iParam;
-            private TableAlias outerAlias;
-            private readonly Dictionary<ColumnExpression, NamedValueExpression> map = new Dictionary<ColumnExpression, NamedValueExpression>();
+            private int _iParam;
+            private TableAlias _outerAlias;
+            private readonly Dictionary<ColumnExpression, NamedValueExpression> _map = new Dictionary<ColumnExpression, NamedValueExpression>();
 
             internal static Expression Parameterize(TableAlias outerAlias, Expression expr)
             {
                 var op = new OuterParameterizer
                 {
-                    outerAlias = outerAlias
+                    _outerAlias = outerAlias
                 };
                 return op.Visit(expr);
             }
@@ -1051,12 +1050,12 @@ namespace Fireasy.Data.Entity.Query
 
             protected override Expression VisitColumn(ColumnExpression column)
             {
-                if (column.Alias == outerAlias)
+                if (column.Alias == _outerAlias)
                 {
-                    if (!map.TryGetValue(column, out NamedValueExpression nv))
+                    if (!_map.TryGetValue(column, out NamedValueExpression nv))
                     {
-                        nv = QueryUtility.GetNamedValueExpression($"n{(iParam++)}", column, (DbType)column.MapInfo.DataType);
-                        map.Add(column, nv);
+                        nv = QueryUtility.GetNamedValueExpression($"n{(_iParam++)}", column, (DbType)column.MapInfo.DataType);
+                        _map.Add(column, nv);
                     }
 
                     return nv;
@@ -1067,11 +1066,11 @@ namespace Fireasy.Data.Entity.Query
         }
         class VariableSubstitutor : DbExpressionVisitor
         {
-            private readonly Dictionary<string, Expression> map;
+            private readonly Dictionary<string, Expression> _map;
 
             private VariableSubstitutor(Dictionary<string, Expression> map)
             {
-                this.map = map;
+                _map = map;
             }
 
             public static Expression Substitute(Dictionary<string, Expression> map, Expression expression)
@@ -1081,7 +1080,7 @@ namespace Fireasy.Data.Entity.Query
 
             protected override Expression VisitVariable(VariableExpression vex)
             {
-                if (map.TryGetValue(vex.Name, out Expression sub))
+                if (_map.TryGetValue(vex.Name, out Expression sub))
                 {
                     return sub;
                 }
@@ -1091,23 +1090,23 @@ namespace Fireasy.Data.Entity.Query
 
         private class ProjectionRowMapper<T> : ExpressionRowMapper<T>
         {
-            private readonly ParameterExpression executor;
-            private readonly LambdaExpression expression;
-            private readonly ParameterExpression recordWrapper;
+            private readonly ParameterExpression _executor;
+            private readonly LambdaExpression _expression;
+            private readonly ParameterExpression _recordWrapper;
 
             public ProjectionRowMapper(ParameterExpression executor, LambdaExpression expression, ParameterExpression recordWrapper)
             {
-                this.executor = executor;
-                this.expression = expression;
-                this.recordWrapper = recordWrapper;
+                _executor = executor;
+                _expression = expression;
+                _recordWrapper = recordWrapper;
             }
 
             protected override Expression<Func<IDatabase, IDataReader, T>> BuildExpressionForDataReader()
             {
-                var exp = (LambdaExpression)DbExpressionReplacer.Replace(expression, recordWrapper, Expression.Constant(RecordWrapper, typeof(IRecordWrapper)));
+                var exp = (LambdaExpression)DbExpressionReplacer.Replace(_expression, _recordWrapper, Expression.Constant(RecordWrapper, typeof(IRecordWrapper)));
                 if (exp.Parameters.Count == 1 && exp.Parameters[0].Type != typeof(IDatabase))
                 {
-                    return Expression.Lambda<Func<IDatabase, IDataReader, T>>(exp.Body, executor, exp.Parameters[0]);
+                    return Expression.Lambda<Func<IDatabase, IDataReader, T>>(exp.Body, _executor, exp.Parameters[0]);
                 }
 
                 return (Expression<Func<IDatabase, IDataReader, T>>)exp;
@@ -1115,10 +1114,10 @@ namespace Fireasy.Data.Entity.Query
 
             protected override Expression<Func<IDatabase, DataRow, T>> BuildExpressionForDataRow()
             {
-                var exp = (LambdaExpression)DbExpressionReplacer.Replace(expression, recordWrapper, Expression.Constant(RecordWrapper, typeof(IRecordWrapper)));
+                var exp = (LambdaExpression)DbExpressionReplacer.Replace(_expression, _recordWrapper, Expression.Constant(RecordWrapper, typeof(IRecordWrapper)));
                 if (exp.Parameters.Count == 1 && exp.Parameters[0].Type != typeof(IDatabase))
                 {
-                    return Expression.Lambda<Func<IDatabase, DataRow, T>>(exp.Body, executor, exp.Parameters[0]);
+                    return Expression.Lambda<Func<IDatabase, DataRow, T>>(exp.Body, _executor, exp.Parameters[0]);
                 }
 
                 return (Expression<Func<IDatabase, DataRow, T>>)exp;

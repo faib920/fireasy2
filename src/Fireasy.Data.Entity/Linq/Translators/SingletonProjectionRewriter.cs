@@ -1,9 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
-using System.Linq.Expressions;
-using System.Reflection;
 using Fireasy.Data.Entity.Linq.Expressions;
+using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
@@ -12,8 +11,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class SingletonProjectionRewriter : DbExpressionVisitor
     {
-        private bool isTopLevel = true;
-        private SelectExpression currentSelect;
+        private bool _isTopLevel = true;
+        private SelectExpression _currentSelect;
 
         public static Expression Rewrite(Expression expression)
         {
@@ -23,65 +22,65 @@ namespace Fireasy.Data.Entity.Linq.Translators
         protected override Expression VisitClientJoin(ClientJoinExpression join)
         {
             // treat client joins as new top level
-            var saveTop = this.isTopLevel;
-            var saveSelect = this.currentSelect;
-            isTopLevel = true;
-            currentSelect = null;
+            var saveTop = _isTopLevel;
+            var saveSelect = _currentSelect;
+            _isTopLevel = true;
+            _currentSelect = null;
 
             Expression result = base.VisitClientJoin(join);
 
-            isTopLevel = saveTop;
-            currentSelect = saveSelect;
+            _isTopLevel = saveTop;
+            _currentSelect = saveSelect;
 
             return result;
         }
 
         protected override Expression VisitProjection(ProjectionExpression proj)
         {
-            if (isTopLevel)
+            if (_isTopLevel)
             {
-                isTopLevel = false;
-                currentSelect = proj.Select;
+                _isTopLevel = false;
+                _currentSelect = proj.Select;
                 var projector = Visit(proj.Projector);
 
-                if (projector != proj.Projector || currentSelect != proj.Select)
+                if (projector != proj.Projector || _currentSelect != proj.Select)
                 {
-                    return new ProjectionExpression(currentSelect, projector, proj.Aggregator, proj.IsAsync, proj.IsNoTracking);
+                    return new ProjectionExpression(_currentSelect, projector, proj.Aggregator, proj.IsAsync, proj.IsNoTracking);
                 }
 
                 return proj;
             }
 
-            if (proj.IsSingleton && CanJoinOnServer(currentSelect))
+            if (proj.IsSingleton && CanJoinOnServer(_currentSelect))
             {
                 var newAlias = new TableAlias();
-                currentSelect = currentSelect.AddRedundantSelect(newAlias);
-                var source = (SelectExpression)ColumnMapper.Map(proj.Select, newAlias, currentSelect.Alias);
+                _currentSelect = _currentSelect.AddRedundantSelect(newAlias);
+                var source = (SelectExpression)ColumnMapper.Map(proj.Select, newAlias, _currentSelect.Alias);
                 var pex = new ProjectionExpression(source, proj.Projector, proj.IsAsync, proj.IsNoTracking).AddOuterJoinTest();
-                var pc = ColumnProjector.ProjectColumns(QueryUtility.CanBeColumnExpression, pex.Projector, currentSelect.Columns, currentSelect.Alias, newAlias, proj.Select.Alias);
+                var pc = ColumnProjector.ProjectColumns(QueryUtility.CanBeColumnExpression, pex.Projector, _currentSelect.Columns, _currentSelect.Alias, newAlias, proj.Select.Alias);
 
                 // **fix** 解决返回关联对象后使用Distinct的问题
-                var join = CreateJoinExpression(currentSelect.From, pex.Select, out bool isDistinct);
-                currentSelect = new SelectExpression(currentSelect.Alias, pc.Columns, join, null);
+                var join = CreateJoinExpression(_currentSelect.From, pex.Select, out bool isDistinct);
+                _currentSelect = new SelectExpression(_currentSelect.Alias, pc.Columns, join, null);
                 if (isDistinct)
                 {
-                    var newPc = ColumnProjector.ProjectColumns(QueryUtility.CanBeColumnExpression, proj.Projector, null, currentSelect.Alias, proj.Select.Alias);
-                    currentSelect = new SelectExpression(currentSelect.Alias, newPc.Columns, currentSelect, null, null, null, isDistinct, null, null, null, null, false);
+                    var newPc = ColumnProjector.ProjectColumns(QueryUtility.CanBeColumnExpression, proj.Projector, null, _currentSelect.Alias, proj.Select.Alias);
+                    _currentSelect = new SelectExpression(_currentSelect.Alias, newPc.Columns, _currentSelect, null, null, null, isDistinct, null, null, null, null, false);
                     return Visit(newPc.Projector);
                 }
 
                 return Visit(pc.Projector);
             }
 
-            var saveTop = isTopLevel;
-            var saveSelect = currentSelect;
-            isTopLevel = true;
-            currentSelect = null;
+            var saveTop = _isTopLevel;
+            var saveSelect = _currentSelect;
+            _isTopLevel = true;
+            _currentSelect = null;
 
             var result = base.VisitProjection(proj);
 
-            isTopLevel = saveTop;
-            currentSelect = saveSelect;
+            _isTopLevel = saveTop;
+            _currentSelect = saveSelect;
 
             return result;
         }
@@ -121,7 +120,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitCommand(CommandExpression command)
         {
-            isTopLevel = true;
+            _isTopLevel = true;
             return base.VisitCommand(command);
         }
     }

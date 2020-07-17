@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
+using Fireasy.Common.Extensions;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq.Expressions;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Data.Entity.Linq.Expressions
 {
@@ -39,12 +39,12 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取 IN 左边的列表达式。
         /// </summary>
-        public Expression Expression { get; private set; }
+        public Expression Expression { get; }
 
         /// <summary>
         /// 表示常量的查询表达式集合。
         /// </summary>
-        public ReadOnlyCollection<Expression> Values { get; private set; }
+        public ReadOnlyCollection<Expression> Values { get; }
 
         /// <summary>
         /// 更新 <see cref="InExpression"/> 对象。

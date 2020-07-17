@@ -24,6 +24,6 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 返回列表达式。
         /// </summary>
-        public Expression Expression { get; private set; }
+        public Expression Expression { get; }
     }
 }

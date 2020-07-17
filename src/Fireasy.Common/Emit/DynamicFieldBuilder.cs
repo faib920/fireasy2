@@ -17,17 +17,17 @@ namespace Fireasy.Common.Emit
     /// </summary>
     public class DynamicFieldBuilder : DynamicBuilder
     {
-        private FieldBuilder fieldBuilder;
-        private readonly object defaultValue;
-        private readonly FieldAttributes attributes;
+        private FieldBuilder _fieldBuilder;
+        private readonly object _defaultValue;
+        private readonly FieldAttributes _attributes;
 
         internal DynamicFieldBuilder(BuildContext context, string fieldName, Type fieldType, object defaultValue = null, VisualDecoration visual = VisualDecoration.Private, CallingDecoration calling = CallingDecoration.Standard)
             : base(visual, calling)
         {
             FieldName = fieldName;
             FieldType = fieldType;
-            attributes = GetAttributes(visual, calling);
-            this.defaultValue = defaultValue;
+            _attributes = GetAttributes(visual, calling);
+            _defaultValue = defaultValue;
             Context = context;
             InitBuilder();
         }
@@ -48,7 +48,7 @@ namespace Fireasy.Common.Emit
         /// <param name="customBuilder">一个 <see cref="CustomAttributeBuilder"/> 对象。</param>
         protected override void SetCustomAttribute(CustomAttributeBuilder customBuilder)
         {
-            fieldBuilder.SetCustomAttribute(customBuilder);
+            _fieldBuilder.SetCustomAttribute(customBuilder);
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace Fireasy.Common.Emit
         /// <returns></returns>
         public FieldBuilder FieldBuilder
         {
-            get { return fieldBuilder; }
+            get { return _fieldBuilder; }
         }
 
         private FieldAttributes GetAttributes(VisualDecoration visual, CallingDecoration calling)
@@ -90,15 +90,15 @@ namespace Fireasy.Common.Emit
         {
             if (Context.EnumBuilder == null)
             {
-                fieldBuilder = Context.TypeBuilder.TypeBuilder.DefineField(FieldName, FieldType, attributes);
-                if (defaultValue != null)
+                _fieldBuilder = Context.TypeBuilder.TypeBuilder.DefineField(FieldName, FieldType, _attributes);
+                if (_defaultValue != null)
                 {
-                    fieldBuilder.SetConstant(defaultValue);
+                    _fieldBuilder.SetConstant(_defaultValue);
                 }
             }
             else
             {
-                fieldBuilder = Context.EnumBuilder.EnumBuilder.DefineLiteral(FieldName, defaultValue);
+                _fieldBuilder = Context.EnumBuilder.EnumBuilder.DefineLiteral(FieldName, _defaultValue);
             }
         }
     }

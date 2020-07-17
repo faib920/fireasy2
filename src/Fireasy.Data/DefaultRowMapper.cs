@@ -22,8 +22,8 @@ namespace Fireasy.Data
     /// <typeparam name="T">要转换的类型。</typeparam>
     public sealed class DefaultRowMapper<T> : FieldRowMapperBase<T>
     {
-        private Func<IDataReader, T> funcDataRecd;
-        private Func<DataRow, T> funcDataRow;
+        private Func<IDataReader, T> _funcDataRecd;
+        private Func<DataRow, T> _funcDataRow;
 
         private class MethodCache
         {
@@ -40,12 +40,12 @@ namespace Fireasy.Data
         /// <returns>由当前 <see cref="IDataReader"/> 对象中的数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
         public override T Map(IDatabase database, IDataReader reader)
         {
-            if (funcDataRecd == null)
+            if (_funcDataRecd == null)
             {
                 CompileFunction(reader);
             }
 
-            var result = funcDataRecd(reader);
+            var result = _funcDataRecd(reader);
             Initializer?.Invoke(result);
 
             return result;
@@ -59,12 +59,12 @@ namespace Fireasy.Data
         /// <returns>由 <see cref="DataRow"/> 中数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
         public override T Map(IDatabase database, DataRow row)
         {
-            if (funcDataRecd == null)
+            if (_funcDataRecd == null)
             {
                 CompileFunction(row);
             }
 
-            var result = funcDataRow(row);
+            var result = _funcDataRow(row);
             Initializer?.Invoke(result);
 
             return result;
@@ -79,9 +79,9 @@ namespace Fireasy.Data
         private IEnumerable<PropertyMapping> GetMapping(string[] fields)
         {
             return from s in GetProperties()
-                          let index = IndexOf(fields, s.Name)
-                          where s.CanWrite && index != -1 && s.GetIndexParameters().Length == 0
-                          select new PropertyMapping { Info = s, Index = index };
+                   let index = IndexOf(fields, s.Name)
+                   where s.CanWrite && index != -1 && s.GetIndexParameters().Length == 0
+                   select new PropertyMapping { Info = s, Index = index };
         }
 
         private void CompileFunction(IDataReader reader)
@@ -93,7 +93,8 @@ namespace Fireasy.Data
             var parExp = Expression.Parameter(typeof(IDataRecord), "s");
 
             var bindings =
-                mapping.Select(s => {
+                mapping.Select(s =>
+                {
                     var dbType = reader.GetFieldType(s.Index);
                     var getValueMethod = Data.RecordWrapper.RecordWrapHelper.GetMethodByOrdinal(dbType.GetDbType());
                     //ToTypeEx<TS, TC>()
@@ -124,7 +125,7 @@ namespace Fireasy.Data
                         bindings.ToArray()),
                     parExp);
 
-            funcDataRecd = expr.Compile();
+            _funcDataRecd = expr.Compile();
         }
 
         private void CompileFunction(DataRow row)
@@ -138,8 +139,8 @@ namespace Fireasy.Data
                     Expression.Bind(
                         s.Info,
                         Expression.Convert(
-                            Expression.Call(MethodCache.ToType, new Expression[] 
-                                { 
+                            Expression.Call(MethodCache.ToType, new Expression[]
+                                {
                                     Expression.MakeIndex(parExp, MethodCache.DataRowIndex, new List<Expression> { Expression.Constant(s.Index) }),
                                     Expression.Constant(s.Info.PropertyType),
                                     Expression.Constant(null)
@@ -153,7 +154,7 @@ namespace Fireasy.Data
                         bindings),
                     parExp);
 
-            funcDataRow = expr.Compile();
+            _funcDataRow = expr.Compile();
         }
     }
 }

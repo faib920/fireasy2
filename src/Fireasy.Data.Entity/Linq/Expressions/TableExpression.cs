@@ -20,7 +20,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取数据表的名称。
         /// </summary>
-        public string Name { get; private set; }
+        public string Name { get; }
 
         /// <summary>
         /// 输出表的名称。

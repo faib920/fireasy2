@@ -12,27 +12,27 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class ReferencedColumnGatherer : DbExpressionVisitor
     {
-        private readonly HashSet<ColumnExpression> columns = new HashSet<ColumnExpression>();
-        private bool first = true;
+        private readonly HashSet<ColumnExpression> _columns = new HashSet<ColumnExpression>();
+        private bool _first = true;
 
         public static HashSet<ColumnExpression> Gather(Expression expression)
         {
             var visitor = new ReferencedColumnGatherer();
             visitor.Visit(expression);
-            return visitor.columns;
+            return visitor._columns;
         }
 
         protected override Expression VisitColumn(ColumnExpression column)
         {
-            columns.Add(column);
+            _columns.Add(column);
             return column;
         }
 
         protected override Expression VisitSelect(SelectExpression select)
         {
-            if (first)
+            if (_first)
             {
-                first = false;
+                _first = false;
                 return base.VisitSelect(select);
             }
 

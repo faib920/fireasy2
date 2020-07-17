@@ -18,10 +18,10 @@ namespace Fireasy.Common.Emit
     /// </summary>
     public class DynamicConstructorBuilder : DynamicBuilder
     {
-        private ConstructorBuilder constrBuilder;
-        private readonly Action<BuildContext> action;
-        private readonly MethodAttributes attributes;
-        private readonly List<string> parameters = new List<string>();
+        private ConstructorBuilder _constrBuilder;
+        private readonly Action<BuildContext> _buildAction;
+        private readonly MethodAttributes _attributes;
+        private readonly List<string> _parameters = new List<string>();
 
         internal DynamicConstructorBuilder(BuildContext context, Type[] parameterTypes, VisualDecoration visual = VisualDecoration.Public, CallingDecoration calling = CallingDecoration.Standard, Action<BuildContext> ilCoding = null)
             : base(visual, calling)
@@ -49,8 +49,8 @@ namespace Fireasy.Common.Emit
                 }
             }
 
-            action = ilCoding;
-            attributes = GetMethodAttributes(visual, calling);
+            _buildAction = ilCoding;
+            _attributes = GetMethodAttributes(visual, calling);
             InitBuilder();
         }
 
@@ -79,13 +79,13 @@ namespace Fireasy.Common.Emit
         public DynamicConstructorBuilder OverwriteCode(Action<EmitHelper> ilCoding)
         {
             var builderField = typeof(ConstructorBuilder).GetField("m_methodBuilder", BindingFlags.NonPublic | BindingFlags.Instance);
-            var builder = builderField.GetValue(constrBuilder);
+            var builder = builderField.GetValue(_constrBuilder);
             var field = typeof(MethodBuilder).GetField("m_ilGenerator", BindingFlags.NonPublic | BindingFlags.Instance);
             if (field != null)
             {
                 var cons = typeof(ILGenerator).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)[0];
                 field.SetValue(builder, cons.Invoke(new[] { builder }));
-                Context.Emitter = new EmitHelper(constrBuilder.GetILGenerator());
+                Context.Emitter = new EmitHelper(_constrBuilder.GetILGenerator());
             }
 
             return AppendCode(ilCoding);
@@ -98,8 +98,8 @@ namespace Fireasy.Common.Emit
         /// <returns></returns>
         public DynamicConstructorBuilder DefineParameter(string name)
         {
-            ConstructorBuilder.DefineParameter(parameters.Count + 1, ParameterAttributes.None, name);
-            parameters.Add(name);
+            ConstructorBuilder.DefineParameter(_parameters.Count + 1, ParameterAttributes.None, name);
+            _parameters.Add(name);
             return this;
         }
 
@@ -110,13 +110,13 @@ namespace Fireasy.Common.Emit
         /// <returns></returns>
         public DynamicConstructorBuilder DefineParameter(string name, bool hasDefaultValue = false, object defaultValue = null)
         {
-            var parameterBuilder = ConstructorBuilder.DefineParameter(parameters.Count + 1, hasDefaultValue ? ParameterAttributes.HasDefault : ParameterAttributes.None, name);
+            var parameterBuilder = ConstructorBuilder.DefineParameter(_parameters.Count + 1, hasDefaultValue ? ParameterAttributes.HasDefault : ParameterAttributes.None, name);
             if (hasDefaultValue)
             {
                 parameterBuilder.SetConstant(defaultValue);
             }
 
-            parameters.Add(name);
+            _parameters.Add(name);
             return this;
         }
 
@@ -126,7 +126,7 @@ namespace Fireasy.Common.Emit
         /// <returns></returns>
         public ConstructorBuilder ConstructorBuilder
         {
-            get { return constrBuilder; }
+            get { return _constrBuilder; }
         }
 
         /// <summary>
@@ -140,16 +140,16 @@ namespace Fireasy.Common.Emit
 
         private void InitBuilder()
         {
-            var isDefault = (ParameterTypes == null || ParameterTypes.Length == 0) && action == null;
-            constrBuilder = isDefault ?
-                Context.TypeBuilder.TypeBuilder.DefineDefaultConstructor(attributes) :
-                Context.TypeBuilder.TypeBuilder.DefineConstructor(attributes, CallingConventions.Standard, ParameterTypes);
+            var isDefault = (ParameterTypes == null || ParameterTypes.Length == 0) && _buildAction == null;
+            _constrBuilder = isDefault ?
+                Context.TypeBuilder.TypeBuilder.DefineDefaultConstructor(_attributes) :
+                Context.TypeBuilder.TypeBuilder.DefineConstructor(_attributes, CallingConventions.Standard, ParameterTypes);
             if (!isDefault)
             {
-                Context.Emitter = new EmitHelper(constrBuilder.GetILGenerator());
+                Context.Emitter = new EmitHelper(_constrBuilder.GetILGenerator());
             }
 
-            action?.Invoke(Context);
+            _buildAction?.Invoke(Context);
         }
 
         private MethodAttributes GetMethodAttributes(VisualDecoration visual = VisualDecoration.Public, CallingDecoration calling = CallingDecoration.Standard)

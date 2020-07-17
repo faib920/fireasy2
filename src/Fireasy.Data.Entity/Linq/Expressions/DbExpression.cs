@@ -13,15 +13,15 @@ namespace Fireasy.Data.Entity.Linq.Expressions
     [DebuggerDisplay("NodeType={NodeType},Type={Type}")]
     public abstract class DbExpression : Expression
     {
-        private readonly Type type;
-        private readonly DbExpressionType nodeType;
+        private readonly Type _type;
+        private readonly DbExpressionType _nodeType;
 
         /// <summary>
         /// 初始化 <see cref="DbExpression"/> 类的新实例。
         /// </summary>
         /// <param name="nodeType">节点的类型。</param>
         public DbExpression(DbExpressionType nodeType)
-            : this (nodeType, typeof(void))
+            : this(nodeType, typeof(void))
         {
         }
 
@@ -32,12 +32,12 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <param name="type">表达式的静态类型。</param>
         public DbExpression(DbExpressionType nodeType, Type type)
         {
-            this.nodeType = nodeType;
-            this.type = type;
+            _nodeType = nodeType;
+            _type = type;
         }
 
-        public override Type Type => type;
+        public override Type Type => _type;
 
-        public override ExpressionType NodeType => (ExpressionType)nodeType;
+        public override ExpressionType NodeType => (ExpressionType)_nodeType;
     }
 }

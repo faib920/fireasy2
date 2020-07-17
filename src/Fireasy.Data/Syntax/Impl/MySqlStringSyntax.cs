@@ -6,7 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 namespace Fireasy.Data.Syntax
 {
     /// <summary>
@@ -38,8 +37,8 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string IndexOf(object sourceExp, object searchExp, object startExp = null, object countExp = null)
         {
-            return startExp != null ? 
-                $"LOCATE({searchExp}, {sourceExp}, {startExp})" : 
+            return startExp != null ?
+                $"LOCATE({searchExp}, {sourceExp}, {startExp})" :
                 $"INSTR({searchExp}, {sourceExp})";
         }
 

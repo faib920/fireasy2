@@ -62,7 +62,7 @@ namespace Fireasy.Common.Security
 
         public static AsymmetricCrypto CreateAsymmetric(CryptoAlgorithm algorithm)
         {
-            if (algorithm != CryptoAlgorithm.RSA && 
+            if (algorithm != CryptoAlgorithm.RSA &&
                 algorithm != CryptoAlgorithm.DSA)
             {
                 throw new NotSupportedException(SR.GetString(SRKind.AlgorithmNotSupported, algorithm));
@@ -88,10 +88,10 @@ namespace Fireasy.Common.Security
 
         public static HashCrypto CreateHash(CryptoAlgorithm algorithm)
         {
-            if (algorithm != CryptoAlgorithm.MD5 && 
-                algorithm != CryptoAlgorithm.SHA1 && 
-                algorithm != CryptoAlgorithm.SHA256 && 
-                algorithm != CryptoAlgorithm.SHA384 && 
+            if (algorithm != CryptoAlgorithm.MD5 &&
+                algorithm != CryptoAlgorithm.SHA1 &&
+                algorithm != CryptoAlgorithm.SHA256 &&
+                algorithm != CryptoAlgorithm.SHA384 &&
                 algorithm != CryptoAlgorithm.SHA512)
             {
                 throw new NotSupportedException(SR.GetString(SRKind.AlgorithmNotSupported, algorithm));

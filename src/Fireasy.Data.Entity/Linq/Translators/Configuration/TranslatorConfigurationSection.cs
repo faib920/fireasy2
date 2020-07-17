@@ -7,8 +7,8 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
-using System.Xml;
 using System;
+using System.Xml;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
@@ -24,14 +24,14 @@ namespace Fireasy.Data.Entity.Linq.Translators.Configuration
             if (ndOption != null)
             {
                 Options = new TranslateOptions
-                    {
-                        HideTableAliases = ndOption.GetAttributeValue("hideTableAliases", false),
-                        HideColumnAliases = ndOption.GetAttributeValue("hideColumnAliases", false),
-                        CacheParsing = ndOption.GetAttributeValue("cacheParsing", true),
-                        CacheParsingTimes = ndOption.GetAttributeValue("cacheParsingTimes").ToTimeSpan(TimeSpan.FromMinutes(10)),
-                        CacheExecution = ndOption.GetAttributeValue("cacheExecution", false),
-                        CacheExecutionTimes = ndOption.GetAttributeValue("cacheExecutionTimes").ToTimeSpan(TimeSpan.FromMinutes(5)),
-                        TraceEntityState = ndOption.GetAttributeValue("traceEntityState", true),
+                {
+                    HideTableAliases = ndOption.GetAttributeValue("hideTableAliases", false),
+                    HideColumnAliases = ndOption.GetAttributeValue("hideColumnAliases", false),
+                    CacheParsing = ndOption.GetAttributeValue("cacheParsing", true),
+                    CacheParsingTimes = ndOption.GetAttributeValue("cacheParsingTimes").ToTimeSpan(TimeSpan.FromMinutes(10)),
+                    CacheExecution = ndOption.GetAttributeValue("cacheExecution", false),
+                    CacheExecutionTimes = ndOption.GetAttributeValue("cacheExecutionTimes").ToTimeSpan(TimeSpan.FromMinutes(5)),
+                    TraceEntityState = ndOption.GetAttributeValue("traceEntityState", true),
                 };
             }
         }

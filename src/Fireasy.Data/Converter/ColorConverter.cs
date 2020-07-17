@@ -6,10 +6,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.Extensions;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Data.Converter
 {
@@ -141,7 +141,7 @@ namespace Fireasy.Data.Converter
             }
 
             var color = (Color)value;
-            return new [] { color.A, color.R, color.G, color.B };
+            return new[] { color.A, color.R, color.G, color.B };
         }
     }
 }

@@ -22,7 +22,7 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public static class RelationshipUnity
     {
-        private static readonly SafetyDictionary<Assembly, SafetyDictionary<string, RelationshipMetadata>> relationCache =
+        private static readonly SafetyDictionary<Assembly, SafetyDictionary<string, RelationshipMetadata>> _relationCache =
             new SafetyDictionary<Assembly, SafetyDictionary<string, RelationshipMetadata>>();
 
         /// <summary>
@@ -86,7 +86,7 @@ namespace Fireasy.Data.Entity
 
         private static SafetyDictionary<string, RelationshipMetadata> GetRelationships(Assembly assembly)
         {
-            return relationCache.GetOrAdd(assembly, key =>
+            return _relationCache.GetOrAdd(assembly, key =>
             {
                 try
                 {
@@ -132,7 +132,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         private static RelationshipMetadata CachedRelationshipMetadata(RelationProperty relProperty, Type thisType, Type otherType)
         {
-            if (relationCache.TryGetValue(thisType.Assembly, out SafetyDictionary<string, RelationshipMetadata> relations))
+            if (_relationCache.TryGetValue(thisType.Assembly, out SafetyDictionary<string, RelationshipMetadata> relations))
             {
                 var key = string.Format("{0}:{1}:{2}",
                    EntityMetadataUnity.GetEntityMetadata(thisType).TableName,
@@ -251,8 +251,7 @@ namespace Fireasy.Data.Entity
             var list = new List<RelationshipKey>();
             foreach (var pair in keys.Where(pair => !string.IsNullOrEmpty(pair)))
             {
-                string thisKey, otherKey;
-                if (!ParseRelationKey(pair, out thisKey, out otherKey))
+                if (!ParseRelationKey(pair, out string thisKey, out string otherKey))
                 {
                     continue;
                 }

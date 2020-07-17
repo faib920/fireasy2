@@ -17,11 +17,11 @@ namespace Fireasy.Data.Converter
     /// <typeparam name="T"></typeparam>
     public abstract class SerializableValueConverter<T> : IValueConverter
     {
-        protected readonly ITextSerializer serializer;
+        protected readonly ITextSerializer _serializer;
 
         public SerializableValueConverter()
         {
-            serializer = CreateSerializer();
+            _serializer = CreateSerializer();
         }
 
         protected virtual ITextSerializer CreateSerializer()
@@ -36,12 +36,12 @@ namespace Fireasy.Data.Converter
                 return default;
             }
 
-            return serializer.Deserialize<T>(value);
+            return _serializer.Deserialize<T>(value);
         }
 
         public virtual string ConvertTo(T value)
         {
-            return serializer.Serialize(value);
+            return _serializer.Serialize(value);
         }
 
         object IValueConverter.ConvertFrom(object value, DbType dbType)

@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
+using Fireasy.Common.Extensions;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq.Expressions;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Data.Entity.Linq.Expressions
 {
@@ -66,54 +66,54 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取返回的列表达式集合。
         /// </summary>
-        public ReadOnlyCollection<ColumnDeclaration> Columns { get; private set; }
+        public ReadOnlyCollection<ColumnDeclaration> Columns { get; }
 
         /// <summary>
         /// 获取查询的表或子查询表达式。
         /// </summary>
-        public Expression From { get; private set; }
+        public Expression From { get; }
 
         /// <summary>
         /// 获取条件表达式。
         /// </summary>
-        public Expression Where { get; private set; }
+        public Expression Where { get; }
 
         /// <summary>
         /// 获取排序表达式集合。
         /// </summary>
-        public ReadOnlyCollection<OrderExpression> OrderBy { get; private set; }
+        public ReadOnlyCollection<OrderExpression> OrderBy { get; }
 
         /// <summary>
         /// 获取分组表达式集合。
         /// </summary>
-        public ReadOnlyCollection<Expression> GroupBy { get; private set; }
+        public ReadOnlyCollection<Expression> GroupBy { get; }
 
         /// <summary>
         /// 获取 Having 表达式。
         /// </summary>
-        public Expression Having { get; private set; }
+        public Expression Having { get; }
 
         /// <summary>
         /// 获取是否使用 Distinct 关键字。
         /// </summary>
-        public bool IsDistinct { get; private set; }
+        public bool IsDistinct { get; }
 
         /// <summary>
         /// 获取跳过的数量表达式。
         /// </summary>
-        public Expression Skip { get; private set; }
+        public Expression Skip { get; }
 
         /// <summary>
         /// 获取返回的数量表达式。
         /// </summary>
-        public Expression Take { get; private set; }
+        public Expression Take { get; }
 
         /// <summary>
         /// 获取分段表达式。
         /// </summary>
-        public Expression Segment { get; private set; }
+        public Expression Segment { get; }
 
-        public bool IsReverse { get; private set; }
+        public bool IsReverse { get; }
 
         /// <summary>
         /// 更新 <see cref="SelectExpression"/> 对象。

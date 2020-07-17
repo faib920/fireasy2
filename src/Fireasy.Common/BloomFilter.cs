@@ -16,7 +16,7 @@ namespace Fireasy.Common
     /// <typeparam name="T"></typeparam>
     public sealed class BloomFilter<T>
     {
-        private readonly BitArray array;
+        private readonly BitArray _array;
 
         /// <summary>
         /// 获取布隆数组的大小。
@@ -41,7 +41,7 @@ namespace Fireasy.Common
         /// <param name="bitIndexCount">hash数。</param>
         public BloomFilter(int bloomArryLength, int dataArrayLength, int bitIndexCount)
         {
-            array = new BitArray(bloomArryLength);
+            _array = new BitArray(bloomArryLength);
             BloomArryLength = bloomArryLength;
             DataArrayLength = dataArrayLength;
             BitIndexCount = bitIndexCount;
@@ -59,7 +59,7 @@ namespace Fireasy.Common
             for (int i = 0; i < BitIndexCount; i++)
             {
                 var c = random.Next((int)(BloomArryLength - 1));
-                array[c] = true;
+                _array[c] = true;
             }
         }
 
@@ -75,7 +75,7 @@ namespace Fireasy.Common
 
             for (var i = 0; i < BitIndexCount; i++)
             {
-                if (!array[random.Next((int)(BloomArryLength - 1))])
+                if (!_array[random.Next((int)(BloomArryLength - 1))])
                 {
                     return false;
                 }

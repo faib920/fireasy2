@@ -1,13 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
+using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Linq.Expressions;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
@@ -16,7 +14,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class CrossJoinRewriter : DbExpressionVisitor
     {
-        private Expression currentWhere;
+        private Expression _currentWhere;
 
         public static Expression Rewrite(Expression expression)
         {
@@ -25,41 +23,41 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitSelect(SelectExpression select)
         {
-            var saveWhere = currentWhere;
+            var saveWhere = _currentWhere;
             try
             {
-                currentWhere = select.Where;
+                _currentWhere = select.Where;
                 var result = (SelectExpression)base.VisitSelect(select);
-                if (currentWhere != result.Where)
+                if (_currentWhere != result.Where)
                 {
-                    return result.SetWhere(this.currentWhere);
+                    return result.SetWhere(_currentWhere);
                 }
 
                 return result;
             }
             finally
             {
-                this.currentWhere = saveWhere;
+                _currentWhere = saveWhere;
             }
         }
 
         protected override Expression VisitJoin(JoinExpression join)
         {
             join = (JoinExpression)base.VisitJoin(join);
-            if (join.JoinType == JoinType.CrossJoin && this.currentWhere != null)
+            if (join.JoinType == JoinType.CrossJoin && _currentWhere != null)
             {
                 // try to figure out which parts of the current where expression can be used for a join condition
                 var declaredLeft = DeclaredAliasGatherer.Gather(join.Left);
                 var declaredRight = DeclaredAliasGatherer.Gather(join.Right);
                 var declared = new HashSet<TableAlias>(declaredLeft.Union(declaredRight));
-                var exprs = currentWhere.Split(ExpressionType.And, ExpressionType.AndAlso);
+                var exprs = _currentWhere.Split(ExpressionType.And, ExpressionType.AndAlso);
                 var good = exprs.Where(e => CanBeJoinCondition(e, declaredLeft, declaredRight, declared)).ToList();
                 if (good.Count > 0)
                 {
                     var condition = good.Join(ExpressionType.And);
                     join = join.Update(JoinType.InnerJoin, join.Left, join.Right, condition);
                     var newWhere = exprs.Where(e => !good.Contains(e)).Join(ExpressionType.And);
-                    currentWhere = newWhere;
+                    _currentWhere = newWhere;
                 }
             }
             return join;

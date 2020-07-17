@@ -13,14 +13,14 @@ namespace Fireasy.Data
     /// </summary>
     internal sealed class TransactionStack
     {
-        private int pos;
+        private int _pos;
 
         /// <summary>
         /// 入栈。
         /// </summary>
         internal void Push()
         {
-            pos++;
+            _pos++;
         }
 
         /// <summary>
@@ -29,8 +29,8 @@ namespace Fireasy.Data
         /// <returns></returns>
         internal bool Pop()
         {
-            pos--;
-            return pos == 0;
+            _pos--;
+            return _pos == 0;
         }
     }
 }

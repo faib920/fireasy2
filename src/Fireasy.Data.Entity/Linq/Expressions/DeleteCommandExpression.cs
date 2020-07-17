@@ -31,12 +31,12 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取操作的表的表达式。
         /// </summary>
-        public Expression Table { get; private set; }
+        public Expression Table { get; }
 
         /// <summary>
         /// 获取条件表达式。
         /// </summary>
-        public Expression Where { get; private set; }
+        public Expression Where { get; }
 
         /// <summary>
         /// 更新 <see cref="DeleteCommandExpression"/> 对象。

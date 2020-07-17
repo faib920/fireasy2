@@ -14,7 +14,7 @@ namespace Fireasy.Data.Entity
     public sealed class PropertyChangedEventArgs : System.ComponentModel.PropertyChangedEventArgs
     {
         internal PropertyChangedEventArgs(IProperty property, PropertyValue oldValue, PropertyValue newValue)
-            : base (property.Name)
+            : base(property.Name)
         {
             Property = property;
             OldValue = oldValue;
@@ -24,16 +24,16 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 获取所修改的属性。
         /// </summary>
-        public IProperty Property { get; private set; }
+        public IProperty Property { get; }
 
         /// <summary>
         /// 获取属性修改前的值。
         /// </summary>
-        public PropertyValue OldValue { get; private set; }
+        public PropertyValue OldValue { get; }
 
         /// <summary>
         /// 获取属性修改后的新值。
         /// </summary>
-        public PropertyValue NewValue { get; private set; }
+        public PropertyValue NewValue { get; }
     }
 }

@@ -18,7 +18,7 @@ namespace Fireasy.Data.Entity.Validation
         /// 初始化 <see cref="TelphoneOrMobileAttribute"/> 类的新实例。
         /// </summary>
         public TelphoneOrMobileAttribute()
-            : base (string.Empty)
+            : base(string.Empty)
         {
             ErrorMessage = "{0} 字段不符合电话号码和手机号码的格式";
         }

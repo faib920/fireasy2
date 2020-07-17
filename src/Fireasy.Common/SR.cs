@@ -65,19 +65,19 @@ namespace Fireasy.Common
 
     internal class SR
     {
-        private static readonly StringResource Resource;
+        private static readonly StringResource _resource;
 
         static SR()
         {
-            if (Resource == null)
+            if (_resource == null)
             {
-                Resource = StringResource.Create("Strings", typeof(SR).Assembly);
+                _resource = StringResource.Create("Strings", typeof(SR).Assembly);
             }
         }
 
         internal static string GetString(string kind, params object[] args)
         {
-            return Resource.GetString(kind, args);
+            return _resource.GetString(kind, args);
         }
     }
 }

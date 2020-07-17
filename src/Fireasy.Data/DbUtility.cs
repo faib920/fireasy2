@@ -76,13 +76,13 @@ namespace Fireasy.Data
 
             var section = ConfigurationUnity.GetSection<GlobalConfigurationSection>();
 
-            if ((section == null || 
+            if ((section == null ||
                 (!section.Options.AttachQuote && name.IndexOf(' ') == -1) || name.Length == 0 || syntax.Quote == null || syntax.Quote.Length != 2))
             {
                 return name;
             }
 
-            if (name.Length > 1 && 
+            if (name.Length > 1 &&
                 (name[0].ToString() == syntax.Quote[0] || name[name.Length - 1].ToString() == syntax.Quote[1]))
             {
                 return name;

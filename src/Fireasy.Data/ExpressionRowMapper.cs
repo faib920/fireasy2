@@ -14,8 +14,8 @@ namespace Fireasy.Data
 {
     public abstract class ExpressionRowMapper<T> : IDataRowMapper<T>
     {
-        private Func<IDatabase, IDataReader, T> funcDataRecd;
-        private Func<IDatabase, DataRow, T> funcDataRow;
+        private Func<IDatabase, IDataReader, T> _funcDataRecd;
+        private Func<IDatabase, DataRow, T> _funcDataRow;
 
         /// <summary>
         /// 将一个 <see cref="IDataReader"/> 转换为一个 <typeparamref name="T"/> 的对象。
@@ -24,12 +24,12 @@ namespace Fireasy.Data
         /// <returns>由当前 <see cref="IDataReader"/> 对象中的数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
         public virtual T Map(IDatabase database, IDataReader reader)
         {
-            if (funcDataRecd == null)
+            if (_funcDataRecd == null)
             {
-                funcDataRecd = BuildExpressionForDataReader().Compile();
+                _funcDataRecd = BuildExpressionForDataReader().Compile();
             }
 
-            var result = funcDataRecd(database, reader);
+            var result = _funcDataRecd(database, reader);
             Initializer?.Invoke(result);
 
             return result;
@@ -42,12 +42,12 @@ namespace Fireasy.Data
         /// <returns>由 <see cref="DataRow"/> 中数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
         public virtual T Map(IDatabase database, DataRow row)
         {
-            if (funcDataRow == null)
+            if (_funcDataRow == null)
             {
-                funcDataRow = BuildExpressionForDataRow().Compile();
+                _funcDataRow = BuildExpressionForDataRow().Compile();
             }
 
-            var result = funcDataRow(database, row);
+            var result = _funcDataRow(database, row);
             Initializer?.Invoke(result);
 
             return result;

@@ -35,7 +35,7 @@ namespace Fireasy.Data.Provider
     /// </summary>
     public class InstallerProviderFactoryResolver : IProviderFactoryResolver
     {
-        private string providerName;
+        private readonly string _providerName;
 
         /// <summary>
         /// 初始化类 <see cref="InstallerProviderFactoryResolver"/> 类的新实例。
@@ -43,20 +43,20 @@ namespace Fireasy.Data.Provider
         /// <param name="providerName">固定的驱动名称。</param>
         public InstallerProviderFactoryResolver(string providerName)
         {
-            this.providerName = providerName;
+            _providerName = providerName;
         }
 
         public Exception Exception { get; private set; }
 
         public DbProviderFactory Resolve()
         {
-            var factory = DbProviderFactories.GetFactory(providerName);
+            var factory = DbProviderFactories.GetFactory(_providerName);
             if (factory != null)
             {
                 return factory;
             }
 
-            Exception = new FileNotFoundException(SR.GetString(SRKind.ProviderNoFound, providerName));
+            Exception = new FileNotFoundException(SR.GetString(SRKind.ProviderNoFound, _providerName));
             return null;
         }
     }
@@ -67,7 +67,7 @@ namespace Fireasy.Data.Provider
     /// </summary>
     public class AssemblyProviderFactoryResolver : IProviderFactoryResolver
     {
-        private string[] typeNames;
+        private readonly string[] _typeNames;
 
         /// <summary>
         /// 初始化类 <see cref="AssemblyProviderFactoryResolver"/> 类的新实例。
@@ -75,14 +75,14 @@ namespace Fireasy.Data.Provider
         /// <param name="typeNames">一组程序集标识。</param>
         public AssemblyProviderFactoryResolver(params string[] typeNames)
         {
-            this.typeNames = typeNames;
+            _typeNames = typeNames;
         }
 
         public Exception Exception { get; private set; }
 
         public DbProviderFactory Resolve()
         {
-            foreach (var typeName in typeNames)
+            foreach (var typeName in _typeNames)
             {
                 if (AssemblyLoader.TryLoad(typeName, out DbProviderFactory factory))
                 {
@@ -90,7 +90,7 @@ namespace Fireasy.Data.Provider
                 }
             }
 
-            Exception = new FileNotFoundException(SR.GetString(SRKind.InstallProviderAssembly, string.Join("、", typeNames.Select(s => s.Substring(s.LastIndexOf(",") + 1).Trim() + ".dll").ToArray())));
+            Exception = new FileNotFoundException(SR.GetString(SRKind.InstallProviderAssembly, string.Join("、", _typeNames.Select(s => s.Substring(s.LastIndexOf(",") + 1).Trim() + ".dll").ToArray())));
             return null;
         }
     }

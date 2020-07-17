@@ -10,7 +10,6 @@ using System;
 using System.Xml;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
-using System.Collections.Generic;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #else
@@ -129,10 +128,10 @@ namespace Fireasy.Data.Configuration
                 {
                     var connstr = master.GetAttributeValue("connectionString");
                     var cluster = new ClusteredConnectionSetting
-                        {
-                            ConnectionString = ConnectionStringHelper.GetConnectionString(connstr),
-                            Mode = DistributedMode.Master
-                        };
+                    {
+                        ConnectionString = ConnectionStringHelper.GetConnectionString(connstr),
+                        Mode = DistributedMode.Master
+                    };
                     setting.Clusters.Add(cluster);
                 }
 
@@ -142,11 +141,11 @@ namespace Fireasy.Data.Configuration
                     {
                         var connstr = node.GetAttributeValue("connectionString");
                         var cluster = new ClusteredConnectionSetting
-                            {
-                                ConnectionString = ConnectionStringHelper.GetConnectionString(connstr),
-                                Mode = DistributedMode.Slave,
-                                Weight = node.GetAttributeValue("weight", 0)
-                            };
+                        {
+                            ConnectionString = ConnectionStringHelper.GetConnectionString(connstr),
+                            Mode = DistributedMode.Slave,
+                            Weight = node.GetAttributeValue("weight", 0)
+                        };
                         setting.Clusters.Add(cluster);
                     }
                 }

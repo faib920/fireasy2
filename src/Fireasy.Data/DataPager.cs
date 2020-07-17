@@ -8,7 +8,6 @@
 
 using Fireasy.Common.ComponentModel;
 using System;
-using System.Diagnostics;
 
 namespace Fireasy.Data
 {
@@ -17,14 +16,14 @@ namespace Fireasy.Data
     /// </summary>
     public class DataPager : IDataSegment, IDataPageEvaluatable, IPager
     {
-        private int currentPageIndex;
-        private int recordCount;
+        private int _currentPageIndex;
+        private int _recordCount;
 
         /// <summary>
         /// 使用默认每页 20 条记录初始化 <see cref="DataPager"/> 类的新实例。
         /// </summary>
         public DataPager()
-            : this (20)
+            : this(20)
         {
         }
 
@@ -46,10 +45,10 @@ namespace Fireasy.Data
         /// <param name="pageSize">每页的记录数。</param>
         /// <param name="currentPageIndex">当前页索引。</param>
         public DataPager(int pageSize, int currentPageIndex)
-            : this (pageSize)
+            : this(pageSize)
         {
             PageSize = pageSize;
-            this.currentPageIndex = currentPageIndex;
+            _currentPageIndex = currentPageIndex;
         }
 
         /// <summary>
@@ -64,22 +63,22 @@ namespace Fireasy.Data
         {
             get
             {
-                if (currentPageIndex < 0)
+                if (_currentPageIndex < 0)
                 {
-                    currentPageIndex = 0;
+                    _currentPageIndex = 0;
                 }
 
-                if (PageCount > 0 && currentPageIndex > PageCount - 1)
+                if (PageCount > 0 && _currentPageIndex > PageCount - 1)
                 {
-                    currentPageIndex = PageCount - 1;
+                    _currentPageIndex = PageCount - 1;
                 }
 
-                return currentPageIndex;
+                return _currentPageIndex;
             }
 
             set
             {
-                currentPageIndex = value;
+                _currentPageIndex = value;
             }
         }
 
@@ -100,16 +99,16 @@ namespace Fireasy.Data
         {
             get
             {
-                return recordCount;
+                return _recordCount;
             }
             set
             {
-                recordCount = value;
+                _recordCount = value;
                 var num = 0;
                 if (PageSize > 0)
                 {
-                    num = recordCount / PageSize;
-                    if ((num * PageSize) < recordCount)
+                    num = _recordCount / PageSize;
+                    if ((num * PageSize) < _recordCount)
                     {
                         num++;
                     }
@@ -132,13 +131,13 @@ namespace Fireasy.Data
 
         public int? Start
         {
-            get { return (currentPageIndex * PageSize) + 1; }
+            get { return (_currentPageIndex * PageSize) + 1; }
             set { throw new NotSupportedException(); }
         }
 
         public int? End
         {
-            get { return (currentPageIndex + 1) * PageSize; }
+            get { return (_currentPageIndex + 1) * PageSize; }
             set { throw new NotSupportedException(); }
         }
 

@@ -16,7 +16,7 @@ namespace Fireasy.Common.Reflection
     /// </summary>
     public class MethodInvoker
     {
-        private Func<object, object[], object> invoker;
+        private readonly Func<object, object[], object> _invoker;
 
         /// <summary>
         /// 获取要包装的 <see cref="MethodInfo"/> 对象。
@@ -30,7 +30,7 @@ namespace Fireasy.Common.Reflection
         public MethodInvoker(MethodInfo methodInfo)
         {
             MethodInfo = methodInfo;
-            invoker = CreateInvokeDelegate(methodInfo);
+            _invoker = CreateInvokeDelegate(methodInfo);
         }
 
         /// <summary>
@@ -41,12 +41,12 @@ namespace Fireasy.Common.Reflection
         /// <returns></returns>
         public object Invoke(object instance, params object[] parameters)
         {
-            if (invoker == null)
+            if (_invoker == null)
             {
                 throw new NotSupportedException(SR.GetString(SRKind.UnableCreateCachedDelegate));
             }
 
-            return invoker(instance, parameters);
+            return _invoker(instance, parameters);
         }
 
         private static Func<object, object[], object> CreateInvokeDelegate(MethodInfo methodInfo)

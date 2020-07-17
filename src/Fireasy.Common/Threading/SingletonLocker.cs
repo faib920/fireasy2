@@ -15,7 +15,7 @@ namespace Fireasy.Common.Threading
     /// </summary>
     public static class SingletonLocker
     {
-        private static readonly SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
+        private static readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
         /// <summary>
         /// 锁定 <paramref name="instance"/> 单例变量，使用默认的构造函数实例化。
@@ -46,11 +46,11 @@ namespace Fireasy.Common.Threading
 
             if (timeout == null)
             {
-                semaphore.Wait();
+                _semaphore.Wait();
             }
             else
             {
-                semaphore.Wait(timeout.Value);
+                _semaphore.Wait(timeout.Value);
             }
 
             if (instance == null)
@@ -58,7 +58,7 @@ namespace Fireasy.Common.Threading
                 instance = valueCreator();
             }
 
-            semaphore.Release();
+            _semaphore.Release();
 
             return instance;
         }

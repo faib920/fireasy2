@@ -16,7 +16,7 @@ namespace Fireasy.Data.Entity.Dynamic
     /// </summary>
     public sealed class PropertyExtension : IProperty
     {
-        private readonly List<Expression<Func<Attribute>>> attrExps = new List<Expression<Func<Attribute>>>();
+        private readonly List<Expression<Func<Attribute>>> _attrExps = new List<Expression<Func<Attribute>>>();
 
         /// <summary>
         /// 初始化 <see cref="PropertyExtension"/> 类的新实例。
@@ -30,7 +30,7 @@ namespace Fireasy.Data.Entity.Dynamic
         /// <summary>
         /// 获取原本的 <see cref="IProperty"/> 对象。
         /// </summary>
-        public IProperty Property { get; private set; }
+        public IProperty Property { get; }
 
         string IProperty.Name
         {
@@ -62,7 +62,7 @@ namespace Fireasy.Data.Entity.Dynamic
         /// <returns></returns>
         public IEnumerable<Expression<Func<Attribute>>> GetCustomAttributes()
         {
-            return attrExps;
+            return _attrExps;
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace Fireasy.Data.Entity.Dynamic
         /// <param name="expression">一个特性表达式，必须为 <see cref="NewExpression"/>。</param>
         public void SetCustomAttribute(Expression<Func<Attribute>> expression)
         {
-            attrExps.Add(expression);
+            _attrExps.Add(expression);
         }
     }
 }

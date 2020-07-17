@@ -21,13 +21,13 @@ namespace Fireasy.Data.Syntax
     /// </summary>
     public class SQLiteFunctionBuilder
     {
-        private static readonly List<string> cache = new List<string>();
-        private static readonly object locker = new object();
-        private static readonly DynamicAssemblyBuilder assemblyBuilder = new DynamicAssemblyBuilder("SQLiteFunctionAssembly");
-        private static readonly Type funcType = "System.Data.SQLite.SQLiteFunction,System.Data.SQLite".ParseType();
-        private static readonly Type funcAttrType = "System.Data.SQLite.SQLiteFunctionAttribute,System.Data.SQLite".ParseType();
-        private static readonly Type funcTypeType = "System.Data.SQLite.FunctionType,System.Data.SQLite".ParseType();
-        private static readonly MethodInfo RegisterMethod = funcType.GetMethod("RegisterFunction", BindingFlags.Public | BindingFlags.Static);
+        private static readonly List<string> _cache = new List<string>();
+        private static readonly object _locker = new object();
+        private static readonly DynamicAssemblyBuilder _assemblyBuilder = new DynamicAssemblyBuilder("SQLiteFunctionAssembly");
+        private static readonly Type _funcType = "System.Data.SQLite.SQLiteFunction,System.Data.SQLite".ParseType();
+        private static readonly Type _funcAttrType = "System.Data.SQLite.SQLiteFunctionAttribute,System.Data.SQLite".ParseType();
+        private static readonly Type _funcTypeType = "System.Data.SQLite.FunctionType,System.Data.SQLite".ParseType();
+        private static readonly MethodInfo _mthRegister = _funcType.GetMethod("RegisterFunction", BindingFlags.Public | BindingFlags.Static);
 
         /// <summary>
         /// 注册一个新的自定义函数。
@@ -39,12 +39,12 @@ namespace Fireasy.Data.Syntax
         {
             var key = $"{functionName}_{paramsCount}";
 
-            lock (locker)
+            lock (_locker)
             {
-                if (!cache.Contains(key))
+                if (!_cache.Contains(key))
                 {
                     InternalRegister(BuildFunctionType(functionName, paramsCount, actionIL));
-                    cache.Add(key);
+                    _cache.Add(key);
                 }
             }
         }
@@ -84,22 +84,22 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         protected virtual Type BuildFunctionType(string functionName, int paramsCount, Action<BuildContext> actionIL)
         {
-            var scalar = funcTypeType.GetField("Scalar");
+            var scalar = _funcTypeType.GetField("Scalar");
             var bindings = new[] {
-                    Expression.Bind(funcAttrType.GetProperty("Name"), Expression.Constant(functionName)),
-                    Expression.Bind(funcAttrType.GetProperty("Arguments"), Expression.Constant(paramsCount)),
-                    Expression.Bind(funcAttrType.GetProperty("FuncType"), Expression.MakeMemberAccess(null, scalar))
+                    Expression.Bind(_funcAttrType.GetProperty("Name"), Expression.Constant(functionName)),
+                    Expression.Bind(_funcAttrType.GetProperty("Arguments"), Expression.Constant(paramsCount)),
+                    Expression.Bind(_funcAttrType.GetProperty("FuncType"), Expression.MakeMemberAccess(null, scalar))
                 };
 
-            var typeBuilder = assemblyBuilder.DefineType(string.Format("SQLiteFunction_{0}_{1}", functionName, paramsCount), baseType: funcType);
-            typeBuilder.SetCustomAttribute(Expression.MemberInit(Expression.New(funcAttrType), bindings));
+            var typeBuilder = _assemblyBuilder.DefineType(string.Format("SQLiteFunction_{0}_{1}", functionName, paramsCount), baseType: _funcType);
+            typeBuilder.SetCustomAttribute(Expression.MemberInit(Expression.New(_funcAttrType), bindings));
             typeBuilder.DefineMethod("Invoke", typeof(object), new Type[] { typeof(object[]) }, ilCoding: actionIL).DefineParameter("args");
             return typeBuilder.CreateType();
         }
 
         private void InternalRegister(Type functionType)
         {
-            RegisterMethod.FastInvoke(null, new object[] { functionType });
+            _mthRegister.FastInvoke(null, new object[] { functionType });
         }
     }
 }

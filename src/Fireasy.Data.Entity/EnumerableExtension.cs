@@ -6,12 +6,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.Extensions;
+using Fireasy.Data.Entity.Metadata;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using Fireasy.Common.Extensions;
-using Fireasy.Data.Entity.Metadata;
 using System.Linq;
 
 namespace Fireasy.Data.Entity
@@ -48,7 +48,7 @@ namespace Fireasy.Data.Entity
             }
             var entityType = source.FirstOrDefault().GetType();
             var properties = new List<IProperty>(PropertyUnity.GetPersistentProperties(entityType));
-            
+
             if (string.IsNullOrEmpty(tableName))
             {
                 var metadata = EntityMetadataUnity.GetEntityMetadata(entityType);

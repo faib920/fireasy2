@@ -15,14 +15,14 @@ namespace Fireasy.Common.Localization
     /// </summary>
     public class ResCategoryAttribute : CategoryAttribute
     {
-        private readonly string resourceName;
+        private readonly string _resourceName;
 
         /// <summary>
         /// 初始化 <see cref="CategoryAttribute"/> 类的新实例。
         /// </summary>
         /// <param name="name">资源名称。</param>
         public ResCategoryAttribute(string name)
-            : this ("Strings", name)
+            : this("Strings", name)
         {
         }
 
@@ -32,9 +32,9 @@ namespace Fireasy.Common.Localization
         /// <param name="resourceName">内嵌资源的名称。</param>
         /// <param name="name">资源名称。</param>
         public ResCategoryAttribute(string resourceName, string name)
-            : base (name)
+            : base(name)
         {
-            this.resourceName = resourceName;
+            _resourceName = resourceName;
         }
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace Fireasy.Common.Localization
         /// <returns></returns>
         protected override string GetLocalizedString(string value)
         {
-            return StringResource.Create(resourceName).GetString(value);
+            return StringResource.Create(_resourceName).GetString(value);
         }
 
     }

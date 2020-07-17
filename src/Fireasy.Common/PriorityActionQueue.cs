@@ -16,7 +16,7 @@ namespace Fireasy.Common
     /// </summary>
     public sealed class PriorityActionQueue
     {
-        private readonly SortedDictionary<int, List<Action>> queue = new SortedDictionary<int, List<Action>>();
+        private readonly SortedDictionary<int, List<Action>> _queue = new SortedDictionary<int, List<Action>>();
 
         /// <summary>
         /// 向队列里添加要执行的方法。
@@ -27,7 +27,7 @@ namespace Fireasy.Common
         {
             Guard.ArgumentNull(action, nameof(action));
 
-            var list = queue.TryGetValue(priority, () => new List<Action>());
+            var list = _queue.TryGetValue(priority, () => new List<Action>());
             list.Add(action);
         }
 
@@ -36,12 +36,12 @@ namespace Fireasy.Common
         /// </summary>
         public void Invoke()
         {
-            foreach (var item in queue)
+            foreach (var item in _queue)
             {
                 item.Value.ForEach(s => s.Invoke());
             }
 
-            queue.Clear();
+            _queue.Clear();
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace Fireasy.Common
         /// <param name="action"></param>
         public void ForEach(Action<Action> action)
         {
-            foreach (var item in queue)
+            foreach (var item in _queue)
             {
                 item.Value.ForEach(s => action(s));
             }

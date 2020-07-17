@@ -7,6 +7,9 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+#if NETSTANDARD
+using Microsoft.Extensions.DependencyInjection;
+#endif
 
 namespace Fireasy.Common.Ioc
 {
@@ -14,7 +17,15 @@ namespace Fireasy.Common.Ioc
     /// 对象的反转提供者。
     /// </summary>
     public interface IResolver : IDisposable
+#if NETSTANDARD
+        , IServiceScope
+#endif
     {
+        /// <summary>
+        /// 获取 <see cref="IServiceProvider"/> 对象。
+        /// </summary>
+        IServiceProvider ServiceProvider { get; }
+
         /// <summary>
         /// 创建一个范围，属于 <see cref="Lifetime.Scoped"/> 的对象在此范围内共享。
         /// </summary>

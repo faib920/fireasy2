@@ -5,7 +5,6 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.Extensions;
 using Fireasy.Common.Linq.Expressions;
 using System;
 using System.Collections.Generic;
@@ -20,8 +19,8 @@ namespace Fireasy.Common.Serialization
     /// </summary>
     public class ExpressionJsonWriter
     {
-        private Expression expression;
-        private readonly JsonSerializer serializer;
+        private Expression _expression;
+        private readonly JsonSerializer _serializer;
 
         /// <summary>
         /// 获取类型与参数名称的字典。
@@ -35,8 +34,8 @@ namespace Fireasy.Common.Serialization
         /// <param name="expression"></param>
         public ExpressionJsonWriter(JsonSerializer serializer, Expression expression)
         {
-            this.serializer = serializer;
-            this.expression = expression;
+            _serializer = serializer;
+            _expression = expression;
         }
 
         /// <summary>
@@ -233,10 +232,10 @@ namespace Fireasy.Common.Serialization
         protected virtual void WriteMemberExpression(MemberExpression node)
         {
             JsonWriter.WriteStartObject();
-            
+
             JsonWriter.WriteKey("Type");
             JsonWriter.WriteString(WriteTypeName(node.Member.DeclaringType));
-            
+
             JsonWriter.WriteComma();
             JsonWriter.WriteKey("Member");
             JsonWriter.WriteString(node.Member.Name);
@@ -358,7 +357,7 @@ namespace Fireasy.Common.Serialization
             JsonWriter.WriteComma();
             JsonWriter.WriteKey("Value");
 
-            JsonWriter.WriteString(serializer.Serialize(node.Value));
+            JsonWriter.WriteString(_serializer.Serialize(node.Value));
 
             JsonWriter.WriteEndObject();
         }
@@ -759,8 +758,8 @@ namespace Fireasy.Common.Serialization
             using (var sw = new StringWriter())
             using (JsonWriter = new JsonWriter(sw))
             {
-                expression = PartialEvaluator.Eval(expression);
-                WriteSegment(expression);
+                _expression = PartialEvaluator.Eval(_expression);
+                WriteSegment(_expression);
                 return sw.ToString();
             }
         }

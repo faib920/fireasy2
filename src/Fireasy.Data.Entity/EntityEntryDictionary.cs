@@ -19,14 +19,14 @@ namespace Fireasy.Data.Entity
     [Serializable]
     internal sealed class EntityEntryDictionary : IEnumerable<KeyValuePair<string, EntityEntry>>
     {
-        private readonly Dictionary<string, EntityEntry> dicEntry = new Dictionary<string, EntityEntry>();
+        private readonly Dictionary<string, EntityEntry> _entries = new Dictionary<string, EntityEntry>();
 
         /// <summary>
         /// 重置所有属性的修改状态。
         /// </summary>
         internal void Reset()
         {
-            foreach (var kvp in dicEntry)
+            foreach (var kvp in _entries)
             {
                 kvp.Value.Reset();
             }
@@ -38,7 +38,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         internal IEnumerable<string> GetModifiedProperties()
         {
-            return from kvp in dicEntry where kvp.Value.IsModified select kvp.Key;
+            return from kvp in _entries where kvp.Value.IsModified select kvp.Key;
         }
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         internal bool Has(string propertyName)
         {
-            return dicEntry.ContainsKey(propertyName);
+            return _entries.ContainsKey(propertyName);
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace Fireasy.Data.Entity
         /// <param name="value">要设置的值。</param>
         internal void Initializate(string propertyName, PropertyValue value)
         {
-            dicEntry[propertyName] = EntityEntry.InitByOldValue(value);
+            _entries[propertyName] = EntityEntry.InitByOldValue(value);
         }
 
         /// <summary>
@@ -70,34 +70,34 @@ namespace Fireasy.Data.Entity
         {
             if (Has(propertyName))
             {
-                dicEntry[propertyName].Modify(value);
+                _entries[propertyName].Modify(value);
             }
             else
             {
-                dicEntry.Add(propertyName, EntityEntry.InitByNewValue(value));
+                _entries.Add(propertyName, EntityEntry.InitByNewValue(value));
             }
         }
 
         internal void Add(string propertyName, EntityEntry entry)
         {
-            dicEntry.Add(propertyName, entry);
+            _entries.Add(propertyName, entry);
         }
 
         internal void Modify(string propertyName, bool modified = true)
         {
             if (!modified && Has(propertyName))
             {
-                dicEntry[propertyName].Reset();
+                _entries[propertyName].Reset();
             }
             else
             {
                 if (Has(propertyName))
                 {
-                    dicEntry[propertyName].Modify();
+                    _entries[propertyName].Modify();
                 }
                 else
                 {
-                    dicEntry.Add(propertyName, EntityEntry.Modified());
+                    _entries.Add(propertyName, EntityEntry.Modified());
                 }
             }
         }
@@ -109,7 +109,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         internal EntityEntry this[string propertyName]
         {
-            get { return dicEntry[propertyName]; }
+            get { return _entries[propertyName]; }
         }
 
         /// <summary>
@@ -118,7 +118,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public IEnumerator<KeyValuePair<string, EntityEntry>> GetEnumerator()
         {
-            return dicEntry.GetEnumerator();
+            return _entries.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()

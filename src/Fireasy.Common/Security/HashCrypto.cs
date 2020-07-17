@@ -17,7 +17,7 @@ namespace Fireasy.Common.Security
     /// </summary>
     public class HashCrypto : ICryptoProvider
     {
-        private readonly string algorithmName;
+        private readonly string _algorithmName;
 
         /// <summary>
         /// 初始化 <see cref="SymmetricCrypto"/> 类的新实例。
@@ -26,7 +26,7 @@ namespace Fireasy.Common.Security
         public HashCrypto(string algorithmName)
         {
             Guard.ArgumentNull(algorithmName, nameof(algorithmName));
-            this.algorithmName = algorithmName;
+            _algorithmName = algorithmName;
         }
 
         /// <summary>
@@ -37,12 +37,12 @@ namespace Fireasy.Common.Security
         public virtual byte[] Encrypt(byte[] array)
         {
 #if NETSTANDARD
-            var algorithm = new HashAlgorithmName(algorithmName);
+            var algorithm = new HashAlgorithmName(_algorithmName);
             using var hasher = IncrementalHash.CreateHash(algorithm);
             hasher.AppendData(array);
             return hasher.GetHashAndReset();
 #else
-            using var algorithm = HashAlgorithm.Create(algorithmName);
+            using var algorithm = HashAlgorithm.Create(_algorithmName);
             return algorithm.ComputeHash(array, 0, array.Length);
 #endif
         }
@@ -59,7 +59,7 @@ namespace Fireasy.Common.Security
                 throw new Exception(SR.GetString(SRKind.SourceCanotReadDestCanotWrite));
             }
 
-            using var algorithm = HashAlgorithm.Create(algorithmName);
+            using var algorithm = HashAlgorithm.Create(_algorithmName);
             using var memoryStream = new MemoryStream();
             var buffer = new byte[4096];
             int count;

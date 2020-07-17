@@ -15,17 +15,17 @@ namespace Fireasy.Common.Localization
     /// </summary>
     public class ResDescriptionAttribute : DescriptionAttribute
     {
-        private readonly string name;
-        private readonly string resourceName;
+        private readonly string _name;
+        private readonly string _resourceName;
 
         /// <summary>
         /// 初始化 <see cref="ResDescriptionAttribute"/> 类的新实例。
         /// </summary>
         /// <param name="name">资源名称。</param>
         public ResDescriptionAttribute(string name)
-            : this ("Strings", name)
+            : this("Strings", name)
         {
-            this.name = name;
+            _name = name;
         }
 
         /// <summary>
@@ -34,9 +34,9 @@ namespace Fireasy.Common.Localization
         /// <param name="resourceName">内嵌资源的名称。</param>
         /// <param name="name">资源名称。</param>
         public ResDescriptionAttribute(string resourceName, string name)
-            : base (name)
+            : base(name)
         {
-            this.resourceName = resourceName;
+            _resourceName = resourceName;
         }
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace Fireasy.Common.Localization
         {
             get
             {
-                return StringResource.Create(resourceName).GetString(name);
+                return StringResource.Create(_resourceName).GetString(_name);
             }
         }
     }

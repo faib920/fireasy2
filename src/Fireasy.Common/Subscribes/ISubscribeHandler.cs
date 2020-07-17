@@ -8,6 +8,9 @@
 
 namespace Fireasy.Common.Subscribes
 {
+    /// <summary>
+    /// 订阅器处理者。
+    /// </summary>
     public interface ISubscribeHandler
     {
     }

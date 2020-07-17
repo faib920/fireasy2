@@ -16,7 +16,7 @@ namespace Fireasy.Common.Subscribes
     /// </summary>
     public class SynchronizedSubscribeManager : ISubscribeManager
     {
-        private readonly SubscriberCollection subscribers = new SubscriberCollection();
+        private readonly SubscriberCollection _subscribers = new SubscriberCollection();
 
         /// <summary>
         /// 缺省实例。
@@ -30,7 +30,7 @@ namespace Fireasy.Common.Subscribes
         /// <param name="subject">主题内容。</param>
         public void Publish<TSubject>(TSubject subject) where TSubject : class
         {
-            subscribers.Accept(TopicHelper.GetTopicName(typeof(TSubject)), subject);
+            _subscribers.Accept(TopicHelper.GetTopicName(typeof(TSubject)), subject);
         }
 
         /// <summary>
@@ -41,7 +41,7 @@ namespace Fireasy.Common.Subscribes
         /// <param name="subject">主题内容。</param>
         public void Publish<TSubject>(string name, TSubject subject) where TSubject : class
         {
-            subscribers.Accept(name, subject);
+            _subscribers.Accept(name, subject);
         }
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            subscribers.AddSyncSubscriber(typeof(TSubject), TopicHelper.GetTopicName(typeof(TSubject)), subscriber);
+            _subscribers.AddSyncSubscriber(typeof(TSubject), TopicHelper.GetTopicName(typeof(TSubject)), subscriber);
         }
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            subscribers.AddAsyncSubscriber(typeof(TSubject), TopicHelper.GetTopicName(typeof(TSubject)), subscriber);
+            _subscribers.AddAsyncSubscriber(typeof(TSubject), TopicHelper.GetTopicName(typeof(TSubject)), subscriber);
         }
 
         /// <summary>
@@ -101,7 +101,7 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            subscribers.AddSyncSubscriber(typeof(TSubject), name, subscriber);
+            _subscribers.AddSyncSubscriber(typeof(TSubject), name, subscriber);
         }
 
         /// <summary>
@@ -114,7 +114,7 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            subscribers.AddAsyncSubscriber(typeof(TSubject), name, subscriber);
+            _subscribers.AddAsyncSubscriber(typeof(TSubject), name, subscriber);
         }
 
         /// <summary>
@@ -126,7 +126,7 @@ namespace Fireasy.Common.Subscribes
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
-            subscribers.AddSyncSubscriber(subjectType, TopicHelper.GetTopicName(subjectType), subscriber);
+            _subscribers.AddSyncSubscriber(subjectType, TopicHelper.GetTopicName(subjectType), subscriber);
         }
 
         /// <summary>
@@ -144,22 +144,7 @@ namespace Fireasy.Common.Subscribes
         /// <param name="subjectType">主题的类型。</param>
         public void RemoveSubscriber(Type subjectType)
         {
-            subscribers.Remove(TopicHelper.GetTopicName(subjectType));
-        }
-
-        void ISubscribeManager.Publish(string name, byte[] data)
-        {
-            throw new NotImplementedException();
-        }
-
-        Task ISubscribeManager.PublishAsync(string name, byte[] data, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-
-        void ISubscribeManager.AddSubscriber(string name, Action<byte[]> subscriber)
-        {
-            throw new NotImplementedException();
+            _subscribers.Remove(TopicHelper.GetTopicName(subjectType));
         }
 
         void ISubscribeManager.RemoveSubscriber(string name)

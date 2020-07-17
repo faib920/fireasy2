@@ -19,18 +19,18 @@ namespace Fireasy.Common.Configuration
         [DllImport("kernel32", CharSet = CharSet.Unicode)]
         private static extern int GetPrivateProfileString(string section, string key, string def, byte[] retVal, int size, string filePath);
 
-        private string fileName;
+        private readonly string _fileName;
 
         public IniManager(string fileName)
         {
-            this.fileName = fileName;
+            _fileName = fileName;
         }
 
         public T Get<T>(string section, string key)
         {
             var buffer = new byte[65535];
-            var bufLen = GetPrivateProfileString(section, key, string.Empty, buffer, buffer.GetUpperBound(0), fileName);
-            
+            var bufLen = GetPrivateProfileString(section, key, string.Empty, buffer, buffer.GetUpperBound(0), _fileName);
+
             //必须设定0（系统默认的代码页）的编码方式，否则无法支持中文
             var str = Encoding.GetEncoding(0).GetString(buffer);
             str = str.Substring(0, bufLen);
@@ -39,7 +39,7 @@ namespace Fireasy.Common.Configuration
 
         public void Set<T>(string section, string key, T value)
         {
-            if (!WritePrivateProfileString(section, key, value.ToStringSafely(), fileName))
+            if (!WritePrivateProfileString(section, key, value.ToStringSafely(), _fileName))
             {
                 throw (new ApplicationException());
             }

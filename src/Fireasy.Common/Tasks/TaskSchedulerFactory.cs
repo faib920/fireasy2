@@ -6,7 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Configuration;
-using Fireasy.Common.Extensions;
 using Fireasy.Common.Tasks.Configuration;
 #if NETSTANDARD
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +13,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 #endif
 using System;
-using System.Linq;
 
 namespace Fireasy.Common.Tasks
 {
@@ -78,7 +76,9 @@ namespace Fireasy.Common.Tasks
             var section = ConfigurationUnity.GetSection<TaskScheduleConfigurationSection>();
             if (section != null && section.Factory != null)
             {
-                manager = ConfigurationUnity.Cached<ITaskScheduler>($"TaskScheduler_{configName ?? "default"}", () => section.Factory.CreateInstance(configName) as ITaskScheduler);
+                manager = ConfigurationUnity.Cached<ITaskScheduler>($"TaskScheduler_{configName ?? "default"}", serviceProvider,
+                    () => section.Factory.CreateInstance(serviceProvider, configName) as ITaskScheduler);
+
                 if (manager != null)
                 {
                     return manager;
@@ -89,7 +89,8 @@ namespace Fireasy.Common.Tasks
             {
                 if (section == null || (setting = section.GetDefault()) == null)
                 {
-                    return DefaultTaskScheduler.Instance.TrySetServiceProvider(serviceProvider);
+                    return serviceProvider != null ?
+                        new DefaultTaskScheduler(serviceProvider) : DefaultTaskScheduler.Instance;
                 }
             }
             else if (section != null)
@@ -102,7 +103,7 @@ namespace Fireasy.Common.Tasks
                 return null;
             }
 
-            return ConfigurationUnity.Cached<ITaskScheduler>($"TaskScheduler_{configName ?? "default"}",
+            return ConfigurationUnity.Cached<ITaskScheduler>($"TaskScheduler_{configName ?? "default"}", serviceProvider,
                 () => ConfigurationUnity.CreateInstance<TaskScheduleConfigurationSetting, ITaskScheduler>(serviceProvider, setting, s => s.SchedulerType, (s, t) => InitializeDefinitions(s, t)));
         }
 

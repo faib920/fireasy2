@@ -12,21 +12,21 @@ namespace Fireasy.Common.Ioc.Registrations
 {
     internal class FuncRegistration<TService> : AbstractRegistration where TService : class
     {
-        private readonly Func<IResolver, object> instanceCreator;
-        private readonly Lifetime lifetime;
+        private readonly Func<IResolver, object> _instanceCreator;
+        private readonly Lifetime _lifetime;
 
         internal FuncRegistration(Container container, Func<IResolver, object> instanceCreator, Lifetime lifetime)
             : base(container, typeof(TService), (Type)null)
         {
-            this.instanceCreator = instanceCreator;
-            this.lifetime = lifetime;
+            _instanceCreator = instanceCreator;
+            _lifetime = lifetime;
         }
 
-        public override Lifetime Lifetime => lifetime;
+        public override Lifetime Lifetime => _lifetime;
 
         internal override Expression BuildExpression()
         {
-            return Expression.Invoke(Expression.Constant(instanceCreator), parameter);
+            return Expression.Invoke(Expression.Constant(_instanceCreator), _parameter);
         }
     }
 }

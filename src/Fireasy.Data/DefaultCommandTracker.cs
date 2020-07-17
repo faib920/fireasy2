@@ -21,14 +21,14 @@ namespace Fireasy.Data
     /// </summary>
     internal class DefaultCommandTracker : ICommandTracker
     {
-        private string logPath;
-        private readonly ISubscribeManager subscribeMgr = DefaultSubscribeManager.Instance;
+        private string _logPath;
+        private readonly ISubscribeManager _subscribeMgr = DefaultSubscribeManager.Instance;
 
         internal readonly static ICommandTracker Instance = new DefaultCommandTracker();
 
         protected DefaultCommandTracker()
         {
-            subscribeMgr.AddSubscriber<CommandTrackerSubject>(s =>
+            _subscribeMgr.AddSubscriber<CommandTrackerSubject>(s =>
                 {
                     using var writer = new StreamWriter(s.FileName, true, Encoding.Default);
                     writer.WriteLine(s.Content);
@@ -39,35 +39,35 @@ namespace Fireasy.Data
         {
             CreateDirectory();
 
-            var fileName = Path.Combine(logPath, DateTime.Today.ToString("yyyy-MM-dd") + ".log");
+            var fileName = Path.Combine(_logPath, DateTime.Today.ToString("yyyy-MM-dd") + ".log");
             var content = $@"time: {DateTime.Now}
 sql: {command.Output()}
 timer(s): {period}
 ===========================================================
 ";
 
-            subscribeMgr.Publish(new CommandTrackerSubject { FileName = fileName, Content = content });
+            _subscribeMgr.Publish(new CommandTrackerSubject { FileName = fileName, Content = content });
         }
 
         void ICommandTracker.Fail(IDbCommand command, Exception exception)
         {
             CreateDirectory();
 
-            var fileName = Path.Combine(logPath, DateTime.Today.ToString("yyyy-MM-dd") + ".error.log");
+            var fileName = Path.Combine(_logPath, DateTime.Today.ToString("yyyy-MM-dd") + ".error.log");
             var content = $@"time: {DateTime.Now}
 sql: {command.Output()}
 error: {exception.Message}
 ===========================================================
 ";
 
-            subscribeMgr.Publish(new CommandTrackerSubject { FileName = fileName, Content = content });
+            _subscribeMgr.Publish(new CommandTrackerSubject { FileName = fileName, Content = content });
         }
 
         async Task ICommandTracker.WriteAsync(IDbCommand command, TimeSpan period, CancellationToken cancellationToken)
         {
             CreateDirectory();
 
-            var fileName = Path.Combine(logPath, DateTime.Today.ToString("yyyy-MM-dd") + ".log");
+            var fileName = Path.Combine(_logPath, DateTime.Today.ToString("yyyy-MM-dd") + ".log");
             var content = $@"time: {DateTime.Now}
 sql: {command.Output()}
 timer(s): {period}
@@ -76,7 +76,7 @@ timer(s): {period}
 
             try
             {
-                await subscribeMgr.PublishAsync(new CommandTrackerSubject { FileName = fileName, Content = content });
+                await _subscribeMgr.PublishAsync(new CommandTrackerSubject { FileName = fileName, Content = content });
             }
             catch (Exception exp)
             {
@@ -88,22 +88,22 @@ timer(s): {period}
         {
             CreateDirectory();
 
-            var fileName = Path.Combine(logPath, DateTime.Today.ToString("yyyy-MM-dd") + ".error.log");
+            var fileName = Path.Combine(_logPath, DateTime.Today.ToString("yyyy-MM-dd") + ".error.log");
             var content = $@"time: {DateTime.Now}
 sql: {command.Output()}
 error: {exception.Message}
 ===========================================================
 ";
 
-            await subscribeMgr.PublishAsync(new CommandTrackerSubject { FileName = fileName, Content = content });
+            await _subscribeMgr.PublishAsync(new CommandTrackerSubject { FileName = fileName, Content = content });
         }
 
         private void CreateDirectory()
         {
-            logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "__dbtrack");
-            if (!Directory.Exists(logPath))
+            _logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "__dbtrack");
+            if (!Directory.Exists(_logPath))
             {
-                Directory.CreateDirectory(logPath);
+                Directory.CreateDirectory(_logPath);
             }
         }
 

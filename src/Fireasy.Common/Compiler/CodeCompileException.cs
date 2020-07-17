@@ -19,7 +19,7 @@ namespace Fireasy.Common.Compiler
         /// </summary>
         /// <param name="message">编译错误信息。</param>
         public CodeCompileException(string message)
-            : base (message)
+            : base(message)
         {
         }
     }

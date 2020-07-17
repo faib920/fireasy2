@@ -5,8 +5,8 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.ComponentModel;
 using System;
-using System.Diagnostics;
 using System.Threading;
 
 namespace Fireasy.Common.Threading
@@ -16,7 +16,7 @@ namespace Fireasy.Common.Threading
     /// </summary>
     public sealed class ReadWriteLocker : DisposeableBase
     {
-        private readonly ReaderWriterLockSlim locker = new ReaderWriterLockSlim();
+        private readonly ReaderWriterLockSlim _locker = new ReaderWriterLockSlim();
 
         /// <summary>
         /// 静态实例。
@@ -32,9 +32,9 @@ namespace Fireasy.Common.Threading
             Guard.ArgumentNull(method, nameof(method));
 
             var isMustReadHeld = false;
-            if (!locker.IsReadLockHeld)
+            if (!_locker.IsReadLockHeld)
             {
-                locker.EnterReadLock();
+                _locker.EnterReadLock();
                 isMustReadHeld = true;
             }
 
@@ -46,7 +46,7 @@ namespace Fireasy.Common.Threading
             {
                 if (isMustReadHeld)
                 {
-                    locker.ExitReadLock();
+                    _locker.ExitReadLock();
                 }
             }
         }
@@ -61,9 +61,9 @@ namespace Fireasy.Common.Threading
             Guard.ArgumentNull(method, nameof(method));
 
             var isMustReadHeld = false;
-            if (!locker.IsReadLockHeld)
+            if (!_locker.IsReadLockHeld)
             {
-                locker.EnterReadLock();
+                _locker.EnterReadLock();
                 isMustReadHeld = true;
             }
 
@@ -75,7 +75,7 @@ namespace Fireasy.Common.Threading
             {
                 if (isMustReadHeld)
                 {
-                    locker.ExitReadLock();
+                    _locker.ExitReadLock();
                 }
             }
         }
@@ -92,20 +92,20 @@ namespace Fireasy.Common.Threading
             var isMustWriteHeld = false;
             var isUpgradeable = false;
 
-            if (locker.IsReadLockHeld)
+            if (_locker.IsReadLockHeld)
             {
-                locker.ExitReadLock();
-                if (!locker.IsUpgradeableReadLockHeld)
+                _locker.ExitReadLock();
+                if (!_locker.IsUpgradeableReadLockHeld)
                 {
-                    locker.EnterUpgradeableReadLock();
+                    _locker.EnterUpgradeableReadLock();
                     isUpgradeable = true;
                 }
 
                 isMustReadHeld = true;
             }
-            else if (!locker.IsWriteLockHeld)
+            else if (!_locker.IsWriteLockHeld)
             {
-                locker.EnterWriteLock();
+                _locker.EnterWriteLock();
                 isMustWriteHeld = true;
             }
 
@@ -122,14 +122,14 @@ namespace Fireasy.Common.Threading
                 {
                     if (isUpgradeable)
                     {
-                        locker.ExitUpgradeableReadLock();
+                        _locker.ExitUpgradeableReadLock();
                     }
 
-                    locker.EnterReadLock();
+                    _locker.EnterReadLock();
                 }
                 else if (isMustWriteHeld)
                 {
-                    locker.ExitWriteLock();
+                    _locker.ExitWriteLock();
                 }
             }
         }
@@ -140,7 +140,7 @@ namespace Fireasy.Common.Threading
         /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
         protected override bool Dispose(bool disposing)
         {
-            locker.Dispose();
+            _locker.Dispose();
 
             return base.Dispose(disposing);
         }

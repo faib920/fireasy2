@@ -5,10 +5,11 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.ComponentModel;
+using Fireasy.Common.Extensions;
 using System;
 using System.IO;
 using System.Text;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Common.Serialization
 {
@@ -17,7 +18,7 @@ namespace Fireasy.Common.Serialization
     /// </summary>
     public sealed class JsonReader : DisposeableBase
     {
-        private TextReader reader;
+        private TextReader _reader;
 
         /// <summary>
         /// 初始化 <see cref="JsonReader"/> 类的新实例。
@@ -25,7 +26,7 @@ namespace Fireasy.Common.Serialization
         /// <param name="reader">一个 <see cref="TextReader"/> 对象。</param>
         public JsonReader(TextReader reader)
         {
-            this.reader = reader;
+            _reader = reader;
         }
 
         /// <summary>
@@ -103,7 +104,7 @@ namespace Fireasy.Common.Serialization
                     break;
                 }
 
-                reader.Read();
+                _reader.Read();
             }
         }
 
@@ -253,7 +254,7 @@ namespace Fireasy.Common.Serialization
                     break;
                 }
 
-                var read = reader.Read();
+                var read = _reader.Read();
                 if (read >= '0' && read <= '9')
                 {
                     sb.Append(read - '0');
@@ -413,7 +414,7 @@ namespace Fireasy.Common.Serialization
         /// <returns>读取的字符。</returns>
         public char Peek()
         {
-            var c = reader.Peek();
+            var c = _reader.Peek();
             return ValidateChar(c);
         }
 
@@ -423,7 +424,7 @@ namespace Fireasy.Common.Serialization
         /// <returns>读取的字符。</returns>
         public char Read()
         {
-            var c = reader.Read();
+            var c = _reader.Read();
             return ValidateChar(c);
         }
 
@@ -529,10 +530,10 @@ namespace Fireasy.Common.Serialization
         /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
         protected override bool Dispose(bool disposing)
         {
-            if (reader != null)
+            if (_reader != null)
             {
-                reader.Close();
-                reader = null;
+                _reader.Close();
+                _reader = null;
             }
 
             return base.Dispose(disposing);

@@ -5,13 +5,13 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
+using Fireasy.Data.Converter;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Linq;
-using Fireasy.Common.Extensions;
-using Fireasy.Data.Converter;
 
 namespace Fireasy.Data.Entity
 {
@@ -21,8 +21,8 @@ namespace Fireasy.Data.Entity
     /// <typeparam name="T">要转换的实体类型。</typeparam>
     public sealed class EntityRowMapper<T> : FieldRowMapperBase<T> where T : class
     {
-        private IEnumerable<PropertyMapping> mapping;
-        private IEnumerable<IProperty> alwaysProperties;
+        private IEnumerable<PropertyMapping> _mapping;
+        private IEnumerable<IProperty> _alwaysProperties;
 
         /// <summary>
         /// 将一个 <see cref="IDataReader"/> 转换为一个 <typeparamref name="T"/> 的对象。
@@ -32,7 +32,7 @@ namespace Fireasy.Data.Entity
         /// <returns>由当前 <see cref="IDataReader"/> 对象中的数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
         public override T Map(IDatabase database, IDataReader reader)
         {
-            if (mapping == null)
+            if (_mapping == null)
             {
                 InitMapping(GetDataReaderFields(reader));
             }
@@ -48,7 +48,7 @@ namespace Fireasy.Data.Entity
         /// <returns>由 <see cref="DataRow"/> 中数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
         public override T Map(IDatabase database, DataRow row)
         {
-            if (mapping == null)
+            if (_mapping == null)
             {
                 InitMapping(GetDataRowFields(row));
             }
@@ -70,15 +70,15 @@ namespace Fireasy.Data.Entity
             entity.SetState(EntityState.Unchanged);
             entity.As<ISupportInitializeNotification>(s => s.BeginInit());
 
-            foreach (var mapper in mapping)
+            foreach (var mapper in _mapping)
             {
                 var value = func(mapper);
                 entity.InitializeValue(mapper.Property, value);
             }
 
-            if (alwaysProperties != null)
+            if (_alwaysProperties != null)
             {
-                foreach (var property in alwaysProperties)
+                foreach (var property in _alwaysProperties)
                 {
                     EntityLazyloader.AsyncLoad(entity, property);
                 }
@@ -196,11 +196,11 @@ namespace Fireasy.Data.Entity
 
         private void InitMapping(string[] fields)
         {
-            mapping = from s in PropertyUnity.GetProperties(typeof(T))
-                      let index = IndexOf(fields, s)
-                      where index != -1 && s is ILoadedProperty
-                      select new PropertyMapping { Property = s, Index = index };
-            alwaysProperties = PropertyUnity.GetRelatedProperties(typeof(T), LoadBehavior.Always);
+            _mapping = from s in PropertyUnity.GetProperties(typeof(T))
+                       let index = IndexOf(fields, s)
+                       where index != -1 && s is ILoadedProperty
+                       select new PropertyMapping { Property = s, Index = index };
+            _alwaysProperties = PropertyUnity.GetRelatedProperties(typeof(T), LoadBehavior.Always);
         }
 
         private int IndexOf(string[] fields, IProperty property)

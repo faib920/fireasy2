@@ -8,10 +8,10 @@
 
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Xml;
-using System;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
@@ -52,12 +52,12 @@ namespace Fireasy.Common.Ioc.Configuration
         /// <param name="configuration">对应的配置节点。</param>
         public override void Bind(IConfiguration configuration)
         {
-            Bind(configuration, 
-                "settings", 
+            Bind(configuration,
+                "settings",
                 func: c => InitializeSetting(new ContainerConfigurationSetting
-                    {
-                        Name = c.Key
-                    }, c));
+                {
+                    Name = c.Key
+                }, c));
 
             DefaultInstanceName = configuration.GetSection("default").Value;
 

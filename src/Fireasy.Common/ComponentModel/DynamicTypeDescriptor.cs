@@ -107,7 +107,7 @@ namespace Fireasy.Common.ComponentModel
 
             public override Type PropertyType
             {
-                get 
+                get
                 {
                     return _instance.TryGetMember(_name, out object value) ? value.GetType() : null;
                 }

@@ -8,12 +8,12 @@
 
 using Fireasy.Common;
 using Fireasy.Common.ComponentModel;
+using Fireasy.Common.Extensions;
 using Fireasy.Common.Subscribes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Fireasy.Common.Extensions;
 #if NETSTANDARD
 using Microsoft.Extensions.DependencyInjection;
 #endif
@@ -27,7 +27,7 @@ namespace Fireasy.Data.Entity.Subscribes
     {
         public static readonly InnerSubscribeManager Default = new InnerSubscribeManager();
 
-        private readonly static SafetyDictionary<Type, InnerSubscribeManager> managers = new SafetyDictionary<Type, InnerSubscribeManager>();
+        private readonly static SafetyDictionary<Type, InnerSubscribeManager> _managers = new SafetyDictionary<Type, InnerSubscribeManager>();
 
         /// <summary>
         /// 获取上下文的持久化订阅管理器，如果没有注册过，则注册与之对应的管理器。
@@ -36,7 +36,7 @@ namespace Fireasy.Data.Entity.Subscribes
         /// <returns></returns>
         public static InnerSubscribeManager Get<TContext>() where TContext : EntityContext
         {
-            return managers.GetOrAdd(typeof(TContext), k => new InnerSubscribeManager(k));
+            return _managers.GetOrAdd(typeof(TContext), k => new InnerSubscribeManager(k));
         }
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace Fireasy.Data.Entity.Subscribes
                 return Default;
             }
 
-            return managers.GetOrAdd(contextType, k => new InnerSubscribeManager(k));
+            return _managers.GetOrAdd(contextType, k => new InnerSubscribeManager(k));
         }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace Fireasy.Data.Entity.Subscribes
                 return Default;
             }
 
-            if (managers.TryGetValue(contextType, out InnerSubscribeManager mgr))
+            if (_managers.TryGetValue(contextType, out InnerSubscribeManager mgr))
             {
                 return mgr;
             }

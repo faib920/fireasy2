@@ -1,11 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
+using Fireasy.Data.Entity.Linq.Expressions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using Fireasy.Data.Entity.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
@@ -16,31 +16,31 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class ColumnProjector : DbExpressionVisitor
     {
-        private readonly Dictionary<ColumnExpression, ColumnExpression> map;
-        private readonly List<ColumnDeclaration> columns;
-        private readonly HashSet<string> columnNames;
-        private readonly HashSet<Expression> candidates;
-        private readonly HashSet<TableAlias> existingAliases;
-        private readonly TableAlias newAlias;
-        private int iColumn;
+        private readonly Dictionary<ColumnExpression, ColumnExpression> _map;
+        private readonly List<ColumnDeclaration> _columns;
+        private readonly HashSet<string> _columnNames;
+        private readonly HashSet<Expression> _candidates;
+        private readonly HashSet<TableAlias> _existingAliases;
+        private readonly TableAlias _newAlias;
+        private int _column;
 
         private ColumnProjector(Func<Expression, bool> fnCanBeColumn, Expression expression, IEnumerable<ColumnDeclaration> existingColumns, TableAlias newAlias, IEnumerable<TableAlias> existingAliases)
         {
-            this.newAlias = newAlias;
-            this.existingAliases = new HashSet<TableAlias>(existingAliases);
-            map = new Dictionary<ColumnExpression, ColumnExpression>();
+            _newAlias = newAlias;
+            _existingAliases = new HashSet<TableAlias>(existingAliases);
+            _map = new Dictionary<ColumnExpression, ColumnExpression>();
             if (existingColumns != null)
             {
-                columns = new List<ColumnDeclaration>(existingColumns);
-                columnNames = new HashSet<string>(existingColumns.Select(c => c.Name));
+                _columns = new List<ColumnDeclaration>(existingColumns);
+                _columnNames = new HashSet<string>(existingColumns.Select(c => c.Name));
             }
             else
             {
-                columns = new List<ColumnDeclaration>();
-                columnNames = new HashSet<string>();
+                _columns = new List<ColumnDeclaration>();
+                _columnNames = new HashSet<string>();
             }
 
-            candidates = Nominator.Nominate(fnCanBeColumn, expression);
+            _candidates = Nominator.Nominate(fnCanBeColumn, expression);
         }
 
         internal static ProjectedColumns ProjectColumns(Func<Expression, bool> fnCanBeColumn, Expression expression, IEnumerable<ColumnDeclaration> existingColumns, TableAlias newAlias, IEnumerable<TableAlias> existingAliases)
@@ -48,7 +48,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var projector = new ColumnProjector(fnCanBeColumn, expression, existingColumns, newAlias, existingAliases);
             var expr = projector.Visit(expression);
 
-            return new ProjectedColumns(expr, projector.columns.AsReadOnly());
+            return new ProjectedColumns(expr, projector._columns.AsReadOnly());
         }
 
         internal static ProjectedColumns ProjectColumns(Func<Expression, bool> fnCanBeColumn, Expression expression, IEnumerable<ColumnDeclaration> existingColumns, TableAlias newAlias, params TableAlias[] existingAliases)
@@ -63,35 +63,35 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 return null;
             }
 
-            if (candidates.Contains(expression))
+            if (_candidates.Contains(expression))
             {
                 if (expression.NodeType == (ExpressionType)DbExpressionType.Column)
                 {
                     var column = (ColumnExpression)expression;
-                    if (map.TryGetValue(column, out ColumnExpression mapped))
+                    if (_map.TryGetValue(column, out ColumnExpression mapped))
                     {
                         return mapped;
                     }
 
                     // check for column that already refers to this column
-                    foreach (var existingColumn in columns)
+                    foreach (var existingColumn in _columns)
                     {
                         if (existingColumn.Expression is ColumnExpression cex &&
                             cex.Alias == column.Alias &&
                             cex.Name == column.Name)
                         {
                             // refer to the column already in the column list
-                            return new ColumnExpression(column.Type, newAlias, existingColumn.Name, null);
+                            return new ColumnExpression(column.Type, _newAlias, existingColumn.Name, null);
                         }
                     }
 
-                    if (existingAliases.Contains(column.Alias))
+                    if (_existingAliases.Contains(column.Alias))
                     {
                         var columnName = GetUniqueColumnName(column.Name);
-                        columns.Add(new ColumnDeclaration(columnName, column));
-                        mapped = new ColumnExpression(column.Type, newAlias, columnName, column.MapInfo);
-                        map.Add(column, mapped);
-                        columnNames.Add(columnName);
+                        _columns.Add(new ColumnDeclaration(columnName, column));
+                        mapped = new ColumnExpression(column.Type, _newAlias, columnName, column.MapInfo);
+                        _map.Add(column, mapped);
+                        _columnNames.Add(columnName);
                         return mapped;
                     }
 
@@ -101,8 +101,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 else
                 {
                     string columnName = GetNextColumnName();
-                    columns.Add(new ColumnDeclaration(columnName, expression));
-                    return new ColumnExpression(expression.Type, newAlias, columnName, null);
+                    _columns.Add(new ColumnDeclaration(columnName, expression));
+                    return new ColumnExpression(expression.Type, _newAlias, columnName, null);
                 }
             }
             else
@@ -113,7 +113,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private bool IsColumnNameInUse(string name)
         {
-            return columnNames.Contains(name);
+            return _columnNames.Contains(name);
         }
 
         private string GetUniqueColumnName(string name)
@@ -130,7 +130,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private string GetNextColumnName()
         {
-            return GetUniqueColumnName("c" + (iColumn++));
+            return GetUniqueColumnName("c" + (_column++));
         }
 
         /// <summary>
@@ -139,50 +139,50 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// </summary>
         private class Nominator : DbExpressionVisitor
         {
-            private readonly Func<Expression, bool> fnCanBeColumn;
-            private bool isBlocked;
-            private readonly HashSet<Expression> candidates;
+            private readonly Func<Expression, bool> _fnCanBeColumn;
+            private bool _isBlocked;
+            private readonly HashSet<Expression> _candidates;
 
             private Nominator(Func<Expression, bool> fnCanBeColumn)
             {
-                this.fnCanBeColumn = fnCanBeColumn;
-                candidates = new HashSet<Expression>();
-                isBlocked = false;
+                _fnCanBeColumn = fnCanBeColumn;
+                _candidates = new HashSet<Expression>();
+                _isBlocked = false;
             }
 
             internal static HashSet<Expression> Nominate(Func<Expression, bool> fnCanBeColumn, Expression expression)
             {
                 var nominator = new Nominator(fnCanBeColumn);
                 nominator.Visit(expression);
-                return nominator.candidates;
+                return nominator._candidates;
             }
 
             public override Expression Visit(Expression expression)
             {
                 if (expression != null)
                 {
-                    bool saveIsBlocked = this.isBlocked;
-                    isBlocked = false;
-                    if (fnCanBeColumn(expression))
+                    bool saveIsBlocked = _isBlocked;
+                    _isBlocked = false;
+                    if (_fnCanBeColumn(expression))
                     {
-                        candidates.Add(expression);
+                        _candidates.Add(expression);
                         // don't merge saveIsBlocked
                     }
                     else
                     {
                         base.Visit(expression);
-                        if (!isBlocked)
+                        if (!_isBlocked)
                         {
-                            if (fnCanBeColumn(expression))
+                            if (_fnCanBeColumn(expression))
                             {
-                                candidates.Add(expression);
+                                _candidates.Add(expression);
                             }
                             else
                             {
-                                this.isBlocked = true;
+                                _isBlocked = true;
                             }
                         }
-                        isBlocked |= saveIsBlocked;
+                        _isBlocked |= saveIsBlocked;
                     }
                 }
                 return expression;
@@ -190,7 +190,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             protected override Expression VisitProjection(ProjectionExpression proj)
             {
-                this.Visit(proj.Projector);
+                Visit(proj.Projector);
                 return proj;
             }
 

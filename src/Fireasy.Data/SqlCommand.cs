@@ -13,7 +13,7 @@ namespace Fireasy.Data
     /// </summary>
     public sealed class SqlCommand : IQueryCommand
     {
-        private readonly string sql;
+        private readonly string _sql;
 
         /// <summary>
         /// 将字符串转换为 <see cref="SqlCommand"/> 实例。
@@ -32,7 +32,7 @@ namespace Fireasy.Data
         /// <returns></returns>
         public static explicit operator string(SqlCommand sqlCommand)
         {
-            return sqlCommand != null ? sqlCommand.sql : string.Empty;
+            return sqlCommand != null ? sqlCommand._sql : string.Empty;
         }
 
         /// <summary>
@@ -41,7 +41,7 @@ namespace Fireasy.Data
         /// <param name="command0"></param>
         /// <param name="command1"></param>
         /// <returns></returns>
-        public static SqlCommand operator + (SqlCommand command0, SqlCommand command1)
+        public static SqlCommand operator +(SqlCommand command0, SqlCommand command1)
         {
             return string.Concat(command0, command1);
         }
@@ -52,7 +52,7 @@ namespace Fireasy.Data
         /// <param name="sql">查询语句。</param>
         public SqlCommand(string sql)
         {
-            this.sql = sql;
+            _sql = sql;
         }
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace Fireasy.Data
         /// <returns></returns>
         public override string ToString()
         {
-            return sql;
+            return _sql;
         }
     }
 }

@@ -15,8 +15,8 @@ namespace Fireasy.Data
     /// </summary>
     public sealed class ConnectionProperties
     {
-        private readonly Dictionary<string, PropertyValue> properties = new Dictionary<string, PropertyValue>();
-        private readonly ConnectionString connectionString;
+        private readonly Dictionary<string, PropertyValue> _properties = new Dictionary<string, PropertyValue>();
+        private readonly ConnectionString _connectionString;
 
         /// <summary>
         /// 属性值。
@@ -47,7 +47,7 @@ namespace Fireasy.Data
 
         public ConnectionProperties(ConnectionString connectionString)
         {
-            this.connectionString = connectionString;
+            _connectionString = connectionString;
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace Fireasy.Data
         /// <param name="isCustomized">是否自定的属性。</param>
         public void Add(string name, string value, bool isCustomized = false)
         {
-            properties.AddOrReplace(name, new PropertyValue(isCustomized, value));
+            _properties.AddOrReplace(name, new PropertyValue(isCustomized, value));
         }
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace Fireasy.Data
         {
             get
             {
-                return properties.Keys;
+                return _properties.Keys;
             }
         }
 
@@ -81,7 +81,7 @@ namespace Fireasy.Data
         {
             get
             {
-                if (properties.TryGetValue(name, out PropertyValue value))
+                if (_properties.TryGetValue(name, out PropertyValue value))
                 {
                     return value.Value;
                 }
@@ -99,9 +99,9 @@ namespace Fireasy.Data
         {
             foreach (var name in names)
             {
-                if (properties.ContainsKey(name))
+                if (_properties.ContainsKey(name))
                 {
-                    return properties[name].Value;
+                    return _properties[name].Value;
                 }
             }
 
@@ -118,9 +118,9 @@ namespace Fireasy.Data
         {
             foreach (var name in names)
             {
-                if (properties.ContainsKey(name))
+                if (_properties.ContainsKey(name))
                 {
-                    return properties[name].Value;
+                    return _properties[name].Value;
                 }
             }
 
@@ -134,9 +134,9 @@ namespace Fireasy.Data
         /// <param name="name">属性名称。</param>
         public ConnectionProperties TrySetValue(string value, string name)
         {
-            if (properties.ContainsKey(name))
+            if (_properties.ContainsKey(name))
             {
-                properties[name].Value = value;
+                _properties[name].Value = value;
             }
 
             return this;
@@ -151,9 +151,9 @@ namespace Fireasy.Data
         {
             foreach (var name in names)
             {
-                if (properties.ContainsKey(name))
+                if (_properties.ContainsKey(name))
                 {
-                    properties[name].Value = value;
+                    _properties[name].Value = value;
                 }
             }
 
@@ -167,7 +167,7 @@ namespace Fireasy.Data
         /// <returns></returns>
         public bool IsCustomized(string name)
         {
-            if (properties.TryGetValue(name, out PropertyValue value))
+            if (_properties.TryGetValue(name, out PropertyValue value))
             {
                 return value.IsCustomized;
             }
@@ -180,7 +180,7 @@ namespace Fireasy.Data
         /// </summary>
         public void Update()
         {
-            connectionString.Update();
+            _connectionString.Update();
         }
 
         /// <summary>
@@ -190,7 +190,7 @@ namespace Fireasy.Data
         /// <returns></returns>
         public bool ContainsKey(string name)
         {
-            return properties.ContainsKey(name);
+            return _properties.ContainsKey(name);
         }
     }
 }

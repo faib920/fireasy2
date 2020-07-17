@@ -21,7 +21,7 @@ namespace Fireasy.Common.Caching
         /// <param name="message">自定义异常信息。</param>
         /// <param name="innerException">内部异常。</param>
         public CacheException(string message, Exception innerException)
-            : base (message, innerException)
+            : base(message, innerException)
         {
         }
     }

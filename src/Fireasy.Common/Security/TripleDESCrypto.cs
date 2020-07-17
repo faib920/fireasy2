@@ -12,7 +12,7 @@ namespace Fireasy.Common.Security
     internal class TripleDESCrypto : SymmetricCrypto
     {
         public TripleDESCrypto()
-            : base ("TripleDES")
+            : base("TripleDES")
         {
         }
 

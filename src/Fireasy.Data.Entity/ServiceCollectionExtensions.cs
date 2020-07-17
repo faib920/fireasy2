@@ -34,7 +34,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IServiceCollection AddEntityContext(this IServiceCollection services, Action<EntityContextOptionsBuilder> setupAction = null)
         {
-            services.RegisterBase();
+            services.RegisterBasic();
 
             if (services is ServiceCollection coll)
             {
@@ -43,9 +43,9 @@ namespace Microsoft.Extensions.DependencyInjection
                     services.Remove(desc);
 
                     var optionsType = ReflectionCache.GetMember("EntityOptionsType", desc.ServiceType, k => typeof(EntityContextOptions<>).MakeGenericType(k));
-                    services.AddScoped(optionsType, sp => ContextOptionsFactory(desc.ServiceType, optionsType, sp, setupAction));
-                    services.AddScoped(typeof(EntityContextOptions), sp => sp.GetRequiredService(optionsType));
-                    services.AddScoped(desc.ServiceType, desc.ServiceType);
+                    services.AddScoped(optionsType, sp => ContextOptionsFactory(desc.ServiceType, optionsType, sp, setupAction))
+                        .AddScoped(typeof(EntityContextOptions), sp => sp.GetRequiredService(optionsType))
+                        .AddScoped(desc.ServiceType, desc.ServiceType);
                 }
             }
 
@@ -60,13 +60,10 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IServiceCollection AddEntityContext<TContext>(this IServiceCollection services, Action<EntityContextOptionsBuilder> setupAction = null) where TContext : EntityContext
         {
-            services.RegisterBase();
-
-            services.AddScoped(typeof(EntityContextOptions<TContext>), sp => ContextOptionsFactory<TContext>(sp, setupAction));
-            services.AddScoped(typeof(EntityContextOptions), sp => sp.GetRequiredService<EntityContextOptions<TContext>>());
-            services.AddScoped(typeof(TContext), typeof(TContext));
-
-            return services;
+            return services.RegisterBasic()
+                .AddScoped(typeof(EntityContextOptions<TContext>), sp => ContextOptionsFactory<TContext>(sp, setupAction))
+                .AddScoped(typeof(EntityContextOptions), sp => sp.GetRequiredService<EntityContextOptions<TContext>>())
+                .AddScoped(typeof(TContext), typeof(TContext));
         }
 
         /// <summary>
@@ -78,15 +75,12 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IServiceCollection AddEntityContextPool<TContext>(this IServiceCollection services, Action<EntityContextOptionsBuilder> setupAction = null, int maxSize = 64) where TContext : EntityContext
         {
-            services.RegisterBase();
-
-            services.AddSingleton(typeof(EntityContextOptions<TContext>), sp => ContextOptionsFactory<TContext>(sp, setupAction));
-            services.AddSingleton(typeof(EntityContextOptions), sp => sp.GetRequiredService<EntityContextOptions<TContext>>());
-            services.AddSingleton(sp => new EntityContextPool<TContext>(sp, sp.GetRequiredService<EntityContextOptions<TContext>>(), maxSize));
-            services.AddScoped<EntityContextPool<TContext>.Lease>();
-            services.AddScoped(sp => sp.GetService<EntityContextPool<TContext>.Lease>().Context);
-
-            return services;
+            return services.RegisterBasic()
+                .AddScoped(typeof(EntityContextOptions<TContext>), sp => ContextOptionsFactory<TContext>(sp, setupAction))
+                .AddScoped(typeof(EntityContextOptions), sp => sp.GetRequiredService<EntityContextOptions<TContext>>())
+                .AddSingleton(sp => new EntityContextPool<TContext>(sp, maxSize))
+                .AddScoped<EntityContextPool<TContext>.Lease>()
+                .AddScoped(sp => sp.GetService<EntityContextPool<TContext>.Lease>().Context);
         }
 
         /// <summary>
@@ -125,11 +119,11 @@ namespace Microsoft.Extensions.DependencyInjection
             return builder.Options;
         }
 
-        private static IServiceCollection RegisterBase(this IServiceCollection services)
+        private static IServiceCollection RegisterBasic(this IServiceCollection services)
         {
-            services.AddSingleton<IQueryCache, DefaultQueryCache>();
-            services.AddSingleton<IExecuteCache, DefaultExecuteCache>();
-            return services;
+            return services.AddTransient<IQueryCache, DefaultQueryCache>()
+                .AddTransient<IExecuteCache, DefaultExecuteCache>()
+                .AddScoped<SharedDatabaseAccessor>();
         }
     }
 

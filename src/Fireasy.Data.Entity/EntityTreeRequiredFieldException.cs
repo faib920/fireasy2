@@ -29,11 +29,11 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 获取实体的类型。
         /// </summary>
-        public Type EntityType { get; private set; }
+        public Type EntityType { get; }
 
         /// <summary>
         /// 获取所需的属性名称。
         /// </summary>
-        public string PropertyName { get; private set; }
+        public string PropertyName { get; }
     }
 }

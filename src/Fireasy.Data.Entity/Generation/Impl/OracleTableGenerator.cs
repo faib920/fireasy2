@@ -5,10 +5,8 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Syntax;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace Fireasy.Data.Entity.Generation

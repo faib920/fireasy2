@@ -20,11 +20,11 @@ namespace Fireasy.Common.Emit
     /// </summary>
     public class DynamicAssemblyBuilder : DynamicBuilder
     {
-        private AssemblyBuilder assemblyBuilder;
-        private ModuleBuilder moduleBuilder;
-        private static readonly SafetyDictionary<string, Assembly> assemblies = new SafetyDictionary<string, Assembly>();
-        private readonly List<ITypeCreator> typeBuilders = new List<ITypeCreator>();
-        private bool isCreated = false;
+        private AssemblyBuilder _assemblyBuilder;
+        private ModuleBuilder _moduleBuilder;
+        private static readonly SafetyDictionary<string, Assembly> _assemblies = new SafetyDictionary<string, Assembly>();
+        private readonly List<ITypeCreator> _typeBuilders = new List<ITypeCreator>();
+        private bool _isCreated = false;
 
         /// <summary>
         /// 初始化 <see cref="DynamicAssemblyBuilder"/> 类的新实例。
@@ -45,7 +45,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                return assemblyBuilder ?? (assemblyBuilder = InitAssemblyBuilder());
+                return _assemblyBuilder ?? (_assemblyBuilder = InitAssemblyBuilder());
             }
         }
 
@@ -56,7 +56,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                return moduleBuilder ?? (moduleBuilder = InitModuleBuilder());
+                return _moduleBuilder ?? (_moduleBuilder = InitModuleBuilder());
             }
         }
 
@@ -66,15 +66,15 @@ namespace Fireasy.Common.Emit
         /// <returns></returns>
         private AssemblyBuilder InitAssemblyBuilder()
         {
-            if (assemblyBuilder == null)
+            if (_assemblyBuilder == null)
             {
                 var an = new AssemblyName(AssemblyName);
                 if (string.IsNullOrEmpty(OutputAssembly))
                 {
 #if !NETSTANDARD
-                    assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(an, AssemblyBuilderAccess.Run);
+                    _assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(an, AssemblyBuilderAccess.Run);
 #else
-                    assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(an, AssemblyBuilderAccess.RunAndCollect);
+                    _assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(an, AssemblyBuilderAccess.RunAndCollect);
 #endif
                 }
                 else
@@ -86,19 +86,19 @@ namespace Fireasy.Common.Emit
                         Directory.CreateDirectory(dir);
                     }
 
-                    assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(an, AssemblyBuilderAccess.RunAndSave, dir);
+                    _assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(an, AssemblyBuilderAccess.RunAndSave, dir);
 #else
-                    assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(an, AssemblyBuilderAccess.Run);
+                    _assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(an, AssemblyBuilderAccess.Run);
 #endif
                 }
 
-                assemblies.TryAdd(AssemblyName, assemblyBuilder);
+                _assemblies.TryAdd(AssemblyName, _assemblyBuilder);
 
                 //如果引用到当前程序集中的其他类型，则需要定义以下事件
                 AppDomain.CurrentDomain.AssemblyResolve += (o, e) =>
                     {
                         var names = e.Name.Split(',');
-                        if (assemblies.TryGetValue(names[0].Trim(), out Assembly assembly))
+                        if (_assemblies.TryGetValue(names[0].Trim(), out Assembly assembly))
                         {
                             return assembly;
                         }
@@ -107,7 +107,7 @@ namespace Fireasy.Common.Emit
                     };
             }
 
-            return assemblyBuilder;
+            return _assemblyBuilder;
         }
 
         /// <summary>
@@ -116,24 +116,24 @@ namespace Fireasy.Common.Emit
         /// <returns></returns>
         private ModuleBuilder InitModuleBuilder()
         {
-            if (moduleBuilder == null)
+            if (_moduleBuilder == null)
             {
                 if (string.IsNullOrEmpty(OutputAssembly))
                 {
-                    moduleBuilder = AssemblyBuilder.DefineDynamicModule("Main");
+                    _moduleBuilder = AssemblyBuilder.DefineDynamicModule("Main");
                 }
                 else
                 {
                     var fileName = OutputAssembly.Substring(OutputAssembly.LastIndexOf("\\") + 1);
 #if !NETSTANDARD
-                    moduleBuilder = AssemblyBuilder.DefineDynamicModule(fileName, fileName);
+                    _moduleBuilder = AssemblyBuilder.DefineDynamicModule(fileName, fileName);
 #else
-                    moduleBuilder = AssemblyBuilder.DefineDynamicModule(fileName);
+                    _moduleBuilder = AssemblyBuilder.DefineDynamicModule(fileName);
 #endif
                 }
             }
 
-            return moduleBuilder;
+            return _moduleBuilder;
         }
 
         /// <summary>
@@ -157,7 +157,7 @@ namespace Fireasy.Common.Emit
         public DynamicTypeBuilder DefineType(string typeName, VisualDecoration visual = VisualDecoration.Public, CallingDecoration calling = CallingDecoration.Standard, Type baseType = null)
         {
             var typeBuilder = new DynamicTypeBuilder(Context, typeName, visual, calling, baseType);
-            typeBuilders.Add(typeBuilder);
+            _typeBuilders.Add(typeBuilder);
             return typeBuilder;
         }
 
@@ -170,7 +170,7 @@ namespace Fireasy.Common.Emit
         public DynamicInterfaceBuilder DefineInterface(string typeName, VisualDecoration visual = VisualDecoration.Public)
         {
             var typeBuilder = new DynamicInterfaceBuilder(Context, typeName, visual);
-            typeBuilders.Add(typeBuilder);
+            _typeBuilders.Add(typeBuilder);
             return typeBuilder;
         }
 
@@ -184,7 +184,7 @@ namespace Fireasy.Common.Emit
         public DynamicEnumBuilder DefineEnum(string enumName, Type underlyingType = null, VisualDecoration visual = VisualDecoration.Public)
         {
             var enumBuilder = new DynamicEnumBuilder(Context, enumName, underlyingType ?? typeof(int), visual);
-            typeBuilders.Add(enumBuilder);
+            _typeBuilders.Add(enumBuilder);
             return enumBuilder;
         }
 
@@ -194,14 +194,14 @@ namespace Fireasy.Common.Emit
         /// <returns></returns>
         public Assembly Create()
         {
-            if (!isCreated)
+            if (!_isCreated)
             {
-                foreach (var typeBuilder in typeBuilders)
+                foreach (var typeBuilder in _typeBuilders)
                 {
                     typeBuilder.CreateType();
                 }
 
-                isCreated = true;
+                _isCreated = true;
             }
 
             return AssemblyBuilder;

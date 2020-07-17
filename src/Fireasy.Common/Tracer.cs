@@ -5,16 +5,18 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using System.Diagnostics;
+#if NETFRAMEWORK
 using Fireasy.Common.Extensions;
 using System.Configuration;
-using System.Diagnostics;
+#endif
 
 namespace Fireasy.Common
 {
     /// <summary>
     /// 跟踪器。
     /// </summary>
-    public static class Tracer
+    public class Tracer
     {
 #if NETFRAMEWORK
         static Tracer()

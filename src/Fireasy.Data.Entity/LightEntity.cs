@@ -136,7 +136,7 @@ namespace Fireasy.Data.Entity
         /// <param name="value"></param>
         public override void InitializeValue(IProperty property, PropertyValue value)
         {
-            this.SetValue(property, value);
+            SetValue(property, value);
         }
 
         /// <summary>

@@ -5,8 +5,8 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using Fireasy.Common.Configuration;
+using System;
 
 namespace Fireasy.Common.Composition.Configuration
 {

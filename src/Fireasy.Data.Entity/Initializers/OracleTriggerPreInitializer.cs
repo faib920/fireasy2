@@ -17,7 +17,7 @@ namespace Fireasy.Data.Entity.Initializers
     /// </summary>
     public sealed class OracleTriggerPreInitializer : IEntityContextPreInitializer
     {
-        private List<Type> entityTypes = null;
+        private List<Type> _entityTypes = null;
 
         /// <summary>
         /// 指定需要使用触发器的实体类型。
@@ -25,19 +25,19 @@ namespace Fireasy.Data.Entity.Initializers
         /// <param name="entityType">实体类型。</param>
         public void Add(Type entityType)
         {
-            if (entityTypes == null)
+            if (_entityTypes == null)
             {
-                entityTypes = new List<Type>();
+                _entityTypes = new List<Type>();
             }
 
-            entityTypes.Add(entityType);
+            _entityTypes.Add(entityType);
         }
 
         void IEntityContextPreInitializer.PreInitialize(EntityContextPreInitializeContext context)
         {
             foreach (var map in context.Mappers)
             {
-                if (entityTypes != null && entityTypes.Count != 0 && !entityTypes.Contains(map.EntityType))
+                if (_entityTypes != null && _entityTypes.Count != 0 && !_entityTypes.Contains(map.EntityType))
                 {
                     continue;
                 }

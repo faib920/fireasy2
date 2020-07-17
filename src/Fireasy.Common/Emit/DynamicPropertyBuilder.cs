@@ -17,11 +17,11 @@ namespace Fireasy.Common.Emit
     /// </summary>
     public class DynamicPropertyBuilder : DynamicBuilder
     {
-        private PropertyBuilder propertyBuilder;
-        private DynamicFieldBuilder fieldBuilder;
+        private PropertyBuilder _propertyBuilder;
+        private DynamicFieldBuilder _fieldBuilder;
 
         internal DynamicPropertyBuilder(BuildContext context, string propertyName, Type propertyType, VisualDecoration visual = VisualDecoration.Public, CallingDecoration calling = CallingDecoration.Standard)
-            : base (visual, calling)
+            : base(visual, calling)
         {
             Context = new BuildContext(context) { PropertyBuilder = this };
             Name = propertyName;
@@ -47,7 +47,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                return fieldBuilder ?? (fieldBuilder = Context.TypeBuilder.DefineField(string.Format("m_<{0}>", Name), PropertyType));
+                return _fieldBuilder ?? (_fieldBuilder = Context.TypeBuilder.DefineField(string.Format("m_<{0}>", Name), PropertyType));
             }
         }
 
@@ -57,7 +57,7 @@ namespace Fireasy.Common.Emit
         /// <returns></returns>
         public PropertyBuilder PropertyBuilder
         {
-            get { return propertyBuilder; }
+            get { return _propertyBuilder; }
         }
 
         /// <summary>
@@ -205,7 +205,7 @@ namespace Fireasy.Common.Emit
 
         private void InitBuilder()
         {
-            propertyBuilder = Context.TypeBuilder.TypeBuilder.DefineProperty(Name, GetPropertyAttributes(), PropertyType, null);
+            _propertyBuilder = Context.TypeBuilder.TypeBuilder.DefineProperty(Name, GetPropertyAttributes(), PropertyType, null);
         }
 
         private string GetMethodName()

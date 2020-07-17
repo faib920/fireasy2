@@ -20,7 +20,7 @@ namespace Fireasy.Data
         /// 初始化 <see cref="UnableGetDatabaseScopeException"/> 类的新实例。
         /// </summary>
         public UnableGetDatabaseScopeException()
-            : base (SR.GetString(SRKind.UnableGetDatabaseScope))
+            : base(SR.GetString(SRKind.UnableGetDatabaseScope))
         {
         }
     }

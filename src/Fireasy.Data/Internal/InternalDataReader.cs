@@ -16,175 +16,176 @@ namespace Fireasy.Data.Internal
 {
     internal class InternalDataReader : IDataReader
     {
-        private readonly DbConnection connection;
-        private readonly IDataReader reader;
-        private readonly bool canCloseConnection;
-        private readonly ReaderNestedlocked locker;
+        private readonly DbConnection _connection;
+        private readonly IDataReader _reader;
+        private readonly bool _canCloseConnection;
+        private readonly ReaderNestedlocked _locker;
 
         public InternalDataReader(IDbConnection connection, IDataReader reader, bool canCloseConnection, ReaderNestedlocked locker)
         {
-            this.connection = (DbConnection)connection;
-            this.reader = reader;
-            this.canCloseConnection = canCloseConnection;
-            this.locker = locker;
+            _connection = (DbConnection)connection;
+            _reader = reader;
+            _canCloseConnection = canCloseConnection;
+            _locker = locker;
+
             locker.Increment();
         }
 
-        public object this[int i] => reader[i];
+        public object this[int i] => _reader[i];
 
-        public object this[string name] => reader[name];
+        public object this[string name] => _reader[name];
 
-        public int Depth => reader.Depth;
+        public int Depth => _reader.Depth;
 
-        public bool IsClosed => reader.IsClosed;
+        public bool IsClosed => _reader.IsClosed;
 
-        public int RecordsAffected => reader.RecordsAffected;
+        public int RecordsAffected => _reader.RecordsAffected;
 
-        public int FieldCount => reader.FieldCount;
+        public int FieldCount => _reader.FieldCount;
 
         public void Close()
         {
-            reader.Close();
+            _reader.Close();
         }
 
         void IDisposable.Dispose()
         {
-            reader.Dispose();
+            _reader.Dispose();
 
-            if (locker.Decrement() == 0 && canCloseConnection)
+            if (_locker.Decrement() == 0 && _canCloseConnection)
             {
-                connection.TryClose();
+                _connection.TryClose();
             }
         }
 
         public bool GetBoolean(int i)
         {
-            return reader.GetBoolean(i);
+            return _reader.GetBoolean(i);
         }
 
         public byte GetByte(int i)
         {
-            return reader.GetByte(i);
+            return _reader.GetByte(i);
         }
 
         public long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferoffset, int length)
         {
-            return reader.GetBytes(i, fieldOffset, buffer, bufferoffset, length);
+            return _reader.GetBytes(i, fieldOffset, buffer, bufferoffset, length);
         }
 
         public char GetChar(int i)
         {
-            return reader.GetChar(i);
+            return _reader.GetChar(i);
         }
 
         public long GetChars(int i, long fieldoffset, char[] buffer, int bufferoffset, int length)
         {
-            return reader.GetChars(i, fieldoffset, buffer, bufferoffset, length);
+            return _reader.GetChars(i, fieldoffset, buffer, bufferoffset, length);
         }
 
         public IDataReader GetData(int i)
         {
-            return reader.GetData(i);
+            return _reader.GetData(i);
         }
 
         public string GetDataTypeName(int i)
         {
-            return reader.GetDataTypeName(i);
+            return _reader.GetDataTypeName(i);
         }
 
         public DateTime GetDateTime(int i)
         {
-            return reader.GetDateTime(i);
+            return _reader.GetDateTime(i);
         }
 
         public decimal GetDecimal(int i)
         {
-            return reader.GetDecimal(i);
+            return _reader.GetDecimal(i);
         }
 
         public double GetDouble(int i)
         {
-            return reader.GetDouble(i);
+            return _reader.GetDouble(i);
         }
 
         public Type GetFieldType(int i)
         {
-            return reader.GetFieldType(i);
+            return _reader.GetFieldType(i);
         }
 
         public float GetFloat(int i)
         {
-            return reader.GetFloat(i);
+            return _reader.GetFloat(i);
         }
 
         public Guid GetGuid(int i)
         {
-            return reader.GetGuid(i);
+            return _reader.GetGuid(i);
         }
 
         public short GetInt16(int i)
         {
-            return reader.GetInt16(i);
+            return _reader.GetInt16(i);
         }
 
         public int GetInt32(int i)
         {
-            return reader.GetInt32(i);
+            return _reader.GetInt32(i);
         }
 
         public long GetInt64(int i)
         {
-            return reader.GetInt64(i);
+            return _reader.GetInt64(i);
         }
 
         public string GetName(int i)
         {
-            return reader.GetName(i);
+            return _reader.GetName(i);
         }
 
         public int GetOrdinal(string name)
         {
-            return reader.GetOrdinal(name);
+            return _reader.GetOrdinal(name);
         }
 
         public DataTable GetSchemaTable()
         {
-            return reader.GetSchemaTable();
+            return _reader.GetSchemaTable();
         }
 
         public string GetString(int i)
         {
-            return reader.GetString(i);
+            return _reader.GetString(i);
         }
 
         public object GetValue(int i)
         {
-            return reader.GetValue(i);
+            return _reader.GetValue(i);
         }
 
         public int GetValues(object[] values)
         {
-            return reader.GetValues(values);
+            return _reader.GetValues(values);
         }
 
         public bool IsDBNull(int i)
         {
-            return reader.IsDBNull(i);
+            return _reader.IsDBNull(i);
         }
 
         public bool NextResult()
         {
-            return reader.NextResult();
+            return _reader.NextResult();
         }
 
         public bool Read()
         {
-            return reader.Read();
+            return _reader.Read();
         }
 
         public async Task<bool> ReadAsync(CancellationToken cancellationToken)
         {
-            return await ((DbDataReader)reader).ReadAsync(cancellationToken);
+            return await ((DbDataReader)_reader).ReadAsync(cancellationToken);
         }
     }
 }

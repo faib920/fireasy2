@@ -8,9 +8,7 @@
 using Fireasy.Common;
 using Fireasy.Common.ComponentModel;
 using Fireasy.Data.Extensions;
-using System;
 using System.Data.Common;
-using System.Diagnostics;
 using System.Transactions;
 
 namespace Fireasy.Data
@@ -20,7 +18,7 @@ namespace Fireasy.Data
     /// </summary>
     public sealed class TransactionScopeConnections
     {
-        private static readonly SafetyDictionary<Transaction, SafetyDictionary<string, DbConnection>> transConns =
+        private static readonly SafetyDictionary<Transaction, SafetyDictionary<string, DbConnection>> _transConns =
             new SafetyDictionary<Transaction, SafetyDictionary<string, DbConnection>>();
 
         /// <summary>
@@ -37,10 +35,10 @@ namespace Fireasy.Data
                 return null;
             }
 
-            if (!transConns.TryGetValue(curTrans, out SafetyDictionary<string, DbConnection> connDictionary))
+            if (!_transConns.TryGetValue(curTrans, out SafetyDictionary<string, DbConnection> connDictionary))
             {
                 connDictionary = new SafetyDictionary<string, DbConnection>();
-                transConns.TryAdd(curTrans, connDictionary);
+                _transConns.TryAdd(curTrans, connDictionary);
 
                 Tracer.Debug($"Transaction registered.");
                 curTrans.TransactionCompleted += OnTransactionCompleted;
@@ -75,7 +73,7 @@ namespace Fireasy.Data
         /// <param name="e"></param>
         static void OnTransactionCompleted(object sender, TransactionEventArgs e)
         {
-            if (!transConns.TryGetValue(e.Transaction, out SafetyDictionary<string, DbConnection> connDictionary))
+            if (!_transConns.TryGetValue(e.Transaction, out SafetyDictionary<string, DbConnection> connDictionary))
             {
                 return;
             }
@@ -86,7 +84,7 @@ namespace Fireasy.Data
                 connection.Dispose();
             }
 
-            transConns.TryRemove(e.Transaction, out _);
+            _transConns.TryRemove(e.Transaction, out _);
         }
     }
 }

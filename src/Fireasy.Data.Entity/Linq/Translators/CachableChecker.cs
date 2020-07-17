@@ -6,10 +6,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common.Extensions;
 using System.Collections;
 using System.Linq;
 using System.Linq.Expressions;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
@@ -18,7 +18,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public sealed class CachableChecker : Common.Linq.Expressions.ExpressionVisitor
     {
-        private bool isCachable = true;
+        private bool _isCachable = true;
 
         /// <summary>
         /// 检查表达式是否可以被缓存。
@@ -29,17 +29,17 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             var checker = new CachableChecker();
             checker.Visit(expression);
-            return checker.isCachable;
+            return checker._isCachable;
         }
 
         protected override Expression VisitConstant(ConstantExpression constExp)
         {
-            if (constExp.Value != null && 
+            if (constExp.Value != null &&
                 !constExp.Value.Is<IQueryable>() &&
-                !constExp.Value.Is<IEnumerable>() && 
+                !constExp.Value.Is<IEnumerable>() &&
                 constExp.Type.ToString() == constExp.Value.ToString())
             {
-                isCachable = false;
+                _isCachable = false;
                 return constExp;
             }
 

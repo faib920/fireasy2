@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
@@ -13,7 +14,6 @@ using System.ComponentModel.Composition.Primitives;
 using System.ComponentModel.Composition.ReflectionModel;
 using System.Linq;
 using System.Reflection;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Common.Composition
 {
@@ -22,7 +22,7 @@ namespace Fireasy.Common.Composition
     /// </summary>
     public class ConventionalCatalog : ComposablePartCatalog
     {
-        private readonly Dictionary<Type, ComposablePartDefinition> partDictionary = new Dictionary<Type, ComposablePartDefinition>();
+        private readonly Dictionary<Type, ComposablePartDefinition> _partDictionary = new Dictionary<Type, ComposablePartDefinition>();
 
         /// <summary>
         /// 注册一个指定协定类型的实现类型。
@@ -54,7 +54,7 @@ namespace Fireasy.Common.Composition
                     false,
                     new Lazy<IEnumerable<ImportDefinition>>(() => GetImportDefinitions(implType)),
                     new Lazy<IEnumerable<ExportDefinition>>(() => GetExportDefinitions(implType, contractType)), null, null);
-                partDictionary.AddOrReplace(contractType, part);
+                _partDictionary.AddOrReplace(contractType, part);
             }
 
             return this;
@@ -94,7 +94,7 @@ namespace Fireasy.Common.Composition
                 instance,
                 new Lazy<IEnumerable<ImportDefinition>>(() => new List<ImportDefinition>()),
                 new Lazy<IEnumerable<ExportDefinition>>(() => GetExportDefinitions(implType, contractType)));
-                partDictionary.Add(contractType, part);
+                _partDictionary.Add(contractType, part);
             }
 
             return this;
@@ -105,12 +105,12 @@ namespace Fireasy.Common.Composition
         /// </summary>
         public override IQueryable<ComposablePartDefinition> Parts
         {
-            get { return partDictionary.Values.AsQueryable(); }
+            get { return _partDictionary.Values.AsQueryable(); }
         }
 
         private bool IsRegisted(Type contractType)
         {
-            return partDictionary.ContainsKey(contractType);
+            return _partDictionary.ContainsKey(contractType);
         }
 
         private IEnumerable<ImportDefinition> GetImportDefinitions(Type implementationType)
@@ -148,7 +148,7 @@ namespace Fireasy.Common.Composition
                     };
                     return md;
                 });
-            return new []
+            return new[]
                 {
                     ReflectionModelServices.CreateExportDefinition(lazyMember, contracName, metadata, null)
                 };
@@ -156,49 +156,49 @@ namespace Fireasy.Common.Composition
 
         private class ConventionalPartPartDefinition : ComposablePartDefinition
         {
-            private readonly ConventionalPart part;
-            private readonly Lazy<IEnumerable<ImportDefinition>> imports;
-            private readonly Lazy<IEnumerable<ExportDefinition>> exports;
+            private readonly ConventionalPart _part;
+            private readonly Lazy<IEnumerable<ImportDefinition>> _imports;
+            private readonly Lazy<IEnumerable<ExportDefinition>> _exports;
 
             public ConventionalPartPartDefinition(object exportValue, Lazy<IEnumerable<ImportDefinition>> imports, Lazy<IEnumerable<ExportDefinition>> exports)
             {
-                part = new ConventionalPart(exportValue, imports, exports);
-                this.imports = imports;
-                this.exports = exports;
+                _part = new ConventionalPart(exportValue, imports, exports);
+                _imports = imports;
+                _exports = exports;
             }
 
             public override ComposablePart CreatePart()
             {
-                return part;
+                return _part;
             }
 
             public override IEnumerable<ExportDefinition> ExportDefinitions
             {
-                get { return exports?.Value; }
+                get { return _exports?.Value; }
             }
 
             public override IEnumerable<ImportDefinition> ImportDefinitions
             {
-                get { return imports?.Value; }
+                get { return _imports?.Value; }
             }
         }
 
         private class ConventionalPart : ComposablePart
         {
-            private readonly object exportValue;
-            private readonly Lazy<IEnumerable<ImportDefinition>> imports;
-            private readonly Lazy<IEnumerable<ExportDefinition>> exports;
+            private readonly object _exportValue;
+            private readonly Lazy<IEnumerable<ImportDefinition>> _imports;
+            private readonly Lazy<IEnumerable<ExportDefinition>> _exports;
 
             public ConventionalPart(object exportValue, Lazy<IEnumerable<ImportDefinition>> imports, Lazy<IEnumerable<ExportDefinition>> exports)
             {
-                this.exportValue = exportValue;
-                this.imports = imports;
-                this.exports = exports;
+                _exportValue = exportValue;
+                _imports = imports;
+                _exports = exports;
             }
 
             public override object GetExportedValue(ExportDefinition definition)
             {
-                return exportValue;
+                return _exportValue;
             }
 
             public override void SetImport(ImportDefinition definition, IEnumerable<Export> exports)
@@ -207,12 +207,12 @@ namespace Fireasy.Common.Composition
 
             public override IEnumerable<ExportDefinition> ExportDefinitions
             {
-                get { return exports?.Value; }
+                get { return _exports?.Value; }
             }
 
             public override IEnumerable<ImportDefinition> ImportDefinitions
             {
-                get { return imports?.Value; }
+                get { return _imports?.Value; }
             }
         }
 

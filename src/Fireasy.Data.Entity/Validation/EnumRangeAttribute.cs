@@ -18,7 +18,7 @@ namespace Fireasy.Data.Entity.Validation
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
     public class EnumRangeAttribute : ValidationAttribute
     {
-        private ReadOnlyCollection<int> values;
+        private ReadOnlyCollection<int> _values;
 
         /// <summary>
         /// 初始化 <see cref="EnumRangeAttribute"/> 类的新实例。
@@ -41,12 +41,12 @@ namespace Fireasy.Data.Entity.Validation
         {
             get
             {
-                if (values == null)
+                if (_values == null)
                 {
-                    values = new ReadOnlyCollection<int>(EnumType.GetFields().Where(s => s.Name != "value__").Select(s => (int)s.GetValue(null)).ToList());
+                    _values = new ReadOnlyCollection<int>(EnumType.GetFields().Where(s => s.Name != "value__").Select(s => (int)s.GetValue(null)).ToList());
                 }
 
-                return values;
+                return _values;
             }
         }
 

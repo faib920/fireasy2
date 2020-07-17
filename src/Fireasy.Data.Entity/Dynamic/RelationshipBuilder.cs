@@ -6,8 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using Fireasy.Common.Emit;
+using System;
 
 namespace Fireasy.Data.Entity.Dynamic
 {
@@ -16,7 +16,7 @@ namespace Fireasy.Data.Entity.Dynamic
     /// </summary>
     public sealed class RelationshipBuilder
     {
-        private readonly DynamicAssemblyBuilder assemblyBuilder;
+        private readonly DynamicAssemblyBuilder _assemblyBuilder;
 
         /// <summary>
         /// 初始化 <see cref="RelationshipBuilder"/> 类的新实例。
@@ -24,7 +24,7 @@ namespace Fireasy.Data.Entity.Dynamic
         /// <param name="assemblyBuilder">一个 <see cref="DynamicAssemblyBuilder"/> 容器。</param>
         public RelationshipBuilder(DynamicAssemblyBuilder assemblyBuilder = null)
         {
-            this.assemblyBuilder = assemblyBuilder ?? new DynamicAssemblyBuilder($"<DynamicRelationship>_{Guid.NewGuid():N}");
+            _assemblyBuilder = assemblyBuilder ?? new DynamicAssemblyBuilder($"<DynamicRelationship>_{Guid.NewGuid():N}");
         }
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace Fireasy.Data.Entity.Dynamic
         public void DefineRelation(Type thisType, Type otherType, string keyExpression)
         {
             var relationName = $"{thisType.Name}_{otherType.Name}:{keyExpression}";
-            assemblyBuilder.SetCustomAttribute(() => new RelationshipAttribute(relationName, thisType, otherType, keyExpression));
+            _assemblyBuilder.SetCustomAttribute(() => new RelationshipAttribute(relationName, thisType, otherType, keyExpression));
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace Fireasy.Data.Entity.Dynamic
         public void DefineRelation(Type thisType, Type otherType, IProperty thisProperty, IProperty otherProperty, RelationshipStyle style)
         {
             var relationName = $"{thisType.Name}:{otherType.Name}";
-            assemblyBuilder.SetCustomAttribute(() => new RelationshipAttribute(relationName, thisType, otherType, GetRelationshipExpression(thisProperty, otherProperty, style)));
+            _assemblyBuilder.SetCustomAttribute(() => new RelationshipAttribute(relationName, thisType, otherType, GetRelationshipExpression(thisProperty, otherProperty, style)));
         }
 
         private string GetRelationshipExpression(IProperty thisProperty, IProperty otherProperty, RelationshipStyle style)

@@ -15,14 +15,11 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 
 namespace Fireasy.Data.Entity.Linq.Translators
 {
     internal sealed class QueryUtility
     {
-        const string REFERENCE_MPROS_KEY = "MPSKEY";
-
         internal static LambdaExpression GetAggregator(Type expectedType, Type actualType)
         {
             var actualElementType = ReflectionCache.GetMember("EnumerableElementType", actualType, k => k.GetEnumerableElementType());
@@ -108,14 +105,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return expression;
         }
 
-        internal static ProjectionExpression GetTableQuery(EntityMetadata entity, bool isNoTracking, bool isAsync)
+        internal static ProjectionExpression GetTableQuery(TranslateContext transContext, EntityMetadata entity, bool isNoTracking, bool isAsync)
         {
             var tableAlias = new TableAlias();
             var selectAlias = new TableAlias();
             var entityType = entity.EntityType;
             var table = new TableExpression(tableAlias, entity.TableName, entityType);
 
-            var projector = GetTypeProjection(table, entity);
+            var projector = GetTypeProjection(transContext, table, entity);
             var pc = ColumnProjector.ProjectColumns(CanBeColumnExpression, projector, null, selectAlias, tableAlias);
 
             var proj = new ProjectionExpression(
@@ -123,10 +120,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 pc.Projector, isAsync, isNoTracking
                 );
 
-            return (ProjectionExpression)ApplyPolicy(proj, entityType);
+            return (ProjectionExpression)transContext.QueryPolicy.ApplyPolicy(proj, entityType, ex => QueryBinder.Bind(transContext, ex));
         }
 
-        internal static Expression GetTypeProjection(Expression root, EntityMetadata entity)
+        internal static Expression GetTypeProjection(TranslateContext transContext, Expression root, EntityMetadata entity)
         {
             var entityType = entity.EntityType;
 
@@ -134,20 +131,20 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var properties = PropertyUnity.GetLoadedProperties(entityType);
 
             var bindings = from p in properties
-             let mbrExp = GetMemberExpression(root, p)
-             where mbrExp != null
-             select Expression.Bind(p.Info.ReflectionInfo, mbrExp);
+                           let mbrExp = GetMemberExpression(transContext, root, p)
+                           where mbrExp != null
+                           select Expression.Bind(p.Info.ReflectionInfo, mbrExp);
 
             return new EntityExpression(entity, Expression.MemberInit(Expression.New(entityType), bindings));
         }
 
-        internal static Expression GetMemberExpression(Expression root, IProperty property)
+        internal static Expression GetMemberExpression(TranslateContext transContext, Expression root, IProperty property)
         {
             if (property is RelationProperty relationProprety)
             {
                 //所关联的实体类型
                 var relMetadata = EntityMetadataUnity.GetEntityMetadata(relationProprety.RelationalType);
-                var projection = GetTableQuery(relMetadata, false, false);
+                var projection = GetTableQuery(transContext, relMetadata, false, false);
 
                 Expression parentExp = null, childExp = null;
                 var ship = RelationshipUnity.GetRelationship(relationProprety);
@@ -164,7 +161,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 }
 
                 var where = ship.Keys.Select(r =>
-                        GetMemberExpression(parentExp, r.ThisProperty).Equal(GetMemberExpression(childExp, r.OtherProperty)))
+                        GetMemberExpression(transContext, parentExp, r.ThisProperty).Equal(GetMemberExpression(transContext, childExp, r.OtherProperty)))
                     .Aggregate(Expression.And);
 
                 var newAlias = new TableAlias();
@@ -176,7 +173,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     pc.Projector, aggregator, projection.IsAsync, projection.IsNoTracking
                     );
 
-                return ApplyPolicy(result, property.Info.ReflectionInfo);
+                return transContext.QueryPolicy.ApplyPolicy(result, property.Info.ReflectionInfo, ex => QueryBinder.Bind(transContext, ex));
             }
 
             if (root is TableExpression table)
@@ -194,7 +191,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return QueryBinder.BindMember(root, property.Info.ReflectionInfo);
         }
 
-        internal static Expression GetDeleteExpression(EntityMetadata metadata, LambdaExpression predicate, bool replace, bool isAsync)
+        internal static Expression GetDeleteExpression(TranslateContext transContext, EntityMetadata metadata, LambdaExpression predicate, bool replace, bool isAsync)
         {
             var table = new TableExpression(new TableAlias(), metadata.TableName, metadata.EntityType);
             Expression where = null;
@@ -203,7 +200,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 if (replace)
                 {
-                    var row = GetTypeProjection(table, metadata);
+                    var row = GetTypeProjection(transContext, table, metadata);
                     where = DbExpressionReplacer.Replace(predicate.Body, predicate.Parameters[0], row);
                 }
                 else
@@ -215,12 +212,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return new DeleteCommandExpression(table, where, isAsync);
         }
 
-        internal static Expression GetLogicalDeleteExpression(EntityMetadata metadata, LambdaExpression predicate, bool isAsync)
+        internal static Expression GetLogicalDeleteExpression(TranslateContext transContext, EntityMetadata metadata, LambdaExpression predicate, bool isAsync)
         {
             var table = new TableExpression(new TableAlias(), metadata.TableName, metadata.EntityType);
             Expression where = null;
 
-            var delflag = (ColumnExpression)GetMemberExpression(table, metadata.DeleteProperty);
+            var delflag = (ColumnExpression)GetMemberExpression(transContext, table, metadata.DeleteProperty);
             var assignments = new List<ColumnAssignment>
                 {
                     new ColumnAssignment(delflag, Expression.Constant(true))
@@ -228,22 +225,22 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             if (predicate != null)
             {
-                var row = GetTypeProjection(table, metadata);
+                var row = GetTypeProjection(transContext, table, metadata);
                 where = DbExpressionReplacer.Replace(predicate.Body, predicate.Parameters[0], row);
             }
 
             return new UpdateCommandExpression(table, where, assignments, isAsync);
         }
 
-        internal static Expression GetUpdateExpression(Expression instance, LambdaExpression predicate, bool isAsync)
+        internal static Expression GetUpdateExpression(TranslateContext transContext, Expression instance, LambdaExpression predicate, bool isAsync)
         {
             if (instance is ParameterExpression)
             {
-                return GetUpdateExpressionByParameter((ParameterExpression)instance, predicate, isAsync);
+                return GetUpdateExpressionByParameter(transContext, (ParameterExpression)instance, predicate, isAsync);
             }
             else if (instance is ConstantExpression)
             {
-                return GetUpdateExpressionByEntity((ConstantExpression)instance, predicate, isAsync);
+                return GetUpdateExpressionByEntity(transContext, (ConstantExpression)instance, predicate, isAsync);
             }
 
             var lambda = instance as LambdaExpression;
@@ -254,13 +251,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             if (lambda != null)
             {
-                return GetUpdateExpressionByCalculator(lambda, predicate, isAsync);
+                return GetUpdateExpressionByCalculator(transContext, lambda, predicate, isAsync);
             }
 
             return null;
         }
 
-        internal static LambdaExpression GetPrimaryKeyExpression(ParameterExpression parExp)
+        internal static LambdaExpression GetPrimaryKeyExpression(TranslateContext transContext, ParameterExpression parExp)
         {
             var metadata = EntityMetadataUnity.GetEntityMetadata(parExp.Type);
             var table = new TableExpression(new TableAlias(), metadata.TableName, parExp.Type);
@@ -272,13 +269,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
 
             var where = primaryKeys.Select(p =>
-                   GetMemberExpression(table, p).Equal(Expression.MakeMemberAccess(parExp, p.Info.ReflectionInfo)))
+                   GetMemberExpression(transContext, table, p).Equal(Expression.MakeMemberAccess(parExp, p.Info.ReflectionInfo)))
                 .Aggregate(Expression.Add);
 
             return Expression.Lambda(where, parExp);
         }
 
-        private static Expression GetUpdateExpressionByEntity(ConstantExpression constant, LambdaExpression predicate, bool isAsync)
+        private static Expression GetUpdateExpressionByEntity(TranslateContext transContext, ConstantExpression constant, LambdaExpression predicate, bool isAsync)
         {
             var entity = constant.Value as IEntity;
             var metadata = EntityMetadataUnity.GetEntityMetadata(entity.EntityType);
@@ -287,22 +284,22 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             if (predicate != null)
             {
-                var row = GetTypeProjection(table, metadata);
+                var row = GetTypeProjection(transContext, table, metadata);
                 where = DbExpressionReplacer.Replace(predicate.Body, predicate.Parameters[0], row);
             }
 
-            return new UpdateCommandExpression(table, where, GetUpdateArguments(table, entity), isAsync);
+            return new UpdateCommandExpression(table, where, GetUpdateArguments(transContext, table, entity), isAsync);
         }
 
-        private static Expression GetUpdateExpressionByParameter(ParameterExpression parExp, LambdaExpression predicate, bool isAsync)
+        private static Expression GetUpdateExpressionByParameter(TranslateContext transContext, ParameterExpression parExp, LambdaExpression predicate, bool isAsync)
         {
             var metadata = EntityMetadataUnity.GetEntityMetadata(parExp.Type);
             var table = new TableExpression(new TableAlias(), metadata.TableName, parExp.Type);
 
-            return new UpdateCommandExpression(table, predicate.Body, GetUpdateArguments(table, parExp), isAsync);
+            return new UpdateCommandExpression(table, predicate.Body, GetUpdateArguments(transContext, table, parExp), isAsync);
         }
 
-        private static Expression GetUpdateExpressionByCalculator(LambdaExpression lambda, LambdaExpression predicate, bool isAsync)
+        private static Expression GetUpdateExpressionByCalculator(TranslateContext transContext, LambdaExpression lambda, LambdaExpression predicate, bool isAsync)
         {
             var initExp = lambda.Body as MemberInitExpression;
             var newExp = initExp.NewExpression;
@@ -311,7 +308,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var table = new TableExpression(new TableAlias(), metadata.TableName, metadata.EntityType);
             Expression where = null;
 
-            var row = GetTypeProjection(table, metadata);
+            var row = GetTypeProjection(transContext, table, metadata);
 
             if (predicate != null)
             {
@@ -321,21 +318,21 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var bindings = initExp.Bindings.Cast<MemberAssignment>().Select(m =>
                     Expression.Bind(m.Member, DbExpressionReplacer.Replace(m.Expression, lambda.Parameters[0], row)));
 
-            return new UpdateCommandExpression(table, where, GetUpdateArguments(table, bindings), isAsync);
+            return new UpdateCommandExpression(table, where, GetUpdateArguments(transContext, table, bindings), isAsync);
         }
 
-        internal static Expression GetInsertExpression(ISyntaxProvider syntax, Expression instance, bool isAsync)
+        internal static Expression GetInsertExpression(TranslateContext transContext, Expression instance, bool isAsync)
         {
             var entityType = instance.Type;
             Func<TableExpression, Expression, IEnumerable<ColumnAssignment>> func;
 
             if (instance is ParameterExpression)
             {
-                func = new Func<TableExpression, Expression, IEnumerable<ColumnAssignment>>((t, exp) => GetInsertArguments(syntax, t, exp.As<ParameterExpression>()));
+                func = new Func<TableExpression, Expression, IEnumerable<ColumnAssignment>>((t, exp) => GetInsertArguments(transContext, t, exp.As<ParameterExpression>()));
             }
             else if (instance is ConstantExpression)
             {
-                func = new Func<TableExpression, Expression, IEnumerable<ColumnAssignment>>((t, exp) => GetInsertArguments(syntax, t, exp.As<ConstantExpression>().Value as IEntity));
+                func = new Func<TableExpression, Expression, IEnumerable<ColumnAssignment>>((t, exp) => GetInsertArguments(transContext, t, exp.As<ConstantExpression>().Value as IEntity));
             }
             else
             {
@@ -346,10 +343,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var table = new TableExpression(new TableAlias(), metadata.TableName, entityType);
 
             return new InsertCommandExpression(table, func(table, instance), isAsync)
-                {
-                    WithAutoIncrement = !string.IsNullOrEmpty(syntax.IdentitySelect) && HasAutoIncrement(instance.Type),
-                    WithGenerateValue = HasGenerateValue(instance.Type)
-                };
+            {
+                WithAutoIncrement = !string.IsNullOrEmpty(transContext.SyntaxProvider.IdentitySelect) && HasAutoIncrement(instance.Type),
+                WithGenerateValue = HasGenerateValue(instance.Type)
+            };
         }
 
         internal static NamedValueExpression GetNamedValueExpression(string name, Expression value, DbType dbType)
@@ -375,30 +372,6 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return new NamedValueExpression(name, exp, dbType);
         }
 
-        /// <summary>
-        /// 将被修改的属性集附加到 <see cref="TranslateScope"/> 对象中。
-        /// </summary>
-        /// <param name="instances"></param>
-        /// <param name="batchOpt"></param>
-        internal static List<string> AttachModifiedProperties(Expression instances, BatchOperateOptions batchOpt)
-        {
-            var properties = GetModifiedProperties(instances, batchOpt);
-
-            //在序列中查找被修改的属性列表
-            TranslateScope.Current.SetData(REFERENCE_MPROS_KEY, properties);
-
-            return properties;
-        }
-
-        /// <summary>
-        /// 从 <see cref="TranslateScope"/> 中移除标记的属性集。
-        /// </summary>
-        internal static void ReleaseModifiedProperties()
-        {
-            //从上下文中移除
-            TranslateScope.Current.RemoveData(REFERENCE_MPROS_KEY);
-        }
-
         private static bool HasAutoIncrement(Type entityType)
         {
             return PropertyUnity.GetPrimaryProperties(entityType).Any(s => s.Info.GenerateType == IdentityGenerateType.AutoIncrement);
@@ -409,40 +382,39 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return PropertyUnity.GetPrimaryProperties(entityType).Any(s => s.Info.GenerateType == IdentityGenerateType.Generator);
         }
 
-        private static IEnumerable<ColumnAssignment> GetUpdateArguments(TableExpression table, IEntity entity)
+        private static IEnumerable<ColumnAssignment> GetUpdateArguments(TranslateContext transContext, TableExpression table, IEntity entity)
         {
             var properties = GetModifiedProperties(entity).ToArray();
 
             return properties
                 .Select(p => new ColumnAssignment(
-                       (ColumnExpression)GetMemberExpression(table, p),
+                       (ColumnExpression)GetMemberExpression(transContext, table, p),
                        Expression.Constant(GetConvertableValue(entity, p))
                        )).ToList();
         }
 
-        private static IEnumerable<ColumnAssignment> GetUpdateArguments(TableExpression table, ParameterExpression parExp)
+        private static IEnumerable<ColumnAssignment> GetUpdateArguments(TranslateContext transContext, TableExpression table, ParameterExpression parExp)
         {
             IEnumerable<IProperty> properties = null;
-            List<string> modifiedNames = null;
 
-            if ((modifiedNames = GetReferenceModifiedProperties()) != null)
+            if (transContext.TemporaryBag != null)
             {
-                properties = GetModifiedProperties(table.Type, modifiedNames);
+                properties = GetModifiedProperties(table.Type, transContext.TemporaryBag);
             }
 
             return from p in properties
                    select new ColumnAssignment(
-                       (ColumnExpression)GetMemberExpression(table, p),
+                       (ColumnExpression)GetMemberExpression(transContext, table, p),
                        Expression.MakeMemberAccess(parExp, p.Info.ReflectionInfo));
         }
 
-        private static IEnumerable<ColumnAssignment> GetUpdateArguments(TableExpression table, IEnumerable<MemberAssignment> bindings)
+        private static IEnumerable<ColumnAssignment> GetUpdateArguments(TranslateContext transContext, TableExpression table, IEnumerable<MemberAssignment> bindings)
         {
             return from m in bindings
                    let property = PropertyUnity.GetProperty(table.Type, m.Member.Name)
                    where property != null
                    select new ColumnAssignment(
-                       (ColumnExpression)GetMemberExpression(table, property),
+                       (ColumnExpression)GetMemberExpression(transContext, table, property),
                        m.Expression);
         }
 
@@ -453,17 +425,17 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <param name="table"></param>
         /// <param name="entity">具体的实体。</param>
         /// <returns></returns>
-        private static IEnumerable<ColumnAssignment> GetInsertArguments(ISyntaxProvider syntax, TableExpression table, IEntity entity)
+        private static IEnumerable<ColumnAssignment> GetInsertArguments(TranslateContext transContext, TableExpression table, IEntity entity)
         {
             var properties = GetModifiedProperties(entity);
 
             var assignments = properties
                 .Select(p => new ColumnAssignment(
-                       (ColumnExpression)GetMemberExpression(table, p),
+                       (ColumnExpression)GetMemberExpression(transContext, table, p),
                        Expression.Constant(GetConvertableValue(entity, p))
                        )).ToList();
 
-            assignments.AddRange(GetAssignmentsForPrimaryKeys(syntax, table, null, entity));
+            assignments.AddRange(GetAssignmentsForPrimaryKeys(transContext, table, null, entity));
 
             return assignments;
         }
@@ -475,54 +447,43 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <param name="table"></param>
         /// <param name="parExp"></param>
         /// <returns></returns>
-        private static IEnumerable<ColumnAssignment> GetInsertArguments(ISyntaxProvider syntax, TableExpression table, ParameterExpression parExp)
+        private static IEnumerable<ColumnAssignment> GetInsertArguments(TranslateContext transContext, TableExpression table, ParameterExpression parExp)
         {
             IEnumerable<IProperty> properties = null;
-            List<string> modifiedNames = null;
 
-            if ((modifiedNames = GetReferenceModifiedProperties()) != null)
+            if (transContext.TemporaryBag != null)
             {
-                properties = GetModifiedProperties(table.Type, modifiedNames);
+                properties = GetModifiedProperties(table.Type, transContext.TemporaryBag);
             }
 
             var assignments = properties
                 .Select(p => new ColumnAssignment(
-                       (ColumnExpression)GetMemberExpression(table, p),
+                       (ColumnExpression)GetMemberExpression(transContext, table, p),
                        Expression.MakeMemberAccess(parExp, p.Info.ReflectionInfo)
                        )).ToList();
 
-            assignments.AddRange(GetAssignmentsForPrimaryKeys(syntax, table, parExp, null));
+            assignments.AddRange(GetAssignmentsForPrimaryKeys(transContext, table, parExp, null));
 
             return assignments;
         }
 
-        private static IEnumerable<ColumnAssignment> GetAssignmentsForPrimaryKeys(ISyntaxProvider syntax, TableExpression table, ParameterExpression parExp, IEntity entity)
+        private static IEnumerable<ColumnAssignment> GetAssignmentsForPrimaryKeys(TranslateContext transContext, TableExpression table, ParameterExpression parExp, IEntity entity)
         {
             var entityType = parExp != null ? parExp.Type : entity.EntityType;
             var assignments = new List<ColumnAssignment>();
 
             foreach (var p in PropertyUnity.GetPrimaryProperties(entityType))
             {
-                var pvExp = GetPrimaryValueExpression(syntax, table, parExp, entity, p);
+                var pvExp = GetPrimaryValueExpression(transContext.SyntaxProvider, table, parExp, entity, p);
 
                 if (pvExp != null)
                 {
-                    var columnExp = (ColumnExpression)GetMemberExpression(table, p);
+                    var columnExp = (ColumnExpression)GetMemberExpression(transContext, table, p);
                     assignments.Add(new ColumnAssignment(columnExp, pvExp));
                 }
             }
 
             return assignments;
-        }
-
-        private static Expression ApplyPolicy(Expression expression, MemberInfo member)
-        {
-            if (TranslateScope.Current != null && TranslateScope.Current.QueryPolicy != null)
-            {
-                return TranslateScope.Current.QueryPolicy.ApplyPolicy(expression, member);
-            }
-
-            return expression;
         }
 
         /// <summary>
@@ -603,27 +564,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
         }
 
         /// <summary>
-        /// 在批处理的指令中获取被修改的实体属性名称列表。
-        /// </summary>
-        /// <returns></returns>
-        private static List<string> GetReferenceModifiedProperties()
-        {
-            if (TranslateScope.Current != null &&
-                TranslateScope.Current.GetData<object>(REFERENCE_MPROS_KEY) is List<string> names)
-            {
-                return names;
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// 获取插入或更新所参照的实体。
         /// </summary>
         /// <param name="instances"></param>
         /// <param name="batchOpt"></param>
         /// <returns></returns>
-        private static List<string> GetModifiedProperties(Expression instances, BatchOperateOptions batchOpt)
+        internal static List<string> GetModifiedProperties(Expression instances, BatchOperateOptions batchOpt)
         {
             if (!(instances is ConstantExpression consExp) || !(consExp.Value is IEnumerable entities))
             {

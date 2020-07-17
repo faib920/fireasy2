@@ -5,9 +5,9 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Data.Entity.Linq.Expressions
 {
@@ -25,7 +25,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取所包含的排序表达式。
         /// </summary>
-        public ReadOnlyCollection<OrderExpression> OrderBy { get; private set; }
+        public ReadOnlyCollection<OrderExpression> OrderBy { get; }
 
         public RowNumberExpression Update(IEnumerable<OrderExpression> orderBy)
         {

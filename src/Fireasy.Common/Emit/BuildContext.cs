@@ -6,9 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using System.Reflection;
-using em = System.Reflection.Emit;
 
 namespace Fireasy.Common.Emit
 {

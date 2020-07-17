@@ -16,12 +16,12 @@ namespace Fireasy.Data.Entity.Linq.Expressions
     public class CaseWhenExpression : DbExpression
     {
         public CaseWhenExpression(List<CaseWhenParameter> parameters, Type type)
-            : base (DbExpressionType.CaseWhen, type)
+            : base(DbExpressionType.CaseWhen, type)
         {
             Parameters = parameters.ToReadOnly();
         }
 
-        public ReadOnlyCollection<CaseWhenParameter> Parameters { get; private set; }
+        public ReadOnlyCollection<CaseWhenParameter> Parameters { get; }
     }
 
     public class CaseWhenParameter

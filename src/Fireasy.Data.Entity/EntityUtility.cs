@@ -9,7 +9,6 @@
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Properties;
 using System;
-using System.Collections;
 
 namespace Fireasy.Data.Entity
 {

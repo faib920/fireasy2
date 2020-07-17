@@ -380,7 +380,7 @@ namespace Fireasy.Data.Entity
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>影响的实体数。</returns>
         Task<int> BatchAsync(IEnumerable<TEntity> instances, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation, BatchOperateOptions batchOpt = null, CancellationToken cancellationToken = default);
-        
+
         /// <summary>
         /// 批量将一组实体对象插入到库中。
         /// </summary>

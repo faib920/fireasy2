@@ -14,12 +14,12 @@ namespace Fireasy.Common.Caching
     /// </summary>
     public sealed class RelativeTime : ICacheItemExpiration, IExpirationTime
     {
-        private static readonly Random random = new Random();
+        private static readonly Random _random = new Random();
 
         /// <summary>
         /// 最后一次访问的时间。
         /// </summary>
-        private readonly DateTime createdTime;
+        private readonly DateTime _createdTime;
 
         public static RelativeTime Default = new RelativeTime(TimeSpan.FromMinutes(30));
 
@@ -29,8 +29,8 @@ namespace Fireasy.Common.Caching
         /// <param name="timeSpan">一个时间间隔。</param>
         public RelativeTime(TimeSpan timeSpan)
         {
-            Expiration = timeSpan.Add(TimeSpan.FromMilliseconds(random.Next(500, 5000)));
-            createdTime = DateTime.Now;
+            Expiration = timeSpan.Add(TimeSpan.FromMilliseconds(_random.Next(500, 5000)));
+            _createdTime = DateTime.Now;
         }
 
         public static implicit operator RelativeTime(TimeSpan value)
@@ -49,7 +49,7 @@ namespace Fireasy.Common.Caching
         /// <returns>过期为 true，有效为 false。</returns>
         public bool HasExpired()
         {
-            return createdTime.Add(Expiration) <= DateTime.Now;
+            return _createdTime.Add(Expiration) <= DateTime.Now;
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace Fireasy.Common.Caching
         /// <returns></returns>
         public TimeSpan? GetExpirationTime()
         {
-            return createdTime.Add(Expiration) - DateTime.Now;
+            return _createdTime.Add(Expiration) - DateTime.Now;
         }
     }
 }

@@ -14,9 +14,9 @@ namespace Fireasy.Common.MultiTenancy
     public interface ITenancyProvider<T> where T : class
     {
         /// <summary>
-        /// 获取租户信息。
+        /// 解析租户信息。
         /// </summary>
         /// <returns></returns>
-        T GetTenancyInfo();
+        T Resolve(T tenancy);
     }
 }

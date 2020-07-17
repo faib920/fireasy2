@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common;
+using Fireasy.Common.ComponentModel;
 using Fireasy.Data.Provider;
 using System;
 using System.Collections.Concurrent;
@@ -23,7 +24,7 @@ namespace Fireasy.Data.Entity
         IEntityPersistentInstanceContainer,
         IEntityPersistentEnvironment
     {
-        private readonly ConcurrentDictionary<Type, IRepositoryProvider> providers = new ConcurrentDictionary<Type, IRepositoryProvider>();
+        private readonly ConcurrentDictionary<Type, IRepositoryProvider> _providers = new ConcurrentDictionary<Type, IRepositoryProvider>();
 
         /// <summary>
         /// 初始化 <see cref="ContextServiceBase"/> 类的新实例。
@@ -41,7 +42,7 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 获取 <see cref="EntityContext"/> 的类型。
         /// </summary>
-        public Type ContextType { get; private set; }
+        public Type ContextType { get; }
 
         /// <summary>
         /// 获取或设置实例名称。
@@ -91,7 +92,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public virtual IRepositoryProvider CreateRepositoryProvider(Type entityType)
         {
-            return providers.GetOrAdd(entityType, key => CreateFactory(key));
+            return _providers.GetOrAdd(entityType, key => CreateFactory(key));
         }
 
         /// <summary>
@@ -111,7 +112,7 @@ namespace Fireasy.Data.Entity
 
         protected override bool Dispose(bool disposing)
         {
-            providers.Clear();
+            _providers.Clear();
 
             return base.Dispose(disposing);
         }

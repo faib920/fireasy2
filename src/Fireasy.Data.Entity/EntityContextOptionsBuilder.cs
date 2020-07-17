@@ -16,7 +16,7 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public class EntityContextOptionsBuilder
     {
-        private readonly Type contextType;
+        private readonly Type _contextType;
 
         /// <summary>
         /// 初始化 <see cref="EntityContextOptionsBuilder"/> 类的新实例。
@@ -28,7 +28,7 @@ namespace Fireasy.Data.Entity
 
             if (Options is IInstanceIdentifier identifier && identifier.ContextType != null)
             {
-                contextType = identifier.ContextType;
+                _contextType = identifier.ContextType;
             }
         }
 
@@ -40,13 +40,13 @@ namespace Fireasy.Data.Entity
         public EntityContextOptionsBuilder(Type contextType, EntityContextOptions options)
             : this(options)
         {
-            this.contextType = contextType;
+            _contextType = contextType;
         }
 
         /// <summary>
         /// 获取 <see cref="EntityContextOptions"/> 参数。
         /// </summary>
-        public EntityContextOptions Options { get; private set; }
+        public EntityContextOptions Options { get; }
 
         /// <summary>
         /// 配置 <see cref="EntityContext"/> 使用 SqlServer 数据库。

@@ -6,17 +6,17 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using Fireasy.Common;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
+using Fireasy.Common.Security;
 using Fireasy.Data.Configuration;
 using Fireasy.Data.Provider;
 using Fireasy.Data.Provider.Configuration;
-using Fireasy.Common.Security;
+using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using System.Collections.Generic;
 
 namespace Fireasy.Data
 {
@@ -60,7 +60,7 @@ namespace Fireasy.Data
                 DatabaseScope.Current.InstanceName = instanceName;
             }
 
-            return database;
+            return database.TryUseContainer();
         }
 
         /// <summary>
@@ -81,10 +81,10 @@ namespace Fireasy.Data
 
             if (setting.Clusters.Count > 0)
             {
-                return new Database(GetDistributedConnections(setting), provider);
+                return new ScopedDatabase(GetDistributedConnections(setting), provider);
             }
 
-            return new Database(setting.ConnectionString, provider);
+            return new ScopedDatabase(setting.ConnectionString, provider);
         }
 
         /// <summary>
@@ -162,10 +162,10 @@ namespace Fireasy.Data
                 foreach (var cluster in setting.Clusters)
                 {
                     connections.Add(new DistributedConnectionString(cluster.ConnectionString)
-                        {
-                            Mode = cluster.Mode,
-                            Weight = cluster.Weight
-                        });
+                    {
+                        Mode = cluster.Mode,
+                        Weight = cluster.Weight
+                    });
                 }
 
                 return connections;

@@ -20,7 +20,7 @@ namespace Fireasy.Data
         /// <param name="connectionString">数据库连接字符串。</param>
         /// <exception cref="ArgumentNullException">connectionString 为 null。</exception>
         public DistributedConnectionString(string connectionString)
-            : base (connectionString)
+            : base(connectionString)
         {
         }
 

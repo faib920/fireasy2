@@ -6,11 +6,11 @@ namespace Fireasy.Common.Linq.Expressions
 {
     public class ExpressionReplacer : ExpressionVisitor
     {
-        private ICollection<ParameterExpression> pars;
+        private readonly ICollection<ParameterExpression> _pars;
 
         public ExpressionReplacer(ICollection<ParameterExpression> pars)
         {
-            this.pars = pars;
+            _pars = pars;
         }
 
         public static Expression Replace(Expression expression, ICollection<ParameterExpression> pars)
@@ -30,7 +30,7 @@ namespace Fireasy.Common.Linq.Expressions
             var parExp = memberExp.Expression as ParameterExpression;
             if (parExp != null)
             {
-                var p = pars.FirstOrDefault(s => s.Type == parExp.Type);
+                var p = _pars.FirstOrDefault(s => s.Type == parExp.Type);
 
                 if (p != null)
                 {

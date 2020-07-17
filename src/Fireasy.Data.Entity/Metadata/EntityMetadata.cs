@@ -19,8 +19,8 @@ namespace Fireasy.Data.Entity.Metadata
     /// </summary>
     public sealed class EntityMetadata
     {
-        private readonly List<IProperty> concurrencyProperties = new List<IProperty>();
-        private readonly List<Type> inheritedTypes = new List<Type>();
+        private readonly List<IProperty> _concurrencyProperties = new List<IProperty>();
+        private readonly List<Type> _inheritedTypes = new List<Type>();
 
         /// <summary>
         /// 初始化 <see cref="EntityMetadata"/> 类的新实例。
@@ -61,7 +61,7 @@ namespace Fireasy.Data.Entity.Metadata
         /// <summary>
         /// 获取实体的类型。
         /// </summary>
-        public Type EntityType { get; private set; }
+        public Type EntityType { get; }
 
         /// <summary>
         /// 获取数据表名称。
@@ -90,7 +90,7 @@ namespace Fireasy.Data.Entity.Metadata
         {
             get
             {
-                return new ReadOnlyCollection<IProperty>(concurrencyProperties);
+                return new ReadOnlyCollection<IProperty>(_concurrencyProperties);
             }
         }
 
@@ -102,7 +102,7 @@ namespace Fireasy.Data.Entity.Metadata
         /// <summary>
         /// 获取实体树结构的元数据。
         /// </summary>
-        public EntityTreeMetadata EntityTree { get; private set; }
+        public EntityTreeMetadata EntityTree { get; }
 
         /// <summary>
         /// 使用指定的实体类型进行过滤。
@@ -119,12 +119,12 @@ namespace Fireasy.Data.Entity.Metadata
 
         internal EntityMetadata Attach(Type entityType)
         {
-            if (inheritedTypes.Contains(entityType))
+            if (_inheritedTypes.Contains(entityType))
             {
                 return this;
             }
 
-            inheritedTypes.Add(entityType);
+            _inheritedTypes.Add(entityType);
 
             if (typeof(ICompilableEntity).IsAssignableFrom(entityType))
             {
@@ -161,7 +161,7 @@ namespace Fireasy.Data.Entity.Metadata
 
             if (property.Info.IsConcurrencyKey)
             {
-                concurrencyProperties.Add(property);
+                _concurrencyProperties.Add(property);
             }
 
             Properties.Add(property.Name, property);

@@ -44,8 +44,10 @@ namespace Fireasy.Redis
                 setting.LockTimeout = configNode.GetAttributeValue("lockTimeout").ToTimeSpan(TimeSpan.FromSeconds(10));
                 setting.ConnectTimeout = configNode.GetAttributeValue("connectTimeout").ToTimeSpan(TimeSpan.FromMilliseconds(5000));
                 setting.SyncTimeout = configNode.GetAttributeValue("syncTimeout").ToTimeSpan(TimeSpan.FromMilliseconds(10000));
-                setting.RequeueDelayTime = configNode.GetAttributeValue("requeueDelayTime").ToTimeSpan();
+                setting.RetryDelayTime = configNode.GetAttributeValue("retryDelayTime").ToTimeSpan(TimeSpan.FromSeconds(20));
+                setting.RetryTimes = configNode.GetAttributeValue("retryTimes").To<int?>();
                 setting.SlidingTime = configNode.GetAttributeValue("slidingTime").ToTimeSpan();
+                setting.IgnoreException = configNode.GetAttributeValue("ignoreException").To(true);
 
                 foreach (XmlNode nd in configNode.SelectNodes("host"))
                 {
@@ -86,10 +88,18 @@ namespace Fireasy.Redis
                 setting.LockTimeout = configNode["lockTimeout"].ToTimeSpan(TimeSpan.FromSeconds(10));
                 setting.ConnectTimeout = configNode["connectTimeout"].ToTimeSpan(TimeSpan.FromMilliseconds(5000));
                 setting.SyncTimeout = configNode["syncTimeout"].ToTimeSpan(TimeSpan.FromMilliseconds(10000));
-                setting.RequeueDelayTime = configNode["requeueDelayTime"].ToTimeSpan();
+                setting.RetryDelayTime = configNode["retryDelayTime"].ToTimeSpan(TimeSpan.FromSeconds(20));
+                setting.RetryTimes = configNode["retryTimes"].To<int?>();
                 setting.SlidingTime = configNode["slidingTime"].ToTimeSpan();
+                setting.IgnoreException = configNode["ignoreException"].To(true);
 
-                foreach (var nd in configNode.GetSection("host").GetChildren())
+                var hosts = configNode.GetSection("hosts");
+                if (!hosts.Exists())
+                {
+                    hosts = configNode.GetSection("host");
+                }
+
+                foreach (var nd in hosts.GetChildren())
                 {
                     var host = new RedisHost(nd["server"], nd["port"].To(0))
                     {

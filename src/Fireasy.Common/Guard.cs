@@ -7,7 +7,7 @@
 // -----------------------------------------------------------------------
 using System;
 
-namespace Fireasy.Common 
+namespace Fireasy.Common
 {
     /// <summary>
     /// 提供对程序的异常检查。

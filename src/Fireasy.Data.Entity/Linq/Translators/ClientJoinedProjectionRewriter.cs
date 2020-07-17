@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
+using Fireasy.Data.Entity.Linq.Expressions;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using Fireasy.Data.Entity.Linq.Expressions;
 using System.Reflection;
 
 namespace Fireasy.Data.Entity.Linq.Translators
@@ -14,10 +14,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
     /// </summary>
     public class ClientJoinedProjectionRewriter : DbExpressionVisitor
     {
-        private bool isTopLevel = true;
-        private SelectExpression currentSelect;
-        private MemberInfo currentMember;
-        private readonly bool canJoinOnClient = true;
+        private bool _isTopLevel = true;
+        private SelectExpression _currentSelect;
+        private MemberInfo _currentMember;
+        private readonly bool _canJoinOnClient = true;
 
         public static Expression Rewrite(Expression expression)
         {
@@ -26,35 +26,35 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override MemberAssignment VisitMemberAssignment(MemberAssignment assignment)
         {
-            var saveMember = currentMember;
-            currentMember = assignment.Member;
+            var saveMember = _currentMember;
+            _currentMember = assignment.Member;
             Expression e = Visit(assignment.Expression);
-            currentMember = saveMember;
+            _currentMember = saveMember;
             return assignment.Update(e);
         }
 
         protected override Expression VisitMemberAndExpression(MemberInfo member, Expression expression)
         {
-            var saveMember = currentMember;
-            currentMember = member;
+            var saveMember = _currentMember;
+            _currentMember = member;
             Expression e = Visit(expression);
-            currentMember = saveMember;
+            _currentMember = saveMember;
             return e;
         }
 
         protected override Expression VisitProjection(ProjectionExpression proj)
         {
-            var saved = currentSelect;
-            currentSelect = proj.Select;
+            var saved = _currentSelect;
+            _currentSelect = proj.Select;
             try
             {
-                if (!isTopLevel)
+                if (!_isTopLevel)
                 {
-                    if (CanJoinOnClient(currentSelect))
+                    if (CanJoinOnClient(_currentSelect))
                     {
                         // make a query that combines all the constraints from the outer queries into a single select
                         var newOuterSelect = (SelectExpression)QueryDuplicator.Duplicate(saved);
-                        
+
                         // remap any references to the outer select to the new alias;
                         var newInnerSelect = (SelectExpression)ColumnMapper.Map(proj.Select, newOuterSelect.Alias, saved.Alias);
                         // add outer-join test
@@ -68,7 +68,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         var joinedSelect = new SelectExpression(newAlias, pc.Columns, join, null, null, null, proj.IsSingleton, null, null, null, null, false);
 
                         // apply client-join treatment recursively
-                        currentSelect = joinedSelect;
+                        _currentSelect = joinedSelect;
                         newProjector = Visit(pc.Projector);
 
                         // compute keys (this only works if join condition was a single column comparison)
@@ -88,14 +88,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 }
                 else
                 {
-                    isTopLevel = false;
+                    _isTopLevel = false;
                 }
 
                 return base.VisitProjection(proj);
             }
             finally
             {
-                currentSelect = saved;
+                _currentSelect = saved;
             }
         }
 
@@ -103,8 +103,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             // can add singleton (1:0,1) join if no grouping/aggregates or distinct
             return
-                this.canJoinOnClient
-                && this.currentMember != null
+                _canJoinOnClient
+                && _currentMember != null
                 && !select.IsDistinct
                 && (select.GroupBy == null || select.GroupBy.Count == 0)
                 && !AggregateChecker.HasAggregates(select);
@@ -159,7 +159,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitCommand(CommandExpression command)
         {
-            isTopLevel = true;
+            _isTopLevel = true;
             return base.VisitCommand(command);
         }
     }

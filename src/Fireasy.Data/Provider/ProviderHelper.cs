@@ -22,7 +22,7 @@ namespace Fireasy.Data.Provider
     /// </summary>
     public static class ProviderHelper
     {
-        private static readonly List<ProviderWapper> providerWappers = new List<ProviderWapper>();
+        private static readonly List<ProviderWapper> _providerWappers = new List<ProviderWapper>();
 
         static ProviderHelper()
         {
@@ -51,7 +51,7 @@ namespace Fireasy.Data.Provider
         /// <returns></returns>
         public static IProvider GetDefinedProviderInstance(string providerName)
         {
-            var wapper = providerWappers.FirstOrDefault(s => s.Contains(providerName));
+            var wapper = _providerWappers.FirstOrDefault(s => s.Contains(providerName));
             if (wapper != null)
             {
                 return wapper.LazyValue.Value;
@@ -77,7 +77,7 @@ namespace Fireasy.Data.Provider
         /// <returns></returns>
         public static string[] GetSupportedProviders()
         {
-            return providerWappers.Select(s => s.Alias.FirstOrDefault()).ToArray();
+            return _providerWappers.Select(s => s.Alias.FirstOrDefault()).ToArray();
         }
 
         private static bool AddProvider<T>(string providerName, Func<IProvider> factory) where T : IProvider
@@ -93,14 +93,14 @@ namespace Fireasy.Data.Provider
         private static bool AddProvider(string providerName, Type providerType, Func<IProvider> factory)
         {
             ProviderWapper wapper = null;
-            if ((wapper = providerWappers.FirstOrDefault(s => s.ProviderType == providerType)) != null)
+            if ((wapper = _providerWappers.FirstOrDefault(s => s.ProviderType == providerType)) != null)
             {
                 wapper.Alias.Add(providerName);
                 return false;
             }
             else
             {
-                providerWappers.Add(new ProviderWapper
+                _providerWappers.Add(new ProviderWapper
                 {
                     Alias = new List<string> { providerName },
                     ProviderType = providerType,
@@ -113,14 +113,14 @@ namespace Fireasy.Data.Provider
         private static bool AddProvider(string[] providerNames, Type providerType, Func<IProvider> factory)
         {
             ProviderWapper wapper = null;
-            if ((wapper = providerWappers.FirstOrDefault(s => s.ProviderType == providerType)) != null)
+            if ((wapper = _providerWappers.FirstOrDefault(s => s.ProviderType == providerType)) != null)
             {
                 wapper.Alias.AddRange(providerNames);
                 return false;
             }
             else
             {
-                providerWappers.Add(new ProviderWapper
+                _providerWappers.Add(new ProviderWapper
                 {
                     Alias = new List<string>(providerNames),
                     ProviderType = providerType,
@@ -163,7 +163,7 @@ namespace Fireasy.Data.Provider
             foreach (var key in section.Settings.Keys)
             {
                 var setting = section.Settings[key];
-                if (providerWappers.Any(s => s.Contains(setting.Name)) || setting.Type == null)
+                if (_providerWappers.Any(s => s.Contains(setting.Name)) || setting.Type == null)
                 {
                     continue;
                 }

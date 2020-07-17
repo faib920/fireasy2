@@ -15,26 +15,26 @@ namespace Fireasy.Data
     /// </summary>
     public sealed class DatabaseScope : Scope<DatabaseScope>
     {
-        private readonly IDatabase database;
+        private readonly IDatabase _database;
 
         /// <summary>
         /// 初始化 <see cref="DatabaseScope"/> 类的新实例。
         /// </summary>
         /// <param name="database">当前的 <see cref="IDatabase"/> 对象。</param>
-        internal DatabaseScope(IDatabase database)
-            : base (false)
+        public DatabaseScope(IDatabase database)
+             : base(false)
         {
-            this.database = database;
+            _database = database;
         }
 
         /// <summary>
         /// 返回当前线程内的 <see cref="IDatabase"/> 对象。
         /// </summary>
-        public IDatabase Database 
+        public IDatabase Database
         {
             get
             {
-                return new NoDisposeDatabase(database);
+                return new NoDisposeDatabase(_database);
             }
         }
 

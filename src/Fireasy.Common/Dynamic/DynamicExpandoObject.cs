@@ -5,10 +5,10 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
-using Fireasy.Common.Extensions;
 
 namespace Fireasy.Common.Dynamic
 {
@@ -17,7 +17,7 @@ namespace Fireasy.Common.Dynamic
     /// </summary>
     public class DynamicExpandoObject : DynamicObject, IDictionary<string, object>
     {
-        private readonly Dictionary<string, object> values = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, object> _values = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// 初始化 <see cref="DynamicExpandoObject"/> 类的新实例。
@@ -36,11 +36,11 @@ namespace Fireasy.Common.Dynamic
 
             foreach (var kvp in source)
             {
-                values.Add(kvp.Key, kvp.Value);
+                _values.Add(kvp.Key, kvp.Value);
             }
         }
 
-        public static implicit operator DynamicExpandoObject (KeyValuePair<string, object>[] array)
+        public static implicit operator DynamicExpandoObject(KeyValuePair<string, object>[] array)
         {
             return new DynamicExpandoObject(array);
         }
@@ -51,7 +51,7 @@ namespace Fireasy.Common.Dynamic
         /// <returns></returns>
         public override IEnumerable<string> GetDynamicMemberNames()
         {
-            return values.Keys;
+            return _values.Keys;
         }
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace Fireasy.Common.Dynamic
         /// <returns></returns>
         public override bool TryGetMember(GetMemberBinder binder, out object result)
         {
-            return values.TryGetValue(binder.Name, out result);
+            return _values.TryGetValue(binder.Name, out result);
         }
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace Fireasy.Common.Dynamic
         /// <returns></returns>
         public override bool TrySetMember(SetMemberBinder binder, object value)
         {
-            return values.TryAdd(binder.Name, value);
+            return _values.TryAdd(binder.Name, value);
         }
 
         /// <summary>
@@ -85,9 +85,9 @@ namespace Fireasy.Common.Dynamic
         /// <returns></returns>
         public override bool TryInvokeMember(InvokeMemberBinder binder, object[] args, out object result)
         {
-            if (values.ContainsKey(binder.Name))
+            if (_values.ContainsKey(binder.Name))
             {
-                result = values[binder.Name];
+                result = _values[binder.Name];
                 if (result is DynamicDelegate dydel)
                 {
                     result = dydel.Invoke(this, args);
@@ -108,7 +108,7 @@ namespace Fireasy.Common.Dynamic
         public override bool TrySetIndex(SetIndexBinder binder, object[] indexes, object value)
         {
             var key = $"__{string.Join("-", indexes)}";
-            return values.TryAdd(key, value);
+            return _values.TryAdd(key, value);
         }
 
         /// <summary>
@@ -121,49 +121,49 @@ namespace Fireasy.Common.Dynamic
         public override bool TryGetIndex(GetIndexBinder binder, object[] indexes, out object result)
         {
             var key = $"__{string.Join("-", indexes)}";
-            return values.TryGetValue(key, out result);
+            return _values.TryGetValue(key, out result);
         }
 
         #region IDictionary<string, object>成员
         void IDictionary<string, object>.Add(string key, object value)
         {
-            values.Add(key, value);
+            _values.Add(key, value);
         }
 
         bool IDictionary<string, object>.ContainsKey(string key)
         {
-            return values.ContainsKey(key);
+            return _values.ContainsKey(key);
         }
 
         ICollection<string> IDictionary<string, object>.Keys
         {
-            get { return values.Keys; }
+            get { return _values.Keys; }
         }
 
         bool IDictionary<string, object>.Remove(string key)
         {
-            return values.Remove(key);
+            return _values.Remove(key);
         }
 
         bool IDictionary<string, object>.TryGetValue(string key, out object value)
         {
-            return values.TryGetValue(key, out value);
+            return _values.TryGetValue(key, out value);
         }
 
         ICollection<object> IDictionary<string, object>.Values
         {
-            get { return values.Values; }
+            get { return _values.Values; }
         }
 
         object IDictionary<string, object>.this[string key]
         {
             get
             {
-                return values[key];
+                return _values[key];
             }
             set
             {
-                values[key] = value;
+                _values[key] = value;
             }
         }
 
@@ -174,7 +174,7 @@ namespace Fireasy.Common.Dynamic
 
         void ICollection<KeyValuePair<string, object>>.Clear()
         {
-            values.Clear();
+            _values.Clear();
         }
 
         bool ICollection<KeyValuePair<string, object>>.Contains(KeyValuePair<string, object> item)
@@ -189,7 +189,7 @@ namespace Fireasy.Common.Dynamic
 
         int ICollection<KeyValuePair<string, object>>.Count
         {
-            get { return values.Count; }
+            get { return _values.Count; }
         }
 
         bool ICollection<KeyValuePair<string, object>>.IsReadOnly
@@ -204,12 +204,12 @@ namespace Fireasy.Common.Dynamic
 
         IEnumerator<KeyValuePair<string, object>> IEnumerable<KeyValuePair<string, object>>.GetEnumerator()
         {
-            return values.GetEnumerator();
+            return _values.GetEnumerator();
         }
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
-            return values.GetEnumerator();
+            return _values.GetEnumerator();
         }
         #endregion
     }

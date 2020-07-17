@@ -6,9 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
-using Fireasy.Common.Threading;
-using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Query;
+using Fireasy.Data.Provider;
 using System;
 using System.Data;
 
@@ -25,7 +24,7 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 获取 <see cref="IQueryPolicy"/> 实例。
         /// </summary>
-        public IQueryPolicy QueryPolicy { get; private set; }
+        public IQueryPolicy QueryPolicy { get; }
 
         /// <summary>
         /// 初始化 <see cref="DefaultContextService"/> 类的新实例。
@@ -35,21 +34,7 @@ namespace Fireasy.Data.Entity
         public DefaultContextService(ContextServiceContext context)
             : base(context)
         {
-            Func<IDatabase> dbCreator;
-            if (context.Options.Provider != null && context.Options.ConnectionString != null)
-            {
-                dbCreator = () => new Database(context.Options.ConnectionString, context.Options.Provider);
-            }
-            else if (context.Options != null)
-            {
-                dbCreator = () => DatabaseFactory.CreateDatabase(context.Options.ConfigName);
-            }
-            else
-            {
-                throw new InvalidOperationException(SR.GetString(SRKind.NotSupportDatabaseFactory));
-            }
-
-            Database = EntityDatabaseFactory.CreateDatabase(InstanceName, dbCreator).TrySetServiceProvider(context.ServiceProvider);
+            Database = TryGetDatabase(context);
             QueryPolicy = new DefaultQueryPolicy(Provider);
         }
 
@@ -68,7 +53,7 @@ namespace Fireasy.Data.Entity
             }
         }
 
-        protected override Func<Type, IRepositoryProvider> CreateFactory => 
+        protected override Func<Type, IRepositoryProvider> CreateFactory =>
             type => typeof(DefaultRepositoryProvider<>).MakeGenericType(type).New<IRepositoryProvider>(this);
 
         /// <summary>
@@ -102,10 +87,50 @@ namespace Fireasy.Data.Entity
         /// <param name="disposing"></param>
         protected override bool Dispose(bool disposing)
         {
-            Database?.Dispose();
-            Database = null;
+            //PreDispose();
+
+            if (Database != null)
+            {
+                Database.Dispose();
+                Database = null;
+            }
 
             return base.Dispose(disposing);
+        }
+
+        private IDatabase TryGetDatabase(ContextServiceContext context)
+        {
+            var accessor = context.ServiceProvider.TryGetService<SharedDatabaseAccessor>();
+            if (accessor != null && accessor.Database != null)
+            {
+                return accessor.Database;
+            }
+
+            Func<IDatabase> dbCreator;
+            if (context.Options.Provider != null && context.Options.ConnectionString != null)
+            {
+                if (accessor == null)
+                {
+                    dbCreator = () => new ScopedDatabase(context.Options.ConnectionString, context.Options.Provider);
+                }
+                else
+                {
+                    dbCreator = () => new Database(context.Options.ConnectionString, context.Options.Provider);
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException(SR.GetString(SRKind.NotSupportDatabaseFactory));
+            }
+
+            var database = EntityDatabaseFactory.CreateDatabase(InstanceName, dbCreator).TrySetServiceProvider(context.ServiceProvider);
+
+            if (accessor != null)
+            {
+                accessor.Database = database;
+            }
+
+            return database;
         }
     }
 }

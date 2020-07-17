@@ -17,7 +17,7 @@ namespace Fireasy.Common.Mapper
     /// </summary>
     public class ConvertMapper
     {
-        private readonly Dictionary<MemberInfo, Expression> cache = new Dictionary<MemberInfo, Expression>();
+        private readonly Dictionary<MemberInfo, Expression> _expressions = new Dictionary<MemberInfo, Expression>();
 
         /// <summary>
         /// 获取或设置来源类型。
@@ -36,7 +36,7 @@ namespace Fireasy.Common.Mapper
         /// <returns></returns>
         public Expression GetMapExpression(MemberInfo member)
         {
-            cache.TryGetValue(member, out Expression exp);
+            _expressions.TryGetValue(member, out Expression exp);
             return exp;
         }
 
@@ -47,7 +47,7 @@ namespace Fireasy.Common.Mapper
         /// <param name="expression"></param>
         protected void Map(MemberInfo member, Expression expression)
         {
-            cache.Add(member, expression);
+            _expressions.Add(member, expression);
         }
     }
 
@@ -76,7 +76,7 @@ namespace Fireasy.Common.Mapper
         /// <returns></returns>
         public ConvertMapper<TSource, TTarget> Map<TMember>(Expression<Func<TTarget, TMember>> target, Expression<Func<TSource, TMember>> source)
         {
-            if ((target as LambdaExpression).Body is MemberExpression memberExp)
+            if (target.Body is MemberExpression memberExp)
             {
                 Map(memberExp.Member, source);
             }

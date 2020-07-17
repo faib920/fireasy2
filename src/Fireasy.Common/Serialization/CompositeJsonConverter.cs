@@ -20,7 +20,7 @@ namespace Fireasy.Common.Serialization
     /// <typeparam name="T"></typeparam>
     public class CompositeJsonConverter<T> : JsonConverter<T>
     {
-        private readonly Dictionary<PropertyInfo, ITextConverter> converters = new Dictionary<PropertyInfo, ITextConverter>();
+        private readonly Dictionary<PropertyInfo, ITextConverter> _converters = new Dictionary<PropertyInfo, ITextConverter>();
 
         /// <summary>
         /// 不支持反序列化。
@@ -36,7 +36,7 @@ namespace Fireasy.Common.Serialization
             {
                 if (lambda.Body is MemberExpression mbrExp && mbrExp.Member.MemberType == MemberTypes.Property)
                 {
-                    converters.Add(mbrExp.Member as PropertyInfo, converter);
+                    _converters.Add(mbrExp.Member as PropertyInfo, converter);
                 }
             }
 
@@ -78,7 +78,7 @@ namespace Fireasy.Common.Serialization
                 }
 
                 writer.WriteKey(SerializeName(acc.PropertyName, option));
-                if (converters.TryGetValue(acc.PropertyInfo, out ITextConverter converter))
+                if (_converters.TryGetValue(acc.PropertyInfo, out ITextConverter converter))
                 {
                     writer.WriteRaw(converter.WriteObject(serializer, value));
                 }

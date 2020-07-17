@@ -49,19 +49,19 @@ namespace Fireasy.Data
 
     internal class SR
     {
-        private static StringResource sources;
+        private static readonly StringResource _sources;
 
         static SR()
         {
-            if (sources == null)
+            if (_sources == null)
             {
-                sources = StringResource.Create("Strings", typeof(SR).Assembly);
+                _sources = StringResource.Create("Strings", typeof(SR).Assembly);
             }
         }
 
         internal static string GetString(string kind, params object[] args)
         {
-            return sources.GetString(kind, args);
+            return _sources.GetString(kind, args);
         }
     }
 }

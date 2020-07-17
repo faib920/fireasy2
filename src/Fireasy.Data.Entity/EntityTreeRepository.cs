@@ -29,12 +29,12 @@ namespace Fireasy.Data.Entity
     /// <typeparam name="TEntity"></typeparam>
     public class EntityTreeRepository<TEntity> : ITreeRepository<TEntity>, IQueryProviderAware where TEntity : class, IEntity
     {
-        private readonly IRepository<TEntity> repository;
-        private readonly EntityMetadata metadata;
-        private readonly EntityTreeMetadata metaTree;
-        private readonly Type entityType;
-        private readonly ISyntaxProvider syntax;
-        private readonly IDatabase database;
+        private readonly IRepository<TEntity> _repository;
+        private readonly EntityMetadata _metadata;
+        private readonly EntityTreeMetadata _treeMetadata;
+        private readonly Type _entityType;
+        private readonly ISyntaxProvider _syntax;
+        private readonly IDatabase _database;
 
         /// <summary>
         /// 初始化 <see cref="EntityTreeRepository{TEntity}"/> 类的新实例。
@@ -43,15 +43,15 @@ namespace Fireasy.Data.Entity
         /// <param name="service"></param>
         public EntityTreeRepository(IRepository<TEntity> repository, IContextService service)
         {
-            this.repository = repository;
-            entityType = typeof(TEntity);
-            metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
-            metaTree = metadata.EntityTree;
-            syntax = service.Provider.GetService<ISyntaxProvider>();
+            _repository = repository;
+            _entityType = typeof(TEntity);
+            _metadata = EntityMetadataUnity.GetEntityMetadata(_entityType);
+            _treeMetadata = _metadata.EntityTree;
+            _syntax = service.Provider.GetService<ISyntaxProvider>();
 
             if (service is IDatabaseAware aware)
             {
-                database = aware.Database;
+                _database = aware.Database;
             }
             else
             {
@@ -61,7 +61,7 @@ namespace Fireasy.Data.Entity
 
         IQueryProvider IQueryProviderAware.Provider
         {
-            get { return repository.Provider; }
+            get { return _repository.Provider; }
         }
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace Fireasy.Data.Entity
         /// <param name="isolation">数据隔离表达式。</param>
         public virtual int Insert(TEntity entity, TEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null)
         {
-            return InternalInsert(entity, referEntity, position, isolation, e => repository.Insert(e));
+            return InternalInsert(entity, referEntity, position, isolation, e => _repository.Insert(e));
         }
 
         /// <summary>
@@ -86,7 +86,7 @@ namespace Fireasy.Data.Entity
         /// <param name="cancellationToken">取消操作的通知。</param>
         public virtual async Task<int> InsertAsync(TEntity entity, TEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null, CancellationToken cancellationToken = default)
         {
-            return await InternalInsert(entity, referEntity, position, isolation, async e => await repository.InsertAsync(e, cancellationToken));
+            return await InternalInsert(entity, referEntity, position, isolation, async e => await _repository.InsertAsync(e, cancellationToken));
         }
 
         /// <summary>
@@ -98,7 +98,7 @@ namespace Fireasy.Data.Entity
         /// <param name="isolation">数据隔离表达式。</param>
         public virtual void BatchInsert(IEnumerable<TEntity> entities, TEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null)
         {
-            InternalBatchInsert(entities, referEntity, position, isolation, es => repository.Batch(es, (u, s) => u.Insert(s)));
+            InternalBatchInsert(entities, referEntity, position, isolation, es => _repository.Batch(es, (u, s) => u.Insert(s)));
         }
 
         /// <summary>
@@ -111,7 +111,7 @@ namespace Fireasy.Data.Entity
         /// <param name="cancellationToken">取消操作的通知。</param>
         public virtual async Task BatchInsertAsync(IEnumerable<TEntity> entities, TEntity referEntity, EntityTreePosition position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null, CancellationToken cancellationToken = default)
         {
-            await InternalBatchInsert(entities, referEntity, position, isolation, async es => await repository.BatchAsync(es, (u, s) => u.Insert(s)));
+            await InternalBatchInsert(entities, referEntity, position, isolation, async es => await _repository.BatchAsync(es, (u, s) => u.Insert(s)));
         }
 
         /// <summary>
@@ -123,7 +123,7 @@ namespace Fireasy.Data.Entity
         /// <param name="isolation">数据隔离表达式。</param>
         public virtual void Move(TEntity entity, TEntity referEntity, EntityTreePosition? position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null)
         {
-            InternalMove(entity, referEntity, position, isolation, es => repository.Batch(es, (u, s) => u.Update(s)), e => repository.Update(e));
+            InternalMove(entity, referEntity, position, isolation, es => _repository.Batch(es, (u, s) => u.Update(s)), e => _repository.Update(e));
         }
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace Fireasy.Data.Entity
         /// <param name="cancellationToken">取消操作的通知。</param>
         public virtual async Task MoveAsync(TEntity entity, TEntity referEntity, EntityTreePosition? position = EntityTreePosition.Children, Expression<Func<TEntity>> isolation = null, CancellationToken cancellationToken = default)
         {
-            await InternalMove(entity, referEntity, position, isolation, async es => await repository.BatchAsync(es, (u, s) => u.Update(s), null, cancellationToken), async e => await repository.UpdateAsync(e, cancellationToken));
+            await InternalMove(entity, referEntity, position, isolation, async es => await _repository.BatchAsync(es, (u, s) => u.Update(s), null, cancellationToken), async e => await _repository.UpdateAsync(e, cancellationToken));
         }
 
         /// <summary>
@@ -147,13 +147,13 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public virtual bool HasChildren(TEntity entity, Expression<Func<TEntity, bool>> predicate = null)
         {
-            var query = (IQueryable)QueryHelper.CreateQuery<TEntity>(repository.Provider, predicate);
+            var query = (IQueryable)QueryHelper.CreateQuery<TEntity>(_repository.Provider, predicate);
             var mthCount = typeof(Enumerable).GetMethods().FirstOrDefault(s => s.Name == nameof(Enumerable.Count) && s.GetParameters().Length == 2);
             mthCount = mthCount.MakeGenericMethod(typeof(TEntity));
 
-            var expression = TreeExpressionBuilder.BuildHasChildrenExpression(metaTree, entity, predicate);
+            var expression = TreeExpressionBuilder.BuildHasChildrenExpression(_treeMetadata, entity, predicate);
             expression = Expression.Call(null, mthCount, query.Expression, expression);
-            return repository.Provider.Execute<int>(expression) > 0;
+            return _repository.Provider.Execute<int>(expression) > 0;
         }
 
         /// <summary>
@@ -165,13 +165,13 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public virtual async Task<bool> HasChildrenAsync(TEntity entity, Expression<Func<TEntity, bool>> predicate = null, CancellationToken cancellationToken = default)
         {
-            var query = (IQueryable)QueryHelper.CreateQuery<TEntity>(repository.Provider, predicate);
+            var query = (IQueryable)QueryHelper.CreateQuery<TEntity>(_repository.Provider, predicate);
             var mthCount = typeof(Enumerable).GetMethods().FirstOrDefault(s => s.Name == nameof(Enumerable.Count) && s.GetParameters().Length == 2);
             mthCount = mthCount.MakeGenericMethod(typeof(TEntity));
 
-            var expression = TreeExpressionBuilder.BuildHasChildrenExpression(metaTree, entity, predicate);
+            var expression = TreeExpressionBuilder.BuildHasChildrenExpression(_treeMetadata, entity, predicate);
             expression = Expression.Call(null, mthCount, query.Expression, expression);
-            return await ((IAsyncQueryProvider)repository.Provider).ExecuteAsync<int>(expression, cancellationToken) > 0;
+            return await ((IAsyncQueryProvider)_repository.Provider).ExecuteAsync<int>(expression, cancellationToken) > 0;
         }
 
         /// <summary>
@@ -183,13 +183,13 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public virtual IQueryable<TEntity> QueryChildren(TEntity entity, Expression<Func<TEntity, bool>> predicate = null, bool recurrence = false)
         {
-            var expression = TreeExpressionBuilder.BuildQueryChildrenExpression(metaTree, entity, predicate, recurrence);
+            var expression = TreeExpressionBuilder.BuildQueryChildrenExpression(_treeMetadata, entity, predicate, recurrence);
 
-            var querable = QueryHelper.CreateQuery<TEntity>(repository.Provider, expression);
+            var querable = QueryHelper.CreateQuery<TEntity>(_repository.Provider, expression);
 
-            var orderExp = TreeExpressionBuilder.BuildOrderByExpression<TEntity>(metaTree, querable.Expression);
+            var orderExp = TreeExpressionBuilder.BuildOrderByExpression<TEntity>(_treeMetadata, querable.Expression);
 
-            return repository.Provider.CreateQuery<TEntity>(orderExp);
+            return _repository.Provider.CreateQuery<TEntity>(orderExp);
         }
 
         /// <summary>
@@ -202,21 +202,21 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            var keyId = (string)entity.GetValue(metaTree.InnerSign);
+            var keyId = (string)entity.GetValue(_treeMetadata.InnerSign);
 
             var parents = new List<string>();
-            while ((keyId = keyId.Substring(0, keyId.Length - metaTree.SignLength)).Length > 0)
+            while ((keyId = keyId.Substring(0, keyId.Length - _treeMetadata.SignLength)).Length > 0)
             {
                 parents.Add(keyId);
             }
 
-            var expression = TreeExpressionBuilder.BuildGetByInnerIdExpression<TEntity>(metaTree, predicate, parents);
+            var expression = TreeExpressionBuilder.BuildGetByInnerIdExpression<TEntity>(_treeMetadata, predicate, parents);
 
-            var querable = QueryHelper.CreateQuery<TEntity>(repository.Provider, expression);
+            var querable = QueryHelper.CreateQuery<TEntity>(_repository.Provider, expression);
 
-            var orderExp = TreeExpressionBuilder.BuildOrderByLengthDescExpression<TEntity>(metaTree, querable.Expression);
+            var orderExp = TreeExpressionBuilder.BuildOrderByLengthDescExpression<TEntity>(_treeMetadata, querable.Expression);
 
-            return repository.Provider.CreateQuery<TEntity>(orderExp);
+            return _repository.Provider.CreateQuery<TEntity>(orderExp);
         }
 
         private void AttachRequiredProperties(TEntity entity)
@@ -227,35 +227,35 @@ namespace Fireasy.Data.Entity
                 pkValues.Add(entity.GetValue(pkProperty));
             }
 
-            var oldEntity = repository.Get(pkValues.ToArray());
+            var oldEntity = _repository.Get(pkValues.ToArray());
             if (oldEntity == null)
             {
                 return;
             }
 
-            if (metaTree.InnerSign != null && !entity.IsModified(metaTree.InnerSign.Name))
+            if (_treeMetadata.InnerSign != null && !entity.IsModified(_treeMetadata.InnerSign.Name))
             {
-                entity.InitializeValue(metaTree.InnerSign, oldEntity.GetValue(metaTree.InnerSign));
+                entity.InitializeValue(_treeMetadata.InnerSign, oldEntity.GetValue(_treeMetadata.InnerSign));
             }
 
-            if (metaTree.Name != null && !entity.IsModified(metaTree.Name.Name))
+            if (_treeMetadata.Name != null && !entity.IsModified(_treeMetadata.Name.Name))
             {
-                entity.InitializeValue(metaTree.Name, oldEntity.GetValue(metaTree.Name));
+                entity.InitializeValue(_treeMetadata.Name, oldEntity.GetValue(_treeMetadata.Name));
             }
 
-            if (metaTree.FullName != null && !entity.IsModified(metaTree.FullName.Name))
+            if (_treeMetadata.FullName != null && !entity.IsModified(_treeMetadata.FullName.Name))
             {
-                entity.InitializeValue(metaTree.FullName, oldEntity.GetValue(metaTree.FullName));
+                entity.InitializeValue(_treeMetadata.FullName, oldEntity.GetValue(_treeMetadata.FullName));
             }
 
-            if (metaTree.Order != null && !entity.IsModified(metaTree.Order.Name))
+            if (_treeMetadata.Order != null && !entity.IsModified(_treeMetadata.Order.Name))
             {
-                entity.InitializeValue(metaTree.Order, oldEntity.GetValue(metaTree.Order));
+                entity.InitializeValue(_treeMetadata.Order, oldEntity.GetValue(_treeMetadata.Order));
             }
 
-            if (metaTree.Level != null && !entity.IsModified(metaTree.Level.Name))
+            if (_treeMetadata.Level != null && !entity.IsModified(_treeMetadata.Level.Name))
             {
-                entity.InitializeValue(metaTree.Level, oldEntity.GetValue(metaTree.Level));
+                entity.InitializeValue(_treeMetadata.Level, oldEntity.GetValue(_treeMetadata.Level));
             }
         }
 
@@ -279,9 +279,9 @@ namespace Fireasy.Data.Entity
                 case EntityTreePosition.Children:
                     var sql = string.Format("SELECT MAX({0}) FROM {1} WHERE {2} LIKE {3}",
                         GetOrderExpression(),
-                        DbUtility.FormatByQuote(syntax, metadata.TableName),
-                        QuoteColumn(metaTree.InnerSign),
-                        syntax.FormatParameter("pm"));
+                        DbUtility.FormatByQuote(_syntax, _metadata.TableName),
+                        QuoteColumn(_treeMetadata.InnerSign),
+                        _syntax.FormatParameter("pm"));
                     var innerId = bag.InnerId;
 
                     if (isolation != null)
@@ -293,8 +293,8 @@ namespace Fireasy.Data.Entity
                         }
                     }
 
-                    var parameters = new ParameterCollection { { "pm", innerId + new string('_', metaTree.SignLength) } };
-                    return database.ExecuteScalar((SqlCommand)sql, parameters).To<int>() + 1 + offset;
+                    var parameters = new ParameterCollection { { "pm", innerId + new string('_', _treeMetadata.SignLength) } };
+                    return _database.ExecuteScalar((SqlCommand)sql, parameters).To<int>() + 1 + offset;
                 case EntityTreePosition.Before:
                     return bag.Order + offset;
                 case EntityTreePosition.After:
@@ -312,9 +312,9 @@ namespace Fireasy.Data.Entity
         {
             var sql = string.Format("SELECT MAX({0}) FROM {1} WHERE {2} = {3}",
                 GetOrderExpression(),
-                DbUtility.FormatByQuote(syntax, metadata.TableName),
-                syntax.String.Length(QuoteColumn(metaTree.InnerSign)),
-                metaTree.SignLength);
+                DbUtility.FormatByQuote(_syntax, _metadata.TableName),
+                _syntax.String.Length(QuoteColumn(_treeMetadata.InnerSign)),
+                _treeMetadata.SignLength);
 
             if (isolation != null)
             {
@@ -325,7 +325,7 @@ namespace Fireasy.Data.Entity
                 }
             }
 
-            return database.ExecuteScalar((SqlCommand)sql).To<int>() + 1;
+            return _database.ExecuteScalar((SqlCommand)sql).To<int>() + 1;
         }
 
         /// <summary>
@@ -349,7 +349,7 @@ namespace Fireasy.Data.Entity
             {
                 return false;
             }
-            
+
             return true;
         }
 
@@ -386,7 +386,7 @@ namespace Fireasy.Data.Entity
             //本来就属于它的孩子
             else if (position == EntityTreePosition.Children &&
                 bag1.InnerId.StartsWith(bag2.InnerId) &&
-                bag1.InnerId.Length == bag2.InnerId.Length + metaTree.SignLength)
+                bag1.InnerId.Length == bag2.InnerId.Length + _treeMetadata.SignLength)
             {
                 return false;
             }
@@ -402,13 +402,13 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         private bool IsBrotherly(EntityTreeUpdatingBag bag1, EntityTreeUpdatingBag bag2)
         {
-            if ((bag1.InnerId.Length != bag2.InnerId.Length) || bag2.InnerId.Length < metaTree.SignLength)
+            if ((bag1.InnerId.Length != bag2.InnerId.Length) || bag2.InnerId.Length < _treeMetadata.SignLength)
             {
                 return false;
             }
 
-            return bag1.InnerId.Substring(0, bag1.InnerId.Length - metaTree.SignLength)
-                .Equals(bag2.InnerId.Substring(0, bag2.InnerId.Length - metaTree.SignLength));
+            return bag1.InnerId.Substring(0, bag1.InnerId.Length - _treeMetadata.SignLength)
+                .Equals(bag2.InnerId.Substring(0, bag2.InnerId.Length - _treeMetadata.SignLength));
         }
 
         /// <summary>
@@ -418,15 +418,15 @@ namespace Fireasy.Data.Entity
         private string GetOrderExpression()
         {
             //如果Order没有指定，则取InnerId的后N位转成数字
-            if (metaTree.Order == null)
+            if (_treeMetadata.Order == null)
             {
-                var field = DbUtility.FormatByQuote(syntax, metaTree.InnerSign.Info.FieldName);
-                return syntax.Convert(
-                    syntax.String.Substring(field, syntax.String.Length(field) + " + 1 - " + metaTree.SignLength,
-                    metaTree.SignLength), DbType.Int32);
+                var field = DbUtility.FormatByQuote(_syntax, _treeMetadata.InnerSign.Info.FieldName);
+                return _syntax.Convert(
+                    _syntax.String.Substring(field, _syntax.String.Length(field) + " + 1 - " + _treeMetadata.SignLength,
+                    _treeMetadata.SignLength), DbType.Int32);
             }
 
-            return DbUtility.FormatByQuote(syntax, metaTree.Order.Info.FieldName);
+            return DbUtility.FormatByQuote(_syntax, _treeMetadata.Order.Info.FieldName);
         }
 
         /// <summary>
@@ -436,12 +436,12 @@ namespace Fireasy.Data.Entity
         private string GetLevelExpression()
         {
             //如果Level没有指定，则取InnerId的长度除以N
-            if (metaTree.Level == null)
+            if (_treeMetadata.Level == null)
             {
-                return syntax.String.Length(DbUtility.FormatByQuote(syntax, metaTree.InnerSign.Info.FieldName)) + " / " + metaTree.SignLength;
+                return _syntax.String.Length(DbUtility.FormatByQuote(_syntax, _treeMetadata.InnerSign.Info.FieldName)) + " / " + _treeMetadata.SignLength;
             }
 
-            return DbUtility.FormatByQuote(syntax, metaTree.Order.Info.FieldName);
+            return DbUtility.FormatByQuote(_syntax, _treeMetadata.Order.Info.FieldName);
         }
 
         /// <summary>
@@ -454,14 +454,14 @@ namespace Fireasy.Data.Entity
         private string GenerateInnerId(string keyId, PropertyValue order, EntityTreePosition position)
         {
             var sOrder = order.ToString();
-            if (metaTree.SignLength - sOrder.Length < 0)
+            if (_treeMetadata.SignLength - sOrder.Length < 0)
             {
-                throw new EntityTreeCodeOutOfRangeException(SR.GetString(SRKind.TreeCodeOutOfRange, metaTree.SignLength));
+                throw new EntityTreeCodeOutOfRangeException(SR.GetString(SRKind.TreeCodeOutOfRange, _treeMetadata.SignLength));
             }
 
-            return position == EntityTreePosition.Children || keyId.Length < metaTree.SignLength ?
-                keyId + new string('0', metaTree.SignLength - sOrder.Length) + sOrder :
-                GetPreviousKey(keyId) + new string('0', metaTree.SignLength - sOrder.Length) + sOrder;
+            return position == EntityTreePosition.Children || keyId.Length < _treeMetadata.SignLength ?
+                keyId + new string('0', _treeMetadata.SignLength - sOrder.Length) + sOrder :
+                GetPreviousKey(keyId) + new string('0', _treeMetadata.SignLength - sOrder.Length) + sOrder;
         }
 
         /// <summary>
@@ -472,12 +472,12 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         private string GetPreviousKey(string key, int index = 1)
         {
-            if (key.Length - (metaTree.SignLength * index) <= 0)
+            if (key.Length - (_treeMetadata.SignLength * index) <= 0)
             {
                 return string.Empty;
             }
 
-            return key.Length < metaTree.SignLength ? key : key.Substring(0, key.Length - (metaTree.SignLength * index));
+            return key.Length < _treeMetadata.SignLength ? key : key.Substring(0, key.Length - (_treeMetadata.SignLength * index));
         }
 
         /// <summary>
@@ -487,7 +487,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         private string GetPreviousFullName(string fullName)
         {
-            var index = fullName.LastIndexOf(metaTree.NameSeparator);
+            var index = fullName.LastIndexOf(_treeMetadata.NameSeparator);
             return index != -1 ? fullName.Substring(0, index) : string.Empty;
         }
 
@@ -502,7 +502,7 @@ namespace Fireasy.Data.Entity
             var s = fullName;
             for (var i = 0; i < level; i++)
             {
-                var index = s.IndexOf(metaTree.NameSeparator);
+                var index = s.IndexOf(_treeMetadata.NameSeparator);
                 if (index == -1)
                 {
                     break;
@@ -523,7 +523,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         private string GenerateFullName(EntityTreeUpfydatingArgument arg1, EntityTreeUpfydatingArgument arg2, EntityTreePosition position)
         {
-            if (metaTree.Name == null || metaTree.FullName == null)
+            if (_treeMetadata.Name == null || _treeMetadata.FullName == null)
             {
                 return null;
             }
@@ -546,7 +546,7 @@ namespace Fireasy.Data.Entity
                 }
 
                 //拼接上当前的名称
-                fullName = string.Format("{0}{1}{2}", fullName, metaTree.NameSeparator, arg1.NewValue.Name);
+                fullName = string.Format("{0}{1}{2}", fullName, _treeMetadata.NameSeparator, arg1.NewValue.Name);
             }
 
             return fullName;
@@ -560,13 +560,13 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         private IEnumerable<TEntity> GetChildren(EntityTreeUpfydatingArgument argument, Expression<Func<TEntity>> isolation = null)
         {
-            var expression = TreeExpressionBuilder.BuildGetChildrenExpression<TEntity>(metaTree, argument.OldValue.InnerId);
+            var expression = TreeExpressionBuilder.BuildGetChildrenExpression<TEntity>(_treeMetadata, argument.OldValue.InnerId);
 
-            var querable = QueryHelper.CreateQuery<TEntity>(repository.Provider, expression);
+            var querable = QueryHelper.CreateQuery<TEntity>(_repository.Provider, expression);
             expression = TreeExpressionBuilder.AddIsolationExpression<TEntity>(querable.Expression, isolation);
-            expression = TreeExpressionBuilder.AddUseableSelectExpression<TEntity>(metaTree, expression);
+            expression = TreeExpressionBuilder.AddUseableSelectExpression<TEntity>(_treeMetadata, expression);
 
-            return repository.Provider.CreateQuery<TEntity>(expression).ToList();
+            return _repository.Provider.CreateQuery<TEntity>(expression).ToList();
         }
 
         /// <summary>
@@ -584,7 +584,7 @@ namespace Fireasy.Data.Entity
             var order = argument.OldValue.Order;
             var level = argument.OldValue.Level;
             var parameters = new ParameterCollection();
-            var m = EntityMetadataUnity.GetEntityMetadata(entityType);
+            var m = EntityMetadataUnity.GetEntityMetadata(_entityType);
 
             var sb = new StringBuilder();
             sb.Append("SELECT ");
@@ -605,9 +605,9 @@ namespace Fireasy.Data.Entity
             }
 
             sb.AppendFormat(" FROM {0} t", GetTableName());
-            sb.AppendFormat(" JOIN (SELECT f.{0} {0} FROM {1} f", QuoteColumn(metaTree.InnerSign), GetTableName());
+            sb.AppendFormat(" JOIN (SELECT f.{0} {0} FROM {1} f", QuoteColumn(_treeMetadata.InnerSign), GetTableName());
 
-            sb.AppendFormat(" WHERE {0} LIKE {1} AND {5} = {6} AND {2} {4} {3}", QuoteColumn(metaTree.InnerSign), syntax.FormatParameter("pn"),
+            sb.AppendFormat(" WHERE {0} LIKE {1} AND {5} = {6} AND {2} {4} {3}", QuoteColumn(_treeMetadata.InnerSign), _syntax.FormatParameter("pn"),
                 GetOrderExpression(), order, includeCurrent ? ">=" : ">", GetLevelExpression(), level);
 
             if (m.DeleteProperty != null)
@@ -618,19 +618,19 @@ namespace Fireasy.Data.Entity
             if (excludeArg != null)
             {
                 var excludeId = excludeArg.OldValue.InnerId;
-                sb.AppendFormat(" AND NOT ({0} LIKE {1})", QuoteColumn(metaTree.InnerSign), syntax.FormatParameter("px"));
+                sb.AppendFormat(" AND NOT ({0} LIKE {1})", QuoteColumn(_treeMetadata.InnerSign), _syntax.FormatParameter("px"));
                 parameters.Add("px", excludeId + "%");
 
                 if (isTop)
                 {
-                    sb.AppendFormat(" AND {0} < {1}", QuoteColumn(metaTree.InnerSign), syntax.FormatParameter("px1"));
+                    sb.AppendFormat(" AND {0} < {1}", QuoteColumn(_treeMetadata.InnerSign), _syntax.FormatParameter("px1"));
                     parameters.Add("px1", excludeId);
                 }
             }
 
             if (!includeCurrent)
             {
-                sb.AppendFormat(" AND {0} <> {1}", QuoteColumn(metaTree.InnerSign), syntax.FormatParameter("pm"));
+                sb.AppendFormat(" AND {0} <> {1}", QuoteColumn(_treeMetadata.InnerSign), _syntax.FormatParameter("pm"));
                 parameters.Add("pm", keyId);
             }
 
@@ -644,19 +644,19 @@ namespace Fireasy.Data.Entity
                 }
             }
 
-            sb.AppendFormat(") f ON t.{0} LIKE {1}", QuoteColumn(metaTree.InnerSign), syntax.String.Concat("f." + QuoteColumn(metaTree.InnerSign), "'%'"));
+            sb.AppendFormat(") f ON t.{0} LIKE {1}", QuoteColumn(_treeMetadata.InnerSign), _syntax.String.Concat("f." + QuoteColumn(_treeMetadata.InnerSign), "'%'"));
 
             if (!string.IsNullOrEmpty(conIsolation))
             {
                 sb.AppendFormat(" WHERE {0}", conIsolation);
             }
 
-            sb.AppendFormat("ORDER BY {0}", QuoteColumn(metaTree.InnerSign));
+            sb.AppendFormat("ORDER BY {0}", QuoteColumn(_treeMetadata.InnerSign));
 
             keyId = GetPreviousKey(keyId) + "_%";
             parameters.Add("pn", keyId);
 
-            return database.ExecuteEnumerable((SqlCommand)sb.ToString(), parameters: parameters, rowMapper: new EntityRowMapper<TEntity>()).ToList();
+            return _database.ExecuteEnumerable((SqlCommand)sb.ToString(), parameters: parameters, rowMapper: new EntityRowMapper<TEntity>()).ToList();
         }
 
         /// <summary>
@@ -681,7 +681,7 @@ namespace Fireasy.Data.Entity
                     parentRow.FullName;
 
                 //父全名+分隔+当前元素的名称
-                newFullName = string.Format("{0}{1}{2}", newFullName, metaTree.NameSeparator, arg.OldValue.Name);
+                newFullName = string.Format("{0}{1}{2}", newFullName, _treeMetadata.NameSeparator, arg.OldValue.Name);
 
                 arg.NewValue.FullName = newFullName;
 
@@ -700,11 +700,11 @@ namespace Fireasy.Data.Entity
                 var arg = CreateUpdatingArgument(entity);
 
                 arg.NewValue.Level = argument.NewValue.Level + arg.OldValue.Level - argument.OldValue.Level;
-                arg.NewValue.InnerId = argument.NewValue.InnerId + arg.OldValue.InnerId.Substring(argument.OldValue.Level * metaTree.SignLength);
+                arg.NewValue.InnerId = argument.NewValue.InnerId + arg.OldValue.InnerId.Substring(argument.OldValue.Level * _treeMetadata.SignLength);
 
-                if (metaTree.FullName != null && !string.IsNullOrEmpty(argument.NewValue.FullName))
+                if (_treeMetadata.FullName != null && !string.IsNullOrEmpty(argument.NewValue.FullName))
                 {
-                    arg.NewValue.FullName = argument.NewValue.FullName + metaTree.NameSeparator + GetRightFullName(arg.OldValue.FullName, argument.OldValue.Level);
+                    arg.NewValue.FullName = argument.NewValue.FullName + _treeMetadata.NameSeparator + GetRightFullName(arg.OldValue.FullName, argument.OldValue.Level);
                 }
 
                 UpdateEntityByArgument(entity, arg);
@@ -748,7 +748,7 @@ namespace Fireasy.Data.Entity
                 }
 
                 var sorder = arg.NewValue.Order.ToString();
-                arg.NewValue.InnerId = prevRowInnerId + new string('0', metaTree.SignLength - sorder.Length) + sorder;
+                arg.NewValue.InnerId = prevRowInnerId + new string('0', _treeMetadata.SignLength - sorder.Length) + sorder;
 
                 UpdateEntityByArgument(entity, arg);
             }
@@ -777,7 +777,7 @@ namespace Fireasy.Data.Entity
             var currentInnerId = GenerateInnerId(string.Empty, newOrder, EntityTreePosition.Children);
 
             //全名即为名称
-            if (metaTree.FullName != null && metaTree.Name != null)
+            if (_treeMetadata.FullName != null && _treeMetadata.Name != null)
             {
                 arg.NewValue.FullName = arg.OldValue.Name;
             }
@@ -862,14 +862,14 @@ namespace Fireasy.Data.Entity
         /// <param name="handler2"></param>
         private T UpdateCurrent<T>(TEntity current, Expression<Func<TEntity>> isolation, Func<IEnumerable<TEntity>, T> handler1, Func<TEntity, T> handler2)
         {
-            if (metaTree.FullName != null && current.IsModified(metaTree.Name.Name))
+            if (_treeMetadata.FullName != null && current.IsModified(_treeMetadata.Name.Name))
             {
                 var arg = CreateUpdatingArgument(current);
 
                 var fullName = GetPreviousFullName(arg.OldValue.FullName);
 
                 fullName = string.IsNullOrEmpty(fullName) ?
-                    arg.NewValue.Name : string.Format("{0}{1}{2}", fullName, metaTree.NameSeparator, arg.NewValue.Name);
+                    arg.NewValue.Name : string.Format("{0}{1}{2}", fullName, _treeMetadata.NameSeparator, arg.NewValue.Name);
 
                 arg.NewValue.FullName = fullName;
 
@@ -903,9 +903,9 @@ namespace Fireasy.Data.Entity
         /// <param name="eitities"></param>
         private void SetNameNotModified(IEnumerable<TEntity> eitities)
         {
-            if (metaTree.Name != null)
+            if (_treeMetadata.Name != null)
             {
-                eitities.ForEach(s => s.NotifyModified(metaTree.Name.Name, false));
+                eitities.ForEach(s => s.NotifyModified(_treeMetadata.Name.Name, false));
             }
         }
 
@@ -916,7 +916,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         private string QuoteColumn(IProperty property)
         {
-            return DbUtility.FormatByQuote(syntax, property.Info.FieldName);
+            return DbUtility.FormatByQuote(_syntax, property.Info.FieldName);
         }
 
         /// <summary>
@@ -925,7 +925,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         private string GetTableName()
         {
-            return DbUtility.FormatByQuote(syntax, metadata.TableName);
+            return DbUtility.FormatByQuote(_syntax, _metadata.TableName);
         }
 
         /// <summary>
@@ -934,33 +934,33 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         private IEnumerable<IProperty> GetUseableProperties()
         {
-            foreach (var pkProperty in PropertyUnity.GetPrimaryProperties(entityType))
+            foreach (var pkProperty in PropertyUnity.GetPrimaryProperties(_entityType))
             {
-                if (pkProperty != metaTree.InnerSign)
+                if (pkProperty != _treeMetadata.InnerSign)
                 {
                     yield return pkProperty;
                 }
             }
 
-            yield return metaTree.InnerSign;
-            if (metaTree.Name != null && metaTree.FullName != null)
+            yield return _treeMetadata.InnerSign;
+            if (_treeMetadata.Name != null && _treeMetadata.FullName != null)
             {
-                yield return metaTree.Name;
+                yield return _treeMetadata.Name;
             }
 
-            if (metaTree.FullName != null)
+            if (_treeMetadata.FullName != null)
             {
-                yield return metaTree.FullName;
+                yield return _treeMetadata.FullName;
             }
 
-            if (metaTree.Order != null)
+            if (_treeMetadata.Order != null)
             {
-                yield return metaTree.Order;
+                yield return _treeMetadata.Order;
             }
 
-            if (metaTree.Level != null)
+            if (_treeMetadata.Level != null)
             {
-                yield return metaTree.Level;
+                yield return _treeMetadata.Level;
             }
         }
 
@@ -993,35 +993,35 @@ namespace Fireasy.Data.Entity
         {
             var data = new EntityTreeUpdatingBag
             {
-                InnerId = (string)entity.GetValue(metaTree.InnerSign),
+                InnerId = (string)entity.GetValue(_treeMetadata.InnerSign),
             };
 
-            if (metaTree.Order != null)
+            if (_treeMetadata.Order != null)
             {
-                data.Order = (int)entity.GetValue(metaTree.Order);
+                data.Order = (int)entity.GetValue(_treeMetadata.Order);
             }
             else if (!string.IsNullOrEmpty(data.InnerId))
             {
-                data.Order = int.Parse(data.InnerId.Right(metaTree.SignLength));
+                data.Order = int.Parse(data.InnerId.Right(_treeMetadata.SignLength));
             }
 
-            if (metaTree.Level != null)
+            if (_treeMetadata.Level != null)
             {
-                data.Level = (int)entity.GetValue(metaTree.Level);
+                data.Level = (int)entity.GetValue(_treeMetadata.Level);
             }
             else if (!string.IsNullOrEmpty(data.InnerId))
             {
-                data.Level = data.InnerId.Length / metaTree.SignLength;
+                data.Level = data.InnerId.Length / _treeMetadata.SignLength;
             }
 
-            if (metaTree.Name != null)
+            if (_treeMetadata.Name != null)
             {
-                data.Name = (string)entity.GetValue(metaTree.Name);
+                data.Name = (string)entity.GetValue(_treeMetadata.Name);
             }
 
-            if (metaTree.FullName != null)
+            if (_treeMetadata.FullName != null)
             {
-                data.FullName = (string)entity.GetValue(metaTree.FullName);
+                data.FullName = (string)entity.GetValue(_treeMetadata.FullName);
             }
 
             return data;
@@ -1038,31 +1038,31 @@ namespace Fireasy.Data.Entity
             //force强制修改属性
             if (force || argument.OldValue.InnerId != argument.NewValue.InnerId)
             {
-                entity.SetValue(metaTree.InnerSign, argument.NewValue.InnerId);
+                entity.SetValue(_treeMetadata.InnerSign, argument.NewValue.InnerId);
             }
 
-            if (metaTree.Level != null &&
+            if (_treeMetadata.Level != null &&
                 (force || argument.OldValue.Level != argument.NewValue.Level))
             {
-                entity.SetValue(metaTree.Level, argument.NewValue.Level);
+                entity.SetValue(_treeMetadata.Level, argument.NewValue.Level);
             }
 
-            if (metaTree.Order != null &&
+            if (_treeMetadata.Order != null &&
                 (force || argument.OldValue.Order != argument.NewValue.Order))
             {
-                entity.SetValue(metaTree.Order, argument.NewValue.Order);
+                entity.SetValue(_treeMetadata.Order, argument.NewValue.Order);
             }
 
-            if (metaTree.Name != null &&
+            if (_treeMetadata.Name != null &&
                 (force || argument.OldValue.Name != argument.NewValue.Name))
             {
-                entity.SetValue(metaTree.Name, argument.NewValue.Name);
+                entity.SetValue(_treeMetadata.Name, argument.NewValue.Name);
             }
 
-            if (metaTree.FullName != null &&
+            if (_treeMetadata.FullName != null &&
                 (force || argument.OldValue.FullName != argument.NewValue.FullName))
             {
-                entity.SetValue(metaTree.FullName, argument.NewValue.FullName);
+                entity.SetValue(_treeMetadata.FullName, argument.NewValue.FullName);
             }
         }
 
@@ -1257,7 +1257,7 @@ namespace Fireasy.Data.Entity
             T result = default;
             try
             {
-                database.BeginTransaction();
+                _database.BeginTransaction();
 
                 var arg1 = CreateUpdatingArgument(entity);
 
@@ -1280,11 +1280,11 @@ namespace Fireasy.Data.Entity
                     }
                 }
 
-                database.CommitTransaction();
+                _database.CommitTransaction();
             }
             catch (Exception ex)
             {
-                database.RollbackTransaction();
+                _database.RollbackTransaction();
 
                 throw new EntityPersistentException(SR.GetString(SRKind.FailInEntityMove), ex);
             }

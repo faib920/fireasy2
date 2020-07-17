@@ -20,7 +20,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// </summary>
         /// <param name="sqlCommand">SQL命令行。</param>
         public SqlExpression(string sqlCommand)
-            : base (DbExpressionType.SqlText)
+            : base(DbExpressionType.SqlText)
         {
             SqlCommand = sqlCommand;
         }
@@ -51,12 +51,12 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取 SQL 命令行。
         /// </summary>
-        public string SqlCommand { get; private set; }
+        public string SqlCommand { get; }
 
         /// <summary>
         /// 获取参数集合。
         /// </summary>
-        public List<NamedValueExpression> Parameters { get; private set; }
+        public List<NamedValueExpression> Parameters { get; }
 
         public SqlExpression Update(string sqlCommand)
         {

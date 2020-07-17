@@ -5,9 +5,9 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
-using Fireasy.Common.Threading.Configuration;
 using Fireasy.Common.Configuration;
+using Fireasy.Common.Threading.Configuration;
+using System;
 #if NETSTANDARD
 using Microsoft.Extensions.DependencyInjection;
 #endif
@@ -17,10 +17,10 @@ namespace Fireasy.Common.Threading
     /// <summary>
     /// 分布式锁的工厂。
     /// </summary>
-    public static class LockerFactory
+    public static class DistributedLockerFactory
     {
 #if NETSTANDARD
-        public static IServiceCollection AddLocker(this IServiceCollection services)
+        internal static IServiceCollection AddLocker(this IServiceCollection services)
         {
             var section = ConfigurationUnity.GetSection<LockerConfigurationSection>();
             if (section == null)
@@ -71,7 +71,8 @@ namespace Fireasy.Common.Threading
             var section = ConfigurationUnity.GetSection<LockerConfigurationSection>();
             if (section != null && section.Factory != null)
             {
-                locker = ConfigurationUnity.Cached<IDistributedLocker>($"Locker_{configName}", () => section.Factory.CreateInstance(configName) as IDistributedLocker);
+                locker = ConfigurationUnity.Cached<IDistributedLocker>($"Locker_{configName}", serviceProvider,
+                    () => section.Factory.CreateInstance(serviceProvider, configName) as IDistributedLocker);
                 if (locker != null)
                 {
                     return locker;
@@ -95,7 +96,7 @@ namespace Fireasy.Common.Threading
                 return null;
             }
 
-            return ConfigurationUnity.Cached<IDistributedLocker>($"Locker_{configName}", 
+            return ConfigurationUnity.Cached<IDistributedLocker>($"Locker_{configName}", serviceProvider,
                 () => ConfigurationUnity.CreateInstance<LockerConfigurationSetting, IDistributedLocker>(serviceProvider, setting, s => s.LockerType));
         }
     }
