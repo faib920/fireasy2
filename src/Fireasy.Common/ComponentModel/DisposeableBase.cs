@@ -15,7 +15,7 @@ namespace Fireasy.Common.ComponentModel
     /// <summary>
     /// 实现了标准的 <see cref="IDisposable"/> 模式的抽象类。
     /// </summary>
-    public abstract class DisposeableBase : IDisposable
+    public abstract class DisposeableBase : IDisposable, ISpecificDisposable
 #if NETSTANDARD2_1
         , IAsyncDisposable
 #endif
@@ -58,6 +58,11 @@ namespace Fireasy.Common.ComponentModel
                     _isDisposed = true;
                 }
             }
+
+            if (disposing)
+            {
+                GC.SuppressFinalize(this);
+            }
         }
 
         /// <summary>
@@ -67,7 +72,11 @@ namespace Fireasy.Common.ComponentModel
         public void Dispose()
         {
             DoDispose(true);
-            GC.SuppressFinalize(this);
+        }
+
+        void ISpecificDisposable.Dispose(bool disposing)
+        {
+            DoDispose(disposing);
         }
 
 #if NETSTANDARD2_1
@@ -95,6 +104,11 @@ namespace Fireasy.Common.ComponentModel
                     _isDisposed = true;
                 }
             }
+
+            if (disposing)
+            {
+                GC.SuppressFinalize(this);
+            }
         }
 
         /// <summary>
@@ -103,7 +117,6 @@ namespace Fireasy.Common.ComponentModel
         public async ValueTask DisposeAsync()
         {
             await DoDisposeAsync(true);
-            GC.SuppressFinalize(this);
         }
 #endif
     }

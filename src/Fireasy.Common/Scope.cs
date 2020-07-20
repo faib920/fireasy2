@@ -42,7 +42,14 @@ namespace Fireasy.Common
             get
             {
                 var stack = GetScopeStack();
-                return stack.Count == 0 ? null : stack.Peek();
+                try
+                {
+                    return stack.Count == 0 ? null : stack.Peek();
+                }
+                catch
+                {
+                    return null;
+                }
             }
         }
 
@@ -129,16 +136,21 @@ namespace Fireasy.Common
         protected override bool Dispose(bool disposing)
         {
             var stack = GetScopeStack();
+
             if (stack.Count > 0)
             {
+                //单例模式下，要判断是否与 current 相等
                 if (_isSingleton)
                 {
-                    //单例模式下，要判断是否与 current 相等
-                    var current = stack.Peek();
-                    if (current == null || current.Equals(this))
+                    try
                     {
-                        stack.Pop();
+                        var current = stack.Peek();
+                        if (current == null || current.Equals(this))
+                        {
+                            stack.Pop();
+                        }
                     }
+                    catch { }
                 }
                 else
                 {

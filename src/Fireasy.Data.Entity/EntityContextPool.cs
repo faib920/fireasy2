@@ -70,7 +70,7 @@ namespace Fireasy.Data.Entity
                     if (!_pool.Return(Context))
                     {
                         ((IObjectPoolable)Context).SetPool(null);
-                        Context.TryDispose();
+                        Context.TryDispose(disposing);
                     }
 
                     _pool = null;

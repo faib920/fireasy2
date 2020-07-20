@@ -125,7 +125,7 @@ namespace Fireasy.Data.Entity
             {
                 Tracer.Debug($"The {GetType().Name} is Disposing.");
 
-                _contextService?.Dispose();
+                _contextService?.TryDispose(disposing);
                 _contextService = null;
 
                 _options = null;

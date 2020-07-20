@@ -174,11 +174,11 @@ namespace Fireasy.Data.Entity.Query
         /// <returns></returns>
         private static T EnumerateData<T>(T data)
         {
-            if (data is IEnumerable && !(data is ICollection))
+            if (data is IEnumerable enumerable && !(data is ICollection))
             {
                 var elementType = typeof(T).GetEnumerableElementType();
                 var result = typeof(List<>).MakeGenericType(elementType).New<IList>();
-                var en = ((IEnumerable)data).GetEnumerator();
+                var en = enumerable.GetEnumerator();
                 while (en.MoveNext())
                 {
                     result.Add(en.Current);
@@ -322,18 +322,18 @@ namespace Fireasy.Data.Entity.Query
             }
 
             types.ForEach(type =>
-                {
-                    Tracer.Debug($"Now clear the reference-keys of '{string.Concat(rootKey, ":", type.FullName)}'");
+            {
+                Tracer.Debug($"Now clear the reference-keys of '{string.Concat(rootKey, ":", type.FullName)}'");
 
-                    if (_cacheMgr is IEnhancedCacheManager ehCache)
-                    {
-                        ehCache.UseTransaction(string.Concat(rootKey, ":", type.FullName, ":Execute"), () => process(type.FullName), TimeSpan.FromSeconds(10));
-                    }
-                    else
-                    {
-                        _locker.LockWrite(() => process(type.FullName));
-                    }
-                });
+                if (_cacheMgr is IEnhancedCacheManager ehCache)
+                {
+                    ehCache.UseTransaction(string.Concat(rootKey, ":", type.FullName, ":Execute"), () => process(type.FullName), TimeSpan.FromSeconds(10));
+                }
+                else
+                {
+                    _locker.LockWrite(() => process(type.FullName));
+                }
+            });
         }
 
         private TimeSpan GetExpire(CacheableCheckResult checkResult, TranslateOptions option, ExecuteCacheContext cacheOpt)

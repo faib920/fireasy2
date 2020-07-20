@@ -606,7 +606,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 }
             }
 
-            return maxProperties;
+             return maxProperties;
         }
     }
 }

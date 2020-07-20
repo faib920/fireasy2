@@ -87,11 +87,9 @@ namespace Fireasy.Data.Entity
         /// <param name="disposing"></param>
         protected override bool Dispose(bool disposing)
         {
-            //PreDispose();
-
             if (Database != null)
             {
-                Database.Dispose();
+                Database.TryDispose(disposing);
                 Database = null;
             }
 
@@ -101,9 +99,11 @@ namespace Fireasy.Data.Entity
         private IDatabase TryGetDatabase(ContextServiceContext context)
         {
             var accessor = context.ServiceProvider.TryGetService<SharedDatabaseAccessor>();
-            if (accessor != null && accessor.Database != null)
+            IDatabase database;
+
+            if (accessor != null && (database = accessor[context.Options.ConnectionString]) != null)
             {
-                return accessor.Database;
+                return database;
             }
 
             Func<IDatabase> dbCreator;
@@ -123,11 +123,11 @@ namespace Fireasy.Data.Entity
                 throw new InvalidOperationException(SR.GetString(SRKind.NotSupportDatabaseFactory));
             }
 
-            var database = EntityDatabaseFactory.CreateDatabase(InstanceName, dbCreator).TrySetServiceProvider(context.ServiceProvider);
+            database = EntityDatabaseFactory.CreateDatabase(InstanceName, dbCreator).TrySetServiceProvider(context.ServiceProvider);
 
             if (accessor != null)
             {
-                accessor.Database = database;
+                accessor[context.Options.ConnectionString] = database;
             }
 
             return database;

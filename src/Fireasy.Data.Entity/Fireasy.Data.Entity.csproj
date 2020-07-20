@@ -12,7 +12,7 @@
     <Product>Fireasy Entity Framework</Product>
     <FileVersion>2.2.0</FileVersion>
     <AssemblyVersion>2.2.0</AssemblyVersion>
-    <Version>2.2.0-beta1</Version>
+    <Version>2.2.0-beta2</Version>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Description>类似于 Entity framework，也提供了 LINQ to Entities 大众化的查询方法，相比之下更容易使用多种数据库，比如SqlServer、Oracle、MySQL、SQLite、PostgreSQL等等。独创性地提供树持久化方法，使用AOP代理技术管理实体对象的状态变更，提供更贴合SQL语言的Update、Delete语句。
 

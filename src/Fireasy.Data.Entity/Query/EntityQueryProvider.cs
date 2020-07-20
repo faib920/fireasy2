@@ -113,7 +113,7 @@ namespace Fireasy.Data.Entity.Query
         public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
         {
             var queryCache = ContextService.ServiceProvider.TryGetService(() => DefaultQueryCache.Instance);
-            var efn = queryCache.TryGetDelegate(expression, GetCacheContext(), () => (LambdaExpression)GetExecutionPlan(expression));
+            var efn = queryCache.TryGetDelegate(expression, GetCacheContext(), () => (LambdaExpression)GetExecutionPlan(expression, true));
 
             var result = InternalExecuteQuery(expression, efn, cancellationToken);
 

@@ -277,7 +277,7 @@ namespace Fireasy.Data
 
             rowMapper ??= RowMapperFactory.CreateRowMapper<T>();
             rowMapper.RecordWrapper = Provider.GetService<IRecordWrapper>();
-            using var reader = (DbDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, null, cancellationToken);
+            using var reader = (InternalDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, null, cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
                 yield return rowMapper.Map(this, reader);
@@ -296,7 +296,7 @@ namespace Fireasy.Data
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
 
-            using var reader = (DbDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, null, cancellationToken);
+            using var reader = (InternalDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, null, cancellationToken);
             var wrapper = Provider.GetService<IRecordWrapper>();
             TypeDescriptorUtility.AddDefaultDynamicProvider();
 
@@ -784,20 +784,30 @@ namespace Fireasy.Data
 
             if (Transaction != null)
             {
-                Transaction.Commit();
+                Transaction.Rollback();
                 Transaction = null;
             }
 
             if (_connMaster != null)
             {
-                _connMaster.Dispose();
-                _connMaster = null;
+                _connMaster.TryClose();
+
+                if (disposing)
+                {
+                    _connMaster.Dispose();
+                    _connMaster = null;
+                }
             }
 
             if (_connSlave != null)
             {
-                _connSlave.Dispose();
-                _connSlave = null;
+                _connSlave.TryClose();
+
+                if (disposing)
+                {
+                    _connSlave.Dispose();
+                    _connSlave = null;
+                }
             }
 
             return base.Dispose(disposing);

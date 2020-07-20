@@ -12,9 +12,9 @@
     <Product>Fireasy Common Library</Product>
     <FileVersion>2.2.0</FileVersion>
     <AssemblyVersion>2.2.0</AssemblyVersion>
-    <Version>2.2.0-beta1</Version>
+    <Version>2.2.0-beta2</Version>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Description>通用类库，提供配置、缓存、日志、AOP、IOC、JSON序列化、扩展方法、Emit、加解密、定时任务、本地化等等基础方法。
+    <Description>通用类库，提供配置、缓存、日志、AOP、IOC、序列化、扩展方法、Emit、加解密、定时任务、本地化、分布式锁、多租户、对象映射等等基础方法。
 
 示例源码：https://github.com/faib920/zero</Description>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>

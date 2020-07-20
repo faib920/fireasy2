@@ -1251,11 +1251,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
                 if (isAsync)
                 {
-#if NETSTANDARD && !NETSTANDARD2_0
-                    var taskEnumType = ReflectionCache.GetMember("TaskAsyncEnumerableType", valueType, k => typeof(IAsyncEnumerable<>).MakeGenericType(k));
-#else
                     var taskEnumType = ReflectionCache.GetMember("TaskEnumerableType", valueType, k => typeof(Task<>).MakeGenericType(typeof(IEnumerable<>).MakeGenericType(k)));
-#endif
                     parExp = Expression.Parameter(taskEnumType, "p");
                     gator = Expression.Lambda(Expression.Call(typeof(Extensions), nameof(Extensions.SingleOrDefaultCoreAsnyc), new Type[] { valueType }, parExp), parExp);
                 }
@@ -1439,11 +1435,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
                 if (isAsync)
                 {
-#if NETSTANDARD && !NETSTANDARD2_0
-                    var taskEnumType = ReflectionCache.GetMember("TaskAsyncEnumerableType", elementType, k => typeof(IAsyncEnumerable<>).MakeGenericType(k));
-#else
                     var taskEnumType = ReflectionCache.GetMember("TaskEnumerableType", elementType, k => typeof(Task<>).MakeGenericType(typeof(IEnumerable<>).MakeGenericType(k)));
-#endif
                     var parExp = Expression.Parameter(taskEnumType, "p");
                     gator = Expression.Lambda(Expression.Call(typeof(Extensions), nameof(Extensions.FirstOrDefaultCoreAsnyc), new Type[] { elementType }, parExp), parExp);
                 }
@@ -1544,11 +1536,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             LambdaExpression gator = null;
             if (isAsync)
             {
-#if NETSTANDARD && !NETSTANDARD2_0
-                var taskEnumType = ReflectionCache.GetMember("TaskAsyncEnumerableType", expr.Type, k => typeof(IAsyncEnumerable<>).MakeGenericType(k));
-#else
                 var taskEnumType = ReflectionCache.GetMember("TaskEnumerableType", expr.Type, k => typeof(Task<>).MakeGenericType(typeof(IEnumerable<>).MakeGenericType(k)));
-#endif
                 var parExp = Expression.Parameter(taskEnumType, "p");
                 gator = Expression.Lambda(Expression.Call(typeof(Extensions), nameof(Extensions.SingleOrDefaultCoreAsnyc), new[] { expr.Type }, parExp), parExp);
             }
@@ -1790,7 +1778,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             var op = (LambdaExpression)Visit(operation);
 
-            _transContext.TemporaryBag.Clear();
+            _transContext.TemporaryBag = null;
 
             var items = (ConstantExpression)Visit(instances);
             return new BatchCommandExpression(items, op, isAsync, properties);

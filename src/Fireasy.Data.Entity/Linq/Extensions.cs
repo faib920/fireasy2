@@ -15,6 +15,7 @@ using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Entity.Query;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -695,24 +696,8 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-#if NETSTANDARD && !NETSTANDARD2_0
-            var enumerable = ((IAsyncQueryProvider)source.Provider).ExecuteEnumerableAsync<TSource>(expression, cancellationToken);
-            if (enumerable == null)
-            {
-                return null;
-            }
-
-            var result = new List<TSource>();
-            await foreach (var item in enumerable)
-            {
-                result.Add(item);
-            }
-
-            return result;
-#else
             var enumerable = await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<IEnumerable<TSource>>(expression, cancellationToken);
             return enumerable.ToList();
-#endif
         }
 
         /// <summary>
@@ -1148,27 +1133,6 @@ namespace Fireasy.Data.Entity.Linq
             return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<T>(expression, cancellationToken);
         }
 
-#if NETSTANDARD && !NETSTANDARD2_0
-        internal static async Task<T> FirstOrDefaultCoreAsnyc<T>(this IAsyncEnumerable<T> enumerable)
-        {
-            await foreach (var item in enumerable)
-            {
-                return item;
-            }
-
-            return default;
-        }
-
-        internal static async Task<T> SingleOrDefaultCoreAsnyc<T>(this IAsyncEnumerable<T> enumerable)
-        {
-            await foreach (var item in enumerable)
-            {
-                return item;
-            }
-
-            return default;
-        }
-#else
         internal static async Task<T> FirstOrDefaultCoreAsnyc<T>(this Task<IEnumerable<T>> task)
         {
             return (await task).FirstOrDefault();
@@ -1178,7 +1142,6 @@ namespace Fireasy.Data.Entity.Linq
         {
             return (await task).SingleOrDefault();
         }
-#endif
 
         /// <summary>
         /// 创建一个实体。

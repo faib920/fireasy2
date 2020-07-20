@@ -112,6 +112,19 @@ namespace Fireasy.Common.Extensions
         }
 
         /// <summary>
+        /// 尝试释放对象占用的资源。
+        /// </summary>
+        /// <param name="disobj"></param>
+        /// <param name="disposing">为 true 表示是来自方法 Dispose 的调用，而 false 则表示通过来自终结器的调用。</param>
+        public static void TryDispose(this object disobj, bool disposing)
+        {
+            if (disobj is ISpecificDisposable p)
+            {
+                p.Dispose(disposing);
+            }
+        }
+
+        /// <summary>
         /// 将对象转换为 T 类型，如果对象不支持转换，则返回 null。
         /// </summary>
         /// <typeparam name="T"></typeparam>
