@@ -5,18 +5,19 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-namespace Fireasy.Data
+
+namespace Fireasy.Data.Entity
 {
     /// <summary>
-    /// 分布式数据库连接串管理器。
+    /// 用于创建 <see cref="IDatabase"/> 实例的工厂。
     /// </summary>
-    public interface IDistributedConnectionManager
+    public interface IDatabaseFactory
     {
         /// <summary>
-        /// 根据调度算法从配置中获取一个 <see cref="ConnectionString"/> 对象。
+        /// 创建一个 <see cref="IDatabase"/> 实例。
         /// </summary>
-        /// <param name="database"></param>
+        /// <param name="options"></param>
         /// <returns></returns>
-        ConnectionString GetConnection(IDistributedDatabase database);
+        IDatabase Create(EntityContextOptions options);
     }
 }

@@ -20,11 +20,11 @@ namespace Fireasy.Data
         private static readonly Random _random = new Random();
 
         /// <summary>
-        /// 根据调度算法从配置中获取一个 <see cref="DistributedConnectionString"/> 对象。
+        /// 根据调度算法从配置中获取一个 <see cref="ConnectionString"/> 对象。
         /// </summary>
         /// <param name="database"></param>
         /// <returns></returns>
-        public DistributedConnectionString GetConnection(IDistributedDatabase database)
+        public ConnectionString GetConnection(IDistributedDatabase database)
         {
             if (database.DistributedConnectionStrings == null)
             {

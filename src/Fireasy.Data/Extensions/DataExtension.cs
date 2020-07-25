@@ -732,6 +732,8 @@ namespace Fireasy.Data.Extensions
 
         internal static async Task<DbConnection> TryOpenAsync(this DbConnection connection, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (connection.State == ConnectionState.Broken)
             {
                 connection.Close();
@@ -742,7 +744,7 @@ namespace Fireasy.Data.Extensions
                 try
                 {
                     var watch = Stopwatch.StartNew();
-                    await connection.OpenAsync(cancellationToken);
+                    await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
                     Tracer.Debug($"The connection of '{connection.ConnectionString}' was opened ({watch.ElapsedMilliseconds}ms).");
                 }
                 catch (DbException exp)

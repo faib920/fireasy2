@@ -12,7 +12,7 @@
     <Product>Fireasy Data Library</Product>
     <FileVersion>2.2.0</FileVersion>
     <AssemblyVersion>2.2.0</AssemblyVersion>
-    <Version>2.2.0-beta2</Version>
+    <Version>2.2.0-beta3</Version>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Description>数据库访问库，提供 SqlServer, MySql, Oracle, SQLite, PostgreSql 等数据库的驱动适配，以及插件服务，如SQL语法、数据库架构、批量插入、记录包装等。
 

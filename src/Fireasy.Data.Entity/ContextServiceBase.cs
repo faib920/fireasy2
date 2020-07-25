@@ -10,7 +10,6 @@ using Fireasy.Common.ComponentModel;
 using Fireasy.Data.Provider;
 using System;
 using System.Collections.Concurrent;
-using System.Data;
 
 namespace Fireasy.Data.Entity
 {
@@ -68,22 +67,6 @@ namespace Fireasy.Data.Entity
         /// 获取或设置应用程序服务提供者实例。
         /// </summary>
         public virtual IServiceProvider ServiceProvider { get; set; }
-
-        /// <summary>
-        /// 开启事务。
-        /// </summary>
-        /// <param name="level"></param>
-        public abstract void BeginTransaction(IsolationLevel level);
-
-        /// <summary>
-        /// 提交事务。
-        /// </summary>
-        public abstract void CommitTransaction();
-
-        /// <summary>
-        /// 回滚事务。
-        /// </summary>
-        public abstract void RollbackTransaction();
 
         /// <summary>
         /// 创建实体类型所对应的 <see cref="IRepositoryProvider"/> 实例。

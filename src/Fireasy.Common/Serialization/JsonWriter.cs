@@ -8,7 +8,7 @@
 
 using Fireasy.Common.ComponentModel;
 using System.IO;
-using System.Text;
+#nullable enable
 
 namespace Fireasy.Common.Serialization
 {
@@ -60,7 +60,7 @@ namespace Fireasy.Common.Serialization
         /// 写入一段 Json。
         /// </summary>
         /// <param name="json"></param>
-        public void WriteRaw(string json)
+        public void WriteRaw(string? json)
         {
             _writer.Write(json);
         }
@@ -69,7 +69,7 @@ namespace Fireasy.Common.Serialization
         /// 写入一个键。
         /// </summary>
         /// <param name="key">要写入的键值。</param>
-        public void WriteKey(string key)
+        public void WriteKey(string? key)
         {
             SetFlags(false, 0, 1, 2);
 
@@ -88,7 +88,7 @@ namespace Fireasy.Common.Serialization
         /// 写入一个文本值。
         /// </summary>
         /// <param name="value">要写入的值。</param>
-        public void WriteString(string value)
+        public void WriteString(string? value)
         {
             SetFlags(false, 0, 1, 2);
 
@@ -98,41 +98,39 @@ namespace Fireasy.Common.Serialization
                 return;
             }
 
-            var sb = new StringBuilder();
-            sb.Append(JsonTokens.StringDelimiter);
+            _writer.Write(JsonTokens.StringDelimiter);
             foreach (var c in value)
             {
                 switch (c)
                 {
                     case '\r':
-                        sb.Append(@"\r");
+                        _writer.Write(@"\r");
                         break;
                     case '\n':
-                        sb.Append(@"\n");
+                        _writer.Write(@"\n");
                         break;
                     case '\t':
-                        sb.Append(@"\t");
+                        _writer.Write(@"\t");
                         break;
                     case '\b':
-                        sb.Append(@"\b");
+                        _writer.Write(@"\b");
                         break;
                     case '\f':
-                        sb.Append(@"\f");
+                        _writer.Write(@"\f");
                         break;
                     case '\"':
-                        sb.Append(@"\""");
+                        _writer.Write(@"\""");
                         break;
                     case '\\':
-                        sb.Append(@"\\");
+                        _writer.Write(@"\\");
                         break;
                     default:
-                        sb.Append(c);
+                        _writer.Write(c);
                         break;
                 }
             }
 
-            sb.Append(JsonTokens.StringDelimiter);
-            _writer.Write(sb.ToString());
+            _writer.Write(JsonTokens.StringDelimiter);
         }
 
         /// <summary>
@@ -221,14 +219,6 @@ namespace Fireasy.Common.Serialization
         }
 
         /// <summary>
-        /// 释放对象所占用的所有资源。
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-        }
-
-        /// <summary>
         /// 写入缩进空格。
         /// </summary>
         private void WriteIndent()
@@ -263,7 +253,7 @@ namespace Fireasy.Common.Serialization
 
         private bool GetFlags(int bit)
         {
-            return Indent != 0 ? _flags[bit] : false;
+            return Indent != 0 && _flags[bit];
         }
 
         /// <summary>

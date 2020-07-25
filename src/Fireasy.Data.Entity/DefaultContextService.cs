@@ -6,8 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
+using Fireasy.Common.Threading;
 using Fireasy.Data.Entity.Query;
-using Fireasy.Data.Provider;
 using System;
 using System.Data;
 
@@ -18,9 +18,13 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public sealed class DefaultContextService :
         ContextServiceBase,
+        IEntityTransactional,
         IQueryPolicyAware,
         IDatabaseAware
     {
+        private readonly Func<IDatabase> _databaseCreateor;
+        private IDatabase _database;
+
         /// <summary>
         /// 获取 <see cref="IQueryPolicy"/> 实例。
         /// </summary>
@@ -34,14 +38,21 @@ namespace Fireasy.Data.Entity
         public DefaultContextService(ContextServiceContext context)
             : base(context)
         {
-            Database = TryGetDatabase(context);
+            _databaseCreateor = () => CreateDatabase(context);
+
             QueryPolicy = new DefaultQueryPolicy(Provider);
         }
 
         /// <summary>
         /// 获取数据库实例。
         /// </summary>
-        public IDatabase Database { get; private set; }
+        public IDatabase Database
+        {
+            get
+            {
+                return SingletonLocker.Lock(ref _database, _databaseCreateor);
+            }
+        }
 
         public override IServiceProvider ServiceProvider
         {
@@ -49,7 +60,8 @@ namespace Fireasy.Data.Entity
             set
             {
                 base.ServiceProvider = value;
-                Database?.TrySetServiceProvider(value);
+
+                _database?.TrySetServiceProvider(value);
             }
         }
 
@@ -57,80 +69,87 @@ namespace Fireasy.Data.Entity
             type => typeof(DefaultRepositoryProvider<>).MakeGenericType(type).New<IRepositoryProvider>(this);
 
         /// <summary>
-        /// 开始事务。
-        /// </summary>
-        /// <param name="level"></param>
-        public override void BeginTransaction(IsolationLevel level)
-        {
-            Database?.BeginTransaction(level);
-        }
-
-        /// <summary>
-        /// 提交事务。
-        /// </summary>
-        public override void CommitTransaction()
-        {
-            Database?.CommitTransaction();
-        }
-
-        /// <summary>
-        /// 回滚事务。
-        /// </summary>
-        public override void RollbackTransaction()
-        {
-            Database?.RollbackTransaction();
-        }
-
-        /// <summary>
         /// 释放资源。
         /// </summary>
         /// <param name="disposing"></param>
         protected override bool Dispose(bool disposing)
         {
+            if (EntityTransactionScope.IsInTransaction())
+            {
+                return false;
+            }
+
+            RollbackTransaction();
+
             if (Database != null)
             {
                 Database.TryDispose(disposing);
-                Database = null;
+                _database = null;
             }
 
             return base.Dispose(disposing);
         }
 
-        private IDatabase TryGetDatabase(ContextServiceContext context)
+        private IDatabase CreateDatabase(ContextServiceContext context)
         {
-            var accessor = context.ServiceProvider.TryGetService<SharedDatabaseAccessor>();
-            IDatabase database;
-
-            if (accessor != null && (database = accessor[context.Options.ConnectionString]) != null)
+            var factory = context.ServiceProvider.TryGetService<IDatabaseFactory>();
+            if (factory != null)
             {
-                return database;
+                return factory.Create(context.Options);
             }
 
-            Func<IDatabase> dbCreator;
+            IDatabase database;
             if (context.Options.Provider != null && context.Options.ConnectionString != null)
             {
-                if (accessor == null)
-                {
-                    dbCreator = () => new ScopedDatabase(context.Options.ConnectionString, context.Options.Provider);
-                }
-                else
-                {
-                    dbCreator = () => new Database(context.Options.ConnectionString, context.Options.Provider);
-                }
+                database = new Database(context.Options.ConnectionString, context.Options.Provider);
             }
             else
             {
                 throw new InvalidOperationException(SR.GetString(SRKind.NotSupportDatabaseFactory));
             }
 
-            database = EntityDatabaseFactory.CreateDatabase(InstanceName, dbCreator).TrySetServiceProvider(context.ServiceProvider);
-
-            if (accessor != null)
+            if (EntityTransactionScope.IsInTransaction())
             {
-                accessor[context.Options.ConnectionString] = database;
+                database.BeginTransaction();
+                EntityTransactionScope.Current.Addransaction((string)context.Options.ConnectionString, this);
             }
 
             return database;
+        }
+
+        /// <summary>
+        /// 开始数据库事务。
+        /// </summary>
+        /// <param name="level"></param>
+        public void BeginTransaction(IsolationLevel level)
+        {
+            Database.BeginTransaction();
+        }
+
+        /// <summary>
+        /// 提交数据库事务。
+        /// </summary>
+        public void CommitTransaction()
+        {
+            if (EntityTransactionScope.IsInTransaction())
+            {
+                return;
+            }
+
+            Database.CommitTransaction();
+        }
+
+        /// <summary>
+        /// 回滚数据库事务。
+        /// </summary>
+        public void RollbackTransaction()
+        {
+            if (EntityTransactionScope.IsInTransaction())
+            {
+                return;
+            }
+
+            Database.RollbackTransaction();
         }
     }
 }

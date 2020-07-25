@@ -8,6 +8,7 @@
 
 using Fireasy.Common;
 using Fireasy.Common.ComponentModel;
+using Fireasy.Common.Extensions;
 
 namespace Fireasy.Data.Entity
 {
@@ -16,7 +17,7 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public class EntityTransactionScope : Scope<EntityTransactionScope>
     {
-        private readonly SafetyDictionary<string, IDatabase> _databases = new SafetyDictionary<string, IDatabase>();
+        private readonly SafetyDictionary<string, IEntityTransactional> _transactions = new SafetyDictionary<string, IEntityTransactional>();
         private bool _isDisposed;
 
         /// <summary>
@@ -25,14 +26,7 @@ namespace Fireasy.Data.Entity
         /// <param name="option">选项。</param>
         public EntityTransactionScope(EntityTransactionScopeOption option = null)
         {
-            var database = DatabaseFactory.GetDatabaseFromScope();
-            if (database != null)
-            {
-                SetDatabase(DatabaseScope.Current.InstanceName, database);
-                EntityDatabaseFactory.StartTransaction(database, option);
-            }
-
-            Option = option;
+            Option = option ?? new EntityTransactionScopeOption { IsolationLevel = System.Data.IsolationLevel.ReadCommitted };
         }
 
         /// <summary>
@@ -63,12 +57,10 @@ namespace Fireasy.Data.Entity
 
             base.Dispose(true);
 
-            foreach (var database in _databases.Values)
+            foreach (var transaction in _transactions.Values)
             {
-                if (database.CommitTransaction())
-                {
-                    database.Dispose();
-                }
+                transaction.CommitTransaction();
+                transaction.TryDispose(true);
             }
 
             _isDisposed = true;
@@ -86,12 +78,10 @@ namespace Fireasy.Data.Entity
 
             base.Dispose(true);
 
-            foreach (var database in _databases.Values)
+            foreach (var transaction in _transactions.Values)
             {
-                if (database.RollbackTransaction())
-                {
-                    database.Dispose();
-                }
+                transaction.RollbackTransaction();
+                transaction.TryDispose(true);
             }
 
             _isDisposed = true;
@@ -100,32 +90,36 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 设置当前持久化工作区内的 <see cref="IDatabase"/> 对象。
         /// </summary>
-        /// <param name="instanceName"></param>
-        /// <param name="database"></param>
-        public virtual void SetDatabase(string instanceName, IDatabase database)
+        /// <param name="key"></param>
+        /// <param name="transaction"></param>
+        public virtual void Addransaction(string key, IEntityTransactional transaction)
         {
-            _databases.TryAdd(GetDefaultInstanceName(instanceName), database);
+            _transactions.TryAdd(key, transaction);
         }
 
         /// <summary>
         /// 返回当前持久化工作区内的 <see cref="IDatabase"/> 对象。
         /// </summary>
-        /// <param name="instanceName"></param>
+        /// <param name="key"></param>
         /// <returns></returns>
-        public virtual IDatabase GetDatabase(string instanceName)
+        public virtual IEntityTransactional GetDatabase(string key)
         {
-            if (_databases == null)
+            if (_transactions == null)
             {
                 return null;
             }
 
-            _databases.TryGetValue(GetDefaultInstanceName(instanceName), out IDatabase database);
-            return database;
+            _transactions.TryGetValue(key, out IEntityTransactional transaction);
+            return transaction;
         }
 
-        protected string GetDefaultInstanceName(string instanceName)
+        /// <summary>
+        /// 获取是否在事务范围之内。
+        /// </summary>
+        /// <returns></returns>
+        public static bool IsInTransaction()
         {
-            return string.IsNullOrEmpty(instanceName) ? "$$default" : instanceName;
+            return Current != null;
         }
     }
 }

@@ -6,12 +6,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 #if !NET45
 using System.Threading;
-#else
-using System;
 #endif
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
@@ -96,9 +95,9 @@ namespace Fireasy.Common
         {
             _dataCache.TryGetValue(key, out object data);
 
-            if (data is TData)
+            if (data is TData tdata)
             {
-                return (TData)data;
+                return tdata;
             }
 
             return default;
@@ -159,6 +158,17 @@ namespace Fireasy.Common
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// 在当前堆栈中查找最匹配的一个实例。
+        /// </summary>
+        /// <param name="predicate">用于判断是否匹配的函数。</param>
+        /// <returns></returns>
+        protected T Match(Func<T, bool> predicate)
+        {
+            var stack = GetScopeStack();
+            return stack.FirstOrDefault(predicate);
         }
 
         private static Stack<T> GetScopeStack()

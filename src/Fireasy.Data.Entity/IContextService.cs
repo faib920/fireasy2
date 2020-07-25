@@ -8,7 +8,6 @@
 using Fireasy.Common;
 using Fireasy.Data.Provider;
 using System;
-using System.Data;
 
 namespace Fireasy.Data.Entity
 {
@@ -35,21 +34,5 @@ namespace Fireasy.Data.Entity
         /// <typeparam name="TEntity"></typeparam>
         /// <returns></returns>
         IRepositoryProvider<TEntity> CreateRepositoryProvider<TEntity>() where TEntity : class, IEntity;
-
-        /// <summary>
-        /// 开启一个事务。
-        /// </summary>
-        /// <param name="level"></param>
-        void BeginTransaction(IsolationLevel level);
-
-        /// <summary>
-        /// 提交事务。
-        /// </summary>
-        void CommitTransaction();
-
-        /// <summary>
-        /// 回滚事务。
-        /// </summary>
-        void RollbackTransaction();
     }
 }

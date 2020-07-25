@@ -37,9 +37,10 @@ namespace Fireasy.Data
     /// </summary>
     public class Database : DisposeableBase, IDatabase, IDistributedDatabase, IServiceProviderAccessor
     {
-        private readonly TransactionStack _tranStack;
         private DbConnection _connMaster;
         private DbConnection _connSlave;
+        private DbTransaction _transaction;
+        private DbTransactionScope _transactionScope;
         private readonly ReaderNestedlocked _readerLocker = new ReaderNestedlocked();
 
         /// <summary>
@@ -48,7 +49,6 @@ namespace Fireasy.Data
         /// <param name="provider">数据库提供者。</param>
         protected Database(IProvider provider)
         {
-            _tranStack = new TransactionStack();
             Provider = provider;
         }
 
@@ -103,7 +103,13 @@ namespace Fireasy.Data
         /// <summary>
         /// 获取当前数据库事务。
         /// </summary>
-        public DbTransaction Transaction { get; private set; }
+        public DbTransaction Transaction
+        {
+            get
+            {
+                return _transaction ?? DbTransactionScope.Current?.GetCurrentTransaction(ConnectionString);
+            }
+        }
 
         /// <summary>
         /// 获取当前数据库链接。
@@ -129,7 +135,6 @@ namespace Fireasy.Data
         /// <returns>如果当前实例首次启动事务，则为 true，否则为 false。</returns>
         public virtual bool BeginTransaction(IsolationLevel level = IsolationLevel.ReadCommitted)
         {
-            _tranStack.Push();
             if (Transaction != null)
             {
                 return false;
@@ -142,7 +147,8 @@ namespace Fireasy.Data
 
             Connection.TryOpen();
             Tracer.Debug("Starting transcation.");
-            Transaction = Connection.BeginTransaction(Provider.AmendIsolationLevel(level));
+            _transaction = Connection.BeginTransaction(Provider.AmendIsolationLevel(level));
+            _transactionScope = new DbTransactionScope(ConnectionString, _transaction);
 
             return true;
         }
@@ -153,15 +159,18 @@ namespace Fireasy.Data
         /// <returns>成功提交事务则为 true，否则为 false。</returns>
         public virtual bool CommitTransaction()
         {
-            if (Transaction == null ||
-                !_tranStack.Pop())
+            if (_transactionScope == null)
             {
                 return false;
             }
 
             Tracer.Debug("Commiting transcation.");
-            Transaction.Commit();
-            Transaction = null;
+
+            _transaction.Commit();
+            _connMaster?.TryClose();
+            _transactionScope.Dispose();
+            _transaction = null;
+            _transactionScope = null;
 
             return true;
         }
@@ -172,15 +181,18 @@ namespace Fireasy.Data
         /// <returns>成功回滚事务则为 true，否则为 false。</returns>
         public virtual bool RollbackTransaction()
         {
-            if (Transaction == null ||
-                !_tranStack.Pop())
+            if (_transactionScope == null)
             {
                 return false;
             }
 
             Tracer.Debug("Rollbacking transcation.");
-            Transaction.Rollback();
-            Transaction = null;
+
+            _transaction.Rollback();
+            _connMaster?.TryClose();
+            _transactionScope.Dispose();
+            _transaction = null;
+            _transactionScope = null;
 
             return true;
         }
@@ -216,7 +228,7 @@ namespace Fireasy.Data
 
             rowMapper ??= RowMapperFactory.CreateRowMapper<T>();
             rowMapper.RecordWrapper = Provider.GetService<IRecordWrapper>();
-            using var reader = ExecuteReader(queryCommand, segment, parameters);
+            using var reader = ExecuteReader(queryCommand, segment, parameters, CommandBehavior.Default);
             while (reader.Read())
             {
                 yield return rowMapper.Map(this, reader);
@@ -234,7 +246,7 @@ namespace Fireasy.Data
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
 
-            using var reader = ExecuteReader(queryCommand, segment, parameters);
+            using var reader = ExecuteReader(queryCommand, segment, parameters, CommandBehavior.Default);
             var wrapper = Provider.GetService<IRecordWrapper>();
             TypeDescriptorUtility.AddDefaultDynamicProvider();
 
@@ -277,7 +289,7 @@ namespace Fireasy.Data
 
             rowMapper ??= RowMapperFactory.CreateRowMapper<T>();
             rowMapper.RecordWrapper = Provider.GetService<IRecordWrapper>();
-            using var reader = (InternalDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, null, cancellationToken);
+            using var reader = (InternalDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, CommandBehavior.Default, cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
                 yield return rowMapper.Map(this, reader);
@@ -296,7 +308,7 @@ namespace Fireasy.Data
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
 
-            using var reader = (InternalDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, null, cancellationToken);
+            using var reader = (InternalDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, CommandBehavior.Default, cancellationToken);
             var wrapper = Provider.GetService<IRecordWrapper>();
             TypeDescriptorUtility.AddDefaultDynamicProvider();
 
@@ -339,7 +351,7 @@ namespace Fireasy.Data
             rowMapper ??= RowMapperFactory.CreateRowMapper<T>();
             rowMapper.RecordWrapper = Provider.GetService<IRecordWrapper>();
 
-            using var reader = (InternalDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, null, cancellationToken);
+            using var reader = (InternalDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, CommandBehavior.Default, cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
                 result.Add(rowMapper.Map(this, reader));
@@ -362,7 +374,7 @@ namespace Fireasy.Data
             cancellationToken.ThrowIfCancellationRequested();
 
             var result = new List<dynamic>();
-            using var reader = (InternalDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, null, cancellationToken);
+            using var reader = (InternalDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, CommandBehavior.Default, cancellationToken);
             var wrapper = Provider.GetService<IRecordWrapper>();
             TypeDescriptorUtility.AddDefaultDynamicProvider();
 
@@ -461,10 +473,9 @@ namespace Fireasy.Data
             var command = new InternalDbCommand(CreateDbCommand(connection, queryCommand, parameters), _readerLocker);
             try
             {
-                var cmdBehavior = GetCommandBehavior(behavior);
                 var context = new CommandContext(this, command, segment, parameters);
                 HandleSegmentCommand(context);
-                return HandleCommandExecuted(command, parameters, cmdBehavior, (command, behavior) => command.ExecuteReader(behavior));
+                return HandleCommandExecuted(command, parameters, behavior ?? CommandBehavior.Default, (command, behavior) => command.ExecuteReader(behavior));
             }
             catch (DbException exp)
             {
@@ -490,11 +501,10 @@ namespace Fireasy.Data
             var command = new InternalDbCommand(CreateDbCommand(connection, queryCommand, parameters), _readerLocker);
             try
             {
-                var cmdBehavior = GetCommandBehavior(behavior);
                 var context = new CommandContext(this, command, segment, parameters);
                 await HandleSegmentCommandAsync(context, cancellationToken);
 
-                return await HandleCommandExecutedAsync(command, parameters, cmdBehavior,
+                return await HandleCommandExecutedAsync(command, parameters, behavior ?? CommandBehavior.Default,
                     (command, behavior, cancelToken) => command.ExecuteReaderAsync(behavior, cancelToken), cancellationToken);
             }
             catch (DbException exp)
@@ -782,11 +792,7 @@ namespace Fireasy.Data
         {
             Tracer.Debug("The Database is Disposing.");
 
-            if (Transaction != null)
-            {
-                Transaction.Rollback();
-                Transaction = null;
-            }
+            RollbackTransaction();
 
             if (_connMaster != null)
             {
@@ -1235,11 +1241,6 @@ namespace Fireasy.Data
                 dataTable.Columns.Remove(genColumn);
                 newColumn.ColumnName = genColumn.ColumnName;
             }
-        }
-
-        private CommandBehavior GetCommandBehavior(CommandBehavior? behavior)
-        {
-            return behavior ?? (Transaction == null ? CommandBehavior.CloseConnection : CommandBehavior.Default);
         }
     }
 }

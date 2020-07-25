@@ -16,16 +16,14 @@ namespace Fireasy.Data.Internal
 {
     internal class InternalDataReader : IDataReader
     {
-        private readonly DbConnection _connection;
+        private readonly DbCommand _command;
         private readonly IDataReader _reader;
-        private readonly bool _canCloseConnection;
         private readonly ReaderNestedlocked _locker;
 
-        public InternalDataReader(IDbConnection connection, IDataReader reader, bool canCloseConnection, ReaderNestedlocked locker)
+        public InternalDataReader(IDbCommand command, IDataReader reader, ReaderNestedlocked locker)
         {
-            _connection = (DbConnection)connection;
+            _command = (DbCommand)command;
             _reader = reader;
-            _canCloseConnection = canCloseConnection;
             _locker = locker;
 
             locker.Increment();
@@ -52,9 +50,9 @@ namespace Fireasy.Data.Internal
         {
             _reader.Dispose();
 
-            if (_locker.Decrement() == 0 && _canCloseConnection)
+            if (_locker.Decrement() == 0 && _command.Transaction == null)
             {
-                _connection.TryClose();
+                _command.Connection.TryClose();
             }
         }
 

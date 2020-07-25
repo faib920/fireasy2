@@ -122,8 +122,7 @@ namespace Microsoft.Extensions.DependencyInjection
         private static IServiceCollection RegisterBasic(this IServiceCollection services)
         {
             return services.AddTransient<IQueryCache, DefaultQueryCache>()
-                .AddTransient<IExecuteCache, DefaultExecuteCache>()
-                .AddScoped<SharedDatabaseAccessor>();
+                .AddTransient<IExecuteCache, DefaultExecuteCache>();
         }
     }
 

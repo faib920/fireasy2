@@ -87,24 +87,28 @@ namespace Fireasy.Data.Internal
 
         public IDataReader ExecuteReader()
         {
-            return new InternalDataReader(_command.Connection, _command.ExecuteReader(), false, _locker);
+            return new InternalDataReader(_command, _command.ExecuteReader(), _locker);
         }
 
         public async Task<IDataReader> ExecuteReaderAsync(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var reader = await ((DbCommand)_command).ExecuteReaderAsync(cancellationToken);
-            return new InternalDataReader(_command.Connection, reader, false, _locker);
+            return new InternalDataReader(_command, reader, _locker);
         }
 
         public IDataReader ExecuteReader(CommandBehavior behavior)
         {
-            return new InternalDataReader(_command.Connection, _command.ExecuteReader(), behavior == CommandBehavior.CloseConnection, _locker);
+            return new InternalDataReader(_command, _command.ExecuteReader(behavior), _locker);
         }
 
         public async Task<IDataReader> ExecuteReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
         {
-            var reader = await ((DbCommand)_command).ExecuteReaderAsync(cancellationToken);
-            return new InternalDataReader(_command.Connection, reader, behavior == CommandBehavior.CloseConnection, _locker);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var reader = await ((DbCommand)_command).ExecuteReaderAsync(behavior, cancellationToken);
+            return new InternalDataReader(_command, reader, _locker);
         }
 
         public object ExecuteScalar()

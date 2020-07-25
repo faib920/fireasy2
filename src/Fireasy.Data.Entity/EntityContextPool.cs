@@ -6,7 +6,6 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
-using Fireasy.Common.MultiTenancy;
 using System;
 using System.Linq;
 using System.Reflection;

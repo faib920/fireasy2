@@ -153,7 +153,10 @@ namespace Fireasy.Data.Entity.Query
 
         private CacheItem<T> HandleCacheItem<T>(string cacheKey, Expression expression, T data, DataPager pager)
         {
-            Task.Run(() => Reference(cacheKey, expression));
+            var tenancyProvider = _serviceProvider.TryGetService<ITenancyProvider<CacheTenancyInfo>>();
+            var barrier = tenancyProvider == null ? string.Empty : tenancyProvider.Resolve(null).Key;
+
+            Task.Run(() => Reference(barrier, cacheKey, expression));
 
             var total = 0;
             if (pager != null)
@@ -234,7 +237,10 @@ namespace Fireasy.Data.Entity.Query
             var operateType = OperateFinder.Find(expression);
             if (operateType != null)
             {
-                Task.Run(() => ClearKeys(operateType));
+                var tenancyProvider = _serviceProvider.TryGetService<ITenancyProvider<CacheTenancyInfo>>();
+                var barrier = tenancyProvider == null ? string.Empty : tenancyProvider.Resolve(null).Key;
+
+                Task.Run(() => ClearKeys(barrier, operateType));
             }
         }
 
@@ -258,13 +264,14 @@ namespace Fireasy.Data.Entity.Query
         /// <summary>
         /// 找出表达式中相关联的实体类型，进行关系维护
         /// </summary>
+        /// <param name="barrier">缓存隔离带。</param>
         /// <param name="key">缓存键。</param>
         /// <param name="cachePrefix"></param>
         /// <param name="expression"></param>
-        private void Reference(string key, Expression expression)
+        private void Reference(string barrier, string key, Expression expression)
         {
             var types = RelationshipFinder.Find(expression);
-            var rootKey = $"{CACHE_KEY}.keys";
+            var rootKey = _serviceProvider.GetCacheKey($"{CACHE_KEY}.keys", barrier);
             var hashSet = _cacheMgr.GetHashSet<string, List<string>>(rootKey, checkExpiration: false);
 
             void process(string key, string subKey)
@@ -294,15 +301,17 @@ namespace Fireasy.Data.Entity.Query
         /// <summary>
         /// 清理实体类型的全部缓存键。
         /// </summary>
+        /// <param name="barrier">缓存隔离带。</param>
         /// <param name="types"></param>
-        private void ClearKeys(params Type[] types)
+        private void ClearKeys(string barrier, params Type[] types)
         {
             if (_cacheMgr == null || types == null || types.Length == 0)
             {
                 return;
             }
 
-            var rootKey = $"{CACHE_KEY}.keys";
+            var rootKey = _serviceProvider.GetCacheKey($"{CACHE_KEY}.keys", barrier);
+
             var hashSet = _cacheMgr.GetHashSet<string, List<string>>(rootKey, checkExpiration: false);
 
             void process(string key)

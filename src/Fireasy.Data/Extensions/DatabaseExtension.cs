@@ -68,7 +68,8 @@ namespace Fireasy.Data.Extensions
 
             ConnectionString connStr = null;
 
-            if (mode == DistributedMode.Slave && database is IDistributedDatabase distDb)
+            if (mode == DistributedMode.Slave && database is IDistributedDatabase distDb && 
+                distDb.DistributedConnectionStrings != null && distDb.DistributedConnectionStrings.Count > 0)
             {
                 var serviceProvider = database.TryGetServiceProvider();
                 var manager = serviceProvider.TryGetService(() => DefaultDistributedConnectionManager.Instance);

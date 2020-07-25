@@ -260,8 +260,15 @@ namespace Fireasy.Data.Entity
         /// <param name="level"></param>
         public void BeginTransaction(IsolationLevel? level = null)
         {
-            level ??= _options.IsolationLevel;
-            _contextService.BeginTransaction(level.Value);
+            if (_contextService is IEntityTransactional transactional)
+            {
+                level ??= _options.IsolationLevel;
+                transactional.BeginTransaction(level.Value);
+            }
+            else
+            {
+                throw new NotSupportedException();
+            }
         }
 
         /// <summary>
@@ -269,7 +276,14 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public void CommitTransaction()
         {
-            _contextService.CommitTransaction();
+            if (_contextService is IEntityTransactional transactional)
+            {
+                transactional.CommitTransaction();
+            }
+            else
+            {
+                throw new NotSupportedException();
+            }
         }
 
         /// <summary>
@@ -277,7 +291,14 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public void RollbackTransaction()
         {
-            _contextService.RollbackTransaction();
+            if (_contextService is IEntityTransactional transactional)
+            {
+                transactional.RollbackTransaction();
+            }
+            else
+            {
+                throw new NotSupportedException();
+            }
         }
 
         /// <summary>
