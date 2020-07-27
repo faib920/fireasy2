@@ -13,7 +13,8 @@ using System.Data;
 
 namespace Fireasy.MongoDB
 {
-    public class MongoDBContextService : ContextServiceBase
+    public class MongoDBContextService : ContextServiceBase,
+        IEntityTransactional
     {
         private readonly MongoClient client;
 
@@ -49,7 +50,7 @@ namespace Fireasy.MongoDB
         /// 开启事务。
         /// </summary>
         /// <param name="level"></param>
-        public override void BeginTransaction(IsolationLevel level = IsolationLevel.ReadCommitted)
+        public void BeginTransaction(IsolationLevel level = IsolationLevel.ReadCommitted)
         {
             Session = client.StartSession();
             Session.StartTransaction();
@@ -58,7 +59,7 @@ namespace Fireasy.MongoDB
         /// <summary>
         /// 提交事务。
         /// </summary>
-        public override void CommitTransaction()
+        public void CommitTransaction()
         {
             Session?.CommitTransaction();
         }
@@ -66,7 +67,7 @@ namespace Fireasy.MongoDB
         /// <summary>
         /// 回滚事务。
         /// </summary>
-        public override void RollbackTransaction()
+        public void RollbackTransaction()
         {
             Session?.AbortTransaction();
         }
