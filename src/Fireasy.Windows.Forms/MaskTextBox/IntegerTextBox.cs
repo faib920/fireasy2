@@ -1,6 +1,4 @@
-using System;
 using System.ComponentModel;
-using System.Text;
 
 namespace Fireasy.Windows.Forms
 {
@@ -13,14 +11,14 @@ namespace Fireasy.Windows.Forms
             :
             base(null)
         {
-            m_behavior = new IntegerBehavior(this);
+            _behavior = new IntegerBehavior(this);
         }
 
         public IntegerTextBox(int maxWholeDigits)
             :
             base(null)
         {
-            m_behavior = new IntegerBehavior(this, maxWholeDigits);
+            _behavior = new IntegerBehavior(this, maxWholeDigits);
         }
 
         public IntegerTextBox(IntegerBehavior behavior)

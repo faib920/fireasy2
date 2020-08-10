@@ -25,14 +25,6 @@ namespace Fireasy.Data
         object Map(IDatabase database, IDataReader reader);
 
         /// <summary>
-        /// 将一个 <see cref="DataRow"/> 转换为一个对象。
-        /// </summary>
-        /// <param name="database">当前的 <see cref="IDatabase"/> 对象。</param>
-        /// <param name="row">一个 <see cref="DataRow"/> 对象。</param>
-        /// <returns>由 <see cref="DataRow"/> 中数据转换成对象实例。</returns>
-        object Map(IDatabase database, DataRow row);
-
-        /// <summary>
         /// 获取或设置 <see cref="IRecordWrapper"/>。
         /// </summary>
         IRecordWrapper RecordWrapper { get; set; }
@@ -56,13 +48,5 @@ namespace Fireasy.Data
         /// <param name="reader">一个 <see cref="IDataReader"/> 对象。</param>
         /// <returns>由当前 <see cref="IDataReader"/> 对象中的数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
         new T Map(IDatabase database, IDataReader reader);
-
-        /// <summary>
-        /// 将一个 <see cref="DataRow"/> 转换为一个 <typeparamref name="T"/> 的对象。
-        /// </summary>
-        /// <param name="database">当前的 <see cref="IDatabase"/> 对象。</param>
-        /// <param name="row">一个 <see cref="DataRow"/> 对象。</param>
-        /// <returns>由 <see cref="DataRow"/> 中数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
-        new T Map(IDatabase database, DataRow row);
     }
 }

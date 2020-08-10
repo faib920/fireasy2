@@ -1,40 +1,47 @@
-﻿
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 namespace Fireasy.Windows.Forms
 {
     internal class VirtualItemManager
     {
-        private VirtualTreeListItemCollection virtualList = new VirtualTreeListItemCollection();
-        private TreeList treeList;
-        private int rowNumberIndex;
+        private readonly VirtualTreeListItemCollection _virtualList = new VirtualTreeListItemCollection();
+        private readonly TreeList _treeList;
+        private int _rowNumberIndex;
 
         public VirtualItemManager(TreeList treeList)
         {
-            this.treeList = treeList;
+            _treeList = treeList;
         }
 
         public VirtualTreeListItemCollection Items
         {
             get
             {
-                return virtualList;
+                return _virtualList;
             }
         }
 
         public void Recalc()
         {
-            rowNumberIndex = 0;
-            virtualList.Clear();
-            if (treeList.Groups.Count == 0)
+            _rowNumberIndex = 0;
+            _virtualList.Clear();
+            if (_treeList.Groups.Count == 0)
             {
-                GenerateVirtualListItems(treeList.Items);
+                GenerateVirtualListItems(_treeList.Items);
             }
             else
             {
-                foreach (var g in treeList.Groups)
+                foreach (var g in _treeList.Groups)
                 {
 
-                    var vitem = new VirtualTreeListItem(g, virtualList.Count);
-                    virtualList.Add(vitem);
+                    var vitem = new VirtualTreeListItem(g, _virtualList.Count);
+                    _virtualList.Add(vitem);
 
                     if (g.Expended)
                     {
@@ -48,13 +55,13 @@ namespace Fireasy.Windows.Forms
         {
             for (var i = 0; i < items.Count; i++)
             {
-                var vitem = new VirtualTreeListItem(items[i], virtualList.Count);
-                items[i].DataIndex = (++rowNumberIndex);
-                virtualList.Add(vitem);
+                var vitem = new VirtualTreeListItem(items[i], _virtualList.Count);
+                items[i].DataIndex = (++_rowNumberIndex);
+                _virtualList.Add(vitem);
 
                 if (items[i].Selected)
                 {
-                    treeList.SelectedItems.Add(items[i]);
+                    _treeList.SelectedItems.Add(items[i]);
                 }
 
                 if (items[i].Expended)

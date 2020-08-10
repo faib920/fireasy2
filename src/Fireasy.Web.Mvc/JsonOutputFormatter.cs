@@ -34,7 +34,7 @@ namespace Fireasy.Web.Mvc
                 = MediaTypeHeaderValue.Parse("application/*+json").CopyAsReadOnly();
         }
 
-        private MvcOptions mvcOptions;
+        private readonly MvcOptions _mvcOptions;
 
         public JsonOutputFormatter(MvcOptions mvcOptions)
         {
@@ -44,7 +44,7 @@ namespace Fireasy.Web.Mvc
             SupportedMediaTypes.Add(MediaTypeHeaderValues.TextJson);
             SupportedMediaTypes.Add(MediaTypeHeaderValues.ApplicationAnyJsonSyntax);
 
-            this.mvcOptions = mvcOptions;
+            _mvcOptions = mvcOptions;
         }
 
         public override Task WriteResponseBodyAsync(OutputFormatterWriteContext context, Encoding selectedEncoding)
@@ -68,11 +68,11 @@ namespace Fireasy.Web.Mvc
 
             if (option == null)
             {
-                option = mvcOptions.JsonSerializeOption;
+                option = _mvcOptions.JsonSerializeOption;
             }
             else
             {
-                option.Reference(mvcOptions.JsonSerializeOption);
+                option.Reference(_mvcOptions.JsonSerializeOption);
             }
 
             var serializer = serviceProvider.TryGetService<ISerializer>(() => new JsonSerializer(option));

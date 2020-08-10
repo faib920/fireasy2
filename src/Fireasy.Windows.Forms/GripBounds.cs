@@ -1,8 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 using System.Drawing;
-using System.Linq;
-using System.Text;
 
 namespace Fireasy.Windows.Forms
 {
@@ -13,13 +16,13 @@ namespace Fireasy.Windows.Forms
 
         public GripBounds(Rectangle clientRectangle)
         {
-            this.clientRectangle = clientRectangle;
+            _clientRectangle = clientRectangle;
         }
 
-        private Rectangle clientRectangle;
+        private Rectangle _clientRectangle;
         public Rectangle ClientRectangle
         {
-            get { return clientRectangle; }
+            get { return _clientRectangle; }
             //set { clientRectangle = value; }
         }
 

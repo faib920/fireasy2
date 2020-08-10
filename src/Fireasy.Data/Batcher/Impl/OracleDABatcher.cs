@@ -154,8 +154,8 @@ namespace Fireasy.Data.Batcher
                 var syntax = database.Provider.GetService<ISyntaxProvider>();
 
                 var sql = string.Format("INSERT INTO {0}({1}) VALUES({2})",
-                    DbUtility.FormatByQuote(syntax, tableName),
-                    string.Join(",", mapping.Select(s => DbUtility.FormatByQuote(syntax, s.FieldName))), string.Join(",", mapping.Select(s => syntax.ParameterPrefix + s.FieldName)));
+                    syntax.FormatByDelimiter(tableName),
+                    string.Join(",", mapping.Select(s => syntax.FormatByDelimiter(s.FieldName))), string.Join(",", mapping.Select(s => syntax.ParameterPrefix + s.FieldName)));
 
                 command.CommandText = sql;
 

@@ -12,11 +12,11 @@ namespace Fireasy.Windows.Forms
 {
     public class TreeListCellCollection : ObservableCollection<TreeListCell>
     {
-        private TreeListItem listitem;
+        private readonly TreeListItem _listitem;
 
         internal TreeListCellCollection(TreeListItem item)
         {
-            listitem = item;
+            _listitem = item;
         }
 
         public TreeListCell this[string key]
@@ -25,9 +25,9 @@ namespace Fireasy.Windows.Forms
             {
                 Guard.ArgumentNull(key, nameof(key));
 
-                if (listitem != null)
+                if (_listitem != null)
                 {
-                    foreach (var column in listitem.TreeList.Columns)
+                    foreach (var column in _listitem.TreeList.Columns)
                     {
                         if (key.Equals(column.DataKey))
                         {
@@ -46,7 +46,7 @@ namespace Fireasy.Windows.Forms
             {
                 Guard.ArgumentNull(column, nameof(column));
 
-                if (listitem != null)
+                if (_listitem != null)
                 {
                     return Items[column.Index];
                 }
@@ -65,9 +65,9 @@ namespace Fireasy.Windows.Forms
 
         protected override void InsertItem(int index, TreeListCell item)
         {
-            if (listitem != null)
+            if (_listitem != null)
             {
-                item.Update(listitem, index);
+                item.Update(_listitem, index);
             }
 
             base.InsertItem(index, item);

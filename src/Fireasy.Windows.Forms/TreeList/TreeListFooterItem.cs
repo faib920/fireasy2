@@ -14,7 +14,7 @@ namespace Fireasy.Windows.Forms
     /// </summary>
     public sealed class TreeListFooterItem : TreeListItem
     {
-        private object statInfo;
+        private readonly object _statInfo;
 
         internal TreeListFooterItem(TreeListItem item)
         {
@@ -28,12 +28,12 @@ namespace Fireasy.Windows.Forms
 
         public TreeListFooterItem(object statInfo)
         {
-            this.statInfo = statInfo;
+            _statInfo = statInfo;
         }
 
         internal override void Update(TreeList treelist, TreeListItem parent, int level)
         {
-            if (statInfo != null)
+            if (_statInfo != null)
             {
                 for (var i = Cells.Count; i < treelist.Columns.Count; i++)
                 {
@@ -49,12 +49,12 @@ namespace Fireasy.Windows.Forms
 
         private object GetStatPropertyValue(string dataKey)
         {
-            if (statInfo != null && !string.IsNullOrEmpty(dataKey))
+            if (_statInfo != null && !string.IsNullOrEmpty(dataKey))
             {
-                var p = statInfo.GetType().GetProperty(dataKey, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                var p = _statInfo.GetType().GetProperty(dataKey, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
                 if (p != null && p.CanRead)
                 {
-                    return p.GetValue(statInfo, null);
+                    return p.GetValue(_statInfo, null);
                 }
             }
 

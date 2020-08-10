@@ -5,11 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Windows.Forms;
-using System.Windows.Forms.VisualStyles;
 
 namespace Fireasy.Windows.Forms
 {

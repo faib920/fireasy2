@@ -1,7 +1,6 @@
 using System;
-using System.ComponentModel;
 using System.Collections;
-using System.Text;
+using System.ComponentModel;
 
 namespace Fireasy.Windows.Forms
 {
@@ -13,7 +12,7 @@ namespace Fireasy.Windows.Forms
     {
         public DateTextBox()
         {
-            m_behavior = new DateBehavior(this);
+            _behavior = new DateBehavior(this);
         }
 
         public DateTextBox(DateBehavior behavior)
@@ -27,7 +26,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return (DateBehavior)m_behavior;
+                return (DateBehavior)_behavior;
             }
         }
 

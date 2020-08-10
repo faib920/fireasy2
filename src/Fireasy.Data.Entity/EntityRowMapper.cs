@@ -40,22 +40,6 @@ namespace Fireasy.Data.Entity
             return MapInternal(mapper => GetPropertyValue(mapper, reader.IsDBNull, reader.GetValue, isNull => GetSupportedValue(isNull, mapper, reader)));
         }
 
-        /// <summary>
-        /// 将一个 <see cref="DataRow"/> 转换为一个 <typeparamref name="T"/> 的对象。
-        /// </summary>
-        /// <param name="database">当前的 <see cref="IDatabase"/> 对象。</param>
-        /// <param name="row">一个 <see cref="DataRow"/> 对象。</param>
-        /// <returns>由 <see cref="DataRow"/> 中数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
-        public override T Map(IDatabase database, DataRow row)
-        {
-            if (_mapping == null)
-            {
-                InitMapping(GetDataRowFields(row));
-            }
-
-            return MapInternal(mapper => GetPropertyValue(mapper, index => row[index] == DBNull.Value, index => row[index], isNull => GetSupportedValue(isNull, mapper, row)));
-        }
-
         private T MapInternal(Func<PropertyMapping, PropertyValue> func)
         {
             var proxyType = EntityProxyManager.GetType((Type)null, typeof(T));

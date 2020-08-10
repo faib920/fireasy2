@@ -130,6 +130,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     case nameof(Extensions.CacheParsing):
                     case nameof(Extensions.CacheExecution):
                         return Visit(node.Arguments[0]);
+                    case nameof(Extensions.FirstAsync):
+                    case nameof(Extensions.LastAsync):
+                    case nameof(Extensions.SingleAsync):
                     case nameof(Extensions.FirstOrDefaultAsync):
                     case nameof(Extensions.LastOrDefaultAsync):
                     case nameof(Extensions.SingleOrDefaultAsync):
@@ -157,6 +160,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         return Visit(node.Arguments[0]);
                     case nameof(Extensions.Where):
                         return BindWhere(node.Type, node.Arguments[0], node.Arguments[1], node.Arguments[2]);
+                    case nameof(Extensions.IsBetween):
+                        return BindBetween(node.Arguments[0], node.Arguments[1], node.Arguments[2]);
                 }
             }
             else if (typeof(IRepository).IsAssignableFrom(node.Method.DeclaringType))
@@ -877,6 +882,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return result;
         }
 
+        private Expression BindBetween(Expression source, Expression lower, Expression upper)
+        {
+            return new BetweenExpression(Visit(source), Visit(lower), Visit(upper));
+        }
+
         private Expression m_currentGroupElement;
 
         private class GroupByInfo
@@ -1415,6 +1425,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             var isFirst = kind.StartsWith("First");
             var isLast = kind.StartsWith("Last");
+            var hasDefualt = kind.Contains("OrDefault");
 
             Expression logicalDeleteExp = (isFirst || isLast) ? Expression.Constant(1) : null;
 
@@ -1437,7 +1448,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 {
                     var taskEnumType = ReflectionCache.GetMember("TaskEnumerableType", elementType, k => typeof(Task<>).MakeGenericType(typeof(IEnumerable<>).MakeGenericType(k)));
                     var parExp = Expression.Parameter(taskEnumType, "p");
-                    gator = Expression.Lambda(Expression.Call(typeof(Extensions), nameof(Extensions.FirstOrDefaultCoreAsnyc), new Type[] { elementType }, parExp), parExp);
+                    gator = Expression.Lambda(Expression.Call(typeof(Extensions), hasDefualt ? nameof(Extensions.SingleOrDefaultCoreAsnyc) : nameof(Extensions.SingleCoreAsnyc), new Type[] { elementType }, parExp), parExp);
                 }
                 else
                 {
@@ -1570,6 +1581,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
                 var values = (from object s in array select (Expression)Expression.Constant(s.ToType(match.Type), match.Type)).ToList();
                 match = Visit(match);
+
+                if (values.Count == 1)
+                {
+                    return Expression.Equal(match, values[0]);
+                }
+
                 return new InExpression(match, values);
             }
             else if (isRoot)

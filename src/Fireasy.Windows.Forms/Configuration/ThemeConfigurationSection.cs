@@ -16,7 +16,7 @@ using System.Xml;
 namespace Fireasy.Windows.Forms.Configuration
 {
     [ConfigurationSectionStorage("fireasy/winThemes")]
-    public class ThemeConfigurationSection : ConfigurationSection
+    public class ThemeConfigurationSection : Common.Configuration.ConfigurationSection
     {
         public override void Initialize(XmlNode section)
         {

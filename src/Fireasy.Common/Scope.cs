@@ -21,7 +21,7 @@ namespace Fireasy.Common
     /// 一个抽象类，在当前线程内标识一组用户定义的数据，这些数据在此线程块内唯一共享。
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class Scope<T> : DisposeableBase where T : Scope<T>
+    public abstract class Scope<T> : DisposableBase where T : Scope<T>
     {
         private readonly Dictionary<string, object> _dataCache = new Dictionary<string, object>();
         private readonly bool _isSingleton;

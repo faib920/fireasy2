@@ -12,7 +12,7 @@ namespace Fireasy.Windows.Forms
 {
     public class TreeListColumnCollection : ObservableCollection<TreeListColumn>
     {
-        private TreeList treelist;
+        private readonly TreeList _treelist;
 
         public TreeListColumnCollection()
         {
@@ -20,7 +20,7 @@ namespace Fireasy.Windows.Forms
 
         internal TreeListColumnCollection(TreeList treelist)
         {
-            this.treelist = treelist;
+            _treelist = treelist;
         }
 
         public TreeListColumn this[string key]
@@ -78,10 +78,10 @@ namespace Fireasy.Windows.Forms
             column.Index = index;
             base.InsertItem(index, column);
 
-            if (treelist != null)
+            if (_treelist != null)
             {
-                column.Update(treelist);
-                treelist.Invalidate();
+                column.Update(_treelist);
+                _treelist.Invalidate();
             }
         }
 

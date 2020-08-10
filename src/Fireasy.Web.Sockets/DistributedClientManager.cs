@@ -6,12 +6,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Caching;
-using Fireasy.Common.Serialization;
+using Fireasy.Common.Extensions;
 using Fireasy.Common.Subscribes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Fireasy.Web.Sockets
@@ -19,51 +18,52 @@ namespace Fireasy.Web.Sockets
     /// <summary>
     /// 分布式的客户端管理器。
     /// </summary>
-    public class DistributedClientManager : ClientManager
+    public class DistributedClientManager : DefaultClientManager
     {
         private const string WS_KEY = "ws_alive_keys";
-        private string aliveKey;
+        private string _aliveKey;
+        private ISubscribeManager _subscribeMgr;
+        private IDistributedCacheManager _cacheMgr;
 
-        /// <summary>
-        /// 初始化 <see cref="DistributedClientManager"/> 类的新实例。
-        /// </summary>
-        /// <param name="option"></param>
-        public DistributedClientManager(WebSocketBuildOption option)
-            : base(option)
+        public override void Initialize(WebSocketAcceptContext acceptContext)
         {
-            aliveKey = option.AliveKey;
+            base.Initialize(acceptContext);
+
+            _aliveKey = acceptContext.Option.AliveKey;
 
             //开启消息订阅，使用aliveKey作为通道
-            var subMgr = SubscribeManagerFactory.CreateManager();
+            _subscribeMgr = acceptContext.ServiceProvider.TryGetService<ISubscribeManager>();
+            _cacheMgr = acceptContext.ServiceProvider.TryGetService<IDistributedCacheManager>();
 
-            subMgr.AddSubscriber(aliveKey, bytes =>
+            if (_cacheMgr == null)
+            {
+                throw new NotSupportedException("必须使用分布式缓存组件。");
+            }
+
+            _subscribeMgr.AddSubscriber<DistributedInvokeMessage>(_aliveKey, msg =>
+            {
+                try
                 {
-                    try
-                    {
-                        //收到消息后，在本地查找连接，并发送消息
-                        var content = Encoding.UTF8.GetString(bytes);
-                        var msg = new JsonSerializer().Deserialize<DistributedInvokeMessage>(content);
-                        Clients(msg.Connections.ToArray()).SendAsync(msg.Message.Method, msg.Message.Arguments);
-                    }
-                    catch { }
-                });
+                    //收到消息后，在本地查找连接，并发送消息
+                    Clients(msg.Connections.ToArray()).SendAsync(msg.Message.Method, msg.Message.Arguments);
+                }
+                catch { }
+            });
         }
 
-        public override void Add(string connectionId, IClientProxy handler)
+        public override void Add(string connectionId, IClientProxy clientProxy)
         {
-            var cacheMgr = CacheManagerFactory.CreateManager();
-            var hashSet = cacheMgr.GetHashSet<string, string>(WS_KEY);
+            var hashSet = _cacheMgr.GetHashSet<string, string>(WS_KEY);
 
-            //在redis缓存里存放连接标识对应的aliveKey，即服务标识，以方便后面查找
-            hashSet.Add(connectionId, aliveKey, new RelativeTime(TimeSpan.FromDays(5)));
+            //在分布式缓存里存放连接标识对应的aliveKey，即服务标识，以方便后面查找
+            hashSet.Add(connectionId, _aliveKey, new RelativeTime(TimeSpan.FromDays(5)));
 
-            base.Add(connectionId, handler);
+            base.Add(connectionId, clientProxy);
         }
 
         public override void Remove(string connectionId)
         {
-            var cacheMgr = CacheManagerFactory.CreateManager();
-            var hashSet = cacheMgr.GetHashSet<string, string>(WS_KEY);
+            var hashSet = _cacheMgr.GetHashSet<string, string>(WS_KEY);
 
             hashSet.Remove(connectionId);
 
@@ -96,16 +96,41 @@ namespace Fireasy.Web.Sockets
                 return client;
             }
 
-            //如果没有，则去redis缓存里查找出aliveKey，并使用分布式代理进行传递
-            var cacheMgr = CacheManagerFactory.CreateManager();
-            var hashSet = cacheMgr.GetHashSet<string, string>(WS_KEY);
+            //如果没有，则去分布式缓存里查找出aliveKey，并使用分布式代理进行传递
+            var hashSet = _cacheMgr.GetHashSet<string, string>(WS_KEY);
 
             if (hashSet.TryGet(connectionId, out string aliveKey))
             {
-                return new DistributedUserClientProxy(aliveKey, connectionId);
+                return new DistributedUserClientProxy(_subscribeMgr, aliveKey, connectionId);
             }
-
+            
             return NullClientProxy.Instance;
+        }
+
+        public override IClientProxy All
+        {
+            get
+            {
+                var clients = new List<IClientProxy>();
+                var hashSet = _cacheMgr.GetHashSet<string, string>(WS_KEY);
+                foreach (var connectionId in hashSet.GetKeys())
+                {
+                    if (hashSet.TryGet(connectionId, out string aliveKey))
+                    {
+                        var client = base.Client(connectionId);
+                        if (client != NullClientProxy.Instance)
+                        {
+                            clients.Add(client);
+                        }
+                        else
+                        {
+                            clients.Add(new DistributedUserClientProxy(_subscribeMgr, aliveKey, connectionId));
+                        }
+                    }
+                }
+
+                return new EnumerableClientProxy(() => clients);
+            }
         }
 
         /// <summary>
@@ -120,8 +145,7 @@ namespace Fireasy.Web.Sockets
                 return NullClientProxy.Instance;
             }
 
-            var cacheMgr = CacheManagerFactory.CreateManager();
-            var hashSet = cacheMgr.GetHashSet<string, string>(WS_KEY);
+            var hashSet = _cacheMgr.GetHashSet<string, string>(WS_KEY);
 
             var clients = new List<IClientProxy>();
 
@@ -134,7 +158,7 @@ namespace Fireasy.Web.Sockets
                 }
                 else if (hashSet.TryGet(connectionId, out string aliveKey))
                 {
-                    clients.Add(new DistributedUserClientProxy(aliveKey, connectionId));
+                    clients.Add(new DistributedUserClientProxy(_subscribeMgr, aliveKey, connectionId));
                 }
             }
 
@@ -147,19 +171,21 @@ namespace Fireasy.Web.Sockets
     /// </summary>
     public class DistributedUserClientProxy : BaseClientProxy
     {
-        private string aliveKey;
-        private List<string> connections;
+        private readonly ISubscribeManager _subscribeMgr;
+        private readonly string _aliveKey;
+        private readonly List<string> _connections;
 
-        public DistributedUserClientProxy(string aliveKey, string connectionId)
+        public DistributedUserClientProxy(ISubscribeManager _subscribeMgr, string aliveKey, string connectionId)
         {
-            this.aliveKey = aliveKey;
-            this.connections = new List<string> { connectionId };
+            this._subscribeMgr = _subscribeMgr;
+            _aliveKey = aliveKey;
+            _connections = new List<string> { connectionId };
         }
 
         public DistributedUserClientProxy(string aliveKey, IEnumerable<string> connectionIds)
         {
-            this.aliveKey = aliveKey;
-            this.connections = new List<string>(connectionIds.Distinct());
+            _aliveKey = aliveKey;
+            _connections = new List<string>(connectionIds.Distinct());
         }
 
         /// <summary>
@@ -171,16 +197,14 @@ namespace Fireasy.Web.Sockets
         public override async Task SendAsync(string method, params object[] arguments)
         {
             //使用消息队列将消息发指定的服务器，即aliveKey对应的服务器
-            var subMgr = SubscribeManagerFactory.CreateManager();
             var msg = new DistributedInvokeMessage
             {
-                AliveKey = aliveKey,
-                Connections = connections,
+                AliveKey = _aliveKey,
+                Connections = _connections,
                 Message = new InvokeMessage(method, 0, arguments)
             };
 
-            var bytes = Encoding.UTF8.GetBytes(new JsonSerializer().Serialize(msg));
-            await subMgr.PublishAsync(aliveKey, bytes);
+            await _subscribeMgr.PublishAsync(_aliveKey, msg);
         }
     }
 

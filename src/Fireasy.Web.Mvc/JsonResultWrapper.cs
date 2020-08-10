@@ -34,7 +34,7 @@ namespace Fireasy.Web.Mvc
 #endif
         {
 #if !NETCOREAPP
-            this.result = new JsonResult { Data = value, JsonRequestBehavior = JsonRequestBehavior.AllowGet };
+            result = new JsonResult { Data = value, JsonRequestBehavior = JsonRequestBehavior.AllowGet };
 #endif
             Option = option;
         }
@@ -42,7 +42,7 @@ namespace Fireasy.Web.Mvc
         public JsonSerializeOption Option { get; set; }
 
 #if !NETCOREAPP
-        private JsonResult result;
+        private readonly JsonResult result;
 
         /// <summary>
         /// 初始化 <see cref="JsonResultWrapper"/> 类的新实例。
@@ -72,7 +72,7 @@ namespace Fireasy.Web.Mvc
                 throw new ArgumentNullException(nameof(result));
             }
 
-            if ((result.JsonRequestBehavior == JsonRequestBehavior.DenyGet) && 
+            if ((result.JsonRequestBehavior == JsonRequestBehavior.DenyGet) &&
                 string.Equals(context.HttpContext.Request.HttpMethod, "GET", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException("此请求已被阻止，因为当用在 GET 请求中时，会将敏感信息透漏给第三方网站。若要允许 GET 请求，请将 JsonRequestBehavior 设置为 AllowGet。");

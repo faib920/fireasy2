@@ -15,7 +15,7 @@ namespace Fireasy.Common.ComponentModel
     /// <summary>
     /// 实现了标准的 <see cref="IDisposable"/> 模式的抽象类。
     /// </summary>
-    public abstract class DisposeableBase : IDisposable, ISpecificDisposable
+    public abstract class DisposableBase : IDisposable, ISpecificDisposable
 #if NETSTANDARD2_1
         , IAsyncDisposable
 #endif
@@ -28,7 +28,7 @@ namespace Fireasy.Common.ComponentModel
         public virtual bool VerifyDisposed { get; }
 
         [SuppressMessage("Design", "CA1063")]
-        ~DisposeableBase()
+        ~DisposableBase()
         {
             Tracer.Debug($"From {GetType().Name} destructor!!!");
             DoDispose(false);

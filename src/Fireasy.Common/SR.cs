@@ -61,6 +61,7 @@ namespace Fireasy.Common
         internal const string KeyMustBeStringable = "KeyMustBeStringable";
         internal const string UnableCreateCachedDelegate = "UnableCreateCachedDelegate";
         internal const string LoopResolveSameType = "LoopResolveSameType";
+        internal const string NotFoundRegisterForType = "NotFoundRegisterForType";
     }
 
     internal class SR

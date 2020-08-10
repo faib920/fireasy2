@@ -1,7 +1,6 @@
 using System;
-using System.Windows.Forms;
 using System.Globalization;
-using System.Text;
+using System.Windows.Forms;
 
 namespace Fireasy.Windows.Forms
 {
@@ -23,7 +22,7 @@ namespace Fireasy.Windows.Forms
             :
             base(textBox)
         {
-            m_flags |= ((int)LostFocusFlag.RemoveExtraLeadingZeros |
+            _flags |= ((int)LostFocusFlag.RemoveExtraLeadingZeros |
                         (int)LostFocusFlag.PadWithZerosAfterDecimal |
                         (int)LostFocusFlag.DontPadWithZerosIfEmpty |
                         (int)LostFocusFlag.CallHandlerWhenTextPropertyIsSet);
@@ -44,7 +43,7 @@ namespace Fireasy.Windows.Forms
                     Prefix = NumberFormatInfo.CurrentInfo.CurrencySymbol + ' ';
                     break;
 
-                // The rest are suffixes, so no prefix
+                    // The rest are suffixes, so no prefix
             }
 
             AdjustDecimalAndGroupSeparators();

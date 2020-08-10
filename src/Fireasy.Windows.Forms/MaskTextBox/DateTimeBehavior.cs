@@ -1,7 +1,6 @@
 using System;
-using System.Windows.Forms;
 using System.Diagnostics;
-using System.Text;
+using System.Windows.Forms;
 
 namespace Fireasy.Windows.Forms
 {
@@ -9,7 +8,7 @@ namespace Fireasy.Windows.Forms
     public class DateTimeBehavior : TimeBehavior
     {
         // Fields
-        private DateBehavior m_dateBehavior;
+        private readonly DateBehavior _dateBehavior;
 
         /// <summary>
         ///   Internal values that are added/removed to the <see cref="Behavior.Flags" /> property by other
@@ -50,9 +49,9 @@ namespace Fireasy.Windows.Forms
             :
             base(textBox)
         {
-            m_dateBehavior = new DateBehavior(textBox, false);  // does not add the event handlers
-            m_flags |= m_dateBehavior.Flags;
-            m_hourStart = 11;
+            _dateBehavior = new DateBehavior(textBox, false);  // does not add the event handlers
+            _flags |= _dateBehavior.Flags;
+            _hourStart = 11;
         }
 
         /// <summary>
@@ -67,7 +66,7 @@ namespace Fireasy.Windows.Forms
             :
             base(behavior)
         {
-            m_dateBehavior = new DateBehavior(m_textBox, false);  // does not add the event handlers
+            _dateBehavior = new DateBehavior(_textBox, false);  // does not add the event handlers
         }
 
         /// <summary>
@@ -111,13 +110,13 @@ namespace Fireasy.Windows.Forms
         public void SetDateTime(int year, int month, int day, int hour, int minute, int second)
         {
             if (HasFlag((int)Flag.DateOnly))
-                m_dateBehavior.SetDate(year, month, day);
+                _dateBehavior.SetDate(year, month, day);
             else if (HasFlag((int)Flag.TimeOnly))
                 SetTime(hour, minute, second);
             else
             {
-                Debug.Assert(m_dateBehavior.IsWithinRange(new DateTime(year, month, day)));
-                m_textBox.Text = m_dateBehavior.GetFormattedDate(year, month, day) + ' ' + GetFormattedTime(hour, minute, second, "");
+                Debug.Assert(_dateBehavior.IsWithinRange(new DateTime(year, month, day)));
+                _textBox.Text = _dateBehavior.GetFormattedDate(year, month, day) + ' ' + GetFormattedTime(hour, minute, second, "");
             }
         }
 
@@ -135,7 +134,7 @@ namespace Fireasy.Windows.Forms
         public void SetDate(int year, int month, int day)
         {
             if (HasFlag((int)Flag.DateOnly) || !HasFlag((int)Flag.TimeOnly))
-                m_dateBehavior.SetDate(year, month, day);
+                _dateBehavior.SetDate(year, month, day);
         }
 
         /// <summary>
@@ -196,7 +195,7 @@ namespace Fireasy.Windows.Forms
                 try
                 {
                     if (HasFlag((int)Flag.DateOnly))
-                        return m_dateBehavior.Value;
+                        return _dateBehavior.Value;
                     if (HasFlag((int)Flag.TimeOnly))
                         return base.Value;
                     return new DateTime(Year, Month, Day, Hour, Minute, Second);
@@ -227,12 +226,12 @@ namespace Fireasy.Windows.Forms
             {
                 if (HasFlag((int)Flag.TimeOnly))
                     return 0;
-                return m_dateBehavior.Month;
+                return _dateBehavior.Month;
             }
             set
             {
                 if (!HasFlag((int)Flag.TimeOnly))
-                    m_dateBehavior.Month = value;
+                    _dateBehavior.Month = value;
             }
         }
 
@@ -250,12 +249,12 @@ namespace Fireasy.Windows.Forms
             {
                 if (HasFlag((int)Flag.TimeOnly))
                     return 0;
-                return m_dateBehavior.Day;
+                return _dateBehavior.Day;
             }
             set
             {
                 if (!HasFlag((int)Flag.TimeOnly))
-                    m_dateBehavior.Day = value;
+                    _dateBehavior.Day = value;
             }
         }
 
@@ -273,12 +272,12 @@ namespace Fireasy.Windows.Forms
             {
                 if (HasFlag((int)Flag.TimeOnly))
                     return 0;
-                return m_dateBehavior.Year;
+                return _dateBehavior.Year;
             }
             set
             {
                 if (!HasFlag((int)Flag.TimeOnly))
-                    m_dateBehavior.Year = value;
+                    _dateBehavior.Year = value;
             }
         }
 
@@ -291,10 +290,10 @@ namespace Fireasy.Windows.Forms
         public override bool IsValid()
         {
             if (HasFlag((int)Flag.DateOnly))
-                return m_dateBehavior.IsValid();
+                return _dateBehavior.IsValid();
             if (HasFlag((int)Flag.TimeOnly))
                 return base.IsValid();
-            return (m_dateBehavior.IsValid() && base.IsValid());
+            return (_dateBehavior.IsValid() && base.IsValid());
         }
 
         /// <summary>
@@ -309,18 +308,18 @@ namespace Fireasy.Windows.Forms
             get
             {
                 if (HasFlag((int)Flag.DateOnly))
-                    return m_dateBehavior.RangeMin;
+                    return _dateBehavior.RangeMin;
                 if (HasFlag((int)Flag.TimeOnly))
                     return base.RangeMin;
 
                 DateTime rangeMin = base.RangeMin;
-                return new DateTime(m_dateBehavior.RangeMin.Year, m_dateBehavior.RangeMin.Month, m_dateBehavior.RangeMin.Day, rangeMin.Hour, rangeMin.Minute, rangeMin.Second);
+                return new DateTime(_dateBehavior.RangeMin.Year, _dateBehavior.RangeMin.Month, _dateBehavior.RangeMin.Day, rangeMin.Hour, rangeMin.Minute, rangeMin.Second);
             }
             set
             {
                 base.RangeMin = value;
                 if (HasFlag((int)Flag.DateOnly) || !HasFlag((int)Flag.TimeOnly))
-                    m_dateBehavior.RangeMin = value;		// updates the control
+                    _dateBehavior.RangeMin = value;		// updates the control
             }
         }
 
@@ -336,18 +335,18 @@ namespace Fireasy.Windows.Forms
             get
             {
                 if (HasFlag((int)Flag.DateOnly))
-                    return m_dateBehavior.RangeMax;
+                    return _dateBehavior.RangeMax;
                 if (HasFlag((int)Flag.TimeOnly))
                     return base.RangeMax;
 
                 DateTime rangeMax = base.RangeMax;
-                return new DateTime(m_dateBehavior.RangeMax.Year, m_dateBehavior.RangeMax.Month, m_dateBehavior.RangeMax.Day, rangeMax.Hour, rangeMax.Minute, rangeMax.Second);
+                return new DateTime(_dateBehavior.RangeMax.Year, _dateBehavior.RangeMax.Month, _dateBehavior.RangeMax.Day, rangeMax.Hour, rangeMax.Minute, rangeMax.Second);
             }
             set
             {
                 base.RangeMax = value;
                 if (HasFlag((int)Flag.DateOnly) || !HasFlag((int)Flag.TimeOnly))
-                    m_dateBehavior.RangeMax = value;		// updates the control
+                    _dateBehavior.RangeMax = value;		// updates the control
             }
         }
 
@@ -363,10 +362,10 @@ namespace Fireasy.Windows.Forms
         public new bool IsWithinRange(DateTime dt)
         {
             if (HasFlag((int)Flag.DateOnly))
-                return m_dateBehavior.IsWithinRange(dt);
+                return _dateBehavior.IsWithinRange(dt);
             if (HasFlag((int)Flag.TimeOnly))
                 return base.IsWithinRange(dt);
-            return (m_dateBehavior.IsWithinRange(dt) && base.IsWithinRange(dt));
+            return (_dateBehavior.IsWithinRange(dt) && base.IsWithinRange(dt));
         }
 
         /// <summary>
@@ -378,11 +377,11 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return m_dateBehavior.Separator;
+                return _dateBehavior.Separator;
             }
             set
             {
-                m_dateBehavior.Separator = value;
+                _dateBehavior.Separator = value;
             }
         }
 
@@ -414,7 +413,7 @@ namespace Fireasy.Windows.Forms
             get
             {
                 if (HasFlag((int)Flag.DateOnly))
-                    return m_dateBehavior.Separator;
+                    return _dateBehavior.Separator;
                 if (HasFlag((int)Flag.TimeOnly))
                     return base.Separator;
                 return ' ';
@@ -451,17 +450,17 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return m_flags;
+                return _flags;
             }
             set
             {
-                if (m_flags == value)
+                if (_flags == value)
                     return;
 
-                m_flags = value;
-                m_hourStart = ((value & (int)Flag.TimeOnly) != 0) ? 0 : 11;
+                _flags = value;
+                _hourStart = ((value & (int)Flag.TimeOnly) != 0) ? 0 : 11;
 
-                m_dateBehavior.Flags = value;  // should call UpdateText
+                _dateBehavior.Flags = value;  // should call UpdateText
             }
         }
 
@@ -472,7 +471,7 @@ namespace Fireasy.Windows.Forms
         protected override string GetValidText()
         {
             // Check if we're showing the date only
-            string date = m_dateBehavior.GetValidTextForDateTime();
+            string date = _dateBehavior.GetValidTextForDateTime();
             if (HasFlag((int)Flag.DateOnly))
                 return date;
 
@@ -507,7 +506,7 @@ namespace Fireasy.Windows.Forms
             }
 
             if (e.KeyCode != Keys.Delete)
-                m_dateBehavior.HandleKeyEvent(sender, e);
+                _dateBehavior.HandleKeyEvent(sender, e);
 
             if ((e.KeyCode == Keys.Up || e.KeyCode == Keys.Down || e.KeyCode == Keys.Delete) && !HasFlag((int)Flag.DateOnly))
                 base.HandleKeyDown(sender, e);
@@ -528,15 +527,15 @@ namespace Fireasy.Windows.Forms
             TraceLine("DateTimeBehavior.HandleKeyPress " + e.KeyChar);
 
             // Check to see if it's read only
-            if (m_textBox.ReadOnly)
+            if (_textBox.ReadOnly)
                 return;
 
-            m_noTextChanged = true;
+            _noTextChanged = true;
 
             // Check if we're showing the date or the time only
             if (HasFlag((int)Flag.DateOnly))
             {
-                m_dateBehavior.HandleKeyEvent(sender, e);
+                _dateBehavior.HandleKeyEvent(sender, e);
                 return;
             }
             if (HasFlag((int)Flag.TimeOnly))
@@ -548,20 +547,19 @@ namespace Fireasy.Windows.Forms
             char c = e.KeyChar;
             e.Handled = true;
 
-            int start, end;
-            m_selection.Get(out start, out end);
+            _selection.Get(out int start, out int end);
 
-            string text = m_textBox.Text;
+            string text = _textBox.Text;
             int length = text.Length;
 
             if (start >= 0 && start <= 9)
             {
-                m_dateBehavior.HandleKeyEvent(sender, e);
+                _dateBehavior.HandleKeyEvent(sender, e);
                 ChangeAMPM(c);	// allow changing AM/PM (if it's being shown) by pressing A or P
             }
             else if (start == 10)
             {
-                m_dateBehavior.HandleKeyEvent(sender, e);
+                _dateBehavior.HandleKeyEvent(sender, e);
 
                 int space = 0;
                 if (c == ' ')
@@ -571,7 +569,7 @@ namespace Fireasy.Windows.Forms
 
                 // If we need the space, enter it
                 if (space != 0)
-                    m_selection.SetAndReplace(start, start + 1, " ");
+                    _selection.SetAndReplace(start, start + 1, " ");
 
                 // If the space is to be preceded by a valid digit, "type" it in.
                 if (space == 2)
@@ -593,16 +591,16 @@ namespace Fireasy.Windows.Forms
             {
                 // Get the message depending on what we're showing
                 if (HasFlag((int)Flag.DateOnly))
-                    return m_dateBehavior.ErrorMessage;
+                    return _dateBehavior.ErrorMessage;
                 else if (HasFlag((int)Flag.TimeOnly))
                     return base.ErrorMessage;
                 else
                 {
                     string minDateTime =
-                        m_dateBehavior.GetFormattedDate(m_dateBehavior.RangeMin.Year, m_dateBehavior.RangeMin.Month, m_dateBehavior.RangeMin.Day) + ' ' +
+                        _dateBehavior.GetFormattedDate(_dateBehavior.RangeMin.Year, _dateBehavior.RangeMin.Month, _dateBehavior.RangeMin.Day) + ' ' +
                         base.GetFormattedTime(base.RangeMin.Hour, base.RangeMin.Minute, base.RangeMin.Second, "");
                     string maxDateTime =
-                        m_dateBehavior.GetFormattedDate(m_dateBehavior.RangeMax.Year, m_dateBehavior.RangeMax.Month, m_dateBehavior.RangeMax.Day) + ' ' +
+                        _dateBehavior.GetFormattedDate(_dateBehavior.RangeMax.Year, _dateBehavior.RangeMax.Month, _dateBehavior.RangeMax.Day) + ' ' +
                         base.GetFormattedTime(base.RangeMax.Hour, base.RangeMax.Minute, base.RangeMax.Second, "");
 
                     return "Please specify a date and time between " + minDateTime + " and " + maxDateTime + '.';

@@ -12,10 +12,10 @@ namespace Fireasy.Windows.Forms
 {
     public partial class TreeList
     {
-        private bool controlPressed;
-        private bool shiftPressed;
-        private int lastRowIndex = -1;
-        private int shiftRowIndex = -1;
+        private bool _controlPressed;
+        private bool _shiftPressed;
+        private int _lastRowIndex = -1;
+        private int _shiftRowIndex = -1;
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
@@ -24,14 +24,14 @@ namespace Fireasy.Windows.Forms
             if (MultiSelect) //允许多选
             {
                 //按下Control
-                if (e.KeyCode == Keys.ControlKey && e.Modifiers == Keys.Control && !controlPressed)
+                if (e.KeyCode == Keys.ControlKey && e.Modifiers == Keys.Control && !_controlPressed)
                 {
-                    controlPressed = true;
+                    _controlPressed = true;
                 }
                 //按下Shift
-                else if (e.KeyCode == Keys.ShiftKey && e.Modifiers == Keys.Shift && !shiftPressed)
+                else if (e.KeyCode == Keys.ShiftKey && e.Modifiers == Keys.Shift && !_shiftPressed)
                 {
-                    shiftPressed = true;
+                    _shiftPressed = true;
                 }
             }
         }
@@ -46,15 +46,15 @@ namespace Fireasy.Windows.Forms
                 SelectAll();
             }
             //取消Control键
-            else if (controlPressed)
+            else if (_controlPressed)
             {
-                controlPressed = false;
+                _controlPressed = false;
             }
             //取消Shift键
-            else if (shiftPressed)
+            else if (_shiftPressed)
             {
-                shiftPressed = false;
-                shiftRowIndex = -1;
+                _shiftPressed = false;
+                _shiftRowIndex = -1;
             }
             else if (ShowCheckBoxes && e.Modifiers == Keys.None && e.KeyCode == Keys.Space)
             {
@@ -79,7 +79,7 @@ namespace Fireasy.Windows.Forms
             }
 
             var item = SelectedItems[0];
-            var vitem = virMgr.Items.FirstOrDefault(s => s.Item == item);
+            var vitem = _virMgr.Items.FirstOrDefault(s => s.Item == item);
             var index = vitem.Index;
 
             if (msg.Msg == 0x100) //避免移动方向键时跳出控件
@@ -87,20 +87,20 @@ namespace Fireasy.Windows.Forms
                 switch (msg.WParam.ToInt32())
                 {
                     case 40: //下移
-                        if (index++ >= virMgr.Items.Count - 1)
+                        if (index++ >= _virMgr.Items.Count - 1)
                         {
                             return base.PreProcessMessage(ref msg);
                         }
 
-                        if (virMgr.Items[index].Item is TreeListGroup)
+                        if (_virMgr.Items[index].Item is TreeListGroup)
                         {
-                            if (index++ >= virMgr.Items.Count - 1)
+                            if (index++ >= _virMgr.Items.Count - 1)
                             {
                                 return base.PreProcessMessage(ref msg);
                             }
                         }
 
-                        virMgr.Items[index].Item.Selected = true;
+                        _virMgr.Items[index].Item.Selected = true;
                         break;
                     case 38: //上移
                         if (index-- <= 0)
@@ -108,7 +108,7 @@ namespace Fireasy.Windows.Forms
                             return base.PreProcessMessage(ref msg);
                         }
 
-                        if (virMgr.Items[index].Item is TreeListGroup)
+                        if (_virMgr.Items[index].Item is TreeListGroup)
                         {
                             if (index-- <= 0)
                             {
@@ -116,7 +116,7 @@ namespace Fireasy.Windows.Forms
                             }
                         }
 
-                        virMgr.Items[index].Item.Selected = true;
+                        _virMgr.Items[index].Item.Selected = true;
                         break;
                 }
 
@@ -131,7 +131,7 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         private void SelectAll()
         {
-            foreach (var item in virMgr.Items)
+            foreach (var item in _virMgr.Items)
             {
                 if (item.Item is TreeListItem)
                 {

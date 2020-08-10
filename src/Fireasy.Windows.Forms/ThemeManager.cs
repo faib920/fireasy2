@@ -6,8 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Configuration;
-using Fireasy.Windows.Forms.Configuration;
 using Fireasy.Common.Extensions;
+using Fireasy.Windows.Forms.Configuration;
 
 namespace Fireasy.Windows.Forms
 {

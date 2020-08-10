@@ -35,7 +35,7 @@ namespace Fireasy.Data
     /// <summary>
     /// 提供数据库基本操作的方法。
     /// </summary>
-    public class Database : DisposeableBase, IDatabase, IDistributedDatabase, IServiceProviderAccessor
+    public class Database : DisposableBase, IDatabase, IDistributedDatabase, IServiceProviderAccessor
     {
         private DbConnection _connMaster;
         private DbConnection _connSlave;
@@ -468,7 +468,7 @@ namespace Fireasy.Data
         {
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
 
-            var connection = GetConnection(DistributedMode.Slave).TryOpen();
+            var connection = GetConnection(DistributedMode.Slave);
 
             var command = new InternalDbCommand(CreateDbCommand(connection, queryCommand, parameters), _readerLocker);
             try
@@ -496,7 +496,7 @@ namespace Fireasy.Data
             Guard.ArgumentNull(queryCommand, nameof(queryCommand));
             cancellationToken.ThrowIfCancellationRequested();
 
-            var connection = await GetConnection(DistributedMode.Slave).TryOpenAsync();
+            var connection = GetConnection(DistributedMode.Slave);
 
             var command = new InternalDbCommand(CreateDbCommand(connection, queryCommand, parameters), _readerLocker);
             try
@@ -1127,8 +1127,9 @@ namespace Fireasy.Data
 
             var watch = Stopwatch.StartNew();
             var result = func(command, behavior);
-            Tracer.Debug($"The DbCommand was executed ({watch.Elapsed.Milliseconds}ms):\n{command.Output()}");
             watch.Stop();
+
+            Tracer.Debug($"The DbCommand was executed ({watch.Elapsed.Milliseconds}ms):\n{command.Output()}");
 
             if (ConnectionString.IsTracking && tracker != null)
             {
@@ -1155,8 +1156,9 @@ namespace Fireasy.Data
 
             var watch = Stopwatch.StartNew();
             var result = await func(command, behavior, cancellationToken).ConfigureAwait(false);
-            Tracer.Debug($"The DbCommand was executed ({Thread.CurrentThread.ManagedThreadId}th, {watch.Elapsed.Milliseconds}ms):\n{command.Output()}");
             watch.Stop();
+            
+            Tracer.Debug($"The DbCommand was executed ({Thread.CurrentThread.ManagedThreadId}th, {watch.Elapsed.Milliseconds}ms):\n{command.Output()}");
 
             if (ConnectionString.IsTracking && tracker != null)
             {

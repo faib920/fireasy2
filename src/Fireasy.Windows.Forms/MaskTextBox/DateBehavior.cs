@@ -1,8 +1,8 @@
 using System;
-using System.Windows.Forms;
-using System.Globalization;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
+using System.Windows.Forms;
 
 namespace Fireasy.Windows.Forms
 {
@@ -10,9 +10,9 @@ namespace Fireasy.Windows.Forms
     public class DateBehavior : Behavior
     {
         // Fields
-        private DateTime m_rangeMin = new DateTime(1900, 1, 1);
-        private DateTime m_rangeMax = new DateTime(9998, 12, 31);
-        private char m_separator = '/';
+        private DateTime _rangeMin = new DateTime(1900, 1, 1);
+        private DateTime _rangeMax = new DateTime(9998, 12, 31);
+        private char _separator = '/';
 
         /// <summary>
         ///   Internal values that are added/removed to the <see cref="Behavior.Flags" /> property by other
@@ -55,7 +55,7 @@ namespace Fireasy.Windows.Forms
             base(textBox, addEventHandlers)
         {
             // Get the system's date separator
-            m_separator = DateTimeFormatInfo.CurrentInfo.DateSeparator[0];
+            _separator = DateTimeFormatInfo.CurrentInfo.DateSeparator[0];
 
             // Determine if the day should go before the month
             string shortDate = DateTimeFormatInfo.CurrentInfo.ShortDatePattern;
@@ -66,7 +66,7 @@ namespace Fireasy.Windows.Forms
                     break;
                 if (c == 'D')	// see if the day is first, and then set the flag
                 {
-                    m_flags |= (int)Flag.DayBeforeMonth;
+                    _flags |= (int)Flag.DayBeforeMonth;
                     break;
                 }
             }
@@ -84,9 +84,9 @@ namespace Fireasy.Windows.Forms
             :
             base(behavior)
         {
-            m_rangeMin = behavior.m_rangeMin;
-            m_rangeMax = behavior.m_rangeMax;
-            m_separator = behavior.m_separator;
+            _rangeMin = behavior._rangeMin;
+            _rangeMax = behavior._rangeMax;
+            _separator = behavior._separator;
         }
 
         /// <summary>
@@ -123,7 +123,7 @@ namespace Fireasy.Windows.Forms
             TraceLine("DateBehavior.HandleKeyDown " + e.KeyCode);
 
             // Check to see if it's read only
-            if (m_textBox.ReadOnly)
+            if (_textBox.ReadOnly)
                 return;
 
             e.Handled = true;
@@ -135,10 +135,9 @@ namespace Fireasy.Windows.Forms
                         // If deleting make sure it's the last character or that
                         // the selection goes all the way to the end of the text
 
-                        int start, end;
-                        m_selection.Get(out start, out end);
+                        _selection.Get(out int start, out int end);
 
-                        string text = m_textBox.Text;
+                        string text = _textBox.Text;
                         int length = text.Length;
 
                         if (end != length)
@@ -147,7 +146,7 @@ namespace Fireasy.Windows.Forms
                                 return;
                         }
 
-                        m_noTextChanged = true;
+                        _noTextChanged = true;
                         break;
                     }
 
@@ -155,13 +154,12 @@ namespace Fireasy.Windows.Forms
                     {
                         // If pressing the UP arrow, increment the corresponding value.
 
-                        int start, end;
-                        m_selection.Get(out start, out end);
+                        _selection.Get(out int start, out int end);
 
                         if (start >= GetYearStartPosition() && start <= GetYearStartPosition() + 4)
                         {
                             int year = Year;
-                            if (year >= m_rangeMin.Year && year < m_rangeMax.Year)
+                            if (year >= _rangeMin.Year && year < _rangeMax.Year)
                                 Year = ++year;
                         }
 
@@ -186,13 +184,12 @@ namespace Fireasy.Windows.Forms
                     {
                         // If pressing the DOWN arrow, decrement the corresponding value.
 
-                        int start, end;
-                        m_selection.Get(out start, out end);
+                        _selection.Get(out int start, out int end);
 
                         if (start >= GetYearStartPosition() && start <= GetYearStartPosition() + 4)
                         {
                             int year = Year;
-                            if (year > m_rangeMin.Year)
+                            if (year > _rangeMin.Year)
                                 Year = --year;
                         }
 
@@ -232,17 +229,16 @@ namespace Fireasy.Windows.Forms
             TraceLine("DateBehavior.HandleKeyPress " + e.KeyChar);
 
             // Check to see if it's read only
-            if (m_textBox.ReadOnly)
+            if (_textBox.ReadOnly)
                 return;
 
             char c = e.KeyChar;
             e.Handled = true;
-            m_noTextChanged = true;
+            _noTextChanged = true;
 
-            int start, end;
-            m_selection.Get(out start, out end);
+            _selection.Get(out int start, out int end);
 
-            string text = m_textBox.Text;
+            string text = _textBox.Text;
             int length = text.Length;
 
             // Check for a non-printable character (such as Ctrl+C)
@@ -270,14 +266,14 @@ namespace Fireasy.Windows.Forms
                             {
                                 if (length > start)
                                 {
-                                    m_selection.SetAndReplace(start, start + 1, c.ToString());
+                                    _selection.SetAndReplace(start, start + 1, c.ToString());
 
                                     if (length > start + 1)
                                     {
                                         if (!IsValidDay(Day))
                                         {
-                                            m_selection.SetAndReplace(start + 1, start + 2, GetMinDayDigit(1).ToString());
-                                            m_selection.Set(start + 1, start + 2);
+                                            _selection.SetAndReplace(start + 1, start + 2, GetMinDayDigit(1).ToString());
+                                            _selection.Set(start + 1, start + 2);
                                         }
                                     }
                                 }
@@ -286,7 +282,7 @@ namespace Fireasy.Windows.Forms
                             }
                             // Check if we can insert the digit with a leading zero
                             else if (length == start && GetMinDayDigit(0) == '0' && IsValidDayDigit(c, 1))
-                                m_selection.SetAndReplace(start, start + 2, "0" + c);
+                                _selection.SetAndReplace(start, start + 2, "0" + c);
                         }
                         else
                         {
@@ -294,14 +290,14 @@ namespace Fireasy.Windows.Forms
                             {
                                 if (length > start)
                                 {
-                                    m_selection.SetAndReplace(start, start + 1, c.ToString());
+                                    _selection.SetAndReplace(start, start + 1, c.ToString());
 
                                     if (length > start + 1)
                                     {
                                         if (!IsValidMonth(Month))
                                         {
-                                            m_selection.SetAndReplace(start + 1, start + 2, GetMinMonthDigit(1).ToString());
-                                            m_selection.Set(start + 1, start + 2);
+                                            _selection.SetAndReplace(start + 1, start + 2, GetMinMonthDigit(1).ToString());
+                                            _selection.Set(start + 1, start + 2);
                                         }
                                     }
                                     AdjustMaxDay();
@@ -311,7 +307,7 @@ namespace Fireasy.Windows.Forms
                             }
                             // Check if we can insert the digit with a leading zero
                             else if (length == start && GetMinMonthDigit(0) == '0' && IsValidMonthDigit(c, 1))
-                                m_selection.SetAndReplace(start, start + 2, "0" + c);
+                                _selection.SetAndReplace(start, start + 2, "0" + c);
                         }
                         break;
                     }
@@ -322,13 +318,13 @@ namespace Fireasy.Windows.Forms
                             if (IsValidDayDigit(c, 1))
                             {
                                 if (length > start)
-                                    m_selection.SetAndReplace(start, start + 1, c.ToString());
+                                    _selection.SetAndReplace(start, start + 1, c.ToString());
                                 else
                                     base.HandleKeyPress(sender, e);
                             }
                             // Check if it's a slash and the first digit (preceded by a zero) is a valid month
-                            else if (c == m_separator && length == start && GetMinDayDigit(0) == '0' && IsValidDay(ToInt("0" + text[0])))
-                                m_selection.SetAndReplace(0, start, "0" + text[0] + c);
+                            else if (c == _separator && length == start && GetMinDayDigit(0) == '0' && IsValidDay(ToInt("0" + text[0])))
+                                _selection.SetAndReplace(0, start, "0" + text[0] + c);
                         }
                         else
                         {
@@ -336,17 +332,17 @@ namespace Fireasy.Windows.Forms
                             {
                                 if (length > start)
                                 {
-                                    m_selection.SetAndReplace(start, start + 1, c.ToString());
+                                    _selection.SetAndReplace(start, start + 1, c.ToString());
 
                                     if (Day > 0 && AdjustMaxDay())
-                                        m_selection.Set(GetDayStartPosition(), GetDayStartPosition() + 2);
+                                        _selection.Set(GetDayStartPosition(), GetDayStartPosition() + 2);
                                 }
                                 else
                                     base.HandleKeyPress(sender, e);
                             }
                             // Check if it's a slash and the first digit (preceded by a zero) is a valid month
-                            else if (c == m_separator && length == start && GetMinMonthDigit(0) == '0' && IsValidMonth(ToInt("0" + text[0])))
-                                m_selection.SetAndReplace(0, start, "0" + text[0] + c);
+                            else if (c == _separator && length == start && GetMinMonthDigit(0) == '0' && IsValidMonth(ToInt("0" + text[0])))
+                                _selection.SetAndReplace(0, start, "0" + text[0] + c);
                         }
                         break;
                     }
@@ -354,7 +350,7 @@ namespace Fireasy.Windows.Forms
                 case 2:		// FIRST SLASH
                     {
                         int slash = 0;
-                        if (c == m_separator)
+                        if (c == _separator)
                             slash = 1;
                         else
                         {
@@ -366,7 +362,7 @@ namespace Fireasy.Windows.Forms
 
                         // If we need the slash, enter it
                         if (slash != 0)
-                            m_selection.SetAndReplace(start, start + 1, m_separator.ToString());
+                            _selection.SetAndReplace(start, start + 1, _separator.ToString());
 
                         // If the slash is to be preceded by a valid digit, "type" it in.
                         if (slash == 2)
@@ -382,14 +378,14 @@ namespace Fireasy.Windows.Forms
                             {
                                 if (length > start)
                                 {
-                                    m_selection.SetAndReplace(start, start + 1, c.ToString());
+                                    _selection.SetAndReplace(start, start + 1, c.ToString());
 
                                     if (length > start + 1)
                                     {
                                         if (!IsValidMonth(Month))
                                         {
-                                            m_selection.SetAndReplace(start + 1, start + 2, GetMinMonthDigit(1).ToString());
-                                            m_selection.Set(start + 1, start + 2);
+                                            _selection.SetAndReplace(start + 1, start + 2, GetMinMonthDigit(1).ToString());
+                                            _selection.Set(start + 1, start + 2);
                                         }
                                     }
                                 }
@@ -401,7 +397,7 @@ namespace Fireasy.Windows.Forms
                             // Check if we can insert the digit with a leading zero
                             else if (length == start && GetMinMonthDigit(0) == '0' && IsValidMonthDigit(c, 1))
                             {
-                                m_selection.SetAndReplace(start, start + 2, "0" + c);
+                                _selection.SetAndReplace(start, start + 2, "0" + c);
                                 AdjustMaxDay();
                             }
                         }
@@ -411,14 +407,14 @@ namespace Fireasy.Windows.Forms
                             {
                                 if (length > start)
                                 {
-                                    m_selection.SetAndReplace(start, start + 1, c.ToString());
+                                    _selection.SetAndReplace(start, start + 1, c.ToString());
 
                                     if (length > start + 1)
                                     {
                                         if (!IsValidDay(Day))
                                         {
-                                            m_selection.SetAndReplace(start + 1, start + 2, GetMinDayDigit(1).ToString());
-                                            m_selection.Set(start + 1, start + 2);
+                                            _selection.SetAndReplace(start + 1, start + 2, GetMinDayDigit(1).ToString());
+                                            _selection.Set(start + 1, start + 2);
                                         }
                                     }
                                 }
@@ -427,7 +423,7 @@ namespace Fireasy.Windows.Forms
                             }
                             // Check if we can insert the digit with a leading zero
                             else if (length == start && GetMinDayDigit(0) == '0' && IsValidDayDigit(c, 1))
-                                m_selection.SetAndReplace(start, start + 2, "0" + c);
+                                _selection.SetAndReplace(start, start + 2, "0" + c);
                         }
                         break;
                     }
@@ -440,10 +436,10 @@ namespace Fireasy.Windows.Forms
                             {
                                 if (length > start)
                                 {
-                                    m_selection.SetAndReplace(start, start + 1, c.ToString());
+                                    _selection.SetAndReplace(start, start + 1, c.ToString());
 
                                     if (Day > 0 && AdjustMaxDay())
-                                        m_selection.Set(GetDayStartPosition(), GetDayStartPosition() + 2);
+                                        _selection.Set(GetDayStartPosition(), GetDayStartPosition() + 2);
                                 }
                                 else
                                 {
@@ -452,21 +448,21 @@ namespace Fireasy.Windows.Forms
                                 }
                             }
                             // Check if it's a slash and the first digit (preceded by a zero) is a valid month
-                            else if (c == m_separator && length == start && GetMinMonthDigit(0) == '0' && IsValidMonth(ToInt("0" + text[3])))
-                                m_selection.SetAndReplace(3, start, "0" + text[3] + c);
+                            else if (c == _separator && length == start && GetMinMonthDigit(0) == '0' && IsValidMonth(ToInt("0" + text[3])))
+                                _selection.SetAndReplace(3, start, "0" + text[3] + c);
                         }
                         else
                         {
                             if (IsValidDayDigit(c, 1))
                             {
                                 if (length > start)
-                                    m_selection.SetAndReplace(start, start + 1, c.ToString());
+                                    _selection.SetAndReplace(start, start + 1, c.ToString());
                                 else
                                     base.HandleKeyPress(sender, e);
                             }
                             // Check if it's a slash and the first digit (preceded by a zero) is a valid month
-                            else if (c == m_separator && length == start && GetMinDayDigit(0) == '0' && IsValidDay(ToInt("0" + text[3])))
-                                m_selection.SetAndReplace(3, start, "0" + text[3] + c);
+                            else if (c == _separator && length == start && GetMinDayDigit(0) == '0' && IsValidDay(ToInt("0" + text[3])))
+                                _selection.SetAndReplace(3, start, "0" + text[3] + c);
                         }
                         break;
                     }
@@ -474,14 +470,14 @@ namespace Fireasy.Windows.Forms
                 case 5:		// SECOND SLASH	(year's first digit)
                     {
                         int slash = 0;
-                        if (c == m_separator)
+                        if (c == _separator)
                             slash = 1;
                         else
                             slash = (IsValidYearDigit(c, 0) ? 2 : 0);
 
                         // If we need the slash, enter it
                         if (slash != 0)
-                            m_selection.SetAndReplace(start, start + 1, m_separator.ToString());
+                            _selection.SetAndReplace(start, start + 1, _separator.ToString());
 
                         // If the slash is to be preceded by a valid digit, "type" it in.
                         if (slash == 2)
@@ -498,19 +494,19 @@ namespace Fireasy.Windows.Forms
                         {
                             if (length > start)
                             {
-                                m_selection.SetAndReplace(start, start + 1, c.ToString());
+                                _selection.SetAndReplace(start, start + 1, c.ToString());
 
                                 for (; start + 1 < length && start < 9; start++)
                                 {
                                     if (!IsValidYearDigit(text[start + 1], start - (GetYearStartPosition() - 1)))
                                     {
-                                        m_selection.Set(start + 1, 10);
+                                        _selection.Set(start + 1, 10);
                                         StringBuilder portion = new StringBuilder();
                                         for (int iPos = start + 1; iPos < length && iPos < 10; iPos++)
                                             portion.Append(GetMinYearDigit(iPos - GetYearStartPosition(), false));
 
-                                        m_selection.Replace(portion.ToString());
-                                        m_selection.Set(start + 1, 10);
+                                        _selection.Replace(portion.ToString());
+                                        _selection.Set(start + 1, 10);
                                         break;
                                     }
                                 }
@@ -582,8 +578,8 @@ namespace Fireasy.Windows.Forms
         ///   The return value is the maximum value for the month. </returns>
         protected int GetMaxMonth()
         {
-            if (GetValidYear() == m_rangeMax.Year)
-                return m_rangeMax.Month;
+            if (GetValidYear() == _rangeMax.Year)
+                return _rangeMax.Month;
             return 12;
         }
 
@@ -593,8 +589,8 @@ namespace Fireasy.Windows.Forms
         ///   The return value is the minimum value for the month. </returns>
         protected int GetMinMonth()
         {
-            if (GetValidYear() == m_rangeMin.Year)
-                return m_rangeMin.Month;
+            if (GetValidYear() == _rangeMin.Year)
+                return _rangeMin.Month;
             return 1;
         }
 
@@ -607,8 +603,8 @@ namespace Fireasy.Windows.Forms
             int year = GetValidYear();
             int month = GetValidMonth();
 
-            if (year == m_rangeMax.Year && month == m_rangeMax.Month)
-                return m_rangeMax.Day;
+            if (year == _rangeMax.Year && month == _rangeMax.Month)
+                return _rangeMax.Day;
 
             return GetMaxDayOfMonth(month, year);
         }
@@ -622,8 +618,8 @@ namespace Fireasy.Windows.Forms
             int year = GetValidYear();
             int month = GetValidMonth();
 
-            if (year == m_rangeMin.Year && month == m_rangeMin.Month)
-                return m_rangeMin.Day;
+            if (year == _rangeMin.Year && month == _rangeMin.Month)
+                return _rangeMin.Day;
 
             return 1;
         }
@@ -665,8 +661,8 @@ namespace Fireasy.Windows.Forms
             Debug.Assert(position >= 0 && position <= 1);
 
             int year = GetValidYear();
-            int maxMonth = m_rangeMax.Month;
-            int maxYear = m_rangeMax.Year;
+            int maxMonth = _rangeMax.Month;
+            int maxYear = _rangeMax.Year;
 
             // First digit
             if (position == 0)
@@ -680,12 +676,12 @@ namespace Fireasy.Windows.Forms
             }
 
             // Second digit
-            string text = m_textBox.Text;
+            string text = _textBox.Text;
             char firstDigit = (text.Length > GetMonthStartPosition()) ? text[GetMonthStartPosition()] : '0';
             Debug.Assert(firstDigit != 0);  // must have a valid first digit at this point
 
             // If the year is at the max, then check if the first digits match
-            if (year == maxYear && (IsValidYear(Year) || maxYear == m_rangeMin.Year))
+            if (year == maxYear && (IsValidYear(Year) || maxYear == _rangeMin.Year))
             {
                 // If the first digits match, then use the second digit of the max month
                 if (TwoDigits(maxMonth)[0] == firstDigit)
@@ -711,8 +707,8 @@ namespace Fireasy.Windows.Forms
             Debug.Assert(position >= 0 && position <= 1);
 
             int year = GetValidYear();
-            int minMonth = m_rangeMin.Month;
-            int minYear = m_rangeMin.Year;
+            int minMonth = _rangeMin.Month;
+            int minYear = _rangeMin.Year;
 
             // First digit
             if (position == 0)
@@ -726,13 +722,13 @@ namespace Fireasy.Windows.Forms
             }
 
             // Second digit
-            string text = m_textBox.Text;
+            string text = _textBox.Text;
             char firstDigit = (text.Length > GetMonthStartPosition()) ? text[GetMonthStartPosition()] : '0';
             if (firstDigit == 0)
                 return '1';
 
             // If the year is at the max, then check if the first digits match
-            if (year == minYear && (IsValidYear(Year) || minYear == m_rangeMax.Year))
+            if (year == minYear && (IsValidYear(Year) || minYear == _rangeMax.Year))
             {
                 // If the first digits match, then use the second digit of the max month
                 if (TwoDigits(minMonth)[0] == firstDigit)
@@ -790,9 +786,9 @@ namespace Fireasy.Windows.Forms
 
             int month = GetValidMonth();
             int year = GetValidYear();
-            int maxDay = m_rangeMax.Day;
-            int maxMonth = m_rangeMax.Month;
-            int maxYear = m_rangeMax.Year;
+            int maxDay = _rangeMax.Day;
+            int maxMonth = _rangeMax.Month;
+            int maxYear = _rangeMax.Year;
 
             // First digit
             if (position == 0)
@@ -804,7 +800,7 @@ namespace Fireasy.Windows.Forms
             }
 
             // Second digit
-            string text = m_textBox.Text;
+            string text = _textBox.Text;
             char firstDigit = (text.Length > GetDayStartPosition()) ? text[GetDayStartPosition()] : '0';
             Debug.Assert(firstDigit != 0);  // must have a valid first digit at this point
 
@@ -832,9 +828,9 @@ namespace Fireasy.Windows.Forms
 
             int month = GetValidMonth();
             int year = GetValidYear();
-            int minDay = m_rangeMin.Day;
-            int minMonth = m_rangeMin.Month;
-            int minYear = m_rangeMin.Year;
+            int minDay = _rangeMin.Day;
+            int minMonth = _rangeMin.Month;
+            int minYear = _rangeMin.Year;
 
             // First digit
             if (position == 0)
@@ -846,7 +842,7 @@ namespace Fireasy.Windows.Forms
             }
 
             // Second digit
-            string text = m_textBox.Text;
+            string text = _textBox.Text;
             char firstDigit = (text.Length > GetDayStartPosition()) ? text[GetDayStartPosition()] : '0';
             if (firstDigit == 0)  // must have a valid first digit at this point
                 return '1';
@@ -898,7 +894,7 @@ namespace Fireasy.Windows.Forms
         ///   If the year falls within the allowed range, the return value is true; otherwise it is false. </returns>
         protected bool IsValidYear(int year)
         {
-            return (year >= m_rangeMin.Year && year <= m_rangeMax.Year);
+            return (year >= _rangeMin.Year && year <= _rangeMax.Year);
         }
 
         /// <summary>
@@ -944,7 +940,7 @@ namespace Fireasy.Windows.Forms
             Debug.Assert(position >= 0 && position <= 3);
 
             string yearStr = "" + Year;
-            string maxYear = "" + m_rangeMax.Year;
+            string maxYear = "" + _rangeMax.Year;
 
             if (position == 0 || ToInt(maxYear.Substring(0, position)) <= ToInt(yearStr.Substring(0, position)))
                 return maxYear[position];
@@ -968,7 +964,7 @@ namespace Fireasy.Windows.Forms
                 year = GetValidYear();
 
             string yearStr = "" + year;
-            string minYear = "" + m_rangeMin.Year;
+            string minYear = "" + _rangeMin.Year;
 
             if (position == 0 || ToInt(minYear.Substring(0, position)) >= ToInt(yearStr.Substring(0, position)))
                 return minYear[position];
@@ -1044,14 +1040,14 @@ namespace Fireasy.Windows.Forms
         protected int GetValidYear()
         {
             int year = Year;
-            if (year < m_rangeMin.Year)
+            if (year < _rangeMin.Year)
             {
                 year = DateTime.Today.Year;
-                if (year < m_rangeMin.Year)
-                    year = m_rangeMin.Year;
+                if (year < _rangeMin.Year)
+                    year = _rangeMin.Year;
             }
-            if (year > m_rangeMax.Year)
-                year = m_rangeMax.Year;
+            if (year > _rangeMax.Year)
+                year = _rangeMax.Year;
 
             return year;
         }
@@ -1068,10 +1064,10 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                string text = m_textBox.Text;
+                string text = _textBox.Text;
 
                 int startPos = GetMonthStartPosition();
-                int slash = text.IndexOf(m_separator);
+                int slash = text.IndexOf(_separator);
 
                 if (startPos != 0 && slash > 0)
                     startPos = slash + 1;
@@ -1082,12 +1078,12 @@ namespace Fireasy.Windows.Forms
             }
             set
             {
-                using (Selection.Saver savedSelection = new Selection.Saver(m_textBox)) 	// remember the current selection
+                using (Selection.Saver savedSelection = new Selection.Saver(_textBox)) 	// remember the current selection
                 {
                     if (Month > 0)		// see if there's already a month
-                        m_selection.Set(GetMonthStartPosition(), GetMonthStartPosition() + 3);
+                        _selection.Set(GetMonthStartPosition(), GetMonthStartPosition() + 3);
 
-                    m_selection.Replace(TwoDigits(value) + m_separator);	// set the month
+                    _selection.Replace(TwoDigits(value) + _separator);	// set the month
 
                     AdjustMaxDay();	// adjust the day if it's out of range
 
@@ -1110,10 +1106,10 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                string text = m_textBox.Text;
+                string text = _textBox.Text;
 
                 int startPos = GetDayStartPosition();
-                int slash = text.IndexOf(m_separator);
+                int slash = text.IndexOf(_separator);
 
                 if (startPos != 0 && slash > 0)
                     startPos = slash + 1;
@@ -1128,12 +1124,12 @@ namespace Fireasy.Windows.Forms
                 if (!IsValidDay(value))
                     throw new ArgumentOutOfRangeException();
 
-                using (Selection.Saver savedSelection = new Selection.Saver(m_textBox))	// remember the current selection
+                using (Selection.Saver savedSelection = new Selection.Saver(_textBox))	// remember the current selection
                 {
                     if (Day > 0)		// see if there's already a day
-                        m_selection.Set(GetDayStartPosition(), GetDayStartPosition() + 3);
+                        _selection.Set(GetDayStartPosition(), GetDayStartPosition() + 3);
 
-                    m_selection.Replace(TwoDigits(value) + m_separator);	// set the day
+                    _selection.Replace(TwoDigits(value) + _separator);	// set the day
                 }
             }
         }
@@ -1150,10 +1146,10 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                string text = m_textBox.Text;
+                string text = _textBox.Text;
                 int length = text.Length;
 
-                int slash = text.LastIndexOf(m_separator);
+                int slash = text.LastIndexOf(_separator);
                 if (slash > 0 && slash < length - 1)
                     return ToInt(text.Substring(slash + 1, Math.Min(4, length - slash - 1)));
                 return 0;
@@ -1164,12 +1160,12 @@ namespace Fireasy.Windows.Forms
                 if (!IsValidYear(value))
                     throw new ArgumentOutOfRangeException();
 
-                using (Selection.Saver savedSelection = new Selection.Saver(m_textBox))	// remember the current selection
+                using (Selection.Saver savedSelection = new Selection.Saver(_textBox))	// remember the current selection
                 {
                     if (Year > 0)		// see if there's already a year
-                        m_selection.Set(GetYearStartPosition(), GetYearStartPosition() + 4);
+                        _selection.Set(GetYearStartPosition(), GetYearStartPosition() + 4);
 
-                    m_selection.Replace(String.Format("{0,4:0000}", value));	// set the year
+                    _selection.Replace(String.Format("{0,4:0000}", value));	// set the year
 
                     AdjustMaxMonthAndDay();	// adjust the month and/or day if they're out of range
                 }
@@ -1209,7 +1205,7 @@ namespace Fireasy.Windows.Forms
             set
             {
                 DateTime dt = (DateTime)value;
-                m_textBox.Text = GetFormattedDate(dt.Year, dt.Month, dt.Day);
+                _textBox.Text = GetFormattedDate(dt.Year, dt.Month, dt.Day);
             }
         }
 
@@ -1255,7 +1251,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return "Please specify a date between " + GetFormattedDate(m_rangeMin.Year, m_rangeMin.Month, m_rangeMin.Day) + " and " + GetFormattedDate(m_rangeMax.Year, m_rangeMax.Month, m_rangeMax.Day) + ".";
+                return "Please specify a date between " + GetFormattedDate(_rangeMin.Year, _rangeMin.Month, _rangeMin.Day) + " and " + GetFormattedDate(_rangeMax.Year, _rangeMax.Month, _rangeMax.Day) + ".";
             }
         }
 
@@ -1270,14 +1266,14 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return m_rangeMin;
+                return _rangeMin;
             }
             set
             {
                 if (value < new DateTime(1900, 1, 1))
                     throw new ArgumentOutOfRangeException("RangeMin", value, "Minimum value may not be older than January 1, 1900");
 
-                m_rangeMin = value;
+                _rangeMin = value;
                 UpdateText();
             }
         }
@@ -1293,11 +1289,11 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return m_rangeMax;
+                return _rangeMax;
             }
             set
             {
-                m_rangeMax = value;
+                _rangeMax = value;
                 UpdateText();
             }
         }
@@ -1316,7 +1312,7 @@ namespace Fireasy.Windows.Forms
         public bool IsWithinRange(DateTime dt)
         {
             DateTime date = new DateTime(dt.Year, dt.Month, dt.Day);
-            return (date >= m_rangeMin && date <= m_rangeMax);
+            return (date >= _rangeMin && date <= _rangeMax);
         }
 
         /// <summary>
@@ -1328,17 +1324,17 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return m_separator;
+                return _separator;
             }
             set
             {
-                if (m_separator == value)
+                if (_separator == value)
                     return;
 
                 Debug.Assert(value != 0);
                 Debug.Assert(!Char.IsDigit(value));
 
-                m_separator = value;
+                _separator = value;
                 UpdateText();
             }
         }
@@ -1367,7 +1363,7 @@ namespace Fireasy.Windows.Forms
         ///   If the textbox's text is valid, it is returned; otherwise a valid version of it is returned. </returns>
         protected override string GetValidText()
         {
-            string text = m_textBox.Text;
+            string text = _textBox.Text;
 
             if (text == "")
                 return text;
@@ -1415,8 +1411,8 @@ namespace Fireasy.Windows.Forms
         public string GetFormattedDate(int year, int month, int day)
         {
             if (ShowDayBeforeMonth)
-                return String.Format("{0,2:00}{1}{2,2:00}{3}{4,4:0000}", day, m_separator, month, m_separator, year);
-            return String.Format("{0,2:00}{1}{2,2:00}{3}{4,4:0000}", month, m_separator, day, m_separator, year);
+                return String.Format("{0,2:00}{1}{2,2:00}{3}{4,4:0000}", day, _separator, month, _separator, year);
+            return String.Format("{0,2:00}{1}{2,2:00}{3}{4,4:0000}", month, _separator, day, _separator, year);
         }
     }
     #endregion

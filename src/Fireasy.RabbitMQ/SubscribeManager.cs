@@ -30,7 +30,7 @@ using Fireasy.Common.Ioc;
 namespace Fireasy.RabbitMQ
 {
     [ConfigurationSetting(typeof(RabbitConfigurationSetting))]
-    public class SubscribeManager : DisposeableBase, ISubscribeManager, IConfigurationSettingHostService, IServiceProviderAccessor
+    public class SubscribeManager : DisposableBase, ISubscribeManager, IConfigurationSettingHostService, IServiceProviderAccessor
     {
         private static AliveObject<IConnection> _connectionLazy;
         private static readonly SafetyDictionary<string, RabbitChannelCollection> _subscribers = new SafetyDictionary<string, RabbitChannelCollection>();
@@ -416,24 +416,42 @@ namespace Fireasy.RabbitMQ
             StoredSubject subject = null;
             try
             {
-                subject = Deserialize(typeof(StoredSubject), args.Body) as StoredSubject;
-                if (subject == null)
-                {
-                    return;
-                }
-
                 object body;
-                if (found.Handler.DataType == typeof(byte[]))
+
+                try
                 {
-                    body = subject.Body;
+                    subject = Deserialize(typeof(StoredSubject), args.Body) as StoredSubject;
+                    if (subject == null)
+                    {
+                        return;
+                    }
+
+                    if (found.Handler.DataType == typeof(byte[]))
+                    {
+                        body = subject.Body;
+                    }
+                    else
+                    {
+                        body = Deserialize(found.Handler.DataType, subject.Body);
+                    }
                 }
-                else
+                catch (SerializationException)
                 {
-                    body = Deserialize(found.Handler.DataType, subject.Body);
+                    if (found.Handler.DataType == typeof(byte[]))
+                    {
+                        body = args.Body;
+                    }
+                    else
+                    {
+                        body = Deserialize(found.Handler.DataType, args.Body);
+                    }
                 }
 
-                found.Handler.Invoke(body);
-                consumer.Model.BasicAck(args.DeliveryTag, false);
+                if (body != null)
+                {
+                    found.Handler.Invoke(body);
+                    consumer.Model.BasicAck(args.DeliveryTag, false);
+                }
             }
             catch (Exception exp)
             {
@@ -626,7 +644,7 @@ namespace Fireasy.RabbitMQ
             return base.Dispose(disposing);
         }
 
-        private class RabbitChannelCollection : DisposeableBase
+        private class RabbitChannelCollection : DisposableBase
         {
             private readonly List<RabbitChannel> channels = new List<RabbitChannel>();
 
@@ -654,7 +672,7 @@ namespace Fireasy.RabbitMQ
             }
         }
 
-        private class RabbitChannel : DisposeableBase
+        private class RabbitChannel : DisposableBase
         {
             public RabbitChannel(SubscribeDelegate handler, AliveObject<IModel> model)
             {

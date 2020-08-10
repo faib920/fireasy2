@@ -9,7 +9,6 @@ using Fireasy.Common.Logging;
 using log4net;
 using log4net.Config;
 using System;
-using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -25,7 +24,8 @@ namespace Fireasy.Log4net
     /// </summary>
     public class Logger : ILogger
     {
-        private readonly ILog log;
+        private readonly ILog _logger;
+        private readonly Log4netOptions _options;
 
         public Logger()
             : this(null, null)
@@ -39,15 +39,16 @@ namespace Fireasy.Log4net
         }
 #endif
 
-
         public Logger(Type type, Log4netOptions options)
         {
+            _options = options;
+
             var repository = LogManager.GetAllRepositories().FirstOrDefault(s => s.Name == "fireasy") ?? LogManager.CreateRepository("fireasy");
-            
-            XmlConfigurator.Configure(repository, 
+
+            XmlConfigurator.Configure(repository,
                 new FileInfo(options == null || string.IsNullOrEmpty(options.XmlFile) ? "log4net.config" : options.XmlFile));
-            
-            log = type == null ? LogManager.GetLogger("fireasy", string.Empty) :
+
+            _logger = type == null ? LogManager.GetLogger("fireasy", string.Empty) :
                 LogManager.GetLogger("fireasy", type);
         }
 
@@ -60,7 +61,7 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Error))
             {
-                log.Error(message, exception);
+                _logger.Error(message, exception);
             }
         }
 
@@ -73,7 +74,7 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Info))
             {
-                log.Info(message, exception);
+                _logger.Info(message, exception);
             }
         }
 
@@ -86,7 +87,7 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Warn))
             {
-                log.Warn(message, exception);
+                _logger.Warn(message, exception);
             }
         }
 
@@ -99,7 +100,7 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Debug))
             {
-                log.Debug(message, exception);
+                _logger.Debug(message, exception);
             }
         }
 
@@ -112,7 +113,7 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Fatal))
             {
-                log.Fatal(message, exception);
+                _logger.Fatal(message, exception);
             }
         }
 
@@ -125,7 +126,7 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Error))
             {
-                log.Error(message, exception);
+                _logger.Error(message, exception);
             }
         }
 
@@ -138,7 +139,7 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Info))
             {
-                log.Info(message, exception);
+                _logger.Info(message, exception);
             }
         }
 
@@ -151,7 +152,7 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Warn))
             {
-                log.Warn(message, exception);
+                _logger.Warn(message, exception);
             }
         }
 
@@ -164,7 +165,7 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Debug))
             {
-                log.Debug(message, exception);
+                _logger.Debug(message, exception);
             }
         }
 
@@ -177,19 +178,28 @@ namespace Fireasy.Log4net
         {
             if (LogEnvironment.IsConfigured(LogLevel.Fatal))
             {
-                log.Fatal(message, exception);
+                _logger.Fatal(message, exception);
             }
+        }
+
+        public ILogger<T> Create<T>() where T : class
+        {
+            throw new NotImplementedException();
         }
     }
 
-#if NETSTANDARD
-    public class Logger<T> : Logger, ILogger<T>
+    public class Logger<T> : Logger, ILogger<T> where T : class
     {
+        public Logger(Log4netOptions options)
+            : base(typeof(T), options)
+        {
+        }
+
+#if NETSTANDARD
         public Logger(IOptions<Log4netOptions> options)
             : base(typeof(T), options.Value)
         {
         }
-    }
 #endif
-
+    }
 }

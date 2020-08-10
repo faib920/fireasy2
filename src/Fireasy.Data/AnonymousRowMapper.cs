@@ -25,13 +25,11 @@ namespace Fireasy.Data
     public class AnonymousRowMapper<T> : IDataRowMapper<T>
     {
         private Func<IDataReader, T> _funcDataRecd;
-        private Func<DataRow, T> _funcDataRow;
 
         private class MethodCache
         {
             internal static readonly MethodInfo ToType = typeof(GenericExtension).GetMethod(nameof(GenericExtension.ToType));
             internal static readonly MethodInfo GetValue = typeof(IRecordWrapper).GetMethod(nameof(IRecordWrapper.GetValue), new[] { typeof(IDataReader), typeof(string) });
-            internal static readonly PropertyInfo DataRowIndex = typeof(DataRow).GetProperty("Item", new[] { typeof(string) });
         }
 
         /// <summary>
@@ -51,22 +49,6 @@ namespace Fireasy.Data
         }
 
         /// <summary>
-        /// 将一个 <see cref="DataRow"/> 转换为一个 <typeparamref name="T"/> 的对象。
-        /// </summary>
-        /// <param name="database">当前的 <see cref="IDatabase"/> 对象。</param>
-        /// <param name="row">一个 <see cref="DataRow"/> 对象。</param>
-        /// <returns>由 <see cref="DataRow"/> 中数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
-        public T Map(IDatabase database, DataRow row)
-        {
-            if (_funcDataRow == null)
-            {
-                _funcDataRow = BuildExpressionForDataRow().Compile();
-            }
-
-            return _funcDataRow(row);
-        }
-
-        /// <summary>
         /// 获取或设置 <see cref="IRecordWrapper"/>。
         /// </summary>
         public IRecordWrapper RecordWrapper { get; set; }
@@ -79,11 +61,6 @@ namespace Fireasy.Data
         object IDataRowMapper.Map(IDatabase database, IDataReader reader)
         {
             return Map(database, reader);
-        }
-
-        object IDataRowMapper.Map(IDatabase database, DataRow row)
-        {
-            return Map(database, row);
         }
 
         private IEnumerable<ParameterInfo> GetParameters(ConstructorInfo conInfo)
@@ -109,27 +86,6 @@ namespace Fireasy.Data
             var newExp = Expression.New(conInfo, parameters);
 
             return Expression.Lambda<Func<IDataReader, T>>(
-                    Expression.MemberInit(newExp), parExp);
-        }
-
-        protected virtual Expression<Func<DataRow, T>> BuildExpressionForDataRow()
-        {
-            var conInfo = typeof(T).GetConstructors().FirstOrDefault();
-            Guard.NullReference(conInfo);
-            var parExp = Expression.Parameter(typeof(DataRow), "s");
-            var parameters =
-                GetParameters(conInfo).Select(s => (Expression)Expression.Convert(
-                            Expression.Call(MethodCache.ToType, new Expression[]
-                                    {
-                                        Expression.MakeIndex(parExp, MethodCache.DataRowIndex, new List<Expression> { Expression.Constant(s.Name) }),
-                                        Expression.Constant(s.ParameterType),
-                                        Expression.Constant(null)
-                                    }
-                            ), s.ParameterType));
-
-            var newExp = Expression.New(conInfo, parameters);
-
-            return Expression.Lambda<Func<DataRow, T>>(
                     Expression.MemberInit(newExp), parExp);
         }
     }

@@ -1,9 +1,5 @@
-using System;
-using System.Globalization;
-using System.ComponentModel;
 using System.Collections;
-using System.Diagnostics;
-using System.Text;
+using System.ComponentModel;
 
 namespace Fireasy.Windows.Forms
 {
@@ -17,7 +13,7 @@ namespace Fireasy.Windows.Forms
             :
             base(null)
         {
-            m_behavior = new CurrencyBehavior(this);
+            _behavior = new CurrencyBehavior(this);
             TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
         }
 

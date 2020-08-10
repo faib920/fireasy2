@@ -20,7 +20,7 @@ namespace Fireasy.Web.EasyUI
     /// <typeparam name="T"></typeparam>
     public class TreeNodeJsonConverter<T> : JsonConverter where T : ITreeNode
     {
-        private Dictionary<string, Func<T, object>> attrMappers = new Dictionary<string, Func<T, object>>();
+        private readonly Dictionary<string, Func<T, object>> _attrMappers = new Dictionary<string, Func<T, object>>();
 
         /// <summary>
         /// 初始化 <see cref="TreeNodeJsonConverter{T}"/> 类的新实例。
@@ -35,7 +35,7 @@ namespace Fireasy.Web.EasyUI
         /// <param name="attrMappers"></param>
         public TreeNodeJsonConverter(Dictionary<string, Func<T, object>> attrMappers)
         {
-            this.attrMappers = attrMappers;
+            this._attrMappers = attrMappers;
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace Fireasy.Web.EasyUI
             sb.Append("{");
             sb.Append($"\"id\": \"{node.Id}\",");
 
-            foreach (var map in attrMappers)
+            foreach (var map in _attrMappers)
             {
                 sb.AppendFormat("\"{0}\": {1},", map.Key, serializer.Serialize(map.Value((T)obj)));
             }

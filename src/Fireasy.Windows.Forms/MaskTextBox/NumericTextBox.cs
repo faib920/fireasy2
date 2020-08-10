@@ -1,7 +1,6 @@
 using System;
-using System.ComponentModel;
 using System.Collections;
-using System.Text;
+using System.ComponentModel;
 
 namespace Fireasy.Windows.Forms
 {
@@ -14,13 +13,13 @@ namespace Fireasy.Windows.Forms
         public NumericTextBox()
         {
             ImeMode = System.Windows.Forms.ImeMode.Off;
-            m_behavior = new NumericBehavior(this);
+            _behavior = new NumericBehavior(this);
         }
 
         public NumericTextBox(int maxWholeDigits, int maxDecimalPlaces)
         {
             ImeMode = System.Windows.Forms.ImeMode.Off;
-            m_behavior = new NumericBehavior(this, maxWholeDigits, maxDecimalPlaces);
+            _behavior = new NumericBehavior(this, maxWholeDigits, maxDecimalPlaces);
         }
 
         public NumericTextBox(NumericBehavior behavior)
@@ -35,7 +34,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return (NumericBehavior)m_behavior;
+                return (NumericBehavior)_behavior;
             }
         }
 

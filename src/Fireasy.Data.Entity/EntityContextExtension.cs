@@ -25,7 +25,8 @@ namespace Fireasy.Data.Entity
         /// <param name="context"></param>
         /// <param name="action">要执行的操作。</param>
         /// <param name="level">事务级别。</param>
-        public static void UseTransaction<TContext>(this TContext context, Action<TContext> action, IsolationLevel? level = null) where TContext : EntityContext
+        /// <param name="throwExp">发生异常时的处理。</param>
+        public static void UseTransaction<TContext>(this TContext context, Action<TContext> action, IsolationLevel? level = null, Action<Exception> throwExp = null) where TContext : EntityContext
         {
             Guard.ArgumentNull(action, nameof(action));
 
@@ -40,7 +41,15 @@ namespace Fireasy.Data.Entity
             catch (Exception exp)
             {
                 context.RollbackTransaction();
-                throw exp;
+
+                if (throwExp != null)
+                {
+                    throwExp(exp);
+                }
+                else
+                {
+                    throw exp;
+                }
             }
         }
 
@@ -52,8 +61,9 @@ namespace Fireasy.Data.Entity
         /// <param name="context"></param>
         /// <param name="func">要执行的操作。</param>
         /// <param name="level">事务级别。</param>
+        /// <param name="throwExp">发生异常时的处理。</param>
         /// <returns></returns>
-        public static TResult UseTransaction<TContext, TResult>(this TContext context, Func<TContext, TResult> func, IsolationLevel? level = null) where TContext : EntityContext
+        public static TResult UseTransaction<TContext, TResult>(this TContext context, Func<TContext, TResult> func, IsolationLevel? level = null, Func<Exception, TResult> throwExp = null) where TContext : EntityContext
         {
             Guard.ArgumentNull(func, nameof(func));
 
@@ -70,7 +80,15 @@ namespace Fireasy.Data.Entity
             catch (Exception exp)
             {
                 context.RollbackTransaction();
-                throw exp;
+
+                if (throwExp != null)
+                {
+                    return throwExp(exp);
+                }
+                else
+                {
+                    throw exp;
+                }
             }
         }
 
@@ -81,9 +99,10 @@ namespace Fireasy.Data.Entity
         /// <param name="context"></param>
         /// <param name="func">要执行的操作。</param>
         /// <param name="level">事务级别。</param>
+        /// <param name="throwExp">发生异常时的处理。</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task UseTransactionAsync<TContext>(this TContext context, Func<TContext, CancellationToken, Task> func, IsolationLevel? level = null, CancellationToken cancellationToken = default) where TContext : EntityContext
+        public static async Task UseTransactionAsync<TContext>(this TContext context, Func<TContext, CancellationToken, Task> func, IsolationLevel? level = null, Func<Exception, Task> throwExp = null, CancellationToken cancellationToken = default) where TContext : EntityContext
         {
             Guard.ArgumentNull(func, nameof(func));
 
@@ -98,7 +117,15 @@ namespace Fireasy.Data.Entity
             catch (Exception exp)
             {
                 context.RollbackTransaction();
-                throw exp;
+
+                if (throwExp != null)
+                {
+                    await throwExp(exp);
+                }
+                else
+                {
+                    throw exp;
+                }
             }
         }
 
@@ -110,9 +137,10 @@ namespace Fireasy.Data.Entity
         /// <param name="context"></param>
         /// <param name="func">要执行的操作。</param>
         /// <param name="level">事务级别。</param>
+        /// <param name="throwExp">发生异常时的处理。</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TResult> UseTransactionAsync<TContext, TResult>(this TContext context, Func<TContext, CancellationToken, Task<TResult>> func, IsolationLevel? level = null, CancellationToken cancellationToken = default) where TContext : EntityContext
+        public static async Task<TResult> UseTransactionAsync<TContext, TResult>(this TContext context, Func<TContext, CancellationToken, Task<TResult>> func, IsolationLevel? level = null, Func<Exception, Task<TResult>> throwExp = null, CancellationToken cancellationToken = default) where TContext : EntityContext
         {
             Guard.ArgumentNull(func, nameof(func));
 
@@ -129,7 +157,15 @@ namespace Fireasy.Data.Entity
             catch (Exception exp)
             {
                 context.RollbackTransaction();
-                throw exp;
+
+                if (throwExp != null)
+                {
+                    return await throwExp(exp);
+                }
+                else
+                {
+                    throw exp;
+                }
             }
         }
 

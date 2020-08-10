@@ -27,11 +27,11 @@ namespace Fireasy.MongoDB
     /// <typeparam name="TEntity"></typeparam>
     public sealed class MongoDBRepositoryProvider<TEntity> : IRepositoryProvider<TEntity> where TEntity : class, IEntity
     {
-        private static readonly SafetyDictionary<Type, CustomBsonSerializer> cache = new SafetyDictionary<Type, CustomBsonSerializer>();
+        private static readonly SafetyDictionary<Type, CustomBsonSerializer> _cache = new SafetyDictionary<Type, CustomBsonSerializer>();
 
-        private readonly MongoDBContextService contextService;
-        private readonly MongoCollection<TEntity> collection;
-        private IRepository repository;
+        private readonly MongoDBContextService _contextService;
+        private readonly MongoCollection<TEntity> _collection;
+        private IRepository _repository;
 
         /// <summary>
         /// 初始化 <see cref="MongoDBRepositoryProvider{TEntity}"/> 类的新实例。
@@ -39,26 +39,26 @@ namespace Fireasy.MongoDB
         /// <param name="contextService"></param>
         public MongoDBRepositoryProvider(MongoDBContextService contextService)
         {
-            this.contextService = contextService;
+            _contextService = contextService;
             var metadata = EntityMetadataUnity.GetEntityMetadata(typeof(TEntity));
             var collectionSettings = new MongoCollectionSettings { AssignIdOnInsert = false };
-            collection = contextService.Database.GetCollection<TEntity>(metadata.TableName, collectionSettings);
+            _collection = contextService.Database.GetCollection<TEntity>(metadata.TableName, collectionSettings);
 
-            cache.GetOrAdd(typeof(TEntity), contextService.ContextType, (k, c) =>
+            _cache.GetOrAdd(typeof(TEntity), contextService.ContextType, (k, c) =>
                 {
                     var serializer = new CustomBsonSerializer(c);
                     BsonSerializer.RegisterSerializer(serializer);
                     return serializer;
                 });
 
-            var provider = new MongoQueryProvider(collection);
+            var provider = new MongoQueryProvider(_collection);
             QueryProvider = provider;
             Queryable = new MongoQueryable<TEntity>(provider);
         }
 
         IRepository IRepositoryProvider.CreateRepository(EntityContextOptions options)
         {
-            return repository ?? (repository = new EntityRepository<TEntity>(contextService, this, options));
+            return _repository ?? (_repository = new EntityRepository<TEntity>(_contextService, this, options));
         }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace Fireasy.MongoDB
         /// <returns>影响的实体数。</returns>
         public int Insert(TEntity entity)
         {
-            var result = collection.Insert(entity);
+            var result = _collection.Insert(entity);
             return (int)result.DocumentsAffected;
         }
 
@@ -100,7 +100,7 @@ namespace Fireasy.MongoDB
         /// <returns>影响的实体数。</returns>
         public int Update(TEntity entity)
         {
-            var result = collection.Save(entity);
+            var result = _collection.Save(entity);
             return (int)result.DocumentsAffected;
         }
 
@@ -123,7 +123,7 @@ namespace Fireasy.MongoDB
         /// <param name="completePercentage">此参数无效。</param>
         public void BatchInsert(IEnumerable<TEntity> entities, int batchSize = 1000, Action<int> completePercentage = null)
         {
-            collection.InsertBatch(entities);
+            _collection.InsertBatch(entities);
         }
 
         /// <summary>
@@ -148,7 +148,7 @@ namespace Fireasy.MongoDB
         {
             var predicate = BuildPrimaryExpression((p, i) => entity.GetValue(p).GetValue());
             var query = Query<TEntity>.Where(predicate);
-            var result = collection.Remove(query);
+            var result = _collection.Remove(query);
             return (int)result.DocumentsAffected;
         }
 
@@ -173,7 +173,7 @@ namespace Fireasy.MongoDB
         public int Delete(Expression<Func<TEntity, bool>> predicate, bool logicalDelete = true)
         {
             var query = Query<TEntity>.Where(predicate);
-            var result = collection.Remove(query);
+            var result = _collection.Remove(query);
             return (int)result.DocumentsAffected;
         }
 
@@ -199,7 +199,7 @@ namespace Fireasy.MongoDB
         {
             var query = Query<TEntity>.Where(predicate);
             var update = GetUpdateBuilder(entity);
-            var result = collection.Update(query, update);
+            var result = _collection.Update(query, update);
             return (int)result.DocumentsAffected;
         }
 
@@ -273,7 +273,7 @@ namespace Fireasy.MongoDB
         {
             var predicate = BuildPrimaryExpression((p, i) => PropertyValue.IsEmpty(primaryValues[i]) ? null : primaryValues[i].GetValue());
             var query = Query<TEntity>.Where(predicate);
-            var result = collection.Remove(query);
+            var result = _collection.Remove(query);
             return (int)result.DocumentsAffected;
         }
 
@@ -298,7 +298,7 @@ namespace Fireasy.MongoDB
         {
             var predicate = BuildPrimaryExpression((p, i) => PropertyValue.IsEmpty(primaryValues[i]) ? null : primaryValues[i].GetValue());
             var query = Query<TEntity>.Where(predicate);
-            return collection.FindOne(query);
+            return _collection.FindOne(query);
         }
 
         /// <summary>

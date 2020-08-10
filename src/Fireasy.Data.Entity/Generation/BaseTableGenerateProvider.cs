@@ -122,9 +122,9 @@ namespace Fireasy.Data.Entity.Generation
             return reader.GetInt32(0) > 0;
         }
 
-        protected string Quote(ISyntaxProvider syntax, string name)
+        protected string Delimit(ISyntaxProvider syntax, string name)
         {
-            return DbUtility.FormatByQuote(syntax, name);
+            return syntax.FormatByDelimiter(name);
         }
 
         /// <summary>
@@ -145,7 +145,7 @@ namespace Fireasy.Data.Entity.Generation
         /// <param name="property"></param>
         protected virtual void AppendFieldToBuilder(StringBuilder builder, ISyntaxProvider syntax, IProperty property)
         {
-            builder.Append($" {Quote(syntax, property.Info.FieldName)}");
+            builder.Append($" {Delimit(syntax, property.Info.FieldName)}");
 
             //数据类型及长度精度等
             builder.AppendFormat(" {0}", syntax.Column((DbType)property.Info.DataType,

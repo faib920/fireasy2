@@ -359,15 +359,14 @@ namespace Fireasy.Data.Entity.Query
                 Expression expression = Expression.Call(recordWrapper, method, dataReader, Expression.Constant(ordinal));
 
                 //先找转换器
-                var converter = ConvertManager.GetConverter(column.Type);
-                if (converter != null)
+                if (ConvertManager.CanConvert(column.Type))
                 {
                     //调用ConvertManager.GetConverter
-                    var mconverter = Expression.Call(null, MethodCache.GetConverter, Expression.Constant(column.Type));
+                    var converter = Expression.Call(null, MethodCache.GetConverter, Expression.Constant(column.Type));
 
                     //调用 IValueConverter.ConvertFrom
                     expression = Expression.Convert(
-                        Expression.Call(mconverter, MethodCache.ConvertFrom, expression, Expression.Constant(dbType)),
+                        Expression.Call(converter, MethodCache.ConvertFrom, expression, Expression.Constant(dbType)),
                         column.Type);
                 }
                 else
@@ -1110,17 +1109,6 @@ namespace Fireasy.Data.Entity.Query
                 }
 
                 return (Expression<Func<IDatabase, IDataReader, T>>)exp;
-            }
-
-            protected override Expression<Func<IDatabase, DataRow, T>> BuildExpressionForDataRow()
-            {
-                var exp = (LambdaExpression)DbExpressionReplacer.Replace(_expression, _recordWrapper, Expression.Constant(RecordWrapper, typeof(IRecordWrapper)));
-                if (exp.Parameters.Count == 1 && exp.Parameters[0].Type != typeof(IDatabase))
-                {
-                    return Expression.Lambda<Func<IDatabase, DataRow, T>>(exp.Body, _executor, exp.Parameters[0]);
-                }
-
-                return (Expression<Func<IDatabase, DataRow, T>>)exp;
             }
         }
 

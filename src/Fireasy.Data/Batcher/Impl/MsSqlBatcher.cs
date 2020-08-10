@@ -85,8 +85,9 @@ namespace Fireasy.Data.Batcher
             {
                 database.Connection.TryOpen();
 
-                //给表名加上前后导符
-                var tableName = DbUtility.FormatByQuote(database.Provider.GetService<ISyntaxProvider>(), dataTable.TableName);
+                //给表名加上界定符
+                var syntax = database.Provider.GetService<ISyntaxProvider>();
+                var tableName = syntax.FormatByDelimiter(dataTable.TableName);
                 using var bulk = new SqlBulkCopy((SqlConnection)database.Connection,
                     SqlBulkCopyOptions.KeepIdentity,
                     (SqlTransaction)database.Transaction)

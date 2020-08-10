@@ -18,7 +18,7 @@ namespace Fireasy.Web.Sockets
     {
         private const string WS_SESSION_KEY = "ws_session";
         private const string WS_IDENTITY_KEY = "ws_identity";
-        private TimeSpan expire = TimeSpan.FromDays(5);
+        private TimeSpan _expire = TimeSpan.FromDays(5);
 
         /// <summary>
         /// 获取当前会话个数。
@@ -43,9 +43,9 @@ namespace Fireasy.Web.Sockets
             var cacheMgr = CacheManagerFactory.CreateManager();
             var hashSet1 = cacheMgr.GetHashSet<string, T>(WS_SESSION_KEY);
             var hashSet2 = cacheMgr.GetHashSet<string, string>(WS_IDENTITY_KEY);
-            
-            hashSet1.Add(connectionId, identity, new RelativeTime(expire));
-            hashSet2.Add(identity.ToString(), connectionId, new RelativeTime(expire));
+
+            hashSet1.Add(connectionId, identity, new RelativeTime(_expire));
+            hashSet2.Add(identity.ToString(), connectionId, new RelativeTime(_expire));
         }
 
         /// <summary>

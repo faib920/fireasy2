@@ -39,6 +39,19 @@ namespace Fireasy.Data.Entity.Query
     }
 
     /// <summary>
+    /// 用于评估表达式能否使用缓存。
+    /// </summary>
+    public interface IExecuteCacheEvaluator
+    {
+        /// <summary>
+        /// 评估表达式能够被缓存。
+        /// </summary>
+        /// <param name="expression"></param>
+        /// <returns></returns>
+        bool Evaluate(MethodCallExpression expression);
+    }
+
+    /// <summary>
     /// 执行缓存的上下文。
     /// </summary>
     public class ExecuteCacheContext

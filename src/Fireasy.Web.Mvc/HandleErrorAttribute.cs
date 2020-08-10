@@ -50,7 +50,7 @@ namespace Fireasy.Web.Mvc
             {
                 HandleExceptionForJson(filterContext);
             }
-            else if (descriptor != null && 
+            else if (descriptor != null &&
                 descriptor.MethodInfo.GetCustomAttributes<ActionJsonResultAttribute>().Any())
             {
                 HandleExceptionForJson(filterContext);

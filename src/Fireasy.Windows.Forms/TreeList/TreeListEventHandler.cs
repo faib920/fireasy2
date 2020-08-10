@@ -49,6 +49,8 @@ namespace Fireasy.Windows.Forms
 
     public delegate void TreeListCellAfterCheckedEventHandler(object sender, TreeListCellEventArgs e);
 
+    public delegate void TreeListItemCheckChangeEventHandler(object sender, TreeListItemEventArgs e);
+
     public class TreeListItemSelectionEventArgs
     {
     }

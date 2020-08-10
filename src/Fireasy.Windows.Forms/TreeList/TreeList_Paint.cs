@@ -20,7 +20,7 @@ namespace Fireasy.Windows.Forms
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            ThemeManager.BaseRenderer.DrawBackground(new BackgroundRenderEventArgs(this, e.Graphics, bound.ItemBound));
+            ThemeManager.BaseRenderer.DrawBackground(new BackgroundRenderEventArgs(this, e.Graphics, _bound.ItemBound));
             ThemeManager.BaseRenderer.DrawBorder(new BorderRenderEventArgs(this, e.Graphics, ClientRectangle));
 
             DrawColumns(e.Graphics);
@@ -36,7 +36,7 @@ namespace Fireasy.Windows.Forms
                 return;
             }
 
-            var rect = bound.FooterBound;
+            var rect = _bound.FooterBound;
             rect = rect.ReduceLeft(GetOffsetLeft());
             var e = new TreeListItemRenderEventArgs(Footer, graphics, rect)
             {
@@ -50,7 +50,7 @@ namespace Fireasy.Windows.Forms
                 return;
             }
 
-            e.Graphics.KeepClip(bound.FooterBound, () =>
+            e.Graphics.KeepClip(_bound.FooterBound, () =>
             {
                 DrawCells(e.Graphics, e.Item.Cells, e.Bounds, e.DrawState);
             });
@@ -58,7 +58,7 @@ namespace Fireasy.Windows.Forms
 
         private void DrawItem(TreeListItemRenderEventArgs e, bool setClip = true)
         {
-            e.Graphics.KeepClip(bound.ItemBound, () =>
+            e.Graphics.KeepClip(_bound.ItemBound, () =>
             {
                 Renderer.DrawItem(e);
                 DrawCells(e.Graphics, e.Item.Cells, e.Bounds, e.DrawState);
@@ -66,9 +66,9 @@ namespace Fireasy.Windows.Forms
 
             if (ShowRowNumber)
             {
-                var e3 = new TreeListRowNumberRenderEventArgs(this, RowNumberIndex + e.Item.DataIndex, e.Graphics, new Rectangle(bound.WorkBound.X, e.Bounds.Y, RowNumberWidth, e.Bounds.Height));
+                var e3 = new TreeListRowNumberRenderEventArgs(this, RowNumberIndex + e.Item.DataIndex, e.Graphics, new Rectangle(_bound.WorkBound.X, e.Bounds.Y, RowNumberWidth, e.Bounds.Height));
 
-                e.Graphics.KeepClip(bound.RowNumberBound, () =>
+                e.Graphics.KeepClip(_bound.RowNumberBound, () =>
                 {
                     e3.DrawState = e.DrawState;
                     DrawRowNumber(e3);
@@ -78,7 +78,7 @@ namespace Fireasy.Windows.Forms
 
         private void DrawRowNumber(TreeListRowNumberRenderEventArgs e, bool setClip = true)
         {
-            e.Graphics.KeepClip(bound.WorkBound, () =>
+            e.Graphics.KeepClip(_bound.WorkBound, () =>
             {
                 Renderer.DrawRowNumber(e);
 
@@ -91,7 +91,7 @@ namespace Fireasy.Windows.Forms
 
         private void DrawGroup(TreeListGroupRenderEventArgs e, bool setClip = true)
         {
-            e.Graphics.KeepClip(bound.ItemBound, () =>
+            e.Graphics.KeepClip(_bound.ItemBound, () =>
             {
                 Renderer.DrawGroup(e);
             }, setClip);
@@ -164,7 +164,7 @@ namespace Fireasy.Windows.Forms
 
             if (springColumn != null)
             {
-                springColumn.Width = Math.Max(0, Width - width - bound.WorkBound.X * 2 - (ShowVerScrollBar ? vbar.Width : 0));
+                springColumn.Width = Math.Max(0, Width - width - _bound.WorkBound.X * 2 - (ShowVerScrollBar ? _vbar.Width : 0));
             }
         }
 
@@ -188,7 +188,7 @@ namespace Fireasy.Windows.Forms
         {
             using (var graphics = CreateGraphics())
             {
-                foreach (var vitem in virMgr.Items)
+                foreach (var vitem in _virMgr.Items)
                 {
                     if (vitem.Item.Selected)
                     {

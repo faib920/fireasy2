@@ -17,7 +17,7 @@ namespace Fireasy.Data.Entity
     /// <see cref="IContextService"/> 的抽象类。
     /// </summary>
     public abstract class ContextServiceBase :
-        DisposeableBase,
+        DisposableBase,
         IContextService,
         IServiceProviderAccessor,
         IEntityPersistentInstanceContainer,

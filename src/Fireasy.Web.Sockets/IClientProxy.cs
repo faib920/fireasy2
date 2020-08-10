@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -40,9 +41,9 @@ namespace Fireasy.Web.Sockets
     /// <summary>
     /// 枚举器，表示多个连接代理。
     /// </summary>
-    public class EnumerableClientProxy : BaseClientProxy
+    public class EnumerableClientProxy : BaseClientProxy, IEnumerable<IClientProxy>
     {
-        private Func<IEnumerable<IClientProxy>> proxyFactory;
+        private readonly Func<IEnumerable<IClientProxy>> proxyFactory;
 
         public EnumerableClientProxy(Func<IEnumerable<IClientProxy>> proxyFactory)
         {
@@ -67,6 +68,16 @@ namespace Fireasy.Web.Sockets
 #else
             return new Task(null);
 #endif
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return proxyFactory().GetEnumerator();
+        }
+
+        public IEnumerator<IClientProxy> GetEnumerator()
+        {
+            return proxyFactory().GetEnumerator();
         }
     }
 

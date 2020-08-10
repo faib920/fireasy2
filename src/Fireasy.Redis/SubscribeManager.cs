@@ -16,6 +16,7 @@ using System.Linq;
 #endif
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Subscribes;
+using Fireasy.Common.Serialization;
 using System;
 using System.Threading.Tasks;
 using System.Threading;
@@ -225,8 +226,15 @@ namespace Fireasy.Redis
                         StoredSubject subject = null;
                         try
                         {
-                            subject = Deserialize<StoredSubject>(msg.Body);
-                            subscriber(Deserialize<TSubject>(subject.Body));
+                            try
+                            {
+                                subject = Deserialize<StoredSubject>(msg.Body);
+                                subscriber(Deserialize<TSubject>(subject.Body));
+                            }
+                            catch (SerializationException)
+                            {
+                                subscriber(Deserialize<TSubject>(msg.Body));
+                            }
                         }
                         catch (Exception exp)
                         {
@@ -254,8 +262,15 @@ namespace Fireasy.Redis
                         StoredSubject subject = null;
                         try
                         {
-                            subject = Deserialize<StoredSubject>(msg.Body);
-                            subscriber(Deserialize<TSubject>(subject.Body)).AsSync();
+                            try
+                            {
+                                subject = Deserialize<StoredSubject>(msg.Body);
+                                subscriber(Deserialize<TSubject>(subject.Body)).AsSync();
+                            }
+                            catch (SerializationException)
+                            {
+                                subscriber(Deserialize<TSubject>(msg.Body)).AsSync();
+                            }
                         }
                         catch (Exception exp)
                         {
@@ -282,8 +297,15 @@ namespace Fireasy.Redis
                         StoredSubject subject = null;
                         try
                         {
-                            subject = Deserialize<StoredSubject>(msg.Body);
-                            subscriber.DynamicInvoke(Deserialize(subjectType, subject.Body));
+                            try
+                            {
+                                subject = Deserialize<StoredSubject>(msg.Body);
+                                subscriber.DynamicInvoke(Deserialize(subjectType, subject.Body));
+                            }
+                            catch (SerializationException)
+                            {
+                                subscriber.DynamicInvoke(Deserialize(subjectType, msg.Body));
+                            }
                         }
                         catch (Exception exp)
                         {

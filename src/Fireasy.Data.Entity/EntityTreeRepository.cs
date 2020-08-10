@@ -279,7 +279,7 @@ namespace Fireasy.Data.Entity
                 case EntityTreePosition.Children:
                     var sql = string.Format("SELECT MAX({0}) FROM {1} WHERE {2} LIKE {3}",
                         GetOrderExpression(),
-                        DbUtility.FormatByQuote(_syntax, _metadata.TableName),
+                        _syntax.FormatByDelimiter(_metadata.TableName),
                         QuoteColumn(_treeMetadata.InnerSign),
                         _syntax.FormatParameter("pm"));
                     var innerId = bag.InnerId;
@@ -312,7 +312,7 @@ namespace Fireasy.Data.Entity
         {
             var sql = string.Format("SELECT MAX({0}) FROM {1} WHERE {2} = {3}",
                 GetOrderExpression(),
-                DbUtility.FormatByQuote(_syntax, _metadata.TableName),
+                _syntax.FormatByDelimiter(_metadata.TableName),
                 _syntax.String.Length(QuoteColumn(_treeMetadata.InnerSign)),
                 _treeMetadata.SignLength);
 
@@ -420,13 +420,13 @@ namespace Fireasy.Data.Entity
             //如果Order没有指定，则取InnerId的后N位转成数字
             if (_treeMetadata.Order == null)
             {
-                var field = DbUtility.FormatByQuote(_syntax, _treeMetadata.InnerSign.Info.FieldName);
+                var field = _syntax.FormatByDelimiter(_treeMetadata.InnerSign.Info.FieldName);
                 return _syntax.Convert(
                     _syntax.String.Substring(field, _syntax.String.Length(field) + " + 1 - " + _treeMetadata.SignLength,
                     _treeMetadata.SignLength), DbType.Int32);
             }
 
-            return DbUtility.FormatByQuote(_syntax, _treeMetadata.Order.Info.FieldName);
+            return _syntax.FormatByDelimiter(_treeMetadata.Order.Info.FieldName);
         }
 
         /// <summary>
@@ -438,10 +438,10 @@ namespace Fireasy.Data.Entity
             //如果Level没有指定，则取InnerId的长度除以N
             if (_treeMetadata.Level == null)
             {
-                return _syntax.String.Length(DbUtility.FormatByQuote(_syntax, _treeMetadata.InnerSign.Info.FieldName)) + " / " + _treeMetadata.SignLength;
+                return _syntax.String.Length(_syntax.FormatByDelimiter(_treeMetadata.InnerSign.Info.FieldName)) + " / " + _treeMetadata.SignLength;
             }
 
-            return DbUtility.FormatByQuote(_syntax, _treeMetadata.Order.Info.FieldName);
+            return _syntax.FormatByDelimiter(_treeMetadata.Order.Info.FieldName);
         }
 
         /// <summary>
@@ -916,7 +916,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         private string QuoteColumn(IProperty property)
         {
-            return DbUtility.FormatByQuote(_syntax, property.Info.FieldName);
+            return _syntax.FormatByDelimiter(property.Info.FieldName);
         }
 
         /// <summary>
@@ -925,7 +925,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         private string GetTableName()
         {
-            return DbUtility.FormatByQuote(_syntax, _metadata.TableName);
+            return _syntax.FormatByDelimiter(_metadata.TableName);
         }
 
         /// <summary>

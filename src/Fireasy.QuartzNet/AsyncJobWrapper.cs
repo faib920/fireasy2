@@ -29,11 +29,12 @@ namespace Fireasy.QuartzNet
         {
             if (context.MergedJobDataMap["executor"] is IAsyncTaskExecutor executor)
             {
-                var service = context.MergedJobDataMap["serviceProvider"] as IServiceProvider;
+                var serviceProvider = context.MergedJobDataMap["serviceProvider"] as IServiceProvider;
                 var arguments = context.MergedJobDataMap["arguments"] as IDictionary<string, object>;
                 var cancellationToken = (CancellationToken)context.MergedJobDataMap["cancellationToken"];
 
-                var econtext = new TaskExecuteContext(service, arguments, cancellationToken);
+                using var scope = serviceProvider.TryCreateScope();
+                var econtext = new TaskExecuteContext(scope.ServiceProvider, arguments, cancellationToken);
                 await executor.ExecuteAsync(econtext);
             }
         }
@@ -59,7 +60,9 @@ namespace Fireasy.QuartzNet
             {
                 var initializer = context.MergedJobDataMap["initializer"] as Action<TJob>;
                 initializer?.Invoke((TJob)executor);
-                var econtext = new TaskExecuteContext(serviceProvider, arguments, cancellationToken);
+
+                using var scope = serviceProvider.TryCreateScope();
+                var econtext = new TaskExecuteContext(scope.ServiceProvider, arguments, cancellationToken);
                 await executor.ExecuteAsync(econtext);
             }
         }

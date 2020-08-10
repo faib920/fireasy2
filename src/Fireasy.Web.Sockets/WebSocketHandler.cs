@@ -5,9 +5,11 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Reflection;
 using System.Threading;
@@ -18,13 +20,11 @@ namespace Fireasy.Web.Sockets
     /// <summary>
     /// WebSocket 处理的抽象类。
     /// </summary>
-    public abstract class WebSocketHandler : IClientProxy, IDisposable
+    public abstract class WebSocketHandler : DisposableBase, IClientProxy
     {
-        private WebSocketAcceptContext acceptContext;
-        private DateTime lastReceivedTime = DateTime.Now;
-        private Timer timer;
-        private bool isDisposed = false;
-        private bool isClosing = false;
+        private DateTime _lastReceivedTime = DateTime.Now;
+        private Timer _timer;
+        private bool _isClosing = false;
         private CancellationTokenSource cancelToken;
 
         /// <summary>
@@ -33,21 +33,21 @@ namespace Fireasy.Web.Sockets
         public string ConnectionId { get; private set; }
 
         /// <summary>
+        /// 获取当前的 <see cref="WebSocketAcceptContext"/> 对象。
+        /// </summary>
+        public WebSocketAcceptContext AcceptContext { get; private set; }
+
+        /// <summary>
         /// 获取客户端集合。
         /// </summary>
-        public ClientManager Clients { get; private set; }
+        public IClientManager Clients { get; private set; }
 
         /// <summary>
         /// 初始化 <see cref="WebSocketHandler"/> 类的新实例。
         /// </summary>
         public WebSocketHandler()
         {
-            this.ConnectionId = Guid.NewGuid().ToString();
-        }
-
-        ~WebSocketHandler()
-        {
-            Dispose(false);
+            ConnectionId = Guid.NewGuid().ToString();
         }
 
         internal static async Task Accept<T>(WebSocketAcceptContext acceptContext) where T : WebSocketHandler, new()
@@ -66,8 +66,9 @@ namespace Fireasy.Web.Sockets
         internal static async Task Accept(WebSocketHandler handler, WebSocketAcceptContext acceptContext)
         {
             handler.cancelToken = new CancellationTokenSource();
-            handler.acceptContext = acceptContext;
-            handler.Clients = ClientManagerCache.GetManager(handler.GetType(), acceptContext);
+            handler.AcceptContext = acceptContext;
+
+            handler.Clients = new WrapClientManager(ClientManagerCache.GetManager(handler.GetType(), acceptContext), handler);
 
             try
             {
@@ -81,20 +82,20 @@ namespace Fireasy.Web.Sockets
 
         DateTime IClientProxy.AliveTime
         {
-            get { return lastReceivedTime; }
+            get { return _lastReceivedTime; }
         }
 
         async Task IClientProxy.SendAsync(string method, params object[] arguments)
         {
             var message = new InvokeMessage(method, 0, arguments);
-            var json = acceptContext.Option.Formatter.FormatMessage(message);
-            var bytes = acceptContext.Option.Encoding.GetBytes(json);
+            var json = AcceptContext.Option.Formatter.FormatMessage(message);
+            var bytes = AcceptContext.Option.Encoding.GetBytes(json);
 
             try
             {
                 if (IsValidState(WebSocketState.Open, WebSocketState.CloseReceived))
                 {
-                    await acceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Text, true, cancelToken.Token);
+                    await AcceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Text, true, cancelToken.Token);
                 }
             }
             catch (Exception exp)
@@ -110,16 +111,16 @@ namespace Fireasy.Web.Sockets
             OnConnected();
             Clients.Add(ConnectionId, this);
 
-            var buffer = new byte[acceptContext.Option.ReceiveBufferSize];
+            var buffer = new byte[AcceptContext.Option.ReceiveBufferSize];
             var data = new DataBuffer();
 
-            while (acceptContext.WebSocket.State == WebSocketState.Open)
+            while (AcceptContext.WebSocket.State == WebSocketState.Open)
             {
-                var result = await acceptContext.WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cancelToken.Token);
+                var result = await AcceptContext.WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cancelToken.Token);
 
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
-                    await acceptContext.WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Close response received", cancelToken.Token);
+                    await AcceptContext.WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Close response received", cancelToken.Token);
                     break;
                 }
 
@@ -127,7 +128,7 @@ namespace Fireasy.Web.Sockets
 
                 if (result.EndOfMessage)
                 {
-                    lastReceivedTime = DateTime.Now;
+                    _lastReceivedTime = DateTime.Now;
 
                     var bytes = HandleResult(result.MessageType, data);
 
@@ -135,7 +136,7 @@ namespace Fireasy.Web.Sockets
 
                     if (bytes != null)
                     {
-                        await acceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), result.MessageType, result.EndOfMessage, cancelToken.Token);
+                        await AcceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), result.MessageType, result.EndOfMessage, cancelToken.Token);
                     }
                 }
 
@@ -206,34 +207,23 @@ namespace Fireasy.Web.Sockets
         /// <param name="exception">异常。</param>
         protected virtual void OnFatalError(Exception exception)
         {
-
         }
 
         /// <summary>
-        /// 释放对象所占用的所有资源。
+        /// 用户认证。
         /// </summary>
-        public void Dispose()
+        /// <param name="context"></param>
+        /// <returns></returns>
+        protected virtual bool OnAuthorizing(AuthorizeContext context)
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            return true;
         }
 
-        /// <summary>
-        /// 释放对象所占用的非托管和托管资源。
-        /// </summary>
-        /// <param name="disposing">为 true 则释放托管资源和非托管资源；为 false 则仅释放非托管资源。</param>
-        protected virtual void Dispose(bool disposing)
+        protected override bool Dispose(bool disposing)
         {
-            if (isDisposed)
+            if (_timer != null)
             {
-                return;
-            }
-
-            isDisposed = true;
-
-            if (timer != null)
-            {
-                timer.Dispose();
+                _timer.Dispose();
             }
 
             if (cancelToken != null)
@@ -241,18 +231,20 @@ namespace Fireasy.Web.Sockets
                 cancelToken.Dispose();
             }
 
-            if (!isClosing)
+            if (!_isClosing)
             {
-                isClosing = true;
+                _isClosing = true;
                 Clients.Remove(ConnectionId);
                 OnDisconnected();
 
-                if (acceptContext != null && acceptContext.WebSocket != null && acceptContext.WebSocket.CloseStatus == null)
+                if (AcceptContext != null && AcceptContext.WebSocket != null && AcceptContext.WebSocket.CloseStatus == null)
                 {
-                    acceptContext.WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None)
-                        .ContinueWith(t => acceptContext.WebSocket.Dispose());
+                    AcceptContext.WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None)
+                        .ContinueWith(t => AcceptContext.WebSocket.Dispose());
                 }
             }
+
+            return base.Dispose(disposing);
         }
 
         /// <summary>
@@ -276,12 +268,12 @@ namespace Fireasy.Web.Sockets
             }
             else if (type == WebSocketMessageType.Text)
             {
-                var content = acceptContext.Option.Encoding.GetString(data);
+                var content = AcceptContext.Option.Encoding.GetString(data);
                 InvokeMessage message;
                 try
                 {
                     OnReceived(content);
-                    message = acceptContext.Option.Formatter.ResolveMessage(content);
+                    message = AcceptContext.Option.Formatter.ResolveMessage(content);
                 }
                 catch (Exception exp)
                 {
@@ -294,9 +286,11 @@ namespace Fireasy.Web.Sockets
                 try
                 {
                     var method = FindMethod(message);
-                    if (method == null)
+
+                    var authContext = new AuthorizeContext(AcceptContext.User, method, message.Arguments);
+                    if (!OnAuthorizing(authContext))
                     {
-                        throw new Exception($"没有发现方法 {message.Method}");
+                        throw new Exception($"未通过认证 {message.Method}。");
                     }
 
                     var arguments = ResolveArguments(method, message);
@@ -307,7 +301,7 @@ namespace Fireasy.Web.Sockets
                         returnType = method.ReturnType.GetGenericArguments()[0];
                         result = method.ReturnType.GetProperty("Result").GetValue(result);
                     }
-                    else if (method.ReturnType != typeof(void))
+                    else if (method.ReturnType != typeof(void) && method.ReturnType != typeof(Task))
                     {
                         returnType = method.ReturnType;
                     }
@@ -342,7 +336,7 @@ namespace Fireasy.Web.Sockets
             }
 
             var retMsg = new InvokeMessage(message.Method, 1, new[] { result });
-            return acceptContext.Option.Encoding.GetBytes(acceptContext.Option.Formatter.FormatMessage(retMsg));
+            return AcceptContext.Option.Encoding.GetBytes(AcceptContext.Option.Formatter.FormatMessage(retMsg));
         }
 
         /// <summary>
@@ -352,7 +346,18 @@ namespace Fireasy.Web.Sockets
         /// <returns></returns>
         private MethodInfo FindMethod(InvokeMessage message)
         {
-            return this.GetType().GetMethod(message.Method, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            var methods = GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(s => s.Name.Equals(message.Method, StringComparison.InvariantCultureIgnoreCase)).ToArray();
+            if (methods.Length == 0)
+            {
+                throw new Exception($"没有找到方法 {message.Method}。");
+            }
+
+            if (methods.Length > 1)
+            {
+                throw new AmbiguousMatchException($"无法从多个重载方法匹配 {message.Method}，只允许定义一个方法。");
+            }
+
+            return methods[0];
         }
 
         /// <summary>
@@ -366,7 +371,7 @@ namespace Fireasy.Web.Sockets
             var parameters = method.GetParameters();
             if (parameters.Length != message.Arguments.Length)
             {
-                throw new Exception($"方法 {message.Method} 参数不匹配");
+                throw new Exception($"方法 {message.Method} 参数不匹配。");
             }
 
             //处理参数
@@ -391,7 +396,7 @@ namespace Fireasy.Web.Sockets
         /// </summary>
         private void ManualClose()
         {
-            if (isClosing)
+            if (_isClosing)
             {
                 return;
             }
@@ -404,16 +409,21 @@ namespace Fireasy.Web.Sockets
         /// </summary>
         private void ListenHeartBeat()
         {
-            timer = new Timer(o =>
+            if (AcceptContext.Option.HeartbeatInterval == TimeSpan.MaxValue)
+            {
+                return;
+            }
+
+            _timer = new Timer(o =>
                 {
                     //3次容错
-                    if ((DateTime.Now - lastReceivedTime).TotalMilliseconds >=
-                        acceptContext.Option.HeartbeatInterval.TotalMilliseconds * acceptContext.Option.HeartbeatTryTimes)
+                    if ((DateTime.Now - _lastReceivedTime).TotalMilliseconds >=
+                        AcceptContext.Option.HeartbeatInterval.TotalMilliseconds * AcceptContext.Option.HeartbeatTryTimes)
                     {
                         cancelToken.Cancel(false);
                         ManualClose();
                     }
-                }, null, acceptContext.Option.HeartbeatInterval, acceptContext.Option.HeartbeatInterval);
+                }, null, AcceptContext.Option.HeartbeatInterval, AcceptContext.Option.HeartbeatInterval);
         }
 
         private class DataBuffer : List<byte>
@@ -434,7 +444,7 @@ namespace Fireasy.Web.Sockets
 
         private bool IsValidState(params WebSocketState[] status)
         {
-            return Array.IndexOf(status, acceptContext.WebSocket.State) >= 0;
+            return Array.IndexOf(status, AcceptContext.WebSocket.State) >= 0;
         }
     }
 }

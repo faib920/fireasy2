@@ -5,12 +5,8 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 
@@ -31,7 +27,7 @@ namespace Fireasy.Windows.Forms
             var sortArrayRect = GetColumnHeaderSortArrayBound(e.Column, e.Bounds);
 
             //图标绘制区
-            var image = e.Column == null ? null : e.Column.GetImage();
+            var image = e.Column?.GetImage();
             var imageRect = image == null ? Rectangle.Empty : GetColumnHeaderImageRect(image, e.Column.ImageAlign, e.Bounds, sortArrayRect.Width);
 
             //文本绘制区
@@ -117,9 +113,11 @@ namespace Fireasy.Windows.Forms
             e.Graphics.FillRectangle(SystemBrushes.Window, rect);
             e.Graphics.DrawRectangle(Pens.LightGray, rect);
 
-            var sf = new StringFormat();
-            sf.LineAlignment = StringAlignment.Center;
-            sf.Alignment = StringAlignment.Center;
+            var sf = new StringFormat
+            {
+                LineAlignment = StringAlignment.Center,
+                Alignment = StringAlignment.Center
+            };
             e.Graphics.DrawString(e.TreeList.LoadingText, e.TreeList.Font, Brushes.Gray, rect, sf);
         }
 
@@ -129,8 +127,10 @@ namespace Fireasy.Windows.Forms
         /// <param name="e"></param>
         public virtual void DrawGroup(TreeListGroupRenderEventArgs e)
         {
-            var sf = new StringFormat();
-            sf.LineAlignment = StringAlignment.Center;
+            var sf = new StringFormat
+            {
+                LineAlignment = StringAlignment.Center
+            };
 
             var trect = new Rectangle(e.Bounds.X + 10, e.Bounds.Y, e.Bounds.Width - 10, e.Bounds.Height);
             using (var brush = new SolidBrush(e.Group.TreeList.GroupForeColor))
@@ -163,9 +163,11 @@ namespace Fireasy.Windows.Forms
         /// <param name="e"></param>
         public virtual void DrawNoneItem(TreeListRenderEventArgs e)
         {
-            var sf = new StringFormat();
-            sf.LineAlignment = StringAlignment.Center;
-            sf.Alignment = StringAlignment.Center;
+            var sf = new StringFormat
+            {
+                LineAlignment = StringAlignment.Center,
+                Alignment = StringAlignment.Center
+            };
 
             var rect = e.Bounds;
 
@@ -235,9 +237,11 @@ namespace Fireasy.Windows.Forms
 
             using (var font = new Font("Marlett", 9))
             {
-                var form = new StringFormat();
-                form.Alignment = StringAlignment.Center;
-                form.LineAlignment = StringAlignment.Center;
+                var form = new StringFormat
+                {
+                    Alignment = StringAlignment.Center,
+                    LineAlignment = StringAlignment.Center
+                };
 
                 graphics.DrawString(sortOrder == SortOrder.Ascending ? "5" : "6", font, SystemBrushes.ControlDark, rect, form);
             }

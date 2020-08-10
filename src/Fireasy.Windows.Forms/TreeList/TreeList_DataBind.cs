@@ -16,7 +16,7 @@ namespace Fireasy.Windows.Forms
 {
     public partial class TreeList
     {
-        private object dataSource;
+        private object _dataSource;
 
         /// <summary>
         /// 将一个数据对象绑定到 <see cref="TreeList"/>
@@ -24,7 +24,7 @@ namespace Fireasy.Windows.Forms
         /// <param name="dataSource"></param>
         public void DataBind(object dataSource)
         {
-            this.dataSource = dataSource;
+            _dataSource = dataSource;
 
             BeginUpdate();
 
@@ -67,11 +67,11 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         public object DataSource
         {
-            get { return dataSource; }
+            get { return _dataSource; }
             set
             {
-                dataSource = value;
-                DataBind(dataSource);
+                _dataSource = value;
+                DataBind(_dataSource);
             }
         }
 
@@ -97,7 +97,7 @@ namespace Fireasy.Windows.Forms
         {
             if (selectKeyValues != null)
             {
-                foreach (var vitem in virMgr.Items)
+                foreach (var vitem in _virMgr.Items)
                 {
                     if (vitem.Item is TreeListItem item &&
                         item.KeyValue != null &&
@@ -115,6 +115,7 @@ namespace Fireasy.Windows.Forms
         /// <param name="table"></param>
         private void BindDataTable(DataTable table)
         {
+            throw new NotSupportedException();
         }
 
         /// <summary>
@@ -191,7 +192,7 @@ namespace Fireasy.Windows.Forms
 
         private PropertyDescriptor FindProperty(List<PropertyDescriptor> properties, string name)
         {
-            return string.IsNullOrEmpty(name) ? null : 
+            return string.IsNullOrEmpty(name) ? null :
                 properties.Find(s => s.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));
         }
 

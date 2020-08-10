@@ -2,6 +2,26 @@
 
   <PropertyGroup>
     <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Authors>Huangxd</Authors>
+    <Company>Fireasy</Company>
+    <Copyright>Copyright © Fireasy 2013-2020</Copyright>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>False</DelaySign>
+    <Product>Fireasy AutoMapper Provider</Product>
+    <FileVersion>2.2.0</FileVersion>
+    <AssemblyVersion>2.2.0</AssemblyVersion>
+    <Version>2.2.0</Version>
+    <Description>
+      适配 AutoMapper。
+
+      示例源码：https://github.com/faib920/zero
+    </Description>
+    <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
+    <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

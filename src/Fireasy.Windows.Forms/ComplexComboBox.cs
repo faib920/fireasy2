@@ -6,8 +6,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
+using System.Text;
 using System.Windows.Forms;
 
 namespace Fireasy.Windows.Forms
@@ -153,7 +153,7 @@ namespace Fireasy.Windows.Forms
 
             TreeList.Columns.Add(new TreeListColumn { Spring = true });
             TreeList.ItemClick += TreeList_ItemClick;
-            TreeList.AfterItemCheckChange += TreeList_AfterItemCheckChange;
+            TreeList.ItemCheckChanged += TreeList_ItemCheckChanged;
             TreeList.ShowGridLines = false;
         }
 
@@ -169,7 +169,7 @@ namespace Fireasy.Windows.Forms
             HideDropDown();
         }
 
-        void TreeList_AfterItemCheckChange(object sender, TreeListItemEventArgs e)
+        void TreeList_ItemCheckChanged(object sender, TreeListItemEventArgs e)
         {
             if (!TreeList.ShowCheckBoxes)
             {

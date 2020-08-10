@@ -21,7 +21,7 @@ namespace Fireasy.Common.Caching
     /// <summary>
     /// 基于内存的缓存管理。无法继承此类。
     /// </summary>
-    public sealed class MemoryCacheManager : DisposeableBase, IMemoryCacheManager
+    public sealed class MemoryCacheManager : DisposableBase, IMemoryCacheManager
     {
         /// <summary>
         /// 获取 <see cref="MemoryCacheManager"/> 的静态实例。

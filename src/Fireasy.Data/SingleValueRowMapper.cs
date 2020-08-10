@@ -38,19 +38,6 @@ namespace Fireasy.Data
         }
 
         /// <summary>
-        /// 将一个 <see cref="DataRow"/> 转换为一个 <typeparamref name="T"/> 的对象。
-        /// </summary>
-        /// <param name="database">当前的 <see cref="IDatabase"/> 对象。</param>
-        /// <param name="row">一个 <see cref="DataRow"/> 对象。</param>
-        /// <returns>由 <see cref="DataRow"/> 中数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
-        public virtual T Map(IDatabase database, DataRow row)
-        {
-            var converter = ConvertManager.GetConverter(typeof(T));
-            return converter != null ? (T)converter.ConvertFrom(row[0], row.Table.Columns[0].DataType.GetDbType()) :
-                row[0].To<object, T>();
-        }
-
-        /// <summary>
         /// 获取或设置 <see cref="IRecordWrapper"/>。
         /// </summary>
         public IRecordWrapper RecordWrapper { get; set; }
@@ -63,11 +50,6 @@ namespace Fireasy.Data
         object IDataRowMapper.Map(IDatabase database, IDataReader reader)
         {
             return Map(database, reader);
-        }
-
-        object IDataRowMapper.Map(IDatabase database, DataRow row)
-        {
-            return Map(database, row);
         }
     }
 }

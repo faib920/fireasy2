@@ -1,4 +1,11 @@
-﻿using System.Drawing;
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace Fireasy.Windows.Forms
@@ -51,8 +58,7 @@ namespace Fireasy.Windows.Forms
                 (!item.ForeColor.IsEmpty ? item.ForeColor : treeList.ForeColor)));
             var font = column.CellFont ?? column.Font ?? item.Font ?? treeList.Font;
 
-            bool isNullText;
-            var text = GetDrawingText(cell, out isNullText);
+            var text = GetDrawingText(cell, out bool isNullText);
             if (isNullText && !(state == DrawState.Selected && treeList.Focused))
             {
                 foreColor = Color.DarkGray;

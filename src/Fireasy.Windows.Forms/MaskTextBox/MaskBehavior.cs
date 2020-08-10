@@ -1,7 +1,7 @@
 using System;
-using System.Windows.Forms;
 using System.Collections;
 using System.Text;
+using System.Windows.Forms;
 
 namespace Fireasy.Windows.Forms
 {
@@ -9,8 +9,8 @@ namespace Fireasy.Windows.Forms
     public class MaskBehavior : Behavior
     {
         // Fields
-        private string m_mask;
-        private ArrayList m_symbols = new ArrayList();
+        private string _mask;
+        private readonly ArrayList _symbols = new ArrayList();
 
         /// <summary>
         ///   Initializes a new instance of the MaskedBehavior class by associating it with a TextBoxBase derived object. </summary>
@@ -41,10 +41,10 @@ namespace Fireasy.Windows.Forms
             :
             base(textBox, true)
         {
-            m_mask = mask;
+            _mask = mask;
 
             // Add the default numeric symbol
-            m_symbols.Add(new Symbol('#', new Symbol.ValidatorMethod(Char.IsDigit)));
+            _symbols.Add(new Symbol('#', new Symbol.ValidatorMethod(Char.IsDigit)));
         }
 
         /// <summary>
@@ -59,8 +59,8 @@ namespace Fireasy.Windows.Forms
             :
             base(behavior)
         {
-            m_mask = behavior.m_mask;
-            m_symbols = behavior.m_symbols;
+            _mask = behavior._mask;
+            _symbols = behavior._symbols;
         }
 
         /// <summary>
@@ -77,14 +77,14 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return m_mask;
+                return _mask;
             }
             set
             {
-                if (m_mask == value)
+                if (_mask == value)
                     return;
 
-                m_mask = value;
+                _mask = value;
                 UpdateText();
             }
         }
@@ -107,7 +107,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return m_symbols;
+                return _symbols;
             }
         }
 
@@ -117,7 +117,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                string text = m_textBox.Text;
+                string text = _textBox.Text;
                 StringBuilder numericText = new StringBuilder();
 
                 foreach (char c in text)
@@ -166,7 +166,7 @@ namespace Fireasy.Windows.Forms
             public event FormatterMethod Formatter;
 
             // The symbol's character
-            private char m_symbol;
+            private char _symbol;
 
             /// <summary>
             ///   Initializes a new instance of the Symbol class by associating it with a character. </summary>
@@ -212,7 +212,7 @@ namespace Fireasy.Windows.Forms
             /// <seealso cref="MaskedBehavior" />
             public Symbol(char symbol, ValidatorMethod validator, FormatterMethod formatter)
             {
-                m_symbol = symbol;
+                _symbol = symbol;
                 Validator = validator;
                 Formatter = formatter;
             }
@@ -263,11 +263,11 @@ namespace Fireasy.Windows.Forms
             {
                 get
                 {
-                    return m_symbol;
+                    return _symbol;
                 }
                 set
                 {
-                    m_symbol = value;
+                    _symbol = value;
                 }
             }
 
@@ -289,21 +289,21 @@ namespace Fireasy.Windows.Forms
         ///   If the textbox's text is valid, it is returned; otherwise a valid version of it is returned. </returns>
         protected override string GetValidText()
         {
-            string text = m_textBox.Text;
-            int maskLength = m_mask.Length;
+            string text = _textBox.Text;
+            int maskLength = _mask.Length;
 
             // If the mask is empty, allow anything
             if (maskLength == 0)
                 return text;
 
             StringBuilder validText = new StringBuilder();
-            int symbolCount = m_symbols.Count;
+            int symbolCount = _symbols.Count;
 
             // Accomodate the text to the mask as much as possible
             for (int iPos = 0, iMaskPos = 0, length = text.Length; iPos < length; iPos++, iMaskPos++)
             {
                 char c = text[iPos];
-                char cMask = (iMaskPos < maskLength ? m_mask[iMaskPos] : (char)0);
+                char cMask = (iMaskPos < maskLength ? _mask[iMaskPos] : (char)0);
 
                 // If we've reached the end of the mask, break
                 if (cMask == 0)
@@ -314,7 +314,7 @@ namespace Fireasy.Windows.Forms
                 // Match the character to any of the symbols
                 for (; iSymbol < symbolCount; iSymbol++)
                 {
-                    Symbol symbol = (Symbol)m_symbols[iSymbol];
+                    Symbol symbol = (Symbol)_symbols[iSymbol];
 
                     // Find the symbol that applies for the given character
                     if (!symbol.Validate(c))
@@ -323,7 +323,7 @@ namespace Fireasy.Windows.Forms
                     // Try to add matching characters in the mask until a different symbol is reached
                     for (; iMaskPos < maskLength; iMaskPos++)
                     {
-                        cMask = m_mask[iMaskPos];
+                        cMask = _mask[iMaskPos];
                         if (cMask == (char)symbol)
                         {
                             validText.Append(symbol.Format(c));
@@ -334,7 +334,7 @@ namespace Fireasy.Windows.Forms
                             int iSymbol2 = 0;
                             for (; iSymbol2 < symbolCount; iSymbol2++)
                             {
-                                Symbol symbol2 = (Symbol)m_symbols[iSymbol2];
+                                Symbol symbol2 = (Symbol)_symbols[iSymbol2];
                                 if (cMask == (char)symbol2)
                                 {
                                     validText.Append(symbol.Format(c));
@@ -360,7 +360,7 @@ namespace Fireasy.Windows.Forms
                         // Match the character to any of the symbols
                         for (iSymbol = 0; iSymbol < symbolCount; iSymbol++)
                         {
-                            Symbol symbol = (Symbol)m_symbols[iSymbol];
+                            Symbol symbol = (Symbol)_symbols[iSymbol];
                             if (cMask == (char)symbol)
                                 break;
                         }
@@ -398,10 +398,9 @@ namespace Fireasy.Windows.Forms
                 // If deleting make sure it's the last character or that
                 // the selection goes all the way to the end of the text
 
-                int start, end;
-                m_selection.Get(out start, out end);
+                _selection.Get(out int start, out int end);
 
-                string text = m_textBox.Text;
+                string text = _textBox.Text;
                 int length = text.Length;
 
                 if (end != length)
@@ -427,28 +426,27 @@ namespace Fireasy.Windows.Forms
             TraceLine("MaskedBehavior.HandleKeyPress " + e.KeyChar);
 
             // Check to see if it's read only
-            if (m_textBox.ReadOnly)
+            if (_textBox.ReadOnly)
                 return;
 
             char c = e.KeyChar;
             e.Handled = true;
 
             // If the mask is empty, allow anything
-            int maskLength = m_mask.Length;
+            int maskLength = _mask.Length;
             if (maskLength == 0)
             {
                 base.HandleKeyPress(sender, e);
                 return;
             }
 
-            int start, end;
-            m_selection.Get(out start, out end);
+            _selection.Get(out int start, out int end);
 
             // Check that we haven't gone past the mask's length
             if (start >= maskLength && c != (short)Keys.Back)
                 return;
 
-            string text = m_textBox.Text;
+            string text = _textBox.Text;
             int length = text.Length;
 
             // Check for a non-printable character (such as Ctrl+C)
@@ -465,17 +463,17 @@ namespace Fireasy.Windows.Forms
                 return;
             }
 
-            char cMask = m_mask[start];
+            char cMask = _mask[start];
 
             // Check if the mask's character matches with any of the symbols in the array.
-            foreach (Symbol symbol in m_symbols)
+            foreach (Symbol symbol in _symbols)
             {
                 if (cMask == (char)symbol)
                 {
                     if (symbol.Validate(c))
                     {
                         end = (end == length ? end : (start + 1));
-                        m_selection.SetAndReplace(start, end, symbol.Format(c));
+                        _selection.SetAndReplace(start, end, symbol.Format(c));
                     }
                     return;
                 }
@@ -485,31 +483,31 @@ namespace Fireasy.Windows.Forms
             if (cMask == c)
             {
                 end = (end == length ? end : (start + 1));
-                m_selection.SetAndReplace(start, end, c.ToString());
+                _selection.SetAndReplace(start, end, c.ToString());
                 return;
             }
 
             // Concatenate all the mask symbols
             StringBuilder concatenatedSymbols = new StringBuilder();
-            foreach (Symbol symbol in m_symbols)
+            foreach (Symbol symbol in _symbols)
                 concatenatedSymbols.Append((char)symbol);
 
             char[] symbolChars = concatenatedSymbols.ToString().ToCharArray();
 
             // If it's a valid character, find the next symbol on the mask and add any non-mask characters in between.
-            foreach (Symbol symbol in m_symbols)
+            foreach (Symbol symbol in _symbols)
             {
                 // See if the character is valid for any other symbols
                 if (!symbol.Validate(c))
                     continue;
 
-                string maskPortion = m_mask.Substring(start);
+                string maskPortion = _mask.Substring(start);
                 int maskPos = maskPortion.IndexOfAny(symbolChars);
 
                 // Enter the character if there isn't another symbol before it
                 if (maskPos >= 0 && maskPortion[maskPos] == (char)symbol)
                 {
-                    m_selection.SetAndReplace(start, start + maskPos, maskPortion.Substring(0, maskPos));
+                    _selection.SetAndReplace(start, start + maskPos, maskPortion.Substring(0, maskPos));
                     HandleKeyPress(sender, e);
                     return;
                 }

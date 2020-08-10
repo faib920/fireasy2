@@ -12,7 +12,7 @@ namespace Fireasy.Web.Mvc
     /// <summary>
     /// 标识在发生异常时采取何种替代行为。无法继承此类。
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple=false)]
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     public sealed class EmptyArrayResultAttribute : Attribute
     {
         /// <summary>

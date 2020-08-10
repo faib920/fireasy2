@@ -158,8 +158,8 @@ namespace Fireasy.Data.Batcher
                         async (index, batch, surplus, lastBatch) =>
                             {
                                 var sql = string.Format("INSERT INTO {0}({1}) VALUES {2}",
-                                    DbUtility.FormatByQuote(syntax, tableName),
-                                    string.Join(",", mapping.Select(s => DbUtility.FormatByQuote(syntax, s.FieldName))), string.Join(",", valueSeg));
+                                    syntax.FormatByDelimiter(tableName),
+                                    string.Join(",", mapping.Select(s => syntax.FormatByDelimiter(s.FieldName))), string.Join(",", valueSeg));
 
                                 command.CommandText = sql;
                                 await command.ExecuteNonQueryAsync(cancellationToken);

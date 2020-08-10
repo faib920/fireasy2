@@ -21,12 +21,12 @@ namespace Fireasy.Windows.Forms
         /// <returns></returns>
         protected TreeListHitTestInfo HitTest(int x, int y, TreeListHitTestEventType eventType)
         {
-            if (bound.ColumnBound.Contains(x, y))
+            if (_bound.ColumnBound.Contains(x, y))
             {
                 return HitTestColumn(x, y);
             }
 
-            if (bound.AvlieBound.Contains(x, y))
+            if (_bound.AvlieBound.Contains(x, y))
             {
                 return HitTestItem(x, y);
             }
@@ -43,7 +43,7 @@ namespace Fireasy.Windows.Forms
         private TreeListHitTestInfo HitTestColumn(int x, int y)
         {
             const int SIZE_WIDTH = 4;
-            var workRect = bound.ColumnBound;
+            var workRect = _bound.ColumnBound;
             var x1 = workRect.X - GetOffsetLeft();
             foreach (var column in Columns)
             {
@@ -110,21 +110,21 @@ namespace Fireasy.Windows.Forms
             var index = (y - columnHeight + GetOffsetTop()) / itemHeight;
 
             //判断索引是否有效，以及是否超出右边
-            if (index < 0 || index > virMgr.Items.Count - 1 || x > totalWidth - GetOffsetLeft())
+            if (index < 0 || index > _virMgr.Items.Count - 1 || x > totalWidth - GetOffsetLeft())
             {
                 return new TreeListHitTestInfo(TreeListHitTestType.Item);
             }
 
-            var item = virMgr.Items[index];
+            var item = _virMgr.Items[index];
             if (item.ItemType == ItemType.Group)
             {
                 return HitTestGroup(x, y);
             }
 
-            var x1 = bound.ItemBound.X - GetOffsetLeft();
+            var x1 = _bound.ItemBound.X - GetOffsetLeft();
 
             //修正y座标
-            var y1 = bound.ItemBound.Y + index * itemHeight - GetOffsetTop();
+            var y1 = _bound.ItemBound.Y + index * itemHeight - GetOffsetTop();
             var tw = GetColumnTotalWidth();
 
             var rect = new Rectangle(x1, y1, tw, ItemHeight);
@@ -155,7 +155,7 @@ namespace Fireasy.Windows.Forms
                 return new TreeListHitTestInfo(TreeListHitTestType.Item, item, rect);
             }
 
-            if (ShowRowNumber && new Rectangle(bound.RowNumberBound.X, y1, RowNumberWidth, ItemHeight).Contains(x, y))
+            if (ShowRowNumber && new Rectangle(_bound.RowNumberBound.X, y1, RowNumberWidth, ItemHeight).Contains(x, y))
             {
                 return new TreeListHitTestInfo(TreeListHitTestType.Item, item, rect);
             }
@@ -246,7 +246,7 @@ namespace Fireasy.Windows.Forms
 
         private TreeListHitTestInfo HitTestCell(VirtualTreeListItem vitem, Rectangle rect, int x, int y)
         {
-            var workRect = bound.ItemBound;
+            var workRect = _bound.ItemBound;
             var x1 = workRect.X - GetOffsetLeft();
             var item = (TreeListItem)vitem.Item;
             foreach (var column in Columns)
@@ -304,7 +304,7 @@ namespace Fireasy.Windows.Forms
                         {
                             DrawState = drawState
                         };
-                        graphics.KeepClip(bound.ColumnBound, () => Renderer.DrawColumnHeader(drawArgs));
+                        graphics.KeepClip(_bound.ColumnBound, () => Renderer.DrawColumnHeader(drawArgs));
                     }
 
                     break;
@@ -396,9 +396,9 @@ namespace Fireasy.Windows.Forms
         /// <param name="info"></param>
         private void ProcessColumnClick(TreeListHitTestInfo info)
         {
-            if (lastHoverHitInfo != null &&
-                lastHoverHitInfo.HitTestType == TreeListHitTestType.Column &&
-                lastHoverHitInfo.Element != null)
+            if (_lastHoverHitInfo != null &&
+                _lastHoverHitInfo.HitTestType == TreeListHitTestType.Column &&
+                _lastHoverHitInfo.Element != null)
             {
                 var column = (TreeListColumn)info.Element;
 
@@ -406,33 +406,33 @@ namespace Fireasy.Windows.Forms
 
                 if (Sortable)
                 {
-                    if (sortedColumn != column)
+                    if (_sortedColumn != column)
                     {
-                        sortedOrder = SortOrder.Ascending;
+                        _sortedOrder = SortOrder.Ascending;
                     }
                     else
                     {
-                        if (sortedOrder == SortOrder.Ascending)
+                        if (_sortedOrder == SortOrder.Ascending)
                         {
-                            sortedOrder = SortOrder.Descending;
+                            _sortedOrder = SortOrder.Descending;
                         }
                         else
                         {
-                            sortedOrder = SortOrder.Ascending;
+                            _sortedOrder = SortOrder.Ascending;
                         }
                     }
 
-                    sortedColumn = column;
+                    _sortedColumn = column;
 
-                    if (RaiseColumnClickEvent(column, sortedOrder))
+                    if (RaiseColumnClickEvent(column, _sortedOrder))
                     {
                         if (Groups.Count == 0)
                         {
-                            Items.Sort(++sortVersion, column, sortedOrder);
+                            Items.Sort(++_sortVersion, column, _sortedOrder);
                         }
                         else
                         {
-                            Groups.Sort(++sortVersion, column, sortedOrder);
+                            Groups.Sort(++_sortVersion, column, _sortedOrder);
                         }
                         UpdateItems();
                     }
@@ -449,13 +449,13 @@ namespace Fireasy.Windows.Forms
             var item = (TreeListItem)((VirtualTreeListItem)info.Element).Item;
 
             //按着ctrol切换选中状态
-            if (controlPressed)
+            if (_controlPressed)
             {
                 SelectItem(item, !item.Selected, false);
             }
-            else if (shiftPressed && lastRowIndex != -1)
+            else if (_shiftPressed && _lastRowIndex != -1)
             {
-                if (lastRowIndex > virMgr.Items.Count - 1)
+                if (_lastRowIndex > _virMgr.Items.Count - 1)
                 {
                     return;
                 }
@@ -466,19 +466,19 @@ namespace Fireasy.Windows.Forms
                 }
 
                 SelectedItems.InternalClear();
-                Invalidate(bound.ItemBound);
+                Invalidate(_bound.ItemBound);
 
-                var start = lastRowIndex;
+                var start = _lastRowIndex;
                 var end = item.Index;
                 if (start > end)
                 {
                     start = end;
-                    end = lastRowIndex;
+                    end = _lastRowIndex;
                 }
 
                 for (var i = start; i <= end; i++)
                 {
-                    if (!(virMgr.Items[i].Item is TreeListItem t))
+                    if (!(_virMgr.Items[i].Item is TreeListItem t))
                     {
                         continue;
                     }
@@ -499,7 +499,7 @@ namespace Fireasy.Windows.Forms
             {
                 SelectItem(item, true);
                 HideEditor();
-                lastRowIndex = item.Index;
+                _lastRowIndex = item.Index;
             }
 
             RaiseItemClickEvent(item);
@@ -511,10 +511,10 @@ namespace Fireasy.Windows.Forms
         /// <param name="info"></param>
         private void AdjustItemPosistion(TreeListHitTestInfo info)
         {
-            var y = info.Bounds.Y - bound.ItemBound.Y;
-            if (y < 0 || (y = info.Bounds.Bottom - bound.ItemBound.Bottom) > 0)
+            var y = info.Bounds.Y - _bound.ItemBound.Y;
+            if (y < 0 || (y = info.Bounds.Bottom - _bound.ItemBound.Bottom) > 0)
             {
-                vbar.Value += y;
+                _vbar.Value += y;
                 var r = info.Bounds;
                 r.Offset(0, -y);
                 info.Bounds = r;
@@ -583,7 +583,7 @@ namespace Fireasy.Windows.Forms
             if (cell.Item.Enabled && !RaiseBeforeCellEditingEvent(cell))
             {
                 var rect = GetCellTextRectangle(cell, info.Bounds);
-                editor.BeginEdit(cell, rect);
+                _editor.BeginEdit(cell, rect);
             }
         }
 
@@ -634,9 +634,9 @@ namespace Fireasy.Windows.Forms
             {
                 RaiseAfterItemExpandEvent(item);
 
-                if (sortedColumn != null)
+                if (_sortedColumn != null)
                 {
-                    item.Items.Sort(sortVersion, sortedColumn, sortedOrder);
+                    item.Items.Sort(_sortVersion, _sortedColumn, _sortedOrder);
                 }
             }
             else

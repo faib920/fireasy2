@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.ComponentModel;
 using System.Windows.Forms;
 
@@ -48,6 +49,8 @@ namespace Fireasy.Windows.Forms
         public event TreeListCellBeforeCheckedEventHandler BeforeCellCheckChange;
         [Description("当单元格的 Checked 值改变之后触发此事件。")]
         public event TreeListCellAfterCheckedEventHandler AfterCellCheckChange;
+        [Description("当行的 Checked 值改变后触发此事件。")]
+        public event TreeListItemCheckChangeEventHandler ItemCheckChanged;
 
         #region 触发事件
         protected internal bool RaiseColumnClickEvent(TreeListColumn column, SortOrder order)
@@ -183,6 +186,12 @@ namespace Fireasy.Windows.Forms
             var e = new TreeListCellEventArgs { Cell = cell };
             OnAfterCellCheckChange(e);
         }
+
+        protected internal void RaiseItemCheckChanged(TreeListItem item)
+        {
+            var e = new TreeListItemEventArgs { Item = item };
+            OnItemCheckChanged(e);
+        }
         #endregion
 
         #region 事件虚方法
@@ -284,6 +293,11 @@ namespace Fireasy.Windows.Forms
         protected virtual void OnAfterCellCheckChange(TreeListCellEventArgs e)
         {
             AfterCellCheckChange?.Invoke(this, e);
+        }
+
+        protected virtual void OnItemCheckChanged(TreeListItemEventArgs e)
+        {
+            ItemCheckChanged?.Invoke(this, e);
         }
         #endregion
     }

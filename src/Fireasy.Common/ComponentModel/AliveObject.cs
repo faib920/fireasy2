@@ -14,7 +14,7 @@ namespace Fireasy.Common.ComponentModel
     /// 为对象提供生存能力。无法继承此类。
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public sealed class AliveObject<T> : DisposeableBase where T : class
+    public sealed class AliveObject<T> : DisposableBase where T : class
     {
         private readonly Func<T> _creator;
         private readonly Timer _timer;

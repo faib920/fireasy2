@@ -65,7 +65,7 @@ namespace Fireasy.Common.ComponentModel
     /// 默认的对象缓冲池。
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class ObjectPool<T> : DisposeableBase, IObjectPool where T : class, IObjectPoolable
+    public class ObjectPool<T> : DisposableBase, IObjectPool where T : class, IObjectPoolable
     {
         private readonly SafetyDictionary<string, InternalQueue> _queueDict = new SafetyDictionary<string, InternalQueue>();
         private readonly Func<T> _creator;

@@ -5,7 +5,7 @@
         /// <summary>
         /// 必需的设计器变量。
         /// </summary>
-        private System.ComponentModel.IContainer components = null;
+        private System.ComponentModel.IContainer _components = null;
 
         /// <summary> 
         /// 清理所有正在使用的资源。
@@ -13,9 +13,9 @@
         /// <param name="disposing">如果应释放托管资源，为 true；否则为 false。</param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing && (components != null))
+            if (disposing && (_components != null))
             {
-                components.Dispose();
+                _components.Dispose();
             }
             base.Dispose(disposing);
         }
@@ -28,30 +28,30 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
-            this.timer1 = new System.Windows.Forms.Timer(this.components);
-            this.lnkShow = new System.Windows.Forms.LinkLabel();
+            this._components = new System.ComponentModel.Container();
+            this._timer1 = new System.Windows.Forms.Timer(this._components);
+            this._lnkShow = new System.Windows.Forms.LinkLabel();
             // 
             // timer1
             // 
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            this._timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
             // lnkShow
             // 
-            this.lnkShow.AutoSize = true;
-            this.lnkShow.Location = new System.Drawing.Point(0, 0);
-            this.lnkShow.Name = "lnkShow";
-            this.lnkShow.Size = new System.Drawing.Size(100, 23);
-            this.lnkShow.TabIndex = 0;
-            this.lnkShow.TabStop = true;
-            this.lnkShow.Text = "显示详细信息";
-            this.lnkShow.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.lnkShow_LinkClicked);
+            this._lnkShow.AutoSize = true;
+            this._lnkShow.Location = new System.Drawing.Point(0, 0);
+            this._lnkShow.Name = "lnkShow";
+            this._lnkShow.Size = new System.Drawing.Size(100, 23);
+            this._lnkShow.TabIndex = 0;
+            this._lnkShow.TabStop = true;
+            this._lnkShow.Text = "显示详细信息";
+            this._lnkShow.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.lnkShow_LinkClicked);
 
         }
 
         #endregion
 
-        private System.Windows.Forms.Timer timer1;
-        private System.Windows.Forms.LinkLabel lnkShow;
+        private System.Windows.Forms.Timer _timer1;
+        private System.Windows.Forms.LinkLabel _lnkShow;
     }
 }

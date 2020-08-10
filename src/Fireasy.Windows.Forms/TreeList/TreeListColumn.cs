@@ -18,20 +18,19 @@ namespace Fireasy.Windows.Forms
     [DefaultProperty("Text")]
     public class TreeListColumn : Component, IImageDefinition, IDataFormattable, ICloneable
     {
-        private ITreeListEditor editor = new TreeListTextEditor();
-        private TreeListCellDataType dbType;
-        private int width = 100;
-        private bool hidden;
-        private Color foreColor = Color.Empty;
-        private Font font;
-        private int imageIndex = -1;
-        private string imageKey;
-        private Image image;
-        private string text;
-        private HorizontalAlignment textAlign;
-        private HorizontalAlignment imageAlign;
-        private string dataFormat;
-        private string dataKey;
+        private TreeListCellDataType _dbType;
+        private int _width = 100;
+        private bool _hidden;
+        private Color _foreColor = Color.Empty;
+        private Font _font;
+        private int _imageIndex = -1;
+        private string _imageKey;
+        private Image _image;
+        private string _text;
+        private HorizontalAlignment _textAlign;
+        private HorizontalAlignment _imageAlign;
+        private string _dataFormat;
+        private string _dataKey;
 
         /// <summary>
         /// 初始化 <see cref="TreeListColumn"/> 类的新实例。
@@ -48,12 +47,12 @@ namespace Fireasy.Windows.Forms
         [DefaultValue(100)]
         public int Width
         {
-            get { return width; }
+            get { return _width; }
             set
             {
-                if (width != value)
+                if (_width != value)
                 {
-                    width = value;
+                    _width = value;
                     Invalidate();
                 }
             }
@@ -73,12 +72,12 @@ namespace Fireasy.Windows.Forms
         [DefaultValue(false)]
         public bool Hidden
         {
-            get { return hidden; }
+            get { return _hidden; }
             set
             {
-                if (hidden != value)
+                if (_hidden != value)
                 {
-                    hidden = value;
+                    _hidden = value;
                     Invalidate();
                 }
             }
@@ -91,12 +90,12 @@ namespace Fireasy.Windows.Forms
         [DefaultValue((string)null)]
         public string Text
         {
-            get { return text; }
+            get { return _text; }
             set
             {
-                if (text != value)
+                if (_text != value)
                 {
-                    text = value;
+                    _text = value;
                     InvalidateColumn();
                 }
             }
@@ -109,12 +108,12 @@ namespace Fireasy.Windows.Forms
         [DefaultValue((string)null)]
         public string DataKey
         {
-            get { return dataKey; }
+            get { return _dataKey; }
             set
             {
-                if (dataKey != value)
+                if (_dataKey != value)
                 {
-                    dataKey = value;
+                    _dataKey = value;
                     Invalidate();
                 }
             }
@@ -128,12 +127,12 @@ namespace Fireasy.Windows.Forms
         [Editor(typeof(DataFormatEditor), typeof(UITypeEditor))]
         public string DataFormat
         {
-            get { return dataFormat; }
+            get { return _dataFormat; }
             set
             {
-                if (dataFormat != value)
+                if (_dataFormat != value)
                 {
-                    dataFormat = value;
+                    _dataFormat = value;
                     Invalidate();
                 }
             }
@@ -166,12 +165,12 @@ namespace Fireasy.Windows.Forms
         [DefaultValue(null)]
         public Font Font
         {
-            get { return font; }
+            get { return _font; }
             set
             {
-                if (font != value)
+                if (_font != value)
                 {
-                    font = value;
+                    _font = value;
                     Invalidate();
                 }
             }
@@ -205,12 +204,12 @@ namespace Fireasy.Windows.Forms
         [DefaultValue(typeof(HorizontalAlignment), "Left")]
         public HorizontalAlignment TextAlign
         {
-            get { return textAlign; }
+            get { return _textAlign; }
             set
             {
-                if (textAlign != value)
+                if (_textAlign != value)
                 {
-                    textAlign = value;
+                    _textAlign = value;
                     Invalidate();
                 }
             }
@@ -223,12 +222,12 @@ namespace Fireasy.Windows.Forms
         [DefaultValue(typeof(HorizontalAlignment), "Left")]
         public HorizontalAlignment ImageAlign
         {
-            get { return imageAlign; }
+            get { return _imageAlign; }
             set
             {
-                if (imageAlign != value)
+                if (_imageAlign != value)
                 {
-                    imageAlign = value;
+                    _imageAlign = value;
                     InvalidateColumn();
                 }
             }
@@ -248,12 +247,12 @@ namespace Fireasy.Windows.Forms
         [DefaultValue(typeof(Color), "Empty")]
         public Color ForeColor
         {
-            get { return foreColor; }
+            get { return _foreColor; }
             set
             {
-                if (foreColor != value)
+                if (_foreColor != value)
                 {
-                    foreColor = value;
+                    _foreColor = value;
                     Invalidate();
                 }
             }
@@ -277,12 +276,12 @@ namespace Fireasy.Windows.Forms
         [RefreshProperties(RefreshProperties.Repaint)]
         public int ImageIndex
         {
-            get { return imageIndex; }
+            get { return _imageIndex; }
             set
             {
-                if (imageIndex != value)
+                if (_imageIndex != value)
                 {
-                    imageIndex = value;
+                    _imageIndex = value;
                     InvalidateColumn();
                 }
             }
@@ -299,12 +298,12 @@ namespace Fireasy.Windows.Forms
         [RefreshProperties(RefreshProperties.Repaint)]
         public string ImageKey
         {
-            get { return imageKey; }
+            get { return _imageKey; }
             set
             {
-                if (imageKey != value)
+                if (_imageKey != value)
                 {
-                    imageKey = value;
+                    _imageKey = value;
                     InvalidateColumn();
                 }
             }
@@ -316,12 +315,12 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置显示的图像。")]
         public Image Image
         {
-            get { return image; }
+            get { return _image; }
             set
             {
-                if (image != value)
+                if (_image != value)
                 {
-                    image = value;
+                    _image = value;
                     InvalidateColumn();
                 }
             }
@@ -355,13 +354,13 @@ namespace Fireasy.Windows.Forms
         [DefaultValue(typeof(TreeListCellDataType), "String")]
         public TreeListCellDataType DataType
         {
-            get { return dbType; }
+            get { return _dbType; }
             set
             {
-                if (dbType != value)
+                if (_dbType != value)
                 {
-                    dbType = value;
-                    editor = TreeListEditorFactory.Create(dbType);
+                    _dbType = value;
+                    Editor = TreeListEditorFactory.Create(_dbType);
                 }
             }
         }
@@ -376,10 +375,7 @@ namespace Fireasy.Windows.Forms
         /// 获取编辑器对象。
         /// </summary>
         [Browsable(false)]
-        public ITreeListEditor Editor
-        {
-            get { return editor; }
-        }
+        public ITreeListEditor Editor { get; private set; } = new TreeListTextEditor();
 
         /// <summary>
         /// 设置编辑器对象。
@@ -387,7 +383,7 @@ namespace Fireasy.Windows.Forms
         /// <param name="editor">用于编辑此列的编辑器。</param>
         public void SetEditor(ITreeListEditor editor)
         {
-            this.editor = editor;
+            Editor = editor;
         }
 
         internal void Update(TreeList treelist)
@@ -400,7 +396,7 @@ namespace Fireasy.Windows.Forms
 
         internal void SetWidth(int width)
         {
-            this.width = width;
+            _width = width;
         }
 
         internal void InvalidateColumn()
@@ -421,14 +417,14 @@ namespace Fireasy.Windows.Forms
 
         public object Clone()
         {
-            return (TreeListColumn)this.MemberwiseClone();
+            return (TreeListColumn)MemberwiseClone();
         }
 
         protected override void Dispose(bool disposing)
         {
             if (disposing && (TreeList != null))
             {
-                int index = this.Index;
+                int index = Index;
                 if (index != -1)
                 {
                     TreeList.Columns.RemoveAt(index);

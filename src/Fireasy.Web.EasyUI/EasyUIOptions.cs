@@ -13,7 +13,7 @@ namespace Fireasy.Web.EasyUI
 {
     public class EasyUIOptions
     {
-        internal Dictionary<string, ISettingsBinder> binders = new Dictionary<string, ISettingsBinder>();
+        internal Dictionary<string, ISettingsBinder> _binders = new Dictionary<string, ISettingsBinder>();
 
         /// <summary>
         /// 添加一个 <see cref="ISettingsBinder"/> 实例。
@@ -22,7 +22,7 @@ namespace Fireasy.Web.EasyUI
         /// <param name="binder"></param>
         public void AddBinder(string name, ISettingsBinder binder)
         {
-            binders.Add(name, binder);
+            _binders.Add(name, binder);
         }
     }
 }

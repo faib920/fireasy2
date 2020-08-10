@@ -82,7 +82,7 @@ namespace Fireasy.Data
             var syntax = provider.GetService<ISyntaxProvider>();
             Initializate(provider, connection, transaction);
 
-            var tableName = DbUtility.FormatByQuote(syntax, table.TableName);
+            var tableName = syntax.FormatByDelimiter(table.TableName);
             var sbSelect = new StringBuilder($"SELECT {{0}} FROM {tableName}");
             var sbInsert = new StringBuilder($"INSERT INTO {tableName}({{0}}) VALUES({{1}})");
             var sbUpdate = new StringBuilder($"UPDATE {tableName} SET {{0}} WHERE");
@@ -97,7 +97,7 @@ namespace Fireasy.Data
                     sbDelete.Append(" AND");
                 }
 
-                var set = $" {DbUtility.FormatByQuote(syntax, column.ColumnName)} = {syntax.ParameterPrefix}p_{column.Ordinal + 1}";
+                var set = $" {syntax.FormatByDelimiter(column.ColumnName)} = {syntax.ParameterPrefix}p_{column.Ordinal + 1}";
                 sbUpdate.Append(set);
                 sbDelete.Append(set);
                 UpdateCommand.Parameters.Add(CreateCommandParameter(provider, "p_", column));
@@ -116,7 +116,7 @@ namespace Fireasy.Data
                     continue;
                 }
 
-                var columnName = DbUtility.FormatByQuote(syntax, column.ColumnName);
+                var columnName = syntax.FormatByDelimiter(column.ColumnName);
                 if (sbSelectFields.Length > 0)
                 {
                     sbSelectFields.Append(", ");
@@ -156,7 +156,7 @@ namespace Fireasy.Data
             var syntax = provider.GetService<ISyntaxProvider>();
             Initializate(provider, connection, transaction);
 
-            var tableName = DbUtility.FormatByQuote(syntax, table.TableName);
+            var tableName = syntax.FormatByDelimiter(table.TableName);
             var sbSelect = new StringBuilder($"SELECT {{0}} FROM {tableName}");
             var sbInsert = new StringBuilder($"INSERT INTO {tableName}({{0}}) VALUES({{1}})");
             var sbUpdate = new StringBuilder($"UPDATE {tableName} SET {{0}} WHERE {{1}}");
@@ -169,7 +169,7 @@ namespace Fireasy.Data
 
             foreach (DataColumn column in table.Columns)
             {
-                var columnName = DbUtility.FormatByQuote(syntax, column.ColumnName);
+                var columnName = syntax.FormatByDelimiter(column.ColumnName);
                 if (sbFields.Length > 0)
                 {
                     sbFields.Append(", ");

@@ -16,7 +16,7 @@ namespace Fireasy.Windows.Forms
     {
         [DllImport("user32.dll")]
         static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, Int32 wParam, Int32 lParam);
-        private const Int32 WM_LBUTTONDOWN = 0x201;
+        private const Int32 W_LBUTTONDOWN = 0x201;
         private const Int32 MK_LBUTTON = 0x0001;
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace Fireasy.Windows.Forms
             picker.Top = -1;
 
             picker.Focus();
-            SendMessage(picker.Handle, WM_LBUTTONDOWN, MK_LBUTTON, picker.Width - 5);
+            SendMessage(picker.Handle, W_LBUTTONDOWN, MK_LBUTTON, picker.Width - 5);
         }
 
         /// <summary>

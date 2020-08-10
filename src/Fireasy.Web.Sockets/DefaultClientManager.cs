@@ -18,21 +18,21 @@ namespace Fireasy.Web.Sockets
     /// <summary>
     /// 客户端管理器。
     /// </summary>
-    public class ClientManager
+    public class DefaultClientManager : IClientManager
     {
-        private SafetyDictionary<string, IClientProxy> clients = new SafetyDictionary<string, IClientProxy>();
-        private SafetyDictionary<string, List<string>> groups = new SafetyDictionary<string, List<string>>();
-        private readonly Timer timer = null;
-        private WebSocketBuildOption option;
+        private readonly SafetyDictionary<string, IClientProxy> _clients = new SafetyDictionary<string, IClientProxy>();
+        private readonly SafetyDictionary<string, List<string>> _groups = new SafetyDictionary<string, List<string>>();
+        private Timer _timer = null;
+        private WebSocketBuildOption _option;
 
-        public ClientManager(WebSocketBuildOption option)
+        public virtual void Initialize(WebSocketAcceptContext acceptContext)
         {
-            this.option = option;
+            _option = acceptContext.Option;
 
             //开启一个定时器，一定时间去检查一下有没有死亡而没有释放的连接实例
-            if (option.HeartbeatInterval != TimeSpan.Zero)
+            if (_option.HeartbeatInterval != TimeSpan.Zero)
             {
-                timer = new Timer(CheckAlive, null, TimeSpan.FromSeconds(10), option.HeartbeatInterval);
+                _timer = new Timer(CheckAlive, null, TimeSpan.FromSeconds(10), _option.HeartbeatInterval);
             }
         }
 
@@ -42,33 +42,33 @@ namespace Fireasy.Web.Sockets
         /// <param name="state"></param>
         private void CheckAlive(object state)
         {
-            foreach (var kvp in clients)
+            foreach (var kvp in _clients)
             {
-                var client = clients[kvp.Key];
+                var client = _clients[kvp.Key];
 
                 //心跳时间后延
-                if (client != null && (DateTime.Now - client.AliveTime).TotalMilliseconds >= option.HeartbeatInterval.TotalMilliseconds * (option.HeartbeatTryTimes + 2) &&
-                    clients.TryRemove(kvp.Key, out client))
+                if (client != null && (DateTime.Now - client.AliveTime).TotalMilliseconds >= _option.HeartbeatInterval.TotalMilliseconds * (_option.HeartbeatTryTimes + 2) &&
+                    _clients.TryRemove(kvp.Key, out client))
                 {
                     client.TryDispose();
                 }
             }
         }
 
-        public virtual void Add(string connectionId, IClientProxy handler)
+        public virtual void Add(string connectionId, IClientProxy clientProxy)
         {
-            clients.TryAdd(connectionId, handler);
+            _clients.TryAdd(connectionId, clientProxy);
         }
 
         public virtual void AddToGroup(string connectionId, string groupName)
         {
-            var group = groups.GetOrAdd(groupName, () => new List<string>());
+            var group = _groups.GetOrAdd(groupName, () => new List<string>());
             group.Add(connectionId);
         }
 
         public virtual void Remove(string connectionId)
         {
-            if (clients.TryRemove(connectionId, out IClientProxy client))
+            if (_clients.TryRemove(connectionId, out IClientProxy client))
             {
                 client.TryDispose();
             }
@@ -76,9 +76,9 @@ namespace Fireasy.Web.Sockets
 
         public virtual void RemoveFromGroup(string connectionId, string groupName)
         {
-            if (groups.ContainsKey(groupName))
+            if (_groups.ContainsKey(groupName))
             {
-                groups[groupName].Remove(connectionId);
+                _groups[groupName].Remove(connectionId);
             }
         }
 
@@ -89,7 +89,7 @@ namespace Fireasy.Web.Sockets
         /// <returns></returns>
         public virtual IClientProxy Client(string connectionId)
         {
-            if (clients.TryGetValue(connectionId, out IClientProxy client))
+            if (_clients.TryGetValue(connectionId, out IClientProxy client))
             {
                 return client;
             }
@@ -106,7 +106,7 @@ namespace Fireasy.Web.Sockets
         {
             Guard.ArgumentNull(connectionIds, nameof(connectionIds));
 
-            return new EnumerableClientProxy(() => clients.Where(s => connectionIds.Contains(s.Key)).Select(s => s.Value));
+            return new EnumerableClientProxy(() => _clients.Where(s => connectionIds.Contains(s.Key)).Select(s => s.Value));
         }
 
         /// <summary>
@@ -116,7 +116,18 @@ namespace Fireasy.Web.Sockets
         {
             get
             {
-                return new EnumerableClientProxy(() => clients.Values);
+                return new EnumerableClientProxy(() => _clients.Values);
+            }
+        }
+
+        /// <summary>
+        /// 获取其他客户端代理。
+        /// </summary>
+        public virtual IClientProxy Other
+        {
+            get
+            {
+                throw new NotImplementedException();
             }
         }
 
@@ -127,9 +138,9 @@ namespace Fireasy.Web.Sockets
         /// <returns></returns>
         public virtual IClientProxy Group(string groupName)
         {
-            if (groups.ContainsKey(groupName))
+            if (_groups.ContainsKey(groupName))
             {
-                return new EnumerableClientProxy(() => clients.Where(s => groups[groupName].Contains(s.Key)).Select(s => s.Value));
+                return new EnumerableClientProxy(() => _clients.Where(s => _groups[groupName].Contains(s.Key)).Select(s => s.Value));
             }
 
             return NullClientProxy.Instance;

@@ -52,7 +52,6 @@ namespace Fireasy.Common.Ioc.Registrations
         private NewExpression BuildNewExpression()
         {
             ConstructorInfo[] constructors = null;
-            ConstructorInfo constructor = null;
 
             if (typeof(IAopSupport).IsAssignableFrom(typeof(TImplementation)))
             {
@@ -63,19 +62,19 @@ namespace Fireasy.Common.Ioc.Registrations
                 constructors = typeof(TImplementation).GetConstructors();
             }
 
-            //寻找最匹配的构造方法
-            foreach (var con in constructors.OrderBy(s => s.GetParameters().Length))
-            {
-                if (con.GetParameters().All(s => _container.IsRegistered(s.ParameterType)))
-                {
-                    constructor = con;
-                    break;
-                }
-            }
-
-            if (constructor == null)
+            if (constructors.Length != 1)
             {
                 throw new InvalidOperationException(SR.GetString(SRKind.NoDefaultConstructor));
+            }
+
+            var constructor = constructors[0];
+
+            foreach (var par in constructor.GetParameters())
+            {
+                if (!_container.IsRegistered(par.ParameterType))
+                {
+                    throw new InvalidOperationException(SR.GetString(SRKind.NotFoundRegisterForType, par.ParameterType));
+                }
             }
 
             var arguments =

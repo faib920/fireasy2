@@ -6,15 +6,15 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if !NETCOREAPP
+using Fireasy.Common.Extensions;
+using Fireasy.Common.Ioc;
 using Fireasy.Common.Logging;
 using Fireasy.Common.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web.Mvc;
-using Fireasy.Common.Extensions;
-using Fireasy.Common.Ioc;
 using System.Text;
+using System.Web.Mvc;
 
 namespace Fireasy.Web.Mvc
 {
@@ -23,7 +23,7 @@ namespace Fireasy.Web.Mvc
     /// </summary>
     public class ControllerActionInvoker : System.Web.Mvc.Async.AsyncControllerActionInvoker
     {
-        private ActionContext context;
+        private ActionContext _context;
 
         /// <summary>
         /// 获取参数的值。
@@ -34,7 +34,7 @@ namespace Fireasy.Web.Mvc
         protected override object GetParameterValue(ControllerContext controllerContext, ParameterDescriptor parameterDescriptor)
         {
             var type = parameterDescriptor.ParameterType.GetNonNullableType();
-            if (type.IsValueType || type.IsEnum || type == typeof(string))
+            if (type.IsPrimitive || type.IsEnum || type == typeof(string))
             {
                 var value = controllerContext.HttpContext.Request.Params[parameterDescriptor.ParameterName];
                 if (value == "null")
@@ -89,7 +89,7 @@ namespace Fireasy.Web.Mvc
 
         public override IAsyncResult BeginInvokeAction(ControllerContext controllerContext, string actionName, AsyncCallback callback, object state)
         {
-            context = new ActionContext(controllerContext);
+            _context = new ActionContext(controllerContext);
             return base.BeginInvokeAction(controllerContext, actionName, callback, state);
         }
 
@@ -97,9 +97,9 @@ namespace Fireasy.Web.Mvc
         {
             var ret = base.EndInvokeAction(asyncResult);
 
-            if (context != null)
+            if (_context != null)
             {
-                context.Dispose();
+                _context.Dispose();
             }
 
             return ret;

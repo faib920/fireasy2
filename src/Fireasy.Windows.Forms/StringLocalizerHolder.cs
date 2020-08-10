@@ -18,7 +18,7 @@ namespace Fireasy.Windows.Forms
     [ProvideProperty("ResourceKey", typeof(Component))]
     public class StringLocalizerHolder : Component, IExtenderProvider
     {
-        private Dictionary<Component, string> keys = new Dictionary<Component, string>();
+        private readonly Dictionary<Component, string> _keys = new Dictionary<Component, string>();
 
         public StringLocalizerHolder()
         {
@@ -42,9 +42,9 @@ namespace Fireasy.Windows.Forms
 
         public string GetResourceKey(Component control)
         {
-            if (keys.ContainsKey(control))
+            if (_keys.ContainsKey(control))
             {
-                return keys[control];
+                return _keys[control];
             }
 
             return string.Empty;
@@ -52,20 +52,20 @@ namespace Fireasy.Windows.Forms
 
         public void SetResourceKey(Component control, string name)
         {
-            if (keys.ContainsKey(control))
+            if (_keys.ContainsKey(control))
             {
                 if (string.IsNullOrEmpty(name))
                 {
-                    keys.Remove(control);
+                    _keys.Remove(control);
                 }
                 else
                 {
-                    keys[control] = name;
+                    _keys[control] = name;
                 }
             }
             else if (!string.IsNullOrEmpty(name))
             {
-                keys.Add(control, name);
+                _keys.Add(control, name);
             }
         }
 
@@ -82,7 +82,7 @@ namespace Fireasy.Windows.Forms
 
             var localizer = manager.GetLocalizer(Name);
 
-            foreach (var kvp in keys)
+            foreach (var kvp in _keys)
             {
                 if (kvp.Key is Control control)
                 {

@@ -8,8 +8,8 @@
 #if !NETCOREAPP
 using System.Web.Mvc;
 #else
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Html;
+using Microsoft.AspNetCore.Mvc.Rendering;
 #endif
 
 namespace Fireasy.Web.Mvc.Rendering
@@ -24,7 +24,7 @@ namespace Fireasy.Web.Mvc.Rendering
         /// </summary>
         /// <param name="tagName"></param>
         public TagBuildWrapper(string tagName)
-            : base (tagName)
+            : base(tagName)
         {
         }
 

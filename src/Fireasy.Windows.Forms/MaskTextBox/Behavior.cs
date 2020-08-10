@@ -1,28 +1,29 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace Fireasy.Windows.Forms
 {
     public abstract class Behavior : IDisposable
     {
-        protected TextBoxBase m_textBox;
-        protected int m_flags;
-        protected bool m_noTextChanged;
-        protected Selection m_selection;
-        protected ErrorProvider m_errorProvider;
-        private static string m_errorCaption;
+        protected TextBoxBase _textBox;
+        protected int _flags;
+        protected bool _noTextChanged;
+        protected Selection _selection;
+        protected ErrorProvider _errorProvider;
+        private static string _errorCaption;
 
         protected Behavior(TextBoxBase textBox, bool addEventHandlers)
         {
             if (textBox == null)
+            {
                 throw new ArgumentNullException("没有指定TextBox");
+            }
 
-            m_textBox = textBox;
-            m_selection = new Selection(m_textBox);
-            m_selection.TextChanging += new EventHandler(HandleTextChangingBySelection);
+            _textBox = textBox;
+            _selection = new Selection(_textBox);
+            _selection.TextChanging += new EventHandler(HandleTextChangingBySelection);
 
             if (addEventHandlers)
                 AddEventHandlers();
@@ -34,27 +35,27 @@ namespace Fireasy.Windows.Forms
                 throw new ArgumentNullException("没有指定Behavior");
 
             TextBox = behavior.TextBox;
-            m_flags = behavior.m_flags;
+            _flags = behavior._flags;
 
             behavior.Dispose();
         }
 
         private void HandleTextChangingBySelection(object sender, EventArgs e)
         {
-            m_noTextChanged = true;
+            _noTextChanged = true;
         }
 
         protected virtual string GetValidText()
         {
-            return m_textBox.Text;
+            return _textBox.Text;
         }
 
         public virtual bool UpdateText()
         {
             string validText = GetValidText();
-            if (validText != m_textBox.Text)
+            if (validText != _textBox.Text)
             {
-                m_textBox.Text = validText;
+                _textBox.Text = validText;
                 return true;
             }
             return false;
@@ -62,7 +63,7 @@ namespace Fireasy.Windows.Forms
 
         public TextBoxBase TextBox
         {
-            get { return m_textBox; }
+            get { return _textBox; }
             set
             {
                 if (value == null)
@@ -70,9 +71,9 @@ namespace Fireasy.Windows.Forms
 
                 RemoveEventHandlers();
 
-                m_textBox = value;
-                m_selection = new Selection(m_textBox);
-                m_selection.TextChanging += new EventHandler(HandleTextChangingBySelection);
+                _textBox = value;
+                _selection = new Selection(_textBox);
+                _selection.TextChanging += new EventHandler(HandleTextChangingBySelection);
 
                 AddEventHandlers();
             }
@@ -108,20 +109,19 @@ namespace Fireasy.Windows.Forms
         /// <returns></returns>
         protected double ToDouble(String text)
         {
-            double result = 0;
-            double.TryParse(text, out result);
+            double.TryParse(text, out double result);
             return result;
         }
 
         public virtual int Flags
         {
-            get { return m_flags; }
+            get { return _flags; }
             set
             {
-                if (m_flags == value)
+                if (_flags == value)
                     return;
 
-                m_flags = value;
+                _flags = value;
                 UpdateText();
             }
         }
@@ -129,14 +129,14 @@ namespace Fireasy.Windows.Forms
         public void ModifyFlags(int flags, bool addOrRemove)
         {
             if (addOrRemove)
-                Flags = m_flags | flags;
+                Flags = _flags | flags;
             else
-                Flags = m_flags & ~flags;
+                Flags = _flags & ~flags;
         }
 
         public bool HasFlag(int flag)
         {
-            return (m_flags & flag) != 0;
+            return (_flags & flag) != 0;
         }
 
         /// <summary>
@@ -145,7 +145,7 @@ namespace Fireasy.Windows.Forms
         /// <param name="message"></param>
         public virtual void ShowErrorMessageBox(string message)
         {
-            MessageBox.Show(m_textBox, message, ErrorCaption, MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            MessageBox.Show(_textBox, message, ErrorCaption, MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
         }
 
         /// <summary>
@@ -154,13 +154,13 @@ namespace Fireasy.Windows.Forms
         /// <param name="message"></param>
         public virtual void ShowErrorIcon(string message)
         {
-            if (m_errorProvider == null)
+            if (_errorProvider == null)
             {
                 if (message == "")
                     return;
-                m_errorProvider = new ErrorProvider();
+                _errorProvider = new ErrorProvider();
             }
-            m_errorProvider.SetError(m_textBox, message);
+            _errorProvider.SetError(_textBox, message);
         }
 
         /// <summary>
@@ -181,11 +181,11 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                if (m_errorCaption == null)
+                if (_errorCaption == null)
                     return Application.ProductName;
-                return m_errorCaption;
+                return _errorCaption;
             }
-            set { m_errorCaption = value; }
+            set { _errorCaption = value; }
         }
 
         [Conditional("TRACE_AMS")]
@@ -206,7 +206,7 @@ namespace Fireasy.Windows.Forms
             if ((flags & (int)ValidatingFlag.Max) == 0)
                 return true;
 
-            if ((flags & (int)ValidatingFlag.Max_IfEmpty) != 0 && m_textBox.Text.Length == 0)
+            if ((flags & (int)ValidatingFlag.Max_IfEmpty) != 0 && _textBox.Text.Length == 0)
             {
                 if ((flags & (int)ValidatingFlag.Beep_IfEmpty) != 0)
                     NativeMethods.MessageBeep(MessageBoxIcon.Exclamation);
@@ -224,12 +224,12 @@ namespace Fireasy.Windows.Forms
                     ShowErrorMessageBox(ErrorMessage);
 
                 if (setFocusIfNotValid)
-                    m_textBox.Focus();
+                    _textBox.Focus();
 
                 return false;
             }
 
-            if ((flags & (int)ValidatingFlag.Max_IfInvalid) != 0 && m_textBox.Text.Length != 0 && !IsValid())
+            if ((flags & (int)ValidatingFlag.Max_IfInvalid) != 0 && _textBox.Text.Length != 0 && !IsValid())
             {
                 if ((flags & (int)ValidatingFlag.Beep_IfInvalid) != 0)
                     NativeMethods.MessageBeep(MessageBoxIcon.Exclamation);
@@ -247,7 +247,7 @@ namespace Fireasy.Windows.Forms
                     ShowErrorMessageBox(ErrorMessage);
 
                 if (setFocusIfNotValid)
-                    m_textBox.Focus();
+                    _textBox.Focus();
 
                 return false;
             }
@@ -269,12 +269,12 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         protected virtual void AddEventHandlers()
         {
-            m_textBox.KeyDown += new KeyEventHandler(HandleKeyDown);
-            m_textBox.KeyPress += new KeyPressEventHandler(HandleKeyPress);
-            m_textBox.TextChanged += new EventHandler(HandleTextChanged);
-            m_textBox.Validating += new CancelEventHandler(HandleValidating);
-            m_textBox.LostFocus += new EventHandler(HandleLostFocus);
-            m_textBox.DataBindings.CollectionChanged += new CollectionChangeEventHandler(HandleBindingChanges);
+            _textBox.KeyDown += new KeyEventHandler(HandleKeyDown);
+            _textBox.KeyPress += new KeyPressEventHandler(HandleKeyPress);
+            _textBox.TextChanged += new EventHandler(HandleTextChanged);
+            _textBox.Validating += new CancelEventHandler(HandleValidating);
+            _textBox.LostFocus += new EventHandler(HandleLostFocus);
+            _textBox.DataBindings.CollectionChanged += new CollectionChangeEventHandler(HandleBindingChanges);
         }
 
         /// <summary>
@@ -282,15 +282,15 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         protected virtual void RemoveEventHandlers()
         {
-            if (m_textBox == null)
+            if (_textBox == null)
                 return;
 
-            m_textBox.KeyDown -= new KeyEventHandler(HandleKeyDown);
-            m_textBox.KeyPress -= new KeyPressEventHandler(HandleKeyPress);
-            m_textBox.TextChanged -= new EventHandler(HandleTextChanged);
-            m_textBox.Validating -= new CancelEventHandler(HandleValidating);
-            m_textBox.LostFocus -= new EventHandler(HandleLostFocus);
-            m_textBox.DataBindings.CollectionChanged -= new CollectionChangeEventHandler(HandleBindingChanges);
+            _textBox.KeyDown -= new KeyEventHandler(HandleKeyDown);
+            _textBox.KeyPress -= new KeyPressEventHandler(HandleKeyPress);
+            _textBox.TextChanged -= new EventHandler(HandleTextChanged);
+            _textBox.Validating -= new CancelEventHandler(HandleValidating);
+            _textBox.LostFocus -= new EventHandler(HandleLostFocus);
+            _textBox.DataBindings.CollectionChanged -= new CollectionChangeEventHandler(HandleBindingChanges);
         }
 
         /// <summary>
@@ -299,7 +299,7 @@ namespace Fireasy.Windows.Forms
         public virtual void Dispose()
         {
             RemoveEventHandlers();
-            m_textBox = null;
+            _textBox = null;
         }
 
         protected virtual void HandleKeyDown(object sender, KeyEventArgs e)
@@ -318,12 +318,12 @@ namespace Fireasy.Windows.Forms
 
         protected virtual void HandleTextChanged(object sender, EventArgs e)
         {
-            TraceLine("Behavior.HandleTextChanged " + m_noTextChanged);
+            TraceLine("Behavior.HandleTextChanged " + _noTextChanged);
 
-            if (!m_noTextChanged)
+            if (!_noTextChanged)
                 UpdateText();
 
-            m_noTextChanged = false;
+            _noTextChanged = false;
         }
 
         protected virtual void HandleValidating(object sender, CancelEventArgs e)

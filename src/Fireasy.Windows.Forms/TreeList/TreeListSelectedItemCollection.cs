@@ -14,8 +14,8 @@ namespace Fireasy.Windows.Forms
     /// </summary>
     public class TreeListSelectedItemCollection : ObservableCollection<TreeListItem>
     {
-        private bool isForbid;
-        private TreeList treelist;
+        private bool _isForbid;
+        private readonly TreeList _treelist;
 
         /// <summary>
         /// 初始化 <see cref="TreeListSelectedItemCollection"/> 类的新实例。
@@ -23,29 +23,29 @@ namespace Fireasy.Windows.Forms
         /// <param name="treelist"></param>
         internal TreeListSelectedItemCollection(TreeList treelist)
         {
-            this.treelist = treelist;
+            _treelist = treelist;
         }
 
         protected override void InsertItem(int index, TreeListItem item)
         {
-            if (isForbid)
+            if (_isForbid)
             {
                 base.InsertItem(index, item);
                 return;
             }
 
-            treelist.SelectItem(item, true, !treelist.MultiSelect);
+            _treelist.SelectItem(item, true, !_treelist.MultiSelect);
         }
 
         protected override void RemoveItem(int index)
         {
-            if (isForbid)
+            if (_isForbid)
             {
                 base.RemoveItem(index);
                 return;
             }
 
-            treelist.SelectItem(this[index], false, !treelist.MultiSelect);
+            _treelist.SelectItem(this[index], false, !_treelist.MultiSelect);
         }
 
         /// <summary>
@@ -53,16 +53,16 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         protected override void ClearItems()
         {
-            if (!isForbid)
+            if (!_isForbid)
             {
                 foreach (var item in Items)
                 {
                     item.SetSelected(false);
                 }
 
-                if (treelist != null)
+                if (_treelist != null)
                 {
-                    treelist.UpdateItems();
+                    _treelist.UpdateItems();
                 }
             }
 
@@ -74,23 +74,23 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         internal void InternalClear()
         {
-            isForbid = true;
+            _isForbid = true;
             Clear();
-            isForbid = false;
+            _isForbid = false;
         }
 
         internal void InternalAdd(TreeListItem item)
         {
-            isForbid = true;
+            _isForbid = true;
             Add(item);
-            isForbid = false;
+            _isForbid = false;
         }
 
         internal void InternalRemove(TreeListItem item)
         {
-            isForbid = true;
+            _isForbid = true;
             Remove(item);
-            isForbid = false;
+            _isForbid = false;
         }
     }
 }

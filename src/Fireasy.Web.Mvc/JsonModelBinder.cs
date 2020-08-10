@@ -14,11 +14,11 @@ namespace Fireasy.Web.Mvc
     /// </summary>
     public class JsonModelBinder : IModelBinder
     {
-        private MvcOptions mvcOptions;
+        private readonly MvcOptions _mvcOptions;
 
         public JsonModelBinder(MvcOptions mvcOptions)
         {
-            this.mvcOptions = mvcOptions;
+            _mvcOptions = mvcOptions;
         }
 
         public Task BindModelAsync(ModelBindingContext bindingContext)
@@ -34,7 +34,7 @@ namespace Fireasy.Web.Mvc
             var modelState = bindingContext.ModelState;
             modelState.SetModelValue(bindingContext.ModelName, value);
 
-            var option = mvcOptions.JsonSerializeOption;
+            var option = _mvcOptions.JsonSerializeOption;
             var serializer = serviceProvider.TryGetService<ISerializer>(() => new JsonSerializer(option));
 
             try

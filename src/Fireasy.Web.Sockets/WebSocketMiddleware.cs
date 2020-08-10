@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 #if NETSTANDARD
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,9 +19,9 @@ namespace Fireasy.Web.Sockets
     /// </summary>
     public class WebSocketMiddleware
     {
-        private RequestDelegate next;
-        private WebSocketBuildOption option;
-        private IServiceProvider serviceProvider;
+        private readonly RequestDelegate _next;
+        private readonly WebSocketBuildOption _option;
+        private readonly IServiceProvider _serviceProvider;
 
         /// <summary>
         /// 初始化 <see cref="SessionReviveMiddleware"/> 类的新实例。
@@ -30,9 +31,9 @@ namespace Fireasy.Web.Sockets
         /// <param name="option"></param>
         public WebSocketMiddleware(RequestDelegate next, IServiceProvider serviceProvider, WebSocketBuildOption option)
         {
-            this.next = next;
-            this.serviceProvider = serviceProvider;
-            this.option = option;
+            _next = next;
+            _serviceProvider = serviceProvider;
+            _option = option;
         }
 
         public async Task Invoke(HttpContext context)
@@ -40,21 +41,24 @@ namespace Fireasy.Web.Sockets
             if (context.WebSockets.IsWebSocketRequest)
             {
                 var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                var handlerType = option.GetHandlerType(context.Request.Path);
+                var handlerType = _option.GetHandlerType(context.Request.Path);
 
                 if (handlerType != null && typeof(WebSocketHandler).IsAssignableFrom(handlerType))
                 {
                     var handler = GetHandler(handlerType);
                     if (handler != null)
                     {
-                        var acceptContext = new WebSocketAcceptContext(context, webSocket, context.User, option);
-                        await WebSocketHandler.Accept(handler, acceptContext);
+                        using (var scope = context.RequestServices.CreateScope())
+                        {
+                            var acceptContext = new WebSocketAcceptContext(scope.ServiceProvider, webSocket, context.User, _option);
+                            await WebSocketHandler.Accept(handler, acceptContext);
+                        }
                     }
                 }
             }
             else
             {
-                await next(context);
+                await _next(context);
             }
         }
 
@@ -69,11 +73,11 @@ namespace Fireasy.Web.Sockets
             var parameters = constructor.GetParameters();
             var arguments = new object[parameters.Length];
 
-            if (serviceProvider != null)
+            if (_serviceProvider != null)
             {
                 for (var i = 0; i < parameters.Length; i++)
                 {
-                    arguments[i] = serviceProvider.GetService(parameters[i].ParameterType);
+                    arguments[i] = _serviceProvider.GetService(parameters[i].ParameterType);
                 }
             }
 

@@ -21,7 +21,7 @@ using System.Xml;
 
 namespace Fireasy.Common.Serialization
 {
-    internal sealed class XmlSerialize : DisposeableBase
+    internal sealed class XmlSerialize : DisposableBase
     {
         private readonly XmlSerializeOption _option;
         private readonly XmlSerializer _serializer;

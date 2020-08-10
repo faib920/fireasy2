@@ -21,7 +21,7 @@ namespace Fireasy.Common.Tasks
     /// <summary>
     /// 缺省的任务调度管理器。
     /// </summary>
-    public class DefaultTaskScheduler : DisposeableBase, ITaskScheduler, IServiceProviderAccessor
+    public class DefaultTaskScheduler : DisposableBase, ITaskScheduler, IServiceProviderAccessor
     {
         /// <summary>
         /// 获取 <see cref="DefaultTaskScheduler"/> 的静态实例。

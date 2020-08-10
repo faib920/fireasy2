@@ -18,10 +18,10 @@ namespace Fireasy.Windows.Forms
     /// </summary>
     public class TreeListCell
     {
-        private object value;
-        private string nullText;
-        private BoxType boxType;
-        private bool @checked;
+        private object _value;
+        private string _nullText;
+        private BoxType _boxType;
+        private bool _checked;
 
         /// <summary>
         /// 初始化 <see cref="TreeListCell"/> 类的新实例。
@@ -46,12 +46,12 @@ namespace Fireasy.Windows.Forms
         [DefaultValue(null)]
         public object Value
         {
-            get { return value; }
+            get { return _value; }
             set
             {
-                if (this.value != value)
+                if (_value != value)
                 {
-                    this.value = value;
+                    _value = value;
 
                     ValidateCellValue();
                     InvalidateItem();
@@ -65,12 +65,12 @@ namespace Fireasy.Windows.Forms
         [DefaultValue((string)null)]
         public string NullText
         {
-            get { return nullText; }
+            get { return _nullText; }
             set
             {
-                if (nullText != value)
+                if (_nullText != value)
                 {
-                    nullText = value;
+                    _nullText = value;
                     InvalidateItem();
                 }
             }
@@ -82,12 +82,12 @@ namespace Fireasy.Windows.Forms
         [DefaultValue(typeof(BoxType), "None")]
         public BoxType BoxType
         {
-            get { return boxType; }
+            get { return _boxType; }
             set
             {
-                if (boxType != value)
+                if (_boxType != value)
                 {
-                    boxType = value;
+                    _boxType = value;
                     InvalidateItem();
                 }
             }
@@ -98,12 +98,12 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         public bool Checked
         {
-            get { return @checked; }
+            get { return _checked; }
             set
             {
-                if (@checked != value)
+                if (_checked != value)
                 {
-                    @checked = value;
+                    _checked = value;
                 }
             }
         }
@@ -175,20 +175,19 @@ namespace Fireasy.Windows.Forms
                 }
 
                 //日期，如果小于1900年，输出空字符串
-                if (Value is DateTime && ((DateTime)Value).Year <= 1900)
+                if (Value is DateTime time && time.Year <= 1900)
                 {
                     return string.Empty;
                 }
 
                 //枚举值说明文本
-                if (Value is Enum && Column.DataFormat == "[ed]")
+                if (Value is Enum @enum && Column.DataFormat == "[ed]")
                 {
-                    return ((Enum)Value).GetDescription();
+                    return @enum.GetDescription();
                 }
 
                 //使用IFormattable进行转换
-                var formater = Value as IFormattable;
-                if (!string.IsNullOrEmpty(Column.DataFormat) && formater != null)
+                if (!string.IsNullOrEmpty(Column.DataFormat) && Value is IFormattable formater)
                 {
                     return formater.ToString(Column.DataFormat, CultureInfo.CurrentCulture);
                 }

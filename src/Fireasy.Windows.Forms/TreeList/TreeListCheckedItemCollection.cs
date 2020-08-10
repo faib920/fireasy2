@@ -1,11 +1,18 @@
-﻿using System.Collections.ObjectModel;
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+using System.Collections.ObjectModel;
 
 namespace Fireasy.Windows.Forms
 {
     public class TreeListCheckedItemCollection : ObservableCollection<TreeListItem>
     {
-        private bool isForbid;
-        private TreeList treelist;
+        private bool _isForbid;
+        private readonly TreeList _treelist;
 
         /// <summary>
         /// 初始化 <see cref="TreeListCheckedItemCollection"/> 类的新实例。
@@ -13,29 +20,29 @@ namespace Fireasy.Windows.Forms
         /// <param name="treelist"></param>
         internal TreeListCheckedItemCollection(TreeList treelist)
         {
-            this.treelist = treelist;
+            _treelist = treelist;
         }
 
         protected override void InsertItem(int index, TreeListItem item)
         {
-            if (isForbid)
+            if (_isForbid)
             {
                 base.InsertItem(index, item);
                 return;
             }
 
-            treelist.CheckItem(item, true);
+            _treelist.CheckItem(item, true);
         }
 
         protected override void RemoveItem(int index)
         {
-            if (isForbid)
+            if (_isForbid)
             {
                 base.RemoveItem(index);
                 return;
             }
 
-            treelist.CheckItem(this[index], false);
+            _treelist.CheckItem(this[index], false);
         }
 
         /// <summary>
@@ -43,16 +50,16 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         protected override void ClearItems()
         {
-            if (!isForbid)
+            if (!_isForbid)
             {
                 foreach (var item in Items)
                 {
                     item.SetChecked(false);
                 }
 
-                if (treelist != null)
+                if (_treelist != null)
                 {
-                    treelist.UpdateItems();
+                    _treelist.UpdateItems();
                 }
             }
 
@@ -64,23 +71,23 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         internal void InternalClear()
         {
-            isForbid = true;
+            _isForbid = true;
             Clear();
-            isForbid = false;
+            _isForbid = false;
         }
 
         internal void InternalAdd(TreeListItem item)
         {
-            isForbid = true;
+            _isForbid = true;
             Add(item);
-            isForbid = false;
+            _isForbid = false;
         }
 
         internal void InternalRemove(TreeListItem item)
         {
-            isForbid = true;
+            _isForbid = true;
             Remove(item);
-            isForbid = false;
+            _isForbid = false;
         }
     }
 }

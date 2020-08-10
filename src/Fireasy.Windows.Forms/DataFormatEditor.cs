@@ -15,20 +15,20 @@ namespace Fireasy.Windows.Forms
 {
     public class DataFormatEditor : UITypeEditor
     {
-        private DataFormatListBox modelUI;
+        private DataFormatListBox _modelUI;
         public override object EditValue(ITypeDescriptorContext context, IServiceProvider provider, object value)
         {
             if (provider != null)
             {
                 var edSvc = (IWindowsFormsEditorService)provider.GetService(typeof(IWindowsFormsEditorService));
-                var control = (IDataFormattable)context.Instance;
+                _ = (IDataFormattable)context.Instance;
 
-                modelUI = new DataFormatListBox();
-                modelUI.Start(edSvc, value);
+                _modelUI = new DataFormatListBox();
+                _modelUI.Start(edSvc, value);
 
-                edSvc.DropDownControl(modelUI);
-                value = modelUI.Value;
-                modelUI.End();
+                edSvc.DropDownControl(_modelUI);
+                value = _modelUI.Value;
+                _modelUI.End();
             }
 
             return value;
@@ -49,7 +49,7 @@ namespace Fireasy.Windows.Forms
 
         private class DataFormatListBox : ListBox
         {
-            private IWindowsFormsEditorService edSvc;
+            private IWindowsFormsEditorService _edSvc;
 
             public DataFormatListBox()
             {
@@ -74,13 +74,13 @@ namespace Fireasy.Windows.Forms
             void DataFormatListBox_SelectedIndexChanged(object sender, EventArgs e)
             {
                 Value = base.SelectedItem;
-                edSvc.CloseDropDown();
+                _edSvc.CloseDropDown();
             }
 
             public void Start(IWindowsFormsEditorService edSvc, object value)
             {
                 SelectedItems.Clear();
-                this.edSvc = edSvc;
+                _edSvc = edSvc;
                 Value = value;
 
                 if (value == null)
@@ -100,7 +100,7 @@ namespace Fireasy.Windows.Forms
 
             public void End()
             {
-                edSvc = null;
+                _edSvc = null;
             }
 
             public object Value { get; set; }

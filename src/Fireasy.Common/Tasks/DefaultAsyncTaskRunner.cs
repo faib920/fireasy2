@@ -15,7 +15,7 @@ namespace Fireasy.Common.Tasks
     /// <summary>
     /// 缺省的异步任务运行器。
     /// </summary>
-    public class DefaultAsyncTaskRunner : DisposeableBase, ITaskRunner
+    public class DefaultAsyncTaskRunner : DisposableBase, ITaskRunner
     {
         private readonly IAsyncTaskExecutor _executor;
         private Timer _timer;

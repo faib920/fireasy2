@@ -26,7 +26,7 @@ namespace Fireasy.Common.Ioc
     /// <summary>
     /// 控制反转的容器，用于存放描述组件与服务的联系。
     /// </summary>
-    public sealed class Container : DisposeableBase, IServiceProvider, IResolver
+    public sealed class Container : DisposableBase, IServiceProvider, IResolver
 #if NETSTANDARD
         , IServiceScopeFactory
 #endif
@@ -471,7 +471,7 @@ namespace Fireasy.Common.Ioc
             return base.Dispose(disposing);
         }
 
-        private class ResolveScope : DisposeableBase, IServiceProvider, IResolver
+        private class ResolveScope : DisposableBase, IServiceProvider, IResolver
 #if NETSTANDARD
             , IServiceScope
 #endif

@@ -18,7 +18,7 @@ using System.Text;
 
 namespace Fireasy.Common.Serialization
 {
-    internal sealed class JsonSerialize : DisposeableBase
+    internal sealed class JsonSerialize : DisposableBase
     {
         private readonly JsonSerializeOption _option;
         private readonly JsonSerializer _serializer;

@@ -16,7 +16,7 @@ namespace Fireasy.Common.Caching
     /// <summary>
     /// 提供对缓存的优化。
     /// </summary>
-    internal class CacheOptimizer : DisposeableBase
+    internal class CacheOptimizer : DisposableBase
     {
         private readonly Timer _timer;
 

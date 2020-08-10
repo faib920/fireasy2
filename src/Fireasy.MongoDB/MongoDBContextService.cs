@@ -16,7 +16,7 @@ namespace Fireasy.MongoDB
     public class MongoDBContextService : ContextServiceBase,
         IEntityTransactional
     {
-        private readonly MongoClient client;
+        private readonly MongoClient _client;
 
         public MongoDBContextService(ContextServiceContext context)
             : base(context)
@@ -29,8 +29,8 @@ namespace Fireasy.MongoDB
                 database = "admin";
             }
 
-            client = new MongoClient(serverName);
-            Database = client.GetServer().GetDatabase(database);
+            _client = new MongoClient(serverName);
+            Database = _client.GetServer().GetDatabase(database);
         }
 
         protected override Func<Type, IRepositoryProvider> CreateFactory =>
@@ -52,7 +52,7 @@ namespace Fireasy.MongoDB
         /// <param name="level"></param>
         public void BeginTransaction(IsolationLevel level = IsolationLevel.ReadCommitted)
         {
-            Session = client.StartSession();
+            Session = _client.StartSession();
             Session.StartTransaction();
         }
 

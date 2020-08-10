@@ -15,7 +15,7 @@ namespace Fireasy.Common.Serialization
     /// <summary>
     /// 表示将对象使用json表示的编写器。
     /// </summary>
-    public sealed class JsonWriter : DisposeableBase
+    public sealed class JsonWriter : DisposableBase
     {
         private TextWriter _writer;
         private int _level;

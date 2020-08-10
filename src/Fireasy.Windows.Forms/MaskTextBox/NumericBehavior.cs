@@ -1,9 +1,9 @@
 using System;
-using System.Windows.Forms;
 using System.ComponentModel;
-using System.Globalization;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
+using System.Windows.Forms;
 
 namespace Fireasy.Windows.Forms
 {
@@ -11,19 +11,19 @@ namespace Fireasy.Windows.Forms
     public class NumericBehavior : Behavior
     {
         // Fields
-        private int m_maxWholeDigits = 9;
-        private int m_maxDecimalPlaces = 4;
-        private int m_digitsInGroup = 0;
-        private char m_negativeSign = NumberFormatInfo.CurrentInfo.NegativeSign[0];
-        private char m_decimalPoint = NumberFormatInfo.CurrentInfo.NumberDecimalSeparator[0];
-        private char m_groupSeparator = NumberFormatInfo.CurrentInfo.NumberGroupSeparator[0];
-        private string m_prefix = "";
-        private double m_rangeMin = Double.MinValue;
-        private double m_rangeMax = Double.MaxValue;
-        private double m_defaultValue = 0;
+        private int _maxWholeDigits = 9;
+        private int _maxDecimalPlaces = 4;
+        private int _digitsInGroup = 0;
+        private char _negativeSign = NumberFormatInfo.CurrentInfo.NegativeSign[0];
+        private char _decimalPoint = NumberFormatInfo.CurrentInfo.NumberDecimalSeparator[0];
+        private char _groupSeparator = NumberFormatInfo.CurrentInfo.NumberGroupSeparator[0];
+        private string _prefix = "";
+        private double _rangeMin = Double.MinValue;
+        private double _rangeMax = Double.MaxValue;
+        private double _defaultValue = 0;
 
-        private int m_previousSeparatorCount = -1;
-        private bool m_textChangedByKeystroke = false;
+        private int _previousSeparatorCount = -1;
+        private bool _textChangedByKeystroke = false;
 
         /// <summary>
         ///   Internal values that are added/removed to the <see cref="Behavior.Flags" /> property by other
@@ -106,13 +106,13 @@ namespace Fireasy.Windows.Forms
             :
             this(textBox)
         {
-            m_maxWholeDigits = maxWholeDigits;
-            m_maxDecimalPlaces = maxDecimalPlaces;
+            _maxWholeDigits = maxWholeDigits;
+            _maxDecimalPlaces = maxDecimalPlaces;
 
-            if (m_maxWholeDigits < 1)
-                m_maxWholeDigits = 1;
-            if (m_maxDecimalPlaces < 0)
-                m_maxDecimalPlaces = 0;
+            if (_maxWholeDigits < 1)
+                _maxWholeDigits = 1;
+            if (_maxDecimalPlaces < 0)
+                _maxDecimalPlaces = 0;
         }
 
         /// <summary>
@@ -147,15 +147,15 @@ namespace Fireasy.Windows.Forms
             :
             base(behavior)
         {
-            m_maxWholeDigits = behavior.m_maxWholeDigits;
-            m_maxDecimalPlaces = behavior.m_maxDecimalPlaces;
-            m_digitsInGroup = behavior.m_digitsInGroup;
-            m_negativeSign = behavior.m_negativeSign;
-            m_decimalPoint = behavior.m_decimalPoint;
-            m_groupSeparator = behavior.m_groupSeparator;
-            m_prefix = behavior.m_prefix;
-            m_rangeMin = behavior.m_rangeMin;
-            m_rangeMax = behavior.m_rangeMax;
+            _maxWholeDigits = behavior._maxWholeDigits;
+            _maxDecimalPlaces = behavior._maxDecimalPlaces;
+            _digitsInGroup = behavior._digitsInGroup;
+            _negativeSign = behavior._negativeSign;
+            _decimalPoint = behavior._decimalPoint;
+            _groupSeparator = behavior._groupSeparator;
+            _prefix = behavior._prefix;
+            _rangeMin = behavior._rangeMin;
+            _rangeMax = behavior._rangeMax;
         }
 
         /// <summary>
@@ -168,16 +168,16 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return m_maxWholeDigits;
+                return _maxWholeDigits;
             }
             set
             {
-                if (m_maxWholeDigits == value)
+                if (_maxWholeDigits == value)
                     return;
 
-                m_maxWholeDigits = value;
-                if (m_maxWholeDigits < 1)
-                    m_maxWholeDigits = 1;
+                _maxWholeDigits = value;
+                if (_maxWholeDigits < 1)
+                    _maxWholeDigits = 1;
 
                 UpdateText();
             }
@@ -185,8 +185,8 @@ namespace Fireasy.Windows.Forms
 
         public double DefaultValue
         {
-            get { return m_defaultValue; }
-            set { m_defaultValue = value; }
+            get { return _defaultValue; }
+            set { _defaultValue = value; }
         }
 
         /// <summary>
@@ -199,16 +199,16 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return m_maxDecimalPlaces;
+                return _maxDecimalPlaces;
             }
             set
             {
-                if (m_maxDecimalPlaces == value)
+                if (_maxDecimalPlaces == value)
                     return;
 
-                m_maxDecimalPlaces = value;
-                if (m_maxDecimalPlaces < 0)
-                    m_maxDecimalPlaces = 0;
+                _maxDecimalPlaces = value;
+                if (_maxDecimalPlaces < 0)
+                    _maxDecimalPlaces = 0;
 
                 UpdateText();
             }
@@ -262,16 +262,16 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return m_digitsInGroup;
+                return _digitsInGroup;
             }
             set
             {
-                if (m_digitsInGroup == value)
+                if (_digitsInGroup == value)
                     return;
 
-                m_digitsInGroup = value;
-                if (m_digitsInGroup < 0)
-                    m_digitsInGroup = 0;
+                _digitsInGroup = value;
+                if (_digitsInGroup < 0)
+                    _digitsInGroup = 0;
 
                 UpdateText();
             }
@@ -287,14 +287,14 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return m_decimalPoint;
+                return _decimalPoint;
             }
             set
             {
-                if (m_decimalPoint == value)
+                if (_decimalPoint == value)
                     return;
 
-                m_decimalPoint = value;
+                _decimalPoint = value;
                 AdjustDecimalAndGroupSeparators();
                 UpdateText();
             }
@@ -311,14 +311,14 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return m_groupSeparator;
+                return _groupSeparator;
             }
             set
             {
-                if (m_groupSeparator == value)
+                if (_groupSeparator == value)
                     return;
 
-                m_groupSeparator = value;
+                _groupSeparator = value;
                 AdjustDecimalAndGroupSeparators();
                 UpdateText();
             }
@@ -334,14 +334,14 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return m_negativeSign;
+                return _negativeSign;
             }
             set
             {
-                if (m_negativeSign == value)
+                if (_negativeSign == value)
                     return;
 
-                m_negativeSign = value;
+                _negativeSign = value;
                 UpdateText();
             }
         }
@@ -355,14 +355,14 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return m_prefix;
+                return _prefix;
             }
             set
             {
-                if (m_prefix == value)
+                if (_prefix == value)
                     return;
 
-                m_prefix = value;
+                _prefix = value;
                 UpdateText();
             }
         }
@@ -377,11 +377,11 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return m_rangeMin;
+                return _rangeMin;
             }
             set
             {
-                m_rangeMin = value;
+                _rangeMin = value;
             }
         }
 
@@ -395,11 +395,11 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return m_rangeMax;
+                return _rangeMax;
             }
             set
             {
-                m_rangeMax = value;
+                _rangeMax = value;
             }
         }
 
@@ -410,8 +410,8 @@ namespace Fireasy.Windows.Forms
         ///   This prevents potential problems as the user is entering the value. </remarks>	
         protected void AdjustDecimalAndGroupSeparators()
         {
-            if (m_decimalPoint == m_groupSeparator)
-                m_groupSeparator = (m_decimalPoint == ',' ? '.' : ',');
+            if (_decimalPoint == _groupSeparator)
+                _groupSeparator = (_decimalPoint == ',' ? '.' : ',');
         }
 
         /// <summary>
@@ -431,13 +431,13 @@ namespace Fireasy.Windows.Forms
             {
                 StringBuilder mask = new StringBuilder();
 
-                for (int iDigit = 0; iDigit < m_maxWholeDigits; iDigit++)
+                for (int iDigit = 0; iDigit < _maxWholeDigits; iDigit++)
                     mask.Append('0');
 
-                if (m_maxDecimalPlaces > 0)
-                    mask.Append(m_decimalPoint);
+                if (_maxDecimalPlaces > 0)
+                    mask.Append(_decimalPoint);
 
-                for (int iDigit = 0; iDigit < m_maxDecimalPlaces; iDigit++)
+                for (int iDigit = 0; iDigit < _maxDecimalPlaces; iDigit++)
                     mask.Append('0');
 
                 mask = new StringBuilder(GetSeparatedText(mask.ToString()));
@@ -455,11 +455,11 @@ namespace Fireasy.Windows.Forms
                 int decimalPos = -1;
                 int length = value.Length;
 
-                m_maxWholeDigits = 0;
-                m_maxDecimalPlaces = 0;
-                m_digitsInGroup = 0;
-                m_flags = (m_flags & (int)~Flag.CannotBeNegative);  // allow it to be negative
-                m_prefix = "";
+                _maxWholeDigits = 0;
+                _maxDecimalPlaces = 0;
+                _digitsInGroup = 0;
+                _flags = (_flags & (int)~Flag.CannotBeNegative);  // allow it to be negative
+                _prefix = "";
 
                 for (int iPos = length - 1; iPos >= 0; iPos--)
                 {
@@ -467,37 +467,37 @@ namespace Fireasy.Windows.Forms
                     if (c == '#')
                     {
                         if (decimalPos >= 0)
-                            m_maxWholeDigits++;
+                            _maxWholeDigits++;
                         else
-                            m_maxDecimalPlaces++;
+                            _maxDecimalPlaces++;
                     }
-                    else if ((c == '.' || c == m_decimalPoint) && decimalPos < 0)
+                    else if ((c == '.' || c == _decimalPoint) && decimalPos < 0)
                     {
                         decimalPos = iPos;
-                        m_decimalPoint = c;
+                        _decimalPoint = c;
                     }
-                    else if (c == ',' || c == m_groupSeparator)
+                    else if (c == ',' || c == _groupSeparator)
                     {
-                        if (m_digitsInGroup == 0)
+                        if (_digitsInGroup == 0)
                         {
-                            m_digitsInGroup = (((decimalPos >= 0) ? decimalPos : length) - iPos) - 1;
-                            m_groupSeparator = c;
+                            _digitsInGroup = (((decimalPos >= 0) ? decimalPos : length) - iPos) - 1;
+                            _groupSeparator = c;
                         }
                     }
                     else
                     {
-                        m_prefix = value.Substring(0, iPos + 1);
+                        _prefix = value.Substring(0, iPos + 1);
                         break;
                     }
                 }
 
                 if (decimalPos < 0)
                 {
-                    m_maxWholeDigits = m_maxDecimalPlaces;
-                    m_maxDecimalPlaces = 0;
+                    _maxWholeDigits = _maxDecimalPlaces;
+                    _maxDecimalPlaces = 0;
                 }
 
-                Debug.Assert(m_maxWholeDigits > 0);	// must have at least one digit on left side of decimal point
+                Debug.Assert(_maxWholeDigits > 0);	// must have at least one digit on left side of decimal point
 
                 AdjustDecimalAndGroupSeparators();
                 UpdateText();
@@ -536,7 +536,7 @@ namespace Fireasy.Windows.Forms
         public override bool IsValid()
         {
             double value = ToDouble(RealNumericText);
-            return (value >= m_rangeMin && value <= m_rangeMax);
+            return (value >= _rangeMin && value <= _rangeMax);
         }
 
         /// <summary>
@@ -547,12 +547,12 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                if (m_rangeMin > double.MinValue && m_rangeMax < double.MaxValue)
-                    return "Please specify a numeric value between " + m_rangeMin.ToString() + " and " + m_rangeMax.ToString() + ".";
-                else if (m_rangeMin > double.MinValue)
-                    return "Please specify a numeric value greater than or equal to " + m_rangeMin.ToString() + ".";
-                else if (m_rangeMax < double.MinValue)
-                    return "Please specify a numeric value less than or equal to " + m_rangeMax.ToString() + ".";
+                if (_rangeMin > double.MinValue && _rangeMax < double.MaxValue)
+                    return "Please specify a numeric value between " + _rangeMin.ToString() + " and " + _rangeMax.ToString() + ".";
+                else if (_rangeMin > double.MinValue)
+                    return "Please specify a numeric value greater than or equal to " + _rangeMin.ToString() + ".";
+                else if (_rangeMax < double.MinValue)
+                    return "Please specify a numeric value less than or equal to " + _rangeMax.ToString() + ".";
                 return "Please specify a valid numeric value.";
             }
         }
@@ -566,17 +566,17 @@ namespace Fireasy.Windows.Forms
                 return;
 
             // If it's empty, set it a valid number
-            if (m_textBox.Text == "")
-                m_textBox.Text = " ";
+            if (_textBox.Text == "")
+                _textBox.Text = " ";
             else
                 UpdateText();
 
             // Make it fall within the range
             double value = ToDouble(RealNumericText);
-            if (value < m_rangeMin)
-                m_textBox.Text = m_rangeMin.ToString();
-            else if (value > m_rangeMax)
-                m_textBox.Text = m_rangeMax.ToString();
+            if (value < _rangeMin)
+                _textBox.Text = _rangeMin.ToString();
+            else if (value > _rangeMax)
+                _textBox.Text = _rangeMax.ToString();
         }
 
         /// <summary>
@@ -586,7 +586,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return GetNumericText(m_textBox.Text, false);
+                return GetNumericText(_textBox.Text, false);
             }
         }
 
@@ -598,7 +598,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return GetNumericText(m_textBox.Text, true);
+                return GetNumericText(_textBox.Text, true);
             }
         }
 
@@ -622,18 +622,18 @@ namespace Fireasy.Windows.Forms
             {
                 if (Char.IsDigit(c))
                     numericText.Append(c);
-                else if (c == m_negativeSign)
+                else if (c == _negativeSign)
                     isNegative = true;
-                else if (c == m_decimalPoint && !hasDecimalPoint)
+                else if (c == _decimalPoint && !hasDecimalPoint)
                 {
                     hasDecimalPoint = true;
-                    numericText.Append(realNumeric ? '.' : m_decimalPoint);
+                    numericText.Append(realNumeric ? '.' : _decimalPoint);
                 }
             }
 
             // Add the negative sign to the front of the number.
             if (isNegative)
-                numericText.Insert(0, realNumeric ? '-' : m_negativeSign);
+                numericText.Insert(0, realNumeric ? '-' : _negativeSign);
 
             return numericText.ToString();
         }
@@ -645,7 +645,7 @@ namespace Fireasy.Windows.Forms
             int count = 0;
             foreach (char c in text)
             {
-                if (c == m_groupSeparator)
+                if (c == _groupSeparator)
                     count++;
             }
             return count;
@@ -657,10 +657,10 @@ namespace Fireasy.Windows.Forms
         ///   If the textbox's text is valid, it is returned; otherwise a valid version of it is returned. </returns>
         protected override string GetValidText()
         {
-            string text = m_textBox.Text;
+            string text = _textBox.Text;
             StringBuilder newText = new StringBuilder();
             bool isNegative = false;
-            int prefixLength = m_prefix.Length;
+            int prefixLength = _prefix.Length;
 
             // Remove any invalid characters from the number
             for (int iPos = 0, decimalPos = -1, newLength = 0, length = text.Length; iPos < length; iPos++)
@@ -668,17 +668,17 @@ namespace Fireasy.Windows.Forms
                 char c = text[iPos];
 
                 // Check for a negative sign
-                if (c == m_negativeSign && AllowNegative)
+                if (c == _negativeSign && AllowNegative)
                     isNegative = true;
 
                 // Check for a digit
                 else if (Char.IsDigit(c))
                 {
                     // Make sure it doesn't go beyond the limits
-                    if (decimalPos < 0 && newLength == m_maxWholeDigits)
+                    if (decimalPos < 0 && newLength == _maxWholeDigits)
                         continue;
 
-                    if (decimalPos >= 0 && newLength > decimalPos + m_maxDecimalPlaces)
+                    if (decimalPos >= 0 && newLength > decimalPos + _maxDecimalPlaces)
                         break;
 
                     newText.Append(c);
@@ -686,9 +686,9 @@ namespace Fireasy.Windows.Forms
                 }
 
                 // Check for a decimal point
-                else if (c == m_decimalPoint && decimalPos < 0)
+                else if (c == _decimalPoint && decimalPos < 0)
                 {
-                    if (m_maxDecimalPlaces == 0)
+                    if (_maxDecimalPlaces == 0)
                         break;
 
                     newText.Append(c);
@@ -699,7 +699,7 @@ namespace Fireasy.Windows.Forms
 
             // Insert the negative sign if it's there
             if (isNegative)
-                newText.Insert(0, m_negativeSign);
+                newText.Insert(0, _negativeSign);
 
             return GetSeparatedText(newText.ToString());
         }
@@ -717,24 +717,24 @@ namespace Fireasy.Windows.Forms
             string separatedText = numericText;
 
             // Retrieve the number without the decimal point
-            int decimalPos = numericText.IndexOf(m_decimalPoint);
+            int decimalPos = numericText.IndexOf(_decimalPoint);
             if (decimalPos >= 0)
                 separatedText = separatedText.Substring(0, decimalPos);
 
-            if (m_digitsInGroup > 0)
+            if (_digitsInGroup > 0)
             {
                 int length = separatedText.Length;
-                bool isNegative = (separatedText != "" && separatedText[0] == m_negativeSign);
+                bool isNegative = (separatedText != "" && separatedText[0] == _negativeSign);
 
-                // Loop in reverse and stick the separator every m_digitsInGroup digits.
-                for (int iPos = length - (m_digitsInGroup + 1); iPos >= (isNegative ? 1 : 0); iPos -= m_digitsInGroup)
-                    separatedText = separatedText.Substring(0, iPos + 1) + m_groupSeparator + separatedText.Substring(iPos + 1);
+                // Loop in reverse and stick the separator every _digitsInGroup digits.
+                for (int iPos = length - (_digitsInGroup + 1); iPos >= (isNegative ? 1 : 0); iPos -= _digitsInGroup)
+                    separatedText = separatedText.Substring(0, iPos + 1) + _groupSeparator + separatedText.Substring(iPos + 1);
             }
 
             // Prepend the prefix, if the number is not empty.
             if (separatedText != "" || decimalPos >= 0)
             {
-                separatedText = m_prefix + separatedText;
+                separatedText = _prefix + separatedText;
 
                 if (decimalPos >= 0)
                     separatedText += numericText.Substring(decimalPos);
@@ -759,14 +759,13 @@ namespace Fireasy.Windows.Forms
 
             if (e.KeyCode == Keys.Delete)
             {
-                int start, end;
-                m_selection.Get(out start, out end);
+                _selection.Get(out int start, out int end);
 
-                string text = m_textBox.Text;
+                string text = _textBox.Text;
                 int length = text.Length;
 
                 // If deleting the prefix, don't allow it if there's a number after it.
-                int prefixLength = m_prefix.Length;
+                int prefixLength = _prefix.Length;
                 if (start < prefixLength && length > prefixLength)
                 {
                     if (end != length)
@@ -774,13 +773,13 @@ namespace Fireasy.Windows.Forms
                     return;
                 }
 
-                m_textChangedByKeystroke = true;
+                _textChangedByKeystroke = true;
 
                 // If deleting a group separator (comma), move the cursor to the right
-                if (start < length && text[start] == m_groupSeparator && start == end)
+                if (start < length && text[start] == _groupSeparator && start == end)
                     SendKeys.SendWait("{RIGHT}");
 
-                m_previousSeparatorCount = GetGroupSeparatorCount(text);
+                _previousSeparatorCount = GetGroupSeparatorCount(text);
 
                 // If everything on the right was deleted, put the selection on the right
                 if (end == length)
@@ -803,31 +802,30 @@ namespace Fireasy.Windows.Forms
             TraceLine("NumericBehavior.HandleKeyPress " + e.KeyChar);
 
             // Check to see if it's read only
-            if (m_textBox.ReadOnly)
+            if (_textBox.ReadOnly)
                 return;
 
             char c = e.KeyChar;
             e.Handled = true;
-            m_textChangedByKeystroke = true;
+            _textChangedByKeystroke = true;
 
-            int start, end;
-            m_selection.Get(out start, out end);
+            _selection.Get(out int start, out int end);
 
-            string text = m_textBox.Text;
-            m_previousSeparatorCount = -1;
+            string text = _textBox.Text;
+            _previousSeparatorCount = -1;
 
             string numericText = NumericText;
-            int decimalPos = text.IndexOf(m_decimalPoint);
-            int numericDecimalPos = numericText.IndexOf(m_decimalPoint);
+            int decimalPos = text.IndexOf(_decimalPoint);
+            int numericDecimalPos = numericText.IndexOf(_decimalPoint);
             int length = text.Length;
             int numericLen = numericText.Length;
-            int prefixLength = m_prefix.Length;
+            int prefixLength = _prefix.Length;
             int separatorCount = GetGroupSeparatorCount(text);
 
             // Check if we're in the prefix's location
             if (start < prefixLength && !Char.IsControl(c))
             {
-                char cPrefix = m_prefix[start];
+                char cPrefix = _prefix[start];
 
                 // Check if it's the same character as the prefix.
                 if (cPrefix == c)
@@ -835,16 +833,16 @@ namespace Fireasy.Windows.Forms
                     if (length > start)
                     {
                         end = (end == length ? end : (start + 1));
-                        m_selection.SetAndReplace(start, end, c.ToString());
+                        _selection.SetAndReplace(start, end, c.ToString());
                     }
                     else
                         base.HandleKeyPress(sender, e);
                 }
                 // If it's a part of the number, enter the prefix
-                else if (Char.IsDigit(c) || c == m_negativeSign || c == m_decimalPoint)
+                else if (Char.IsDigit(c) || c == _negativeSign || c == _decimalPoint)
                 {
                     end = (end == length ? end : prefixLength);
-                    m_selection.SetAndReplace(start, end, m_prefix.Substring(start));
+                    _selection.SetAndReplace(start, end, _prefix.Substring(start));
                     HandleKeyPress(sender, e);
                 }
 
@@ -852,30 +850,30 @@ namespace Fireasy.Windows.Forms
             }
 
             // Check if it's a negative sign
-            if (c == m_negativeSign && AllowNegative)
+            if (c == _negativeSign && AllowNegative)
             {
                 // If it's at the beginning, determine if it should overwritten
                 if (start == prefixLength)
                 {
-                    if (numericText != "" && numericText[0] == m_negativeSign)
+                    if (numericText != "" && numericText[0] == _negativeSign)
                     {
                         end = (end == length ? end : (start + 1));
-                        m_selection.SetAndReplace(start, end, m_negativeSign.ToString());
+                        _selection.SetAndReplace(start, end, _negativeSign.ToString());
                         return;
                     }
                 }
                 // If we're not at the beginning, toggle the sign
                 else
                 {
-                    if (numericText[0] == m_negativeSign)
+                    if (numericText[0] == _negativeSign)
                     {
-                        m_selection.SetAndReplace(prefixLength, prefixLength + 1, "");
-                        m_selection.Set(start - 1, end - 1);
+                        _selection.SetAndReplace(prefixLength, prefixLength + 1, "");
+                        _selection.Set(start - 1, end - 1);
                     }
                     else
                     {
-                        m_selection.SetAndReplace(prefixLength, prefixLength, m_negativeSign.ToString());
-                        m_selection.Set(start + 1, end + 1);
+                        _selection.SetAndReplace(prefixLength, prefixLength, _negativeSign.ToString());
+                        _selection.Set(start + 1, end + 1);
                     }
 
                     return;
@@ -883,21 +881,21 @@ namespace Fireasy.Windows.Forms
             }
 
             // Check if it's a decimal point (only one is allowed).
-            else if (c == m_decimalPoint && m_maxDecimalPlaces > 0)
+            else if (c == _decimalPoint && _maxDecimalPlaces > 0)
             {
                 if (decimalPos >= 0)
                 {
                     // Check if we're replacing the decimal point
                     if (decimalPos >= start && decimalPos < end)
-                        m_previousSeparatorCount = separatorCount;
+                        _previousSeparatorCount = separatorCount;
                     else
                     {	// Otherwise, put the caret on it
-                        m_selection.Set(decimalPos + 1, decimalPos + 1);
+                        _selection.Set(decimalPos + 1, decimalPos + 1);
                         return;
                     }
                 }
                 else
-                    m_previousSeparatorCount = separatorCount;
+                    _previousSeparatorCount = separatorCount;
             }
 
             // Check if it's a digit
@@ -906,12 +904,12 @@ namespace Fireasy.Windows.Forms
                 // Check if we're on the right of the decimal point.
                 if (decimalPos >= 0 && decimalPos < start)
                 {
-                    if (numericText.Substring(numericDecimalPos + 1).Length == m_maxDecimalPlaces)
+                    if (numericText.Substring(numericDecimalPos + 1).Length == _maxDecimalPlaces)
                     {
-                        if (start <= decimalPos + m_maxDecimalPlaces)
+                        if (start <= decimalPos + _maxDecimalPlaces)
                         {
                             end = (end == length ? end : (start + 1));
-                            m_selection.SetAndReplace(start, end, c.ToString());
+                            _selection.SetAndReplace(start, end, c.ToString());
                         }
                         return;
                     }
@@ -920,37 +918,37 @@ namespace Fireasy.Windows.Forms
                 // We're on the left side of the decimal point
                 else
                 {
-                    bool isNegative = (numericText.Length != 0 && numericText[0] == m_negativeSign);
+                    bool isNegative = (numericText.Length != 0 && numericText[0] == _negativeSign);
 
                     // Make sure we can still enter digits.
-                    if (start == m_maxWholeDigits + separatorCount + prefixLength + (isNegative ? 1 : 0))
+                    if (start == _maxWholeDigits + separatorCount + prefixLength + (isNegative ? 1 : 0))
                     {
-                        if (AddDecimalAfterMaxWholeDigits && m_maxDecimalPlaces > 0)
+                        if (AddDecimalAfterMaxWholeDigits && _maxDecimalPlaces > 0)
                         {
                             end = (end == length ? end : (start + 2));
-                            m_selection.SetAndReplace(start, end, m_decimalPoint.ToString() + c);
+                            _selection.SetAndReplace(start, end, _decimalPoint.ToString() + c);
                         }
 
                         return;
                     }
 
-                    if (numericText.Substring(0, numericDecimalPos >= 0 ? numericDecimalPos : numericLen).Length == m_maxWholeDigits + (isNegative ? 1 : 0))
+                    if (numericText.Substring(0, numericDecimalPos >= 0 ? numericDecimalPos : numericLen).Length == _maxWholeDigits + (isNegative ? 1 : 0))
                     {
-                        if (text[start] == m_groupSeparator)
+                        if (text[start] == _groupSeparator)
                             start++;
 
                         end = (end == length ? end : (start + 1));
-                        m_selection.SetAndReplace(start, end, c.ToString());
+                        _selection.SetAndReplace(start, end, c.ToString());
                         return;
                     }
 
-                    m_previousSeparatorCount = separatorCount;
+                    _previousSeparatorCount = separatorCount;
                 }
             }
 
             // Check if it's a non-printable character, such as Backspace or Ctrl+C
             else if (Char.IsControl(c))
-                m_previousSeparatorCount = separatorCount;
+                _previousSeparatorCount = separatorCount;
             else
                 return;
 
@@ -973,24 +971,24 @@ namespace Fireasy.Windows.Forms
         {
             TraceLine("NumericBehavior.HandleTextChanged");
 
-            Selection.Saver savedSelection = new Selection.Saver(m_textBox);  // save the selection before the text changes
-            bool textChangedByKeystroke = m_textChangedByKeystroke;
+            Selection.Saver savedSelection = new Selection.Saver(_textBox);  // save the selection before the text changes
+            bool textChangedByKeystroke = _textChangedByKeystroke;
             base.HandleTextChanged(sender, e);
-            if (m_textBox.Text.Length == 0)
+            if (_textBox.Text.Length == 0)
             {
-                m_textBox.Text = m_defaultValue.ToString();
+                _textBox.Text = _defaultValue.ToString();
             }
 
             // Check if the user has changed the number enough to cause
             // one or more separators to be added/removed, in which case
             // the selection may need to be adjusted.
-            if (m_previousSeparatorCount >= 0)
+            if (_previousSeparatorCount >= 0)
             {
                 using (savedSelection)
                 {
-                    int newSeparatorCount = GetGroupSeparatorCount(m_textBox.Text);
-                    if (m_previousSeparatorCount != newSeparatorCount && savedSelection.Start > m_prefix.Length)
-                        savedSelection.MoveBy(newSeparatorCount - m_previousSeparatorCount);
+                    int newSeparatorCount = GetGroupSeparatorCount(_textBox.Text);
+                    if (_previousSeparatorCount != newSeparatorCount && savedSelection.Start > _prefix.Length)
+                        savedSelection.MoveBy(newSeparatorCount - _previousSeparatorCount);
                 }
             }
 
@@ -1000,7 +998,7 @@ namespace Fireasy.Windows.Forms
                (!textChangedByKeystroke && HasFlag((int)LostFocusFlag.CallHandlerWhenTextPropertyIsSet)))
                 HandleLostFocus(sender, e);
 
-            m_textChangedByKeystroke = false;
+            _textChangedByKeystroke = false;
         }
 
         /// <summary>
@@ -1021,29 +1019,29 @@ namespace Fireasy.Windows.Forms
             if (!HasFlag((int)LostFocusFlag.Max))
                 return;
 
-            string originalText = GetNumericText(m_textBox.Text, true);
+            string originalText = GetNumericText(_textBox.Text, true);
             string text = originalText;
             int length = text.Length;
 
             // If desired, remove any extra leading zeros but always leave one in front of the decimal point
             if (HasFlag((int)LostFocusFlag.RemoveExtraLeadingZeros) && length > 0)
             {
-                bool isNegative = (text[0] == m_negativeSign);
+                bool isNegative = (text[0] == _negativeSign);
                 if (isNegative)
                     text = text.Substring(1);
                 text = text.TrimStart('0');
-                if (text == "" || text[0] == m_decimalPoint)
+                if (text == "" || text[0] == _decimalPoint)
                     text = '0' + text;
                 if (isNegative)
-                    text = m_negativeSign + text;
+                    text = _negativeSign + text;
             }
             // Check if the value is empty and we don't want to touch it
             else if (length == 0 && HasFlag((int)LostFocusFlag.DontPadWithZerosIfEmpty))
                 return;
 
             int decimalPos = text.IndexOf('.');
-            int maxDecimalPlaces = m_maxDecimalPlaces;
-            int maxWholeDigits = m_maxWholeDigits;
+            int maxDecimalPlaces = _maxDecimalPlaces;
+            int maxWholeDigits = _maxWholeDigits;
 
             // Check if we need to pad the number with zeros after the decimal point
             if (HasFlag((int)LostFocusFlag.PadWithZerosAfterDecimal) && maxDecimalPlaces > 0)
@@ -1076,13 +1074,13 @@ namespace Fireasy.Windows.Forms
 
             if (text != originalText)
             {
-                if (decimalPos >= 0 && m_decimalPoint != '.')
-                    text = text.Replace('.', m_decimalPoint);
+                if (decimalPos >= 0 && _decimalPoint != '.')
+                    text = text.Replace('.', _decimalPoint);
 
                 // remember the current selection 
-                using (Selection.Saver savedSelection = new Selection.Saver(m_textBox))
+                using (Selection.Saver savedSelection = new Selection.Saver(_textBox))
                 {
-                    m_textBox.Text = text;
+                    _textBox.Text = text;
                 }
             }
         }

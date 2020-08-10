@@ -12,7 +12,7 @@ namespace Fireasy.Windows.Forms
 {
     public class TreeListGroupCollection : ObservableCollection<TreeListGroup>
     {
-        private TreeList treelist;
+        private readonly TreeList treelist;
         private int sortVersion;
 
         public TreeListGroupCollection()

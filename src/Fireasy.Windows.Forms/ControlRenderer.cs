@@ -69,14 +69,14 @@ namespace Fireasy.Windows.Forms
                         e.Graphics.DrawImage(control.BackgroundImage, imgRect);
                         break;
                     case ImageLayout.Tile:
-                        for (var i = e.Bounds.X; i < e.Bounds.Width; i+= imgRect.Width)
+                        for (var i = e.Bounds.X; i < e.Bounds.Width; i += imgRect.Width)
                         {
-                            for (var j = e.Bounds.Y; j < e.Bounds.Height; j+= imgRect.Height)
+                            for (var j = e.Bounds.Y; j < e.Bounds.Height; j += imgRect.Height)
                             {
                                 e.Graphics.DrawImage(control.BackgroundImage, new Rectangle(i, j, imgRect.Width, imgRect.Height));
                             }
                         }
-                        
+
                         break;
                     case ImageLayout.Stretch:
                         e.Graphics.DrawImage(control.BackgroundImage, e.Bounds);
@@ -142,7 +142,7 @@ namespace Fireasy.Windows.Forms
     public class BorderRenderEventArgs : RenderEventArgs
     {
         internal BorderRenderEventArgs(IBorderStylization control, Graphics graphics, Rectangle rect)
-            : base (graphics, rect)
+            : base(graphics, rect)
         {
             Control = control;
         }
@@ -153,7 +153,7 @@ namespace Fireasy.Windows.Forms
     public class BackgroundRenderEventArgs : RenderEventArgs
     {
         internal BackgroundRenderEventArgs(IBackgroundAligning control, Graphics graphics, Rectangle rect)
-            : base (graphics, rect)
+            : base(graphics, rect)
         {
             Control = control;
         }

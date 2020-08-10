@@ -16,7 +16,7 @@ namespace Fireasy.Data.Entity.Generation
         protected override SqlCommand[] BuildCreateTableCommands(ISyntaxProvider syntax, string tableName, IList<IProperty> properties)
         {
             var sb = new StringBuilder();
-            sb.Append($"create table main.{Quote(syntax, tableName)}\n(\n");
+            sb.Append($"create table main.{Delimit(syntax, tableName)}\n(\n");
 
             var count = properties.Count;
             var last = count - 1;
@@ -43,7 +43,7 @@ namespace Fireasy.Data.Entity.Generation
             var count = properties.Count;
             for (var i = 0; i < count; i++)
             {
-                sb.Append($"alter table {Quote(syntax, tableName)} add ");
+                sb.Append($"alter table {Delimit(syntax, tableName)} add ");
 
                 AppendFieldToBuilder(sb, syntax, properties[i]);
 

@@ -6,11 +6,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if NETCOREAPP
+using Microsoft.AspNetCore.Html;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System.IO;
 using System.Text;
 using System.Text.Encodings.Web;
-using Microsoft.AspNetCore.Html;
-using Microsoft.AspNetCore.Mvc.Rendering;
 #else
 using System.Web;
 using System.Web.Mvc;

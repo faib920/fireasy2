@@ -16,7 +16,7 @@ namespace Fireasy.Web.EasyUI.Binders
     /// </summary>
     public class SettingsBindManager
     {
-        private static ConcurrentDictionary<string, ISettingsBinder> binders = new ConcurrentDictionary<string, ISettingsBinder>();
+        private readonly static ConcurrentDictionary<string, ISettingsBinder> _binders = new ConcurrentDictionary<string, ISettingsBinder>();
 
         /// <summary>
         /// 注册一个 <see cref="ISettingsBinder"/> 对象。
@@ -26,7 +26,7 @@ namespace Fireasy.Web.EasyUI.Binders
         /// <param name="binder"><see cref="SettingsBase"/> 绑定者。</param>
         public static void RegisterBinder<T>(string name, T binder) where T : ISettingsBinder
         {
-            binders.TryAdd(name, binder);
+            _binders.TryAdd(name, binder);
         }
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace Fireasy.Web.EasyUI.Binders
         /// <param name="settings"></param>
         public static void Bind(Type modelType, string propertyName, ISettingsBindable settings)
         {
-            foreach (var binder in binders.Where(s => s.Value != null && s.Value.CanBind(settings)))
+            foreach (var binder in _binders.Where(s => s.Value != null && s.Value.CanBind(settings)))
             {
                 binder.Value.Bind(modelType, propertyName, settings);
             }

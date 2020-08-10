@@ -1,4 +1,11 @@
-﻿using Fireasy.Common;
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+using Fireasy.Common;
 using System;
 using System.ComponentModel;
 using System.Drawing;
@@ -14,15 +21,15 @@ namespace Fireasy.Windows.Forms
     {
         #region " Fields & Properties "
 
-        private ToolStripControlHost host;
-        private Control opener;
-        private Popup ownerPopup;
-        private Popup childPopup;
-        private bool resizableTop;
-        private bool resizableLeft;
+        private readonly ToolStripControlHost _host;
+        private Control _opener;
+        private Popup _ownerPopup;
+        private Popup _childPopup;
+        private bool _resizableTop;
+        private bool _resizableLeft;
 
-        private bool isChildPopupOpened;
-        private bool resizable = true;
+        private bool _isChildPopupOpened;
+        private bool _resizable = true;
 
         /// <summary>
         /// 获取下拉显示的控件。
@@ -49,8 +56,8 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         public bool Resizable
         {
-            get { return resizable && !isChildPopupOpened; }
-            set { resizable = value; }
+            get { return _resizable && !_isChildPopupOpened; }
+            set { _resizable = value; }
         }
 
         /// <summary>
@@ -96,8 +103,8 @@ namespace Fireasy.Windows.Forms
             AutoSize = false;
             DoubleBuffered = true;
             ResizeRedraw = true;
-            host = new ToolStripControlHost(content);
-            Padding = Margin = host.Padding = host.Margin = Padding.Empty;
+            _host = new ToolStripControlHost(content);
+            Padding = Margin = _host.Padding = _host.Margin = Padding.Empty;
             MinimumSize = content.MinimumSize;
             content.MinimumSize = content.Size;
             MaximumSize = content.MaximumSize;
@@ -105,7 +112,7 @@ namespace Fireasy.Windows.Forms
             Size = content.Size;
             TabStop = content.TabStop = true;
             Font = DefaultFont;
-            Items.Add(host);
+            Items.Add(_host);
             content.Disposed += (sender, e) =>
             {
                 content = null;
@@ -181,18 +188,18 @@ namespace Fireasy.Windows.Forms
         /// <param name="area"></param>
         public void Show(Rectangle area)
         {
-            resizableTop = resizableLeft = false;
+            _resizableTop = _resizableLeft = false;
             Point location = new Point(area.Left, area.Top + area.Height);
             Rectangle screen = Screen.FromControl(this).WorkingArea;
             if (location.X + Size.Width > (screen.Left + screen.Width))
             {
-                resizableLeft = true;
+                _resizableLeft = true;
                 location.X = (screen.Left + screen.Width) - Size.Width;
             }
 
             if (location.Y + Size.Height > (screen.Top + screen.Height))
             {
-                resizableTop = true;
+                _resizableTop = true;
                 location.Y -= Size.Height + area.Height;
             }
 
@@ -205,18 +212,18 @@ namespace Fireasy.Windows.Forms
 
             SetOwnerItem(control);
 
-            resizableTop = resizableLeft = false;
+            _resizableTop = _resizableLeft = false;
             Point location = control.PointToScreen(new Point(area.Left, area.Top + area.Height));
             Rectangle screen = Screen.FromControl(control).WorkingArea;
             if (location.X + Size.Width > (screen.Left + screen.Width))
             {
-                resizableLeft = true;
+                _resizableLeft = true;
                 location.X = (screen.Left + screen.Width) - Size.Width;
             }
 
             if (location.Y + Size.Height > (screen.Top + screen.Height))
             {
-                resizableTop = true;
+                _resizableTop = true;
                 location.Y -= Size.Height + area.Height;
             }
 
@@ -234,14 +241,14 @@ namespace Fireasy.Windows.Forms
             if (control is Popup)
             {
                 Popup popupControl = control as Popup;
-                ownerPopup = popupControl;
-                ownerPopup.childPopup = this;
+                _ownerPopup = popupControl;
+                _ownerPopup._childPopup = this;
                 OwnerItem = popupControl.Items[0];
                 return;
             }
-            else if (opener == null)
+            else if (_opener == null)
             {
-                opener = control;
+                _opener = control;
             }
 
             if (control.Parent != null)
@@ -277,9 +284,9 @@ namespace Fireasy.Windows.Forms
 
         protected override void OnOpened(EventArgs e)
         {
-            if (ownerPopup != null)
+            if (_ownerPopup != null)
             {
-                ownerPopup.isChildPopupOpened = true;
+                _ownerPopup._isChildPopupOpened = true;
             }
 
             if (FocusOnOpen)
@@ -292,10 +299,10 @@ namespace Fireasy.Windows.Forms
 
         protected override void OnClosed(ToolStripDropDownClosedEventArgs e)
         {
-            opener = null;
-            if (ownerPopup != null)
+            _opener = null;
+            if (_ownerPopup != null)
             {
-                ownerPopup.isChildPopupOpened = false;
+                _ownerPopup._isChildPopupOpened = false;
             }
 
             base.OnClosed(e);
@@ -336,7 +343,7 @@ namespace Fireasy.Windows.Forms
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         protected override void WndProc(ref Message m)
         {
-            if (m.Msg == NativeMethods.WM_PRINT && !Visible)
+            if (m.Msg == NativeMethods.W_PRINT && !Visible)
             {
                 Visible = true;
             }
@@ -358,12 +365,12 @@ namespace Fireasy.Windows.Forms
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         private bool InternalProcessResizing(ref Message m, bool contentControl)
         {
-            if (m.Msg == NativeMethods.WM_NCACTIVATE &&
+            if (m.Msg == NativeMethods.W_NCACTIVATE &&
                 m.WParam != IntPtr.Zero &&
-                childPopup != null &&
-                childPopup.Visible)
+                _childPopup != null &&
+                _childPopup.Visible)
             {
-                childPopup.Hide();
+                _childPopup.Hide();
             }
 
             if (!Resizable)
@@ -371,11 +378,11 @@ namespace Fireasy.Windows.Forms
                 return false;
             }
 
-            if (m.Msg == NativeMethods.WM_NCHITTEST)
+            if (m.Msg == NativeMethods.W_NCHITTEST)
             {
                 return OnNcHitTest(ref m, contentControl);
             }
-            else if (m.Msg == NativeMethods.WM_GETMINMAXINFO)
+            else if (m.Msg == NativeMethods.W_GETMINMAXINFO)
             {
                 return OnGetMinMaxInfo(ref m);
             }
@@ -406,15 +413,15 @@ namespace Fireasy.Windows.Forms
             var gripBouns = new GripBounds(contentControl ? Content.ClientRectangle : ClientRectangle);
             var transparent = new IntPtr(NativeMethods.HTTRANSPARENT);
 
-            if (resizableTop)
+            if (_resizableTop)
             {
-                if (resizableLeft && gripBouns.TopLeft.Contains(clientLocation))
+                if (_resizableLeft && gripBouns.TopLeft.Contains(clientLocation))
                 {
                     m.Result = contentControl ? transparent : (IntPtr)NativeMethods.HTTOPLEFT;
                     return true;
                 }
 
-                if (!resizableLeft && gripBouns.TopRight.Contains(clientLocation))
+                if (!_resizableLeft && gripBouns.TopRight.Contains(clientLocation))
                 {
                     m.Result = contentControl ? transparent : (IntPtr)NativeMethods.HTTOPRIGHT;
                     return true;
@@ -428,13 +435,13 @@ namespace Fireasy.Windows.Forms
             }
             else
             {
-                if (resizableLeft && gripBouns.BottomLeft.Contains(clientLocation))
+                if (_resizableLeft && gripBouns.BottomLeft.Contains(clientLocation))
                 {
                     m.Result = contentControl ? transparent : (IntPtr)NativeMethods.HTBOTTOMLEFT;
                     return true;
                 }
 
-                if (!resizableLeft && gripBouns.BottomRight.Contains(clientLocation))
+                if (!_resizableLeft && gripBouns.BottomRight.Contains(clientLocation))
                 {
                     m.Result = contentControl ? transparent : (IntPtr)NativeMethods.HTBOTTOMRIGHT;
                     return true;
@@ -447,13 +454,13 @@ namespace Fireasy.Windows.Forms
                 }
             }
 
-            if (resizableLeft && gripBouns.Left.Contains(clientLocation))
+            if (_resizableLeft && gripBouns.Left.Contains(clientLocation))
             {
                 m.Result = contentControl ? transparent : (IntPtr)NativeMethods.HTLEFT;
                 return true;
             }
 
-            if (!resizableLeft && gripBouns.Right.Contains(clientLocation))
+            if (!_resizableLeft && gripBouns.Right.Contains(clientLocation))
             {
                 m.Result = contentControl ? transparent : (IntPtr)NativeMethods.HTRIGHT;
                 return true;
@@ -469,7 +476,7 @@ namespace Fireasy.Windows.Forms
         /// <param name="e">The <see cref="System.Windows.Forms.PaintEventArgs" /> instance containing the event data.</param>
         public void PaintSizeGrip(PaintEventArgs e)
         {
-            if (e == null || e.Graphics == null || !resizable)
+            if (e == null || e.Graphics == null || !_resizable)
             {
                 return;
             }
@@ -495,9 +502,9 @@ namespace Fireasy.Windows.Forms
 
                 var gs = e.Graphics.Save();
                 e.Graphics.ResetTransform();
-                if (resizableTop)
+                if (_resizableTop)
                 {
-                    if (resizableLeft)
+                    if (_resizableLeft)
                     {
                         e.Graphics.RotateTransform(180);
                         e.Graphics.TranslateTransform(-clientSize.Width, -clientSize.Height);
@@ -508,7 +515,7 @@ namespace Fireasy.Windows.Forms
                         e.Graphics.TranslateTransform(0, -clientSize.Height);
                     }
                 }
-                else if (resizableLeft)
+                else if (_resizableLeft)
                 {
                     e.Graphics.ScaleTransform(-1, 1);
                     e.Graphics.TranslateTransform(-clientSize.Width, 0);

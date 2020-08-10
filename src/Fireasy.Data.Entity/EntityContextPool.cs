@@ -41,7 +41,7 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 从缓冲池中取得一个对象。
         /// </summary>
-        public sealed class Lease : DisposeableBase
+        public sealed class Lease : DisposableBase
         {
             private EntityContextPool<TContext> _pool;
 

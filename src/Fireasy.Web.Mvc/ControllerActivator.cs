@@ -18,7 +18,7 @@ namespace Fireasy.Web.Mvc
     /// </summary>
     public class ControllerActivator : IControllerActivator
     {
-        private readonly IServiceProvider serviceProvider;
+        private readonly IServiceProvider _serviceProvider;
 
         /// <summary>
         /// 初始化 <see cref="ControllerActivator"/> 类的新实例。
@@ -26,7 +26,7 @@ namespace Fireasy.Web.Mvc
         /// <param name="serviceProvider">应用程序服务提供者实例。</param>
         public ControllerActivator(IServiceProvider serviceProvider)
         {
-            this.serviceProvider = serviceProvider;
+            _serviceProvider = serviceProvider;
         }
 
         /// <summary>
@@ -44,8 +44,8 @@ namespace Fireasy.Web.Mvc
         /// <returns></returns>
         public IController Create(RequestContext requestContext, Type controllerType)
         {
-            if (serviceProvider != null &&
-                serviceProvider.GetService(controllerType) is IController controller)
+            if (_serviceProvider != null &&
+                _serviceProvider.GetService(controllerType) is IController controller)
             {
                 return controller;
             }

@@ -25,7 +25,7 @@ namespace Fireasy.Data.Entity
     /// <summary>
     /// 提供以对象形式查询和使用实体数据的功能。
     /// </summary>
-    public abstract class EntityContext : DisposeableBase, IServiceProvider, IServiceProviderAccessor, IObjectPoolable
+    public abstract class EntityContext : DisposableBase, IServiceProvider, IServiceProviderAccessor, IObjectPoolable
     {
         private EntityContextOptions _options;
         private IContextService _contextService;

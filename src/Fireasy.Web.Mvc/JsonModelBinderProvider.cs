@@ -1,16 +1,15 @@
 ﻿#if NETCOREAPP
-using Fireasy.Common.Extensions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Fireasy.Web.Mvc
 {
     public class JsonModelBinderProvider : IModelBinderProvider
     {
-        private MvcOptions options;
+        private readonly MvcOptions _options;
 
         public JsonModelBinderProvider(MvcOptions options)
         {
-            this.options = options;
+            _options = options;
         }
 
         public IModelBinder GetBinder(ModelBinderProviderContext context)
@@ -21,7 +20,7 @@ namespace Fireasy.Web.Mvc
                 return null;
             }
 
-            return new JsonModelBinder(options);
+            return new JsonModelBinder(_options);
         }
     }
 }

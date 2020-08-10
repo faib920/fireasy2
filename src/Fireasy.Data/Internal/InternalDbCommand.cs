@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Data.Extensions;
 using System;
 using System.Data;
 using System.Data.Common;
@@ -87,6 +88,7 @@ namespace Fireasy.Data.Internal
 
         public IDataReader ExecuteReader()
         {
+            ((DbConnection)_command.Connection).TryOpen();
             return new InternalDataReader(_command, _command.ExecuteReader(), _locker);
         }
 
@@ -94,12 +96,14 @@ namespace Fireasy.Data.Internal
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            await ((DbConnection)_command.Connection).TryOpenAsync();
             var reader = await ((DbCommand)_command).ExecuteReaderAsync(cancellationToken);
             return new InternalDataReader(_command, reader, _locker);
         }
 
         public IDataReader ExecuteReader(CommandBehavior behavior)
         {
+            ((DbConnection)_command.Connection).TryOpen();
             return new InternalDataReader(_command, _command.ExecuteReader(behavior), _locker);
         }
 
@@ -107,6 +111,7 @@ namespace Fireasy.Data.Internal
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            await ((DbConnection)_command.Connection).TryOpenAsync();
             var reader = await ((DbCommand)_command).ExecuteReaderAsync(behavior, cancellationToken);
             return new InternalDataReader(_command, reader, _locker);
         }

@@ -1,4 +1,11 @@
-﻿using System.Drawing;
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
@@ -6,9 +13,9 @@ namespace Fireasy.Windows.Forms
 {
     internal class ToolTipWrapper
     {
-        private ToolTip inner;
-        private TreeList treelist;
-        private Size size = Size.Empty;
+        private ToolTip _inner;
+        private readonly TreeList _treelist;
+        private Size _size = Size.Empty;
 
         /// <summary>
         /// 获取或设置 ToolTip 是否显示。
@@ -17,44 +24,44 @@ namespace Fireasy.Windows.Forms
 
         internal ToolTipWrapper(TreeList treelist)
         {
-            this.treelist = treelist;
+            _treelist = treelist;
         }
 
         internal void Show(TreeListCell cell, Rectangle rect)
         {
             Initialize(cell);
 
-            inner.Show(cell.Text, treelist, rect.X - 2, rect.Y + (rect.Height - size.Height - 2) / 2 + 1);
+            _inner.Show(cell.Text, _treelist, rect.X - 2, rect.Y + (rect.Height - _size.Height - 2) / 2 + 1);
             IsShow = true;
         }
 
         internal void Hide()
         {
-            inner.Hide(treelist);
+            _inner.Hide(_treelist);
             IsShow = false;
         }
 
         private void Initialize(TreeListCell cell)
         {
-            if (inner != null)
+            if (_inner != null)
             {
-                inner.Dispose();
+                _inner.Dispose();
             }
 
             var font = cell.Column.Font ?? cell.Column.TreeList.Font;
-            size = TextRenderer.MeasureText(cell.Text, font);
-            size.Height += 8;
-            size.Width += 6;
+            _size = TextRenderer.MeasureText(cell.Text, font);
+            _size.Height += 8;
+            _size.Width += 6;
 
-            inner = new ToolTip();
-            inner.ToolTipTitle = "dfdsafafd";
-            inner.OwnerDraw = true;
-            inner.Popup += (o, e) =>
+            _inner = new ToolTip();
+            _inner.ToolTipTitle = "dfdsafafd";
+            _inner.OwnerDraw = true;
+            _inner.Popup += (o, e) =>
                 {
-                    e.ToolTipSize = size;
+                    e.ToolTipSize = _size;
                 };
 
-            inner.Draw += (o, e) =>
+            _inner.Draw += (o, e) =>
                 {
                     var flags = TextFormatFlags.VerticalCenter;
                     var r = e.Bounds;

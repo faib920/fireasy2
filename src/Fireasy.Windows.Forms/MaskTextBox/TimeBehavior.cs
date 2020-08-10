@@ -1,8 +1,7 @@
 using System;
-using System.Windows.Forms;
-using System.Globalization;
 using System.Diagnostics;
-using System.Text;
+using System.Globalization;
+using System.Windows.Forms;
 
 namespace Fireasy.Windows.Forms
 {
@@ -10,19 +9,19 @@ namespace Fireasy.Windows.Forms
     public class TimeBehavior : Behavior
     {
         // Fields
-        private DateTime m_rangeMin = new DateTime(1900, 1, 1, 0, 0, 0);
-        private DateTime m_rangeMax = new DateTime(1900, 1, 1, 23, 59, 59);
-        private char m_separator = ':';
-        private string m_am = "AM";
-        private string m_pm = "PM";
-        private int m_ampmLength = 2;
+        private DateTime _rangeMin = new DateTime(1900, 1, 1, 0, 0, 0);
+        private DateTime _rangeMax = new DateTime(1900, 1, 1, 23, 59, 59);
+        private char _separator = ':';
+        private string _am = "AM";
+        private string _pm = "PM";
+        private int _ampmLength = 2;
 
         /// <summary>
         ///   The starting zero-based position of the hour on the texbox. </summary>
         /// <remarks>
         ///   This is 0 by default, however it may be changed to allow 
         ///   another value to be placed in front of the time, such as a date. </remarks>
-        protected int m_hourStart = 0;
+        protected int _hourStart = 0;
 
         /// <summary>
         ///   Internal values that are added/removed to the <see cref="Behavior.Flags" /> property by other
@@ -52,24 +51,24 @@ namespace Fireasy.Windows.Forms
             base(textBox, true)
         {
             // Get the system's time separator
-            m_separator = DateTimeFormatInfo.CurrentInfo.TimeSeparator[0];
+            _separator = DateTimeFormatInfo.CurrentInfo.TimeSeparator[0];
 
             // Determine if it's in 24-hour format
             string shortTime = DateTimeFormatInfo.CurrentInfo.ShortTimePattern;
             if (shortTime.IndexOf('H') >= 0)
-                m_flags |= (int)Flag.TwentyFourHourFormat;
+                _flags |= (int)Flag.TwentyFourHourFormat;
 
             // Get the AM and PM symbols
-            m_am = DateTimeFormatInfo.CurrentInfo.AMDesignator;
-            m_pm = DateTimeFormatInfo.CurrentInfo.PMDesignator;
-            m_ampmLength = m_am.Length;
+            _am = DateTimeFormatInfo.CurrentInfo.AMDesignator;
+            _pm = DateTimeFormatInfo.CurrentInfo.PMDesignator;
+            _ampmLength = _am.Length;
 
             // Verify the lengths are the same; otherwise use the default
-            if (m_ampmLength == 0 || m_ampmLength != m_pm.Length)
+            if (_ampmLength == 0 || _ampmLength != _pm.Length)
             {
-                m_am = "AM";
-                m_pm = "PM";
-                m_ampmLength = 2;
+                _am = "AM";
+                _pm = "PM";
+                _ampmLength = 2;
             }
         }
 
@@ -85,13 +84,13 @@ namespace Fireasy.Windows.Forms
             :
             base(behavior)
         {
-            m_rangeMin = behavior.m_rangeMin;
-            m_rangeMax = behavior.m_rangeMax;
-            m_separator = behavior.m_separator;
-            m_am = behavior.m_am;
-            m_pm = behavior.m_pm;
-            m_ampmLength = behavior.m_ampmLength;
-            m_hourStart = behavior.m_hourStart;
+            _rangeMin = behavior._rangeMin;
+            _rangeMax = behavior._rangeMax;
+            _separator = behavior._separator;
+            _am = behavior._am;
+            _pm = behavior._pm;
+            _ampmLength = behavior._ampmLength;
+            _hourStart = behavior._hourStart;
         }
 
         /// <summary>
@@ -109,7 +108,7 @@ namespace Fireasy.Windows.Forms
             TraceLine("TimeBehavior.HandleKeyDown " + e.KeyCode);
 
             // Check to see if it's read only
-            if (m_textBox.ReadOnly)
+            if (_textBox.ReadOnly)
                 return;
 
             e.Handled = true;
@@ -121,10 +120,9 @@ namespace Fireasy.Windows.Forms
                         // If deleting make sure it's the last character or that
                         // the selection goes all the way to the end of the text
 
-                        int start, end;
-                        m_selection.Get(out start, out end);
+                        _selection.Get(out int start, out int end);
 
-                        string text = m_textBox.Text;
+                        string text = _textBox.Text;
                         int length = text.Length;
 
                         if (end != length)
@@ -133,7 +131,7 @@ namespace Fireasy.Windows.Forms
                                 return;
                         }
 
-                        m_noTextChanged = true;
+                        _noTextChanged = true;
                         break;
                     }
 
@@ -141,8 +139,7 @@ namespace Fireasy.Windows.Forms
                     {
                         // If pressing the UP arrow, increment the corresponding value.
 
-                        int start, end;
-                        m_selection.Get(out start, out end);
+                        _selection.Get(out int start, out int end);
 
                         if (start >= GetHourStartPosition() && start <= GetHourStartPosition() + 2)
                         {
@@ -155,7 +152,7 @@ namespace Fireasy.Windows.Forms
                                 {
                                     if (hour == 11)
                                     {
-                                        if (ampm == m_pm)  // stop at midnight
+                                        if (ampm == _pm)  // stop at midnight
                                             return;
                                         SetAMPM(false);
                                     }
@@ -173,10 +170,10 @@ namespace Fireasy.Windows.Forms
                             if (minute >= GetMinMinute() && minute < GetMaxMinute())
                                 Minute = ++minute;
                         }
-                        else if (start >= GetAMPMStartPosition() && start <= GetAMPMStartPosition() + m_ampmLength)
+                        else if (start >= GetAMPMStartPosition() && start <= GetAMPMStartPosition() + _ampmLength)
                         {
                             string ampm = AMPM;
-                            SetAMPM(!IsValidAMPM(ampm) || ampm == m_pm);
+                            SetAMPM(!IsValidAMPM(ampm) || ampm == _pm);
                         }
                         else if (start >= GetSecondStartPosition() && start <= GetSecondStartPosition() + 2)
                         {
@@ -192,8 +189,7 @@ namespace Fireasy.Windows.Forms
                     {
                         // If pressing the DOWN arrow, decrement the corresponding value.
 
-                        int start, end;
-                        m_selection.Get(out start, out end);
+                        _selection.Get(out int start, out int end);
 
                         if (start >= GetHourStartPosition() && start <= GetHourStartPosition() + 2)
                         {
@@ -206,7 +202,7 @@ namespace Fireasy.Windows.Forms
                                 {
                                     if (hour == 12)
                                     {
-                                        if (ampm == m_am)	// stop at midnight
+                                        if (ampm == _am)	// stop at midnight
                                             return;
                                         SetAMPM(true);
                                     }
@@ -224,10 +220,10 @@ namespace Fireasy.Windows.Forms
                             if (minute > GetMinMinute() && minute <= GetMaxMinute())
                                 Minute = --minute;
                         }
-                        else if (start >= GetAMPMStartPosition() && start <= GetAMPMStartPosition() + m_ampmLength)
+                        else if (start >= GetAMPMStartPosition() && start <= GetAMPMStartPosition() + _ampmLength)
                         {
                             string ampm = AMPM;
-                            SetAMPM(!IsValidAMPM(ampm) || ampm == m_pm);
+                            SetAMPM(!IsValidAMPM(ampm) || ampm == _pm);
                         }
                         else if (start >= GetSecondStartPosition() && start <= GetSecondStartPosition() + 2)
                         {
@@ -257,17 +253,16 @@ namespace Fireasy.Windows.Forms
             TraceLine("TimeBehavior.HandleKeyPress " + e.KeyChar);
 
             // Check to see if it's read only
-            if (m_textBox.ReadOnly)
+            if (_textBox.ReadOnly)
                 return;
 
             char c = e.KeyChar;
             e.Handled = true;
-            m_noTextChanged = true;
+            _noTextChanged = true;
 
-            int start, end;
-            m_selection.Get(out start, out end);
+            _selection.Get(out int start, out int end);
 
-            string text = m_textBox.Text;
+            string text = _textBox.Text;
             int length = text.Length;
 
             // Check for a non-printable character (such as Ctrl+C)
@@ -285,21 +280,21 @@ namespace Fireasy.Windows.Forms
             }
 
             // Add the digit depending on its location
-            if (start == m_hourStart)		// FIRST DIGIT
+            if (start == _hourStart)		// FIRST DIGIT
             {
                 if (IsValidHourDigit(c, 0))
                 {
                     if (length > start)
                     {
-                        m_selection.SetAndReplace(start, start + 1, c.ToString());
+                        _selection.SetAndReplace(start, start + 1, c.ToString());
 
                         if (length > start + 1)
                         {
                             // If the second digit is no longer valid, correct and select it
                             if (!IsValidHour(Hour, false))
                             {
-                                m_selection.SetAndReplace(start + 1, start + 2, GetMinHourDigit(1).ToString());
-                                m_selection.Set(start + 1, start + 2);
+                                _selection.SetAndReplace(start + 1, start + 2, GetMinHourDigit(1).ToString());
+                                _selection.Set(start + 1, start + 2);
                             }
                         }
                     }
@@ -307,37 +302,37 @@ namespace Fireasy.Windows.Forms
                         base.HandleKeyPress(sender, e);
                 }
                 else if (length == start && IsValidHourDigit(c, 1))
-                    m_selection.SetAndReplace(start, start + 2, "0" + c);
+                    _selection.SetAndReplace(start, start + 2, "0" + c);
                 else
                     ChangeAMPM(c);	// allow changing AM/PM (if it's being shown) by pressing A or P
             }
 
-            else if (start == m_hourStart + 1)	// SECOND DIGIT
+            else if (start == _hourStart + 1)	// SECOND DIGIT
             {
                 if (IsValidHourDigit(c, 1))
                 {
                     if (length > start)
-                        m_selection.SetAndReplace(start, start + 1, c.ToString());
+                        _selection.SetAndReplace(start, start + 1, c.ToString());
                     else
                         base.HandleKeyPress(sender, e);
                 }
-                else if (c == m_separator && length == start && IsValidHour(ToInt("0" + text[m_hourStart]), false))
-                    m_selection.SetAndReplace(m_hourStart, start, "0" + text[m_hourStart] + c);
+                else if (c == _separator && length == start && IsValidHour(ToInt("0" + text[_hourStart]), false))
+                    _selection.SetAndReplace(_hourStart, start, "0" + text[_hourStart] + c);
                 else
                     ChangeAMPM(c);	// allow changing AM/PM (if it's being shown) by pressing A or P
             }
 
-            else if (start == m_hourStart + 2)	// FIRST COLON
+            else if (start == _hourStart + 2)	// FIRST COLON
             {
                 int colon = 0;
-                if (c == m_separator)
+                if (c == _separator)
                     colon = 1;
                 else
                     colon = (IsValidMinuteDigit(c, 0) ? 2 : 0);
 
                 // If we need the colon, enter it
                 if (colon != 0)
-                    m_selection.SetAndReplace(start, start + 1, m_separator.ToString());
+                    _selection.SetAndReplace(start, start + 1, _separator.ToString());
 
                 // If the colon is to be preceded by a valid digit, "type" it in.
                 if (colon == 2)
@@ -346,20 +341,20 @@ namespace Fireasy.Windows.Forms
                     ChangeAMPM(c);	// allow changing AM/PM (if it's being shown) by pressing A or P
             }
 
-            else if (start == m_hourStart + 3)	// THIRD DIGIT
+            else if (start == _hourStart + 3)	// THIRD DIGIT
             {
                 if (IsValidMinuteDigit(c, 0))
                 {
                     if (length > start)
                     {
-                        m_selection.SetAndReplace(start, start + 1, c.ToString());
+                        _selection.SetAndReplace(start, start + 1, c.ToString());
 
                         if (length > start + 1)
                         {
                             if (!IsValidMinute(Minute))
                             {
-                                m_selection.SetAndReplace(start + 1, start + 2, GetMinMinuteDigit(1).ToString());
-                                m_selection.Set(start + 1, start + 2);
+                                _selection.SetAndReplace(start + 1, start + 2, GetMinMinuteDigit(1).ToString());
+                                _selection.Set(start + 1, start + 2);
                             }
                         }
                     }
@@ -370,12 +365,12 @@ namespace Fireasy.Windows.Forms
                     ChangeAMPM(c);	// allow changing AM/PM (if it's being shown) by pressing A or P
             }
 
-            else if (start == m_hourStart + 4)	// FOURTH DIGIT
+            else if (start == _hourStart + 4)	// FOURTH DIGIT
             {
                 if (IsValidMinuteDigit(c, 1))
                 {
                     if (length > start)
-                        m_selection.SetAndReplace(start, start + 1, c.ToString());
+                        _selection.SetAndReplace(start, start + 1, c.ToString());
                     else
                         base.HandleKeyPress(sender, e);
 
@@ -387,12 +382,12 @@ namespace Fireasy.Windows.Forms
                     ChangeAMPM(c);	// allow changing AM/PM (if it's being shown) by pressing A or P
             }
 
-            else if (start == m_hourStart + 5)	// SECOND COLON	OR FIRST SPACE (seconds' first digit or AM/PM)
+            else if (start == _hourStart + 5)	// SECOND COLON	OR FIRST SPACE (seconds' first digit or AM/PM)
             {
                 if (ShowSeconds)
                 {
                     int colon = 0;
-                    if (c == m_separator)
+                    if (c == _separator)
                         colon = 1;
                     else
                         colon = (IsValidSecondDigit(c, 0) ? 2 : 0);
@@ -401,7 +396,7 @@ namespace Fireasy.Windows.Forms
                     if (colon != 0)
                     {
                         int replace = (start < length && text[start] != ' ') ? 1 : 0;
-                        m_selection.SetAndReplace(start, start + replace, m_separator.ToString());
+                        _selection.SetAndReplace(start, start + replace, _separator.ToString());
                     }
 
                     // If the colon is to be preceded by a valid digit, "type" it in.
@@ -411,14 +406,14 @@ namespace Fireasy.Windows.Forms
                 else if (!Show24HourFormat)
                 {
                     if (c == ' ')
-                        m_selection.SetAndReplace(start, start + 1, c.ToString());
+                        _selection.SetAndReplace(start, start + 1, c.ToString());
                     ShowAMPM();
                 }
 
                 ChangeAMPM(c);	// allow changing AM/PM (if it's being shown) by pressing A or P
             }
 
-            else if (start == m_hourStart + 6)	// FIFTH DIGIT - first digit of seconds or AM/PM
+            else if (start == _hourStart + 6)	// FIFTH DIGIT - first digit of seconds or AM/PM
             {
                 if (ShowSeconds)
                 {
@@ -427,7 +422,7 @@ namespace Fireasy.Windows.Forms
                         if (length > start)
                         {
                             int replace = (start < length && text[start] != ' ') ? 1 : 0;
-                            m_selection.SetAndReplace(start, start + replace, c.ToString());
+                            _selection.SetAndReplace(start, start + replace, c.ToString());
                         }
                         else
                             base.HandleKeyPress(sender, e);
@@ -437,7 +432,7 @@ namespace Fireasy.Windows.Forms
                 ChangeAMPM(c);	// allow changing AM/PM (if it's being shown) by pressing A or P
             }
 
-            else if (start == m_hourStart + 7)	// SIXTH DIGIT - second digit of seconds or AM/PM
+            else if (start == _hourStart + 7)	// SIXTH DIGIT - second digit of seconds or AM/PM
             {
                 if (ShowSeconds)
                 {
@@ -446,7 +441,7 @@ namespace Fireasy.Windows.Forms
                         if (length > start)
                         {
                             int replace = (start < length && text[start] != ' ') ? 1 : 0;
-                            m_selection.SetAndReplace(start, start + replace, c.ToString());
+                            _selection.SetAndReplace(start, start + replace, c.ToString());
                         }
                         else
                             base.HandleKeyPress(sender, e);
@@ -459,13 +454,13 @@ namespace Fireasy.Windows.Forms
                 ChangeAMPM(c);	// allow changing AM/PM (if it's being shown) by pressing A or P
             }
 
-            else if (start == m_hourStart + 8)	// FIRST SPACE (with seconds showing)
+            else if (start == _hourStart + 8)	// FIRST SPACE (with seconds showing)
             {
                 if (ShowSeconds && !Show24HourFormat)
                 {
                     if (c == ' ')
                     {
-                        m_selection.SetAndReplace(start, start + 1, c.ToString());
+                        _selection.SetAndReplace(start, start + 1, c.ToString());
                         ShowAMPM();
                     }
                 }
@@ -497,7 +492,7 @@ namespace Fireasy.Windows.Forms
         ///   The return value is the starting position of the hour. </returns>
         protected int GetHourStartPosition()
         {
-            return m_hourStart;
+            return _hourStart;
         }
 
         /// <summary>
@@ -506,7 +501,7 @@ namespace Fireasy.Windows.Forms
         ///   The return value is the starting position of the minute. </returns>
         protected int GetMinuteStartPosition()
         {
-            return m_hourStart + 3;
+            return _hourStart + 3;
         }
 
         /// <summary>
@@ -515,7 +510,7 @@ namespace Fireasy.Windows.Forms
         ///   The return value is the starting position of the second. </returns>
         protected int GetSecondStartPosition()
         {
-            return m_hourStart + 6;
+            return _hourStart + 6;
         }
 
         /// <summary>
@@ -526,7 +521,7 @@ namespace Fireasy.Windows.Forms
         ///   This is based on whether the seconds are being shown or not. </remarks>
         protected int GetAMPMStartPosition()
         {
-            return m_hourStart + (ShowSeconds ? 9 : 6);
+            return _hourStart + (ShowSeconds ? 9 : 6);
         }
 
         /// <summary>
@@ -616,7 +611,7 @@ namespace Fireasy.Windows.Forms
                 return Show24HourFormat ? '2' : '1';
 
             // Second digit
-            string text = m_textBox.Text;
+            string text = _textBox.Text;
             char firstDigit = (text.Length > GetHourStartPosition()) ? text[GetHourStartPosition()] : '0';
             Debug.Assert(firstDigit != 0);  // must have a valid first digit at this point
 
@@ -643,7 +638,7 @@ namespace Fireasy.Windows.Forms
                 return '0';
 
             // Second digit
-            string text = m_textBox.Text;
+            string text = _textBox.Text;
             char firstDigit = (text.Length > GetHourStartPosition()) ? text[GetHourStartPosition()] : '0';
             Debug.Assert(firstDigit != 0);  // must have a valid first digit at this point
 
@@ -796,10 +791,10 @@ namespace Fireasy.Windows.Forms
             if (Show24HourFormat)
                 return;
 
-            using (Selection.Saver savedSelection = new Selection.Saver(m_textBox))	// remember the current selection
+            using (Selection.Saver savedSelection = new Selection.Saver(_textBox))	// remember the current selection
             {
-                m_selection.Set(GetAMPMStartPosition() - 1, GetAMPMStartPosition() + m_ampmLength);
-                m_selection.Replace(" " + (am ? m_am : m_pm));	// set the AM/PM
+                _selection.Set(GetAMPMStartPosition() - 1, GetAMPMStartPosition() + _ampmLength);
+                _selection.Replace(" " + (am ? _am : _pm));	// set the AM/PM
             }
         }
 
@@ -814,15 +809,14 @@ namespace Fireasy.Windows.Forms
             if (Show24HourFormat)
                 return false;
 
-            string text = m_textBox.Text;
+            string text = _textBox.Text;
             int length = text.Length;
 
             int position = GetAMPMPosition(text);
             if (position == 0)
                 return false;
 
-            int start, end;
-            m_selection.Get(out start, out end);
+            _selection.Get(out int start, out int end);
 
             char cUpper = Char.ToUpper(c);
 
@@ -832,7 +826,7 @@ namespace Fireasy.Windows.Forms
                 case 'P':
                     SetAMPM(cUpper == 'A');
 
-                    if (cUpper == Char.ToUpper(m_am[0]) || cUpper == Char.ToUpper(m_pm[0]))
+                    if (cUpper == Char.ToUpper(_am[0]) || cUpper == Char.ToUpper(_pm[0]))
                     {
                         // Move the cursor right, if we're in front of the AM/PM symbols
                         if (start == position)
@@ -854,11 +848,11 @@ namespace Fireasy.Windows.Forms
                         // Check if we're adding a character of the AM/PM symbol (after the first one)
                         if ((length == start && !IsValidAMPM(AMPM)) || (length == end && end != start))
                         {
-                            string ampmToUse = Char.ToUpper(text[position]) == Char.ToUpper(m_am[0]) ? m_am : m_pm;
+                            string ampmToUse = Char.ToUpper(text[position]) == Char.ToUpper(_am[0]) ? _am : _pm;
                             if (cUpper == Char.ToUpper(ampmToUse[start - position]))
                             {
-                                m_selection.Replace(ampmToUse.Substring(start - position));	// set the rest of the AM/PM
-                                m_selection.Set(start, start);  // Reset the selection so that the cursor can be moved
+                                _selection.Replace(ampmToUse.Substring(start - position));	// set the rest of the AM/PM
+                                _selection.Set(start, start);  // Reset the selection so that the cursor can be moved
                                 return ChangeAMPM(c); // move the cursor (below)
                             }
                         }
@@ -884,8 +878,8 @@ namespace Fireasy.Windows.Forms
         ///   The return value is the zero-based position of the AM/PM symbol. </returns>
         private int GetAMPMPosition(string text)
         {
-            int position = text.IndexOf(' ' + m_am);
-            return ((position < 0) ? text.IndexOf(' ' + m_pm) : position) + 1;
+            int position = text.IndexOf(' ' + _am);
+            return ((position < 0) ? text.IndexOf(' ' + _pm) : position) + 1;
         }
 
         /// <summary>
@@ -896,7 +890,7 @@ namespace Fireasy.Windows.Forms
         ///   If the value is a valid AM or PM symbol, the return value is true; otherwise it is false. </returns>
         protected bool IsValidAMPM(string ampm)
         {
-            return (ampm == m_am || ampm == m_pm);
+            return (ampm == _am || ampm == _pm);
         }
 
         /// <summary>
@@ -977,7 +971,7 @@ namespace Fireasy.Windows.Forms
         {
             string ampm = AMPM;
             if (!IsValidAMPM(ampm))
-                return m_am;
+                return _am;
 
             return ampm;
         }
@@ -994,12 +988,12 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                string text = m_textBox.Text;
+                string text = _textBox.Text;
 
                 int startPos = GetHourStartPosition();
 
                 // If there's already a separator, extract the value in front of it
-                int sepPos = text.IndexOf(m_separator);
+                int sepPos = text.IndexOf(_separator);
                 if (sepPos > 0)
                 {
                     startPos = sepPos - 2;
@@ -1017,21 +1011,21 @@ namespace Fireasy.Windows.Forms
                 if (!IsValidHour(value, false))
                     throw new ArgumentOutOfRangeException();
 
-                using (Selection.Saver savedSelection = new Selection.Saver(m_textBox))	// remember the current selection
+                using (Selection.Saver savedSelection = new Selection.Saver(_textBox))	// remember the current selection
                 {
                     if (Hour >= 0)		// see if there's already an hour
-                        m_selection.Set(GetHourStartPosition(), GetHourStartPosition() + 3);
+                        _selection.Set(GetHourStartPosition(), GetHourStartPosition() + 3);
 
                     // Convert it to AM/PM hour if necessary
                     string ampm = "";
                     if (!Show24HourFormat && value > 12)
                         value = ConvertToAMPMHour(value, out ampm);
 
-                    m_selection.Replace(TwoDigits(value) + m_separator);	// set the hour
+                    _selection.Replace(TwoDigits(value) + _separator);	// set the hour
 
                     // Change the AM/PM if it's present
                     if (ampm != "" && IsValidAMPM(AMPM))
-                        SetAMPM(ampm == m_am);
+                        SetAMPM(ampm == _am);
                 }
             }
         }
@@ -1048,8 +1042,8 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                string text = m_textBox.Text;
-                int startPos = text.IndexOf(m_separator, m_hourStart) + 1;
+                string text = _textBox.Text;
+                int startPos = text.IndexOf(_separator, _hourStart) + 1;
 
                 if (startPos > 0 && text.Length >= startPos + 2)
                     return ToInt(text.Substring(startPos, 2));
@@ -1061,16 +1055,16 @@ namespace Fireasy.Windows.Forms
                 if (!IsValidMinute(value))
                     throw new ArgumentOutOfRangeException();
 
-                using (Selection.Saver savedSelection = new Selection.Saver(m_textBox))	// remember the current selection
+                using (Selection.Saver savedSelection = new Selection.Saver(_textBox))	// remember the current selection
                 {
                     if (Minute >= 0)		// see if there's already a minute
-                        m_selection.Set(GetMinuteStartPosition(), GetMinuteStartPosition() + 2 + (ShowSeconds ? 1 : 0));
+                        _selection.Set(GetMinuteStartPosition(), GetMinuteStartPosition() + 2 + (ShowSeconds ? 1 : 0));
 
                     string text = TwoDigits(value);
                     if (ShowSeconds)
-                        text += m_separator;
+                        text += _separator;
 
-                    m_selection.Replace(text);	// set the minute
+                    _selection.Replace(text);	// set the minute
 
                     // Append the AM/PM if no seconds come after and it's not in 24-hour format
                     if (!ShowSeconds)
@@ -1091,11 +1085,11 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                string text = m_textBox.Text;
-                int startPos = text.IndexOf(m_separator, m_hourStart);
+                string text = _textBox.Text;
+                int startPos = text.IndexOf(_separator, _hourStart);
                 if (startPos > 0)
                 {
-                    startPos = text.IndexOf(m_separator, startPos + 1) + 1;
+                    startPos = text.IndexOf(_separator, startPos + 1) + 1;
                     if (startPos == 0)
                         return -1;
                 }
@@ -1113,12 +1107,12 @@ namespace Fireasy.Windows.Forms
                 if (!ShowSeconds)
                     return;
 
-                using (Selection.Saver savedSelection = new Selection.Saver(m_textBox))	// remember the current selection
+                using (Selection.Saver savedSelection = new Selection.Saver(_textBox))	// remember the current selection
                 {
                     if (Second >= 0)		// see if there's already a second
-                        m_selection.Set(GetSecondStartPosition(), GetSecondStartPosition() + 2);
+                        _selection.Set(GetSecondStartPosition(), GetSecondStartPosition() + 2);
 
-                    m_selection.Replace(TwoDigits(value));	// set the second
+                    _selection.Replace(TwoDigits(value));	// set the second
 
                     // Append the AM/PM if it's not in 24-hour format
                     ShowAMPM();
@@ -1137,7 +1131,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                string text = m_textBox.Text;
+                string text = _textBox.Text;
                 int position = GetAMPMPosition(text);
                 if (position > 0)
                     return text.Substring(position);
@@ -1157,9 +1151,9 @@ namespace Fireasy.Windows.Forms
         /// <seealso cref="ConvertToAMPMHour" />
         protected int ConvertTo24Hour(int hour, string ampm)
         {
-            if (ampm == m_pm && hour >= 1 && hour <= 11)
+            if (ampm == _pm && hour >= 1 && hour <= 11)
                 hour += 12;
-            else if (ampm == m_am && hour == 12)
+            else if (ampm == _am && hour == 12)
                 hour = 0;
             return hour;
         }
@@ -1175,12 +1169,12 @@ namespace Fireasy.Windows.Forms
         /// <seealso cref="ConvertTo24Hour" />
         protected int ConvertToAMPMHour(int hour, out string ampm)
         {
-            ampm = m_am;
+            ampm = _am;
 
             if (hour >= 12)
             {
                 hour -= 12;
-                ampm = m_pm;
+                ampm = _pm;
             }
             if (hour == 0)
                 hour = 12;
@@ -1222,7 +1216,7 @@ namespace Fireasy.Windows.Forms
             set
             {
                 DateTime dt = (DateTime)value;
-                m_textBox.Text = GetFormattedTime(dt.Hour, dt.Minute, dt.Second, "");
+                _textBox.Text = GetFormattedTime(dt.Hour, dt.Minute, dt.Second, "");
             }
         }
 
@@ -1294,17 +1288,17 @@ namespace Fireasy.Windows.Forms
             string ampm = AMPM;
             bool force24HourFormat = Show24HourFormat;
             if ((force24HourFormat && ampm != "") ||
-                (!force24HourFormat && (ampm != m_am && ampm != m_pm)))
+                (!force24HourFormat && (ampm != _am && ampm != _pm)))
                 return false;
 
-            if (!force24HourFormat && ampm == m_pm)
+            if (!force24HourFormat && ampm == _pm)
             {
                 hour += 12;
                 if (hour == 24)
                     hour = 0;
             }
             if (!showingSeconds)
-                second = m_rangeMin.Second; // avoids possible problem when checking range below
+                second = _rangeMin.Second; // avoids possible problem when checking range below
 
             // Check the range if desired
             if (checkRangeAlso)
@@ -1320,7 +1314,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return "Please specify a time between " + GetFormattedTime(m_rangeMin.Hour, m_rangeMin.Minute, m_rangeMin.Second, "") + " and " + GetFormattedTime(m_rangeMax.Hour, m_rangeMax.Minute, m_rangeMax.Second, "") + ".";
+                return "Please specify a time between " + GetFormattedTime(_rangeMin.Hour, _rangeMin.Minute, _rangeMin.Second, "") + " and " + GetFormattedTime(_rangeMax.Hour, _rangeMax.Minute, _rangeMax.Second, "") + ".";
             }
         }
 
@@ -1334,11 +1328,11 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return m_rangeMin;
+                return _rangeMin;
             }
             set
             {
-                m_rangeMin = new DateTime(1900, 1, 1, value.Hour, value.Minute, value.Second);
+                _rangeMin = new DateTime(1900, 1, 1, value.Hour, value.Minute, value.Second);
             }
         }
 
@@ -1352,11 +1346,11 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return m_rangeMax;
+                return _rangeMax;
             }
             set
             {
-                m_rangeMax = new DateTime(1900, 1, 1, value.Hour, value.Minute, value.Second);
+                _rangeMax = new DateTime(1900, 1, 1, value.Hour, value.Minute, value.Second);
             }
         }
 
@@ -1374,7 +1368,7 @@ namespace Fireasy.Windows.Forms
         public bool IsWithinRange(DateTime dt)
         {
             DateTime time = new DateTime(1900, 1, 1, dt.Hour, dt.Minute, dt.Second);
-            return (time >= m_rangeMin && time <= m_rangeMax);
+            return (time >= _rangeMin && time <= _rangeMax);
         }
 
         /// <summary>
@@ -1386,17 +1380,17 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return m_separator;
+                return _separator;
             }
             set
             {
-                if (m_separator == value)
+                if (_separator == value)
                     return;
 
                 Debug.Assert(value != 0);
                 Debug.Assert(!Char.IsDigit(value));
 
-                m_separator = value;
+                _separator = value;
                 UpdateText();
             }
         }
@@ -1452,22 +1446,22 @@ namespace Fireasy.Windows.Forms
         /// <seealso cref="GetAMPMSymbols" />
         public void SetAMPMSymbols(string am, string pm)
         {
-            if (m_am == am && m_pm == pm)
+            if (_am == am && _pm == pm)
                 return;
 
             // Make sure they're the same length
             if (am.Length != pm.Length)
                 throw new ArgumentException("The length of the AM and PM symbols must be identical.");
 
-            m_am = am;
-            m_pm = pm;
+            _am = am;
+            _pm = pm;
 
-            if (m_am == "")
-                m_am = "AM";
-            if (m_pm == "")
-                m_pm = "PM";
+            if (_am == "")
+                _am = "AM";
+            if (_pm == "")
+                _pm = "PM";
 
-            m_ampmLength = m_am.Length;
+            _ampmLength = _am.Length;
             UpdateText();
         }
 
@@ -1480,8 +1474,8 @@ namespace Fireasy.Windows.Forms
         /// <seealso cref="SetAMPMSymbols" />
         public void GetAMPMSymbols(out string am, out string pm)
         {
-            am = m_am;
-            pm = m_pm;
+            am = _am;
+            pm = _pm;
         }
 
         /// <summary>
@@ -1490,7 +1484,7 @@ namespace Fireasy.Windows.Forms
         ///   If the textbox's text is valid, it is returned; otherwise a valid version of it is returned. </returns>
         protected override string GetValidText()
         {
-            string text = m_textBox.Text;
+            string text = _textBox.Text;
 
             // If it's empty or has a valid time, return it
             if (text == "")
@@ -1540,13 +1534,13 @@ namespace Fireasy.Windows.Forms
             if (ShowSeconds)
             {
                 if (Show24HourFormat)
-                    return String.Format("{0,2:00}{1}{2,2:00}{3}{4,2:00}", hour, m_separator, minute, m_separator, second);
-                return String.Format("{0,2:00}{1}{2,2:00}{3}{4,2:00} {5}", hour, m_separator, minute, m_separator, second, ampm);
+                    return String.Format("{0,2:00}{1}{2,2:00}{3}{4,2:00}", hour, _separator, minute, _separator, second);
+                return String.Format("{0,2:00}{1}{2,2:00}{3}{4,2:00} {5}", hour, _separator, minute, _separator, second, ampm);
             }
 
             if (Show24HourFormat)
-                return String.Format("{0,2:00}{1}{2,2:00}", hour, m_separator, minute);
-            return String.Format("{0,2:00}{1}{2,2:00} {3}", hour, m_separator, minute, ampm);
+                return String.Format("{0,2:00}{1}{2,2:00}", hour, _separator, minute);
+            return String.Format("{0,2:00}{1}{2,2:00} {3}", hour, _separator, minute, ampm);
         }
 
         /// <summary>
@@ -1558,17 +1552,17 @@ namespace Fireasy.Windows.Forms
                 return;
 
             // If it's empty, set it to the current time
-            if (m_textBox.Text == "")
-                m_textBox.Text = " ";
+            if (_textBox.Text == "")
+                _textBox.Text = " ";
             else
                 UpdateText();
 
             // Make it fall within the range
             DateTime date = (DateTime)Value;
-            if (date < m_rangeMin)
-                Value = m_rangeMin;
-            else if (date > m_rangeMax)
-                Value = m_rangeMax;
+            if (date < _rangeMin)
+                Value = _rangeMin;
+            else if (date > _rangeMax)
+                Value = _rangeMax;
         }
     }
     #endregion

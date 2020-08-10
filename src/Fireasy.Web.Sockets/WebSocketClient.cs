@@ -19,7 +19,7 @@ namespace Fireasy.Web.Sockets
     /// </summary>
     public class WebSocketClient
     {
-        private ClientWebSocket client;
+        private ClientWebSocket _client;
 
         /// <summary>
         /// 获取或设置接收数据的缓冲区大小。
@@ -43,8 +43,8 @@ namespace Fireasy.Web.Sockets
         /// <returns></returns>
         public async Task StartAsync(string uri)
         {
-            client = new ClientWebSocket();
-            await client.ConnectAsync(new System.Uri(uri), CancellationToken.None);
+            _client = new ClientWebSocket();
+            await _client.ConnectAsync(new System.Uri(uri), CancellationToken.None);
         }
 
         /// <summary>
@@ -53,9 +53,9 @@ namespace Fireasy.Web.Sockets
         /// <returns></returns>
         public async Task CloseAsync()
         {
-            if (client != null)
+            if (_client != null)
             {
-                await client.CloseAsync(WebSocketCloseStatus.Empty, string.Empty, CancellationToken.None);
+                await _client.CloseAsync(WebSocketCloseStatus.Empty, string.Empty, CancellationToken.None);
             }
         }
 
@@ -66,7 +66,7 @@ namespace Fireasy.Web.Sockets
         /// <returns></returns>
         public async Task SendAsync(byte[] bytes)
         {
-            await client.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Binary, true, CancellationToken.None);
+            await _client.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Binary, true, CancellationToken.None);
         }
 
         /// <summary>
@@ -77,9 +77,9 @@ namespace Fireasy.Web.Sockets
         /// <returns></returns>
         public async Task<byte[]> SendBinaryAsync(byte[] bytes)
         {
-            await client.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Binary, true, CancellationToken.None);
+            await _client.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Binary, true, CancellationToken.None);
             var buffer = new byte[ReceiveBufferSize];
-            var result = await client.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+            var result = await _client.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
             if (!result.CloseStatus.HasValue)
             {
                 bytes = new byte[result.Count];
@@ -102,7 +102,7 @@ namespace Fireasy.Web.Sockets
             var json = Formatter.FormatMessage(message);
             var bytes = Encoding.GetBytes(json);
 
-            await client.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Text, true, CancellationToken.None);
+            await _client.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Text, true, CancellationToken.None);
         }
 
         /// <summary>
@@ -118,10 +118,10 @@ namespace Fireasy.Web.Sockets
             var json = Formatter.FormatMessage(message);
             var bytes = Encoding.GetBytes(json);
 
-            await client.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Text, true, CancellationToken.None);
+            await _client.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Text, true, CancellationToken.None);
 
             var buffer = new byte[ReceiveBufferSize];
-            var result = await client.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+            var result = await _client.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
 
             if (result.CloseStatus.HasValue)
             {

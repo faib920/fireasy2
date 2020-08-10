@@ -759,7 +759,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 case DbExpressionType.Table:
                     var table = (TableExpression)source;
                     var tableName = GetTableName(table);
-                    Write(DbUtility.FormatByQuote(Syntax, tableName));
+                    Write(Syntax.FormatByDelimiter(tableName));
 
                     if (!_hideTableAliases)
                     {
@@ -2001,12 +2001,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
         protected virtual string GetTableName(TableExpression table)
         {
             var tableName = Environment == null ? table.Name : Environment.GetVariableTableName(table.Type);
-            return DbUtility.FormatByQuote(Syntax, tableName);
+            return Syntax.FormatByDelimiter(tableName);
         }
 
         protected virtual string GetColumnName(string columnName)
         {
-            return DbUtility.FormatByQuote(Syntax, columnName);
+            return Syntax.FormatByDelimiter(columnName);
         }
 
         /// <summary>

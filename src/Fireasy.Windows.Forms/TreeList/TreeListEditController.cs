@@ -13,12 +13,12 @@ namespace Fireasy.Windows.Forms
 {
     public sealed class TreeListEditController
     {
-        private TreeList treelist;
-        private ITreeListEditor editor = null;
+        private readonly TreeList _treelist;
+        private ITreeListEditor _editor = null;
 
         internal TreeListEditController(TreeList treelist)
         {
-            this.treelist = treelist;
+            _treelist = treelist;
         }
 
         /// <summary>
@@ -54,15 +54,15 @@ namespace Fireasy.Windows.Forms
                 return;
             }
 
-            editor = cell.Column.Editor;
+            _editor = cell.Column.Editor;
             Cell = cell;
-            var control = (Control)editor;
-            treelist.Controls.Add(control);
+            var control = (Control)_editor;
+            _treelist.Controls.Add(control);
 
             IsEditing = true;
-            editor.Controller = this;
-            editor.SetValue(cell.Value);
-            editor.Show(rect);
+            _editor.Controller = this;
+            _editor.SetValue(cell.Value);
+            _editor.Show(rect);
         }
 
         /// <summary>
@@ -71,18 +71,18 @@ namespace Fireasy.Windows.Forms
         /// <param name="enterKey"></param>
         public void AcceptEdit(bool enterKey = false)
         {
-            if (editor == null || !IsEditing)
+            if (_editor == null || !IsEditing)
             {
                 return;
             }
 
-            if (!editor.IsValid())
+            if (!_editor.IsValid())
             {
                 RemoveEditor();
                 return;
             }
 
-            var newValue = editor.GetValue();
+            var newValue = _editor.GetValue();
 
             if ((Cell.Value == null && newValue == null) ||
                 (Cell.Value != null && Cell.Value.Equals(newValue)))
@@ -93,10 +93,10 @@ namespace Fireasy.Windows.Forms
             }
 
 
-            if (!treelist.RaiseBeforeCellUpdatingEvent(Cell, Cell.Value, ref newValue))
+            if (!_treelist.RaiseBeforeCellUpdatingEvent(Cell, Cell.Value, ref newValue))
             {
                 Cell.Value = newValue;
-                if (!treelist.RaiseAfterCellUpdatedEvent(Cell, Cell.Value, newValue, enterKey))
+                if (!_treelist.RaiseAfterCellUpdatedEvent(Cell, Cell.Value, newValue, enterKey))
                 {
                     enterKey = false;
                 }
@@ -108,9 +108,9 @@ namespace Fireasy.Windows.Forms
             if (enterKey)
             {
                 var index = Cell.Column.Index + 1;
-                if (index <= treelist.Columns.Count - 1)
+                if (index <= _treelist.Columns.Count - 1)
                 {
-                    treelist.BeginEdit(Cell.Item.Cells[index]);
+                    _treelist.BeginEdit(Cell.Item.Cells[index]);
                 }
             }
         }
@@ -129,13 +129,13 @@ namespace Fireasy.Windows.Forms
         private void RemoveEditor()
         {
             IsEditing = false;
-            if (editor != null)
+            if (_editor != null)
             {
-                editor.Hide();
-                treelist.Focus();
-                treelist.Controls.Remove((Control)editor);
+                _editor.Hide();
+                _treelist.Focus();
+                _treelist.Controls.Remove((Control)_editor);
             }
-            editor = null;
+            _editor = null;
         }
 
         /// <summary>
@@ -144,7 +144,7 @@ namespace Fireasy.Windows.Forms
         /// <param name="enterKey">是否按下回车键。</param>
         private void RaiseEditedEvent(bool enterKey)
         {
-            treelist.RaiseAfterCellEditedEvent(Cell, enterKey);
+            _treelist.RaiseAfterCellEditedEvent(Cell, enterKey);
         }
     }
 }

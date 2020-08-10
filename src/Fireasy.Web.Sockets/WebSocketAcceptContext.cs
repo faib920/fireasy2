@@ -8,6 +8,7 @@
 #if NETSTANDARD
 using Microsoft.AspNetCore.Http;
 #endif
+using System;
 using System.Net.WebSockets;
 using System.Security.Principal;
 
@@ -17,9 +18,7 @@ namespace Fireasy.Web.Sockets
     {
         public WebSocket WebSocket { get; }
 
-#if NETSTANDARD
-        public HttpContext HttpContext { get; }
-#endif
+        public IServiceProvider ServiceProvider { get; }
 
         public IPrincipal User { get; }
 
@@ -27,14 +26,9 @@ namespace Fireasy.Web.Sockets
 
         public string ConnectionId { get; internal set; }
 
-#if NETSTANDARD
-        public WebSocketAcceptContext(HttpContext context, WebSocket webSocket, IPrincipal user, WebSocketBuildOption option)
+        public WebSocketAcceptContext(IServiceProvider serviceProvider, WebSocket webSocket, IPrincipal user, WebSocketBuildOption option)
         {
-            HttpContext = context;
-#else
-        public WebSocketAcceptContext(WebSocket webSocket, IPrincipal user, WebSocketBuildOption option)
-        {
-#endif
+            ServiceProvider = serviceProvider;
             WebSocket = webSocket;
             User = user;
             Option = option;

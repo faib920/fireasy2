@@ -20,7 +20,8 @@ namespace Fireasy.NLog
     /// </summary>
     public class Logger : ILogger
     {
-        private readonly global::NLog.ILogger log;
+        private readonly global::NLog.ILogger _logger;
+        private readonly NLogOptions _options;
 
         public Logger()
             : this(null, null)
@@ -29,19 +30,21 @@ namespace Fireasy.NLog
 
 #if NETSTANDARD
         public Logger(IOptions<NLogOptions> options)
-            : this (null, options.Value)
+            : this(null, options.Value)
         {
         }
 #endif
 
         public Logger(Type type, NLogOptions options)
         {
+            _options = options;
+
             if (options != null && !string.IsNullOrEmpty(options.XmlFile))
             {
                 global::NLog.LogManager.Configuration = new global::NLog.Config.XmlLoggingConfiguration(options.XmlFile, true);
             }
 
-            log = type == null ? global::NLog.LogManager.GetLogger("fireasy") :
+            _logger = type == null ? global::NLog.LogManager.GetLogger("fireasy") :
                 global::NLog.LogManager.GetLogger("fireasy", type);
         }
 
@@ -54,7 +57,7 @@ namespace Fireasy.NLog
         {
             if (LogEnvironment.IsConfigured(LogLevel.Error))
             {
-                log.Error(exception, message?.ToString());
+                _logger.Error(exception, message?.ToString());
             }
         }
 
@@ -67,7 +70,7 @@ namespace Fireasy.NLog
         {
             if (LogEnvironment.IsConfigured(LogLevel.Info))
             {
-                log.Info(exception, message?.ToString());
+                _logger.Info(exception, message?.ToString());
             }
         }
 
@@ -80,7 +83,7 @@ namespace Fireasy.NLog
         {
             if (LogEnvironment.IsConfigured(LogLevel.Warn))
             {
-                log.Warn(exception, message?.ToString());
+                _logger.Warn(exception, message?.ToString());
             }
         }
 
@@ -93,7 +96,7 @@ namespace Fireasy.NLog
         {
             if (LogEnvironment.IsConfigured(LogLevel.Debug))
             {
-                log.Debug(exception, message?.ToString());
+                _logger.Debug(exception, message?.ToString());
             }
         }
 
@@ -106,7 +109,7 @@ namespace Fireasy.NLog
         {
             if (LogEnvironment.IsConfigured(LogLevel.Fatal))
             {
-                log.Fatal(exception, message?.ToString());
+                _logger.Fatal(exception, message?.ToString());
             }
         }
 
@@ -119,7 +122,7 @@ namespace Fireasy.NLog
         {
             if (LogEnvironment.IsConfigured(LogLevel.Error))
             {
-                log.Error(exception, message?.ToString());
+                _logger.Error(exception, message?.ToString());
             }
         }
 
@@ -132,7 +135,7 @@ namespace Fireasy.NLog
         {
             if (LogEnvironment.IsConfigured(LogLevel.Info))
             {
-                log.Info(exception, message?.ToString());
+                _logger.Info(exception, message?.ToString());
             }
         }
 
@@ -145,7 +148,7 @@ namespace Fireasy.NLog
         {
             if (LogEnvironment.IsConfigured(LogLevel.Warn))
             {
-                log.Warn(exception, message?.ToString());
+                _logger.Warn(exception, message?.ToString());
             }
         }
 
@@ -158,7 +161,7 @@ namespace Fireasy.NLog
         {
             if (LogEnvironment.IsConfigured(LogLevel.Debug))
             {
-                log.Debug(exception, message?.ToString());
+                _logger.Debug(exception, message?.ToString());
             }
         }
 
@@ -171,18 +174,28 @@ namespace Fireasy.NLog
         {
             if (LogEnvironment.IsConfigured(LogLevel.Fatal))
             {
-                log.Fatal(exception, message?.ToString());
+                _logger.Fatal(exception, message?.ToString());
             }
+        }
+
+        public ILogger<T> Create<T>() where T : class
+        {
+            return new Logger<T>(_options);
         }
     }
 
-#if NETSTANDARD
-    public class Logger<T> : Logger, ILogger<T>
+    public class Logger<T> : Logger, ILogger<T> where T : class
     {
-        public Logger(IOptions<NLogOptions> options)
-            : base (typeof(T), options.Value)
+        public Logger(NLogOptions options)
+            : base(typeof(T), options)
         {
         }
-    }
+
+#if NETSTANDARD
+        public Logger(IOptions<NLogOptions> options)
+            : base(typeof(T), options.Value)
+        {
+        }
 #endif
+    }
 }

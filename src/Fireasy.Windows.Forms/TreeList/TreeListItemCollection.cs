@@ -17,10 +17,10 @@ namespace Fireasy.Windows.Forms
     /// </summary>
     public class TreeListItemCollection : ObservableCollection<TreeListItem>
     {
-        private TreeList treelist;
-        private TreeListItem parent;
-        private int level;
-        private int sortVersion;
+        private readonly TreeList _treelist;
+        private readonly TreeListItem _parent;
+        private readonly int _level;
+        private int _sortVersion;
 
         /// <summary>
         /// 初始化 <see cref="TreeListItemCollection"/> 类的新实例。
@@ -31,9 +31,9 @@ namespace Fireasy.Windows.Forms
 
         internal TreeListItemCollection(TreeList treelist, TreeListItem parent, int level)
         {
-            this.treelist = treelist;
-            this.parent = parent;
-            this.level = level;
+            _treelist = treelist;
+            _parent = parent;
+            _level = level;
         }
 
         public TreeListItem Add(string text)
@@ -94,11 +94,11 @@ namespace Fireasy.Windows.Forms
 
             ResortIndex();
 
-            if (treelist != null)
+            if (_treelist != null)
             {
-                item.Level = level;
-                item.Update(treelist, parent, level + 1);
-                treelist.UpdateItems();
+                item.Level = _level;
+                item.Update(_treelist, _parent, _level + 1);
+                _treelist.UpdateItems();
             }
         }
 
@@ -113,10 +113,10 @@ namespace Fireasy.Windows.Forms
 
             ResortIndex();
 
-            if (treelist != null)
+            if (_treelist != null)
             {
-                treelist.RemoveValidateFlags(item);
-                treelist.UpdateItems(index);
+                _treelist.RemoveValidateFlags(item);
+                _treelist.UpdateItems(index);
             }
         }
 
@@ -127,10 +127,10 @@ namespace Fireasy.Windows.Forms
         {
             base.ClearItems();
 
-            if (treelist != null)
+            if (_treelist != null)
             {
-                treelist.RemoveValidateFlags();
-                treelist.UpdateItems();
+                _treelist.RemoveValidateFlags();
+                _treelist.UpdateItems();
             }
         }
 
@@ -141,7 +141,7 @@ namespace Fireasy.Windows.Forms
         /// <param name="order"></param>
         public void Sort(TreeListColumn column, SortOrder order)
         {
-            Sort(sortVersion, column, order);
+            Sort(_sortVersion, column, order);
         }
 
         /// <summary>
@@ -152,12 +152,12 @@ namespace Fireasy.Windows.Forms
         /// <param name="order"></param>
         internal void Sort(int sortVersion, TreeListColumn column, SortOrder order)
         {
-            if (this.sortVersion == sortVersion)
+            if (_sortVersion == sortVersion)
             {
                 return;
             }
 
-            this.sortVersion = sortVersion;
+            _sortVersion = sortVersion;
 
             ((List<TreeListItem>)Items).Sort(new TreeListItemComparer(column, order));
 

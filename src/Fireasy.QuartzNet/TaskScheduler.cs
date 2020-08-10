@@ -19,10 +19,11 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Fireasy.Common;
+using Fireasy.Common.ComponentModel;
 
 namespace Fireasy.QuartzNet
 {
-    public class TaskScheduler : DisposeableBase, ITaskScheduler, IServiceProviderAccessor
+    public class TaskScheduler : DisposableBase, ITaskScheduler, IServiceProviderAccessor
     {
         private readonly IScheduler scheduler;
         private readonly CancellationTokenSource stopToken = new CancellationTokenSource();

@@ -68,7 +68,9 @@ namespace Fireasy.Data.Entity.Query
                 TryExpire(expression);
             }
 
-            var result = CacheableChecker.Check(expression);
+            var evaluator = _serviceProvider.TryGetService<IExecuteCacheEvaluator>();
+
+            var result = CacheableChecker.Check(evaluator, expression);
 
             //没有开启数据缓存
             if ((result.Enabled == null && (context.Enabled == false || (context.Enabled == null && !option.CacheExecution))) ||
@@ -111,6 +113,8 @@ namespace Fireasy.Data.Entity.Query
         /// <returns></returns>
         async Task<T> IExecuteCache.TryGetAsync<T>(Expression expression, ExecuteCacheContext context, Func<CancellationToken, Task<T>> creator, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var section = ConfigurationUnity.GetSection<TranslatorConfigurationSection>();
             var option = section == null ? TranslateOptions.Default : section.Options;
 
@@ -119,7 +123,9 @@ namespace Fireasy.Data.Entity.Query
                 TryExpire(expression);
             }
 
-            var result = CacheableChecker.Check(expression);
+            var evaluator = _serviceProvider.TryGetService<IExecuteCacheEvaluator>();
+
+            var result = CacheableChecker.Check(evaluator, expression);
 
             //没有开启数据缓存
             if ((result.Enabled == null && (context.Enabled == false || (context.Enabled == null && !option.CacheExecution))) ||
@@ -380,18 +386,20 @@ namespace Fireasy.Data.Entity.Query
         /// </summary>
         private class CacheableChecker : Common.Linq.Expressions.ExpressionVisitor
         {
-            private readonly CacheableCheckResult result = new CacheableCheckResult();
+            private readonly CacheableCheckResult _result = new CacheableCheckResult();
+            private IExecuteCacheEvaluator _evaluator;
 
             /// <summary>
             /// 检查表达式是否能够被缓存。
             /// </summary>
+            /// <param name="evaluator"></param>
             /// <param name="expression"></param>
             /// <returns></returns>
-            public static CacheableCheckResult Check(Expression expression)
+            public static CacheableCheckResult Check(IExecuteCacheEvaluator evaluator, Expression expression)
             {
-                var checker = new CacheableChecker();
+                var checker = new CacheableChecker { _evaluator = evaluator };
                 checker.Visit(expression);
-                return checker.result;
+                return checker._result;
             }
 
             protected override Expression VisitMethodCall(MethodCallExpression node)
@@ -406,21 +414,40 @@ namespace Fireasy.Data.Entity.Query
                     case nameof(Linq.Extensions.CreateEntityAsync):
                     case nameof(Linq.Extensions.BatchOperate):
                     case nameof(Linq.Extensions.BatchOperateAsync):
+                    case nameof(Linq.Extensions.FirstAsync):
+                    case nameof(Linq.Extensions.FirstOrDefaultAsync):
+                    case nameof(Linq.Extensions.LastAsync):
+                    case nameof(Linq.Extensions.LastOrDefaultAsync):
+                    case nameof(Linq.Extensions.SingleAsync):
+                    case nameof(Linq.Extensions.SingleOrDefaultAsync):
+                    case nameof(Queryable.First):
+                    case nameof(Queryable.FirstOrDefault):
+                    case nameof(Queryable.Last):
+                    case nameof(Queryable.LastOrDefault):
+                    case nameof(Queryable.Single):
+                    case nameof(Queryable.SingleOrDefault):
                     case nameof(IRepository.Insert):
                     case nameof(IRepository.InsertAsync):
                     case nameof(IRepository.Update):
                     case nameof(IRepository.UpdateAsync):
                     case nameof(IRepository.Delete):
                     case nameof(IRepository.DeleteAsync):
-                        result.Enabled = false;
+                        if (_evaluator != null)
+                        {
+                            _result.Enabled = _evaluator.Evaluate(node);
+                        }
+                        else
+                        {
+                            _result.Enabled = false;
+                        }
                         break;
                     case nameof(Linq.Extensions.CacheExecution):
-                        result.Enabled = (bool)((ConstantExpression)node.Arguments[1]).Value;
-                        if (result.Enabled == true && node.Arguments.Count == 3 &&
+                        _result.Enabled = (bool)((ConstantExpression)node.Arguments[1]).Value;
+                        if (_result.Enabled == true && node.Arguments.Count == 3 &&
                             node.Arguments[2] is ConstantExpression consExp && consExp.Value is TimeSpan expired
                             && expired != TimeSpan.Zero)
                         {
-                            result.Expired = expired;
+                            _result.Expired = expired;
                         }
                         break;
                 }

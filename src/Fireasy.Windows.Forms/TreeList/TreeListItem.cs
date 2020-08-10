@@ -17,21 +17,21 @@ namespace Fireasy.Windows.Forms
     [DesignTimeVisible(false)]
     public class TreeListItem : Component, IVirtualItem, IImageDefinition
     {
-        private TreeListItemCollection items;
-        private TreeListCellCollection cells;
-        private bool selected;
-        private bool highlight;
-        private bool @checked;
-        private bool expanded;
-        private bool showBox = true;
+        private TreeListItemCollection _items;
+        private TreeListCellCollection _cells;
+        private bool _selected;
+        private bool _highlight;
+        private bool _checked;
+        private bool _expanded;
+        private bool _showBox = true;
 
-        private Color foreColor;
-        private Color backgroundColor;
-        private Font font;
-        private bool enabled = true;
-        private int imageIndex = -1;
-        private string imageKey;
-        private Image image;
+        private Color _foreColor;
+        private Color _backgroundColor;
+        private Font _font;
+        private bool _enabled = true;
+        private int _imageIndex = -1;
+        private string _imageKey;
+        private Image _image;
 
         public TreeListItem()
         {
@@ -94,12 +94,12 @@ namespace Fireasy.Windows.Forms
         [DefaultValue(null)]
         public Font Font
         {
-            get { return font; }
+            get { return _font; }
             set
             {
-                if (font != value)
+                if (_font != value)
                 {
-                    font = value;
+                    _font = value;
                     InvalidateItem();
                 }
             }
@@ -119,12 +119,12 @@ namespace Fireasy.Windows.Forms
         [DefaultValue(true)]
         public bool Enabled
         {
-            get { return enabled; }
+            get { return _enabled; }
             set
             {
-                if (enabled != value)
+                if (_enabled != value)
                 {
-                    enabled = value;
+                    _enabled = value;
                     InvalidateItem();
                 }
             }
@@ -137,12 +137,12 @@ namespace Fireasy.Windows.Forms
         [DefaultValue(typeof(Color), "Empty")]
         public Color ForeColor
         {
-            get { return foreColor; }
+            get { return _foreColor; }
             set
             {
-                if (foreColor != value)
+                if (_foreColor != value)
                 {
-                    foreColor = value;
+                    _foreColor = value;
                     InvalidateItem();
                 }
             }
@@ -155,12 +155,12 @@ namespace Fireasy.Windows.Forms
         [DefaultValue(typeof(Color), "Empty")]
         public Color BackgroundColor
         {
-            get { return backgroundColor; }
+            get { return _backgroundColor; }
             set
             {
-                if (backgroundColor != value)
+                if (_backgroundColor != value)
                 {
-                    backgroundColor = value;
+                    _backgroundColor = value;
                     InvalidateItem();
                 }
             }
@@ -177,12 +177,12 @@ namespace Fireasy.Windows.Forms
         [RefreshProperties(RefreshProperties.Repaint)]
         public int ImageIndex
         {
-            get { return imageIndex; }
+            get { return _imageIndex; }
             set
             {
-                if (imageIndex != value)
+                if (_imageIndex != value)
                 {
-                    imageIndex = value;
+                    _imageIndex = value;
                     InvalidateItem();
                 }
             }
@@ -199,12 +199,12 @@ namespace Fireasy.Windows.Forms
         [RefreshProperties(RefreshProperties.Repaint)]
         public string ImageKey
         {
-            get { return imageKey; }
+            get { return _imageKey; }
             set
             {
-                if (imageKey != value)
+                if (_imageKey != value)
                 {
-                    imageKey = value;
+                    _imageKey = value;
                     InvalidateItem();
                 }
             }
@@ -216,12 +216,12 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置显示的图像。")]
         public Image Image
         {
-            get { return image; }
+            get { return _image; }
             set
             {
-                if (image != value)
+                if (_image != value)
                 {
-                    image = value;
+                    _image = value;
                     InvalidateItem();
                 }
             }
@@ -234,12 +234,12 @@ namespace Fireasy.Windows.Forms
         [DefaultValue(true)]
         public bool ShowBox
         {
-            get { return showBox; }
+            get { return _showBox; }
             set
             {
-                if (showBox != value)
+                if (_showBox != value)
                 {
-                    showBox = value;
+                    _showBox = value;
                     InvalidateItem();
                 }
             }
@@ -261,13 +261,13 @@ namespace Fireasy.Windows.Forms
         [Localizable(true)]
         public TreeListItemCollection Items
         {
-            get { return items ?? (items = new TreeListItemCollection(TreeList, this, Level + 1)); }
+            get { return _items ?? (_items = new TreeListItemCollection(TreeList, this, Level + 1)); }
         }
 
         [Browsable(false)]
         public TreeListCellCollection Cells
         {
-            get { return cells ?? (cells = new TreeListCellCollection(this)); }
+            get { return _cells ?? (_cells = new TreeListCellCollection(this)); }
         }
 
         /// <summary>
@@ -276,15 +276,15 @@ namespace Fireasy.Windows.Forms
         [Browsable(false)]
         public bool Selected
         {
-            get { return selected; }
+            get { return _selected; }
             set
             {
-                if (selected == value)
+                if (_selected == value)
                 {
                     return;
                 }
 
-                selected = value;
+                _selected = value;
                 if (TreeList != null)
                 {
                     TreeList.SelectItem(this, value, !TreeList.MultiSelect);
@@ -298,30 +298,30 @@ namespace Fireasy.Windows.Forms
         [Browsable(false)]
         public bool Highlight
         {
-            get { return highlight; }
+            get { return _highlight; }
             set
             {
-                if (highlight == value)
+                if (_highlight == value)
                 {
                     return;
                 }
 
-                highlight = value;
+                _highlight = value;
                 InvalidateItem();
             }
         }
 
         public bool Checked
         {
-            get { return @checked; }
+            get { return _checked; }
             set
             {
-                if (@checked == value)
+                if (_checked == value)
                 {
                     return;
                 }
 
-                @checked = value;
+                _checked = value;
                 if (TreeList != null)
                 {
                     TreeList.CheckItem(this, value);
@@ -338,12 +338,12 @@ namespace Fireasy.Windows.Forms
         [Browsable(false)]
         public bool Expended
         {
-            get { return expanded; }
+            get { return _expanded; }
             set
             {
-                if (expanded != value)
+                if (_expanded != value)
                 {
-                    expanded = value;
+                    _expanded = value;
                     if (TreeList != null)
                     {
                         if (value && ShowExpanded && !IsDemandLoad)
@@ -416,12 +416,12 @@ namespace Fireasy.Windows.Forms
 
         internal void SetSelected(bool selected)
         {
-            this.selected = selected;
+            _selected = selected;
         }
 
         internal void SetChecked(bool @checked)
         {
-            this.@checked = @checked;
+            _checked = @checked;
         }
 
         internal void InvalidateItem()

@@ -12,11 +12,11 @@ namespace Fireasy.Windows.Forms
 {
     internal class TreeListBound
     {
-        private TreeList treeList;
+        private readonly TreeList _treeList;
 
         public TreeListBound(TreeList treeList)
         {
-            this.treeList = treeList;
+            _treeList = treeList;
         }
 
         public Rectangle WorkBound { get; private set; }
@@ -28,7 +28,7 @@ namespace Fireasy.Windows.Forms
 
         public void Reset()
         {
-            GetWorkspaceRectangle(treeList.ClientRectangle);
+            GetWorkspaceRectangle(_treeList.ClientRectangle);
             GetRowNumberRectangle();
             GetColumnHeaderRectangle();
             GetItemRectangle();
@@ -42,7 +42,7 @@ namespace Fireasy.Windows.Forms
         private void GetWorkspaceRectangle(Rectangle rect)
         {
             var rr = rect;
-            if (!Application.RenderWithVisualStyles && treeList.BorderStyle == BorderStyle.Fixed3D)
+            if (!Application.RenderWithVisualStyles && _treeList.BorderStyle == BorderStyle.Fixed3D)
             {
                 rr.Inflate(-2, -2);
             }
@@ -64,26 +64,26 @@ namespace Fireasy.Windows.Forms
             var width = WorkBound.Width;
             var height = WorkBound.Height;
 
-            if (treeList.ShowHeader)
+            if (_treeList.ShowHeader)
             {
                 width = WorkBound.Width;
-                top += treeList.HeaderHeight;
-                height -= treeList.HeaderHeight;
+                top += _treeList.HeaderHeight;
+                height -= _treeList.HeaderHeight;
             }
 
-            if (treeList.ShowVerScrollBar)
+            if (_treeList.ShowVerScrollBar)
             {
                 width -= 17;
             }
 
-            if (treeList.ShowHorScrollBar)
+            if (_treeList.ShowHorScrollBar)
             {
                 height -= 17;
             }
 
-            if (treeList.ShowFooter)
+            if (_treeList.ShowFooter)
             {
-                height -= treeList.FooterHeight;
+                height -= _treeList.FooterHeight;
             }
 
             ItemBound = new Rectangle(WorkBound.X + RowNumberBound.Width, top, width, height);
@@ -91,9 +91,9 @@ namespace Fireasy.Windows.Forms
 
         private void GetRowNumberRectangle()
         {
-            if (treeList.ShowRowNumber)
+            if (_treeList.ShowRowNumber)
             {
-                RowNumberBound = new Rectangle(WorkBound.X, WorkBound.Y, treeList.RowNumberWidth, WorkBound.Height);
+                RowNumberBound = new Rectangle(WorkBound.X, WorkBound.Y, _treeList.RowNumberWidth, WorkBound.Height);
             }
             else
             {
@@ -107,27 +107,27 @@ namespace Fireasy.Windows.Forms
         /// <returns></returns>
         private void GetColumnHeaderRectangle()
         {
-            if (!treeList.ShowHeader)
+            if (!_treeList.ShowHeader)
             {
                 ColumnBound = Rectangle.Empty;
                 AvlieBound = WorkBound;
             }
             else
             {
-                ColumnBound = new Rectangle(WorkBound.X + RowNumberBound.Width, WorkBound.Y, WorkBound.Width, treeList.HeaderHeight);
-                AvlieBound = new Rectangle(WorkBound.X, ColumnBound.Bottom, WorkBound.Width, WorkBound.Height - treeList.HeaderHeight);
+                ColumnBound = new Rectangle(WorkBound.X + RowNumberBound.Width, WorkBound.Y, WorkBound.Width, _treeList.HeaderHeight);
+                AvlieBound = new Rectangle(WorkBound.X, ColumnBound.Bottom, WorkBound.Width, WorkBound.Height - _treeList.HeaderHeight);
             }
         }
 
         private void GetFooterRectangle()
         {
-            if (!treeList.ShowFooter)
+            if (!_treeList.ShowFooter)
             {
                 FooterBound = Rectangle.Empty;
             }
             else
             {
-                FooterBound = new Rectangle(WorkBound.X, ItemBound.Bottom, WorkBound.Width, treeList.FooterHeight);
+                FooterBound = new Rectangle(WorkBound.X, ItemBound.Bottom, WorkBound.Width, _treeList.FooterHeight);
             }
         }
     }

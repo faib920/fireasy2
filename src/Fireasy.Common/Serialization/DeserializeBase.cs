@@ -14,7 +14,7 @@ using System.Linq;
 
 namespace Fireasy.Common.Serialization
 {
-    internal class DeserializeBase : DisposeableBase
+    internal class DeserializeBase : DisposableBase
     {
         private readonly SerializeContext _context;
         private readonly SerializeOption _option;

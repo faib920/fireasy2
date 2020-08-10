@@ -101,7 +101,7 @@ namespace Fireasy.Data.Entity
             IDatabase database;
             if (context.Options.Provider != null && context.Options.ConnectionString != null)
             {
-                database = new Database(context.Options.ConnectionString, context.Options.Provider);
+                database = new Database(context.Options.ConnectionString, context.Options.Provider).TrySetServiceProvider(context.ServiceProvider);
             }
             else
             {

@@ -27,7 +27,7 @@ namespace Fireasy.Data.Configuration
             {
                 Options = new GlobalOptions
                 {
-                    AttachQuote = ndOption.GetAttributeValue("attachQuote", false)
+                    AttachDelimit = ndOption.GetAttributeValue("attachDelimit", false)
                 };
             }
         }
@@ -40,7 +40,7 @@ namespace Fireasy.Data.Configuration
             {
                 Options = new GlobalOptions
                     {
-                        AttachQuote = ndOption.GetSection("attachQuote").Value.To(false)
+                        AttachDelimit = ndOption.GetSection("attachDelimit").Value.To(false)
                     };
             }
         }

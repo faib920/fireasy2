@@ -303,15 +303,15 @@ namespace Fireasy.Common.Serialization
 
         private object DeserializeList(Type listType)
         {
-            var isReadonly = listType.IsGenericType && listType.GetGenericTypeDefinition() == typeof(IReadOnlyCollection<>);
-
-            CreateListContainer(listType, out Type elementType, out IList container);
-
             _jsonReader.SkipWhiteSpaces();
             if (_jsonReader.IsNull())
             {
                 return null;
             }
+
+            var isReadonly = listType.IsGenericType && listType.GetGenericTypeDefinition() == typeof(IReadOnlyCollection<>);
+
+            CreateListContainer(listType, out Type elementType, out IList container);
 
             _jsonReader.AssertAndConsume(JsonTokens.StartArrayCharacter);
             while (true)
@@ -353,6 +353,12 @@ namespace Fireasy.Common.Serialization
 
         private IDictionary DeserializeDictionary(Type dictType)
         {
+            _jsonReader.SkipWhiteSpaces();
+            if (_jsonReader.IsNull())
+            {
+                return null;
+            }
+
             CreateDictionaryContainer(dictType, out Type[] keyValueTypes, out IDictionary container);
 
             _jsonReader.SkipWhiteSpaces();
@@ -682,6 +688,11 @@ namespace Fireasy.Common.Serialization
                     mustMatchIndex = i;
                     break;
                 }
+            }
+
+            if (mustMatchIndex == -1)
+            {
+                throw new SerializationException("", new AmbiguousMatchException());
             }
 
             var index = Math.Min(mustMatchIndex, 0);

@@ -14,7 +14,7 @@ namespace Fireasy.Common.Threading
     /// <summary>
     /// 提供在多线程环境中进行数据读取和写入的锁。无法继承此类。
     /// </summary>
-    public sealed class ReadWriteLocker : DisposeableBase
+    public sealed class ReadWriteLocker : DisposableBase
     {
         private readonly ReaderWriterLockSlim _locker = new ReaderWriterLockSlim();
 

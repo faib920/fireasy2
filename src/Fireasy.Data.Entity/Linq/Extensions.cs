@@ -37,10 +37,16 @@ namespace Fireasy.Data.Entity.Linq
             internal protected static readonly MethodInfo UpdateWhereAsync = typeof(Extensions).GetMethod(nameof(Extensions.UpdateWhereAsync), BindingFlags.NonPublic | BindingFlags.Static);
             internal protected static readonly MethodInfo UpdateWhereByCalculatorAsync = typeof(Extensions).GetMethod(nameof(Extensions.UpdateWhereByCalculatorAsync), BindingFlags.NonPublic | BindingFlags.Static);
             internal protected static readonly MethodInfo BatchOperateAsync = typeof(Extensions).GetMethod(nameof(Extensions.BatchOperateAsync), BindingFlags.NonPublic | BindingFlags.Static);
+            internal protected static readonly MethodInfo FirstAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.FirstAsync) && s.GetParameters().Length == 2);
+            internal protected static readonly MethodInfo FirstAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.FirstAsync) && s.GetParameters().Length == 3);
             internal protected static readonly MethodInfo FirstOrDefaultAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.FirstOrDefaultAsync) && s.GetParameters().Length == 2);
             internal protected static readonly MethodInfo FirstOrDefaultAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.FirstOrDefaultAsync) && s.GetParameters().Length == 3);
+            internal protected static readonly MethodInfo LastAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.LastAsync) && s.GetParameters().Length == 2);
+            internal protected static readonly MethodInfo LastAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.LastAsync) && s.GetParameters().Length == 3);
             internal protected static readonly MethodInfo LastOrDefaultAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.LastOrDefaultAsync) && s.GetParameters().Length == 2);
             internal protected static readonly MethodInfo LastOrDefaultAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.LastOrDefaultAsync) && s.GetParameters().Length == 3);
+            internal protected static readonly MethodInfo SingleAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.SingleAsync) && s.GetParameters().Length == 2);
+            internal protected static readonly MethodInfo SingleAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.SingleAsync) && s.GetParameters().Length == 3);
             internal protected static readonly MethodInfo SingleOrDefaultAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.SingleOrDefaultAsync) && s.GetParameters().Length == 2);
             internal protected static readonly MethodInfo SingleOrDefaultAsync3 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.SingleOrDefaultAsync) && s.GetParameters().Length == 3);
             internal protected static readonly MethodInfo AnyAsync2 = typeof(Extensions).GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault(s => s.Name == nameof(Extensions.AnyAsync) && s.GetParameters().Length == 2);
@@ -657,6 +663,19 @@ namespace Fireasy.Data.Entity.Linq
         }
 
         /// <summary>
+        /// 添加是否在两个值范围内的条件。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="lowerBound"></param>
+        /// <param name="upperBound"></param>
+        /// <returns></returns>
+        public static bool IsBetween<T>(this T source, T lowerBound, T upperBound)
+        {
+            throw new NotSupportedException(SR.GetString(SRKind.MethodMustInExpression));
+        }
+
+        /// <summary>
         /// 将实体进行扩展，附加 <paramref name="selector"/> 表达式中的字段，返回 <typeparamref name="TResult"/> 类型的对象。
         /// </summary>
         /// <typeparam name="TSource"></typeparam>
@@ -698,6 +717,135 @@ namespace Fireasy.Data.Entity.Linq
 
             var enumerable = await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<IEnumerable<TSource>>(expression, cancellationToken);
             return enumerable.ToList();
+        }
+
+        /// <summary>
+        /// 异步的，将序列转换为 Dictionary。
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TElement"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="keySelector"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static async Task<Dictionary<TKey, TSource>> ToDictionaryAsync<TSource, TKey, TElement>(this IQueryable<TSource> source, Func<TSource, TKey> keySelector, CancellationToken cancellationToken = default)
+        {
+            CheckAsyncImplementd(source.Provider);
+
+            var method = MethodCache.ToListAsync.MakeGenericMethod(typeof(TSource));
+            var expression = Expression.Call(null, method,
+                new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
+
+            var enumerable = await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<IEnumerable<TSource>>(expression, cancellationToken);
+            return enumerable.ToDictionary(keySelector);
+        }
+
+        /// <summary>
+        /// 异步的，将序列转换为 Dictionary。
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TElement"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="keySelector"></param>
+        /// <param name="comparer"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static async Task<Dictionary<TKey, TSource>> ToDictionaryAsync<TSource, TKey, TElement>(this IQueryable<TSource> source, Func<TSource, TKey> keySelector, IEqualityComparer<TKey> comparer, CancellationToken cancellationToken = default)
+        {
+            CheckAsyncImplementd(source.Provider);
+
+            var method = MethodCache.ToListAsync.MakeGenericMethod(typeof(TSource));
+            var expression = Expression.Call(null, method,
+                new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
+
+            var enumerable = await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<IEnumerable<TSource>>(expression, cancellationToken);
+            return enumerable.ToDictionary(keySelector, comparer);
+        }
+
+        /// <summary>
+        /// 异步的，将序列转换为 Dictionary。
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TElement"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="keySelector"></param>
+        /// <param name="elementSelector"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static async Task<Dictionary<TKey, TElement>> ToDictionaryAsync<TSource, TKey, TElement>(this IQueryable<TSource> source, Func<TSource, TKey> keySelector, Func<TSource, TElement> elementSelector, CancellationToken cancellationToken = default)
+        {
+            CheckAsyncImplementd(source.Provider);
+
+            var method = MethodCache.ToListAsync.MakeGenericMethod(typeof(TSource));
+            var expression = Expression.Call(null, method,
+                new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
+
+            var enumerable = await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<IEnumerable<TSource>>(expression, cancellationToken);
+            return enumerable.ToDictionary(keySelector, elementSelector);
+        }
+
+        /// <summary>
+        /// 异步的，将序列转换为 Dictionary。
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TElement"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="keySelector"></param>
+        /// <param name="elementSelector"></param>
+        /// <param name="comparer"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static async Task<Dictionary<TKey, TElement>> ToDictionaryAsync<TSource, TKey, TElement>(this IQueryable<TSource> source, Func<TSource, TKey> keySelector, Func<TSource, TElement> elementSelector, IEqualityComparer<TKey> comparer, CancellationToken cancellationToken = default)
+        {
+            CheckAsyncImplementd(source.Provider);
+
+            var method = MethodCache.ToListAsync.MakeGenericMethod(typeof(TSource));
+            var expression = Expression.Call(null, method,
+                new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
+
+            var enumerable = await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<IEnumerable<TSource>>(expression, cancellationToken);
+            return enumerable.ToDictionary(keySelector, elementSelector, comparer);
+        }
+
+        /// <summary>
+        /// 异步的，返回序列中的第一个元素。
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static async Task<TSource> FirstAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
+        {
+            CheckAsyncImplementd(source.Provider);
+
+            var method = MethodCache.FirstAsync2.MakeGenericMethod(typeof(TSource));
+            var expression = Expression.Call(null, method,
+                new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
+
+            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
+        }
+
+        /// <summary>
+        /// 异步的，返回序列中的第一个元素。
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static async Task<TSource> FirstAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
+        {
+            CheckAsyncImplementd(source.Provider);
+
+            var method = MethodCache.FirstAsync3.MakeGenericMethod(typeof(TSource));
+            var expression = Expression.Call(null, method,
+                new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
+
+            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -744,6 +892,43 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="source"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
+        public static async Task<TSource> LastAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
+        {
+            CheckAsyncImplementd(source.Provider);
+
+            var method = MethodCache.LastAsync2.MakeGenericMethod(typeof(TSource));
+            var expression = Expression.Call(null, method,
+                new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
+
+            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
+        }
+
+        /// <summary>
+        /// 异步的，返回序列中的最后一个元素。
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static async Task<TSource> LastAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
+        {
+            CheckAsyncImplementd(source.Provider);
+
+            var method = MethodCache.LastAsync3.MakeGenericMethod(typeof(TSource));
+            var expression = Expression.Call(null, method,
+                new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
+
+            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
+        }
+
+        /// <summary>
+        /// 异步的，返回序列中的最后一个元素。
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public static async Task<TSource> LastOrDefaultAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
@@ -768,6 +953,43 @@ namespace Fireasy.Data.Entity.Linq
             CheckAsyncImplementd(source.Provider);
 
             var method = MethodCache.LastOrDefaultAsync3.MakeGenericMethod(typeof(TSource));
+            var expression = Expression.Call(null, method,
+                new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
+
+            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
+        }
+
+        /// <summary>
+        /// 异步的，返回序列中的唯一一个元素。
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static async Task<TSource> SingleAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
+        {
+            CheckAsyncImplementd(source.Provider);
+
+            var method = MethodCache.SingleAsync2.MakeGenericMethod(typeof(TSource));
+            var expression = Expression.Call(null, method,
+                new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
+
+            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
+        }
+
+        /// <summary>
+        /// 异步的，返回序列中的唯一一个元素。
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static async Task<TSource> SingleAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
+        {
+            CheckAsyncImplementd(source.Provider);
+
+            var method = MethodCache.SingleAsync3.MakeGenericMethod(typeof(TSource));
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
@@ -1133,9 +1355,9 @@ namespace Fireasy.Data.Entity.Linq
             return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<T>(expression, cancellationToken);
         }
 
-        internal static async Task<T> FirstOrDefaultCoreAsnyc<T>(this Task<IEnumerable<T>> task)
+        internal static async Task<T> SingleCoreAsnyc<T>(this Task<IEnumerable<T>> task)
         {
-            return (await task).FirstOrDefault();
+            return (await task).Single();
         }
 
         internal static async Task<T> SingleOrDefaultCoreAsnyc<T>(this Task<IEnumerable<T>> task)

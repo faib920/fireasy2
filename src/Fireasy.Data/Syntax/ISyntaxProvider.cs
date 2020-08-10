@@ -57,9 +57,9 @@ namespace Fireasy.Data.Syntax
         string ParameterPrefix { get; }
 
         /// <summary>
-        /// 获取列引号标识符。
+        /// 获取定界符。
         /// </summary>
-        string[] Quote { get; }
+        string[] Delimiter { get; }
 
         /// <summary>
         /// 获取换行符。

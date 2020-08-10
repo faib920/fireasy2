@@ -1,12 +1,11 @@
 using System;
 using System.Windows.Forms;
-using System.Diagnostics;
 
 namespace Fireasy.Windows.Forms
 {
     public class Selection
     {
-        private TextBoxBase m_textBox;
+        private readonly TextBoxBase _textBox;
 
         /// <summary>
         /// 文本正在被改变的事件。
@@ -15,7 +14,7 @@ namespace Fireasy.Windows.Forms
 
         public Selection(TextBoxBase textBox)
         {
-            m_textBox = textBox;
+            _textBox = textBox;
         }
 
         /// <summary>
@@ -26,20 +25,20 @@ namespace Fireasy.Windows.Forms
         /// <param name="endPos">选定的结束点。</param>
         public Selection(TextBoxBase textBox, int startPos, int endPos)
         {
-            m_textBox = textBox;
+            _textBox = textBox;
             Set(startPos, endPos);
         }
 
         public void Set(int startPos, int endPos)
         {
-            m_textBox.SelectionStart = startPos;
-            m_textBox.SelectionLength = endPos - startPos;
+            _textBox.SelectionStart = startPos;
+            _textBox.SelectionLength = endPos - startPos;
         }
 
         public void Get(out int startPos, out int endPos)
         {
-            startPos = m_textBox.SelectionStart;
-            endPos = startPos + m_textBox.SelectionLength;
+            startPos = _textBox.SelectionStart;
+            endPos = startPos + _textBox.SelectionLength;
 
             if (startPos < 0) startPos = 0;
             if (endPos < startPos) endPos = startPos;
@@ -54,7 +53,7 @@ namespace Fireasy.Windows.Forms
             if (TextChanging != null)
                 TextChanging(this, null);
 
-            m_textBox.SelectedText = text;
+            _textBox.SelectedText = text;
         }
 
         /// <summary>
@@ -80,14 +79,14 @@ namespace Fireasy.Windows.Forms
             MoveBy(pos, pos);
         }
 
-        public static Selection operator + (Selection selection, int pos)
+        public static Selection operator +(Selection selection, int pos)
         {
-            return new Selection(selection.m_textBox, selection.Start + pos, selection.End + pos);
+            return new Selection(selection._textBox, selection.Start + pos, selection.End + pos);
         }
 
         public TextBoxBase TextBox
         {
-            get { return m_textBox; }
+            get { return _textBox; }
         }
 
         /// <summary>
@@ -95,8 +94,8 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         public int Start
         {
-            get { return m_textBox.SelectionStart; }
-            set { m_textBox.SelectionStart = value; }
+            get { return _textBox.SelectionStart; }
+            set { _textBox.SelectionStart = value; }
         }
 
         /// <summary>
@@ -104,8 +103,8 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         public int End
         {
-            get { return m_textBox.SelectionStart + m_textBox.SelectionLength; }
-            set { m_textBox.SelectionLength = value - m_textBox.SelectionStart; }
+            get { return _textBox.SelectionStart + _textBox.SelectionLength; }
+            set { _textBox.SelectionLength = value - _textBox.SelectionStart; }
         }
 
         /// <summary>
@@ -113,8 +112,8 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         public int Length
         {
-            get { return m_textBox.SelectionLength; }
-            set { m_textBox.SelectionLength = value; }
+            get { return _textBox.SelectionLength; }
+            set { _textBox.SelectionLength = value; }
         }
 
         #region Saver
@@ -124,33 +123,33 @@ namespace Fireasy.Windows.Forms
         public class Saver : IDisposable
         {
             // Fields
-            private TextBoxBase m_textBox;
-            private Selection m_selection;
-            private int m_start, m_end;
+            private TextBoxBase _textBox;
+            private readonly Selection _selection;
+            private int _start, _end;
 
             public Saver(TextBoxBase textBox)
             {
-                m_textBox = textBox;
-                m_selection = new Selection(textBox);
-                m_selection.Get(out m_start, out m_end);
+                _textBox = textBox;
+                _selection = new Selection(textBox);
+                _selection.Get(out _start, out _end);
             }
 
             public Saver(TextBoxBase textBox, int startPos, int endPos)
             {
-                m_textBox = textBox;
-                m_selection = new Selection(textBox);
+                _textBox = textBox;
+                _selection = new Selection(textBox);
 
-                m_start = startPos;
-                m_end = endPos;
+                _start = startPos;
+                _end = endPos;
             }
 
             public void Restore()
             {
-                if (m_textBox == null)
+                if (_textBox == null)
                     return;
 
-                m_selection.Set(m_start, m_end);
-                m_textBox = null;
+                _selection.Set(_start, _end);
+                _textBox = null;
             }
 
             public void Dispose()
@@ -160,53 +159,53 @@ namespace Fireasy.Windows.Forms
 
             public void MoveTo(int startPos, int endPos)
             {
-                m_start = startPos;
-                m_end = endPos;
+                _start = startPos;
+                _end = endPos;
             }
 
             public void MoveBy(int startPos, int endPos)
             {
-                m_start += startPos;
-                m_end += endPos;
+                _start += startPos;
+                _end += endPos;
             }
 
             public void MoveBy(int pos)
             {
-                m_start += pos;
-                m_end += pos;
+                _start += pos;
+                _end += pos;
             }
 
-            public static Saver operator + (Saver saver, int pos)
+            public static Saver operator +(Saver saver, int pos)
             {
-                return new Saver(saver.m_textBox, saver.m_start + pos, saver.m_end + pos);
+                return new Saver(saver._textBox, saver._start + pos, saver._end + pos);
             }
 
             public TextBoxBase TextBox
             {
-                get { return m_textBox; }
+                get { return _textBox; }
             }
 
             public int Start
             {
-                get { return m_start; }
-                set { m_start = value; }
+                get { return _start; }
+                set { _start = value; }
             }
 
             public int End
             {
-                get { return m_end; }
-                set { m_end = value; }
+                get { return _end; }
+                set { _end = value; }
             }
 
             public void Update()
             {
-                if (m_textBox != null)
-                    m_selection.Get(out m_start, out m_end);
+                if (_textBox != null)
+                    _selection.Get(out _start, out _end);
             }
 
             public void Disable()
             {
-                m_textBox = null;
+                _textBox = null;
             }
         }
         #endregion

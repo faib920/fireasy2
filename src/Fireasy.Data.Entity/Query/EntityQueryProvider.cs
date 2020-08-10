@@ -112,6 +112,8 @@ namespace Fireasy.Data.Entity.Query
         /// <exception cref="TranslateException">对 LINQ 表达式解析失败时抛出此异常。</exception>
         public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var queryCache = ContextService.ServiceProvider.TryGetService(() => DefaultQueryCache.Instance);
             var efn = queryCache.TryGetDelegate(expression, GetCacheContext(), () => (LambdaExpression)GetExecutionPlan(expression, true));
 
@@ -123,6 +125,8 @@ namespace Fireasy.Data.Entity.Query
 #if !NETFRAMEWORK && !NETSTANDARD2_0
         public IAsyncEnumerable<TResult> ExecuteEnumerableAsync<TResult>(Expression expression, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var queryCache = ContextService.ServiceProvider.TryGetService(() => DefaultQueryCache.Instance);
             var efn = queryCache.TryGetDelegate(expression, GetCacheContext(), () => (LambdaExpression)GetExecutionPlan(expression, true));
 

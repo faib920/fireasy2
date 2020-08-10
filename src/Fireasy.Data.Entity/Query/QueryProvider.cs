@@ -137,6 +137,8 @@ namespace Fireasy.Data.Entity.Query
         /// <returns></returns>
         public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var executeCache = ContextService.ServiceProvider.TryGetService(() => DefaultExecuteCache.Instance);
             return await executeCache.TryGetAsync(expression, GetCacheContext(), c => _entityQueryProvider.ExecuteAsync<TResult>(expression, c), cancellationToken);
         }

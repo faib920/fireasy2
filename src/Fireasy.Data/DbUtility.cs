@@ -16,7 +16,7 @@ namespace Fireasy.Data
     /// <summary>
     /// 实用类。
     /// </summary>
-    public sealed class DbUtility
+    public static class DbUtility
     {
         /// <summary>
         /// 解析字符串中的带目录的参数值。
@@ -62,12 +62,12 @@ namespace Fireasy.Data
         }
 
         /// <summary>
-        /// 使用引号标识符格式化表名称或列名称。
+        /// 使用界定符格式化表名称或列名称。
         /// </summary>
         /// <param name="syntax"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public static string FormatByQuote(ISyntaxProvider syntax, string name)
+        public static string FormatByDelimiter(this ISyntaxProvider syntax, string name)
         {
             if (syntax == null)
             {
@@ -77,18 +77,18 @@ namespace Fireasy.Data
             var section = ConfigurationUnity.GetSection<GlobalConfigurationSection>();
 
             if ((section == null ||
-                (!section.Options.AttachQuote && name.IndexOf(' ') == -1) || name.Length == 0 || syntax.Quote == null || syntax.Quote.Length != 2))
+                (!section.Options.AttachDelimit && name.IndexOf(' ') == -1) || name.Length == 0 || syntax.Delimiter == null || syntax.Delimiter.Length != 2))
             {
                 return name;
             }
 
             if (name.Length > 1 &&
-                (name[0].ToString() == syntax.Quote[0] || name[name.Length - 1].ToString() == syntax.Quote[1]))
+                (name[0].ToString() == syntax.Delimiter[0] || name[name.Length - 1].ToString() == syntax.Delimiter[1]))
             {
                 return name;
             }
 
-            return string.Format("{0}{1}{2}", syntax.Quote[0], name, syntax.Quote[1]);
+            return string.Format("{0}{1}{2}", syntax.Delimiter[0], name, syntax.Delimiter[1]);
         }
 
         /// <summary>

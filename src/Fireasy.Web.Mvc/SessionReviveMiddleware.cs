@@ -18,8 +18,8 @@ namespace Fireasy.Web.Mvc
     /// </summary>
     public class SessionReviveMiddleware
     {
-        private readonly RequestDelegate next;
-        private readonly ISessionReviveNotification notification;
+        private readonly RequestDelegate _next;
+        private readonly ISessionReviveNotification _notification;
 
         /// <summary>
         /// 初始化 <see cref="SessionReviveMiddleware"/> 类的新实例。
@@ -28,21 +28,21 @@ namespace Fireasy.Web.Mvc
         /// <param name="notification"></param>
         public SessionReviveMiddleware(RequestDelegate next, ISessionReviveNotification notification)
         {
-            this.next = next;
-            this.notification = notification;
+            _next = next;
+            _notification = notification;
         }
 
         public async Task Invoke(HttpContext context)
         {
-            if (notification != null &&
+            if (_notification != null &&
                 context.Session != null &&
                 context.Session.Keys.IsNullOrEmpty() &&
                 context.User.Identity.IsAuthenticated)
             {
-                await notification.InvokeAsync(context);
+                await _notification.InvokeAsync(context);
             }
 
-            await next(context);
+            await _next(context);
         }
     }
 }

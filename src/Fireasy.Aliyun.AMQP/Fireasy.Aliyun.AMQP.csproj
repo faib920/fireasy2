@@ -12,7 +12,7 @@
     <Product>Fireasy Aliyun AMQP Provider</Product>
     <FileVersion>2.2.0</FileVersion>
     <AssemblyVersion>2.2.0</AssemblyVersion>
-    <Version>2.2.0-beta1</Version>
+    <Version>2.2.0</Version>
     <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
     <Description>

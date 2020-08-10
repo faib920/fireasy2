@@ -7,8 +7,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Drawing;
-using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace Fireasy.Windows.Forms
@@ -21,7 +19,7 @@ namespace Fireasy.Windows.Forms
         //static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong); 
 
         public TreeListNumericUpDownEditor()
-            : base (new NumericUpDown())
+            : base(new NumericUpDown())
         {
             //var field = typeof(NumericUpDown).GetField("upDownButtons", BindingFlags.Instance | BindingFlags.NonPublic);
             //if (field != null)

@@ -16,8 +16,8 @@ namespace Fireasy.Windows.Forms
     /// </summary>
     public class TreeListItemComparer : IComparer<TreeListItem>
     {
-        private TreeListColumn column;
-        private SortOrder order;
+        private readonly TreeListColumn _column;
+        private readonly SortOrder _order;
 
         /// <summary>
         /// 初始化 <see cref="TreeListItemComparer"/> 类的新实例。
@@ -26,8 +26,8 @@ namespace Fireasy.Windows.Forms
         /// <param name="order">排序方式。</param>
         public TreeListItemComparer(TreeListColumn column, SortOrder order)
         {
-            this.column = column;
-            this.order = order;
+            _column = column;
+            _order = order;
         }
 
         /// <summary>
@@ -38,8 +38,8 @@ namespace Fireasy.Windows.Forms
         /// <returns>x 和 y 相等为 0；x 大于 y 为 1；x 小于 y 为 -1。</returns>
         public virtual int Compare(TreeListItem x, TreeListItem y)
         {
-            var xvalue = x.Cells[column.Index].Value;
-            var yvalue = y.Cells[column.Index].Value;
+            var xvalue = x.Cells[_column.Index].Value;
+            var yvalue = y.Cells[_column.Index].Value;
             if (xvalue == null)
             {
                 return Reverse(-1);
@@ -55,8 +55,7 @@ namespace Fireasy.Windows.Forms
                 return 0;
             }
 
-            var comparer = xvalue as IComparable;
-            if (comparer != null)
+            if (xvalue is IComparable comparer)
             {
                 return Reverse(comparer.CompareTo(yvalue));
             }
@@ -71,7 +70,7 @@ namespace Fireasy.Windows.Forms
         /// <returns></returns>
         private int Reverse(int result)
         {
-            if (order == SortOrder.Descending)
+            if (_order == SortOrder.Descending)
             {
                 return 0 - result;
             }

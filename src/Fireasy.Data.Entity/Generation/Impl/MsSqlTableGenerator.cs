@@ -17,7 +17,7 @@ namespace Fireasy.Data.Entity.Generation
         protected override SqlCommand[] BuildCreateTableCommands(ISyntaxProvider syntax, string tableName, IList<IProperty> properties)
         {
             var sb = new StringBuilder();
-            sb.Append($"create table {Quote(syntax, tableName)}\n(\n");
+            sb.Append($"create table {Delimit(syntax, tableName)}\n(\n");
 
             var count = properties.Count;
             var last = count - 1;
@@ -38,7 +38,7 @@ namespace Fireasy.Data.Entity.Generation
             if (primaryPeoperties.Length > 0)
             {
                 sb.AppendLine(",");
-                sb.Append($"\nconstraint {Quote(syntax, "PK_" + tableName)} primary key (");
+                sb.Append($"\nconstraint {Delimit(syntax, "PK_" + tableName)} primary key (");
 
                 for (int i = 0, n = primaryPeoperties.Length; i < n; i++)
                 {
@@ -47,7 +47,7 @@ namespace Fireasy.Data.Entity.Generation
                         sb.Append(",");
                     }
 
-                    sb.Append(Quote(syntax, Quote(syntax, primaryPeoperties[i].Info.FieldName)));
+                    sb.Append(Delimit(syntax, Delimit(syntax, primaryPeoperties[i].Info.FieldName)));
                 }
 
                 sb.Append(")");
@@ -61,7 +61,7 @@ namespace Fireasy.Data.Entity.Generation
         protected override SqlCommand[] BuildAddFieldCommands(ISyntaxProvider syntax, string tableName, IList<IProperty> properties)
         {
             var sb = new StringBuilder();
-            sb.Append($"alter table {Quote(syntax, tableName)} add ");
+            sb.Append($"alter table {Delimit(syntax, tableName)} add ");
 
             var count = properties.Count;
             var last = count - 1;

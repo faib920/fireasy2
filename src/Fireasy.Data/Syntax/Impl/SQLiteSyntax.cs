@@ -61,9 +61,9 @@ namespace Fireasy.Data.Syntax
         public virtual string ParameterPrefix => "@";
 
         /// <summary>
-        /// 获取列引号标识符。
+        /// 获取定界符。
         /// </summary>
-        public string[] Quote => new[] { "[", "]" };
+        public string[] Delimiter => new[] { "[", "]" };
 
         /// <summary>
         /// 获取换行符。

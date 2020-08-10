@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if !NETSTANDARD
+using Fireasy.Common.Ioc;
 using System.Web;
 
 namespace Fireasy.Web.Sockets
@@ -23,8 +24,11 @@ namespace Fireasy.Web.Sockets
                     var handlerType = WebSocketBuildOption.Default.GetHandlerType(context.Request.Path);
                     if (handlerType != null && typeof(WebSocketHandler).IsAssignableFrom(handlerType))
                     {
-                        var acceptContext = new WebSocketAcceptContext(c.WebSocket, context.User, WebSocketBuildOption.Default);
-                        await WebSocketHandler.Accept(handlerType, acceptContext);
+                        using (var scope = ContainerUnity.GetContainer().CreateScope())
+                        {
+                            var acceptContext = new WebSocketAcceptContext(scope.ServiceProvider, c.WebSocket, context.User, WebSocketBuildOption.Default);
+                            await WebSocketHandler.Accept(handlerType, acceptContext);
+                        }
                     }
                 });
             }

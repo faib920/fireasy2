@@ -31,7 +31,7 @@ namespace Microsoft.Extensions.DependencyInjection
             {
                 setupAction(options);
 
-                foreach (var binder in options.binders)
+                foreach (var binder in options._binders)
                 {
                     SettingsBindManager.RegisterBinder(binder.Key, binder.Value);
                 }

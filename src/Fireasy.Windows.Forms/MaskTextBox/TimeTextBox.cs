@@ -1,7 +1,6 @@
 using System;
-using System.ComponentModel;
 using System.Collections;
-using System.Text;
+using System.ComponentModel;
 
 namespace Fireasy.Windows.Forms
 {
@@ -13,7 +12,7 @@ namespace Fireasy.Windows.Forms
     {
         public TimeTextBox()
         {
-            m_behavior = new TimeBehavior(this);
+            _behavior = new TimeBehavior(this);
         }
 
         public TimeTextBox(TimeBehavior behavior)
@@ -27,7 +26,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return (TimeBehavior)m_behavior;
+                return (TimeBehavior)_behavior;
             }
         }
 

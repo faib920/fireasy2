@@ -1,7 +1,4 @@
-using System;
 using System.ComponentModel;
-using System.ComponentModel.Design;
-using System.Collections;
 using System.Windows.Forms;
 using System.Windows.Forms.Design;
 
@@ -12,7 +9,7 @@ namespace Fireasy.Windows.Forms
     DefaultProperty("Text")]
     public abstract class MaskBaseTextBox : TextBox
     {
-        protected Behavior m_behavior = null;
+        protected Behavior _behavior = null;
 
         protected MaskBaseTextBox()
         {
@@ -20,20 +17,20 @@ namespace Fireasy.Windows.Forms
 
         internal MaskBaseTextBox(Behavior behavior)
         {
-            m_behavior = behavior;
+            _behavior = behavior;
         }
 
         public bool UpdateText()
         {
-            return m_behavior.UpdateText();
+            return _behavior.UpdateText();
         }
 
         [Category("Behavior")]
         [Description("")]
         public int Flags
         {
-            get { return m_behavior.Flags; }
-            set { m_behavior.Flags = value; }
+            get { return _behavior.Flags; }
+            set { _behavior.Flags = value; }
         }
 
         /// <summary>
@@ -43,7 +40,7 @@ namespace Fireasy.Windows.Forms
         /// <param name="addOrRemove"></param>
         public void ModifyFlags(int flags, bool addOrRemove)
         {
-            m_behavior.ModifyFlags(flags, addOrRemove);
+            _behavior.ModifyFlags(flags, addOrRemove);
         }
 
         /// <summary>
@@ -52,7 +49,7 @@ namespace Fireasy.Windows.Forms
         /// <returns></returns>
         public bool Validate()
         {
-            return m_behavior.Validate();
+            return _behavior.Validate();
         }
 
         /// <summary>
@@ -61,7 +58,7 @@ namespace Fireasy.Windows.Forms
         /// <returns></returns>
         public bool IsValid()
         {
-            return m_behavior.IsValid();
+            return _behavior.IsValid();
         }
 
         /// <summary>
@@ -70,7 +67,7 @@ namespace Fireasy.Windows.Forms
         /// <param name="message"></param>
         public void ShowErrorMessageBox(string message)
         {
-            m_behavior.ShowErrorMessageBox(message);
+            _behavior.ShowErrorMessageBox(message);
         }
 
         /// <summary>
@@ -79,13 +76,13 @@ namespace Fireasy.Windows.Forms
         /// <param name="message"></param>
         public void ShowErrorIcon(string message)
         {
-            m_behavior.ShowErrorIcon(message);
+            _behavior.ShowErrorIcon(message);
         }
 
         [Browsable(false)]
         public string ErrorMessage
         {
-            get { return m_behavior.ErrorMessage; }
+            get { return _behavior.ErrorMessage; }
         }
 
         internal class Designer : ControlDesigner

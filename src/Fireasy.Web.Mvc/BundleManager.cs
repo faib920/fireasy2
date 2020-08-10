@@ -7,10 +7,10 @@
 // -----------------------------------------------------------------------
 #if !NETCOREAPP
 using Fireasy.Common.Configuration;
+using Fireasy.Web.Mvc.Configuration;
 using System.Text;
 using System.Web;
 using System.Web.Optimization;
-using Fireasy.Web.Mvc.Configuration;
 
 namespace Fireasy.Web.Mvc
 {

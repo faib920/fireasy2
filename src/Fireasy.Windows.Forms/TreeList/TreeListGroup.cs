@@ -1,4 +1,11 @@
-﻿using System.ComponentModel;
+﻿// -----------------------------------------------------------------------
+// <copyright company="Fireasy"
+//      email="faib920@126.com"
+//      qq="55570729">
+//   (c) Copyright Fireasy. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+using System.ComponentModel;
 
 namespace Fireasy.Windows.Forms
 {
@@ -7,7 +14,7 @@ namespace Fireasy.Windows.Forms
     [DefaultProperty("Text")]
     public class TreeListGroup : Component, IVirtualItem
     {
-        private bool expanded = true;
+        private bool _expanded = true;
 
         public TreeListGroup(string text)
         {
@@ -32,12 +39,12 @@ namespace Fireasy.Windows.Forms
         [Browsable(false)]
         public bool Expended
         {
-            get { return expanded; }
+            get { return _expanded; }
             set
             {
-                if (expanded != value)
+                if (_expanded != value)
                 {
-                    expanded = value;
+                    _expanded = value;
                     if (TreeList != null)
                     {
                         if (value && ShowExpanded)

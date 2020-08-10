@@ -127,6 +127,7 @@ namespace Fireasy.Data.Entity
         public async virtual Task<int> InsertAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(entity, nameof(entity));
+            cancellationToken.ThrowIfCancellationRequested();
 
             if (_options.AllowDefaultValue)
             {
@@ -158,6 +159,8 @@ namespace Fireasy.Data.Entity
         /// <returns>如果主键是自增类型，则为主键值，否则为影响的实体数。</returns>
         public async virtual Task<int> InsertAsync(Expression<Func<TEntity>> creator, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var entity = EntityProxyManager.GetType(ContextType, typeof(TEntity)).New<TEntity>();
             entity.InitByExpression(creator);
 
@@ -189,6 +192,7 @@ namespace Fireasy.Data.Entity
         public async virtual Task<int> InsertAsync(Action<TEntity> initializer, CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(initializer, nameof(initializer));
+            cancellationToken.ThrowIfCancellationRequested();
 
             var entity = EntityProxyManager.GetType(ContextType, typeof(TEntity)).New<TEntity>();
             initializer(entity);
@@ -222,6 +226,7 @@ namespace Fireasy.Data.Entity
         public async virtual Task BatchInsertAsync(IEnumerable<TEntity> entities, int batchSize = 1000, Action<int> completePercentage = null, CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(entities, nameof(entities));
+            cancellationToken.ThrowIfCancellationRequested();
 
             await _repositoryProxy.BatchInsertAsync(entities, batchSize, completePercentage, cancellationToken);
         }
@@ -261,6 +266,7 @@ namespace Fireasy.Data.Entity
         public async virtual Task<int> InsertOrUpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(entity, nameof(entity));
+            cancellationToken.ThrowIfCancellationRequested();
 
             var properties = PropertyUnity.GetPrimaryProperties(typeof(TEntity));
             var isNew = entity.EntityState == EntityState.Attached;
@@ -302,6 +308,7 @@ namespace Fireasy.Data.Entity
         public async virtual Task<int> DeleteAsync(TEntity entity, bool logicalDelete = true, CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(entity, nameof(entity));
+            cancellationToken.ThrowIfCancellationRequested();
 
             return await _subMgr.OnRemoveAsync<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
                 () => _repositoryProxy.DeleteAsync(entity, logicalDelete, cancellationToken));
@@ -365,6 +372,8 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public async virtual Task<int> DeleteAsync(PropertyValue[] primaryValues, bool logicalDelete = true, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var ret = await _repositoryProxy.DeleteAsync(primaryValues, logicalDelete, cancellationToken);
             if (ret > 0 && _options.NotifyEvents)
             {
@@ -400,6 +409,8 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public async virtual Task<int> DeleteAsync(Expression<Func<TEntity, bool>> predicate, bool logicalDelete = true, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var ret = await _repositoryProxy.DeleteAsync(predicate, logicalDelete);
             if (ret > 0 && _options.NotifyEvents)
             {
@@ -434,6 +445,7 @@ namespace Fireasy.Data.Entity
         public async virtual Task<int> UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(entity, nameof(entity));
+            cancellationToken.ThrowIfCancellationRequested();
 
             return await _subMgr.OnUpdateAsync<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
                 () => _repositoryProxy.UpdateAsync(HandleValidate(entity), cancellationToken));
@@ -465,6 +477,8 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public async virtual Task<int> UpdateAsync(TEntity entity, Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var ret = await _repositoryProxy.UpdateAsync(entity, predicate);
             if (ret > 0 && _options.NotifyEvents)
             {
@@ -497,6 +511,8 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public async virtual Task<int> UpdateAsync(Expression<Func<TEntity>> creator, Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var entity = EntityProxyManager.GetType(ContextType, typeof(TEntity)).New<TEntity>();
             entity.InitByExpression(creator);
 
@@ -530,6 +546,7 @@ namespace Fireasy.Data.Entity
         public async virtual Task<int> UpdateAsync(Action<TEntity> initializer, Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(initializer, nameof(initializer));
+            cancellationToken.ThrowIfCancellationRequested();
 
             var entity = EntityProxyManager.GetType(ContextType, typeof(TEntity)).New<TEntity>();
 
@@ -564,6 +581,8 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public async virtual Task<int> UpdateAsync(Expression<Func<TEntity, TEntity>> calculator, Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var ret = await _repositoryProxy.UpdateAsync(calculator, predicate, cancellationToken);
             if (ret > 0 && _options.NotifyEvents)
             {
@@ -612,6 +631,8 @@ namespace Fireasy.Data.Entity
             {
                 return -1;
             }
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             var operateName = OperateFinder.Find(fnOperation);
             var eventType = GetEventType(operateName);

@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Options;
-using System;
 using System.Text;
 
 namespace Fireasy.Web.Mvc

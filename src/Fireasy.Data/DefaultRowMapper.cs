@@ -1,4 +1,5 @@
 ﻿using Fireasy.Common.Extensions;
+using Fireasy.Data.Converter;
 using Fireasy.Data.Extensions;
 // -----------------------------------------------------------------------
 // <copyright company="Fireasy"
@@ -23,13 +24,11 @@ namespace Fireasy.Data
     public sealed class DefaultRowMapper<T> : FieldRowMapperBase<T>
     {
         private Func<IDataReader, T> _funcDataRecd;
-        private Func<DataRow, T> _funcDataRow;
 
         private class MethodCache
         {
-            internal static readonly MethodInfo IsDBNull = typeof(IDataRecord).GetMethod(nameof(IDataReader.IsDBNull), new[] { typeof(int) });
-            internal static readonly MethodInfo ToType = typeof(DataExtension).GetMethod(nameof(DataExtension.ToTypeEx), BindingFlags.NonPublic | BindingFlags.Static);
-            internal static readonly PropertyInfo DataRowIndex = typeof(DataRow).GetProperty("Item", new[] { typeof(int) });
+            internal protected static readonly MethodInfo IsDBNull = typeof(IDataRecord).GetMethod(nameof(IDataReader.IsDBNull), new[] { typeof(int) });
+            internal protected static readonly MethodInfo ConvertFrom = typeof(IValueConverter).GetMethod(nameof(IValueConverter.ConvertFrom));
         }
 
         /// <summary>
@@ -51,24 +50,6 @@ namespace Fireasy.Data
             return result;
         }
 
-        /// <summary>
-        /// 将一个 <see cref="DataRow"/> 转换为一个 <typeparamref name="T"/> 的对象。
-        /// </summary>
-        /// <param name="database">当前的 <see cref="IDatabase"/> 对象。</param>
-        /// <param name="row">一个 <see cref="DataRow"/> 对象。</param>
-        /// <returns>由 <see cref="DataRow"/> 中数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
-        public override T Map(IDatabase database, DataRow row)
-        {
-            if (_funcDataRecd == null)
-            {
-                CompileFunction(row);
-            }
-
-            var result = _funcDataRow(row);
-            Initializer?.Invoke(result);
-
-            return result;
-        }
 
         private IEnumerable<PropertyInfo> GetProperties()
         {
@@ -97,22 +78,25 @@ namespace Fireasy.Data
                 {
                     var dbType = reader.GetFieldType(s.Index);
                     var getValueMethod = Data.RecordWrapper.RecordWrapHelper.GetMethodByOrdinal(dbType.GetDbType());
-                    //ToTypeEx<TS, TC>()
-                    var convertMT = MethodCache.ToType.MakeGenericMethod(dbType, s.Info.PropertyType);
 
                     var expression = (Expression)Expression.Call(rowMapExp, getValueMethod, new Expression[] { parExp, Expression.Constant(s.Index) });
-                    var convertExp = Expression.Call(convertMT, new Expression[] { expression });
 
-                    if (s.Info.PropertyType.IsNullableType())
+                    if (ConvertManager.CanConvert(s.Info.PropertyType))
+                    {
+                        var converter = Expression.Call(typeof(ConvertManager), nameof(ConvertManager.GetConverter), null, Expression.Constant(s.Info.PropertyType));
+                        expression = Expression.Call(converter, MethodCache.ConvertFrom, Expression.Convert(expression, typeof(object)), Expression.Constant(dbType.GetDbType()));
+                        expression = Expression.Convert(expression, s.Info.PropertyType);
+                    }
+                    else if (s.Info.PropertyType.IsNullableType())
                     {
                         expression = Expression.Condition(
                             Expression.Call(parExp, MethodCache.IsDBNull, Expression.Constant(s.Index, typeof(int))),
-                            Expression.Convert(Expression.Constant(null), s.Info.PropertyType),
-                        convertExp);
+                                Expression.Convert(Expression.Constant(null), s.Info.PropertyType),
+                            Expression.Convert(expression, s.Info.PropertyType));
                     }
                     else if (dbType != s.Info.PropertyType)
                     {
-                        expression = convertExp;
+                        expression = Expression.Convert(expression, s.Info.PropertyType);
                     }
 
                     return Expression.Bind(s.Info, expression);
@@ -126,35 +110,6 @@ namespace Fireasy.Data
                     parExp);
 
             _funcDataRecd = expr.Compile();
-        }
-
-        private void CompileFunction(DataRow row)
-        {
-            var newExp = Expression.New(typeof(T));
-            var mapping = GetMapping(GetDataRowFields(row));
-
-            var parExp = Expression.Parameter(typeof(DataRow), "s");
-            var bindings =
-                mapping.Select(s => (MemberBinding)
-                    Expression.Bind(
-                        s.Info,
-                        Expression.Convert(
-                            Expression.Call(MethodCache.ToType, new Expression[]
-                                {
-                                    Expression.MakeIndex(parExp, MethodCache.DataRowIndex, new List<Expression> { Expression.Constant(s.Index) }),
-                                    Expression.Constant(s.Info.PropertyType),
-                                    Expression.Constant(null)
-                                }
-                            ), s.Info.PropertyType)));
-
-            var expr =
-                Expression.Lambda<Func<DataRow, T>>(
-                    Expression.MemberInit(
-                        newExp,
-                        bindings),
-                    parExp);
-
-            _funcDataRow = expr.Compile();
         }
     }
 }

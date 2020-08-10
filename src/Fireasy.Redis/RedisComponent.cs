@@ -24,7 +24,7 @@ namespace Fireasy.Redis
     /// <summary>
     /// Redis 组件抽象类。
     /// </summary>
-    public abstract class RedisComponent : DisposeableBase, IConfigurationSettingHostService, IServiceProviderAccessor
+    public abstract class RedisComponent : DisposableBase, IConfigurationSettingHostService, IServiceProviderAccessor
     {
         private List<int> _dbRanage;
         private Func<string, string> _captureRule;

@@ -15,7 +15,6 @@ namespace Fireasy.Data
     public abstract class ExpressionRowMapper<T> : IDataRowMapper<T>
     {
         private Func<IDatabase, IDataReader, T> _funcDataRecd;
-        private Func<IDatabase, DataRow, T> _funcDataRow;
 
         /// <summary>
         /// 将一个 <see cref="IDataReader"/> 转换为一个 <typeparamref name="T"/> 的对象。
@@ -36,24 +35,6 @@ namespace Fireasy.Data
         }
 
         /// <summary>
-        /// 将一个 <see cref="DataRow"/> 转换为一个 <typeparamref name="T"/> 的对象。
-        /// </summary>
-        /// <param name="row">一个 <see cref="DataRow"/> 对象。</param>
-        /// <returns>由 <see cref="DataRow"/> 中数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
-        public virtual T Map(IDatabase database, DataRow row)
-        {
-            if (_funcDataRow == null)
-            {
-                _funcDataRow = BuildExpressionForDataRow().Compile();
-            }
-
-            var result = _funcDataRow(database, row);
-            Initializer?.Invoke(result);
-
-            return result;
-        }
-
-        /// <summary>
         /// 获取或设置 <see cref="IRecordWrapper"/>。
         /// </summary>
         public IRecordWrapper RecordWrapper { get; set; }
@@ -68,21 +49,10 @@ namespace Fireasy.Data
             return Map(database, reader);
         }
 
-        object IDataRowMapper.Map(IDatabase database, DataRow row)
-        {
-            return Map(database, row);
-        }
-
         /// <summary>
         /// 为 <see cref="IDataReader"/> 构造表达式。
         /// </summary>
         /// <returns></returns>
         protected abstract Expression<Func<IDatabase, IDataReader, T>> BuildExpressionForDataReader();
-
-        /// <summary>
-        /// 为 <see cref="DataReader"/> 构造表达式。
-        /// </summary>
-        /// <returns></returns>
-        protected abstract Expression<Func<IDatabase, DataRow, T>> BuildExpressionForDataRow();
     }
 }

@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 #if NETFRAMEWORK
+using Fireasy.Common.Ioc;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -28,8 +29,11 @@ namespace Fireasy.Web.Sockets
                 if (listenerContext.Request.IsWebSocketRequest)
                 {
                     var socketContext = await listenerContext.AcceptWebSocketAsync(null, options.KeepAliveInterval);
-                    var acceptContext = new WebSocketAcceptContext(socketContext.WebSocket, listenerContext.User, options);
-                    await WebSocketHandler.Accept<T>(acceptContext);
+                    using (var scope = ContainerUnity.GetContainer().CreateScope())
+                    {
+                        var acceptContext = new WebSocketAcceptContext(scope.ServiceProvider, socketContext.WebSocket, listenerContext.User, options);
+                        await WebSocketHandler.Accept<T>(acceptContext);
+                    }
                 }
                 else
                 {

@@ -16,7 +16,7 @@ namespace Fireasy.Common.Serialization
     /// <summary>
     /// 表示可连续读取json文本的读取器。
     /// </summary>
-    public sealed class JsonReader : DisposeableBase
+    public sealed class JsonReader : DisposableBase
     {
         private TextReader _reader;
 

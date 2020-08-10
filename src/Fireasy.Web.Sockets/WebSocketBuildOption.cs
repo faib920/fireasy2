@@ -16,7 +16,7 @@ namespace Fireasy.Web.Sockets
     /// </summary>
     public class WebSocketBuildOption
     {
-        private Dictionary<string, Type> mapping = new Dictionary<string, Type>();
+        private readonly Dictionary<string, Type> _mapping = new Dictionary<string, Type>();
 
 #if !NETSTANDARD
         public static readonly WebSocketBuildOption Default = new WebSocketBuildOption();
@@ -63,7 +63,7 @@ namespace Fireasy.Web.Sockets
         /// <param name="path"></param>
         public void MapHandler<T>(string path) where T : WebSocketHandler
         {
-            mapping.Add(path, typeof(T));
+            _mapping.Add(path, typeof(T));
         }
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace Fireasy.Web.Sockets
         /// <returns></returns>
         public Type GetHandlerType(string path)
         {
-            if (mapping.TryGetValue(path, out Type type))
+            if (_mapping.TryGetValue(path, out Type type))
             {
                 return type;
             }

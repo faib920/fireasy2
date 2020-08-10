@@ -17,13 +17,13 @@ namespace Fireasy.Windows.Forms
     /// </summary>
     public class PopupComboBox : ComboBox
     {
-        private Popup dropDown;
-        private Control dropDownControl;
-        private bool isFirstDrop = true;
-        private bool isOpened = false;
-        private bool isDroped = false;
-        private object selectedValue;
-        private object selectedItem;
+        private Popup _dropDown;
+        private Control _dropDownControl;
+        private bool _isFirstDrop = true;
+        private bool _isOpened = false;
+        private bool _isDroped = false;
+        private object _selectedValue;
+        private object _selectedItem;
 
         public new event EventHandler DropDown;
         public new event EventHandler DropDownClosed;
@@ -64,32 +64,32 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return dropDownControl;
+                return _dropDownControl;
             }
             set
             {
-                if (dropDownControl == value)
+                if (_dropDownControl == value)
                 {
                     return;
                 }
 
-                dropDownControl = value;
+                _dropDownControl = value;
 
-                if (dropDown != null)
+                if (_dropDown != null)
                 {
-                    dropDown.Dispose();
+                    _dropDown.Dispose();
                 }
 
-                dropDown = new Popup(value)
+                _dropDown = new Popup(value)
                 {
                     FocusOnOpen = FocusOnOpen,
                     UseFadeEffect = UseFadeEffect,
                     Resizable = Resizable
                 };
 
-                dropDown.Opening += (o, e) => isOpened = true;
-                dropDown.Opened += (o, e) => { isDroped = true; OnPopupOpened(); };
-                dropDown.Closed += (o, e) => isDroped = false;
+                _dropDown.Opening += (o, e) => _isOpened = true;
+                _dropDown.Opened += (o, e) => { _isDroped = true; OnPopupOpened(); };
+                _dropDown.Closed += (o, e) => _isDroped = false;
             }
         }
 
@@ -100,7 +100,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return dropDown.Visible;
+                return _dropDown.Visible;
             }
             set
             {
@@ -120,22 +120,22 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         public void ShowDropDown()
         {
-            if (dropDown != null)
+            if (_dropDown != null)
             {
                 DropDown?.Invoke(this, EventArgs.Empty);
 
-                if (isFirstDrop)
+                if (_isFirstDrop)
                 {
-                    dropDown.Width = DropDownWidth;
-                    dropDown.Height = DropDownHeight;
+                    _dropDown.Width = DropDownWidth;
+                    _dropDown.Height = DropDownHeight;
                     DropDownControl.LostFocus += (o, e) =>
                     {
-                        isOpened = false;
+                        _isOpened = false;
                     };
-                    isFirstDrop = false;
+                    _isFirstDrop = false;
                 }
 
-                dropDown.Show(this);
+                _dropDown.Show(this);
                 OnDropDown(EventArgs.Empty);
             }
         }
@@ -145,9 +145,9 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         public void HideDropDown()
         {
-            if (dropDown != null)
+            if (_dropDown != null)
             {
-                dropDown.Hide();
+                _dropDown.Hide();
                 DropDownClosed?.Invoke(this, EventArgs.Empty);
             }
         }
@@ -185,7 +185,7 @@ namespace Fireasy.Windows.Forms
 
         protected override void OnResize(EventArgs e)
         {
-            dropDown.Width = DropDownWidth;
+            _dropDown.Width = DropDownWidth;
             base.OnResize(e);
         }
 
@@ -194,8 +194,8 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         public virtual new object SelectedValue
         {
-            get { return selectedValue; }
-            set { selectedValue = value; }
+            get { return _selectedValue; }
+            set { _selectedValue = value; }
         }
 
         /// <summary>
@@ -203,8 +203,8 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         public virtual new object SelectedItem
         {
-            get { return selectedItem; }
-            set { selectedItem = value; }
+            get { return _selectedItem; }
+            set { _selectedItem = value; }
         }
 
         /// <summary>
@@ -232,10 +232,10 @@ namespace Fireasy.Windows.Forms
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         protected override void WndProc(ref Message m)
         {
-            if (m.Msg == (NativeMethods.WM_COMMAND + NativeMethods.WM_REFLECT) &&
+            if (m.Msg == (NativeMethods.W_COMMAND + NativeMethods.W_REFLECT) &&
                 NativeMethods.HIWORD((int)m.WParam) == NativeMethods.CBN_DROPDOWN)
             {
-                if (isDroped)
+                if (_isDroped)
                 {
                     HideDropDown();
                 }

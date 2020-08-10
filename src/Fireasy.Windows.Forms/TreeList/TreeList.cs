@@ -21,55 +21,54 @@ namespace Fireasy.Windows.Forms
     [ToolboxItem(true)]
     public partial class TreeList : Control, IBorderStylization, IBackgroundAligning
     {
-        private TreeListColumnCollection columns;
-        private TreeListItemCollection nodes;
-        private TreeListGroupCollection groups;
-        private TreeListRenderer renderer;
-        private TreeListItem footer;
-        private TreeListHitTestInfo lastHoverHitInfo;
-        private readonly TreeListBound bound;
-        private TreeListSelectedItemCollection selectedList = null;
-        private TreeListCheckedItemCollection checkedList = null;
-        private VScrollBar vbar;
-        private HScrollBar hbar;
-        private Panel psize;
-        private readonly ToolTipWrapper tip;
-        private readonly TreeListEditController editor;
-        private int sortVersion;
-        private SortOrder sortedOrder = SortOrder.None;
-        private TreeListColumn sortedColumn;
-        private VirtualItemManager virMgr;
-        private List<TreeListCell> invalidateCells = new List<TreeListCell>();
+        private TreeListColumnCollection _columns;
+        private TreeListItemCollection _nodes;
+        private TreeListGroupCollection _groups;
+        private TreeListRenderer _renderer;
+        private TreeListItem _footer;
+        private TreeListHitTestInfo _lastHoverHitInfo;
+        private readonly TreeListBound _bound;
+        private TreeListSelectedItemCollection _selectedList = null;
+        private TreeListCheckedItemCollection _checkedList = null;
+        private VScrollBar _vbar;
+        private HScrollBar _hbar;
+        private Panel _psize;
+        private readonly ToolTipWrapper _tip;
+        private readonly TreeListEditController _editor;
+        private int _sortVersion;
+        private SortOrder _sortedOrder = SortOrder.None;
+        private TreeListColumn _sortedColumn;
+        private readonly VirtualItemManager _virMgr;
+        private readonly List<TreeListCell> _invalidateCells = new List<TreeListCell>();
 
         //记录列头调整宽度时拖动线的x位置
-        private int dragSizePos = -1;
-        private bool isUpdating = false;
+        private int _dragSizePos = -1;
+        private bool _isUpdating = false;
 
         //检测列头调整宽度是否超出右边框的距离
         private const int RIGHT_EDGE = 4;
 
-        private int itemHeight = 26;
-        private int headerHeight = 26;
-        //private int groupHeight = 26;
-        private int footerHeight = 30;
-        private int rowNumberWidth = 30;
-        private int indent = 20;
-        private bool showHeader = true;
-        private bool showPlusMinusLines = true;
-        private bool showGridLines = true;
-        private bool showFooter;
-        private bool showPlusMinus;
-        private bool showCheckBoxes;
-        private bool showCheckAllBoxOnHeader;
-        private bool columnHorizontalCenter;
-        private bool useDefaultNodeImage;
-        private Image defaultImage;
-        private Image defaultExpandImage;
-        private Image defaultCollapseImage;
-        private ImageList imageList;
-        private string noneItemText = "没有可显示的数据";
-        private Color alternateBackColor = Color.Empty;
-        private Color groupForeColor = Color.DarkBlue;
+        private int _itemHeight = 26;
+        private int _headerHeight = 26;
+        private int _footerHeight = 30;
+        private int _rowNumberWidth = 30;
+        private int _indent = 20;
+        private bool _showHeader = true;
+        private bool _showPlusMinusLines = true;
+        private bool _showGridLines = true;
+        private bool _showFooter;
+        private bool _showPlusMinus;
+        private bool _showCheckBoxes;
+        private bool _showCheckAllBoxOnHeader;
+        private bool _columnHorizontalCenter;
+        private bool _useDefaultNodeImage;
+        private Image _defaultImage;
+        private Image _defaultExpandImage;
+        private Image _defaultCollapseImage;
+        private ImageList _imageList;
+        private string _noneItemText = "没有可显示的数据";
+        private Color _alternateBackColor = Color.Empty;
+        private Color _groupForeColor = Color.DarkBlue;
 
         /// <summary>
         /// 初始化 <see cref="TreeList"/> 类的新实例。
@@ -83,9 +82,9 @@ namespace Fireasy.Windows.Forms
             SetStyle(ControlStyles.Selectable | ControlStyles.AllPaintingInWmPaint, true);
             SetStyle(ControlStyles.SupportsTransparentBackColor, true);
 
-            bound = new TreeListBound(this);
-            tip = new ToolTipWrapper(this);
-            editor = new TreeListEditController(this);
+            _bound = new TreeListBound(this);
+            _tip = new ToolTipWrapper(this);
+            _editor = new TreeListEditController(this);
 
             BackColor = SystemColors.Window;
             BorderStyle = BorderStyle.Fixed3D;
@@ -96,7 +95,7 @@ namespace Fireasy.Windows.Forms
             LoadingText = "正在加载，请稍候...";
             GroupFont = new System.Drawing.Font("Consolas", 12);
 
-            virMgr = new VirtualItemManager(this);
+            _virMgr = new VirtualItemManager(this);
 
             InitScrollBars();
         }
@@ -111,11 +110,11 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return renderer ?? (renderer = ThemeManager.TreeListRenderer);
+                return _renderer ?? (_renderer = ThemeManager.TreeListRenderer);
             }
             set
             {
-                renderer = value;
+                _renderer = value;
             }
         }
 
@@ -145,12 +144,12 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置交替行的背景颜色。")]
         public Color AlternateBackColor
         {
-            get { return alternateBackColor; }
+            get { return _alternateBackColor; }
             set
             {
-                if (alternateBackColor != value)
+                if (_alternateBackColor != value)
                 {
-                    alternateBackColor = value;
+                    _alternateBackColor = value;
                     Invalidate();
                 }
             }
@@ -164,12 +163,12 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置行的高度。")]
         public int ItemHeight
         {
-            get { return itemHeight; }
+            get { return _itemHeight; }
             set
             {
-                if (itemHeight != value)
+                if (_itemHeight != value)
                 {
-                    itemHeight = value;
+                    _itemHeight = value;
                     Invalidate();
                 }
             }
@@ -183,12 +182,12 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置行号列的宽度。")]
         public int RowNumberWidth
         {
-            get { return rowNumberWidth; }
+            get { return _rowNumberWidth; }
             set
             {
-                if (rowNumberWidth != value)
+                if (_rowNumberWidth != value)
                 {
-                    rowNumberWidth = value;
+                    _rowNumberWidth = value;
                     Invalidate();
                 }
             }
@@ -229,12 +228,12 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置列头的高度。")]
         public int HeaderHeight
         {
-            get { return headerHeight; }
+            get { return _headerHeight; }
             set
             {
-                if (headerHeight != value)
+                if (_headerHeight != value)
                 {
-                    headerHeight = value;
+                    _headerHeight = value;
                     Invalidate();
                 }
             }
@@ -248,12 +247,12 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置页尾的高度。")]
         public int FooterHeight
         {
-            get { return footerHeight; }
+            get { return _footerHeight; }
             set
             {
-                if (footerHeight != value)
+                if (_footerHeight != value)
                 {
-                    footerHeight = value;
+                    _footerHeight = value;
                     Invalidate();
                 }
             }
@@ -267,12 +266,12 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置节点缩进的宽度。")]
         public int Indent
         {
-            get { return indent; }
+            get { return _indent; }
             set
             {
-                if (indent != value)
+                if (_indent != value)
                 {
-                    indent = value;
+                    _indent = value;
                     Invalidate();
                 }
             }
@@ -285,12 +284,12 @@ namespace Fireasy.Windows.Forms
         [DefaultValue("没有可显示的数据时显示的文本")]
         public string NoneItemText
         {
-            get { return noneItemText; }
+            get { return _noneItemText; }
             set
             {
-                if (noneItemText != value)
+                if (_noneItemText != value)
                 {
-                    noneItemText = value;
+                    _noneItemText = value;
                     if (Items.Count == 0)
                     {
                         Invalidate();
@@ -347,7 +346,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return columns ?? (columns = new TreeListColumnCollection(this));
+                return _columns ?? (_columns = new TreeListColumnCollection(this));
             }
         }
 
@@ -360,7 +359,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return groups ?? (groups = new TreeListGroupCollection(this));
+                return _groups ?? (_groups = new TreeListGroupCollection(this));
             }
         }
 
@@ -373,7 +372,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return nodes ?? (nodes = new TreeListItemCollection(this, null, 0));
+                return _nodes ?? (_nodes = new TreeListItemCollection(this, null, 0));
             }
         }
 
@@ -385,13 +384,13 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置是否显示列头。")]
         public bool ShowHeader
         {
-            get { return showHeader; }
+            get { return _showHeader; }
             set
             {
-                if (showHeader != value)
+                if (_showHeader != value)
                 {
-                    showHeader = value;
-                    bound.Reset();
+                    _showHeader = value;
+                    _bound.Reset();
                     SetScrollBars();
                     Invalidate();
                 }
@@ -406,13 +405,13 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置是否显示页脚统计部份。")]
         public bool ShowFooter
         {
-            get { return showFooter; }
+            get { return _showFooter; }
             set
             {
-                if (showFooter != value)
+                if (_showFooter != value)
                 {
-                    showFooter = value;
-                    bound.Reset();
+                    _showFooter = value;
+                    _bound.Reset();
                     SetScrollBars();
                     Invalidate();
                 }
@@ -427,12 +426,12 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置是否显示网格线。")]
         public bool ShowGridLines
         {
-            get { return showGridLines; }
+            get { return _showGridLines; }
             set
             {
-                if (showGridLines != value)
+                if (_showGridLines != value)
                 {
-                    showGridLines = value;
+                    _showGridLines = value;
                     Invalidate();
                 }
             }
@@ -446,12 +445,12 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置是否显示节点的展开/收缩按钮。")]
         public bool ShowPlusMinus
         {
-            get { return showPlusMinus; }
+            get { return _showPlusMinus; }
             set
             {
-                if (showPlusMinus != value)
+                if (_showPlusMinus != value)
                 {
-                    showPlusMinus = value;
+                    _showPlusMinus = value;
                     Invalidate();
                 }
             }
@@ -465,12 +464,12 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置是否显示节点的展开/收缩线条。")]
         public bool ShowPlusMinusLines
         {
-            get { return showPlusMinusLines; }
+            get { return _showPlusMinusLines; }
             set
             {
-                if (showPlusMinusLines != value)
+                if (_showPlusMinusLines != value)
                 {
-                    showPlusMinusLines = value;
+                    _showPlusMinusLines = value;
                     Invalidate();
                 }
             }
@@ -484,12 +483,12 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置是否使用复选框。")]
         public bool ShowCheckBoxes
         {
-            get { return showCheckBoxes; }
+            get { return _showCheckBoxes; }
             set
             {
-                if (showCheckBoxes != value)
+                if (_showCheckBoxes != value)
                 {
-                    showCheckBoxes = value;
+                    _showCheckBoxes = value;
                     Invalidate();
                 }
             }
@@ -503,13 +502,13 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置是否在列头上显示全选复选框。")]
         public bool ShowCheckAllBoxOnHeader
         {
-            get { return showCheckAllBoxOnHeader; }
+            get { return _showCheckAllBoxOnHeader; }
             set
             {
-                if (showCheckAllBoxOnHeader != value)
+                if (_showCheckAllBoxOnHeader != value)
                 {
-                    showCheckAllBoxOnHeader = value;
-                    Invalidate(bound.ColumnBound);
+                    _showCheckAllBoxOnHeader = value;
+                    Invalidate(_bound.ColumnBound);
                 }
             }
         }
@@ -522,12 +521,12 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置列头是否始终水平居中对齐。")]
         public bool ColumnHorizontalCenter
         {
-            get { return columnHorizontalCenter; }
+            get { return _columnHorizontalCenter; }
             set
             {
-                if (columnHorizontalCenter != value)
+                if (_columnHorizontalCenter != value)
                 {
-                    columnHorizontalCenter = value;
+                    _columnHorizontalCenter = value;
                     Invalidate();
                 }
             }
@@ -581,12 +580,12 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置 TreeListItem 默认的图像。")]
         public Image DefaultImage
         {
-            get { return defaultImage; }
+            get { return _defaultImage; }
             set
             {
-                if (defaultImage != value)
+                if (_defaultImage != value)
                 {
-                    defaultImage = value;
+                    _defaultImage = value;
                     Invalidate();
                 }
             }
@@ -600,12 +599,12 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置 TreeListItem 节点展开时的默认图像。")]
         public Image DefaultExpandNodeImage
         {
-            get { return defaultExpandImage; }
+            get { return _defaultExpandImage; }
             set
             {
-                if (defaultExpandImage != value)
+                if (_defaultExpandImage != value)
                 {
-                    defaultExpandImage = value;
+                    _defaultExpandImage = value;
                     Invalidate();
                 }
             }
@@ -619,12 +618,12 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置 TreeListItem 节点收缩时的默认图像。")]
         public Image DefaultCollapseNodeImage
         {
-            get { return defaultCollapseImage; }
+            get { return _defaultCollapseImage; }
             set
             {
-                if (defaultCollapseImage != value)
+                if (_defaultCollapseImage != value)
                 {
-                    defaultCollapseImage = value;
+                    _defaultCollapseImage = value;
                     Invalidate();
                 }
             }
@@ -638,12 +637,12 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置是否使用默认的节点图片。")]
         public bool UseDefaultNodeImage
         {
-            get { return useDefaultNodeImage; }
+            get { return _useDefaultNodeImage; }
             set
             {
-                if (useDefaultNodeImage != value)
+                if (_useDefaultNodeImage != value)
                 {
-                    useDefaultNodeImage = value;
+                    _useDefaultNodeImage = value;
                     Invalidate();
                 }
             }
@@ -665,12 +664,12 @@ namespace Fireasy.Windows.Forms
         [DefaultValue((ImageList)null)]
         public ImageList ImageList
         {
-            get { return imageList; }
+            get { return _imageList; }
             set
             {
-                if (imageList != value)
+                if (_imageList != value)
                 {
-                    imageList = value;
+                    _imageList = value;
                     Invalidate();
                 }
             }
@@ -692,12 +691,12 @@ namespace Fireasy.Windows.Forms
         [Description("获取或设置组的前景颜色。")]
         public Color GroupForeColor
         {
-            get { return groupForeColor; }
+            get { return _groupForeColor; }
             set
             {
-                if (groupForeColor != value)
+                if (_groupForeColor != value)
                 {
-                    groupForeColor = value;
+                    _groupForeColor = value;
                     Invalidate();
                 }
             }
@@ -709,7 +708,7 @@ namespace Fireasy.Windows.Forms
         [Browsable(false)]
         public bool IsValid
         {
-            get { return invalidateCells.Count == 0; }
+            get { return _invalidateCells.Count == 0; }
         }
 
         /// <summary>
@@ -718,7 +717,7 @@ namespace Fireasy.Windows.Forms
         [Browsable(false)]
         public TreeListSelectedItemCollection SelectedItems
         {
-            get { return selectedList ?? (selectedList = new TreeListSelectedItemCollection(this)); }
+            get { return _selectedList ?? (_selectedList = new TreeListSelectedItemCollection(this)); }
         }
 
         /// <summary>
@@ -727,7 +726,7 @@ namespace Fireasy.Windows.Forms
         [Browsable(false)]
         public TreeListCheckedItemCollection CheckedItems
         {
-            get { return checkedList ?? (checkedList = new TreeListCheckedItemCollection(this)); }
+            get { return _checkedList ?? (_checkedList = new TreeListCheckedItemCollection(this)); }
         }
 
         /// <summary>
@@ -738,22 +737,22 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return footer;
+                return _footer;
             }
             set
             {
                 if (value != null && value.GetType() == typeof(TreeListItem))
                 {
-                    footer = new TreeListFooterItem(value);
+                    _footer = new TreeListFooterItem(value);
                 }
                 else
                 {
-                    footer = value;
+                    _footer = value;
                 }
 
-                if (footer != null)
+                if (_footer != null)
                 {
-                    footer.Update(this, null, 0);
+                    _footer.Update(this, null, 0);
                 }
             }
         }
@@ -765,7 +764,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return GetColumnTotalWidth() + (ShowVerScrollBar ? vbar.Width : 0) > bound.WorkBound.Width;
+                return GetColumnTotalWidth() + (ShowVerScrollBar ? _vbar.Width : 0) > _bound.WorkBound.Width;
             }
         }
 
@@ -776,8 +775,8 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                var height = virMgr.Items.Count * GetAdjustItemHeight();
-                return height > bound.WorkBound.Height - bound.ColumnBound.Height - (ShowFooter ? FooterHeight : 0);
+                var height = _virMgr.Items.Count * GetAdjustItemHeight();
+                return height > _bound.WorkBound.Height - _bound.ColumnBound.Height - (ShowFooter ? FooterHeight : 0);
             }
         }
 
@@ -788,7 +787,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return base.Focused || editor.IsEditing;
+                return base.Focused || _editor.IsEditing;
             }
         }
 
@@ -809,11 +808,11 @@ namespace Fireasy.Windows.Forms
         #region 方法重载
         protected override void OnMouseMove(MouseEventArgs e)
         {
-            if (lastHoverHitInfo != null &&
-                lastHoverHitInfo.HitTestType == TreeListHitTestType.ColumnSize &&
+            if (_lastHoverHitInfo != null &&
+                _lastHoverHitInfo.HitTestType == TreeListHitTestType.ColumnSize &&
                 e.Button == MouseButtons.Left)
             {
-                if (e.X <= lastHoverHitInfo.Bounds.Left || e.X > Width - RIGHT_EDGE)
+                if (e.X <= _lastHoverHitInfo.Bounds.Left || e.X > Width - RIGHT_EDGE)
                 {
                     return;
                 }
@@ -821,26 +820,26 @@ namespace Fireasy.Windows.Forms
                 //拖动调整线
                 DrawDragLine(e.X);
 
-                if (dragSizePos != -1)
+                if (_dragSizePos != -1)
                 {
                     //抹去原来的调整线
-                    DrawDragLine(dragSizePos);
+                    DrawDragLine(_dragSizePos);
                 }
 
-                dragSizePos = e.X;
+                _dragSizePos = e.X;
             }
             else
             {
                 var current = HitTest(e.X, e.Y, TreeListHitTestEventType.MouseMove);
 
-                if (current != null && (lastHoverHitInfo == null || !lastHoverHitInfo.Equals(current)))
+                if (current != null && (_lastHoverHitInfo == null || !_lastHoverHitInfo.Equals(current)))
                 {
                     if (e.Button != MouseButtons.Left ||
                         current.HitTestType != TreeListHitTestType.ColumnSize)
                     {
-                        ProcessLastHitTestInfo(current, lastHoverHitInfo);
+                        ProcessLastHitTestInfo(current, _lastHoverHitInfo);
                         ProcessHitTestInfo(current, e.Button == MouseButtons.Left ? DrawState.Pressed : DrawState.Hot);
-                        lastHoverHitInfo = current;
+                        _lastHoverHitInfo = current;
                     }
                 }
             }
@@ -850,10 +849,10 @@ namespace Fireasy.Windows.Forms
 
         protected override void OnMouseLeave(EventArgs e)
         {
-            if (!tip.IsShow)
+            if (!_tip.IsShow)
             {
-                ProcessLastHitTestInfo(null, lastHoverHitInfo);
-                lastHoverHitInfo = null;
+                ProcessLastHitTestInfo(null, _lastHoverHitInfo);
+                _lastHoverHitInfo = null;
             }
 
             base.OnMouseLeave(e);
@@ -867,8 +866,8 @@ namespace Fireasy.Windows.Forms
             }
 
             if (e.Button == MouseButtons.Left &&
-                lastHoverHitInfo != null &&
-                lastHoverHitInfo.HitTestType == TreeListHitTestType.ColumnSize)
+                _lastHoverHitInfo != null &&
+                _lastHoverHitInfo.HitTestType == TreeListHitTestType.ColumnSize)
             {
                 HideEditor();
             }
@@ -880,7 +879,7 @@ namespace Fireasy.Windows.Forms
                 {
                     ProcessHitTestInfoClick(current, TreeListHitTestEventType.MouseDown);
                     ProcessHitTestInfo(current, DrawState.Pressed);
-                    lastHoverHitInfo = current;
+                    _lastHoverHitInfo = current;
                 }
             }
 
@@ -889,18 +888,18 @@ namespace Fireasy.Windows.Forms
 
         protected override void OnMouseUp(MouseEventArgs e)
         {
-            if (lastHoverHitInfo != null &&
-                lastHoverHitInfo.HitTestType == TreeListHitTestType.ColumnSize &&
+            if (_lastHoverHitInfo != null &&
+                _lastHoverHitInfo.HitTestType == TreeListHitTestType.ColumnSize &&
                 e.Button == MouseButtons.Left)
             {
-                ResizeColumnWidth((TreeListColumn)lastHoverHitInfo.Element, e.X);
+                ResizeColumnWidth((TreeListColumn)_lastHoverHitInfo.Element, e.X);
 
                 //抹去原来的调整线
-                DrawDragLine(dragSizePos);
+                DrawDragLine(_dragSizePos);
 
-                dragSizePos = -1;
+                _dragSizePos = -1;
 
-                bound.Reset();
+                _bound.Reset();
                 SetScrollBars();
 
                 Invalidate();
@@ -922,19 +921,19 @@ namespace Fireasy.Windows.Forms
         protected override void OnMouseWheel(MouseEventArgs e)
         {
             base.OnMouseWheel(e);
-            if (vbar.Visible && Focused)
+            if (_vbar.Visible && Focused)
             {
-                int newVal = vbar.Value - ((e.Delta / 120) * SystemInformation.MouseWheelScrollLines * GetAdjustItemHeight());
+                int newVal = _vbar.Value - ((e.Delta / 120) * SystemInformation.MouseWheelScrollLines * GetAdjustItemHeight());
                 if (newVal < 0)
                 {
                     newVal = 0;
                 }
-                else if (newVal > vbar.Maximum - vbar.LargeChange + 1)
+                else if (newVal > _vbar.Maximum - _vbar.LargeChange + 1)
                 {
-                    newVal = vbar.Maximum - vbar.LargeChange + 1;
+                    newVal = _vbar.Maximum - _vbar.LargeChange + 1;
                 }
 
-                vbar.Value = Math.Max(0, newVal);
+                _vbar.Value = Math.Max(0, newVal);
             }
         }
 
@@ -948,7 +947,7 @@ namespace Fireasy.Windows.Forms
         {
             base.OnLostFocus(e);
 
-            if (!editor.IsEditing)
+            if (!_editor.IsEditing)
             {
                 EndEdit();
                 RedrawSelectedItems();
@@ -972,7 +971,7 @@ namespace Fireasy.Windows.Forms
 
         protected override void WndProc(ref Message m)
         {
-            if (m.Msg == NativeMethods.WM_SHOWWINDOW)
+            if (m.Msg == NativeMethods.W_SHOWWINDOW)
             {
                 ProcessSpringColumnWidth();
             }
@@ -982,13 +981,13 @@ namespace Fireasy.Windows.Forms
 
         protected override void CreateHandle()
         {
-            bound.Reset();
+            _bound.Reset();
             base.CreateHandle();
         }
 
         protected override void OnResize(EventArgs e)
         {
-            bound.Reset();
+            _bound.Reset();
             ProcessSpringColumnWidth();
             SetScrollBars();
             base.OnResize(e);
@@ -1007,17 +1006,17 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         public void BeginUpdate()
         {
-            isUpdating = true;
+            _isUpdating = true;
 
             if (ShowLoading)
             {
                 using (var g = CreateGraphics())
                 {
-                    Renderer.DrawLoading(new TreeListRenderEventArgs(this, g, bound.ItemBound));
+                    Renderer.DrawLoading(new TreeListRenderEventArgs(this, g, _bound.ItemBound));
                 }
             }
 
-            NativeMethods.SendMessage(Handle, NativeMethods.WM_SETREDRAW, 0, 0);
+            NativeMethods.SendMessage(Handle, NativeMethods.W_SETREDRAW, 0, 0);
         }
 
         /// <summary>
@@ -1025,9 +1024,9 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         public void EndUpdate()
         {
-            isUpdating = false;
-            lastRowIndex = -1;
-            NativeMethods.SendMessage(Handle, NativeMethods.WM_SETREDRAW, 1, 0);
+            _isUpdating = false;
+            _lastRowIndex = -1;
+            NativeMethods.SendMessage(Handle, NativeMethods.W_SETREDRAW, 1, 0);
             UpdateItems();
         }
 
@@ -1037,7 +1036,7 @@ namespace Fireasy.Windows.Forms
         /// <param name="listitem"></param>
         public void EnsureVisible(TreeListItem listitem)
         {
-            var vitem = virMgr.Items.FirstOrDefault(s => s.Item == listitem);
+            var vitem = _virMgr.Items.FirstOrDefault(s => s.Item == listitem);
             if (vitem == null)
             {
                 var parent = listitem.Parent;
@@ -1048,7 +1047,7 @@ namespace Fireasy.Windows.Forms
                 }
             }
 
-            vitem = virMgr.Items.FirstOrDefault(s => s.Item == listitem);
+            vitem = _virMgr.Items.FirstOrDefault(s => s.Item == listitem);
             if (vitem == null)
             {
                 return;
@@ -1057,13 +1056,13 @@ namespace Fireasy.Windows.Forms
             var offsetTop = GetOffsetTop();
             var itemHeight = GetAdjustItemHeight();
             var y = vitem.Index * itemHeight - offsetTop;
-            if (y + bound.ItemBound.Y < bound.ItemBound.Y)
+            if (y + _bound.ItemBound.Y < _bound.ItemBound.Y)
             {
-                vbar.Value = Math.Max(0, vitem.Index * itemHeight);
+                _vbar.Value = Math.Max(0, vitem.Index * itemHeight);
             }
-            else if (y >= bound.ItemBound.Height - itemHeight)
+            else if (y >= _bound.ItemBound.Height - itemHeight)
             {
-                vbar.Value = Math.Max(0, Math.Min((vitem.Index - (bound.ItemBound.Height + (showHeader ? HeaderHeight : 0)) / itemHeight) * itemHeight, vbar.Maximum));
+                _vbar.Value = Math.Max(0, Math.Min((vitem.Index - (_bound.ItemBound.Height + (_showHeader ? HeaderHeight : 0)) / itemHeight) * itemHeight, _vbar.Maximum));
             }
         }
 
@@ -1077,9 +1076,9 @@ namespace Fireasy.Windows.Forms
             Guard.ArgumentNull(item, nameof(item));
 
             VirtualTreeListItem vitem;
-            if ((vitem = virMgr.Items.FirstOrDefault(s => s.Item.Equals(item))) != null)
+            if ((vitem = _virMgr.Items.FirstOrDefault(s => s.Item.Equals(item))) != null)
             {
-                var y = bound.ColumnBound.Bottom + vitem.Index * GetAdjustItemHeight() - GetOffsetTop();
+                var y = _bound.ColumnBound.Bottom + vitem.Index * GetAdjustItemHeight() - GetOffsetTop();
                 return new Point(GetBorderWidth(), y);
             }
 
@@ -1096,9 +1095,9 @@ namespace Fireasy.Windows.Forms
             Guard.ArgumentNull(cell, nameof(cell));
 
             VirtualTreeListItem vitem;
-            if ((vitem = virMgr.Items.FirstOrDefault(s => s.Item.Equals(cell.Item))) != null)
+            if ((vitem = _virMgr.Items.FirstOrDefault(s => s.Item.Equals(cell.Item))) != null)
             {
-                var y = bound.ColumnBound.Bottom + vitem.Index * GetAdjustItemHeight() - GetOffsetTop();
+                var y = _bound.ColumnBound.Bottom + vitem.Index * GetAdjustItemHeight() - GetOffsetTop();
                 var r = GetColumnBound(cell.Column);
                 return new Point(r.Left, y);
             }
@@ -1132,7 +1131,7 @@ namespace Fireasy.Windows.Forms
         /// <param name="order"></param>
         public void Sort(TreeListColumn column, SortOrder order)
         {
-            Items.Sort(++sortVersion, column, order);
+            Items.Sort(++_sortVersion, column, order);
             UpdateItems();
         }
 
@@ -1141,7 +1140,7 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         public void ResetHighlight()
         {
-            groups.SelectMany(s => s.Items).Where(s => s.Highlight).ForEach(s => s.Highlight = false);
+            _groups.SelectMany(s => s.Items).Where(s => s.Highlight).ForEach(s => s.Highlight = false);
             Items.Where(s => s.Highlight).ForEach(s => s.Highlight = false);
         }
 
@@ -1158,7 +1157,7 @@ namespace Fireasy.Windows.Forms
                 }
 
                 SelectedItems.InternalClear();
-                Invalidate(bound.AvlieBound);
+                Invalidate(_bound.AvlieBound);
             }
 
             item.SetSelected(selected);
@@ -1189,7 +1188,9 @@ namespace Fireasy.Windows.Forms
                 CheckedItems.InternalRemove(item);
             }
 
-            Invalidate(bound.AvlieBound);
+            RaiseItemCheckChanged(item);
+
+            Invalidate(_bound.AvlieBound);
         }
         #endregion
 
@@ -1205,10 +1206,10 @@ namespace Fireasy.Windows.Forms
                 return;
             }
 
-            var workRect = bound.ColumnBound;
+            var workRect = _bound.ColumnBound;
             var x = workRect.X - GetOffsetLeft();
 
-            g.KeepClip(bound.ColumnBound, () =>
+            g.KeepClip(_bound.ColumnBound, () =>
             {
                 foreach (var column in Columns)
                 {
@@ -1240,7 +1241,7 @@ namespace Fireasy.Windows.Forms
                 return;
             }
 
-            var rect = new Rectangle(bound.WorkBound.X, bound.WorkBound.Top, RowNumberWidth, HeaderHeight);
+            var rect = new Rectangle(_bound.WorkBound.X, _bound.WorkBound.Top, RowNumberWidth, HeaderHeight);
             var e = new TreeListColumnRenderEventArgs(null, g, rect);
             Renderer.DrawRowNumberColumn(e);
         }
@@ -1259,9 +1260,9 @@ namespace Fireasy.Windows.Forms
         /// <param name="graphics"></param>
         private void DrawItems(Graphics graphics)
         {
-            var workRect = bound.ItemBound;
+            var workRect = _bound.ItemBound;
 
-            if (virMgr.Items.Count == 0 && !string.IsNullOrEmpty(NoneItemText))
+            if (_virMgr.Items.Count == 0 && !string.IsNullOrEmpty(NoneItemText))
             {
                 Renderer.DrawNoneItem(new TreeListRenderEventArgs(this, graphics, workRect));
                 return;
@@ -1271,21 +1272,21 @@ namespace Fireasy.Windows.Forms
             var isDrawing = false;
             var width = GetColumnTotalWidth();
 
-            var fr = vbar.Value / GetAdjustItemHeight();
+            var fr = _vbar.Value / GetAdjustItemHeight();
             if (fr < 0)
             {
                 fr = 0;
             }
 
-            y -= vbar.Value % GetAdjustItemHeight();
+            y -= _vbar.Value % GetAdjustItemHeight();
 
-            graphics.KeepClip(bound.AvlieBound, () =>
+            graphics.KeepClip(_bound.AvlieBound, () =>
             {
-                for (var i = fr; i < virMgr.Items.Count; i++)
+                for (var i = fr; i < _virMgr.Items.Count; i++)
                 {
-                    var vitem = virMgr.Items[i];
+                    var vitem = _virMgr.Items[i];
                     var rect = GetDrawItemRect(vitem, workRect, y, width);
-                    if (!bound.ItemBound.IntersectsWith(rect) && isDrawing)
+                    if (!_bound.ItemBound.IntersectsWith(rect) && isDrawing)
                     {
                         break;
                     }
@@ -1334,8 +1335,8 @@ namespace Fireasy.Windows.Forms
         {
             var width = GetColumnTotalWidth();
 
-            var y = bound.ItemBound.Y + item.Index * GetAdjustItemHeight() - GetOffsetTop();
-            var rect = new Rectangle(bound.ItemBound.X - hbar.Value, y, width, ItemHeight);
+            var y = _bound.ItemBound.Y + item.Index * GetAdjustItemHeight() - GetOffsetTop();
+            var rect = new Rectangle(_bound.ItemBound.X - _hbar.Value, y, width, ItemHeight);
 
             if (item.Item is TreeListItem titem)
             {
@@ -1362,7 +1363,7 @@ namespace Fireasy.Windows.Forms
                     using (var graphics = CreateGraphics())
                     {
                         var e = new TreeListColumnRenderEventArgs(c, graphics, GetColumnBound(c));
-                        graphics.KeepClip(bound.ColumnBound, () => Renderer.DrawColumnHeader(e));
+                        graphics.KeepClip(_bound.ColumnBound, () => Renderer.DrawColumnHeader(e));
                     }
                 }
             }
@@ -1389,7 +1390,7 @@ namespace Fireasy.Windows.Forms
                         {
                             DrawState = DrawState.Normal
                         };
-                        graphics.KeepClip(bound.ColumnBound, () => Renderer.DrawColumnHeader(drawArgs));
+                        graphics.KeepClip(_bound.ColumnBound, () => Renderer.DrawColumnHeader(drawArgs));
                     }
 
                     break;
@@ -1426,7 +1427,7 @@ namespace Fireasy.Windows.Forms
                     using (var graphics = CreateGraphics())
                     {
                         var rect = info.Bounds;
-                        var h = vitem.Index * GetAdjustItemHeight() + bound.ItemBound.Top - GetOffsetTop() - info.Bounds.Y;
+                        var h = vitem.Index * GetAdjustItemHeight() + _bound.ItemBound.Top - GetOffsetTop() - info.Bounds.Y;
                         if (h != 0)
                         {
                             rect.Offset(0, h);
@@ -1452,8 +1453,8 @@ namespace Fireasy.Windows.Forms
         private void ResizeColumnWidth(TreeListColumn column, int x)
         {
             //如果超出容器的右边，则容器宽度减去RIGHT_EDGE
-            var width = x > Width - RIGHT_EDGE ? Width - RIGHT_EDGE : (x < lastHoverHitInfo.Bounds.Left ? 1 :
-                x - lastHoverHitInfo.Bounds.Left + 4);
+            var width = x > Width - RIGHT_EDGE ? Width - RIGHT_EDGE : (x < _lastHoverHitInfo.Bounds.Left ? 1 :
+                x - _lastHoverHitInfo.Bounds.Left + 4);
             column.SetWidth(width);
         }
 
@@ -1468,8 +1469,8 @@ namespace Fireasy.Windows.Forms
         /// <returns></returns>
         private Rectangle GetAvailableItemBound()
         {
-            var r = bound.ItemBound;
-            r.Width = Math.Min(GetColumnTotalWidth(), bound.WorkBound.Width);
+            var r = _bound.ItemBound;
+            r.Width = Math.Min(GetColumnTotalWidth(), _bound.WorkBound.Width);
             return r;
         }
 
@@ -1480,7 +1481,7 @@ namespace Fireasy.Windows.Forms
         /// <returns></returns>
         internal Rectangle GetColumnBound(TreeListColumn column)
         {
-            var workRect = bound.WorkBound;
+            var workRect = _bound.WorkBound;
             var x = workRect.X - GetOffsetLeft();
             if (ShowRowNumber)
             {
@@ -1507,12 +1508,12 @@ namespace Fireasy.Windows.Forms
 
         internal TreeListBound GetBoundSet()
         {
-            return bound;
+            return _bound;
         }
 
         internal void UpdateItems(int index = -1)
         {
-            if (isUpdating)
+            if (_isUpdating)
             {
                 return;
             }
@@ -1527,16 +1528,16 @@ namespace Fireasy.Windows.Forms
                 SelectedItems.InternalClear();
             }
 
-            virMgr.Recalc();
+            _virMgr.Recalc();
             SetScrollBars();
             Invalidate();
         }
 
         internal SortOrder GetSortOrder(TreeListColumn column)
         {
-            if (column == sortedColumn)
+            if (column == _sortedColumn)
             {
-                return sortedOrder;
+                return _sortedOrder;
             }
 
             return SortOrder.None;
@@ -1548,25 +1549,25 @@ namespace Fireasy.Windows.Forms
         private void InitScrollBars()
         {
             var h = GetAdjustItemHeight();
-            vbar = new VScrollBar() { Visible = false, LargeChange = h * 10, SmallChange = h };
-            vbar.ValueChanged += (o, e) =>
+            _vbar = new VScrollBar() { Visible = false, LargeChange = h * 10, SmallChange = h };
+            _vbar.ValueChanged += (o, e) =>
             {
                 HideEditor();
-                Invalidate(bound.WorkBound);
+                Invalidate(_bound.WorkBound);
             };
-            Controls.Add(vbar);
+            Controls.Add(_vbar);
 
-            hbar = new HScrollBar() { Visible = false, LargeChange = 50, SmallChange = 5 };
-            hbar.ValueChanged += (o, e) =>
+            _hbar = new HScrollBar() { Visible = false, LargeChange = 50, SmallChange = 5 };
+            _hbar.ValueChanged += (o, e) =>
             {
                 HideEditor();
-                Invalidate(bound.WorkBound);
+                Invalidate(_bound.WorkBound);
             };
 
-            Controls.Add(hbar);
+            Controls.Add(_hbar);
 
-            psize = new Panel() { BackColor = SystemColors.Control, Visible = false, Width = vbar.Width, Height = hbar.Height };
-            Controls.Add(psize);
+            _psize = new Panel() { BackColor = SystemColors.Control, Visible = false, Width = _vbar.Width, Height = _hbar.Height };
+            Controls.Add(_psize);
         }
 
         /// <summary>
@@ -1577,58 +1578,58 @@ namespace Fireasy.Windows.Forms
             var itemHeight = GetAdjustItemHeight();
             var width = GetColumnTotalWidth();
             var borderWidth = GetBorderWidth();
-            var height = virMgr.Items.Count * itemHeight;
+            var height = _virMgr.Items.Count * itemHeight;
             var large = GetAdjustItemHeight() * 10;
 
             if (ShowVerScrollBar)
             {
-                vbar.Location = new Point(Width - vbar.Width - borderWidth, borderWidth);
-                vbar.Height = Height - borderWidth * 2 - (ShowHorScrollBar ? hbar.Height : 0);
-                vbar.Maximum = height - bound.ItemBound.Height;
-                vbar.LargeChange = vbar.Maximum <= large ? 10 : large;
-                vbar.Maximum += (vbar.LargeChange + 1);
-                vbar.Visible = true;
+                _vbar.Location = new Point(Width - _vbar.Width - borderWidth, borderWidth);
+                _vbar.Height = Height - borderWidth * 2 - (ShowHorScrollBar ? _hbar.Height : 0);
+                _vbar.Maximum = height - _bound.ItemBound.Height;
+                _vbar.LargeChange = _vbar.Maximum <= large ? 10 : large;
+                _vbar.Maximum += (_vbar.LargeChange + 1);
+                _vbar.Visible = true;
             }
             else
             {
-                vbar.Minimum = vbar.Maximum = 0;
-                vbar.Visible = false;
-                vbar.Value = 0;
+                _vbar.Minimum = _vbar.Maximum = 0;
+                _vbar.Visible = false;
+                _vbar.Value = 0;
             }
 
             if (ShowHorScrollBar)
             {
-                hbar.Location = new Point(borderWidth, Height - hbar.Height - borderWidth);
-                hbar.Width = Width - borderWidth * 2 - (ShowVerScrollBar ? vbar.Width : 0);
-                hbar.Maximum = width - bound.ItemBound.Width;
-                hbar.LargeChange = hbar.Maximum <= 50 ? 10 : 50;
-                hbar.Maximum += (hbar.LargeChange + 1);
-                hbar.Visible = true;
+                _hbar.Location = new Point(borderWidth, Height - _hbar.Height - borderWidth);
+                _hbar.Width = Width - borderWidth * 2 - (ShowVerScrollBar ? _vbar.Width : 0);
+                _hbar.Maximum = width - _bound.ItemBound.Width;
+                _hbar.LargeChange = _hbar.Maximum <= 50 ? 10 : 50;
+                _hbar.Maximum += (_hbar.LargeChange + 1);
+                _hbar.Visible = true;
             }
             else
             {
-                hbar.Minimum = hbar.Maximum = 0;
-                hbar.Visible = false;
-                hbar.Value = 0;
+                _hbar.Minimum = _hbar.Maximum = 0;
+                _hbar.Visible = false;
+                _hbar.Value = 0;
             }
 
             if (ShowVerScrollBar && ShowHorScrollBar)
             {
-                psize.Location = new Point(hbar.Right, vbar.Bottom);
-                psize.Visible = true;
+                _psize.Location = new Point(_hbar.Right, _vbar.Bottom);
+                _psize.Visible = true;
             }
             else
             {
-                psize.Visible = false;
+                _psize.Visible = false;
             }
 
-            bound.Reset();
+            _bound.Reset();
         }
 
         private Rectangle OffsetHorRectangle(Rectangle rect)
         {
             var r = rect;
-            r.Offset(-hbar.Value, 0);
+            r.Offset(-_hbar.Value, 0);
             return r;
         }
 
@@ -1639,7 +1640,7 @@ namespace Fireasy.Windows.Forms
 
         private int GetBorderWidth()
         {
-            return bound.ItemBound.X - bound.RowNumberBound.Width;
+            return _bound.ItemBound.X - _bound.RowNumberBound.Width;
         }
 
         private int IncreaseItemY(int y)
@@ -1666,12 +1667,12 @@ namespace Fireasy.Windows.Forms
 
         private int GetOffsetLeft()
         {
-            return hbar.Visible ? hbar.Value : 0;
+            return _hbar.Visible ? _hbar.Value : 0;
         }
 
         private int GetOffsetTop()
         {
-            return vbar.Visible ? vbar.Value : 0;
+            return _vbar.Visible ? _vbar.Value : 0;
         }
 
         private TreeListColumn GetFirstColumn()
@@ -1747,9 +1748,9 @@ namespace Fireasy.Windows.Forms
         /// <param name="rect">要显示的矩形区域。</param>
         private void ShowToolTip(TreeListCell cell, Rectangle rect)
         {
-            if (!rect.IsEmpty && IsTextOverflow(cell, rect) && editor.Cell != cell)
+            if (!rect.IsEmpty && IsTextOverflow(cell, rect) && _editor.Cell != cell)
             {
-                tip.Show(cell, rect);
+                _tip.Show(cell, rect);
             }
             else
             {
@@ -1762,17 +1763,17 @@ namespace Fireasy.Windows.Forms
         /// </summary>
         private void HideToolTip()
         {
-            if (!tip.IsShow)
+            if (!_tip.IsShow)
             {
                 return;
             }
 
-            tip.Hide();
+            _tip.Hide();
         }
 
         private void HideEditor()
         {
-            editor.AcceptEdit();
+            _editor.AcceptEdit();
         }
 
         public void BeginEdit(TreeListCell cell)
@@ -1794,31 +1795,31 @@ namespace Fireasy.Windows.Forms
                 cell.Item.Selected = true;
             }
 
-            editor.BeginEdit(cell, rect);
+            _editor.BeginEdit(cell, rect);
         }
 
         public void EndEdit()
         {
-            editor.AcceptEdit();
+            _editor.AcceptEdit();
         }
 
         private Rectangle GetCellRectangle(TreeListCell cell)
         {
-            var item = virMgr.Items.FirstOrDefault(s => s.Item == cell.Item);
+            var item = _virMgr.Items.FirstOrDefault(s => s.Item == cell.Item);
             if (item == null)
             {
                 return Rectangle.Empty;
             }
 
             var r = GetColumnBound(cell.Column);
-            var y = bound.ItemBound.Y + item.Index * GetAdjustItemHeight() - GetOffsetTop();
+            var y = _bound.ItemBound.Y + item.Index * GetAdjustItemHeight() - GetOffsetTop();
             return new Rectangle(r.Left, y, r.Width, ItemHeight);
         }
 
         private void InvalidateItem(VirtualTreeListItem item)
         {
-            var y = bound.ItemBound.Y + item.Index * GetAdjustItemHeight() - GetOffsetTop();
-            var rect = new Rectangle(bound.AvlieBound.X - hbar.Value, y, bound.AvlieBound.Width, ItemHeight);
+            var y = _bound.ItemBound.Y + item.Index * GetAdjustItemHeight() - GetOffsetTop();
+            var rect = new Rectangle(_bound.AvlieBound.X - _hbar.Value, y, _bound.AvlieBound.Width, ItemHeight);
 
             Invalidate(rect);
         }
@@ -1827,11 +1828,11 @@ namespace Fireasy.Windows.Forms
         {
             if (Footer == item)
             {
-                Invalidate(bound.FooterBound);
+                Invalidate(_bound.FooterBound);
             }
             else
             {
-                var vitem = virMgr.Items.FirstOrDefault(s => s.Item == item);
+                var vitem = _virMgr.Items.FirstOrDefault(s => s.Item == item);
                 if (vitem != null)
                 {
                     InvalidateItem(vitem);
@@ -1843,36 +1844,36 @@ namespace Fireasy.Windows.Forms
         {
             if (ShowHeader)
             {
-                Invalidate(bound.ColumnBound);
+                Invalidate(_bound.ColumnBound);
             }
         }
 
         internal void UpdateValidateFlags(TreeListCell cell)
         {
-            if (!cell.IsValid && !invalidateCells.Contains(cell))
+            if (!cell.IsValid && !_invalidateCells.Contains(cell))
             {
-                invalidateCells.Add(cell);
+                _invalidateCells.Add(cell);
             }
-            else if (cell.IsValid && invalidateCells.Contains(cell))
+            else if (cell.IsValid && _invalidateCells.Contains(cell))
             {
-                invalidateCells.Remove(cell);
+                _invalidateCells.Remove(cell);
             }
         }
 
         internal void RemoveValidateFlags(TreeListItem item)
         {
-            for (var i = invalidateCells.Count - 1; i >= 0; i--)
+            for (var i = _invalidateCells.Count - 1; i >= 0; i--)
             {
-                if (invalidateCells[i].Item == item)
+                if (_invalidateCells[i].Item == item)
                 {
-                    invalidateCells.RemoveAt(i);
+                    _invalidateCells.RemoveAt(i);
                 }
             }
         }
 
         internal void RemoveValidateFlags()
         {
-            invalidateCells.Clear();
+            _invalidateCells.Clear();
         }
         #endregion
     }

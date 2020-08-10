@@ -1,7 +1,5 @@
-using System;
-using System.ComponentModel;
 using System.Collections;
-using System.Text;
+using System.ComponentModel;
 
 namespace Fireasy.Windows.Forms
 {
@@ -12,12 +10,12 @@ namespace Fireasy.Windows.Forms
     {
         public MaskTextBox()
         {
-            m_behavior = new MaskBehavior(this);
+            _behavior = new MaskBehavior(this);
         }
 
         public MaskTextBox(string mask)
         {
-            m_behavior = new MaskBehavior(this, mask);
+            _behavior = new MaskBehavior(this, mask);
         }
 
         public MaskTextBox(MaskBehavior behavior)
@@ -31,7 +29,7 @@ namespace Fireasy.Windows.Forms
         {
             get
             {
-                return (MaskBehavior)m_behavior;
+                return (MaskBehavior)_behavior;
             }
         }
 

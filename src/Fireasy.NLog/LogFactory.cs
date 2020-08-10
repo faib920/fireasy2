@@ -6,12 +6,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Configuration;
+using System;
 
 namespace Fireasy.NLog
 {
     public class LogFactory : IManagedFactory
     {
-        object IManagedFactory.CreateInstance(string name)
+        object IManagedFactory.CreateInstance(IServiceProvider serviceProvider, string name)
         {
             return new Logger();
         }

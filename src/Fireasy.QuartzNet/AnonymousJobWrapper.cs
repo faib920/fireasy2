@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using Quartz;
 using System;
 using System.Threading;
@@ -29,7 +30,8 @@ namespace Fireasy.QuartzNet
                 var serviceProvider = context.MergedJobDataMap["serviceProvider"] as IServiceProvider;
                 var cancellationToken = (CancellationToken)context.MergedJobDataMap["cancellationToken"];
 
-                executor(serviceProvider, cancellationToken);
+                using var scope = serviceProvider.TryCreateScope();
+                executor(scope.ServiceProvider, cancellationToken);
             }
         }
     }

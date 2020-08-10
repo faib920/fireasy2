@@ -28,7 +28,7 @@ namespace Fireasy.Web.Mvc
             Encoding = Encoding.UTF8
         }.ToString();
 
-        private MvcOptions mvcOptions;
+        private readonly MvcOptions _mvcOptions;
 
         public JsonResultExecutor(IHttpResponseStreamWriterFactory writerFactory,
             ILogger<JsonResultExecutor> logger,
@@ -37,7 +37,7 @@ namespace Fireasy.Web.Mvc
             ArrayPool<char> charPool)
             : base(writerFactory, logger, jsonOptions, charPool)
         {
-            this.mvcOptions = mvcOptions.Value;
+            _mvcOptions = mvcOptions.Value;
         }
 
         public override Task ExecuteAsync(ActionContext context, JsonResult result)
@@ -82,11 +82,11 @@ namespace Fireasy.Web.Mvc
 
                 if (option == null)
                 {
-                    option = mvcOptions.JsonSerializeOption;
+                    option = _mvcOptions.JsonSerializeOption;
                 }
                 else
                 {
-                    option.Reference(mvcOptions.JsonSerializeOption);
+                    option.Reference(_mvcOptions.JsonSerializeOption);
                 }
 
                 var serializer = serviceProvider.TryGetService<ISerializer>(() => new JsonSerializer(option));

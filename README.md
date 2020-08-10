@@ -20,11 +20,9 @@ Fireasy 支持 net3.5(已废弃)/net4.0(已废弃)/net4.5/net4.6/net4.7/netstand
 *	[Fireasy.QuartzNet](https://www.nuget.org/packages/Fireasy.QuartzNet)
 *	[Fireasy.Aliyun.AMQP](https://www.nuget.org/packages/Fireasy.Aliyun.AMQP)
 
+Fireasy 的在线文档 [http://www.fireasy.cn/document](http://www.fireasy.cn/document)。
+
 Fireasy 的Demo项目 [https://github.com/faib920/zero](https://github.com/faib920/zero)。
-
-Fireasy 的技术博客 [http://fireasy.cnblogs.com](http://fireasy.cnblogs.com)。
-
-Fireasy 的使用手册 [《Fireasy从入门到精通》](http://www.fireasy.cn/docs/fireasy2.pdf)。
 
 <b>`Fireasy.Common`</b>
 

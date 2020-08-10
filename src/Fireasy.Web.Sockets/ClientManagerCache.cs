@@ -6,26 +6,22 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.ComponentModel;
+using Fireasy.Common.Extensions;
 using System;
 
 namespace Fireasy.Web.Sockets
 {
     internal static class ClientManagerCache
     {
-        private static SafetyDictionary<Type, ClientManager> managers = new SafetyDictionary<Type, ClientManager>();
+        private static readonly SafetyDictionary<Type, IClientManager> _managers = new SafetyDictionary<Type, IClientManager>();
 
-        internal static ClientManager GetManager(Type handlerType, WebSocketAcceptContext acceptContext)
+        internal static IClientManager GetManager(Type handlerType, WebSocketAcceptContext acceptContext)
         {
-            return managers.GetOrAdd(handlerType, () =>
+            return _managers.GetOrAdd(handlerType, () =>
             {
-                ClientManager manager = null;
-#if NETSTANDARD
-                if (acceptContext.HttpContext != null)
-                {
-                    manager = acceptContext.HttpContext.RequestServices.GetService(typeof(ClientManager)) as ClientManager;
-                }
-#endif
-                return manager ?? new ClientManager(acceptContext.Option);
+                var manager = acceptContext.ServiceProvider.TryGetService<IClientManager>(() => new DefaultClientManager());
+                manager.Initialize(acceptContext);
+                return manager;
             });
         }
     }

@@ -150,12 +150,12 @@ namespace Fireasy.Data.Entity
 
             if (_contextService.Environment != null)
             {
-                tableName = DbUtility.FormatByQuote(syntax, _contextService.Environment.GetVariableTableName(rootType));
+                tableName = syntax.FormatByDelimiter(_contextService.Environment.GetVariableTableName(rootType));
             }
             else
             {
                 var metadata = EntityMetadataUnity.GetEntityMetadata(rootType);
-                tableName = DbUtility.FormatByQuote(syntax, metadata.TableName);
+                tableName = syntax.FormatByDelimiter(metadata.TableName);
             }
 
             batcher.Insert(_database, entities, tableName, batchSize, completePercentage);
@@ -182,12 +182,12 @@ namespace Fireasy.Data.Entity
 
             if (_contextService.Environment != null)
             {
-                tableName = DbUtility.FormatByQuote(syntax, _contextService.Environment.GetVariableTableName(rootType));
+                tableName = syntax.FormatByDelimiter(_contextService.Environment.GetVariableTableName(rootType));
             }
             else
             {
                 var metadata = EntityMetadataUnity.GetEntityMetadata(rootType);
-                tableName = DbUtility.FormatByQuote(syntax, metadata.TableName);
+                tableName = syntax.FormatByDelimiter(metadata.TableName);
             }
 
             await batcher.InsertAsync(_database, entities, tableName, batchSize, completePercentage, cancellationToken);
