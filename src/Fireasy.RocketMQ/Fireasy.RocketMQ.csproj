@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
+    <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
+    <Authors>Huangxd</Authors>
+    <Company>Fireasy</Company>
+    <FileVersion>2.0.0.46128</FileVersion>
+    <Copyright>Copyright ? Fireasy 2013-2019</Copyright>
+    <AssemblyVersion>2.0.0.46128</AssemblyVersion>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>False</DelaySign>
+    <Product>Fireasy RabbitMQ Provider</Product>
+    <Version>2.0.32</Version>
+    <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
+    <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
+    <Description>RocketMQ ��Ϣ����/������ʵ�֡�
+
+ʾ��Դ�룺https://github.com/faib920/zero</Description>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NewLife.RocketMQ" Version="1.2.2019.707" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Fireasy.Common\Fireasy.Common.csproj" />
+  </ItemGroup>
+
+</Project>

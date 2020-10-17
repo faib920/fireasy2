@@ -1,0 +1,87 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;netstandard2.0;netstandard2.1;</TargetFrameworks>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Authors>Huangxd</Authors>
+    <Company>Fireasy</Company>
+    <Copyright>Copyright © Fireasy 2013-2020</Copyright>
+    <SignAssembly>True</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>False</DelaySign>
+    <Product>Fireasy Entity Framework</Product>
+    <FileVersion>2.2.2</FileVersion>
+    <AssemblyVersion>2.2.2</AssemblyVersion>
+    <Version>2.2.2-beta3</Version>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Description>类似于 Entity Framework，也提供了 LINQ to Entities 大众化的查询方法，相比之下更容易使用多种数据库，比如SqlServer、Oracle、MySQL、SQLite、PostgreSQL等等。独创性地提供树持久化方法，使用AOP代理技术管理实体对象的状态变更，提供更贴合SQL语言的Update、Delete语句。
+
+示例源码：https://github.com/faib920/zero</Description>
+    <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>
+    <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
+    <PackageReleaseNotes></PackageReleaseNotes>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
+    <DocumentationFile>..\..\Release\net45\Fireasy.Data.Entity.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
+    <DocumentationFile>..\..\Release\netstandard2.0\Fireasy.Data.Entity.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath> 
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.1|AnyCPU'">
+    <DocumentationFile>..\..\Release\netstandard2.1\Fireasy.Data.Entity.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath> 
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Dynamic\EntityPersister.cs" />
+    <Compile Remove="EntityPersister.cs" />
+    <Compile Remove="EntityPersisterHelper.cs" />
+    <Compile Remove="EntityTreePersistentException.cs" />
+    <Compile Remove="EntityTreePersistentHelper.cs" />
+    <Compile Remove="EntityTreePersister.cs" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Remove="Strings.resources" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <EmbeddedResource Include="Strings.resources" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\Fireasy.Common\Fireasy.Common.csproj" />
+    <ProjectReference Include="..\Fireasy.Data\Fireasy.Data.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.ComponentModel.Annotations">
+      <Version>4.4.0</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="2.0.0" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="3.0.0" />
+    <PackageReference Include="System.ComponentModel.Annotations">
+      <Version>4.6.0</Version>
+    </PackageReference>
+  </ItemGroup>
+</Project>

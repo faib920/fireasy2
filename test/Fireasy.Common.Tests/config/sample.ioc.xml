@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<container>
+  <registration
+    serviceType="Fireasy.Common.Tests.Ioc.IMainService, Fireasy.Common.Tests"
+    componentType="Fireasy.Common.Tests.Ioc.MainService, Fireasy.Common.Tests"></registration>
+</container>
