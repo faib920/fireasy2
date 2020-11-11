@@ -1,4 +1,5 @@
 ﻿using Fireasy.Common.Caching;
+using Fireasy.Common.Ioc;
 using Fireasy.Common.Subscribes;
 using Fireasy.Common.Subscribes.Persistance;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -17,9 +18,18 @@ namespace Fireasy.Common.Tests.Subscribes
             InitConfig.Init();
         }
 
+        public class TopicNameNormalizer : Common.Subscribes.ITopicNameNormalizer
+        {
+            public string NormalizeName(string topicName)
+            {
+                return "tt_" + topicName;
+            }
+        }
+
         [TestMethod]
         public void Test()
         {
+            ContainerUnity.GetContainer().RegisterSingleton<ITopicNameNormalizer, TopicNameNormalizer>();
             var subMgr = SubscribeManagerFactory.CreateManager("redis");
             var cacheMgr = CacheManagerFactory.CreateManager("redis");
             var r = new Random();

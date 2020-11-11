@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Data.Identity;
 
 namespace Fireasy.Data.Entity
 {
@@ -14,7 +15,7 @@ namespace Fireasy.Data.Entity
     public enum IdentityGenerateType
     {
         /// <summary>
-        /// 无生成。
+        /// 无生成，手动指定。
         /// </summary>
         None,
 
@@ -24,7 +25,7 @@ namespace Fireasy.Data.Entity
         AutoIncrement,
 
         /// <summary>
-        /// 使用生成器生成。
+        /// 使用 <see cref="IGeneratorProvider"/> 生成器生成。
         /// </summary>
         Generator
     }

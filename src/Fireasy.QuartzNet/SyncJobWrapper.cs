@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Tasks;
+using Fireasy.Common.Threading;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -25,17 +26,19 @@ namespace Fireasy.QuartzNet
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        public async Task Execute(IJobExecutionContext context)
+        public Task Execute(IJobExecutionContext context)
         {
             if (context.MergedJobDataMap["executor"] is ITaskExecutor executor)
             {
-                var service = context.MergedJobDataMap["serviceProvider"] as IServiceProvider;
+                var serviceProvider = context.MergedJobDataMap["serviceProvider"] as IServiceProvider;
                 var arguments = context.MergedJobDataMap["arguments"] as IDictionary<string, object>;
-                var cancellationToken = (CancellationToken)context.MergedJobDataMap["cancellationToken"];
 
-                var econtext = new TaskExecuteContext(service, arguments, cancellationToken);
+                using var scope = serviceProvider.TryCreateScope();
+                var econtext = new TaskExecuteContext(scope.ServiceProvider, arguments, default);
                 executor.Execute(econtext);
             }
+
+            return TaskCompatible.CompletedTask;
         }
     }
 
@@ -49,19 +52,21 @@ namespace Fireasy.QuartzNet
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        public async Task Execute(IJobExecutionContext context)
+        public Task Execute(IJobExecutionContext context)
         {
-            var service = context.MergedJobDataMap["serviceProvider"] as IServiceProvider;
+            var serviceProvider = context.MergedJobDataMap["serviceProvider"] as IServiceProvider;
             var arguments = context.MergedJobDataMap["arguments"] as IDictionary<string, object>;
-            var cancellationToken = (CancellationToken)context.MergedJobDataMap["cancellationToken"];
 
-            if (typeof(TJob).New(service) is ITaskExecutor executor)
+            if (typeof(TJob).New(serviceProvider) is ITaskExecutor executor)
             {
                 var initializer = context.MergedJobDataMap["initializer"] as Action<TJob>;
                 initializer?.Invoke((TJob)executor);
-                var econtext = new TaskExecuteContext(service, arguments, cancellationToken);
+                using var scope = serviceProvider.TryCreateScope();
+                var econtext = new TaskExecuteContext(scope.ServiceProvider, arguments, default);
                 executor.Execute(econtext);
             }
+
+            return TaskCompatible.CompletedTask;
         }
     }
 }

@@ -8,6 +8,7 @@
 using Fireasy.Common.Emit;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Reflection;
+using Fireasy.Data.Entity.Metadata;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -56,10 +57,7 @@ namespace Fireasy.Data.Entity
             }
 
             //重写属性
-            var properties = from s in entityType.GetProperties()
-                             let getMth = s.GetGetMethod()
-                             where getMth.IsVirtual && !getMth.IsFinal
-                             select s;
+            var properties = EntityMetadataUnity.PropertyMetadataResolver.GetProperties(entityType);
 
             foreach (var property in properties)
             {

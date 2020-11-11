@@ -20,6 +20,7 @@ namespace Fireasy.Data.Entity.Metadata.Builders
     {
         private readonly EntityMetadata _metadata;
         private readonly PropertyInfo _propertyInfo;
+        private RelationOptions _options;
         private readonly Dictionary<RelationshipStyle, IMetadataBuilder> _builders = null;
 
         public EntityReferenceBuilder(EntityMetadata metadata, PropertyInfo pinfo)
@@ -54,11 +55,22 @@ namespace Fireasy.Data.Entity.Metadata.Builders
         }
 
         /// <summary>
+        /// 指定关联选项。
+        /// </summary>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        public virtual EntityReferenceBuilder<TEntity, TRelatedEntity> HasOptions(RelationOptions options)
+        {
+            _options = options;
+            return this;
+        }
+
+        /// <summary>
         /// 构造元数据。
         /// </summary>
         public virtual void Build()
         {
-            var property = PropertyUnity.RegisterSupposedProperty(_propertyInfo.Name, _propertyInfo.PropertyType, _metadata.EntityType);
+            var property = PropertyUnity.RegisterSupposedProperty(_propertyInfo.Name, _propertyInfo.PropertyType, _metadata.EntityType, null, _options);
             _metadata.InternalAddProperty(property);
 
             _builders.ForEach(s => s.Value.Build());
@@ -79,6 +91,11 @@ namespace Fireasy.Data.Entity.Metadata.Builders
             public override RelationshipBuilder<TRelatedEntity, TEntity> WithMany()
             {
                 return new RelationshipBuilder<TRelatedEntity, TEntity>.NullBuilder();
+            }
+
+            public override EntityReferenceBuilder<TEntity, TRelatedEntity> HasOptions(RelationOptions options)
+            {
+                return this;
             }
 
             public override void Build()

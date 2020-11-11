@@ -189,7 +189,7 @@ namespace Fireasy.Data.Entity
         /// 将一个新的实体对象插入到库。
         /// </summary>
         /// <param name="entity">要创建的实体对象。</param>
-        /// <returns>如果主键是自增类型，则为主键值，否则为影响的实体数。</returns>
+        /// <returns>如果主键是自增类型（主键为 int 类型时），则为主键值，否则为影响的实体数。</returns>
         int Insert(TEntity entity);
 
         /// <summary>
@@ -197,14 +197,14 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="entity">要创建的实体对象。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
-        /// <returns>如果主键是自增类型，则为主键值，否则为影响的实体数。</returns>
+        /// <returns>如果主键是自增类型（主键为 int 类型时），则为主键值，否则为影响的实体数。</returns>
         Task<int> InsertAsync(TEntity entity, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 使用一个 <see cref="MemberInitExpression"/> 表达式插入新的对象。
         /// </summary>
         /// <param name="creator">一个构造实例并成员绑定的表达式。</param>
-        /// <returns>如果主键是自增类型，则为主键值，否则为影响的实体数。</returns>
+        /// <returns>如果主键是自增类型（主键为 int 类型时），则为主键值，否则为影响的实体数。</returns>
         int Insert(Expression<Func<TEntity>> creator);
 
         /// <summary>
@@ -212,14 +212,14 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="creator">一个构造实例并成员绑定的表达式。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
-        /// <returns>如果主键是自增类型，则为主键值，否则为影响的实体数。</returns>
+        /// <returns>如果主键是自增类型（主键为 int 类型时），则为主键值，否则为影响的实体数。</returns>
         Task<int> InsertAsync(Expression<Func<TEntity>> creator, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 使用初始化函数将一个新的实体对象插入到库。
         /// </summary>
         /// <param name="initializer">一个初始化实体成员绑定的函数。</param>
-        /// <returns>如果主键是自增类型，则为主键值，否则为影响的实体数。</returns>
+        /// <returns>如果主键是自增类型（主键为 int 类型时），则为主键值，否则为影响的实体数。</returns>
         int Insert(Action<TEntity> initializer);
 
         /// <summary>
@@ -227,7 +227,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="initializer">一个初始化实体成员绑定的函数。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
-        /// <returns>如果主键是自增类型，则为主键值，否则为影响的实体数。</returns>
+        /// <returns>如果主键是自增类型（主键为 int 类型时），则为主键值，否则为影响的实体数。</returns>
         Task<int> InsertAsync(Action<TEntity> initializer, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -369,7 +369,7 @@ namespace Fireasy.Data.Entity
         /// <param name="instances"></param>
         /// <param name="fnOperation"></param>
         /// <returns>影响的实体数。</returns>
-        int Batch(IEnumerable<TEntity> instances, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation, BatchOperateOptions batchOpt = null);
+        int Batch(IEnumerable<TEntity> instances, Expression<Action<IRepository<TEntity>, TEntity>> fnOperation, BatchOperateOptions batchOpt = null);
 
         /// <summary>
         /// 异步的，对实体集合进行批量操作。
@@ -379,7 +379,7 @@ namespace Fireasy.Data.Entity
         /// <param name="fnOperation"></param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>影响的实体数。</returns>
-        Task<int> BatchAsync(IEnumerable<TEntity> instances, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation, BatchOperateOptions batchOpt = null, CancellationToken cancellationToken = default);
+        Task<int> BatchAsync(IEnumerable<TEntity> instances, Expression<Action<IRepository<TEntity>, TEntity>> fnOperation, BatchOperateOptions batchOpt = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 批量将一组实体对象插入到库中。
@@ -411,5 +411,26 @@ namespace Fireasy.Data.Entity
         /// <param name="memberQuery"></param>
         /// <returns></returns>
         IRepository<TEntity> Associate(Expression<Func<TEntity, IEnumerable>> memberQuery);
+
+        /// <summary>
+        /// 设置 Insert 或 Update 时的属性过滤器。
+        /// </summary>
+        /// <param name="propertyFilter"></param>
+        /// <returns></returns>
+        IRepository<TEntity> Filter(PropertyFilter<TEntity> propertyFilter);
+
+        /// <summary>
+        /// 初始化 Insert 或 Update 时需要包含的属性。
+        /// </summary>
+        /// <param name="fnFilter"></param>
+        /// <returns></returns>
+        IRepository<TEntity> IncludeFilter(Action<PropertyFilter<TEntity>> fnFilter);
+
+        /// <summary>
+        /// 初始化 Insert 或 Update 时需要排除的属性。
+        /// </summary>
+        /// <param name="fnFilter"></param>
+        /// <returns></returns>
+        IRepository<TEntity> ExcludeFilter(Action<PropertyFilter<TEntity>> fnFilter);
     }
 }

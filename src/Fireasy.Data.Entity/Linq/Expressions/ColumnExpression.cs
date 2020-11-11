@@ -61,15 +61,11 @@ namespace Fireasy.Data.Entity.Linq.Expressions
                  || (Alias == other.Alias && Name == other.Name);
         }
 
-        /// <summary>
-        /// 输出对象的文本表示。
-        /// </summary>
-        /// <returns></returns>
+
         public override string ToString()
         {
-            return Alias + ".C(" + Name + ")";
+            return $"{Alias}.Column({Name})";
         }
-
     }
 
     public class SubqueryColumnExpression : ColumnExpression

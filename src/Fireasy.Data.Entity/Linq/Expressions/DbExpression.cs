@@ -2,7 +2,6 @@
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
 using System;
-using System.Diagnostics;
 using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Expressions
@@ -10,7 +9,6 @@ namespace Fireasy.Data.Entity.Linq.Expressions
     /// <summary>
     /// 一个抽象类，表示 ELinq 自定义表达式。
     /// </summary>
-    [DebuggerDisplay("NodeType={NodeType},Type={Type}")]
     public abstract class DbExpression : Expression
     {
         private readonly Type _type;

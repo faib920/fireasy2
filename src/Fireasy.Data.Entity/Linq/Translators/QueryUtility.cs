@@ -85,6 +85,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 case (ExpressionType)DbExpressionType.Scalar:
                 case (ExpressionType)DbExpressionType.Exists:
                 case (ExpressionType)DbExpressionType.AggregateSubquery:
+                case (ExpressionType)DbExpressionType.AggregateContact:
                 case (ExpressionType)DbExpressionType.Aggregate:
                     return true;
                 default:
@@ -127,6 +128,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             var entityType = entity.EntityType;
 
+            var constructor = entityType.GetConstructors()[0];
+            var constructParams = constructor.GetParameters();
+
             //获取实体中定义的所有依赖属性
             var properties = PropertyUnity.GetLoadedProperties(entityType);
 
@@ -135,7 +139,33 @@ namespace Fireasy.Data.Entity.Linq.Translators
                            where mbrExp != null
                            select Expression.Bind(p.Info.ReflectionInfo, mbrExp);
 
-            return new EntityExpression(entity, Expression.MemberInit(Expression.New(entityType), bindings));
+            //有参数的构造函数
+            if (constructParams.Length > 0)
+            {
+                var pkProperties = PropertyUnity.GetPrimaryProperties(entityType).ToArray();
+
+                if (constructParams.Length != pkProperties.Length)
+                {
+                    throw new ArgumentException(SR.GetString(SRKind.InvalidContructorParametersWithPrimaryKeys, entityType));
+                }
+
+                var constructArgs = new Expression[constructor.GetParameters().Length];
+                for (var i = 0; i < constructArgs.Length; i++)
+                {
+                    if (constructParams[i].ParameterType != pkProperties[i].Type)
+                    {
+                        throw new ArgumentException(SR.GetString(SRKind.InvalidContructorParametersWithPrimaryKeys, entityType));
+                    }
+
+                    constructArgs[i] = GetMemberExpression(transContext, root, pkProperties[i]);
+                }
+
+                return new EntityExpression(entity, Expression.MemberInit(Expression.New(constructor, constructArgs), bindings));
+            }
+            else
+            {
+                return new EntityExpression(entity, Expression.MemberInit(Expression.New(entityType), bindings));
+            }
         }
 
         internal static Expression GetMemberExpression(TranslateContext transContext, Expression root, IProperty property)
@@ -234,13 +264,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         internal static Expression GetUpdateExpression(TranslateContext transContext, Expression instance, LambdaExpression predicate, bool isAsync)
         {
-            if (instance is ParameterExpression)
+            if (instance is ParameterExpression parExp)
             {
-                return GetUpdateExpressionByParameter(transContext, (ParameterExpression)instance, predicate, isAsync);
+                return GetUpdateExpressionByParameter(transContext, parExp, predicate, isAsync);
             }
-            else if (instance is ConstantExpression)
+            else if (instance is ConstantExpression constExp && constExp.Value is EntityExecuteContext exeContext)
             {
-                return GetUpdateExpressionByEntity(transContext, (ConstantExpression)instance, predicate, isAsync);
+                return GetUpdateExpressionByEntity(transContext, exeContext.Entity, exeContext.Filter, predicate, isAsync);
             }
 
             var lambda = instance as LambdaExpression;
@@ -288,7 +318,22 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 where = DbExpressionReplacer.Replace(predicate.Body, predicate.Parameters[0], row);
             }
 
-            return new UpdateCommandExpression(table, where, GetUpdateArguments(transContext, table, entity), isAsync);
+            return new UpdateCommandExpression(table, where, GetUpdateArguments(transContext, table, entity, null), isAsync);
+        }
+
+        private static Expression GetUpdateExpressionByEntity(TranslateContext transContext, IEntity entity, IPropertyFilter propertyFilter, LambdaExpression predicate, bool isAsync)
+        {
+            var metadata = EntityMetadataUnity.GetEntityMetadata(entity.EntityType);
+            var table = new TableExpression(new TableAlias(), metadata.TableName, metadata.EntityType);
+            Expression where = null;
+
+            if (predicate != null)
+            {
+                var row = GetTypeProjection(transContext, table, metadata);
+                where = DbExpressionReplacer.Replace(predicate.Body, predicate.Parameters[0], row);
+            }
+
+            return new UpdateCommandExpression(table, where, GetUpdateArguments(transContext, table, entity, propertyFilter), isAsync);
         }
 
         private static Expression GetUpdateExpressionByParameter(TranslateContext transContext, ParameterExpression parExp, LambdaExpression predicate, bool isAsync)
@@ -323,19 +368,20 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         internal static Expression GetInsertExpression(TranslateContext transContext, Expression instance, bool isAsync)
         {
-            Type entityType = null;
             Func<TableExpression, Expression, IEnumerable<ColumnAssignment>> func;
 
+            Type entityType;
             if (instance is ParameterExpression)
             {
                 entityType = instance.Type;
                 func = new Func<TableExpression, Expression, IEnumerable<ColumnAssignment>>((t, exp) => GetInsertArguments(transContext, t, exp.As<ParameterExpression>()));
             }
-            else if (instance is ConstantExpression constExp && constExp.Value is EntityExecuteWrapper wrapper)
+            else if (instance is ConstantExpression constExp && constExp.Value is EntityExecuteContext exeContext)
             {
-                instance = Expression.Constant(wrapper.Entity);
-                entityType = instance.Type;
-                func = new Func<TableExpression, Expression, IEnumerable<ColumnAssignment>>((t, exp) => GetInsertArguments(transContext, t, exp.As<ConstantExpression>().Value as IEntity));
+                entityType = exeContext.Entity.EntityType;
+                func = new Func<TableExpression, Expression, IEnumerable<ColumnAssignment>>((t, exp) => GetInsertArguments(transContext, t,
+                    exp.As<ConstantExpression>().Value.As<EntityExecuteContext>().Entity,
+                    exp.As<ConstantExpression>().Value.As<EntityExecuteContext>().Filter));
             }
             else
             {
@@ -345,10 +391,16 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var metadata = EntityMetadataUnity.GetEntityMetadata(entityType);
             var table = new TableExpression(new TableAlias(), metadata.TableName, entityType);
 
+            var autoIncProp = HasAutoIncrement(entityType);
+            var genValProp = HasGenerateValue(entityType);
+
+            var withAutoInc = transContext.SyntaxProvider.SupportReturnIdentityValue && autoIncProp != null;
+
             return new InsertCommandExpression(table, func(table, instance), isAsync)
             {
-                WithAutoIncrement = !string.IsNullOrEmpty(transContext.SyntaxProvider.IdentitySelect) && HasAutoIncrement(instance.Type),
-                WithGenerateValue = HasGenerateValue(instance.Type)
+                WithAutoIncrementValue = withAutoInc,
+                WithGenerateValue = genValProp != null,
+                IdentityProperty = autoIncProp ?? genValProp
             };
         }
 
@@ -375,19 +427,19 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return new NamedValueExpression(name, exp, dbType: dbType);
         }
 
-        private static bool HasAutoIncrement(Type entityType)
+        private static IProperty HasAutoIncrement(Type entityType)
         {
-            return PropertyUnity.GetPrimaryProperties(entityType).Any(s => s.Info.GenerateType == IdentityGenerateType.AutoIncrement);
+            return PropertyUnity.GetPersistentProperties(entityType).FirstOrDefault(s => s.Info.GenerateType == IdentityGenerateType.AutoIncrement);
         }
 
-        private static bool HasGenerateValue(Type entityType)
+        private static IProperty HasGenerateValue(Type entityType)
         {
-            return PropertyUnity.GetPrimaryProperties(entityType).Any(s => s.Info.GenerateType == IdentityGenerateType.Generator);
+            return PropertyUnity.GetPersistentProperties(entityType).FirstOrDefault(s => s.Info.GenerateType == IdentityGenerateType.Generator);
         }
 
-        private static IEnumerable<ColumnAssignment> GetUpdateArguments(TranslateContext transContext, TableExpression table, IEntity entity)
+        private static IEnumerable<ColumnAssignment> GetUpdateArguments(TranslateContext transContext, TableExpression table, IEntity entity, IPropertyFilter propertyFilter)
         {
-            var properties = GetModifiedProperties(entity).ToArray();
+            var properties = GetModifiedProperties(entity, propertyFilter).ToArray();
 
             var assignments = properties
                 .Select(p => new ColumnAssignment(
@@ -403,9 +455,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             IEnumerable<IProperty> properties = null;
 
-            if (transContext.TemporaryBag != null)
+            if (transContext.TemporaryProperties != null)
             {
-                properties = GetModifiedProperties(table.Type, transContext.TemporaryBag);
+                properties = GetModifiedProperties(table.Type, transContext.TemporaryProperties);
             }
 
             var assignments = properties
@@ -421,11 +473,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
         private static IEnumerable<ColumnAssignment> GetUpdateArguments(TranslateContext transContext, TableExpression table, IEnumerable<MemberAssignment> bindings)
         {
             var assignments = (from m in bindings
-                   let property = PropertyUnity.GetProperty(table.Type, m.Member.Name)
-                   where property != null
-                   select new ColumnAssignment(
-                       (ColumnExpression)GetMemberExpression(transContext, table, property),
-                       m.Expression)).ToList();
+                               let property = PropertyUnity.GetProperty(table.Type, m.Member.Name)
+                               where property != null
+                               select new ColumnAssignment(
+                                   (ColumnExpression)GetMemberExpression(transContext, table, property),
+                                   m.Expression)).ToList();
 
             ReplaceRowVersionKeys(assignments, transContext, table);
             return assignments;
@@ -438,9 +490,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <param name="table"></param>
         /// <param name="entity">具体的实体。</param>
         /// <returns></returns>
-        private static IEnumerable<ColumnAssignment> GetInsertArguments(TranslateContext transContext, TableExpression table, IEntity entity)
+        private static IEnumerable<ColumnAssignment> GetInsertArguments(TranslateContext transContext, TableExpression table, IEntity entity, IPropertyFilter propertyFilter)
         {
-            var properties = GetModifiedProperties(entity);
+            var properties = GetModifiedProperties(entity, propertyFilter);
 
             var assignments = properties
                 .Select(p => new ColumnAssignment(
@@ -465,9 +517,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             IEnumerable<IProperty> properties = null;
 
-            if (transContext.TemporaryBag != null)
+            if (transContext.TemporaryProperties != null)
             {
-                properties = GetModifiedProperties(table.Type, transContext.TemporaryBag);
+                properties = GetModifiedProperties(table.Type, transContext.TemporaryProperties);
             }
 
             var assignments = properties
@@ -536,12 +588,18 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// 获取实体可插入或更新的非主键属性列表。
         /// </summary>
         /// <param name="entity"></param>
+        /// <param name="propertyFilter"></param>
         /// <returns></returns>
-        private static IEnumerable<IProperty> GetModifiedProperties(IEntity entity)
+        private static IEnumerable<IProperty> GetModifiedProperties(IEntity entity, IPropertyFilter propertyFilter)
         {
             var properties = PropertyUnity.GetPersistentProperties(entity.EntityType)
                 .Where(p => !p.Info.IsPrimaryKey ||
                     (p.Info.IsPrimaryKey && p.Info.GenerateType == IdentityGenerateType.None));
+
+            if (propertyFilter != null)
+            {
+                properties = from s in properties where propertyFilter.Filter(s) select s;
+            }
 
             //判断实体类型有是不是编译的代理类型，如果不是，取非null的属性，否则使用IsModified判断
             var isNotCompiled = entity.GetType().IsNotCompiled();
@@ -622,9 +680,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 return null;
             }
 
-            var maxProperties = new List<string>();
+            List<string> maxProperties = null;
             Type entityType = null;
-            IEnumerable<IProperty> properties = null;
+            List<IProperty> properties = null;
 
             //循环列表查找属性修改最多的那个实体作为参照
             foreach (IEntity entity in entities)
@@ -636,6 +694,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         .Where(p => !p.Info.IsPrimaryKey ||
                             (p.Info.IsPrimaryKey && p.Info.GenerateType == IdentityGenerateType.None))
                         .ToList();
+
+                    maxProperties = new List<string>();
+
+                    if (batchOpt?.PropertyFilter != null)
+                    {
+                        return properties.Where(s => batchOpt.PropertyFilter.Filter(s)).Select(s => s.Name).ToList();
+                    }
                 }
 
                 //判断实体类型有是不是编译的代理类型，如果不是，取非null的属性，否则使用IsModified判断

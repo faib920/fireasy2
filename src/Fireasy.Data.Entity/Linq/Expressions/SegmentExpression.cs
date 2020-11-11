@@ -27,5 +27,10 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// 获取数据分段对象。
         /// </summary>
         public IDataSegment Segment { get; }
+
+        public override string ToString()
+        {
+            return $"Segment({Segment})";
+        }
     }
 }

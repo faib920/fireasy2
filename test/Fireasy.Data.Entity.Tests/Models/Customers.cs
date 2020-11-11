@@ -119,7 +119,7 @@ namespace Fireasy.Data.Entity.Tests.Models
         /// </summary>
 
         [PropertyMapping(ColumnName = "CustomerID", Description = "", IsPrimaryKey = true, Length = 5, IsNullable = false)]
-        public virtual string CustomerID { get; set; }
+        public virtual string CustomerID { get; private set; }
 
         /// <summary>
         /// 获取或设置。

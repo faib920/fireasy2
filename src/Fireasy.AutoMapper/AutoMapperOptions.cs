@@ -5,9 +5,11 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+#if NETSTANDARD
 using AutoMapper;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace Fireasy.AutoMapper
 {
@@ -23,5 +25,16 @@ namespace Fireasy.AutoMapper
         {
             Configurators.Add(c => c.AddProfile<TProfile>());
         }
+
+        /// <summary>
+        /// 添加程序集里的 <see cref="Profile"/> 及定义了 <see cref="AutoMapAttribute"/> 特性的类。
+        /// </summary>
+        /// <param name="assembly"></param>
+        public void AddAssembly(Assembly assembly = null)
+        {
+            assembly ??= Assembly.GetCallingAssembly();
+            Configurators.Add(c => c.AddMaps(assembly));
+        }
     }
 }
+#endif

@@ -12,13 +12,15 @@
     <Product>Fireasy Asp.Net Mvc</Product>
     <FileVersion>2.2.2</FileVersion>
     <AssemblyVersion>2.2.2</AssemblyVersion>
-    <Version>2.2.2-beta3</Version>
+    <Version>2.2.2</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
-    <Description>Asp.Net MVC 辅助类，使 Action 可接受复杂的 Json 绑定，Json 按 Fireasy 序列化输出。支持 .Net Core 3.0 版本。
+    <Description>
+      Asp.Net MVC 辅助类，使 Action 可接受复杂的 Json 绑定，Json 按 Fireasy 序列化输出。支持 .Net Core 3.x 版本。
 
-示例源码：https://github.com/faib920/zero</Description>
+      参考文档：http://www.fireasy.cn/docs/mvc-summary
+    </Description>
     <PackageReleaseNotes></PackageReleaseNotes>
     <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>
   </PropertyGroup>

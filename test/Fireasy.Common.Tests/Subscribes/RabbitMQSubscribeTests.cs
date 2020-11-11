@@ -1,4 +1,5 @@
-﻿using Fireasy.Common.Subscribes;
+﻿using Fireasy.Common.Ioc;
+using Fireasy.Common.Subscribes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Text;
@@ -15,9 +16,18 @@ namespace Fireasy.Common.Tests.Subscribes
             InitConfig.Init();
         }
 
+        public class TopicNameNormalizer : Common.Subscribes.ITopicNameNormalizer
+        {
+            public string NormalizeName(string topicName)
+            {
+                return "tt_" + topicName;
+            }
+        }
+
         [TestMethod]
         public void Test()
         {
+            ContainerUnity.GetContainer().RegisterSingleton<ITopicNameNormalizer, TopicNameNormalizer>();
             var subMgr = SubscribeManagerFactory.CreateManager("rabbit");
             var r = new Random();
             subMgr.AddSubscriber<TestSubject>(s =>

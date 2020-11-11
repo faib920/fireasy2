@@ -5,17 +5,19 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if NET45
 using System.Threading.Tasks;
 
 namespace Fireasy.Common.Threading
 {
     /// <summary>
-    /// 用于兼容非 .net framework 4.5 的 CompletedTask。
+    /// 用于 .Net Framework 4.5 下兼容 CompletedTask。
     /// </summary>
     public class TaskCompatible
     {
-        public Task CompletedTask { get; }
+#if NET45
+        public static Task CompletedTask => Task.Run(() => { });
+#else 
+        public static Task CompletedTask => Task.CompletedTask;
+#endif
     }
 }
-#endif

@@ -88,7 +88,7 @@ namespace Fireasy.Data
 
         private bool CheckNeedProcess(IDistributedDatabase database)
         {
-            return database.DistributedConnectionStrings != null && database.DistributedConnectionStrings.Count > 0 && database.Transaction == null;
+            return database.DistributedConnectionStrings != null && database.DistributedConnectionStrings.Count > 0;
         }
 
         /// <summary>

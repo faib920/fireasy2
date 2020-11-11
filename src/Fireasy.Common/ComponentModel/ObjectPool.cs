@@ -43,6 +43,17 @@ namespace Fireasy.Common.ComponentModel
     }
 
     /// <summary>
+    /// 表示缓冲池通知链。
+    /// </summary>
+    public interface IObjectPoolNotifyChain
+    {
+        /// <summary>
+        /// 将对象还回缓冲池时通知。
+        /// </summary>
+        void OnReturn();
+    }
+
+    /// <summary>
     /// 定义对象缓冲池的相关方法。
     /// </summary>
     public interface IObjectPool

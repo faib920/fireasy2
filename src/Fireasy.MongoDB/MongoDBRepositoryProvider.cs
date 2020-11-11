@@ -76,29 +76,31 @@ namespace Fireasy.MongoDB
         /// </summary>
         /// <param name="entity">要创建的实体对象。</param>
         /// <returns>影响的实体数。</returns>
-        public int Insert(TEntity entity)
+        public long Insert(TEntity entity, IPropertyFilter propertyFilter)
         {
             var result = _collection.Insert(entity);
-            return (int)result.DocumentsAffected;
+            return result.DocumentsAffected;
         }
 
         /// <summary>
         /// 将一个新的实体对象插入到库。
         /// </summary>
         /// <param name="entity">要创建的实体对象。</param>
+        /// <param name="propertyFilter">属性过滤器。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>影响的实体数。</returns>
-        public async Task<int> InsertAsync(TEntity entity, CancellationToken cancellationToken = default)
+        public async Task<long> InsertAsync(TEntity entity, IPropertyFilter propertyFilter = null, CancellationToken cancellationToken = default)
         {
-            return Insert(entity);
+            return Insert(entity, propertyFilter);
         }
 
         /// <summary>
         /// 更新一个实体对象。
         /// </summary>
         /// <param name="entity">要更新的实体对象。</param>
+        /// <param name="propertyFilter">属性过滤器。</param>
         /// <returns>影响的实体数。</returns>
-        public int Update(TEntity entity)
+        public int Update(TEntity entity, IPropertyFilter propertyFilter = null)
         {
             var result = _collection.Save(entity);
             return (int)result.DocumentsAffected;
@@ -108,11 +110,12 @@ namespace Fireasy.MongoDB
         /// 异步的，更新一个实体对象。
         /// </summary>
         /// <param name="entity">要更新的实体对象。</param>
+        /// <param name="propertyFilter">属性过滤器。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>影响的实体数。</returns>
-        public async Task<int> UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
+        public async Task<int> UpdateAsync(TEntity entity, IPropertyFilter propertyFilter = null, CancellationToken cancellationToken = default)
         {
-            return Update(entity);
+            return Update(entity, propertyFilter);
         }
 
         /// <summary>
@@ -194,8 +197,9 @@ namespace Fireasy.MongoDB
         /// </summary>
         /// <param name="entity">更新的参考对象。</param>
         /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <param name="propertyFilter">属性过滤器。</param>
         /// <returns>影响的实体数。</returns>
-        public int Update(TEntity entity, Expression<Func<TEntity, bool>> predicate)
+        public int Update(TEntity entity, Expression<Func<TEntity, bool>> predicate, IPropertyFilter propertyFilter = null)
         {
             var query = Query<TEntity>.Where(predicate);
             var update = GetUpdateBuilder(entity);
@@ -208,11 +212,12 @@ namespace Fireasy.MongoDB
         /// </summary>
         /// <param name="entity">更新的参考对象。</param>
         /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <param name="propertyFilter">属性过滤器。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>影响的实体数。</returns>
-        public async Task<int> UpdateAsync(TEntity entity, Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
+        public async Task<int> UpdateAsync(TEntity entity, Expression<Func<TEntity, bool>> predicate, IPropertyFilter propertyFilter = null, CancellationToken cancellationToken = default)
         {
-            return Update(entity, predicate);
+            return Update(entity, predicate, propertyFilter);
         }
 
         /// <summary>
@@ -245,7 +250,7 @@ namespace Fireasy.MongoDB
         /// <param name="instances"></param>
         /// <param name="fnOperation"></param>
         /// <returns>影响的实体数。</returns>
-        public int Batch(IEnumerable<TEntity> instances, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation, BatchOperateOptions batchOpt)
+        public int Batch(IEnumerable<TEntity> instances, Expression<Action<IRepository<TEntity>, TEntity>> fnOperation, BatchOperateOptions batchOpt)
         {
             throw new NotImplementedException();
         }
@@ -258,7 +263,7 @@ namespace Fireasy.MongoDB
         /// <param name="fnOperation"></param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>影响的实体数。</returns>
-        public async Task<int> BatchAsync(IEnumerable<TEntity> instances, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation, BatchOperateOptions batchOpt, CancellationToken cancellationToken = default)
+        public async Task<int> BatchAsync(IEnumerable<TEntity> instances, Expression<Action<IRepository<TEntity>, TEntity>> fnOperation, BatchOperateOptions batchOpt, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

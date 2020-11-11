@@ -49,5 +49,9 @@ namespace Fireasy.Data.Entity.Linq.Expressions
             return table != Table || where != Where ? new DeleteCommandExpression(table, where, IsAsync) : this;
         }
 
+        public override string ToString()
+        {
+            return $"Delete({Table})";
+        }
     }
 }

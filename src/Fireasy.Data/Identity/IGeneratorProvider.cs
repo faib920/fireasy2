@@ -22,6 +22,6 @@ namespace Fireasy.Data.Identity
         /// <param name="tableName">表的名称。</param>
         /// <param name="columnName">列的名称。</param>
         /// <returns>用于标识唯一性的值。</returns>
-        int GenerateValue(IDatabase database, string tableName, string columnName = null);
+        long GenerateValue(IDatabase database, string tableName, string columnName = null);
     }
 }

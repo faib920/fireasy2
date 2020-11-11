@@ -35,8 +35,9 @@ namespace Fireasy.Data
     /// <summary>
     /// 提供数据库基本操作的方法。
     /// </summary>
-    public class Database : DisposableBase, IDatabase, IDistributedDatabase, IServiceProviderAccessor
+    public class Database : DisposableBase, IDatabase, IDistributedDatabase, IServiceProviderAccessor, IObjectPoolNotifyChain
     {
+        private TransactionStack _tranStack;
         private DbConnection _connMaster;
         private DbConnection _connSlave;
         private DbTransaction _transaction;
@@ -135,6 +136,13 @@ namespace Fireasy.Data
         /// <returns>如果当前实例首次启动事务，则为 true，否则为 false。</returns>
         public virtual bool BeginTransaction(IsolationLevel level = IsolationLevel.ReadCommitted)
         {
+            if (_tranStack == null)
+            {
+                _tranStack = new TransactionStack();
+            }
+
+            _tranStack.Push();
+
             if (Transaction != null)
             {
                 return false;
@@ -162,7 +170,7 @@ namespace Fireasy.Data
         /// <returns>成功提交事务则为 true，否则为 false。</returns>
         public virtual bool CommitTransaction()
         {
-            if (_transactionScope == null)
+            if (_transaction == null || (_tranStack != null && !_tranStack.Pop()))
             {
                 return false;
             }
@@ -184,7 +192,7 @@ namespace Fireasy.Data
         /// <returns>成功回滚事务则为 true，否则为 false。</returns>
         public virtual bool RollbackTransaction()
         {
-            if (_transactionScope == null)
+            if (_transaction == null || (_tranStack != null && !_tranStack.Pop()))
             {
                 return false;
             }
@@ -778,6 +786,9 @@ namespace Fireasy.Data
         public int Update(DataTable dataTable, SqlCommand insertCommand, SqlCommand updateCommand, SqlCommand deleteCommand)
         {
             Guard.ArgumentNull(dataTable, nameof(dataTable));
+
+            InitiaizeDistributedSynchronizer(insertCommand);
+
             var connection = GetConnection(DistributedMode.Master).TryOpen();
 
             HandleDynamicDataTable(dataTable);
@@ -1317,7 +1328,7 @@ namespace Fireasy.Data
         /// <returns></returns>
         private DistributedMode CheckForceUseMaster(Func<DistributedMode> otherwise)
         {
-            if (ForceUseMasterScope.Current != null)
+            if (ForceUseMasterScope.Current != null || Transaction != null)
             {
                 return DistributedMode.Master;
             }
@@ -1342,6 +1353,17 @@ namespace Fireasy.Data
         private void InitiaizeDistributedSynchronizer(IQueryCommand queryCommand)
         {
             ServiceProvider.TryGetService<IDistributedSynchronizer>()?.CatchExecuting(this, queryCommand);
+        }
+
+        void IObjectPoolNotifyChain.OnReturn()
+        {
+            if (DistributedConnectionStrings == null)
+            {
+                return;
+            }
+
+            _connMaster = null;
+            _connSlave = null;
         }
     }
 }

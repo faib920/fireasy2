@@ -18,7 +18,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         {
             Table = table;
             Entity = entity;
-            Property = property;
+            RelationProperty = property;
         }
 
         /// <summary>
@@ -34,6 +34,11 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <summary>
         /// 获取相关的属性。
         /// </summary>
-        public IProperty Property { get; set; }
+        public IProperty RelationProperty { get; set; }
+
+        public override string ToString()
+        {
+            return $"Generate({Entity}.{RelationProperty.Name})";
+        }
     }
 }

@@ -28,7 +28,10 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="MySqlProvider"/> 类的新实例。
         /// </summary>
         public MySqlProvider()
-            : base(new AssemblyProviderFactoryResolver("MySql.Data.MySqlClient.MySqlClientFactory, MySql.Data", "MySql.Data.MySqlClient.MySqlClientFactory, MySqlConnector"))
+            : base(new AssemblyProviderFactoryResolver(
+                "MySql.Data.MySqlClient.MySqlClientFactory, MySql.Data", 
+                "MySql.Data.MySqlClient.MySqlClientFactory, MySqlConnector", 
+                "MySqlConnector.MySqlConnectorFactory, MySqlConnector"))
         {
         }
 

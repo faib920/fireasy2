@@ -25,5 +25,10 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// 返回列表达式。
         /// </summary>
         public Expression Expression { get; }
+
+        public override string ToString()
+        {
+            return $"Declarate({Name}:{Expression})";
+        }
     }
 }

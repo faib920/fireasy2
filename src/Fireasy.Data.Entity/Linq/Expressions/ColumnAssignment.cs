@@ -29,5 +29,10 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// 获取值表达式。
         /// </summary>
         public Expression Expression { get; }
+
+        public override string ToString()
+        {
+            return $"Assign({Column}:{Expression})";
+        }
     }
 }

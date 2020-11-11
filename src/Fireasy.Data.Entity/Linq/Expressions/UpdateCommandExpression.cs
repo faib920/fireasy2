@@ -62,5 +62,9 @@ namespace Fireasy.Data.Entity.Linq.Expressions
                 ? new UpdateCommandExpression(table, where, arguments, IsAsync) : this;
         }
 
+        public override string ToString()
+        {
+            return $"Update({Table})";
+        }
     }
 }

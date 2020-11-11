@@ -45,9 +45,10 @@ namespace Fireasy.Common.Tasks
 
                 var tsset = (TaskScheduleConfigurationSetting)setting;
                 services.AddSingleton(typeof(ITaskScheduler), sp => CreateScheduler(sp, tsset.Name));
-                services.TryAddEnumerable(
-                    ServiceDescriptor.Singleton<IHostedService, ITaskScheduler>(sp => sp.GetService<ITaskScheduler>()));
             }
+
+            services.TryAddEnumerable(
+                ServiceDescriptor.Singleton<IHostedService, ITaskScheduler>(sp => sp.GetService<ITaskScheduler>()));
 
             return services;
         }
@@ -104,21 +105,7 @@ namespace Fireasy.Common.Tasks
             }
 
             return ConfigurationUnity.Cached<ITaskScheduler>($"TaskScheduler_{configName ?? "default"}", serviceProvider,
-                () => ConfigurationUnity.CreateInstance<TaskScheduleConfigurationSetting, ITaskScheduler>(serviceProvider, setting, s => s.SchedulerType, (s, t) => InitializeDefinitions(s, t)));
-        }
-
-        private static ITaskScheduler InitializeDefinitions(TaskScheduleConfigurationSetting setting, ITaskScheduler scheduler)
-        {
-            setting.ExecutorSettings.ForEach(s =>
-                scheduler.PreTasks.Enqueue(
-                    new TaskExecutorDefiniton
-                    {
-                        Delay = s.Delay,
-                        Period = s.Period,
-                        ExecutorType = s.ExecutorType
-                    }));
-
-            return scheduler;
+                () => ConfigurationUnity.CreateInstance<TaskScheduleConfigurationSetting, ITaskScheduler>(serviceProvider, setting, s => s.SchedulerType));
         }
     }
 }

@@ -46,6 +46,8 @@ namespace Fireasy.Data.Entity.Linq.Expressions
                     return VisitSubquery((SubqueryExpression)exp);
                 case DbExpressionType.AggregateSubquery:
                     return VisitAggregateSubquery((AggregateSubqueryExpression)exp);
+                case DbExpressionType.AggregateContact:
+                    return VisitAggregateContact((AggregateContactExpression)exp);
                 case DbExpressionType.IsNull:
                     return VisitIsNull((IsNullExpression)exp);
                 case DbExpressionType.Between:
@@ -286,6 +288,16 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         {
             var subquery = (ScalarExpression)Visit(aggregate.AggregateAsSubquery);
             return aggregate.Update(subquery);
+        }
+
+        /// <summary>
+        /// 访问 <see cref="AggregateSubqueryExpression"/>。
+        /// </summary>
+        /// <param name="aggregate">要访问的表达式。</param>
+        /// <returns></returns>
+        protected virtual Expression VisitAggregateContact(AggregateContactExpression aggregate)
+        {
+            return aggregate;
         }
 
         /// <summary>

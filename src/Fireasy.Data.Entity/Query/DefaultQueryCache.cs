@@ -124,7 +124,7 @@ namespace Fireasy.Data.Entity.Query
         /// </summary>
         private class CacheableChecker : Common.Linq.Expressions.ExpressionVisitor
         {
-            private readonly CacheableCheckResult result = new CacheableCheckResult();
+            private readonly CacheableCheckResult _result = new CacheableCheckResult();
 
             /// <summary>
             /// 检查表达式是否能够被缓存。
@@ -135,7 +135,7 @@ namespace Fireasy.Data.Entity.Query
             {
                 var checker = new CacheableChecker();
                 checker.Visit(expression);
-                return checker.result;
+                return checker._result;
             }
 
             protected override Expression VisitMethodCall(MethodCallExpression node)
@@ -157,15 +157,15 @@ namespace Fireasy.Data.Entity.Query
                     case nameof(IRepository.UpdateAsync):
                     case nameof(IRepository.Delete):
                     case nameof(IRepository.DeleteAsync):
-                        result.Required = false;
+                        _result.Required = false;
                         break;
                     case nameof(Linq.Extensions.CacheParsing):
-                        result.Enabled = (bool)((ConstantExpression)node.Arguments[1]).Value;
-                        if (result.Enabled == true && node.Arguments.Count == 3 &&
+                        _result.Enabled = (bool)((ConstantExpression)node.Arguments[1]).Value;
+                        if (_result.Enabled == true && node.Arguments.Count == 3 &&
                             node.Arguments[2] is ConstantExpression consExp && consExp.Value is TimeSpan expired
                             && expired != TimeSpan.Zero)
                         {
-                            result.Expired = expired;
+                            _result.Expired = expired;
                         }
                         break;
                 }
@@ -179,7 +179,7 @@ namespace Fireasy.Data.Entity.Query
         /// </summary>
         private class SegmentReplacer : Common.Linq.Expressions.ExpressionVisitor
         {
-            private ParameterExpression parExp;
+            private ParameterExpression _parExp;
 
             /// <summary>
             /// 使用 <paramref name="parExp"/> 替换表达式中的 <see cref="IDataSegment"/> 对象。
@@ -189,7 +189,7 @@ namespace Fireasy.Data.Entity.Query
             /// <returns></returns>
             public static Expression Repalce(Expression expression, ParameterExpression parExp)
             {
-                var replaer = new SegmentReplacer { parExp = parExp };
+                var replaer = new SegmentReplacer { _parExp = parExp };
                 return replaer.Visit(expression);
             }
 
@@ -197,7 +197,7 @@ namespace Fireasy.Data.Entity.Query
             {
                 if (constExp.Value is IDataSegment)
                 {
-                    return parExp;
+                    return _parExp;
                 }
 
                 return constExp;

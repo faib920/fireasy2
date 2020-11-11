@@ -77,6 +77,11 @@ namespace Fireasy.Data.Syntax
         bool SupportSubqueryInSelectWithoutFrom { get; }
 
         /// <summary>
+        /// 获取是否支持同时返回自增值。
+        /// </summary>
+        bool SupportReturnIdentityValue { get; }
+
+        /// <summary>
         /// 对命令文本进行分段处理，使之能够返回小范围内的数据。
         /// </summary>
         /// <param name="commandText">命令文本。</param>

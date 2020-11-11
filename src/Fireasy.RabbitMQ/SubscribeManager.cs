@@ -37,6 +37,7 @@ namespace Fireasy.RabbitMQ
         private Func<ISerializer> _serializerFactory;
         private readonly ISubjectPersistance _persistance;
         private readonly ISubscribeNotification _notification;
+        private readonly ITopicNameNormalizer _nameNormalizer;
         private PersistentTimer _timer;
 
         /// <summary>
@@ -56,6 +57,7 @@ namespace Fireasy.RabbitMQ
             ServiceProvider = serviceProvider;
             _persistance = serviceProvider.TryGetService<ISubjectPersistance>(() => LocalFilePersistance.Default);
             _notification = serviceProvider.TryGetService<ISubscribeNotification>();
+            _nameNormalizer = serviceProvider.TryGetService<ITopicNameNormalizer>();
         }
 
 #if NETSTANDARD
@@ -124,6 +126,7 @@ namespace Fireasy.RabbitMQ
         public void Publish<TSubject>(TSubject subject) where TSubject : class
         {
             var name = TopicHelper.GetTopicName(typeof(TSubject));
+
             var data = Serialize(subject);
 
             Publish(name, data);
@@ -191,6 +194,7 @@ namespace Fireasy.RabbitMQ
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
             var name = TopicHelper.GetTopicName(typeof(TSubject));
+
             AddAsyncSubscriber<TSubject>(name, subscriber);
         }
 
@@ -204,6 +208,7 @@ namespace Fireasy.RabbitMQ
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
+            name = TopicHelper.GetTopicName(ServiceProvider, name);
             var list = _subscribers.GetOrAdd(name, () => new RabbitChannelCollection());
 
             list.Add(new RabbitChannel(new SyncSubscribeDelegate(typeof(TSubject), subscriber), CreateAliveModel(name)));
@@ -219,6 +224,7 @@ namespace Fireasy.RabbitMQ
         {
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
+            name = TopicHelper.GetTopicName(ServiceProvider, name);
             var list = _subscribers.GetOrAdd(name, () => new RabbitChannelCollection());
 
             list.Add(new RabbitChannel(new AsyncSubscribeDelegate(typeof(TSubject), subscriber), CreateAliveModel(name)));
@@ -235,6 +241,8 @@ namespace Fireasy.RabbitMQ
             Guard.ArgumentNull(subscriber, nameof(subscriber));
 
             var name = TopicHelper.GetTopicName(subjectType);
+            name = TopicHelper.GetTopicName(ServiceProvider, name);
+
             var list = _subscribers.GetOrAdd(name, () => new RabbitChannelCollection());
 
             list.Add(new RabbitChannel(new SyncSubscribeDelegate(subjectType, subscriber), CreateAliveModel(name)));
@@ -257,8 +265,9 @@ namespace Fireasy.RabbitMQ
         {
             Guard.ArgumentNull(subjectType, nameof(subjectType));
 
-            var channelName = TopicHelper.GetTopicName(subjectType);
-            RemoveSubscriber(channelName);
+            var name = TopicHelper.GetTopicName(subjectType);
+
+            RemoveSubscriber(name);
         }
 
         /// <summary>
@@ -268,6 +277,7 @@ namespace Fireasy.RabbitMQ
         public void RemoveSubscriber(string name)
         {
             Guard.ArgumentNull(name, nameof(name));
+            name = TopicHelper.GetTopicName(ServiceProvider, name);
 
             if (_subscribers.TryGetValue(name, out RabbitChannelCollection channels))
             {
@@ -504,6 +514,7 @@ namespace Fireasy.RabbitMQ
 
         private void Publish(string name, byte[] data)
         {
+            name = TopicHelper.GetTopicName(ServiceProvider, name);
             var pdata = new StoredSubject(name, data);
 
             try

@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq.Expressions;
@@ -41,9 +42,14 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         public ReadOnlyCollection<ColumnAssignment> Assignments { get; }
 
         /// <summary>
+        /// 获取或设置标识字段。
+        /// </summary>
+        public IProperty IdentityProperty { get; set; }
+
+        /// <summary>
         /// 获取或设置是否使用自增量插入。
         /// </summary>
-        public bool WithAutoIncrement { get; set; }
+        public bool WithAutoIncrementValue { get; set; }
 
         /// <summary>
         /// 获取或设置是否使用生成的值。
@@ -60,7 +66,17 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         {
             return table != Table ||
                 arguments != Assignments
-                ? new InsertCommandExpression(table, arguments, IsAsync) { WithAutoIncrement = WithAutoIncrement, WithGenerateValue = WithGenerateValue } : this;
+                ? new InsertCommandExpression(table, arguments, IsAsync)
+                { 
+                    WithAutoIncrementValue = WithAutoIncrementValue, 
+                    WithGenerateValue = WithGenerateValue,
+                    IdentityProperty = IdentityProperty
+                } : this;
+        }
+
+        public override string ToString()
+        {
+            return $"Insert({Table})";
         }
     }
 }

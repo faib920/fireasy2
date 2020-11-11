@@ -20,7 +20,7 @@ namespace Fireasy.Redis
     /// </summary>
     public class RedisConfigurationSettingParser : IConfigurationSettingParseHandler
     {
-        public IConfigurationSettingItem Parse(System.Xml.XmlNode section)
+        public IConfigurationSettingItem Parse(XmlNode section)
         {
             var setting = new RedisConfigurationSetting();
             setting.ConnectionString = section.GetAttributeValue("connectionString");

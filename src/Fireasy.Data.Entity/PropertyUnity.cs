@@ -207,14 +207,11 @@ namespace Fireasy.Data.Entity
         /// <param name="entityType"></param>
         public static void Initialize(Type entityType)
         {
-            foreach (var property in entityType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            var properties = EntityMetadataUnity.PropertyMetadataResolver.GetProperties(entityType);
+
+            foreach (var property in properties)
             {
-                //定义为 virtual
-                var getMth = property.GetGetMethod();
-                if (getMth != null && getMth.IsVirtual && !getMth.IsFinal)
-                {
-                    RegisterProperty(entityType, property);
-                }
+                RegisterProperty(entityType, property);
             }
         }
 

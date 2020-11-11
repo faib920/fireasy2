@@ -305,7 +305,7 @@ namespace Fireasy.Data.Entity.Tests
                 from o11 in o1.DefaultIfEmpty()
                 join t in db.OrderDetails on o11.OrderID equals t.OrderID into t1
                 from t11 in t1.DefaultIfEmpty()
-                select new { Contactname = c.ContactName, Orderid = o11.OrderID, Productid = t11.Product1ID }
+                select new { Contactname = c.ContactName, Orderid = o11.OrderID, Productid = t11.ProductID }
                 );
         }
 
@@ -316,7 +316,7 @@ namespace Fireasy.Data.Entity.Tests
                 from c in db.Customers
                 join o in db.Orders.DefaultIfEmpty() on c.CustomerID equals o.CustomerID
                 join t in db.OrderDetails.DefaultIfEmpty() on o.OrderID equals t.OrderID
-                select new { Contactname = c.ContactName, Orderid = o.OrderID, Productid = t.Product1ID }
+                select new { Contactname = c.ContactName, Orderid = o.OrderID, Productid = t.ProductID }
                 );
         }
 

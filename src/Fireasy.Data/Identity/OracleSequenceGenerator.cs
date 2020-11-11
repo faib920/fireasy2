@@ -24,11 +24,11 @@ namespace Fireasy.Data.Identity
         /// <param name="tableName">表的名称。</param>
         /// <param name="columnName">列的名称。</param>
         /// <returns>用于标识唯一性的值。</returns>
-        public int GenerateValue(IDatabase database, string tableName, string columnName = null)
+        public long GenerateValue(IDatabase database, string tableName, string columnName = null)
         {
             tableName = tableName.ToUpper();
             columnName = columnName.ToUpper();
-            var value = 0;
+            var value = 0L;
             var sequenceName = FixSequenceName(tableName, columnName);
             SqlCommand sql;
 
@@ -43,7 +43,7 @@ namespace Fireasy.Data.Identity
                     {
                         //取表中该列的最大值 + 1
                         sql = $"SELECT MAX({columnName}) FROM {tableName}";
-                        value = database.ExecuteScalar<int>(sql) + 1;
+                        value = database.ExecuteScalar<long>(sql) + 1;
 
                         sql = $"CREATE SEQUENCE {sequenceName} START WITH {value}";
                         try
@@ -61,7 +61,7 @@ namespace Fireasy.Data.Identity
             {
                 //查询下一个值
                 sql = $"SELECT {sequenceName}.NEXTVAL FROM DUAL";
-                value = database.ExecuteScalar<int>(sql);
+                value = database.ExecuteScalar<long>(sql);
             }
 
             return value;

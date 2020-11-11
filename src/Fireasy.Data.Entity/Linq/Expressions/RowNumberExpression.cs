@@ -32,6 +32,9 @@ namespace Fireasy.Data.Entity.Linq.Expressions
             return orderBy != OrderBy ? new RowNumberExpression(orderBy) : this;
         }
 
-
+        public override string ToString()
+        {
+            return $"RowNumber()";
+        }
     }
 }

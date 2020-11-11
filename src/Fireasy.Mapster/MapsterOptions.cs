@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-
+#if NETSTANDARD
 using Mapster;
 using System;
 
@@ -20,7 +20,7 @@ namespace Fireasy.Mapster
         /// <typeparam name="TDestination">目标类型。</typeparam>
         /// <param name="action"></param>
         /// <returns></returns>
-        public MapsterOptions Map<TSource, TDestination>(Action<TypeAdapterSetter<TSource, TDestination>> action)
+        public MapsterOptions CreateMap<TSource, TDestination>(Action<TypeAdapterSetter<TSource, TDestination>> action)
         {
             var setter = TypeAdapterConfig<TSource, TDestination>.NewConfig();
             action?.Invoke(setter);
@@ -29,3 +29,4 @@ namespace Fireasy.Mapster
         }
     }
 }
+#endif

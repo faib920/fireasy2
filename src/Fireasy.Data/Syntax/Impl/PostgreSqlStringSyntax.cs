@@ -25,5 +25,11 @@ namespace Fireasy.Data.Syntax
         {
             return string.Join(" || ", strExps);
         }
+
+        public override string GroupConcat(object sourceExp, object separator)
+        {
+            return $"STRING_AGG({sourceExp}, {separator})";
+        }
+
     }
 }

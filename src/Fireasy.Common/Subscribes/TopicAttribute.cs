@@ -49,5 +49,17 @@ namespace Fireasy.Common.Subscribes
 
             return subjectType.FullName;
         }
+
+        /// <summary>
+        /// 尝试通过 <see cref="ITopicNameNormalizer"/> 来标准化主题名称。
+        /// </summary>
+        /// <param name="serviceProvider"></param>
+        /// <param name="topicName"></param>
+        /// <returns></returns>
+        public static string GetTopicName(this IServiceProvider serviceProvider, string topicName)
+        {
+            var normalizer = serviceProvider.TryGetService<ITopicNameNormalizer>();
+            return normalizer != null ? normalizer.NormalizeName(topicName) : topicName;
+        }
     }
 }

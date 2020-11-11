@@ -2091,7 +2091,7 @@ WHERE (t0.City = 'London')").ToList();
         [TestMethod]
         public void TestSelectWhereAssociation11()
         {
-            var details = db.OrderDetails.Where(s => s.Product1ID == 12);
+            var details = db.OrderDetails.Where(s => s.ProductID == 12);
 
             var ords = db.Orders.Where(s => s.OrderID != 0).Select(s => new
             {

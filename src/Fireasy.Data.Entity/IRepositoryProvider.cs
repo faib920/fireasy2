@@ -47,29 +47,33 @@ namespace Fireasy.Data.Entity
         /// 将一个新的实体对象插入到库。
         /// </summary>
         /// <param name="entity">要创建的实体对象。</param>
+        /// <param name="propertyFilter">属性过滤器。</param>
         /// <returns>影响的实体数。</returns>
-        int Insert(TEntity entity);
+        long Insert(TEntity entity, IPropertyFilter propertyFilter = null);
 
         /// <summary>
         /// 将一个新的实体对象插入到库。
         /// </summary>
         /// <param name="entity">要创建的实体对象。</param>
+        /// <param name="propertyFilter">属性过滤器。</param>
         /// <returns>影响的实体数。</returns>
-        Task<int> InsertAsync(TEntity entity, CancellationToken cancellationToken = default);
+        Task<long> InsertAsync(TEntity entity, IPropertyFilter propertyFilter = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 更新一个实体对象。
         /// </summary>
         /// <param name="entity">要更新的实体对象。</param>
+        /// <param name="propertyFilter">属性过滤器。</param>
         /// <returns>影响的实体数。</returns>
-        int Update(TEntity entity);
+        int Update(TEntity entity, IPropertyFilter propertyFilter = null);
 
         /// <summary>
         /// 更新一个实体对象。
         /// </summary>
         /// <param name="entity">要更新的实体对象。</param>
+        /// <param name="propertyFilter">属性过滤器。</param>
         /// <returns>影响的实体数。</returns>
-        Task<int> UpdateAsync(TEntity entity, CancellationToken cancellationToken = default);
+        Task<int> UpdateAsync(TEntity entity, IPropertyFilter propertyFilter = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 批量将一组实体对象插入到库中。
@@ -154,16 +158,18 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="entity">更新的参考对象。</param>
         /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <param name="propertyFilter">属性过滤器。</param>
         /// <returns>影响的实体数。</returns>
-        int Update(TEntity entity, Expression<Func<TEntity, bool>> predicate);
+        int Update(TEntity entity, Expression<Func<TEntity, bool>> predicate, IPropertyFilter propertyFilter);
 
         /// <summary>
         /// 使用一个参照的实体对象更新满足条件的一序列对象。
         /// </summary>
         /// <param name="entity">更新的参考对象。</param>
         /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
+        /// <param name="propertyFilter">属性过滤器。</param>
         /// <returns>影响的实体数。</returns>
-        Task<int> UpdateAsync(TEntity entity, Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
+        Task<int> UpdateAsync(TEntity entity, Expression<Func<TEntity, bool>> predicate, IPropertyFilter propertyFilter = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 使用一个累加器更新满足条件的一序列对象。
@@ -188,7 +194,7 @@ namespace Fireasy.Data.Entity
         /// <param name="entities"></param>
         /// <param name="fnOperation"></param>
         /// <returns>影响的实体数。</returns>
-        int Batch(IEnumerable<TEntity> entities, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation, BatchOperateOptions batchOpt = null);
+        int Batch(IEnumerable<TEntity> entities, Expression<Action<IRepository<TEntity>, TEntity>> fnOperation, BatchOperateOptions batchOpt = null);
 
         /// <summary>
         /// 对实体集合进行批量操作。
@@ -197,6 +203,6 @@ namespace Fireasy.Data.Entity
         /// <param name="entities"></param>
         /// <param name="fnOperation"></param>
         /// <returns>影响的实体数。</returns>
-        Task<int> BatchAsync(IEnumerable<TEntity> entities, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation, BatchOperateOptions batchOpt = null, CancellationToken cancellationToken = default);
+        Task<int> BatchAsync(IEnumerable<TEntity> entities, Expression<Action<IRepository<TEntity>, TEntity>> fnOperation, BatchOperateOptions batchOpt = null, CancellationToken cancellationToken = default);
     }
 }

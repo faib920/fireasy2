@@ -13,11 +13,10 @@ namespace Fireasy.Common.Tasks
     /// <summary>
     /// 启动选项。
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public sealed class StartOptions<T>
+    public class StartOptions
     {
         /// <summary>
-        /// 初始化 <see cref="StartOptions{T}"/> 类的新实例。
+        /// 初始化 <see cref="StartOptions"/> 类的新实例。
         /// </summary>
         /// <param name="delay"></param>
         /// <param name="period"></param>
@@ -39,13 +38,30 @@ namespace Fireasy.Common.Tasks
         public TimeSpan Period { get; set; }
 
         /// <summary>
-        /// 获取或设置初始化器。
-        /// </summary>
-        public Action<T> Initializer { get; set; }
-
-        /// <summary>
         /// 获取或设置执行参数。
         /// </summary>
         public IDictionary<string, object> Arguments { get; set; }
+    }
+
+    /// <summary>
+    /// 启动选项。
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public sealed class StartOptions<T> : StartOptions
+    {
+        /// <summary>
+        /// 初始化 <see cref="StartOptions{T}"/> 类的新实例。
+        /// </summary>
+        /// <param name="delay"></param>
+        /// <param name="period"></param>
+        public StartOptions(TimeSpan delay, TimeSpan period)
+            : base(delay, period)
+        {
+        }
+
+        /// <summary>
+        /// 获取或设置初始化器。
+        /// </summary>
+        public Action<T> Initializer { get; set; }
     }
 }

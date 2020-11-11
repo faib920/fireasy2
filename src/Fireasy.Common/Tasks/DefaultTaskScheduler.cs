@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Ioc;
+using System.Threading.Tasks;
 
 namespace Fireasy.Common.Tasks
 {
@@ -28,6 +29,7 @@ namespace Fireasy.Common.Tasks
         /// </summary>
         public readonly static DefaultTaskScheduler Instance = new DefaultTaskScheduler();
 
+        private bool _isRunning;
         private readonly List<ITaskRunner> _runners = new List<ITaskRunner>();
         private readonly CancellationTokenSource _stopToken = new CancellationTokenSource();
 
@@ -52,11 +54,6 @@ namespace Fireasy.Common.Tasks
         /// 获取或设置应用程序服务提供者实例。
         /// </summary>
         public IServiceProvider ServiceProvider { get; set; }
-
-        /// <summary>
-        /// 获取预先安排的执行任务队列。
-        /// </summary>
-        public Queue<TaskExecutorDefiniton> PreTasks { get; } = new Queue<TaskExecutorDefiniton>();
 
         /// <summary>
         /// 启动一个任务执行器。
@@ -93,14 +90,38 @@ namespace Fireasy.Common.Tasks
         }
 
         /// <summary>
+        /// 启动一个方法。
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="executor"></param>
+        public void Start(StartOptions options, Action<IServiceProvider> executor)
+        {
+            var context = new TaskExecuteContext(ServiceProvider, options.Arguments, _stopToken.Token);
+            AddRunner(new DefaultAnonymousTaskRunner(options.Delay, options.Period, executor, context));
+        }
+
+        /// <summary>
+        /// 启动一个异步方法。
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="executor"></param>
+        public void StartAsync(StartOptions options, Func<IServiceProvider, CancellationToken, Task> executor)
+        {
+            var context = new TaskExecuteContext(ServiceProvider, options.Arguments, _stopToken.Token);
+            AddRunner(new DefaultAnonymousAsyncTaskRunner(options.Delay, options.Period, executor, context));
+        }
+
+        /// <summary>
         /// 启动启动任务调度器。
         /// </summary>
         public void Start()
         {
-            while (PreTasks.Count > 0)
+            if (_isRunning)
             {
-                TaskRunHelper.Run(this, PreTasks.Dequeue());
+                return;
             }
+
+            _isRunning = true;
         }
 
         /// <summary>
@@ -110,6 +131,7 @@ namespace Fireasy.Common.Tasks
         {
             _stopToken.Cancel();
             _runners.ForEach(s => s.Stop());
+            _isRunning = false;
         }
 
         protected override bool Dispose(bool disposing)

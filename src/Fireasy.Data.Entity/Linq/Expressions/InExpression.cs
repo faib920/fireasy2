@@ -62,5 +62,9 @@ namespace Fireasy.Data.Entity.Linq.Expressions
             return this;
         }
 
+        public override string ToString()
+        {
+            return $"In({Expression})";
+        }
     }
 }

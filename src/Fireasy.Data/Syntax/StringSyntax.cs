@@ -128,6 +128,17 @@ namespace Fireasy.Data.Syntax
         }
 
         /// <summary>
+        /// 将分组后的某字段连接为新的字符串。
+        /// </summary>
+        /// <param name="sourceExp"></param>
+        /// <param name="separator">分隔符。</param>
+        /// <returns></returns>
+        public virtual string GroupConcat(object sourceExp, object separator)
+        {
+            return $"GROUP_CONCAT({sourceExp}, {separator})";
+        }
+
+        /// <summary>
         /// 反转源表达式。
         /// </summary>
         /// <param name="sourceExp">源表达式。</param>

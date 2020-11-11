@@ -133,6 +133,10 @@ namespace Fireasy.Data.Entity
 
                 return true;
             }
+            else if (_contextService is IObjectPoolNotifyChain chain)
+            {
+                chain.OnReturn();
+            }
 
             return false;
         }

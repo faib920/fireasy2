@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Threading;
 using Fireasy.Data.Entity.Query;
@@ -20,7 +21,8 @@ namespace Fireasy.Data.Entity
         ContextServiceBase,
         IEntityTransactional,
         IQueryPolicyAware,
-        IDatabaseAware
+        IDatabaseAware,
+        IObjectPoolNotifyChain
     {
         private readonly Func<IDatabase> _databaseCreateor;
         private IDatabase _database;
@@ -159,6 +161,14 @@ namespace Fireasy.Data.Entity
             }
 
             Database.RollbackTransaction();
+        }
+
+        void IObjectPoolNotifyChain.OnReturn()
+        {
+            if (Database is IObjectPoolNotifyChain chain)
+            {
+                chain.OnReturn();
+            }
         }
     }
 }

@@ -27,5 +27,9 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// </summary>
         public TableAlias Alias { get; }
 
+        public override string ToString()
+        {
+            return $"Alias({Alias})";
+        }
     }
 }

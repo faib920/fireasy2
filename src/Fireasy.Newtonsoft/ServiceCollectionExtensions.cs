@@ -27,7 +27,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 services.Configure(setupAction);
             }
 
-            services.AddSingleton<ISerializer, Fireasy.Newtonsoft.Serializer>();
+            services.AddSingleton<ISerializer, Fireasy.Newtonsoft.JsonSerializer>();
             return services;
         }
     }

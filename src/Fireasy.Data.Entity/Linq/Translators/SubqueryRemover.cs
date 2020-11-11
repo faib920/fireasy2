@@ -59,5 +59,22 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             return column;
         }
+
+        protected override Expression VisitAggregateContact(AggregateContactExpression aggregate)
+        {
+            var column = aggregate.Column;
+            if (_map.TryGetValue(column.Alias, out Dictionary<string, Expression> nameMap))
+            {
+                if (nameMap.TryGetValue(column.Name, out Expression expr))
+                {
+                    var c = (ColumnExpression)Visit(expr);
+                    return aggregate.Update(c);
+                }
+
+                throw new Exception(SR.GetString(SRKind.NotDefinedReference));
+            }
+
+            return aggregate;
+        }
     }
 }

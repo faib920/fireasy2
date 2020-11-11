@@ -8,6 +8,7 @@
 using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -118,6 +119,13 @@ namespace Fireasy.Data.Entity.Metadata.Builders
         {
             using (var scope = new MetadataInitializeScope(_metadata))
             {
+                //没有显式映射的
+                foreach (var p in EntityMetadataUnity.PropertyMetadataResolver.GetProperties(_metadata.EntityType)
+                    .Where(s => !_propBuilders.Keys.Contains(s)))
+                {
+                    _propBuilders.Add(p, new PropertyBuilder(_metadata, p));
+                }
+
                 _propBuilders.ForEach(s => s.Value.Build());
                 _treeBuilder?.Build();
             }

@@ -6,6 +6,8 @@ using Fireasy.Data.Entity.Subscribes;
 using Fireasy.MvcCore.Services;
 using Fireasy.MvcCore.Tests.Controllers;
 using Fireasy.Web.Sockets;
+using Hangfire;
+using Hangfire.MySql;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -20,6 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using System.Transactions;
 
 namespace Fireasy.MvcCore.Tests
 {
@@ -76,11 +79,21 @@ namespace Fireasy.MvcCore.Tests
 
             services.AddPersistentSubscriber<dd>();
 
-            //services.AddQuartzScheduler(options =>
-            //    options.Add(TimeSpan.Zero, TimeSpan.FromSeconds(5), (p, c) =>
-            //        {
-            //            Console.WriteLine(DateTime.Now + " quartz coming...");
-            //        }));
+            services.AddHangfire(o => o.UseStorage(
+                new MySqlStorage("Data Source=localhost;database=northwind;User Id=root;password=faib;pooling=true;charset=utf8",
+                new MySqlStorageOptions
+                {
+                    TablesPrefix = "hangfire_",
+                    TransactionIsolationLevel = IsolationLevel.ReadCommitted,
+                    QueuePollInterval = TimeSpan.FromSeconds(15),
+                    JobExpirationCheckInterval = TimeSpan.FromHours(1),
+                    CountersAggregateInterval = TimeSpan.FromMinutes(5),
+                    PrepareSchemaIfNecessary = true,
+                    DashboardJobListLimit = 1000,
+                    TransactionTimeout = TimeSpan.FromMinutes(1)
+                })));
+
+            services.AddHangfireScheduler();
         }
 
         private class dd : PersistentSubscriber
@@ -215,6 +228,14 @@ namespace Fireasy.MvcCore.Tests
 
             app.UseStaticFiles();
             app.UseCookiePolicy();
+
+            app.UseHangfireServer(new BackgroundJobServerOptions
+            {
+                WorkerCount = 1,
+                ServerName = "dev",
+                Queues = new[] { "dev" },
+                ShutdownTimeout = TimeSpan.FromMinutes(5)
+            });
 
             app.UseMvc(routes =>
             {

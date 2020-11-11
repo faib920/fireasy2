@@ -69,6 +69,20 @@ namespace Fireasy.Data.Entity.Tests
         }
 
         [TestMethod]
+        public void TestPropertyFilter()
+        {
+            using (var db = new DbContext())
+            {
+                var order = new Orders { Freight = 1, OrderDate = DateTime.Now };
+                db.Orders.IncludeFilter(s => s.With(t => new { a = t.Freight, t.OrderDate }))
+                    .Update(order, s => s.OrderDate >= DateTime.Now);
+
+                db.Orders.IncludeFilter(t => new { a = t.Freight })
+                    .Update(order, s => s.OrderDate >= DateTime.Now);
+            }
+        }
+
+        [TestMethod]
         public async Task TestGetAsync()
         {
             ThreadPool.SetMaxThreads(10, 10);
@@ -83,7 +97,7 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var context = new DbContext())
             {
-                var customers = await context.Customer1s.FirstOrDefaultAsync();
+                var customers = await context.Customer1s.Where(s => s.CustomerID != "").FirstOrDefaultAsync();
             }
         }
 
@@ -297,7 +311,41 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var context = new DbContext())
             {
-                var ret = await context.Orders.GroupBy(s => s.CustomerID, (s, t) => new { s, c = t.Count() }).ToDictionaryAsync(s => s.s, s => s.c);
+                var ret = await context.Orders.GroupBy(s => s.CustomerID, (s, t) => new { s, c = t.Sum(v => v.Freight) }).ToDictionaryAsync(s => s.s, s => s.c);
+            }
+        }
+
+        [TestMethod]
+        public async Task TestGroupbyHaving()
+        {
+            using (var context = new DbContext())
+            {
+                var list = await context.Orders.GroupBy(s => s.CustomerID,
+                    (s, t) => new
+                    {
+                        CustomerID = s,
+                        Count = t.Count(),
+                        FreightAvg = t.Average(v => v.Freight)
+                    })
+                    .Where(s => s.Count > 0 && s.FreightAvg > 0)
+                    .ToListAsync();
+            }
+        }
+
+        [TestMethod]
+        public async Task TestGroupbyStringJoin()
+        {
+            using (var context = new DbContext())
+            {
+                var ret2 = await context.Orders.GroupBy(s => s.CustomerID,
+                    (s, t) => new
+                    {
+                        CustomerID = s,
+                        Count = t.Count(),
+                        FreightAvg = t.Average(v => v.Freight),
+                        ShipNames = string.Join(", ", t.Select(v => v.CustomerID).Distinct())
+                    })
+                    .ToListAsync();
             }
         }
 
@@ -308,6 +356,17 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var list = await context.Orders
                     .Where(s => s.OrderDate.IsBetween(DateTime.Now.AddDays(-1), DateTime.Now))
+                    .ToListAsync();
+            }
+        }
+
+        [TestMethod]
+        public async Task TestBetween1()
+        {
+            using (var context = new DbContext())
+            {
+                var list = await context.Orders
+                    .Where(s => s.OrderDate.IsBetween(null, DateTime.Now))
                     .ToListAsync();
             }
         }
@@ -414,7 +473,7 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var detail = context.OrderDetails.Get(10248, 42);
                 Assert.AreEqual(10248, detail.OrderID);
-                Assert.AreEqual(42, detail.Product1ID);
+                Assert.AreEqual(42, detail.ProductID);
             }
         }
 
@@ -425,7 +484,7 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var detail = await context.OrderDetails.GetAsync(10248, 42);
                 Assert.AreEqual(10248, detail.OrderID);
-                Assert.AreEqual(42, detail.Product1ID);
+                Assert.AreEqual(42, detail.ProductID);
             }
         }
 
@@ -854,7 +913,7 @@ namespace Fireasy.Data.Entity.Tests
                 var list = db.OrderDetails.Select(s => new OrderDetailsEx
                 {
                     OrderID = s.OrderID,
-                    Product1ID = s.Product1ID,
+                    ProductID = s.ProductID,
                     Quantity = s.Quantity,
                     UnitPrice = s.UnitPrice,
                     Discount = s.Discount,
@@ -864,7 +923,7 @@ namespace Fireasy.Data.Entity.Tests
 
                 Assert.AreEqual("Queso Cabrales", list[0].ProductName);
 
-                var ss = db.OrderDetails.Select(s => new { s.Product1ID, a = db.Orders.FirstOrDefault(t => t.OrderID == s.OrderID).OrderDate }).ToList();
+                var ss = db.OrderDetails.Select(s => new { s.ProductID, a = db.Orders.FirstOrDefault(t => t.OrderID == s.OrderID).OrderDate }).ToList();
             }
         }
 
@@ -875,8 +934,8 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var list = db.OrderDetails
                     .Join(db.Products.DefaultIfEmpty(),
-                        s => s.Product1ID, s => s.Id, (s, t) => new { detail = s, product = t })
-                    .Select(s => new OrderDetailsEx(s.detail.OrderID) { Product1ID = s.product.Id })
+                        s => s.ProductID, s => s.Id, (s, t) => new { detail = s, product = t })
+                    .Select(s => new OrderDetailsEx(s.detail.OrderID) { ProductID = s.product.Id })
                     .ToList();
                 Assert.AreEqual("Queso Cabrales", list[0].ProductName);
             }
@@ -927,7 +986,7 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var list = db.OrderDetails
                     .LeftJoin(db.Products,
-                        s => s.Product1ID, s => s.Id, (s, t) => new { detail = s, product = t })
+                        s => s.ProductID, s => s.Id, (s, t) => new { detail = s, product = t })
                     .Select(s => new { s.product.ProductName, s.detail.OrderID })
                     .ToList();
                 Assert.AreEqual("Queso Cabrales", list[0].ProductName);
@@ -941,7 +1000,7 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var list = db.OrderDetails
                     .RightJoin(db.Products,
-                        s => s.Product1ID, s => s.Id, (s, t) => new { detail = s, product = t })
+                        s => s.ProductID, s => s.Id, (s, t) => new { detail = s, product = t })
                     .Select(s => new { s.product.ProductName, s.detail.OrderID })
                     .ToList();
                 //Assert.AreEqual("Queso Cabrales", list[0].ProductName);
@@ -955,7 +1014,7 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var list = db.OrderDetails
                     .Join(db.Products.DefaultIfEmpty(),
-                        s => s.Product1ID, s => s.Id, (s, t) => new { detail = s, product = t })
+                        s => s.ProductID, s => s.Id, (s, t) => new { detail = s, product = t })
                     .Select(s => s.detail.ExtendAs<OrderDetailsEx>(() => new OrderDetailsEx
                     {
                         ProductName = s.product.ProductName
@@ -1049,7 +1108,7 @@ namespace Fireasy.Data.Entity.Tests
             {
                 var customer = new Orders
                 {
-                    CustomerID = "A211133",
+                    CustomerID = "ALFKI",
                     EmployeeID = 1,
                     //OrderDate = DateTime.Now,
                     //ShipVia = 3
@@ -1180,7 +1239,7 @@ namespace Fireasy.Data.Entity.Tests
             {
                 order.OrderDetailses.Add(new OrderDetails
                 {
-                    Product1ID = 1 + i,
+                    ProductID = 1 + i,
                     UnitPrice = 1,
                     Quantity = 12,
                     Discount = 0.99,
@@ -1334,7 +1393,7 @@ namespace Fireasy.Data.Entity.Tests
                 var order = db.Orders.Get(11092);
 
                 order.OrderDetailses.RemoveAt(0);
-                order.OrderDetailses.Add(new OrderDetails { Product1ID = 1 });
+                order.OrderDetailses.Add(new OrderDetails { ProductID = 1 });
 
                 db.Orders.Update(order);
             }
@@ -1430,10 +1489,12 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var db = new DbContext())
             {
-                var order = db.Orders.Get(-1);
-                if (order != null)
+                var tt = new List<string> { };
+                //var order = db.Orders.FirstOrDefault();
+                //if (order != null)
                 {
-                    db.Orders.Delete(order, true);
+                    //db.Orders.Update(() => new Orders { IsDelete = true }, s => tt.Contains(s.CustomerID));
+                    //db.Orders.Update(() => new Orders { IsDelete = true }, s => tt.Contains(s.CustomerID));
                 }
             }
         }
@@ -1747,7 +1808,7 @@ namespace Fireasy.Data.Entity.Tests
         {
             using (var context = new DbContext())
             {
-                var func = new Func<OrderDetails, object>(s => new { s.Product1ID, s.OrderID });
+                var func = new Func<OrderDetails, object>(s => new { s.ProductID, s.OrderID });
 
                 var list = context.OrderDetails
                     .Take(2)
@@ -2353,7 +2414,8 @@ namespace Fireasy.Data.Entity.Tests
     {
         public Expression Bind(MethodCallBindContext context)
         {
-            return new SqlExpression("(cast discount as integer)", typeof(int));
+            var exp = (ColumnExpression)context.Visitor.Visit(context.Expression.Arguments[0]);
+            return new SqlExpression($"(cast {exp.MapInfo.ColumnName} as integer)", typeof(int));
         }
     }
 }

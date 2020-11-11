@@ -28,7 +28,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// <returns></returns>
         public override string ToString()
         {
-            return "T(" + Name + ")";
+            return $"Table({Name})";
         }
     }
 }

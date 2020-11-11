@@ -28,16 +28,16 @@ namespace Fireasy.Data.Identity
         /// <param name="tableName">表的名称。</param>
         /// <param name="columnName">列的名称。</param>
         /// <returns>用于标识唯一性的值。</returns>
-        public int GenerateValue(IDatabase database, string tableName, string columnName = null)
+        public long GenerateValue(IDatabase database, string tableName, string columnName = null)
         {
             //查询下一个值
-            var value = 0;
+            var value = 0L;
             var syntax = database.Provider.GetService<ISyntaxProvider>();
             database.WithTransaction(db =>
                 {
                     if (GeneratorCache.IsSequenceCreated(tableName, columnName, () =>
                         {
-                            if (db.ExecuteScalar<int>((SqlCommand)syntax.ExistsTable("SYS_SEQUENCE")) == 0)
+                            if (db.ExecuteScalar<long>((SqlCommand)syntax.ExistsTable("SYS_SEQUENCE")) == 0)
                             {
                                 db.ExecuteNonQuery((SqlCommand)string.Format("CREATE TABLE SYS_SEQUENCE(TABLE_NAME {0}, COLUMN_NAME {0}, VALUE {1})",
                                     syntax.Column(DbType.String, 100),

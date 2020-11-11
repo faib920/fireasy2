@@ -10,7 +10,7 @@ namespace Fireasy.Data.Entity.Linq.Expressions
     {
         public override string ToString()
         {
-            return "A:" + GetHashCode();
+            return "Alais_" + GetHashCode();
         }
     }
 }

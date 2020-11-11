@@ -463,7 +463,7 @@ namespace Fireasy.Data.Entity.Query
         /// </summary>
         private class OperateFinder : Common.Linq.Expressions.ExpressionVisitor
         {
-            private Type operateType;
+            private Type _operateType;
 
             /// <summary>
             /// 检查表达式，查找操作的实体类型。
@@ -474,7 +474,7 @@ namespace Fireasy.Data.Entity.Query
             {
                 var checker = new OperateFinder();
                 checker.Visit(expression);
-                return checker.operateType;
+                return checker._operateType;
             }
 
             protected override Expression VisitMethodCall(MethodCallExpression node)
@@ -510,7 +510,7 @@ namespace Fireasy.Data.Entity.Query
                     var elementType = constExp.Type.GetGenericArguments()[0];
                     if (typeof(IEntity).IsAssignableFrom(elementType))
                     {
-                        operateType = elementType;
+                        _operateType = elementType;
                     }
                 }
 
@@ -523,7 +523,7 @@ namespace Fireasy.Data.Entity.Query
         /// </summary>
         private class RelationshipFinder : Common.Linq.Expressions.ExpressionVisitor
         {
-            private readonly List<Type> types = new List<Type>();
+            private readonly List<Type> _types = new List<Type>();
 
             /// <summary>
             /// 在表达式中查找关联查询的实体类型。
@@ -534,7 +534,7 @@ namespace Fireasy.Data.Entity.Query
             {
                 var finder = new RelationshipFinder();
                 finder.Visit(expression);
-                return finder.types;
+                return finder._types;
             }
 
             protected override Expression VisitMember(MemberExpression memberExp)
@@ -560,9 +560,9 @@ namespace Fireasy.Data.Entity.Query
 
             private void TryAddType(Type elementType)
             {
-                if (typeof(IEntity).IsAssignableFrom(elementType) && !types.Contains(elementType))
+                if (typeof(IEntity).IsAssignableFrom(elementType) && !_types.Contains(elementType))
                 {
-                    types.Add(elementType);
+                    _types.Add(elementType);
                 }
             }
         }

@@ -78,6 +78,9 @@ namespace Fireasy.Data.Entity
         internal const string NotSupportDbProvider = "NotSupportDbProvider";
         internal const string InvalidExpressionInit = "InvalidExpressionInit";
         internal const string NotFoundRelationshipKey = "NotFoundRelationshipKey";
+        internal const string InvalidContructorParametersWithPrimaryKeys = "InvalidContructorParametersWithPrimaryKeys";
+        internal const string NotFoundSelectMethod = "NotFoundSelectMethod";
+        internal const string NotSupportNewExpressionOnStringJoin = "NotSupportNewExpressionOnStringJoin";
     }
 
     internal sealed class SR

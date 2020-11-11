@@ -88,7 +88,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             if (c.Value != null && !IsNumeric(c.Value.GetType()))
             {
-                var tv = new TypeAndValue(c.Type, c.Value);
+                var tv = new TypeAndValue(c.Type, _isLikeMethod, c.Value);
                 if (!_tmap.TryGetValue(tv, out NamedValueExpression nv))
                 {
                     var useEscape = false;
@@ -203,12 +203,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
             private readonly Type _type;
             private readonly object _value;
             private readonly int _hash;
+            private readonly bool _isLike;
 
-            public TypeAndValue(Type type, object value)
+            public TypeAndValue(Type type, bool isLike, object value)
             {
                 _type = type;
                 _value = value;
-                _hash = type.GetHashCode() + (value != null ? value.GetHashCode() : 0);
+                _isLike = isLike;
+                _hash = type.GetHashCode() + (value != null ? value.GetHashCode() : 0) + (_isLike ? 1 : 0);
             }
 
             public override bool Equals(object obj)
@@ -223,7 +225,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             public bool Equals(TypeAndValue vt)
             {
-                return vt._type == _type && Equals(vt._value, _value);
+                return vt._type == _type && Equals(vt._value, _value) && _isLike == vt._isLike;
             }
 
             public override int GetHashCode()

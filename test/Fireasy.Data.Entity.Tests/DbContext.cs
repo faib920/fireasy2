@@ -24,43 +24,28 @@ namespace Fireasy.Data.Entity.Tests
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            builder.Entity<Orders>(e =>
-                {
-                    e.Property(p => p.OrderID)
-                        .IsPrimaryKey()
-                        .HasIdentity(IdentityGenerateType.AutoIncrement);
+            builder.Entity<Orders>(s =>
+            {
+                s.Property(t => t.OrderID).IsPrimaryKey();
 
-                    e.Property(p => p.CustomerID).HasColumnName("customerid");
-                    e.Property(p => p.EmployeeID);
-                    e.Property(p => p.OrderDate);
+                s.HasMany(t => t.OrderDetailses);
+                s.HasOne(t => t.Customers);
 
-                    e.HasMany(r => r.OrderDetailses)
-                        .WithOne().HasPrimaryKey(t => t.OrderID)
-                        .HasForeignKey(t => t.OrderID);
+            }).ToTable("orders");
 
-                    e.HasOne(r => r.Customers)
-                        .WithMany()
-                        .HasPrimaryKey(t => t.CompanyName)
-                        .HasForeignKey(t => t.CustomerID);
-                })
-                .ToTable("orders");
+            builder.Entity<Products>(s =>
+            {
+                s.Property(t => t.Id).HasColumnName("productid").IsPrimaryKey();
 
-            builder.Entity<OrderDetails>(s =>
-                {
-                    s.Property(p => p.OrderID);
-                    s.Property(p => p.Product1ID);
-                })
-                .ToTable("order details");
+            }).ToTable("products");
 
             builder.Entity<Customers>(s =>
-                {
-                    s.Property(p => p.CustomerID).IsPrimaryKey();
-                    s.Property(p => p.CompanyName);
-                })
-                .ToTable("customers");
+            {
+                s.Property(t => t.CustomerID).IsPrimaryKey();
 
+                s.HasMany(t => t.Orderses);
 
-            base.OnModelCreating(builder);
+            }).ToTable("customers");
         }
 
         protected override bool Dispose(bool disposing)

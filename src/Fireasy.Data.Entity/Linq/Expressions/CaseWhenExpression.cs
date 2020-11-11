@@ -22,6 +22,11 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         }
 
         public ReadOnlyCollection<CaseWhenParameter> Parameters { get; }
+
+        public override string ToString()
+        {
+            return $"Casewhen()";
+        }
     }
 
     public class CaseWhenParameter

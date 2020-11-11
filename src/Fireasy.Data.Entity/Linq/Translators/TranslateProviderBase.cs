@@ -44,6 +44,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         {
             var translation = QueryBinder.Bind(transContext, expression);
 
+            translation = HavingRewriter.Rewriter(translation);
             translation = LogicalDeleteFlagRewriter.Rewrite(translation);
             translation = GlobalQueryPolicyRewriter.Rewrite(translation);
             translation = AggregateRewriter.Rewrite(translation);

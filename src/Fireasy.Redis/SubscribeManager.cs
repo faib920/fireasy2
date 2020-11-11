@@ -37,6 +37,7 @@ namespace Fireasy.Redis
         private readonly SafetyDictionary<string, List<CSRedisClient.SubscribeObject>> _channels = new SafetyDictionary<string, List<CSRedisClient.SubscribeObject>>();
         private readonly ISubjectPersistance _persistance;
         private readonly ISubscribeNotification _notification;
+        private readonly ITopicNameNormalizer _nameNormalizer;
         private PersistentTimer _timer;
 
         /// <summary>
@@ -56,6 +57,7 @@ namespace Fireasy.Redis
         {
             _persistance = serviceProvider.TryGetService<ISubjectPersistance>(() => LocalFilePersistance.Default);
             _notification = serviceProvider.TryGetService<ISubscribeNotification>();
+            _nameNormalizer = serviceProvider.TryGetService<ITopicNameNormalizer>();
         }
 
 #if NETSTANDARD
@@ -219,6 +221,7 @@ namespace Fireasy.Redis
         public void AddSubscriber<TSubject>(string name, Action<TSubject> subscriber) where TSubject : class
         {
             var client = GetConnection(null);
+            name = TopicHelper.GetTopicName(ServiceProvider, name);
             _channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((name, msg =>
                     {
@@ -255,6 +258,7 @@ namespace Fireasy.Redis
         public void AddAsyncSubscriber<TSubject>(string name, Func<TSubject, Task> subscriber) where TSubject : class
         {
             var client = GetConnection(null);
+            name = TopicHelper.GetTopicName(ServiceProvider, name);
             _channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((name, msg =>
                     {
@@ -290,6 +294,7 @@ namespace Fireasy.Redis
         {
             var client = GetConnection();
             var name = TopicHelper.GetTopicName(subjectType);
+            name = TopicHelper.GetTopicName(ServiceProvider, name);
             _channels.GetOrAdd(name, () => new List<CSRedisClient.SubscribeObject>())
                 .Add(client.Subscribe((name, msg =>
                     {
@@ -331,8 +336,8 @@ namespace Fireasy.Redis
         /// <param name="subjectType">主题的类型。</param>
         public void RemoveSubscriber(Type subjectType)
         {
-            var channelName = TopicHelper.GetTopicName(subjectType);
-            RemoveSubscriber(channelName);
+            var name = TopicHelper.GetTopicName(subjectType);
+            RemoveSubscriber(name);
         }
 
         /// <summary>
@@ -341,6 +346,7 @@ namespace Fireasy.Redis
         /// <param name="name">主题名称。</param>
         public void RemoveSubscriber(string name)
         {
+            name = TopicHelper.GetTopicName(ServiceProvider, name);
             var client = GetConnection();
             if (_channels.TryRemove(name, out List<CSRedisClient.SubscribeObject> subs) && subs != null)
             {
@@ -391,6 +397,7 @@ namespace Fireasy.Redis
 
         private void Publish(CSRedisClient client, string name, byte[] data)
         {
+            name = TopicHelper.GetTopicName(ServiceProvider, name);
             var pdata = new StoredSubject(name, data);
 
             try
@@ -412,6 +419,7 @@ namespace Fireasy.Redis
 
         private async Task PublishAsync(CSRedisClient client, string name, byte[] data)
         {
+            name = TopicHelper.GetTopicName(ServiceProvider, name);
             var pdata = new StoredSubject(name, data);
 
             try

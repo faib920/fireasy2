@@ -51,6 +51,6 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         public TranslateOptions Options { get; }
 
-        public List<string> TemporaryBag { get; set; }
+        public List<string> TemporaryProperties { get; set; }
     }
 }

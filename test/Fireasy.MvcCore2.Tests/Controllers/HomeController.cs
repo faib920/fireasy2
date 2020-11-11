@@ -26,17 +26,17 @@ namespace Fireasy.MvcCore.Tests.Controllers
         private IService service;
         private ILogger<HomeController> logger;
 
-        public HomeController (IServiceProvider serviceProvider,
+        public HomeController(IServiceProvider serviceProvider,
             TestContext dbContext,
             IModel model,
             IService service,
-            ITaskScheduler taskScheduler, 
-            ISerializer serializer, 
+            ITaskScheduler taskScheduler,
+            ISerializer serializer,
             ISubscribeManager subscribeMgr,
             ICacheManager cacheMgr,
-            IMemoryCacheManager memoryCacheMgr, 
-            IDistributedCacheManager distributedCacheMgr, 
-            ILogger<HomeController> logger, 
+            IMemoryCacheManager memoryCacheMgr,
+            IDistributedCacheManager distributedCacheMgr,
+            ILogger<HomeController> logger,
             IDistributedLocker distributedLocker,
             IObjectMapper objMapper,
             IStringLocalizerManager stringLocalizer)
@@ -50,6 +50,26 @@ namespace Fireasy.MvcCore.Tests.Controllers
             var m1 = new Map1();
 
             var m2 = objMapper.Map<Map1, Map2>(m1);
+
+            //taskScheduler.StartExecutor< TestExecutor1>(new StartOptions<TestExecutor1>(TimeSpan.Zero, TimeSpan.FromMinutes(1)));
+            //taskScheduler.StartExecutorAsync(new StartOptions<TT1>(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(5)));
+        }
+
+        public class TT : ITaskExecutor
+        {
+            public void Execute(TaskExecuteContext context)
+            {
+                Console.WriteLine(DateTime.Now + "tt");
+            }
+        }
+
+        public class TT1 : IAsyncTaskExecutor
+        {
+            public Task ExecuteAsync(TaskExecuteContext context)
+            {
+                Console.WriteLine(DateTime.Now + "tt1");
+                return Task.CompletedTask;
+            }
         }
 
         public override void OnActionExecuting(ActionExecutingContext context)
@@ -90,7 +110,7 @@ namespace Fireasy.MvcCore.Tests.Controllers
         }
 
         [HttpGet]
-        public JsonResult TestJsonSerializeOption([FromServices]JsonSerializeOptionHosting hosting)
+        public JsonResult TestJsonSerializeOption([FromServices] JsonSerializeOptionHosting hosting)
         {
             throw new Exception("");
             hosting.Option.Converters.Add(new FullDateTimeJsonConverter());
@@ -98,20 +118,20 @@ namespace Fireasy.MvcCore.Tests.Controllers
         }
 
         [HttpGet]
-        public JsonResult TestFromServices([FromServices]IModel model)
+        public JsonResult TestFromServices([FromServices] IModel model)
         {
             return Json(45);
         }
 
         [HttpGet]
-        public DateTime GetTime([FromServices]JsonSerializeOptionHosting hosting)
+        public DateTime GetTime([FromServices] JsonSerializeOptionHosting hosting)
         {
             hosting.Option.Converters.Add(new FullDateTimeJsonConverter());
             return DateTime.Now;
         }
 
         [HttpGet]
-        public JsonResult GetTime1([FromServices]JsonSerializeOptionHosting hosting)
+        public JsonResult GetTime1([FromServices] JsonSerializeOptionHosting hosting)
         {
             hosting.Option.Converters.Add(new FullDateTimeJsonConverter());
             return Json(DateTime.Now);
@@ -128,7 +148,7 @@ namespace Fireasy.MvcCore.Tests.Controllers
             return this.Json(new Entity { Date = DateTime.Now }, new DateTimeJsonConverter("hh:mm"));
         }
 
-        public object TestOption1([FromServices]JsonSerializeOptionHosting hosting)
+        public object TestOption1([FromServices] JsonSerializeOptionHosting hosting)
         {
             hosting.Option.Converters.Add(new DateTimeJsonConverter("hh:mm"));
             return new Entity { Date = DateTime.Now };

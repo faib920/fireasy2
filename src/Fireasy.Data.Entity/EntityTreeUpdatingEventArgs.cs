@@ -112,7 +112,7 @@ namespace Fireasy.Data.Entity
 
             var queryProvider = new EntityQueryProvider(service);
             return new QuerySet<T>(new QueryProvider(queryProvider), null)
-                .UpdateWhere(entity, predicate);
+                .UpdateWhere(new EntityExecuteContext(contextProvider.Provider, entity), predicate);
         }
 
         /// <summary>

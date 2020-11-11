@@ -2,6 +2,8 @@
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
 
+using System.Diagnostics;
+
 namespace Fireasy.Data.Entity.Linq.Expressions
 {
     /// <summary>
@@ -65,6 +67,10 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// 聚合子查询表达式。
         /// </summary>
         AggregateSubquery,
+        /// <summary>
+        /// 聚合连接表达式。
+        /// </summary>
+        AggregateContact,
         /// <summary>
         /// 为空表达式。
         /// </summary>

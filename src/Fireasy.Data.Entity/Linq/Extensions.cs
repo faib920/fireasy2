@@ -14,6 +14,7 @@ using Fireasy.Common.Reflection;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Entity.Query;
+using Fireasy.Data.Syntax;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -564,8 +565,9 @@ namespace Fireasy.Data.Entity.Linq
         /// <typeparam name="TEntity"></typeparam>
         /// <param name="source"></param>
         /// <param name="entity">更新的参考对象。</param>
+        /// <param name="propertyFilter">属性过滤器。</param>
         /// <returns></returns>
-        public static int Update<TEntity>(this IQueryable<TEntity> source, TEntity entity) where TEntity : IEntity
+        public static int Update<TEntity>(this IQueryable<TEntity> source, TEntity entity, PropertyFilter<TEntity> propertyFilter = null) where TEntity : IEntity
         {
             var predicate = PredicateGatherer<TEntity>.Gather(source.Expression);
             if (predicate == null)
@@ -573,7 +575,7 @@ namespace Fireasy.Data.Entity.Linq
                 return -1;
             }
 
-            return UpdateWhere(source, entity, predicate);
+            return UpdateWhere(source, new EntityExecuteContext(entity, propertyFilter), predicate);
         }
 
         /// <summary>
@@ -582,9 +584,10 @@ namespace Fireasy.Data.Entity.Linq
         /// <typeparam name="TEntity"></typeparam>
         /// <param name="source"></param>
         /// <param name="entity">更新的参考对象。</param>
+        /// <param name="propertyFilter">属性过滤器。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns></returns>
-        public static async Task<int> UpdateAsync<TEntity>(this IQueryable<TEntity> source, TEntity entity, CancellationToken cancellationToken = default) where TEntity : IEntity
+        public static async Task<int> UpdateAsync<TEntity>(this IQueryable<TEntity> source, TEntity entity, PropertyFilter<TEntity> propertyFilter = null, CancellationToken cancellationToken = default) where TEntity : IEntity
         {
             var predicate = PredicateGatherer<TEntity>.Gather(source.Expression);
             if (predicate == null)
@@ -592,7 +595,7 @@ namespace Fireasy.Data.Entity.Linq
                 return -1;
             }
 
-            return await UpdateWhereAsync(source, entity, predicate, cancellationToken);
+            return await UpdateWhereAsync(source, new EntityExecuteContext(entity, propertyFilter), predicate, cancellationToken);
         }
 
         /// <summary>
@@ -613,7 +616,7 @@ namespace Fireasy.Data.Entity.Linq
             var entity = EntityProxyManager.GetType(source.Provider as IContextTypeAware, typeof(TEntity)).New<TEntity>();
             entity.InitByExpression(valueCreator);
 
-            return UpdateWhere(source, entity, predicate);
+            return UpdateWhere(source, new EntityExecuteContext(entity), predicate);
         }
 
         /// <summary>
@@ -635,7 +638,7 @@ namespace Fireasy.Data.Entity.Linq
             var entity = EntityProxyManager.GetType(source.Provider as IContextTypeAware, typeof(TEntity)).New<TEntity>();
             entity.InitByExpression(valueCreator);
 
-            return await UpdateWhereAsync(source, entity, predicate, cancellationToken);
+            return await UpdateWhereAsync(source, new EntityExecuteContext(entity), predicate, cancellationToken);
         }
 
         /// <summary>
@@ -658,7 +661,7 @@ namespace Fireasy.Data.Entity.Linq
             var entity = EntityProxyManager.GetType(source.Provider as IContextTypeAware, typeof(TEntity)).New<TEntity>();
             initializer(entity);
 
-            return UpdateWhere(source, entity, predicate);
+            return UpdateWhere(source, new EntityExecuteContext(entity), predicate);
         }
 
         /// <summary>
@@ -682,7 +685,7 @@ namespace Fireasy.Data.Entity.Linq
             var entity = EntityProxyManager.GetType(source.Provider as IContextTypeAware, typeof(TEntity)).New<TEntity>();
             initializer(entity);
 
-            return await UpdateWhereAsync(source, entity, predicate, cancellationToken);
+            return await UpdateWhereAsync(source, new EntityExecuteContext(entity), predicate, cancellationToken);
         }
 
         /// <summary>
@@ -1415,59 +1418,97 @@ namespace Fireasy.Data.Entity.Linq
         /// 创建一个实体。
         /// </summary>
         /// <param name="source"></param>
-        /// <param name="wrapper"></param>
-        internal static int CreateEntity(this IQueryable source, EntityExecuteWrapper wrapper)
+        /// <param name="exeContext"></param>
+        internal static long CreateEntity(this IQueryable source, EntityExecuteContext exeContext)
         {
             CheckRepositoryIsReadonly(source.ElementType);
 
-            var entity = wrapper.Entity;
+            var entity = exeContext.Entity;
 
             var method = (MethodInfo)MethodBase.GetCurrentMethod();
             var expression = Expression.Call(null, method,
-                new[] { Expression.Constant(source), (Expression)Expression.Constant(wrapper) });
+                new[] { Expression.Constant(source), (Expression)Expression.Constant(exeContext) });
 
-            var primary = PropertyUnity.GetPrimaryProperties(entity.EntityType).FirstOrDefault(s => s.Info.GenerateType != IdentityGenerateType.None);
+            var autoIncKey = PropertyUnity.GetPersistentProperties(entity.EntityType).FirstOrDefault(s => s.Info.GenerateType == IdentityGenerateType.AutoIncrement);
 
-            var result = source.Provider.Execute<int>(expression);
+            long result;
 
-            wrapper.IsEfficient = result > 0;
+            if (autoIncKey != null && exeContext.Provider != null && exeContext.Provider.GetService<ISyntaxProvider>()?.SupportReturnIdentityValue == true)
+            {
+                result = source.Provider.Execute<long>(expression);
+                SetAutoIncrementKeyValue(entity, autoIncKey, result);
+            }
+            else
+            {
+                result = source.Provider.Execute<int>(expression);
 
-            SetEntityPrimaryKey(entity, result);
+                var genKey = PropertyUnity.GetPersistentProperties(entity.EntityType).FirstOrDefault(s => s.Info.GenerateType == IdentityGenerateType.Generator) ?? autoIncKey;
+                if (genKey != null && genKey.Type.IsNumericType())
+                {
+                    result = (long)entity.GetValue(genKey);
+                }
+            }
 
-            return result.To<int>();
+            exeContext.IsEfficient = result > 0;
+
+            return result;
         }
 
         /// <summary>
         /// 异步的，创建一个实体。
         /// </summary>
         /// <param name="source"></param>
-        /// <param name="wrapper"></param>
-        internal static async Task<int> CreateEntityAsync(this IQueryable source, EntityExecuteWrapper wrapper, CancellationToken cancellationToken = default)
+        /// <param name="exeContext"></param>
+        internal static async Task<long> CreateEntityAsync(this IQueryable source, EntityExecuteContext exeContext, CancellationToken cancellationToken = default)
         {
             CheckRepositoryIsReadonly(source.ElementType);
             CheckAsyncImplementd(source.Provider);
-            var entity = wrapper.Entity;
+            var entity = exeContext.Entity;
 
             var expression = Expression.Call(null, MethodCache.CreateEntityAsync,
-                new[] { Expression.Constant(source), (Expression)Expression.Constant(wrapper), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
+                new[] { Expression.Constant(source), (Expression)Expression.Constant(exeContext), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            var primary = PropertyUnity.GetPrimaryProperties(entity.EntityType).FirstOrDefault(s => s.Info.GenerateType != IdentityGenerateType.None);
+            var autoIncKey = PropertyUnity.GetPersistentProperties(entity.EntityType).FirstOrDefault(s => s.Info.GenerateType == IdentityGenerateType.AutoIncrement);
 
-            var result = await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<int>(expression, cancellationToken);
+            long result;
 
-            wrapper.IsEfficient = result > 0;
+            if (autoIncKey != null && exeContext.Provider != null && exeContext.Provider.GetService<ISyntaxProvider>()?.SupportReturnIdentityValue == true)
+            {
+                result = await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<long>(expression, cancellationToken);
+                SetAutoIncrementKeyValue(entity, autoIncKey, result);
+            }
+            else
+            {
+                result = await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<int>(expression, cancellationToken);
 
-            SetEntityPrimaryKey(entity, result);
+                var genKey = PropertyUnity.GetPersistentProperties(entity.EntityType).FirstOrDefault(s => s.Info.GenerateType == IdentityGenerateType.Generator) ?? autoIncKey;
+                if (genKey != null && genKey.Type.IsNumericType())
+                {
+                    result = (long)entity.GetValue(genKey);
+                }
+            }
+
+            exeContext.IsEfficient = result > 0;
 
             return result;
         }
 
-        private static void SetEntityPrimaryKey(IEntity entity, int result)
+        private static void SetAutoIncrementKeyValue(IEntity entity, IProperty autoIncKey, long result)
         {
-            var primary = PropertyUnity.GetPrimaryProperties(entity.EntityType).FirstOrDefault(s => s.Info.GenerateType != IdentityGenerateType.None);
-            if (primary != null && result > 0 && !entity.IsModified(primary.Name) && result != (int)entity.GetValue(primary))
+            if (result > 0 && !entity.IsModified(autoIncKey.Name) && result != (long)entity.GetValue(autoIncKey))
             {
-                entity.SetValue(primary, PropertyValue.NewValue(result, primary.Type));
+                if (autoIncKey.Type == typeof(int) && result < int.MaxValue)
+                {
+                    entity.SetValue(autoIncKey, (int)result);
+                }
+                else if (autoIncKey.Type == typeof(long))
+                {
+                    entity.SetValue(autoIncKey, result);
+                }
+                else
+                {
+                    entity.SetValue(autoIncKey, PropertyValue.NewValue(result, autoIncKey.Type));
+                }
             }
         }
 
@@ -1475,11 +1516,11 @@ namespace Fireasy.Data.Entity.Linq
         /// 更新一个实体。
         /// </summary>
         /// <param name="source"></param>
-        /// <param name="wrapper"></param>
-        internal static int UpdateEntity(this IQueryable source, EntityExecuteWrapper wrapper)
+        /// <param name="exeContext"></param>
+        internal static int UpdateEntity(this IQueryable source, EntityExecuteContext exeContext)
         {
             CheckRepositoryIsReadonly(source.ElementType);
-            var entity = wrapper.Entity;
+            var entity = exeContext.Entity;
 
             var expression = BindPrimaryExpression(entity);
             if (expression == null)
@@ -1487,11 +1528,11 @@ namespace Fireasy.Data.Entity.Linq
                 expression = BindAllFieldExpression(entity);
             }
 
-            var result = source.UpdateWhere(entity, expression);
+            var result = source.UpdateWhere(exeContext, expression);
 
             if (result > 0)
             {
-                wrapper.IsEfficient = true;
+                exeContext.IsEfficient = true;
             }
 
             return result;
@@ -1501,12 +1542,12 @@ namespace Fireasy.Data.Entity.Linq
         /// 异步的，更新一个实体。
         /// </summary>
         /// <param name="source"></param>
-        /// <param name="wrapper"></param>
-        internal static async Task<int> UpdateEntityAsync(this IQueryable source, EntityExecuteWrapper wrapper, CancellationToken cancellationToken = default)
+        /// <param name="exeContext"></param>
+        internal static async Task<int> UpdateEntityAsync(this IQueryable source, EntityExecuteContext exeContext, CancellationToken cancellationToken = default)
         {
             CheckRepositoryIsReadonly(source.ElementType);
             CheckAsyncImplementd(source.Provider);
-            var entity = wrapper.Entity;
+            var entity = exeContext.Entity;
 
             var expression = BindPrimaryExpression(entity);
             if (expression == null)
@@ -1514,11 +1555,11 @@ namespace Fireasy.Data.Entity.Linq
                 expression = BindAllFieldExpression(entity);
             }
 
-            var result = await source.UpdateWhereAsync(entity, expression, cancellationToken);
+            var result = await source.UpdateWhereAsync(exeContext, expression, cancellationToken);
 
             if (result > 0)
             {
-                wrapper.IsEfficient = true;
+                exeContext.IsEfficient = true;
             }
 
             return result;
@@ -1646,17 +1687,22 @@ namespace Fireasy.Data.Entity.Linq
         /// 根据 lambda 表达式更新实体。
         /// </summary>
         /// <param name="source"></param>
-        /// <param name="entity"></param>
+        /// <param name="exeContext"></param>
         /// <param name="predicate"></param>
         /// <returns></returns>
-        internal static int UpdateWhere(this IQueryable source, IEntity entity, LambdaExpression predicate)
+        internal static int UpdateWhere(this IQueryable source, EntityExecuteContext exeContext, LambdaExpression predicate)
         {
             CheckRepositoryIsReadonly(source.ElementType);
 
-            predicate ??= Expression.Lambda(Expression.Equal(Expression.Constant(1), Expression.Constant(1)), Expression.Parameter(entity.EntityType, "s"));
+            predicate ??= Expression.Lambda(Expression.Equal(Expression.Constant(1), Expression.Constant(1)), Expression.Parameter(exeContext.Entity.EntityType, "s"));
             var method = (MethodInfo)MethodBase.GetCurrentMethod();
             var expression = Expression.Call(null, method,
-                new[] { Expression.Constant(source), (Expression)Expression.Constant(entity), predicate });
+                new[]
+                {
+                    Expression.Constant(source),
+                    (Expression)Expression.Constant(exeContext),
+                    predicate
+                });
 
             return source.Provider.Execute<int>(expression);
         }
@@ -1665,17 +1711,23 @@ namespace Fireasy.Data.Entity.Linq
         /// 异步的，根据 lambda 表达式更新实体。
         /// </summary>
         /// <param name="source"></param>
-        /// <param name="entity"></param>
+        /// <param name="exeContext"></param>
         /// <param name="predicate"></param>
         /// <returns></returns>
-        internal static async Task<int> UpdateWhereAsync(this IQueryable source, IEntity entity, LambdaExpression predicate, CancellationToken cancellationToken = default)
+        internal static async Task<int> UpdateWhereAsync(this IQueryable source, EntityExecuteContext exeContext, LambdaExpression predicate, CancellationToken cancellationToken = default)
         {
             CheckRepositoryIsReadonly(source.ElementType);
             CheckAsyncImplementd(source.Provider);
 
-            predicate ??= Expression.Lambda(Expression.Equal(Expression.Constant(1), Expression.Constant(1)), Expression.Parameter(entity.EntityType, "s"));
+            predicate ??= Expression.Lambda(Expression.Equal(Expression.Constant(1), Expression.Constant(1)), Expression.Parameter(exeContext.Entity.EntityType, "s"));
             var expression = Expression.Call(null, MethodCache.UpdateWhereAsync,
-                new[] { Expression.Constant(source), (Expression)Expression.Constant(entity), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
+                new[]
+                {
+                    Expression.Constant(source),
+                    (Expression)Expression.Constant(exeContext),
+                    predicate,
+                    Expression.Constant(cancellationToken, typeof(CancellationToken))
+                });
 
             return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<int>(expression, cancellationToken);
         }
@@ -1761,7 +1813,8 @@ namespace Fireasy.Data.Entity.Linq
             var method = ReflectionCache.GetMember("RepositoryInsert", source.ElementType, rpType, (k, rt) => rt.GetMethod(nameof(IRepository.Insert), new[] { k }));
             var parSet = Expression.Parameter(rpType, "u");
             var parEle = Expression.Parameter(source.ElementType, "s");
-            return Expression.Lambda(Expression.Call(parSet, method, parEle), parSet, parEle);
+            var actType = typeof(Action<,>).MakeGenericType(rpType, source.ElementType);
+            return Expression.Lambda(actType, Expression.Call(parSet, method, parEle), parSet, parEle);
         }
 
         /// <summary>
@@ -1775,7 +1828,8 @@ namespace Fireasy.Data.Entity.Linq
             var method = ReflectionCache.GetMember("RepositoryUpdate", source.ElementType, rpType, (k, rt) => rt.GetMethod(nameof(IRepository.Update), new[] { k }));
             var parSet = Expression.Parameter(rpType, "u");
             var parEle = Expression.Parameter(source.ElementType, "s");
-            return Expression.Lambda(Expression.Call(parSet, method, parEle), parSet, parEle);
+            var actType = typeof(Action<,>).MakeGenericType(rpType, source.ElementType);
+            return Expression.Lambda(actType, Expression.Call(parSet, method, parEle), parSet, parEle);
         }
 
         /// <summary>
@@ -1790,7 +1844,8 @@ namespace Fireasy.Data.Entity.Linq
             var method = ReflectionCache.GetMember("RepositoryDelete", source.ElementType, rpType, (k, rt) => rt.GetMethod(nameof(IRepository.Delete), new[] { k, typeof(bool) }));
             var parSet = Expression.Parameter(rpType, "u");
             var parEle = Expression.Parameter(source.ElementType, "s");
-            return Expression.Lambda(Expression.Call(parSet, method, parEle, Expression.Constant(logicalDelete)), parSet, parEle);
+            var actType = typeof(Action<,>).MakeGenericType(rpType, source.ElementType);
+            return Expression.Lambda(actType, Expression.Call(parSet, method, parEle, Expression.Constant(logicalDelete)), parSet, parEle);
         }
 
         /// <summary>

@@ -25,13 +25,35 @@ namespace Fireasy.QuartzNet
         /// <returns></returns>
         public async Task Execute(IJobExecutionContext context)
         {
-            if (context.MergedJobDataMap["executor"] is Action<IServiceProvider, CancellationToken> executor)
+            if (context.MergedJobDataMap["executor"] is Action<IServiceProvider> executor)
+            {
+                var serviceProvider = context.MergedJobDataMap["serviceProvider"] as IServiceProvider;
+
+                using var scope = serviceProvider.TryCreateScope();
+                executor(scope.ServiceProvider);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 匿名的 <see cref="IJob"/> 包装器。
+    /// </summary>
+    public class AnonymousAsyncJobWrapper : IJob
+    {
+        /// <summary>
+        /// 执行任务。
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public async Task Execute(IJobExecutionContext context)
+        {
+            if (context.MergedJobDataMap["executor"] is Func<IServiceProvider, CancellationToken, Task> executor)
             {
                 var serviceProvider = context.MergedJobDataMap["serviceProvider"] as IServiceProvider;
                 var cancellationToken = (CancellationToken)context.MergedJobDataMap["cancellationToken"];
 
                 using var scope = serviceProvider.TryCreateScope();
-                executor(scope.ServiceProvider, cancellationToken);
+                await executor(scope.ServiceProvider, cancellationToken);
             }
         }
     }

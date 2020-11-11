@@ -23,7 +23,7 @@ namespace Fireasy.Data.Entity.Tests.Models
         /// </summary>
 
         [PropertyMapping(ColumnName = "ProductID", Description = "", IsPrimaryKey = true, IsNullable = false)]
-        public virtual long Product1ID { get; set; }
+        public virtual long ProductID { get; set; }
 
         /// <summary>
         /// 获取或设置。
@@ -49,7 +49,6 @@ namespace Fireasy.Data.Entity.Tests.Models
         /// <summary>
         /// 获取或设置关联 <see cref="products"/> 对象。
         /// </summary>
-        //[RelationshipAssign("ProductID", "ProductID")]
         //[RelationshipUse("ProductID")]
         public virtual Products Products { get; set; }
 

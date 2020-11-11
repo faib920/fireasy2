@@ -22,10 +22,5 @@ namespace Fireasy.Common.Tasks.Configuration
         /// 获取或设置任务调度管理器的类型。
         /// </summary>
         public Type SchedulerType { get; set; }
-
-        /// <summary>
-        /// 获取执行器配置集合。
-        /// </summary>
-        public List<TaskExecutorSetting> ExecutorSettings { get; private set; } = new List<TaskExecutorSetting>();
     }
 }

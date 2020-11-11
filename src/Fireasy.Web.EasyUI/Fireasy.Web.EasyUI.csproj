@@ -12,11 +12,13 @@
     <Product>Fireasy EasyUI Extensions</Product>
     <FileVersion>2.2.2</FileVersion>
     <AssemblyVersion>2.2.2</AssemblyVersion>
-    <Version>2.2.2-beta3</Version>
+    <Version>2.2.2</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Description>EasyUI for Asp.Net 扩展库。支持 .Net Core 3.0 版本。
+    <Description>
+      EasyUI for Asp.Net 扩展库。支持 .Net Core 3.x 版本。
 
-示例源码：https://github.com/faib920/zero</Description>
+      参考文档：http://www.fireasy.cn/docs/easyui-summary
+    </Description>
     <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>

@@ -12,8 +12,12 @@
     <Product>Fireasy Windows Forms</Product>
     <FileVersion>2.2.2</FileVersion>
     <AssemblyVersion>2.2.2</AssemblyVersion>
-    <Version>2.2.2-beta1</Version>
-    <Description>Winform 组件库，TreeList 控件及输入框控件。</Description>
+    <Version>2.2.2</Version>
+    <Description>
+      Winform 组件库，TreeList 控件及输入框控件。
+      
+      参考文档：http://www.fireasy.cn/docs/winform-summary
+    </Description>
     <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
     <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>

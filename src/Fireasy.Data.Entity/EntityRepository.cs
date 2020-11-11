@@ -39,6 +39,7 @@ namespace Fireasy.Data.Entity
         private readonly IProvider _provider;
         private readonly IContextService _contextService;
         private readonly InnerSubscribeManager _subMgr;
+        private IPropertyFilter _propertyFilter;
 
         /// <summary>
         /// 初始化 <see cref="EntityRepository{TEntity}"/> 类的新实例。
@@ -104,7 +105,7 @@ namespace Fireasy.Data.Entity
         /// 将一个新的实体对象创建到库。
         /// </summary>
         /// <param name="entity">要创建的实体对象。</param>
-        /// <returns>如果主键是自增类型，则为主键值，否则为影响的实体数。</returns>
+        /// <returns>如果主键是自增类型（主键为 int 类型时），则为主键值，否则为影响的实体数。</returns>
         public virtual int Insert(TEntity entity)
         {
             Guard.ArgumentNull(entity, nameof(entity));
@@ -114,8 +115,10 @@ namespace Fireasy.Data.Entity
                 SetDefaultValue(entity);
             }
 
-            return _subMgr.OnCreate<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
-                () => _repositoryProxy.Insert(HandleValidate(entity)));
+            var ret = _subMgr.OnCreate<TEntity, long>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
+                () => _repositoryProxy.Insert(HandleValidate(entity), _propertyFilter));
+
+            return ret > int.MaxValue ? 1 : (int)ret;
         }
 
         /// <summary>
@@ -123,7 +126,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="entity">要创建的实体对象。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
-        /// <returns>如果主键是自增类型，则为主键值，否则为影响的实体数。</returns>
+        /// <returns>如果主键是自增类型（主键为 int 类型时），则为主键值，否则为影响的实体数。</returns>
         public async virtual Task<int> InsertAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(entity, nameof(entity));
@@ -134,15 +137,17 @@ namespace Fireasy.Data.Entity
                 SetDefaultValue(entity);
             }
 
-            return await _subMgr.OnCreateAsync<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
-                () => _repositoryProxy.InsertAsync(HandleValidate(entity), cancellationToken));
+            var ret = await _subMgr.OnCreateAsync<TEntity, long>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
+                () => _repositoryProxy.InsertAsync(HandleValidate(entity), _propertyFilter, cancellationToken));
+
+            return ret > int.MaxValue ? 1 : (int)ret;
         }
 
         /// <summary>
         /// 使用一个 <see cref="MemberInitExpression"/> 表达式插入新的对象。
         /// </summary>
         /// <param name="creator">一个构造实例并成员绑定的表达式。</param>
-        /// <returns>如果主键是自增类型，则为主键值，否则为影响的实体数。</returns>
+        /// <returns>如果主键是自增类型（主键为 int 类型时），则为主键值，否则为影响的实体数。</returns>
         public virtual int Insert(Expression<Func<TEntity>> creator)
         {
             var entity = EntityProxyManager.GetType(ContextType, typeof(TEntity)).New<TEntity>();
@@ -156,7 +161,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="creator">一个构造实例并成员绑定的表达式。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
-        /// <returns>如果主键是自增类型，则为主键值，否则为影响的实体数。</returns>
+        /// <returns>如果主键是自增类型（主键为 int 类型时），则为主键值，否则为影响的实体数。</returns>
         public async virtual Task<int> InsertAsync(Expression<Func<TEntity>> creator, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -172,7 +177,7 @@ namespace Fireasy.Data.Entity
         /// 使用初始化函数将一个新的实体对象插入到库。
         /// </summary>
         /// <param name="initializer">一个初始化实体成员绑定的函数。</param>
-        /// <returns>如果主键是自增类型，则为主键值，否则为影响的实体数。</returns>
+        /// <returns>如果主键是自增类型（主键为 int 类型时），则为主键值，否则为影响的实体数。</returns>
         public virtual int Insert(Action<TEntity> initializer)
         {
             Guard.ArgumentNull(initializer, nameof(initializer));
@@ -188,7 +193,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="initializer">一个初始化实体成员绑定的函数。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
-        /// <returns>如果主键是自增类型，则为主键值，否则为影响的实体数。</returns>
+        /// <returns>如果主键是自增类型（主键为 int 类型时），则为主键值，否则为影响的实体数。</returns>
         public async virtual Task<int> InsertAsync(Action<TEntity> initializer, CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(initializer, nameof(initializer));
@@ -254,7 +259,7 @@ namespace Fireasy.Data.Entity
                 isNew = !this.Any(lambdaExp);
             }
 
-            return isNew ? Insert(entity) : Update(entity);
+            return isNew ? (Insert(entity) > 0 ? 1 : 0) : Update(entity);
         }
 
         /// <summary>
@@ -279,7 +284,7 @@ namespace Fireasy.Data.Entity
                 isNew = !this.Any(lambdaExp);
             }
 
-            return isNew ? await InsertAsync(entity, cancellationToken) : await UpdateAsync(entity, cancellationToken);
+            return isNew ? (await InsertAsync(entity, cancellationToken) > 0 ? 1 : 0) : await UpdateAsync(entity, cancellationToken);
         }
         #endregion
 
@@ -433,7 +438,7 @@ namespace Fireasy.Data.Entity
             Guard.ArgumentNull(entity, nameof(entity));
 
             return _subMgr.OnUpdate<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
-                () => _repositoryProxy.Update(HandleValidate(entity)));
+                () => _repositoryProxy.Update(HandleValidate(entity), _propertyFilter));
         }
 
         /// <summary>
@@ -448,7 +453,7 @@ namespace Fireasy.Data.Entity
             cancellationToken.ThrowIfCancellationRequested();
 
             return await _subMgr.OnUpdateAsync<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
-                () => _repositoryProxy.UpdateAsync(HandleValidate(entity), cancellationToken));
+                () => _repositoryProxy.UpdateAsync(HandleValidate(entity), _propertyFilter, cancellationToken));
         }
 
         /// <summary>
@@ -459,7 +464,7 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public virtual int Update(TEntity entity, Expression<Func<TEntity, bool>> predicate)
         {
-            var ret = _repositoryProxy.Update(entity, predicate);
+            var ret = _repositoryProxy.Update(entity, predicate, _propertyFilter);
             if (ret > 0 && _options.NotifyEvents)
             {
                 _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterUpdate);
@@ -479,7 +484,7 @@ namespace Fireasy.Data.Entity
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var ret = await _repositoryProxy.UpdateAsync(entity, predicate);
+            var ret = await _repositoryProxy.UpdateAsync(entity, predicate, _propertyFilter);
             if (ret > 0 && _options.NotifyEvents)
             {
                 _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterUpdate);
@@ -602,7 +607,7 @@ namespace Fireasy.Data.Entity
         /// <param name="fnOperation">实体操作表达式，权提供 Insert、Update 和 Delete 操作。</param>
         /// <param name="batchOpt"></param>
         /// <returns>影响的实体数。</returns>
-        public virtual int Batch(IEnumerable<TEntity> instances, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation, BatchOperateOptions batchOpt = null)
+        public virtual int Batch(IEnumerable<TEntity> instances, Expression<Action<IRepository<TEntity>, TEntity>> fnOperation, BatchOperateOptions batchOpt = null)
         {
             if (instances.IsNullOrEmpty())
             {
@@ -612,9 +617,14 @@ namespace Fireasy.Data.Entity
             var operateName = OperateFinder.Find(fnOperation);
             var eventType = GetEventType(operateName);
 
+            if (eventType == PersistentOperator.Create && _options.AllowDefaultValue)
+            {
+                instances.ForEach(s => SetDefaultValue(s));
+            }
+
             return _subMgr.OnBatch<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents,
                 instances.Cast<IEntity>(), eventType,
-                () => _repositoryProxy.Batch(instances, fnOperation, batchOpt));
+                () => _repositoryProxy.Batch(instances, fnOperation, GetBatchOperateOptions(batchOpt)));
         }
 
         /// <summary>
@@ -625,7 +635,7 @@ namespace Fireasy.Data.Entity
         /// <param name="batchOpt"></param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>影响的实体数。</returns>
-        public async virtual Task<int> BatchAsync(IEnumerable<TEntity> instances, Expression<Func<IRepository<TEntity>, TEntity, int>> fnOperation, BatchOperateOptions batchOpt = null, CancellationToken cancellationToken = default)
+        public async virtual Task<int> BatchAsync(IEnumerable<TEntity> instances, Expression<Action<IRepository<TEntity>, TEntity>> fnOperation, BatchOperateOptions batchOpt = null, CancellationToken cancellationToken = default)
         {
             if (instances.IsNullOrEmpty())
             {
@@ -637,9 +647,14 @@ namespace Fireasy.Data.Entity
             var operateName = OperateFinder.Find(fnOperation);
             var eventType = GetEventType(operateName);
 
+            if (eventType == PersistentOperator.Create && _options.AllowDefaultValue)
+            {
+                instances.ForEach(s => SetDefaultValue(s));
+            }
+
             return await _subMgr.OnBatchAsync<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents,
                 instances.Cast<IEntity>(), eventType,
-                () => _repositoryProxy.BatchAsync(instances, fnOperation, batchOpt, cancellationToken));
+                () => _repositoryProxy.BatchAsync(instances, fnOperation, GetBatchOperateOptions(batchOpt), cancellationToken));
         }
         #endregion
 
@@ -685,11 +700,73 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 配置参数。
         /// </summary>
-        /// <param name="configuration">配置参数的方法。</param>
+        /// <param name="setupAction">配置参数的方法。</param>
         /// <returns></returns>
-        public EntityRepository<TEntity> ConfigOptions(Action<EntityContextOptions> configuration)
+        public EntityRepository<TEntity> ConfigOptions(Action<EntityContextOptions> setupAction)
         {
-            configuration?.Invoke(_options);
+            setupAction?.Invoke(_options);
+            return this;
+        }
+
+        /// <summary>
+        /// 设置 Insert 或 Update 时的属性过滤器。
+        /// </summary>
+        /// <param name="propertyFilter"></param>
+        /// <returns></returns>
+        public EntityRepository<TEntity> Filter(PropertyFilter<TEntity> propertyFilter)
+        {
+            _propertyFilter = propertyFilter;
+
+            return this;
+        }
+
+        /// <summary>
+        /// 初始化 Insert 或 Update 时需要包含的属性。
+        /// </summary>
+        /// <param name="fnFilter"></param>
+        /// <returns></returns>
+        public EntityRepository<TEntity> IncludeFilter(Action<PropertyFilter<TEntity>> fnFilter)
+        {
+            _propertyFilter = PropertyFilter<TEntity>.Inclusive();
+            fnFilter?.Invoke((PropertyFilter<TEntity>)_propertyFilter);
+
+            return this;
+        }
+
+        /// <summary>
+        /// 初始化 Insert 或 Update 时需要包含的属性。
+        /// </summary>
+        /// <param name="newExp">匿名类型构造表达式。</param>
+        /// <returns></returns>
+        public EntityRepository<TEntity> IncludeFilter(Expression<Func<TEntity, object>> newExp)
+        {
+            _propertyFilter = PropertyFilter<TEntity>.Inclusive().With(newExp);
+
+            return this;
+        }
+
+        /// <summary>
+        /// 初始化 Insert 或 Update 时需要排除的属性。
+        /// </summary>
+        /// <param name="fnFilter"></param>
+        /// <returns></returns>
+        public EntityRepository<TEntity> ExcludeFilter(Action<PropertyFilter<TEntity>> fnFilter)
+        {
+            _propertyFilter = PropertyFilter<TEntity>.Exclusive();
+            fnFilter?.Invoke((PropertyFilter<TEntity>)_propertyFilter);
+
+            return this;
+        }
+
+        /// <summary>
+        /// 初始化 Insert 或 Update 时需要排除的属性。
+        /// </summary>
+        /// <param name="newExp">匿名类型构造表达式。</param>
+        /// <returns></returns>
+        public EntityRepository<TEntity> ExcludeFilter(Expression<Func<TEntity, object>> newExp)
+        {
+            _propertyFilter = PropertyFilter<TEntity>.Exclusive().With(newExp);
+
             return this;
         }
 
@@ -870,6 +947,36 @@ namespace Fireasy.Data.Entity
             return Associate(memberQuery);
         }
 
+        /// <summary>
+        /// 设置 Insert 或 Update 时的属性过滤器。
+        /// </summary>
+        /// <param name="propertyFilter"></param>
+        /// <returns></returns>
+        IRepository<TEntity> IRepository<TEntity>.Filter(PropertyFilter<TEntity> propertyFilter)
+        {
+            return Filter(propertyFilter);
+        }
+
+        /// <summary>
+        /// 初始化 Insert 或 Update 时需要包含的属性。
+        /// </summary>
+        /// <param name="fnFilter"></param>
+        /// <returns></returns>
+        IRepository<TEntity> IRepository<TEntity>.IncludeFilter(Action<PropertyFilter<TEntity>> fnFilter)
+        {
+            return IncludeFilter(fnFilter);
+        }
+
+        /// <summary>
+        /// 初始化 Insert 或 Update 时需要排除的属性。
+        /// </summary>
+        /// <param name="fnFilter"></param>
+        /// <returns></returns>
+        IRepository<TEntity> IRepository<TEntity>.ExcludeFilter(Action<PropertyFilter<TEntity>> fnFilter)
+        {
+            return ExcludeFilter(fnFilter);
+        }
+
         #endregion
 
         /// <summary>
@@ -902,6 +1009,20 @@ namespace Fireasy.Data.Entity
                     entity.SetValue(property, property.Info.DefaultValue.TryAllotValue(property.Type, property.Info.DefaultValueFormatter));
                 }
             }
+        }
+
+        private BatchOperateOptions GetBatchOperateOptions(BatchOperateOptions batchOpt)
+        {
+            if (batchOpt == null)
+            {
+                batchOpt = new BatchOperateOptions { PropertyFilter = _propertyFilter };
+            }
+            else if (batchOpt.PropertyFilter == null)
+            {
+                batchOpt.PropertyFilter = _propertyFilter;
+            }
+
+            return batchOpt;
         }
 
         /// <summary>

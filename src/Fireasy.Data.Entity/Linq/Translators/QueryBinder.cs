@@ -193,6 +193,10 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         return BindInsert(_batchSource, node.Arguments[0], isAsync);
                 }
             }
+            else if (_currentGroupElement != null && node.Method.DeclaringType == typeof(string) && node.Method.Name == nameof(string.Join))
+            {
+                return BindAggregateContact(node.Arguments[0], node.Arguments[1] as MethodCallExpression);
+            }
 
             return base.VisitMethodCall(node);
         }
@@ -804,13 +808,13 @@ namespace Fireasy.Data.Entity.Linq.Translators
             Expression resultExpr;
             if (resultSelector != null)
             {
-                var saveGroupElement = m_currentGroupElement;
-                m_currentGroupElement = elementSubquery;
+                var saveGroupElement = _currentGroupElement;
+                _currentGroupElement = elementSubquery;
                 // compute result expression based on key & element-subquery
                 _expMaps[resultSelector.Parameters[0]] = keyProjection.Projector;
                 _expMaps[resultSelector.Parameters[1]] = elementSubquery;
                 resultExpr = Visit(resultSelector.Body);
-                m_currentGroupElement = saveGroupElement;
+                _currentGroupElement = saveGroupElement;
             }
             else
             {
@@ -893,10 +897,28 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         private Expression BindBetween(Expression source, Expression lower, Expression upper)
         {
+            if (lower is ConstantExpression lowerVal && upper is ConstantExpression upperVal)
+            {
+                if (lowerVal.Value == null && upperVal.Value == null)
+                {
+                    return Expression.MakeBinary(ExpressionType.Equal, Expression.Constant(1), Expression.Constant(0));
+                }
+
+                if (lowerVal.Value == null)
+                {
+                    return Expression.MakeBinary(ExpressionType.LessThan, Visit(source), upper);
+                }
+
+                if (upperVal.Value == null)
+                {
+                    return Expression.MakeBinary(ExpressionType.GreaterThanOrEqual, Visit(source), lower);
+                }
+            }
+
             return new BetweenExpression(Visit(source), Visit(lower), Visit(upper));
         }
 
-        private Expression m_currentGroupElement;
+        private Expression _currentGroupElement;
 
         private class GroupByInfo
         {
@@ -1307,7 +1329,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 // check for easy to optimize case.  If the projection that our aggregate is based on is really the 'group' argument from
                 // the query.GroupBy(xxx, (key, group) => yyy) method then whatever expression we return here will automatically
                 // become part of the select expression that has the group-by clause, so just return the simple aggregate expression.
-                if (projection == m_currentGroupElement)
+                if (projection == _currentGroupElement)
                 {
                     return aggExpr;
                 }
@@ -1316,6 +1338,34 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
 
             return subquery;
+        }
+
+        private Expression BindAggregateContact(Expression separator, MethodCallExpression node)
+        {
+            var found = AggregateContactSelectFinder.Find(node);
+            if (found == null)
+            {
+                throw new InvalidOperationException(SR.GetString(SRKind.NotFoundSelectMethod));
+            }
+
+            var lambda = GetLambda(found.Item2);
+
+            if (!(lambda.Body is MemberExpression))
+            {
+                throw new ArgumentException(SR.GetString(SRKind.NotSupportNewExpressionOnStringJoin));
+            }
+
+            var projection = VisitSequence(found.Item1);
+
+            ColumnExpression column = null;
+
+            if (_groupByMap.TryGetValue(projection, out GroupByInfo info))
+            {
+                _expMaps[lambda.Parameters[0]] = info.Element;
+                column = (ColumnExpression)Visit(lambda.Body);
+            }
+
+            return new AggregateContactExpression(separator, column);
         }
 
         private Expression BindDistinct(Expression source)
@@ -1497,6 +1547,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     {
                         where = Expression.Or(where, expr);
                     }
+                }
+
+                if (where == null)
+                {
+                    return Expression.MakeBinary(ExpressionType.Equal, Expression.Constant(1), Expression.Constant(0));
                 }
 
                 return Visit(where);
@@ -1762,7 +1817,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <returns></returns>
         private LambdaExpression BindConcurrencyLockingExpression(ConstantExpression instance, LambdaExpression predicate)
         {
-            var entity = instance.Value as IEntity;
+            var entity = (instance.Value as EntityExecuteContext).Entity;
             var parExp = predicate.Parameters[0];
             var body = predicate.Body;
             var properties = EntityMetadataUnity.GetEntityMetadata(entity.EntityType).ConcurrencyProperties;
@@ -1800,11 +1855,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var properties = QueryUtility.GetModifiedProperties(instances, options);
 
             //在序列中查找被修改的属性列表
-            _transContext.TemporaryBag = properties;
+            _transContext.TemporaryProperties = properties;
 
             var op = (LambdaExpression)Visit(operation);
 
-            _transContext.TemporaryBag = null;
+            _transContext.TemporaryProperties = null;
 
             var items = (ConstantExpression)Visit(instances);
             return new BatchCommandExpression(items, op, isAsync, properties);
@@ -2172,6 +2227,41 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 _parameterType = parExp.Type;
                 return parExp;
+            }
+        }
+
+        private class AggregateContactSelectFinder : Common.Linq.Expressions.ExpressionVisitor
+        {
+            private Expression _argumentExp;
+            private ParameterExpression _parExp;
+
+            public static Tuple<ParameterExpression, Expression> Find(Expression expression)
+            {
+                var finder = new AggregateContactSelectFinder();
+                finder.Visit(expression);
+                return Tuple.Create(finder._parExp, finder._argumentExp);
+            }
+
+            protected override Expression VisitParameter(ParameterExpression parExp)
+            {
+                if (parExp.Type.IsGenericType && parExp.Type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                {
+                    _parExp = parExp;
+                }
+
+                return parExp;
+            }
+
+            protected override Expression VisitMethodCall(MethodCallExpression node)
+            {
+                var args = VisitExpressionList(node.Arguments);
+
+                if (node.Method.DeclaringType == typeof(Enumerable) && node.Method.Name == nameof(Enumerable.Select))
+                {
+                    _argumentExp = node.Arguments[1];
+                }
+
+                return node;
             }
         }
     }

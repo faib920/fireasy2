@@ -99,10 +99,12 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="entity"></param>
         /// <param name="property"></param>
-        internal static void CheckPrimaryProperty(IEntity entity, IProperty property)
+        internal static void CheckPrimaryProperty(IEntity entity, IProperty property, PropertyValue value)
         {
             //已经持久化后的实体的主键值不能修改
-            if (entity.EntityState != EntityState.Attached && property.Info.IsPrimaryKey)
+            if (entity.EntityState != EntityState.Attached && 
+                property.Info.IsPrimaryKey &&
+                entity.GetValue(property) != value)
             {
                 throw new PrimaryPropertyUpdateException(property);
             }

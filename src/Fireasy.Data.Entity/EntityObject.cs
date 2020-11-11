@@ -137,7 +137,7 @@ namespace Fireasy.Data.Entity
 
             //验证属性值
             //ValidationUnity.Validate(this, property, value);
-            EntityUtility.CheckPrimaryProperty(this, property);
+            EntityUtility.CheckPrimaryProperty(this, property, value);
 
             if (CheckPropertyChangingIsCanceled(property, value, oldValue))
             {

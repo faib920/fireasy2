@@ -12,11 +12,10 @@ namespace Fireasy.Data.Entity.Metadata.Builders
     /// <summary>
     /// 属性映射构造器。
     /// </summary>
-    /// <typeparam name="TProperty"></typeparam>
-    public class PropertyBuilder<TProperty> : IMetadataBuilder
+    public class PropertyBuilder : IMetadataBuilder
     {
-        private readonly EntityMetadata _metadata;
-        private readonly PropertyMapInfo _mapInfo;
+        protected readonly EntityMetadata _metadata;
+        protected readonly PropertyMapInfo _mapInfo;
 
         public PropertyBuilder(EntityMetadata metadata, PropertyInfo pinfo)
         {
@@ -26,6 +25,24 @@ namespace Fireasy.Data.Entity.Metadata.Builders
             {
                 _mapInfo = new PropertyMapInfo { ReflectionInfo = pinfo };
             }
+        }
+
+        public virtual void Build()
+        {
+            var property = PropertyUnity.RegisterProperty(_mapInfo.ReflectionInfo.Name, _mapInfo.ReflectionInfo.PropertyType, _metadata.EntityType, _mapInfo);
+            _metadata.InternalAddProperty(property);
+        }
+    }
+
+    /// <summary>
+    /// 属性映射构造器。
+    /// </summary>
+    /// <typeparam name="TProperty"></typeparam>
+    public class PropertyBuilder<TProperty> : PropertyBuilder
+    {
+        public PropertyBuilder(EntityMetadata metadata, PropertyInfo pinfo)
+            : base (metadata, pinfo)
+        {
         }
 
         /// <summary>
@@ -156,12 +173,14 @@ namespace Fireasy.Data.Entity.Metadata.Builders
         }
 
         /// <summary>
-        /// 构造元数据。
+        /// 指定默认值的格式。
         /// </summary>
-        public virtual void Build()
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public virtual PropertyBuilder<TProperty> DefaultValueFormatter(string formatter)
         {
-            var property = PropertyUnity.RegisterProperty(_mapInfo.ReflectionInfo.Name, _mapInfo.ReflectionInfo.PropertyType, _metadata.EntityType, _mapInfo);
-            _metadata.InternalAddProperty(property);
+            _mapInfo.DefaultValueFormatter = formatter;
+            return this;
         }
 
         internal class NullBuilder : PropertyBuilder<TProperty>
@@ -227,6 +246,11 @@ namespace Fireasy.Data.Entity.Metadata.Builders
             }
 
             public override PropertyBuilder<TProperty> HasDefaultValue(PropertyValue value)
+            {
+                return this;
+            }
+
+            public override PropertyBuilder<TProperty> DefaultValueFormatter(string formatter)
             {
                 return this;
             }

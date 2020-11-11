@@ -22,7 +22,7 @@ namespace Fireasy.AutoMapper
 #if NETSTANDARD
         public ObjectMapper(AP.IMapper mapper)
         {
-            this._mapper = mapper;
+            _mapper = mapper;
         }
 #endif
 

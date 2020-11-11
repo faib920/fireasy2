@@ -228,7 +228,8 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 {
                     var cd = select.Columns[i];
                     if (cd.Expression.NodeType != (ExpressionType)DbExpressionType.Column &&
-                        cd.Expression.NodeType != ExpressionType.Constant)
+                        cd.Expression.NodeType != ExpressionType.Constant &&
+                        cd.Expression.NodeType != (ExpressionType)DbExpressionType.AggregateContact)
                     {
                         return false;
                     }

@@ -42,7 +42,7 @@ namespace Fireasy.Data.Syntax
         /// <summary>
         /// 获取最近创建的自动编号的查询文本。
         /// </summary>
-        public virtual string IdentitySelect => "SELECT SCOPE_IDENTITY()";
+        public virtual string IdentitySelect => ";SELECT SCOPE_IDENTITY()";
 
         /// <summary>
         /// 获取自增长列的关键词。
@@ -83,6 +83,11 @@ namespace Fireasy.Data.Syntax
         /// 获取是否允许在没有 FORM 的语句中使用子查询。
         /// </summary>
         public bool SupportSubqueryInSelectWithoutFrom => true;
+
+        /// <summary>
+        /// 获取是否支持同时返回自增值。
+        /// </summary>
+        public bool SupportReturnIdentityValue => true;
 
         /// <summary>
         /// 对命令文本进行分段处理，使之能够返回小范围内的数据。

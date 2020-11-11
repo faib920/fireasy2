@@ -28,5 +28,9 @@ namespace Fireasy.Data.Entity.Linq.Expressions
             return @select != Select ? new ExistsExpression(@select) : this;
         }
 
+        public override string ToString()
+        {
+            return $"Exists({Select})";
+        }
     }
 }

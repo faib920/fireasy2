@@ -30,11 +30,6 @@ namespace Microsoft.Extensions.DependencyInjection
 
             return services;
         }
-
-        public static void dd(this IServiceCollection stt)
-        {
-            stt.AddMapster(s => s.Map<string, string>(t => t.Map(w => w.Length, v => v.Length)));
-        }
     }
 }
 #endif

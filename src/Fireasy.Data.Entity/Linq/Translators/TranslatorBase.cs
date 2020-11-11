@@ -212,7 +212,11 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 case (ExpressionType)DbExpressionType.Scalar:
                 case (ExpressionType)DbExpressionType.Exists:
                 case (ExpressionType)DbExpressionType.In:
+                    return base.Visit(exp);
                 case (ExpressionType)DbExpressionType.AggregateSubquery:
+                    return base.Visit(exp);
+                case (ExpressionType)DbExpressionType.AggregateContact:
+                    return base.Visit(exp);
                 case (ExpressionType)DbExpressionType.IsNull:
                 case (ExpressionType)DbExpressionType.Between:
                 case (ExpressionType)DbExpressionType.RowCount:
@@ -860,6 +864,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return aggregate;
         }
 
+        protected override Expression VisitAggregateContact(AggregateContactExpression aggregate)
+        {
+            Write(Syntax.String.GroupConcat(TranslateString(aggregate.Column), TranslateString(aggregate.Separator)));
+            return aggregate;
+        }
+
         protected override Expression VisitIsNull(IsNullExpression isnull)
         {
             VisitValue(isnull.Expression);
@@ -1035,11 +1045,6 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitInsert(InsertCommandExpression insert)
         {
-            if (string.IsNullOrEmpty(Syntax.IdentitySelect))
-            {
-                insert.WithAutoIncrement = false;
-            }
-
             if (insert.Table != null)
             {
                 Write("INSERT INTO ");
@@ -1081,10 +1086,16 @@ namespace Fireasy.Data.Entity.Linq.Translators
             WriteLine(Indentation.Outer);
             Write(")");
 
-            if (insert.WithAutoIncrement)
+            if (insert.WithAutoIncrementValue)
             {
-                Write(";\n");
-                Write(Syntax.IdentitySelect);
+                if (Syntax.IdentitySelect.IndexOf("{0}") != -1)
+                {
+                    Write(string.Format(Syntax.IdentitySelect, insert.IdentityProperty.Info.ColumnName));
+                }
+                else
+                {
+                    Write(Syntax.IdentitySelect);
+                }
             }
 
             return insert;
@@ -1300,7 +1311,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 case nameof(string.StartsWith):
                     Write(string.Format("({0} LIKE {1}{2})",
                             TranslateString(m.Object),
-                            Syntax.String.Concat(TranslateString(m.Arguments[0]), "'%'"), 
+                            Syntax.String.Concat(TranslateString(m.Arguments[0]), "'%'"),
                             GetEscapeString(m.Arguments))
                         );
                     break;
@@ -1314,7 +1325,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 case nameof(string.Contains):
                     Write(string.Format("({0} LIKE {1}{2})",
                             TranslateString(m.Object),
-                            Syntax.String.Concat("'%'", TranslateString(m.Arguments[0]), "'%'"), 
+                            Syntax.String.Concat("'%'", TranslateString(m.Arguments[0]), "'%'"),
                             GetEscapeString(m.Arguments))
                         );
                     break;

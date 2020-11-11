@@ -68,6 +68,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
             return base.VisitSubquery(subquery);
         }
 
+        protected override Expression VisitAggregateContact(AggregateContactExpression aggregate)
+        {
+            var column = aggregate.Column;
+            MarkColumnAsUsed(column.Alias, column.Name);
+
+            return base.VisitAggregateContact(aggregate);
+        }
+
         protected override Expression VisitSelect(SelectExpression select)
         {
             // visit column projection first

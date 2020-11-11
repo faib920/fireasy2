@@ -16,5 +16,10 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         {
             return select != Select ? new ScalarExpression(Type, select) : this;
         }
+
+        public override string ToString()
+        {
+            return $"Scalar({Select})";
+        }
     }
 }

@@ -70,11 +70,7 @@ namespace Fireasy.Common.Aop
             internal protected static MethodInfo MembersAdd = typeof(List<MemberInfo>).GetMethod(nameof(List<MemberInfo>.Add));
             internal protected static MethodInfo TaskAsSync = typeof(TaskExtension).GetMethods().FirstOrDefault(s => s.Name == nameof(TaskExtension.AsSync) && !s.IsGenericMethod);
             internal protected static MethodInfo TaskAsSyncT = typeof(TaskExtension).GetMethods().FirstOrDefault(s => s.Name == nameof(TaskExtension.AsSync) && s.IsGenericMethod);
-#if NET45
             internal protected static MethodInfo CompletedTask = typeof(TaskCompatible).GetProperty(nameof(TaskCompatible.CompletedTask)).GetMethod;
-#else
-            internal protected static MethodInfo CompletedTask = typeof(Task).GetProperty(nameof(Task.CompletedTask)).GetMethod;
-#endif
         }
 
         /// <summary>

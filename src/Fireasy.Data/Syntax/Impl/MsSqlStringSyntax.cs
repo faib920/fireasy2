@@ -22,5 +22,16 @@ namespace Fireasy.Data.Syntax
         {
             return $"LEN({sourceExp})";
         }
+
+        /// <summary>
+        /// 将分组后的某字段连接为新的字符串。
+        /// </summary>
+        /// <param name="sourceExp"></param>
+        /// <param name="separator">分隔符。</param>
+        /// <returns></returns>
+        public override string GroupConcat(object sourceExp, object separator)
+        {
+            return $"STRING_AGG({sourceExp}, {separator})";
+        }
     }
 }

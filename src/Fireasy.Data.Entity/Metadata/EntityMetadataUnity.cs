@@ -19,6 +19,11 @@ namespace Fireasy.Data.Entity.Metadata
         private static readonly SafetyDictionary<Type, EntityMetadata> _cache = new SafetyDictionary<Type, EntityMetadata>();
 
         /// <summary>
+        /// 获取或设置可元数据化的属性解析器。
+        /// </summary>
+        public static IPropertyMetadataResolver PropertyMetadataResolver { get; set; } = new DefaultPropertyMetadataResolver();
+
+        /// <summary>
         /// 获取指定类型的实体元数据。
         /// </summary>
         /// <param name="entityType">实体类型。</param>

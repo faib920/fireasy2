@@ -10,6 +10,8 @@ using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using System;
 using System.Xml;
+using System.Collections.Generic;
+using Fireasy.Common.Serialization;
 #if NETSTANDARD
 using Microsoft.Extensions.Configuration;
 #endif
@@ -31,11 +33,11 @@ namespace Fireasy.Common.Tasks.Configuration
             InitializeNode(
                 section,
                 "scheduler",
-                func: node => InitializeSetting(new TaskScheduleConfigurationSetting
+                func: node => new TaskScheduleConfigurationSetting
                 {
                     Name = node.GetAttributeValue("name"),
                     SchedulerType = Type.GetType(node.GetAttributeValue("type"), false, true)
-                }, node));
+                });
 
             //取默认实例
             DefaultInstanceName = section.GetAttributeValue("default");
@@ -52,62 +54,16 @@ namespace Fireasy.Common.Tasks.Configuration
         {
             Bind(configuration,
                 "settings",
-                func: c => InitializeSetting(new TaskScheduleConfigurationSetting
+                func: c => new TaskScheduleConfigurationSetting
                 {
                     Name = c.Key,
                     SchedulerType = Type.GetType(c.GetSection("type").Value, false, true)
-                }, c));
+                });
 
             //取默认实例
             DefaultInstanceName = configuration.GetSection("default").Value;
 
             base.Bind(configuration);
-        }
-#endif
-
-        private TaskScheduleConfigurationSetting InitializeSetting(TaskScheduleConfigurationSetting setting, XmlNode node)
-        {
-            var root = node.SelectSingleNode("executors");
-            if (root == null)
-            {
-                return setting;
-            }
-
-            foreach (XmlNode child in root.SelectNodes("executors"))
-            {
-                var executorType = child.GetAttributeValue("type");
-                var delay = child.GetAttributeValue("delay").ToTimeSpan();
-                var period = child.GetAttributeValue("period").ToTimeSpan(TimeSpan.FromMinutes(10));
-
-                setting.ExecutorSettings.Add(new TaskExecutorSetting
-                {
-                    ExecutorType = executorType.ParseType(),
-                    Delay = delay,
-                    Period = period
-                });
-            }
-
-            return setting;
-        }
-
-#if NETSTANDARD
-        private TaskScheduleConfigurationSetting InitializeSetting(TaskScheduleConfigurationSetting setting, IConfiguration config)
-        {
-            foreach (var child in config.GetSection("executors").GetChildren())
-            {
-                var executorType = child.GetSection("type").Value;
-                var delay = child.GetSection("delay").Value.ToTimeSpan();
-                var period = child.GetSection("period").Value.ToTimeSpan(TimeSpan.FromMinutes(10));
-
-                setting.ExecutorSettings.Add(new TaskExecutorSetting
-                {
-                    ExecutorType = executorType.ParseType(),
-                    Delay = delay,
-                    Period = period
-                });
-            }
-
-            return setting;
         }
 #endif
     }

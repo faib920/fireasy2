@@ -47,5 +47,10 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         {
             return expression != Expression ? new EntityExpression(Metadata, expression) : this;
         }
+
+        public override string ToString()
+        {
+            return $"Entity({Metadata.EntityType.Name})";
+        }
     }
 }

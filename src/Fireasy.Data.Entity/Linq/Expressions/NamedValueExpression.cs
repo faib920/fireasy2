@@ -34,5 +34,10 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         public DbType DataType { get; }
 
         public bool UseEscape { get; }
+
+        public override string ToString()
+        {
+            return $"Named({Name}:{Value})";
+        }
     }
 }

@@ -31,5 +31,11 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         /// 获取参照的列表达式。
         /// </summary>
         public Expression Expression { get; }
+
+        public override string ToString()
+        {
+            return $"OrderBy({Expression})";
+        }
+
     }
 }

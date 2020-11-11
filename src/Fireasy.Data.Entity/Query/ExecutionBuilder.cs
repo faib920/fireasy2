@@ -59,6 +59,7 @@ namespace Fireasy.Data.Entity.Query
             internal protected static readonly MethodInfo ConvertTo = typeof(IValueConverter).GetMethod(nameof(IValueConverter.ConvertTo));
             internal protected static readonly MethodInfo GetConverter = typeof(ConvertManager).GetMethod(nameof(ConvertManager.GetConverter));
             internal protected static readonly MethodInfo GenerateIdentityValue = typeof(ExecutionBuilder).GetMethod(nameof(ExecutionBuilder.GenerateIdentityValue), BindingFlags.Static | BindingFlags.NonPublic);
+            internal protected static readonly MethodInfo GenerateGuidStringValue = typeof(ExecutionBuilder).GetMethod(nameof(ExecutionBuilder.GenerateGuidStringValue), BindingFlags.Static | BindingFlags.NonPublic);
             internal protected static readonly MethodInfo GenerateGuidValue = typeof(ExecutionBuilder).GetMethod(nameof(ExecutionBuilder.GenerateGuidValue), BindingFlags.Static | BindingFlags.NonPublic);
             internal protected static readonly Expression ExpNullParameter = Expression.Constant(null, typeof(ParameterCollection));
         }
@@ -174,7 +175,7 @@ namespace Fireasy.Data.Entity.Query
             var arguments = VisitColumnAssignments(insert.Assignments);
             insert = insert.Update(insert.Table, arguments);
 
-            return insert.WithAutoIncrement ? BuildExecuteScalarCommand(insert) :
+            return insert.WithAutoIncrementValue ? BuildExecuteScalarCommand(insert) :
                 BuildExecuteNoQueryCommand(insert);
         }
 
@@ -393,14 +394,21 @@ namespace Fireasy.Data.Entity.Query
 
         protected override Expression VisitGenerator(GeneratorExpression generator)
         {
-            var property = generator.Property;
-            if (property.Info.DataType != null &&
-                property.Info.DataType.Value.IsStringDbType())
+            var property = generator.RelationProperty;
+            var dataType = property.Info.DataType;
+            if (dataType != null)
             {
-                return Expression.Call(null, MethodCache.GenerateGuidValue, generator.Entity, Expression.Constant(generator.Property));
+                if (dataType.Value.IsStringDbType())
+                {
+                    return Expression.Call(null, MethodCache.GenerateGuidStringValue, generator.Entity, Expression.Constant(generator.RelationProperty));
+                }
+                else if (dataType.Value == DbType.Guid)
+                {
+                    return Expression.Call(null, MethodCache.GenerateGuidValue, generator.Entity, Expression.Constant(generator.RelationProperty));
+                }
             }
 
-            return Expression.Call(null, MethodCache.GenerateIdentityValue, _executor, generator.Entity, Expression.Constant(generator.Property));
+            return Expression.Call(null, MethodCache.GenerateIdentityValue, _executor, generator.Entity, Expression.Constant(generator.RelationProperty));
         }
 
         protected override Expression VisitNamedValue(NamedValueExpression value)
@@ -588,7 +596,7 @@ namespace Fireasy.Data.Entity.Query
 
             if (_isAsync)
             {
-                var method = ReflectionCache.GetMember("ExecuteScalarAsync", command.Type, k => MethodCache.DbExecuteScalarAsync.MakeGenericMethod(k));
+                var method = ReflectionCache.GetMember("ExecuteScalarAsync", typeof(long), k => MethodCache.DbExecuteScalarAsync.MakeGenericMethod(k));
                 _cancelToken = Expression.Parameter(typeof(CancellationToken), "token");
                 return Expression.Call(_executor, method,
                         Expression.Constant((IIdenticalSqlCommand)result.QueryText),
@@ -598,7 +606,7 @@ namespace Fireasy.Data.Entity.Query
             }
             else
             {
-                var method = ReflectionCache.GetMember("ExecuteScalar", command.Type, k => MethodCache.DbExecuteScalar.MakeGenericMethod(k));
+                var method = ReflectionCache.GetMember("ExecuteScalar", typeof(long), k => MethodCache.DbExecuteScalar.MakeGenericMethod(k));
                 return Expression.Call(_executor, method,
                         Expression.Constant((IIdenticalSqlCommand)result.QueryText),
                         CreateParameterCollectionExpression(expression)
@@ -807,7 +815,7 @@ namespace Fireasy.Data.Entity.Query
         /// <param name="entity"></param>
         /// <param name="property"></param>
         /// <returns></returns>
-        private static string GenerateGuidValue(IEntity entity, IProperty property)
+        private static string GenerateGuidStringValue(IEntity entity, IProperty property)
         {
             var value = entity.GetValue(property);
             if (PropertyValue.IsEmpty(value))
@@ -820,13 +828,31 @@ namespace Fireasy.Data.Entity.Query
         }
 
         /// <summary>
+        /// 使用 Guid 作为主键。
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <param name="property"></param>
+        /// <returns></returns>
+        private static Guid GenerateGuidValue(IEntity entity, IProperty property)
+        {
+            var value = entity.GetValue(property);
+            if (PropertyValue.IsEmpty(value))
+            {
+                value = Guid.NewGuid();
+                entity.SetValue(property, value);
+            }
+
+            return (Guid)value;
+        }
+
+        /// <summary>
         /// 调用 <see cref="IGeneratorProvider"/> 对象生成标识值。在 VisitGenerator 中使用该方法。
         /// </summary>
         /// <param name="database"></param>
         /// <param name="entity"></param>
         /// <param name="property"></param>
         /// <returns></returns>
-        private static int GenerateIdentityValue(IDatabase database, IEntity entity, IProperty property)
+        private static long GenerateIdentityValue(IDatabase database, IEntity entity, IProperty property)
         {
             var generator = database.Provider.GetService<IGeneratorProvider>();
             if (generator == null)
@@ -871,23 +897,23 @@ namespace Fireasy.Data.Entity.Query
         private static int UpdateEntities(int rows, DataTable table, IEnumerable entities)
         {
             var index = 0;
-            IProperty pkProperty = null;
+            IProperty autoIncProperty = null;
             foreach (IEntity entity in entities)
             {
-                if (pkProperty == null)
+                if (autoIncProperty == null)
                 {
-                    pkProperty = PropertyUnity.GetPrimaryProperties(entity.EntityType)
+                    autoIncProperty = PropertyUnity.GetPersistentProperties(entity.EntityType)
                         .FirstOrDefault(s => s.Info.GenerateType == IdentityGenerateType.AutoIncrement);
                 }
 
-                if (pkProperty == null)
+                if (autoIncProperty == null)
                 {
                     return rows;
                 }
 
                 var row = table.Rows[index++];
-                var pkValue = PropertyValue.NewValue(row.ItemArray[table.Columns.Count - 1], pkProperty.Type);
-                entity.InitializeValue(pkProperty, pkValue);
+                var value = PropertyValue.NewValue(row.ItemArray[table.Columns.Count - 1], autoIncProperty.Type);
+                entity.InitializeValue(autoIncProperty, value);
             }
 
             return rows;
@@ -904,23 +930,23 @@ namespace Fireasy.Data.Entity.Query
         {
             var rows = await rowsTask;
             var index = 0;
-            IProperty pkProperty = null;
+            IProperty autoIncProperty = null;
             foreach (IEntity entity in entities)
             {
-                if (pkProperty == null)
+                if (autoIncProperty == null)
                 {
-                    pkProperty = PropertyUnity.GetPrimaryProperties(entity.EntityType)
+                    autoIncProperty = PropertyUnity.GetPersistentProperties(entity.EntityType)
                         .FirstOrDefault(s => s.Info.GenerateType == IdentityGenerateType.AutoIncrement);
                 }
 
-                if (pkProperty == null)
+                if (autoIncProperty == null)
                 {
                     return rows;
                 }
 
                 var row = table.Rows[index++];
-                var pkValue = PropertyValue.NewValue(row.ItemArray[table.Columns.Count - 1], pkProperty.Type);
-                entity.InitializeValue(pkProperty, pkValue);
+                var value = PropertyValue.NewValue(row.ItemArray[table.Columns.Count - 1], autoIncProperty.Type);
+                entity.InitializeValue(autoIncProperty, value);
             }
 
             return rows;

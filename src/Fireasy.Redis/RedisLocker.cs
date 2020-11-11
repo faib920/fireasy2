@@ -124,5 +124,25 @@ namespace Fireasy.Redis
         {
             return await RedisHelper.LockAsync(GetConnection(token), token, timeout, func);
         }
+
+        public void TryLock(string token, TimeSpan timeout, Action action, Action onLocked = null)
+        {
+            RedisHelper.TryLock(GetConnection(token), token, timeout, action, onLocked);
+        }
+
+        public T TryLock<T>(string token, TimeSpan timeout, Func<T> func, Func<T> onLocked = null)
+        {
+            return RedisHelper.TryLock(GetConnection(token), token, timeout, func, onLocked);
+        }
+
+        public async Task TryLockAsync(string token, TimeSpan timeout, Func<Task> func, Func<Task> onLocked = null)
+        {
+            await RedisHelper.TryLockAsync(GetConnection(token), token, timeout, func, onLocked);
+        }
+
+        public async Task<T> TryLockAsync<T>(string token, TimeSpan timeout, Func<Task<T>> func, Func<Task<T>> onLocked = null)
+        {
+            return await RedisHelper.TryLockAsync(GetConnection(token), token, timeout, func, onLocked);
+        }
     }
 }
