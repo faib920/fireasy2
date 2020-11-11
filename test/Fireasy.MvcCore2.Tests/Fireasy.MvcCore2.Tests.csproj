@@ -28,7 +28,6 @@
     <ProjectReference Include="..\..\src\Fireasy.App.Licence\Fireasy.App.Licence.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.AutoMapper\Fireasy.AutoMapper.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.Data.Entity\Fireasy.Data.Entity.csproj" />
-    <ProjectReference Include="..\..\src\Fireasy.Hangfire\Fireasy.Hangfire.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.Log4net\Fireasy.Log4net.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.Newtonsoft\Fireasy.Newtonsoft.csproj" />
     <ProjectReference Include="..\..\src\Fireasy.NLog\Fireasy.NLog.csproj" />
