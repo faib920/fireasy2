@@ -10,7 +10,6 @@
 using Fireasy.Common.Emit;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Reflection;
-using Fireasy.Common.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -74,9 +73,6 @@ namespace Fireasy.Common.Aop
             internal protected static MethodInfo TaskFromResult = typeof(Task).GetMethod(nameof(Task.FromResult));
             internal protected static MethodInfo MembersContains = typeof(List<MemberInfo>).GetMethod(nameof(List<MemberInfo>.Contains));
             internal protected static MethodInfo MembersAdd = typeof(List<MemberInfo>).GetMethod(nameof(List<MemberInfo>.Add));
-            internal protected static MethodInfo TaskAsSync = typeof(TaskExtension).GetMethods().FirstOrDefault(s => s.Name == nameof(TaskExtension.AsSync) && !s.IsGenericMethod);
-            internal protected static MethodInfo TaskAsSyncT = typeof(TaskExtension).GetMethods().FirstOrDefault(s => s.Name == nameof(TaskExtension.AsSync) && s.IsGenericMethod);
-            internal protected static MethodInfo CompletedTask = typeof(TaskCompatible).GetProperty(nameof(TaskCompatible.CompletedTask)).GetMethod;
             internal protected static MethodInfo CreateInstance = typeof(Activator).GetMethods().FirstOrDefault(s => s.Name == nameof(Activator.CreateInstance) && s.IsGenericMethod);
         }
 
@@ -1156,7 +1152,7 @@ namespace Fireasy.Common.Aop
 
             machineBuilder.TypeBuilder = typeBuilder;
 
-            var returnType = machineBuilder.ReturnType = method.ReturnType == typeof(Task) ? null : method.ReturnType.GetGenericArguments()[0];
+            var returnType = machineBuilder.ReturnType = method.ReturnType.GetTaskReturnType();
 
             typeBuilder.ImplementInterface(typeof(IAsyncStateMachine));
 
