@@ -52,6 +52,11 @@ namespace Fireasy.Data.Entity
         {
             get
             {
+                if (_databaseCreateor == null)
+                {
+                    return null;
+                }
+
                 return SingletonLocker.Lock(ref _database, _databaseCreateor);
             }
         }

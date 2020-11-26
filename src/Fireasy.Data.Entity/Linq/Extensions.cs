@@ -268,10 +268,12 @@ namespace Fireasy.Data.Entity.Linq
                 return source;
             }
 
-            var builder = new SwitchBuilder<TSource, TValue>(value);
-            buildAction(builder);
+            var builder = new SwitchBuilder<TSource, TValue>();
+            buildAction?.Invoke(builder);
 
-            return builder.Expression == null ? source : source.Where(builder.Expression);
+            var predicate = builder.Build(value);
+
+            return predicate == null ? source : source.Where(predicate);
         }
 
         /// <summary>

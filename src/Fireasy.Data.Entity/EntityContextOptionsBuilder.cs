@@ -136,7 +136,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="setupAction">对 <see cref="EntityPersistentEnvironment"/> 进行配置的方法。</param>
         /// <returns></returns>
-        public EntityContextOptionsBuilder UseEnvironment(Action<EntityPersistentEnvironment> setupAction)
+        public EntityContextOptionsBuilder UseEnvironment(Action<EntityPersistentEnvironment> setupAction = null)
         {
             var environment = new EntityPersistentEnvironment();
             setupAction?.Invoke(environment);

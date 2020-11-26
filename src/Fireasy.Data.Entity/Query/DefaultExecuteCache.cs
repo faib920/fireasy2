@@ -16,11 +16,13 @@ using Fireasy.Common.Threading;
 using Fireasy.Data.Entity.Linq;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Linq.Translators.Configuration;
+using Fireasy.Data.Extensions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -29,7 +31,7 @@ namespace Fireasy.Data.Entity.Query
     /// <summary>
     /// 执行缓存处理器。
     /// </summary>
-    internal class DefaultExecuteCache : IExecuteCache
+    public class DefaultExecuteCache : IExecuteCache
     {
         internal static readonly IExecuteCache Instance = new DefaultExecuteCache();
 
@@ -75,6 +77,12 @@ namespace Fireasy.Data.Entity.Query
             //没有开启数据缓存
             if ((result.Enabled == null && (context.Enabled == false || (context.Enabled == null && !option.CacheExecution))) ||
                 result.Enabled == false || _cacheMgr == null)
+            {
+                return creator();
+            }
+
+            var elementType = typeof(T).GetEnumerableElementType() ?? typeof(T);
+            if (!CanCache(elementType))
             {
                 return creator();
             }
@@ -134,6 +142,12 @@ namespace Fireasy.Data.Entity.Query
                 return await creator(cancellationToken);
             }
 
+            var elementType = typeof(T).GetEnumerableElementType() ?? typeof(T);
+            if (!CanCache(elementType))
+            {
+                return await creator(cancellationToken);
+            }
+
             var generator = _serviceProvider.TryGetService<IExecuteCacheKeyGenerator>(() => ExpressionKeyGenerator.Instance);
             var cacheKey = _serviceProvider.GetCacheKey(generator.Generate(expression, CACHE_KEY));
 
@@ -155,6 +169,27 @@ namespace Fireasy.Data.Entity.Query
             TryStartRunner();
 
             return cacheItem.Data;
+        }
+
+        /// <summary>
+        /// 判断是否使用缓存。
+        /// </summary>
+        /// <param name="elementType"></param>
+        /// <returns></returns>
+        protected virtual bool CanCache(Type elementType)
+        {
+            if (elementType.IsDbTypeSupported())
+            {
+                return true;
+            }
+
+            var attr = elementType.GetCustomAttribute<EntityCachableAttribute>();
+            if (attr == null || attr.Enabled)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private CacheItem<T> HandleCacheItem<T>(string cacheKey, Expression expression, T data, DataPager pager)

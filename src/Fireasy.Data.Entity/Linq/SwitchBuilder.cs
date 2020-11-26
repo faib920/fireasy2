@@ -5,7 +5,9 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq
@@ -17,21 +19,22 @@ namespace Fireasy.Data.Entity.Linq
     /// <typeparam name="TValue"></typeparam>
     public class SwitchBuilder<TSource, TValue> where TValue : IComparable
     {
-        private readonly TValue value;
-
-        /// <summary>
-        /// 初始化 <see cref="SwitchBuilder{TSource, TValue}"/> 类的新实例。
-        /// </summary>
-        /// <param name="value"></param>
-        public SwitchBuilder(TValue value)
-        {
-            this.value = value;
-        }
+        private readonly Dictionary<TValue, Expression<Func<TSource, bool>>> _expressions = new Dictionary<TValue, Expression<Func<TSource, bool>>>();
+        private Expression<Func<TSource, bool>> _else;
 
         /// <summary>
         /// 获取匹配的表达式。
         /// </summary>
-        public Expression<Func<TSource, bool>> Expression { get; private set; }
+        /// <param name="value"></param>
+        public Expression<Func<TSource, bool>> Build(TValue value)
+        {
+            if (_expressions.Count > 0 && _expressions.TryGetValue(value, out Expression<Func<TSource, bool>> exp))
+            {
+                return exp;
+            }
+            
+            return _else;
+        }
 
         /// <summary>
         /// 指定在不同 <paramref name="value"/> 时所使用的断言。
@@ -41,18 +44,18 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public SwitchBuilder<TSource, TValue> When(TValue value, Expression<Func<TSource, bool>> predicate)
         {
-            if (Expression == null)
-            {
-                var equals = value is IComparable<TValue> comparable
-                    ? comparable.CompareTo(this.value) == 0
-                    : value.CompareTo(this.value) == 0;
+            _expressions.AddOrReplace(value, predicate);
+            return this;
+        }
 
-                if (equals)
-                {
-                    Expression = predicate;
-                }
-            }
-
+        /// <summary>
+        /// 指定其他情况所使用的断言。
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <returns></returns>
+        public SwitchBuilder<TSource, TValue> Else(Expression<Func<TSource, bool>> predicate)
+        {
+            _else = predicate;
             return this;
         }
     }

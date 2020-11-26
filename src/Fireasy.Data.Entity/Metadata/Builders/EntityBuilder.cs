@@ -59,6 +59,17 @@ namespace Fireasy.Data.Entity.Metadata.Builders
         }
 
         /// <summary>
+        /// 指定只读。
+        /// </summary>
+        /// <returns></returns>
+        public virtual EntityBuilder<TEntity> IsReadonly()
+        {
+            _metadata.IsReadonly = true;
+
+            return this;
+        }
+
+        /// <summary>
         /// 映射树型结构。
         /// </summary>
         /// <returns></returns>
@@ -146,6 +157,11 @@ namespace Fireasy.Data.Entity.Metadata.Builders
             }
 
             public override EntityBuilder<TEntity> HasDescription(string description)
+            {
+                return this;
+            }
+
+            public override EntityBuilder<TEntity> IsReadonly()
             {
                 return this;
             }

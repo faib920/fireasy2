@@ -29,6 +29,7 @@ namespace Fireasy.Data.Entity
     public class EntityRepository<TEntity> :
         IOrderedQueryable<TEntity>,
         IQueryProviderAware,
+        IServiceProviderAccessor,
         IContextTypeAware,
         IRepository<TEntity>,
         IListSource
@@ -76,6 +77,15 @@ namespace Fireasy.Data.Entity
         public IQueryProvider Provider
         {
             get { return _repositoryProxy.QueryProvider; }
+        }
+
+        /// <summary>
+        /// 获取应用程序服务提供者实例。
+        /// </summary>
+        public IServiceProvider ServiceProvider
+        {
+            get { return _contextService.ServiceProvider; }
+            set { throw new NotSupportedException(); }
         }
 
         #region Get
@@ -259,7 +269,7 @@ namespace Fireasy.Data.Entity
                 isNew = !this.Any(lambdaExp);
             }
 
-            return isNew ? (Insert(entity) > 0 ? 1 : 0) : Update(entity);
+            return isNew ? Insert(entity) : Update(entity);
         }
 
         /// <summary>
@@ -284,7 +294,7 @@ namespace Fireasy.Data.Entity
                 isNew = !this.Any(lambdaExp);
             }
 
-            return isNew ? (await InsertAsync(entity, cancellationToken) > 0 ? 1 : 0) : await UpdateAsync(entity, cancellationToken);
+            return isNew ? await InsertAsync(entity, cancellationToken) : await UpdateAsync(entity, cancellationToken);
         }
         #endregion
 

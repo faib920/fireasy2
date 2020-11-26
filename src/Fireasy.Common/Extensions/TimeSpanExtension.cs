@@ -22,7 +22,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static TimeSpan ToTimeSpan(this string source, TimeSpan? defaultValue = null)
         {
-            if (string.IsNullOrEmpty(source))
+            if (string.IsNullOrWhiteSpace(source))
             {
                 return defaultValue ?? TimeSpan.Zero;
             }
@@ -55,7 +55,7 @@ namespace Fireasy.Common.Extensions
                 return TimeSpan.FromSeconds(v);
             }
 
-            return TimeSpan.FromMilliseconds(source.To(0));
+            return TimeSpan.FromMilliseconds(source.To<int>());
         }
 
         /// <summary>

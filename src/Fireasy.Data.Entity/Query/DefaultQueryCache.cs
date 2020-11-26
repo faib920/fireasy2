@@ -22,7 +22,7 @@ namespace Fireasy.Data.Entity.Query
     /// <summary>
     /// Expression 解析缓存处理器。
     /// </summary>
-    internal class DefaultQueryCache : IQueryCache
+    public class DefaultQueryCache : IQueryCache
     {
         internal static readonly IQueryCache Instance = new DefaultQueryCache();
 

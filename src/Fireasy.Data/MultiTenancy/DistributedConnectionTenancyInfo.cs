@@ -6,13 +6,17 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Data.Provider;
+using System.Collections.Generic;
 
-namespace Fireasy.Data
+namespace Fireasy.Data.MultiTenancy
 {
-    public class ConnectionTenancyInfo
+    /// <summary>
+    /// 分布式数据库连接字符串的租户信息。
+    /// </summary>
+    public class DistributedConnectionTenancyInfo
     {
         public IProvider Provider { get; set; }
 
-        public ConnectionString ConnectionString { get; set; }
+        public List<DistributedConnectionString> DistributedConnectionStrings { get; set; } = new List<DistributedConnectionString>();
     }
 }

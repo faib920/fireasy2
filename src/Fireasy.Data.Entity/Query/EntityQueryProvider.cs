@@ -25,9 +25,9 @@ namespace Fireasy.Data.Entity.Query
     /// <summary>
     /// 为实体提供 LINQ 查询的支持。无法继承此类。
     /// </summary>
-    public sealed class EntityQueryProvider : IEntityQueryProvider, IContextTypeAware
+    public sealed class EntityQueryProvider : IEntityQueryProvider, IContextTypeAware, IServiceProviderAccessor
     {
-        private readonly IDatabase _database;
+        private readonly IContextService _contextService;
         private static readonly ConcurrentDictionary<ParameterInfo[], Tuple<bool, bool>> _attrCache = new ConcurrentDictionary<ParameterInfo[], Tuple<bool, bool>>(new ParametersComparer());
 
         /// <summary>
@@ -38,17 +38,7 @@ namespace Fireasy.Data.Entity.Query
         {
             Guard.ArgumentNull(contextService, nameof(contextService));
 
-            if (contextService is IDatabaseAware aware)
-            {
-                _database = aware.Database;
-            }
-            else
-            {
-                throw new InvalidOperationException(SR.GetString(SRKind.NotFoundDatabaseAware));
-            }
-
-            ContextService = contextService;
-            ContextOptions = contextService.Options;
+            _contextService = contextService;
         }
 
         /// <summary>
@@ -56,18 +46,25 @@ namespace Fireasy.Data.Entity.Query
         /// </summary>
         public Type ContextType
         {
-            get { return ContextService.ContextType; }
+            get { return _contextService.ContextType; }
         }
 
         /// <summary>
-        /// 获取 <see cref="IContextService"/> 实例。
+        /// 获取或设置应用程序服务提供者实例。
         /// </summary>
-        public IContextService ContextService { get; }
+        public IServiceProvider ServiceProvider
+        {
+            get { return _contextService.ServiceProvider; }
+            set { throw new NotSupportedException(); }
+        }
 
         /// <summary>
         /// 获取参数选项。
         /// </summary>
-        public EntityContextOptions ContextOptions { get; }
+        public EntityContextOptions ContextOptions
+        {
+            get { return _contextService.Options; }
+        }
 
         /// <summary>
         /// 执行 <see cref="Expression"/> 的查询，返回查询结果。
@@ -77,19 +74,21 @@ namespace Fireasy.Data.Entity.Query
         /// <exception cref="TranslateException">对 LINQ 表达式解析失败时抛出此异常。</exception>
         public object Execute(Expression expression)
         {
-            var queryCache = ContextService.ServiceProvider.TryGetService(() => DefaultQueryCache.Instance);
+            var queryCache = ServiceProvider.TryGetService(() => DefaultQueryCache.Instance);
             var efn = queryCache.TryGetDelegate(expression, GetCacheContext(), () => (LambdaExpression)GetExecutionPlan(expression));
+
+            var database = GetDatabase();
 
             var attrs = GetMethodAttributes(efn.Method);
 
             if (!attrs.Item2)
             {
-                return efn.DynamicInvoke(_database);
+                return efn.DynamicInvoke(database);
             }
 
             var segment = SegmentFinder.Find(expression);
 
-            return efn.DynamicInvoke(_database, segment);
+            return efn.DynamicInvoke(database, segment);
         }
 
         /// <summary>
@@ -114,7 +113,7 @@ namespace Fireasy.Data.Entity.Query
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var queryCache = ContextService.ServiceProvider.TryGetService(() => DefaultQueryCache.Instance);
+            var queryCache = ServiceProvider.TryGetService(() => DefaultQueryCache.Instance);
             var efn = queryCache.TryGetDelegate(expression, GetCacheContext(), () => (LambdaExpression)GetExecutionPlan(expression, true));
 
             var result = InternalExecuteQuery(expression, efn, cancellationToken);
@@ -127,7 +126,7 @@ namespace Fireasy.Data.Entity.Query
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var queryCache = ContextService.ServiceProvider.TryGetService(() => DefaultQueryCache.Instance);
+            var queryCache = ServiceProvider.TryGetService(() => DefaultQueryCache.Instance);
             var efn = queryCache.TryGetDelegate(expression, GetCacheContext(), () => (LambdaExpression)GetExecutionPlan(expression, true));
 
             var result = InternalExecuteQuery(expression, efn, cancellationToken);
@@ -153,7 +152,7 @@ namespace Fireasy.Data.Entity.Query
 
                 var options = GetTranslateOptions();
 
-                var transContext = new TranslateContext(ContextService, options);
+                var transContext = new TranslateContext(_contextService, options);
                 var transExpression = transContext.TranslateProvider.Translate(transContext, expression);
 
                 var buildOptions = new ExecutionBuilder.BuildOptions { IsAsync = isAsync, IsNoTracking = !options.TraceEntityState };
@@ -183,7 +182,7 @@ namespace Fireasy.Data.Entity.Query
 
                 options ??= GetTranslateOptions();
 
-                var transContext = new TranslateContext(ContextService, options);
+                var transContext = new TranslateContext(_contextService, options);
                 var transExpression = transContext.TranslateProvider.Translate(transContext, expression);
                 var translator = transContext.Translator;
 
@@ -263,17 +262,19 @@ namespace Fireasy.Data.Entity.Query
         {
             var attrs = GetMethodAttributes(efn.Method);
 
+            var database = GetDatabase();
             object result;
+
             if (attrs.Item1)
             {
                 if (attrs.Item2)
                 {
                     var segment = SegmentFinder.Find(expression);
-                    result = efn.DynamicInvoke(_database, segment, cancellationToken);
+                    result = efn.DynamicInvoke(database, segment, cancellationToken);
                 }
                 else
                 {
-                    result = efn.DynamicInvoke(_database, cancellationToken);
+                    result = efn.DynamicInvoke(database, cancellationToken);
                 }
             }
             else
@@ -281,11 +282,11 @@ namespace Fireasy.Data.Entity.Query
                 if (attrs.Item2)
                 {
                     var segment = SegmentFinder.Find(expression);
-                    result = efn.DynamicInvoke(_database, segment);
+                    result = efn.DynamicInvoke(database, segment);
                 }
                 else
                 {
-                    result = efn.DynamicInvoke(_database);
+                    result = efn.DynamicInvoke(database);
                 }
             }
 
@@ -331,6 +332,18 @@ namespace Fireasy.Data.Entity.Query
                 }
 
                 return hash;
+            }
+        }
+
+        private IDatabase GetDatabase()
+        {
+            if (_contextService is IDatabaseAware aware)
+            {
+                return aware.Database;
+            }
+            else
+            {
+                throw new InvalidOperationException(SR.GetString(SRKind.NotFoundDatabaseAware));
             }
         }
     }

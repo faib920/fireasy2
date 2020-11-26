@@ -14,6 +14,7 @@ using Fireasy.Common.MultiTenancy;
 using Fireasy.Data.Configuration;
 using Fireasy.Data.Entity.Metadata.Builders;
 using Fireasy.Data.Entity.Query;
+using Fireasy.Data.MultiTenancy;
 using Fireasy.Data.Provider;
 using System;
 using System.Collections;
@@ -321,7 +322,7 @@ namespace Fireasy.Data.Entity
             TrySetContextType(options);
             TrySetServiceProvider(options);
             TryPaserInstanceSetting(options);
-            TryHandleConnectionTenancy(options);
+            TryHandleMultiTenancy(options);
 
             var builder = new EntityContextOptionsBuilder(options);
             OnConfiguring(builder);
@@ -474,7 +475,7 @@ namespace Fireasy.Data.Entity
         /// 尝试处理多租户信息。
         /// </summary>
         /// <param name="options"></param>
-        private void TryHandleConnectionTenancy(EntityContextOptions options)
+        private void TryHandleMultiTenancy(EntityContextOptions options)
         {
             var tenancyProvider = ServiceProvider.TryGetService<ITenancyProvider<ConnectionTenancyInfo>>();
             if (tenancyProvider != null)
@@ -484,6 +485,21 @@ namespace Fireasy.Data.Entity
                 if (tenancy != null && tenancy.ConnectionString != options.ConnectionString)
                 {
                     options.ConnectionString = tenancy.ConnectionString;
+                }
+            }
+
+            var distributedTenancyProvider = ServiceProvider.TryGetService<ITenancyProvider<DistributedConnectionTenancyInfo>>();
+            if (distributedTenancyProvider != null)
+            {
+                var tenancy = new DistributedConnectionTenancyInfo 
+                { 
+                    Provider = options.Provider,
+                    DistributedConnectionStrings = options.DistributedConnectionStrings 
+                };
+                tenancy = distributedTenancyProvider.Resolve(tenancy);
+                if (tenancy != null && tenancy.DistributedConnectionStrings.Count > 0)
+                {
+                    options.DistributedConnectionStrings = tenancy.DistributedConnectionStrings;
                 }
             }
         }
