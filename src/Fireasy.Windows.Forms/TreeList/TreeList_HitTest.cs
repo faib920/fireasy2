@@ -514,7 +514,17 @@ namespace Fireasy.Windows.Forms
             var y = info.Bounds.Y - _bound.ItemBound.Y;
             if (y < 0 || (y = info.Bounds.Bottom - _bound.ItemBound.Bottom) > 0)
             {
-                _vbar.Value += y;
+                var barValue = _vbar.Value + y;
+                if (y > _vbar.Maximum)
+                {
+                    barValue = _vbar.Maximum;
+                }
+                else if (y < _vbar.Minimum)
+                {
+                    barValue = _vbar.Minimum;
+                }
+
+                _vbar.Value = barValue;
                 var r = info.Bounds;
                 r.Offset(0, -y);
                 info.Bounds = r;
