@@ -17,7 +17,6 @@ using System.Dynamic;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Xml;
 
 namespace Fireasy.Common.Serialization
@@ -46,9 +45,14 @@ namespace Fireasy.Common.Serialization
         /// <param name="type"></param>
         internal void Serialize(object value, bool startEle = false, Type type = null)
         {
-            if (type == null && value != null)
+            if ((type == null || type == typeof(object)) && value != null)
             {
                 type = value.GetType();
+            }
+
+            if (type != null && (type.IsTaskReturnType() || typeof(IAsyncResult).IsAssignableFrom(type)))
+            {
+                throw new SerializationException(SR.GetString(SRKind.NotSerializeTask, type));
             }
 
             if (WithSerializable(type, value, startEle))
@@ -104,11 +108,6 @@ namespace Fireasy.Common.Serialization
                 var eleType = type.IsGenericType || type.IsArray ? type.GetEnumerableElementType() : null;
                 SerializeEnumerable(value as IEnumerable, eleType, startEle);
                 return;
-            }
-
-            if (type.IsTaskReturnType())
-            {
-                throw new SerializationException(SR.GetString(SRKind.NotSerializeTask, type));
             }
 
             SerializeValue(value, startEle);
