@@ -17,6 +17,7 @@ using System.Dynamic;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Xml;
 
 namespace Fireasy.Common.Serialization
@@ -103,6 +104,11 @@ namespace Fireasy.Common.Serialization
                 var eleType = type.IsGenericType || type.IsArray ? type.GetEnumerableElementType() : null;
                 SerializeEnumerable(value as IEnumerable, eleType, startEle);
                 return;
+            }
+
+            if (type.IsTaskReturnType())
+            {
+                throw new SerializationException(SR.GetString(SRKind.NotSerializeTask, type));
             }
 
             SerializeValue(value, startEle);

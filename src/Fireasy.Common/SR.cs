@@ -62,6 +62,7 @@ namespace Fireasy.Common
         internal const string UnableCreateCachedDelegate = "UnableCreateCachedDelegate";
         internal const string LoopResolveSameType = "LoopResolveSameType";
         internal const string NotFoundRegisterForType = "NotFoundRegisterForType";
+        internal const string NotSerializeTask = "NotSerializeTask";
     }
 
     internal class SR

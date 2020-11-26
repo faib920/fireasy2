@@ -49,3 +49,4 @@ KeyMustBeStringable=Key 必须为可字符串化的类型，如 String、Int32�
 UnableCreateCachedDelegate=无法为此创建缓存态委托。
 LoopResolveSameType=检测到循环反转类型为 {0} 的对象，已被终止。
 NotFoundRegisterForType=没有在容器中发现 {0} 的注册。
+NotSerializeTask=不能序列化类型 {0}。
