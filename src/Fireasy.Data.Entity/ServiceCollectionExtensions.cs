@@ -87,10 +87,12 @@ namespace Microsoft.Extensions.DependencyInjection
         /// 添加实体的事件订阅器。
         /// </summary>
         /// <param name="services"></param>
+        /// <param name="filter">过滤器。</param>
         /// <returns></returns>
-        public static IServiceCollection AddPersistentSubscriber<TSubscriber>(this IServiceCollection services) where TSubscriber : PersistentSubscriber
+        public static IServiceCollection AddPersistentSubscriber<TSubscriber>(this IServiceCollection services, Func<PersistentSubject, bool> filter = null) where TSubscriber : PersistentSubscriber
         {
-            services.TryAddEnumerable(ServiceDescriptor.Transient<PersistentSubscriber, TSubscriber>());
+            services.AddTransient<TSubscriber>();
+            services.TryAddEnumerable(ServiceDescriptor.Transient<IPersistentSubscriberPredicatePair, PersistentSubscriberPredicatePair<TSubscriber>>(sp => new PersistentSubscriberPredicatePair<TSubscriber>(filter, sp.GetService<TSubscriber>())));
             return services;
         }
 
@@ -98,10 +100,12 @@ namespace Microsoft.Extensions.DependencyInjection
         /// 添加实体的异步事件订阅器。
         /// </summary>
         /// <param name="services"></param>
+        /// <param name="filter">过滤器。</param>
         /// <returns></returns>
-        public static IServiceCollection AddAsyncPersistentSubscriber<TSubscriber>(this IServiceCollection services) where TSubscriber : AsyncPersistentSubscriber
+        public static IServiceCollection AddAsyncPersistentSubscriber<TSubscriber>(this IServiceCollection services, Func<PersistentSubject, bool> filter = null) where TSubscriber : AsyncPersistentSubscriber
         {
-            services.TryAddEnumerable(ServiceDescriptor.Transient<AsyncPersistentSubscriber, TSubscriber>());
+            services.AddTransient<TSubscriber>();
+            services.TryAddEnumerable(ServiceDescriptor.Transient<IAsyncPersistentSubscriberPredicatePair, AsyncPersistentSubscriberPredicatePair<TSubscriber>>(sp => new AsyncPersistentSubscriberPredicatePair<TSubscriber>(filter, sp.GetService<TSubscriber>())));
             return services;
         }
 

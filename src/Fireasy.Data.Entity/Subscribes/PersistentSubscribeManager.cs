@@ -454,14 +454,22 @@ namespace Fireasy.Data.Entity.Subscribes
 #if NETSTANDARD
             if (serviceProvider != null)
             {
-                foreach (var sub in serviceProvider.GetService<IEnumerable<PersistentSubscriber>>())
+                foreach (var pair in serviceProvider.GetService<IEnumerable<IPersistentSubscriberPredicatePair>>())
                 {
-                    sub.Accept(subject);
+                    if (pair.Filter == null || pair.Filter.Invoke(subject))
+                    {
+                        Tracer.Debug($"{pair.Subscriber} is accepting event of '{subject.EventType}'.");
+                        pair.Subscriber.Accept(subject);
+                    }
                 }
 
-                foreach (var sub in serviceProvider.GetService<IEnumerable<AsyncPersistentSubscriber>>())
+                foreach (var pair in serviceProvider.GetService<IEnumerable<IAsyncPersistentSubscriberPredicatePair>>())
                 {
-                    sub.AcceptAsync(subject).AsSync();
+                    if (pair.Filter == null || pair.Filter.Invoke(subject))
+                    {
+                        Tracer.Debug($"{pair.Subscriber} is accepting event of '{subject.EventType}'.");
+                        pair.Subscriber.AcceptAsync(subject).AsSync();
+                    }
                 }
             }
 #endif
@@ -472,14 +480,22 @@ namespace Fireasy.Data.Entity.Subscribes
 #if NETSTANDARD
             if (serviceProvider != null)
             {
-                foreach (var sub in serviceProvider.GetService<IEnumerable<PersistentSubscriber>>())
+                foreach (var pair in serviceProvider.GetService<IEnumerable<IPersistentSubscriberPredicatePair>>())
                 {
-                    sub.Accept(subject);
+                    if (pair.Filter == null || pair.Filter.Invoke(subject))
+                    {
+                        Tracer.Debug($"{pair.Subscriber} is accepting event of '{subject.EventType}'.");
+                        pair.Subscriber.Accept(subject);
+                    }
                 }
 
-                foreach (var sub in serviceProvider.GetService<IEnumerable<AsyncPersistentSubscriber>>())
+                foreach (var pair in serviceProvider.GetService<IEnumerable<IAsyncPersistentSubscriberPredicatePair>>())
                 {
-                    await sub.AcceptAsync(subject);
+                    if (pair.Filter == null || pair.Filter.Invoke(subject))
+                    {
+                        Tracer.Debug($"{pair.Subscriber} is accepting event of '{subject.EventType}'.");
+                        await pair.Subscriber.AcceptAsync(subject);
+                    }
                 }
             }
 #endif
