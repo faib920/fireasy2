@@ -7,7 +7,7 @@
     <Product>Fireasy MongoDB Provider</Product>
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
-    <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
+    <PackageIconUrl>http://fireasy.cn/icon.png</PackageIconUrl>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <Copyright>Copyright © Fireasy 2013-2020</Copyright>
@@ -16,9 +16,9 @@
 
       参考文档：http://www.fireasy.cn/docs/mongodb
     </Description>
-    <FileVersion>2.2.2</FileVersion>
-    <AssemblyVersion>2.2.2</AssemblyVersion>
-    <Version>2.2.2</Version>
+    <FileVersion>2.2.3</FileVersion>
+    <AssemblyVersion>2.2.3</AssemblyVersion>
+    <Version>2.2.3</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net452|AnyCPU'">

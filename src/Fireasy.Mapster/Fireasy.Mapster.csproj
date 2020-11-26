@@ -10,15 +10,15 @@
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Mapster Provider</Product>
-    <FileVersion>2.2.2</FileVersion>
-    <AssemblyVersion>2.2.2</AssemblyVersion>
-    <Version>2.2.2</Version>
+    <FileVersion>2.2.3</FileVersion>
+    <AssemblyVersion>2.2.3</AssemblyVersion>
+    <Version>2.2.3</Version>
     <Description>
       适配 Mapster。
 
       参考文档：http://www.fireasy.cn/docs/mapster
     </Description>
-    <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
+    <PackageIconUrl>http://fireasy.cn/icon.png</PackageIconUrl>
     <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
     <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>
     <LangVersion>latest</LangVersion>

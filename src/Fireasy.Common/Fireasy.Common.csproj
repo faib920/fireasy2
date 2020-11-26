@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net45;net46;netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net45;netstandard2.0;netstandard2.1</TargetFrameworks>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <Authors>Huangxd</Authors>
     <Company>Fireasy</Company>
@@ -10,16 +10,16 @@
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Common Library</Product>
-    <FileVersion>2.2.2</FileVersion>
-    <AssemblyVersion>2.2.2</AssemblyVersion>
-    <Version>2.2.2</Version>
+    <FileVersion>2.2.3</FileVersion>
+    <AssemblyVersion>2.2.3</AssemblyVersion>
+    <Version>2.2.3</Version>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Description>
       通用类库，提供配置、缓存、日志、AOP、IOC、序列化、扩展方法、Emit、加解密、定时任务、本地化、分布式锁、多租户、对象映射等等基础方法。
 
       参考文档：http://www.fireasy.cn/docs/comm-summary
     </Description>
-    <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
+    <PackageIconUrl>http://fireasy.cn/icon.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>
     <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
     <PackageReleaseNotes></PackageReleaseNotes>
@@ -52,12 +52,6 @@
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net46|AnyCPU'">
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <DocumentationFile>..\..\Release\net45\Fireasy.Common.xml</DocumentationFile>
-    <OutputPath>..\..\Release\</OutputPath>
-  </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <DocumentationFile>..\..\Release\netstandard2.0\Fireasy.Common.xml</DocumentationFile>
@@ -84,17 +78,6 @@
     <EmbeddedResource Include="Strings.resources" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)'=='net45'">
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Microsoft.VisualBasic" />
-    <Reference Include="System" />
-    <Reference Include="System.ComponentModel.Composition" />
-    <Reference Include="System.Configuration" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)'=='net46'">
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="System" />

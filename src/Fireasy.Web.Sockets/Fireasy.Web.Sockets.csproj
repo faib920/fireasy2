@@ -10,12 +10,12 @@
     <SignAssembly>True</SignAssembly>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Asp.Net WebSocket</Product>
-    <FileVersion>2.2.2</FileVersion>
-    <AssemblyVersion>2.2.2</AssemblyVersion>
-    <Version>2.2.2</Version>
+    <FileVersion>2.2.3</FileVersion>
+    <AssemblyVersion>2.2.3</AssemblyVersion>
+    <Version>2.2.3</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
-    <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
+    <PackageIconUrl>http://fireasy.cn/icon.png</PackageIconUrl>
     <Description>
       Asp.Net 下的 WebSocket，实现了与 SignalR 类似的 Hub 功能。
 

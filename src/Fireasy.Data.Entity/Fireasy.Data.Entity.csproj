@@ -10,16 +10,16 @@
     <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Entity Framework</Product>
-    <FileVersion>2.2.2</FileVersion>
-    <AssemblyVersion>2.2.2</AssemblyVersion>
-    <Version>2.2.2</Version>
+    <FileVersion>2.2.3</FileVersion>
+    <AssemblyVersion>2.2.3</AssemblyVersion>
+    <Version>2.2.3</Version>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Description>
       类似于 Entity Framework，也提供了 LINQ to Entities 大众化的查询方法，相比之下更容易使用多种数据库，比如SqlServer、Oracle、MySQL、SQLite、PostgreSQL等等。独创性地提供树持久化方法，使用AOP代理技术管理实体对象的状态变更，提供更贴合SQL语言的Update、Delete语句。
 
       参考文档：http://www.fireasy.cn/docs/entity-summary
     </Description>
-    <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
+    <PackageIconUrl>http://fireasy.cn/icon.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>
     <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
     <PackageReleaseNotes></PackageReleaseNotes>

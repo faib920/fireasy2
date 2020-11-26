@@ -10,16 +10,16 @@
     <SignAssembly>True</SignAssembly>
     <DelaySign>False</DelaySign>
     <Product>Fireasy Windows Forms</Product>
-    <FileVersion>2.2.2</FileVersion>
-    <AssemblyVersion>2.2.2</AssemblyVersion>
-    <Version>2.2.2</Version>
+    <FileVersion>2.2.3</FileVersion>
+    <AssemblyVersion>2.2.3</AssemblyVersion>
+    <Version>2.2.3</Version>
     <Description>
       Winform 组件库，TreeList 控件及输入框控件。
       
       参考文档：http://www.fireasy.cn/docs/winform-summary
     </Description>
     <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
-    <PackageIconUrl>http://images.cnblogs.com/cnblogs_com/fireasy/1.png</PackageIconUrl>
+    <PackageIconUrl>http://fireasy.cn/icon.png</PackageIconUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
