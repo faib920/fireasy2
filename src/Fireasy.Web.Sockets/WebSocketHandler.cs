@@ -25,7 +25,7 @@ namespace Fireasy.Web.Sockets
         private DateTime _lastReceivedTime = DateTime.Now;
         private Timer _timer;
         private bool _isClosing = false;
-        private CancellationTokenSource cancelToken;
+        private CancellationTokenSource _cancelToken;
 
         /// <summary>
         /// 获取连接唯一标识符。
@@ -65,7 +65,7 @@ namespace Fireasy.Web.Sockets
 
         internal static async Task Accept(WebSocketHandler handler, WebSocketAcceptContext acceptContext)
         {
-            handler.cancelToken = new CancellationTokenSource();
+            handler._cancelToken = new CancellationTokenSource();
             handler.AcceptContext = acceptContext;
 
             handler.Clients = new WrapClientManager(ClientManagerCache.GetManager(handler.GetType(), acceptContext), handler);
@@ -95,7 +95,7 @@ namespace Fireasy.Web.Sockets
             {
                 if (IsValidState(WebSocketState.Open, WebSocketState.CloseReceived))
                 {
-                    await AcceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Text, true, cancelToken.Token);
+                    await AcceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Text, true, _cancelToken.Token);
                 }
             }
             catch (Exception exp)
@@ -116,11 +116,11 @@ namespace Fireasy.Web.Sockets
 
             while (AcceptContext.WebSocket.State == WebSocketState.Open)
             {
-                var result = await AcceptContext.WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cancelToken.Token);
+                var result = await AcceptContext.WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), _cancelToken.Token);
 
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
-                    await AcceptContext.WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Close response received", cancelToken.Token);
+                    await AcceptContext.WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Close response received", _cancelToken.Token);
                     break;
                 }
 
@@ -136,7 +136,7 @@ namespace Fireasy.Web.Sockets
 
                     if (bytes != null)
                     {
-                        await AcceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), result.MessageType, result.EndOfMessage, cancelToken.Token);
+                        await AcceptContext.WebSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), result.MessageType, result.EndOfMessage, _cancelToken.Token);
                     }
                 }
 
@@ -226,9 +226,9 @@ namespace Fireasy.Web.Sockets
                 _timer.Dispose();
             }
 
-            if (cancelToken != null)
+            if (_cancelToken != null)
             {
-                cancelToken.Dispose();
+                _cancelToken.Dispose();
             }
 
             if (!_isClosing)
@@ -335,7 +335,11 @@ namespace Fireasy.Web.Sockets
                 return new byte[0];
             }
 
-            var retMsg = new InvokeMessage(message.Method, 1, new[] { result });
+            var retMsg = new InvokeMessage(message.Method, 1, new[] { result })
+            {
+                IsReturn = message.IsReturn
+            };
+
             return AcceptContext.Option.Encoding.GetBytes(AcceptContext.Option.Formatter.FormatMessage(retMsg));
         }
 
@@ -420,7 +424,7 @@ namespace Fireasy.Web.Sockets
                     if ((DateTime.Now - _lastReceivedTime).TotalMilliseconds >=
                         AcceptContext.Option.HeartbeatInterval.TotalMilliseconds * AcceptContext.Option.HeartbeatTryTimes)
                     {
-                        cancelToken.Cancel(false);
+                        _cancelToken.Cancel(false);
                         ManualClose();
                     }
                 }, null, AcceptContext.Option.HeartbeatInterval, AcceptContext.Option.HeartbeatInterval);

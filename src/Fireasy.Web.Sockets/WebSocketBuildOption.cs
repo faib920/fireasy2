@@ -80,5 +80,14 @@ namespace Fireasy.Web.Sockets
 
             return null;
         }
+
+        /// <summary>
+        /// 获取处理类的映射字典。
+        /// </summary>
+        /// <returns></returns>
+        public Dictionary<string, Type> GetHandlers()
+        {
+            return _mapping;
+        }
     }
 }
