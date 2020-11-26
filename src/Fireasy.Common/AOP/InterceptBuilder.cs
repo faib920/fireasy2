@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -37,6 +38,10 @@ namespace Fireasy.Common.Aop
         private const short STACK_CALLINFO_INDEX = 2;
         private const short STACK_ARGUMENT_INDEX = 3;
         private const short STACK_RETURNVALUE_INDEX = 4;
+        private const short STACK_ASYNCSTATEMACHINE_INDEX = 0;
+        private const short STACK_TASK_INDEX = 3;
+        private const short STACK_ASYNC_EXCEPTION1_INDEX = 4;
+        private const short STACK_ASYNC_EXCEPTION2_INDEX = 5;
 
         private class MethodCache
         {
@@ -47,6 +52,7 @@ namespace Fireasy.Common.Aop
             internal protected static MethodInfo MemberGetCustomAttributes = typeof(MemberInfo).GetMethod(nameof(MemberInfo.GetCustomAttributes), new[] { typeof(Type), typeof(bool) });
             internal protected static MethodInfo TypeGetTypeFromHandle = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Public | BindingFlags.Static);
             internal protected static MethodInfo CallInfoGetMember = typeof(InterceptCallInfo).GetMethod($"get_{nameof(InterceptCallInfo.Member)}");
+            internal protected static MethodInfo CallInfoGetException = typeof(InterceptCallInfo).GetMethod($"get_{nameof(InterceptCallInfo.Exception)}");
             internal protected static MethodInfo CallInfoSetMember = typeof(InterceptCallInfo).GetMethod($"set_{nameof(InterceptCallInfo.Member)}");
             internal protected static MethodInfo CallInfoSetTarget = typeof(InterceptCallInfo).GetMethod($"set_" + nameof(InterceptCallInfo.Target));
             internal protected static MethodInfo CallInfoSetReturnType = typeof(InterceptCallInfo).GetMethod($"set_" + nameof(InterceptCallInfo.ReturnType));
@@ -71,6 +77,7 @@ namespace Fireasy.Common.Aop
             internal protected static MethodInfo TaskAsSync = typeof(TaskExtension).GetMethods().FirstOrDefault(s => s.Name == nameof(TaskExtension.AsSync) && !s.IsGenericMethod);
             internal protected static MethodInfo TaskAsSyncT = typeof(TaskExtension).GetMethods().FirstOrDefault(s => s.Name == nameof(TaskExtension.AsSync) && s.IsGenericMethod);
             internal protected static MethodInfo CompletedTask = typeof(TaskCompatible).GetProperty(nameof(TaskCompatible.CompletedTask)).GetMethod;
+            internal protected static MethodInfo CreateInstance = typeof(Activator).GetMethods().FirstOrDefault(s => s.Name == nameof(Activator.CreateInstance) && s.IsGenericMethod);
         }
 
         /// <summary>
@@ -472,6 +479,140 @@ namespace Fireasy.Common.Aop
         private static DynamicMethodBuilder InjectMethod(BuildInternalContext context, MethodInfo method)
         {
             var attributes = method.GetCustomAttributes<InterceptAttribute>(true).Union(context.GlobalIntercepts);
+
+            if (method.ReturnType.IsTaskReturnType())
+            {
+                return InjectAsyncMethod(context, method, attributes);
+            }
+
+            return InjectGenericMethod(context, method, attributes);
+        }
+
+        /// <summary>
+        /// 注入异步方法，使用异步状态机。
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="method"></param>
+        /// <param name="attributes"></param>
+        /// <returns></returns>
+        private static DynamicMethodBuilder InjectAsyncMethod(BuildInternalContext context, MethodInfo method, IEnumerable<InterceptAttribute> attributes)
+        {
+            var returnType = method.ReturnType == typeof(Task) ? null : method.ReturnType.GetGenericArguments()[0];
+
+            var proxyBuilder = CreateAsyncProxyMethod(context.TypeBuilder, method);
+
+            var machineBuilder = CreateAsyncStateMachine(context, method, proxyBuilder);
+
+            #region 方法原型
+            // var list = new List<IInterceptor>();
+            // list.Add(new AopTest.AsyncInterceptor());
+            // var interceptCallInfo = new InterceptCallInfo();
+            // interceptCallInfo.Target = this;
+            // interceptCallInfo.DefinedType = typeof(AopTest.AspectTester);
+            // interceptCallInfo.Member = ((MethodInfo)MethodBase.GetCurrentMethod()).GetBaseDefinition();
+            // interceptCallInfo.ReturnType = typeof(Task<返回类型>);
+            // interceptCallInfo.Arguments = new object[2]
+            // {
+            //     参数1,
+            //     参数2
+            // };
+            // var stateMachine = Activator.CreateInstance<<Aspect>_AsyncStateMachine<>方法>();
+            // stateMachine.<>_builder = default(AsyncTaskMethodBuilder<int?>);
+            // stateMachine.<>_this = this;
+            // stateMachine.<>_interceptors = list;
+            // stateMachine.<>_callInfo = interceptCallInfo;
+            // stateMachine.<>_state = -1;
+            // stateMachine.参数1 = 参数1;
+            // stateMachine.参数2 = 参数2;
+            // stateMachine.<>_builder.Start(ref stateMachine);
+            // return stateMachine.<>_builder.Task;
+            #endregion
+
+            var parameters = method.GetParameters();
+            var methodBuilder = context.TypeBuilder.DefineMethod(
+                method.Name,
+                method.ReturnType,
+                parameters.Select(s => s.ParameterType).ToArray(),
+                ilCoding: ctx =>
+                {
+                    ctx.Emitter.DeclareLocal(machineBuilder.TypeBuilder.TypeBuilder);
+                    ctx.Emitter.DeclareLocal(typeof(List<IInterceptor>));
+                    ctx.Emitter.DeclareLocal(typeof(InterceptCallInfo));
+                    ctx.Emitter.DeclareLocal(method.ReturnType);
+                    ctx.Emitter
+                    .nop
+                    .newobj(typeof(List<IInterceptor>))
+                        .stloc(STACK_INTERCEPTOR_LIST_INDEX)
+                        .Each(attributes, (e, a, i) =>
+                                e.ldloc(STACK_INTERCEPTOR_LIST_INDEX)
+                                .newobj(a.InterceptorType)
+                                .callvirt(MethodCache.InterceptorsAdd))
+                    .nop
+                    .newobj(typeof(InterceptCallInfo))
+                    .stloc(STACK_CALLINFO_INDEX)
+                    .InitLocal(method, method)
+                    // Activator.CreateInstance<<Aspect>_AsyncStateMachine<>方法>()
+                    .nop
+                    .call(MethodCache.CreateInstance.MakeGenericMethod(machineBuilder.TypeBuilder.TypeBuilder))
+                    .stloc(STACK_ASYNCSTATEMACHINE_INDEX)
+                    // new AsyncTaskMethodBuilder
+                    .ldloc(STACK_ASYNCSTATEMACHINE_INDEX)
+                    .ldflda(machineBuilder.Builder)
+                    .initobj(returnType == null ? typeof(AsyncTaskMethodBuilder) : typeof(AsyncTaskMethodBuilder<>).MakeGenericType(returnType))
+                    // set This
+                    .ldloc(STACK_ASYNCSTATEMACHINE_INDEX)
+                    .ldarg(0)
+                    .stfld(machineBuilder.This)
+                    // set IInterceptors
+                    .ldloc(STACK_ASYNCSTATEMACHINE_INDEX)
+                    .ldloc(STACK_INTERCEPTOR_LIST_INDEX)
+                    .stfld(machineBuilder.IInterceptors)
+                    // set CallInfo
+                    .ldloc(STACK_ASYNCSTATEMACHINE_INDEX)
+                    .ldloc(STACK_CALLINFO_INDEX)
+                    .stfld(machineBuilder.CallInfo)
+                    // state = -1
+                    .ldloc(STACK_ASYNCSTATEMACHINE_INDEX)
+                    .ldc_i4(-1)
+                    .stfld(machineBuilder.State)
+                    // set Parameters
+                    .For(0, parameters.Length, (e1, i) =>
+                        e1.ldloc(STACK_ASYNCSTATEMACHINE_INDEX).ldarg(i + 1)
+                            .stfld(machineBuilder.Parameters[parameters[i].Name]).end())
+                    // builder.Start
+                    .ldloc(STACK_ASYNCSTATEMACHINE_INDEX)
+                    .ldflda(machineBuilder.Builder)
+                    .ldloca_s(0)
+                    .call(machineBuilder.Builder.FieldType.GetMethod(nameof(AsyncTaskMethodBuilder.Start)).MakeGenericMethod(machineBuilder.TypeBuilder.TypeBuilder))
+                    // return builder.Task
+                    .nop
+                    .ldloc(STACK_ASYNCSTATEMACHINE_INDEX)
+                    .ldflda(machineBuilder.Builder)
+                    .call(machineBuilder.Builder.FieldType.GetProperty(nameof(AsyncTaskMethodBuilder.Task)).GetMethod)
+                    .stloc(STACK_TASK_INDEX)
+                    .ldloc(STACK_TASK_INDEX)
+                    .ret();
+                });
+
+            foreach (var par in parameters)
+            {
+                methodBuilder.DefineParameter(par.Name, par.IsOut, par.DefaultValue != DBNull.Value, par.DefaultValue);
+            }
+
+            methodBuilder.SetCustomAttribute(() => new AsyncStateMachineAttribute(machineBuilder.TypeBuilder.TypeBuilder));
+
+            return methodBuilder;
+        }
+
+        /// <summary>
+        /// 注入普通方法。
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="method"></param>
+        /// <param name="attributes"></param>
+        /// <returns></returns>
+        private static DynamicMethodBuilder InjectGenericMethod(BuildInternalContext context, MethodInfo method, IEnumerable<InterceptAttribute> attributes)
+        {
             var isInterface = context.TypeBuilder.BaseType == typeof(object);
 
             #region 方法原型
@@ -518,33 +659,33 @@ namespace Fireasy.Common.Aop
                 method.ReturnType,
                 parameters.Select(s => s.ParameterType).ToArray(),
                 ilCoding: ctx =>
-                    {
-                        var isReturn = method.ReturnType != typeof(void);
-                        var lblCancel = ctx.Emitter.DefineLabel();
-                        var lblRet = ctx.Emitter.DefineLabel();
-                        ctx.Emitter.DeclareLocal();
-                        ctx.Emitter.Assert(isReturn, e => e.DeclareLocal(method.ReturnType));
-                        ctx.Emitter.InitInterceptors(attributes);
-                        ctx.Emitter.InitLocal(method, method);
-                        ctx.Emitter.BeginExceptionBlock();
-                        ctx.Emitter.CallInitialize(context.InitializeMethodBuilder)
-                        .SetReturnType(method)
-                        .CallInterceptors(context.InterceptMethodBuilder, InterceptType.BeforeMethodCall)
-                        .ldloc(STACK_CALLINFO_INDEX)
-                        .callvirt(MethodCache.CallInfoGetCancel).brtrue_s(lblCancel)
-                        .Assert(!isInterface, c => c.CallBaseMethod(method)
-                            .Assert(isReturn, e => e.SetReturnValue(method.ReturnType)))
-                        .MarkLabel(lblCancel)
-                        .CallInterceptors(context.InterceptMethodBuilder, InterceptType.AfterMethodCall)
-                    .BeginCatchBlock(typeof(Exception))
-                        .SetException()
-                        .CallInterceptors(context.InterceptMethodBuilder, InterceptType.Catching)
-                        .Assert(AllowThrowException(attributes), e => e.ThrowException())
-                    .BeginFinallyBlock()
-                        .CallInterceptors(context.InterceptMethodBuilder, InterceptType.Finally)
-                    .EndExceptionBlock()
-                    .Assert(isReturn, e1 => e1.GetReturnValue(method.ReturnType, lblRet), e1 => e1.ret());
-                    });
+                {
+                    var isReturn = method.ReturnType != typeof(void);
+                    var lblCancel = ctx.Emitter.DefineLabel();
+                    var lblRet = ctx.Emitter.DefineLabel();
+                    ctx.Emitter.DeclareLocal();
+                    ctx.Emitter.Assert(isReturn, e => e.DeclareLocal(method.ReturnType));
+                    ctx.Emitter.InitInterceptors(attributes);
+                    ctx.Emitter.InitLocal(method, method);
+                    ctx.Emitter.BeginExceptionBlock();
+                    ctx.Emitter.CallInitialize(context.InitializeMethodBuilder)
+                    .CallInterceptors(context.InterceptMethodBuilder, InterceptType.BeforeMethodCall)
+                    .ldloc(STACK_CALLINFO_INDEX)
+                    .callvirt(MethodCache.CallInfoGetCancel).brtrue_s(lblCancel)
+                    .Assert(!isInterface, c => c.CallBaseMethod(method)
+                        .Assert(isReturn, e => e.SetReturnValue(method.ReturnType)))
+                    .MarkLabel(lblCancel)
+                    .CallInterceptors(context.InterceptMethodBuilder, InterceptType.AfterMethodCall)
+                .BeginCatchBlock(typeof(Exception))
+                    .SetException()
+                    .nop
+                    .CallInterceptors(context.InterceptMethodBuilder, InterceptType.Catching)
+                    .Assert(AllowThrowException(attributes), e => e.ThrowException())
+                .BeginFinallyBlock()
+                    .CallInterceptors(context.InterceptMethodBuilder, InterceptType.Finally)
+                .EndExceptionBlock()
+                .Assert(isReturn, e1 => e1.GetReturnValue(method.ReturnType, lblRet), e1 => e1.ret());
+                });
 
             foreach (var par in parameters)
             {
@@ -591,6 +732,7 @@ namespace Fireasy.Common.Aop
                         .CallInterceptors(context.InterceptMethodBuilder, InterceptType.AfterGetValue)
                     .BeginCatchBlock(typeof(Exception))
                         .SetException()
+                        .nop
                         .CallInterceptors(context.InterceptMethodBuilder, InterceptType.Catching)
                         .Assert(AllowThrowException(attributes), e => e.ThrowException())
                     .BeginFinallyBlock()
@@ -642,6 +784,7 @@ namespace Fireasy.Common.Aop
                         .CallInterceptors(context.InterceptMethodBuilder, InterceptType.AfterSetValue)
                     .BeginCatchBlock(typeof(Exception))
                         .SetException()
+                        .nop
                         .CallInterceptors(context.InterceptMethodBuilder, InterceptType.Catching)
                         .Assert(AllowThrowException(attributes), e => e.ThrowException())
                     .BeginFinallyBlock()
@@ -680,7 +823,8 @@ namespace Fireasy.Common.Aop
         private static EmitHelper ThrowException(this EmitHelper emitter)
         {
             return emitter
-                .ldloc(STACK_EXCEPTION_INDEX)
+                .ldloc(STACK_CALLINFO_INDEX)
+                .call(MethodCache.CallInfoGetException)
                 .@throw
                 .end();
         }
@@ -766,8 +910,9 @@ namespace Fireasy.Common.Aop
         {
             return emitter
                 .SetCurrentTarget()
-                .SetCurrentMember(member)
-                .SetCurrentDefinedType(member)
+                .SetCurrentDefinedType(method)
+                .SetCurrentMember(method)
+                .SetReturnType(method)
                 .Assert(method != null, e => e.SetArguments(method));
         }
 
@@ -793,9 +938,10 @@ namespace Fireasy.Common.Aop
         {
             return emitter
                 .stloc(STACK_EXCEPTION_INDEX)
+                .nop
                 .ldloc(STACK_CALLINFO_INDEX)
                 .ldloc(STACK_EXCEPTION_INDEX)
-                .callvirt(MethodCache.CallInfoSetException);
+                .call(MethodCache.CallInfoSetException);
         }
 
         /// <summary>
@@ -806,23 +952,12 @@ namespace Fireasy.Common.Aop
         /// <returns></returns>
         private static EmitHelper SetReturnValue(this EmitHelper emitter, Type returnType)
         {
-            if (returnType == typeof(Task))
-            {
-                return emitter.call(MethodCache.TaskAsSync);
-            }
-
-            var isNotRet = returnType != typeof(Task) && returnType != typeof(void);
-            var taskRetType = returnType.GetTaskReturnType();
-
             return emitter
                 .stloc(STACK_RETURNVALUE_INDEX)
                 .ldloc(STACK_CALLINFO_INDEX)
                 .ldloc(STACK_RETURNVALUE_INDEX)
-                .Assert(taskRetType != null, 
-                    e => e.call(MethodCache.TaskAsSyncT.MakeGenericMethod(taskRetType))
-                        .Assert(taskRetType.IsValueType, e1 => e1.box(taskRetType)), 
-                    e => e.Assert(returnType.IsValueType, e1 => e1.box(returnType)))
-                .Assert(isNotRet, e1 => e1.call(MethodCache.CallInfoSetReturnValue));
+                .Assert(returnType.IsValueType, e1 => e1.box(returnType))
+                .call(MethodCache.CallInfoSetReturnValue);
         }
 
         /// <summary>
@@ -834,18 +969,8 @@ namespace Fireasy.Common.Aop
         /// <returns></returns>
         private static EmitHelper GetReturnValue(this EmitHelper emitter, Type returnType, Label lbRetValNotNull)
         {
-            var taskRetType = returnType.GetTaskReturnType();
-            if (taskRetType != null)
-            {
-                returnType = taskRetType;
-            }
-
             return emitter
-                .Assert(returnType == typeof(Task), 
-                e => e.call(MethodCache.CompletedTask).stloc(STACK_RETURNVALUE_INDEX).ldloc(STACK_RETURNVALUE_INDEX).ret(), 
-                v =>
-                {
-                    v.ldloc(STACK_CALLINFO_INDEX)
+                .ldloc(STACK_CALLINFO_INDEX)
                     .callvirt(MethodCache.CallInfoGetReturnValue)
                     .Assert(returnType.IsValueType, e1 =>
                         e1.brtrue_s(lbRetValNotNull)
@@ -853,21 +978,13 @@ namespace Fireasy.Common.Aop
                             .call(MethodCache.TypeGetTypeFromHandle)
                             .call(MethodCache.GetDefaultValue)
                             .Assert(returnType.IsValueType, e => e.unbox_any(returnType))
-                            .Assert(taskRetType != null, e => e.call(MethodCache.TaskFromResult.MakeGenericMethod(taskRetType)))
                             .ret()
                             .MarkLabel(lbRetValNotNull)
                             .ldloc(STACK_CALLINFO_INDEX)
                             .callvirt(MethodCache.CallInfoGetReturnValue)
                             .Assert(returnType.IsValueType, e => e.unbox_any(returnType))
-                            .Assert(taskRetType != null, e => e.call(MethodCache.TaskFromResult.MakeGenericMethod(taskRetType)))
                             .ret(),
-                        e1 =>
-                            e1
-                            .Assert(returnType.IsValueType, e => e.unbox_any(returnType), e => e.isinst(returnType))
-                            .Assert(taskRetType != null, e => e.call(MethodCache.TaskFromResult.MakeGenericMethod(taskRetType)))
-                            .ret()
-                        );
-                });
+                        e1 => e1.Assert(returnType.IsValueType, e => e.unbox_any(returnType), e => e.isinst(returnType)).ret());
         }
 
         /// <summary>
@@ -880,6 +997,11 @@ namespace Fireasy.Common.Aop
         {
             //方法不允许有ref和out类型的参数
             var parameters = method.GetParameters();
+            if (parameters.Length == 0)
+            {
+                return emitter;
+            }
+
             return emitter
                 .ldloc(STACK_CALLINFO_INDEX)
                 .ldc_i4(parameters.Length)
@@ -913,17 +1035,16 @@ namespace Fireasy.Common.Aop
 
         public static EmitHelper SetReturnType(this EmitHelper emitter, MethodInfo method)
         {
-            var returnType = method.ReturnType.GetTaskReturnType() ?? method.ReturnType;
             return emitter
                 .ldloc(STACK_CALLINFO_INDEX)
-                .ldtoken(returnType)
+                .ldtoken(method.ReturnType)
                 .call(MethodCache.TypeGetTypeFromHandle)
                 .callvirt(MethodCache.CallInfoSetReturnType);
         }
 
         private static EmitHelper GetArguments(this EmitHelper emitter, Type argumentType, int index)
         {
-            return emitter.ldloc(2)
+            return emitter.ldloc(STACK_CALLINFO_INDEX)
                 .callvirt(MethodCache.CallInfoGetArguments)
                 .ldc_i4(index)
                 .ldelem_ref
@@ -979,6 +1100,338 @@ namespace Fireasy.Common.Aop
             return attributes.Any(attr => attr.AllowThrowException);
         }
 
+        private static EmitHelper Intercept(this EmitHelper emitter, BuildInternalContext context, AsyncStateMachineBuilder machineBuilder, InterceptType type)
+        {
+            return emitter
+                .nop
+                .ldarg_0
+                .ldfld(machineBuilder.This)
+                .ldarg_0
+                .ldfld(machineBuilder.IInterceptors)
+                .ldarg_0
+                .ldfld(machineBuilder.CallInfo)
+                .ldc_i4((int)type)
+                .callvirt(context.InterceptMethodBuilder);
+        }
+
+        private static EmitHelper SetState(this EmitHelper emitter, AsyncStateMachineBuilder machineBuilder, sbyte state)
+        {
+            return emitter.ldarg_0.ldc_i4_s(state).stfld(machineBuilder.State);
+        }
+
+        private static EmitHelper SetBuilderResult(this EmitHelper emitter, AsyncStateMachineBuilder machineBuilder)
+        {
+            return emitter
+                .Assert(machineBuilder.Result != null, e1 => e1.ldarg_0.call(machineBuilder.TrySetResultMethodBuilder.MethodBuilder))
+                .ldarg_0
+                .ldflda(machineBuilder.Builder)
+                .Assert(machineBuilder.Result != null, e1 => e1.ldarg_0.ldfld(machineBuilder.Result))
+                .call(machineBuilder.Builder.FieldType.GetMethod(nameof(AsyncTaskMethodBuilder.SetResult)));
+        }
+
+        /// <summary>
+        /// 创建异步状态机类。
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="method"></param>
+        /// <param name="proxyBuilder"></param>
+        /// <returns></returns>
+        private static AsyncStateMachineBuilder CreateAsyncStateMachine(BuildInternalContext context, MethodInfo method, DynamicMethodBuilder proxyBuilder)
+        {
+            var attributes = method.GetCustomAttributes<InterceptAttribute>(true).Union(context.GlobalIntercepts);
+
+            var machineBuilder = new AsyncStateMachineBuilder();
+            var name = AOP_PREFIX + "AsyncStateMachine<>" + method.Name;
+            if (context.MachineCounter.TryGetValue(name, out int index))
+            {
+                context.MachineCounter[name] += 1;
+                name += "<>" + index;
+            }
+            else
+            {
+                context.MachineCounter.Add(name, 1);
+            }
+
+            var typeBuilder = context.TypeBuilder.DefineNestedType(name);
+
+            machineBuilder.TypeBuilder = typeBuilder;
+
+            var returnType = machineBuilder.ReturnType = method.ReturnType == typeof(Task) ? null : method.ReturnType.GetGenericArguments()[0];
+
+            typeBuilder.ImplementInterface(typeof(IAsyncStateMachine));
+
+            var builderType = returnType == null ? typeof(AsyncTaskMethodBuilder) : typeof(AsyncTaskMethodBuilder<>).MakeGenericType(returnType);
+            var awaiterType = returnType == null ? typeof(TaskAwaiter) : typeof(TaskAwaiter<>).MakeGenericType(returnType);
+
+            machineBuilder.This = typeBuilder.DefineField("<>_this", typeBuilder.TypeBuilder.DeclaringType, visual: VisualDecoration.Public);
+            machineBuilder.State = typeBuilder.DefineField("<>_state", typeof(int), visual: VisualDecoration.Public);
+            machineBuilder.Builder = typeBuilder.DefineField("<>_builder", builderType, visual: VisualDecoration.Public);
+            machineBuilder.Awaiter = typeBuilder.DefineField("<>_awaiter", awaiterType);
+            machineBuilder.IInterceptors = typeBuilder.DefineField("<>_interceptors", typeof(List<>).MakeGenericType(typeof(IInterceptor)), visual: VisualDecoration.Public);
+            machineBuilder.CallInfo = typeBuilder.DefineField("<>_callInfo", typeof(InterceptCallInfo), visual: VisualDecoration.Public);
+
+            if (returnType != null)
+            {
+                machineBuilder.Result = typeBuilder.DefineField("<>_result", returnType);
+                machineBuilder.TrySetResultMethodBuilder = DefineTrySetResultMethod(machineBuilder);
+            }
+
+            foreach (var par in method.GetParameters())
+            {
+                machineBuilder.Parameters.Add(par.Name, typeBuilder.DefineField(par.Name, par.ParameterType, null, VisualDecoration.Public));
+            }
+
+            typeBuilder.DefineMethod(nameof(IAsyncStateMachine.MoveNext), null, null, VisualDecoration.Public, ilCoding: b =>
+            {
+                #region 方法原型
+                // try
+                // {
+                //	 try
+                //	 {
+                //		 if (<>_state != 0)
+                //	  	 {
+                //			<>_this.<Aspect>_Initialize(<>_interceptors, <>_callInfo);
+                //			<>_this.<Aspect>_Intercept(<>_interceptors, <>_callInfo, InterceptType.BeforeMethodCall);
+                //			if (<>_callInfo.Cancel)
+                //			{
+                //				<>_state = -2;
+                //				this.<>TrySetResult();
+                //				<>_builder.SetResult(<>_result);
+                //				<>_this.<Aspect>_Intercept(<>_interceptors, <>_callInfo, InterceptType.Finally);
+                //				return;
+                //			}
+                //			<>_awaiter = <>_this.<Aspect>_方法(参数1, 参数2).GetAwaiter();
+                //			if (!<>_awaiter.IsCompleted)
+                //			{
+                //				<>_state = 0;
+                //				<Aspect>_AsyncStateMachine<>TestAsync stateMachine = this;
+                //				<>_builder.AwaitUnsafeOnCompleted(ref <>_awaiter, ref stateMachine);
+                //				return;
+                //			}
+                //		}
+                //		else
+                //		{
+                //			<>_state = -1;
+                //		}
+                //		<>_result = <>_awaiter.GetResult();
+                //		<>_callInfo.ReturnValue = <>_result;
+                //		<>_this.<Aspect>_Intercept(<>_interceptors, <>_callInfo, InterceptType.AfterMethodCall);
+                //	 }
+                //	 catch (Exception exception)
+                //	 {
+                //		<>_callInfo.Exception = exception;
+                //		<>_this.<Aspect>_Intercept(<>_interceptors, <>_callInfo, InterceptType.Catching);
+                //	 }
+                // }
+                // catch (Exception exception2)
+                // {
+                //	 <>_state = -2;
+                //	 <>_builder.SetException(exception2);
+                //	 return;
+                // }
+                // <>_state = -2;
+                // this.<>TrySetResult();
+                // <>_builder.SetResult(<>_result);
+                // <>_this.<Aspect>_Intercept(<>_interceptors, <>_callInfo, InterceptType.Finally);
+                #endregion
+
+                b.Emitter.DeclareLocal(typeof(bool));
+                b.Emitter.DeclareLocal(typeof(bool));
+                b.Emitter.DeclareLocal(typeof(bool));
+                b.Emitter.DeclareLocal(machineBuilder.TypeBuilder);
+                b.Emitter.DeclareLocal(typeof(Exception));
+                b.Emitter.DeclareLocal(typeof(Exception));
+
+                var l1 = b.Emitter.DefineLabel();
+                var l2 = b.Emitter.DefineLabel();
+                var l3 = b.Emitter.DefineLabel();
+                var l4 = b.Emitter.DefineLabel();
+                var l5 = b.Emitter.DefineLabel();
+
+                var mthOnCompleted = builderType.GetMethod(nameof(AsyncTaskMethodBuilder.AwaitUnsafeOnCompleted))
+                    .MakeGenericMethod(awaiterType, machineBuilder.TypeBuilder.TypeBuilder);
+
+                b.Emitter.BeginExceptionBlock();
+                b.Emitter.BeginExceptionBlock();
+
+                b.Emitter
+                    .ldarg_0
+                    .ldfld(machineBuilder.State)
+                    .ldc_i4_0
+                    .cgt_un
+                    .stloc_0
+                    .ldloc_0
+                    .brfalse(l1)
+                    //Initialize
+                    .nop
+                    .ldarg_0
+                    .ldfld(machineBuilder.This)
+                    .ldarg_0
+                    .ldfld(machineBuilder.IInterceptors)
+                    .ldarg_0
+                    .ldfld(machineBuilder.CallInfo)
+                    .callvirt(context.InitializeMethodBuilder)
+                    .Intercept(context, machineBuilder, InterceptType.BeforeMethodCall)
+                    //if (info.Cancel)
+                    .nop
+                    .ldarg_0
+                    .ldfld(machineBuilder.CallInfo)
+                    .callvirt(MethodCache.CallInfoGetCancel)
+                    .stloc(2)
+                    .ldloc(2)
+                    .brfalse(l4)
+                        .nop
+                        .SetState(machineBuilder, -2)
+                        .SetBuilderResult(machineBuilder)
+                        .Intercept(context, machineBuilder, InterceptType.Finally)
+                        .nop.leave(l3)
+                    .MarkLabel(l4)
+                    //Invoke Proxy Method GetAwaiter
+                    .nop
+                    .ldarg_0
+                    .ldarg_0
+                    .ldfld(machineBuilder.This)
+                    .Each(machineBuilder.Parameters, (e1, kvp, i) => e1.ldarg_0.ldfld(kvp.Value))
+                    .callvirt(proxyBuilder.MethodBuilder)
+                    .callvirt(method.ReturnType.GetMethod(nameof(Task.GetAwaiter)))
+                    .stfld(machineBuilder.Awaiter)
+                    //if (!awaiter.IsCompleted)
+                    .ldarg_0
+                    .ldflda(machineBuilder.Awaiter)
+                    .call(awaiterType.GetProperty(nameof(TaskAwaiter.IsCompleted)).GetMethod)
+                    .ldc_i4_0
+                    .ceq
+                    .stloc_1
+                    .ldloc_1
+                    .brfalse(l2)
+                        .SetState(machineBuilder, 0)
+                        //AwaitUnsafeOnCompleted
+                        .ldarg_0
+                        .stloc_s(3)
+                        .ldarg_0
+                        .ldflda(machineBuilder.Builder)
+                        .ldarg_0
+                        .ldflda(machineBuilder.Awaiter)
+                        .ldloca_s(3)
+                        .call(mthOnCompleted)
+                        .nop
+                        .leave(l3)
+                    .MarkLabel(l2)
+                    .nop
+                    .br(l5)
+                    .MarkLabel(l1)
+                    .nop
+                    .SetState(machineBuilder, -1)
+                    .nop
+                    .MarkLabel(l5)
+                    //awaiter.GetResult
+                    .ldarg_0
+                    .ldarg_0
+                    .ldflda(machineBuilder.Awaiter)
+                    .call(awaiterType.GetMethod(nameof(TaskAwaiter.GetResult)))
+                    .Assert(machineBuilder.Result != null, e1 =>
+                        e1.stfld(machineBuilder.Result)
+                            .ldarg_0
+                            .ldfld(machineBuilder.CallInfo)
+                            .ldarg_0
+                            .ldfld(machineBuilder.Result)
+                            .Assert(returnType.IsValueType, e1 => e1.box(returnType))
+                            .call(MethodCache.CallInfoSetReturnValue))
+                    .Intercept(context, machineBuilder, InterceptType.AfterMethodCall)
+                    .BeginCatchBlock(typeof(Exception))
+                        .stloc(STACK_ASYNC_EXCEPTION1_INDEX)
+                        .nop
+                        .ldarg_0
+                        .ldfld(machineBuilder.CallInfo)
+                        .ldloc(STACK_ASYNC_EXCEPTION1_INDEX)
+                        .call(MethodCache.CallInfoSetException)
+                        .Intercept(context, machineBuilder, InterceptType.Catching)
+                        .Assert(AllowThrowException(attributes), e => e.ldarg_0.ldfld(machineBuilder.CallInfo).call(MethodCache.CallInfoGetException).@throw.end())
+                    .EndExceptionBlock()
+                    .BeginCatchBlock(typeof(Exception))
+                        .stloc(STACK_ASYNC_EXCEPTION2_INDEX)
+                        .nop
+                        .SetState(machineBuilder, -2)
+                        //SetException
+                        .ldarg_0
+                        .ldflda(machineBuilder.Builder)
+                        .ldloc(STACK_ASYNC_EXCEPTION2_INDEX)
+                        .call(builderType.GetMethod(nameof(AsyncTaskMethodBuilder.SetException)))
+                        .nop
+                        .leave(l3)
+                    .EndExceptionBlock()
+                        .SetState(machineBuilder, -2)
+                        .SetBuilderResult(machineBuilder)
+                        .Intercept(context, machineBuilder, InterceptType.Finally)
+                    .nop
+                    .MarkLabel(l3)
+                    .ret();
+            });
+
+            typeBuilder.DefineMethod(nameof(IAsyncStateMachine.SetStateMachine), null, new[] { typeof(IAsyncStateMachine) }, VisualDecoration.Public)
+                .DefineParameter("stateMachine");
+
+            return machineBuilder;
+        }
+
+        private static DynamicMethodBuilder DefineTrySetResultMethod(AsyncStateMachineBuilder machineBuilder)
+        {
+            return machineBuilder.TypeBuilder.DefineMethod("<>TrySetResult", null, null, VisualDecoration.Private, ilCoding: b =>
+            {
+                b.Emitter.DeclareLocal(typeof(bool));
+                var b1 = b.Emitter.DefineLabel();
+
+                b.Emitter
+                    .nop
+                    .ldarg_0
+                    .ldfld(machineBuilder.CallInfo)
+                    .callvirt(MethodCache.CallInfoGetReturnValue)
+                    .ldnull
+                    .cgt_un
+                    .stloc_0
+                    .ldloc_0
+                    .brfalse_s(b1)
+                    .nop
+                    .ldarg_0
+                    .ldarg_0
+                    .ldfld(machineBuilder.CallInfo)
+                    .callvirt(MethodCache.CallInfoGetReturnValue)
+                    .Assert(machineBuilder.ReturnType.IsValueType, e1 => e1.unbox_any(machineBuilder.ReturnType), e1 => e1.isinst(machineBuilder.ReturnType))
+                    .stfld(machineBuilder.Result)
+                    .nop
+                    .MarkLabel(b1)
+                    .ret();
+            });
+        }
+
+        /// <summary>
+        /// 创建一个异步代理方法，让异步状态机调用。
+        /// </summary>
+        /// <param name="typeBuilder"></param>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        private static DynamicMethodBuilder CreateAsyncProxyMethod(DynamicTypeBuilder typeBuilder, MethodInfo method)
+        {
+            var parameters = method.GetParameters();
+            var methodBuilder = typeBuilder.DefineMethod(AOP_PREFIX + "<>" + method.Name, method.ReturnType, parameters.Select(s => s.ParameterType).ToArray(), VisualDecoration.Private);
+            foreach (var par in parameters)
+            {
+                methodBuilder.DefineParameter(par.Name);
+            }
+
+            methodBuilder.OverwriteCode(e =>
+            {
+                e.DeclareLocal(method.ReturnType);
+                e.nop.ldarg_0
+                    .For(0, parameters.Length, (e1, i) => e1.ldarg(i + 1))
+                    .call(method)
+                    .stloc_0.ldloc_0
+                    .ret();
+            });
+
+            return methodBuilder;
+        }
+
         private class BuildInternalContext
         {
             public IList<MemberInfo> Members { get; set; }
@@ -992,6 +1445,33 @@ namespace Fireasy.Common.Aop
             public DynamicMethodBuilder InitializeMethodBuilder { get; set; }
 
             public DynamicMethodBuilder InterceptMethodBuilder { get; set; }
+
+            public Dictionary<string, int> MachineCounter { get; set; } = new Dictionary<string, int>();
+        }
+
+        private class AsyncStateMachineBuilder
+        {
+            public Type ReturnType { get; set; }
+
+            public DynamicTypeBuilder TypeBuilder { get; set; }
+
+            public DynamicFieldBuilder State { get; set; }
+
+            public DynamicFieldBuilder This { get; set; }
+
+            public DynamicFieldBuilder Builder { get; set; }
+
+            public DynamicFieldBuilder IInterceptors { get; set; }
+
+            public DynamicFieldBuilder Awaiter { get; set; }
+
+            public DynamicFieldBuilder CallInfo { get; set; }
+
+            public DynamicFieldBuilder Result { get; set; }
+
+            public DynamicMethodBuilder TrySetResultMethodBuilder { get; set; }
+
+            public Dictionary<string, DynamicFieldBuilder> Parameters { get; set; } = new Dictionary<string, DynamicFieldBuilder>();
         }
     }
 }

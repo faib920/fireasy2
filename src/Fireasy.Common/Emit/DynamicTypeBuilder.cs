@@ -40,22 +40,26 @@ namespace Fireasy.Common.Emit
         internal DynamicTypeBuilder(BuildContext context, string typeName, VisualDecoration visual = VisualDecoration.Public, CallingDecoration calling = CallingDecoration.Standard, Type baseType = null)
             : base(visual, calling)
         {
-            Context = new BuildContext(context) { TypeBuilder = this };
+            Context = new BuildContext(context);
             TypeName = typeName;
             _baseType = baseType;
             _attributes = GetTypeAttributes(visual, calling);
             InitBuilder();
+
+            Context.TypeBuilder = this;
         }
 
         internal DynamicTypeBuilder(BuildContext context, string typeName, VisualDecoration visual, Type baseType)
             : base(visual, CallingDecoration.Standard)
         {
-            Context = new BuildContext(context) { TypeBuilder = context.TypeBuilder };
+            Context = new BuildContext(context);
             _isNesetType = true;
             TypeName = typeName;
             _baseType = baseType;
             _attributes = GetTypeAttributes(visual, CallingDecoration.Standard);
             InitBuilder();
+
+            Context.TypeBuilder = this;
         }
 
         /// <summary>
@@ -255,7 +259,7 @@ namespace Fireasy.Common.Emit
         /// <returns></returns>
         protected virtual TypeAttributes GetTypeAttributes()
         {
-            return TypeAttributes.Class | TypeAttributes.Serializable | TypeAttributes.BeforeFieldInit;
+            return TypeAttributes.Class | TypeAttributes.BeforeFieldInit;
         }
 
         /// <summary>

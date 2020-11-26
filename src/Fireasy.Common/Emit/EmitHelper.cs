@@ -138,6 +138,16 @@ namespace Fireasy.Common.Emit
         }
 
         /// <summary>
+        /// 声明指定类型的局部变量。
+        /// </summary>
+        /// <param name="builder">一个 <see cref="DynamicTypeBuilder"/>。</param>
+        /// <returns>已声明的局部变量。</returns>
+        public LocalBuilder DeclareLocal(DynamicTypeBuilder builder)
+        {
+            return ILGenerator.DeclareLocal(builder.TypeBuilder);
+        }
+
+        /// <summary>
         /// 声明指定类型的局部变量，还可以选择固定该变量所引用的对象。
         /// </summary>
         /// <param name="localType">一个 System.Type 对象，表示局部变量的类型。</param>
@@ -635,6 +645,16 @@ namespace Fireasy.Common.Emit
         }
 
         /// <summary>
+        /// 调用由传递的方法说明符指示的方法。
+        /// </summary>
+        /// <param name="builder">构造器。</param>
+        public EmitHelper call(DynamicMethodBuilder builder)
+        {
+            ILGenerator.Emit(OpCodes.Call, builder.MethodBuilder);
+            return this;
+        }
+
+        /// <summary>
         /// 调用由传递的构造函数说明符指示的构造函数。
         /// </summary>
         /// <param name="constructorInfo">The constructor to be called.</param>
@@ -654,6 +674,18 @@ namespace Fireasy.Common.Emit
         public EmitHelper call(MethodInfo methodInfo, Type[] optionalParameterTypes)
         {
             ILGenerator.EmitCall(OpCodes.Call, methodInfo, optionalParameterTypes);
+            return this;
+        }
+
+        /// <summary>
+        /// 调用由传递的方法说明符指示的方法。
+        /// </summary>
+        /// <param name="builder">构造器。</param>
+        /// <param name="optionalParameterTypes">The types of the optional arguments if the method is a varargs method.</param>
+        /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
+        public EmitHelper call(DynamicMethodBuilder builder, Type[] optionalParameterTypes)
+        {
+            ILGenerator.EmitCall(OpCodes.Call, builder.MethodBuilder, optionalParameterTypes);
             return this;
         }
 
@@ -780,12 +812,35 @@ namespace Fireasy.Common.Emit
         /// <summary>
         /// 对对象调用后期绑定方法，并且将返回值推送到计算堆栈上。
         /// </summary>
+        /// <param name="builder">构造器。</param>
+        /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
+        public EmitHelper callvirt(DynamicMethodBuilder builder)
+        {
+            ILGenerator.Emit(OpCodes.Callvirt, builder.MethodBuilder);
+            return this;
+        }
+
+        /// <summary>
+        /// 对对象调用后期绑定方法，并且将返回值推送到计算堆栈上。
+        /// </summary>
         /// <param name="methodInfo">The method to be called.</param>
         /// <param name="optionalParameterTypes">The types of the optional arguments if the method is a varargs method.</param>
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
         public EmitHelper callvirt(MethodInfo methodInfo, Type[] optionalParameterTypes)
         {
             ILGenerator.EmitCall(OpCodes.Callvirt, methodInfo, optionalParameterTypes);
+            return this;
+        }
+
+        /// <summary>
+        /// 对对象调用后期绑定方法，并且将返回值推送到计算堆栈上。
+        /// </summary>
+        /// <param name="builder">构造器。</param>
+        /// <param name="optionalParameterTypes">The types of the optional arguments if the method is a varargs method.</param>
+        /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
+        public EmitHelper callvirt(DynamicMethodBuilder builder, Type[] optionalParameterTypes)
+        {
+            ILGenerator.EmitCall(OpCodes.Callvirt, builder.MethodBuilder, optionalParameterTypes);
             return this;
         }
 
@@ -2181,22 +2236,22 @@ namespace Fireasy.Common.Emit
         /// <summary>
         /// 查找对象中其引用当前位于计算堆栈的字段的值。
         /// </summary>
-        /// <param name="fieldInfo">表示字段的 <see cref="DynamicFieldBuilder"/>。</param>
+        /// <param name="builder">构造器。</param>
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
-        public EmitHelper ldfld(DynamicFieldBuilder fieldInfo)
+        public EmitHelper ldfld(DynamicFieldBuilder builder)
         {
-            ILGenerator.Emit(OpCodes.Ldfld, fieldInfo.FieldBuilder);
+            ILGenerator.Emit(OpCodes.Ldfld, builder.FieldBuilder);
             return this;
         }
 
         /// <summary>
         /// 查找对象中其引用当前位于计算堆栈的字段的地址。
         /// </summary>
-        /// <param name="fieldInfo">表示字段的 <see cref="DynamicFieldBuilder"/>。</param>
+        /// <param name="builder">构造器。</param>
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
-        public EmitHelper ldflda(DynamicFieldBuilder fieldInfo)
+        public EmitHelper ldflda(DynamicFieldBuilder builder)
         {
-            ILGenerator.Emit(OpCodes.Ldflda, fieldInfo.FieldBuilder);
+            ILGenerator.Emit(OpCodes.Ldflda, builder.FieldBuilder);
             return this;
         }
 
@@ -3130,6 +3185,17 @@ namespace Fireasy.Common.Emit
         public EmitHelper stfld(FieldInfo fieldInfo)
         {
             ILGenerator.Emit(OpCodes.Stfld, fieldInfo);
+            return this;
+        }
+
+        /// <summary>
+        /// 用新值替换在对象引用或指针的字段中存储的值。
+        /// </summary>
+        /// <param name="builder">构造器。</param>
+        /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
+        public EmitHelper stfld(DynamicFieldBuilder builder)
+        {
+            ILGenerator.Emit(OpCodes.Stfld, builder.FieldBuilder);
             return this;
         }
 
