@@ -69,7 +69,7 @@ namespace Fireasy.Common.Reflection
         {
             if (_getter == null)
             {
-                throw new NotSupportedException(SR.GetString(SRKind.UnableCreateCachedDelegate));
+                throw new NotSupportedException(SR.GetString(SRKind.UnableCreateCachedDelegate, FieldInfo.Name));
             }
 
             return _getter(instance);

@@ -43,7 +43,7 @@ namespace Fireasy.Common.Reflection
         {
             if (_invoker == null)
             {
-                throw new NotSupportedException(SR.GetString(SRKind.UnableCreateCachedDelegate));
+                throw new NotSupportedException(SR.GetString(SRKind.UnableCreateCachedDelegate, MethodInfo.Name));
             }
 
             return _invoker(instance, parameters);

@@ -111,7 +111,7 @@ namespace Fireasy.Common.Reflection
         {
             if (_getter == null)
             {
-                throw new NotSupportedException(SR.GetString(SRKind.UnableCreateCachedDelegate));
+                throw new NotSupportedException(SR.GetString(SRKind.UnableCreateCachedDelegate, PropertyInfo.Name));
             }
 
             return _getter(instance);
@@ -126,7 +126,7 @@ namespace Fireasy.Common.Reflection
         {
             if (_setter == null)
             {
-                throw new NotSupportedException(SR.GetString(SRKind.UnableCreateCachedDelegate));
+                throw new NotSupportedException(SR.GetString(SRKind.UnableCreateCachedDelegate, PropertyInfo.Name));
             }
 
             _setter(instance, value);

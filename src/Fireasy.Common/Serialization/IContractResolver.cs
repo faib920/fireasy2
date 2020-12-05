@@ -77,8 +77,8 @@ namespace Fireasy.Common.Serialization
                         {
                             return !SerializerUtil.CheckLazyValueCreate(l, p.Name);
                         },
-                        Getter = o => ReflectionCache.GetAccessor(s).GetValue(o),
-                        Setter = (o, v) => ReflectionCache.GetAccessor(s).SetValue(o, v),
+                        Getter = s.CanRead ? o => ReflectionCache.GetAccessor(s).GetValue(o) : null,
+                        Setter = s.CanWrite ? (o, v) => ReflectionCache.GetAccessor(s).SetValue(o, v) : null,
                         PropertyInfo = s,
                         PropertyName = ResolvePropertyName(s),
                         Formatter = s.GetCustomAttributes<TextFormatterAttribute>().FirstOrDefault()?.Formatter,
