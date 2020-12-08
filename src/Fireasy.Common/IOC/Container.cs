@@ -166,7 +166,7 @@ namespace Fireasy.Common.Ioc
         /// <returns></returns>
         public Container RegisterAssembly(Assembly assembly)
         {
-            Helpers.DiscoverAssembly(assembly, (svrType, implType, lifetime) => Register(svrType, implType, lifetime));
+            Helpers.DiscoverServices(assembly, (svrType, implType, lifetime) => Register(svrType, implType, lifetime));
 
             return this;
         }

@@ -10,6 +10,7 @@ using Fireasy.Common.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -75,7 +76,7 @@ namespace Fireasy.Common.Emit
             set
             {
                 _baseType = value;
-                TypeBuilder.SetParent(value);
+                _typeBuilder.SetParent(value);
             }
         }
 
@@ -102,7 +103,7 @@ namespace Fireasy.Common.Emit
         {
             get
             {
-                return TypeBuilder.UnderlyingSystemType;
+                return _typeBuilder.UnderlyingSystemType;
             }
         }
 
@@ -113,6 +114,24 @@ namespace Fireasy.Common.Emit
         public TypeBuilder TypeBuilder
         {
             get { return _typeBuilder; }
+        }
+
+        /// <summary>
+        /// 定义泛型参数。
+        /// </summary>
+        /// <param name="parameters">参数。</param>
+        /// <returns></returns>
+        public List<DynamicGenericTypeParameterBuilder> DefineGenericParameters(params GenericTypeParameter[] parameters)
+        {
+            var builders = _typeBuilder.DefineGenericParameters(parameters.Select(s => s.Name).ToArray());
+            var result = new List<DynamicGenericTypeParameterBuilder>();
+
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                result.Add(new DynamicGenericTypeParameterBuilder(parameters[i], builders[i]));
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -132,9 +151,9 @@ namespace Fireasy.Common.Emit
             }
 
 #if !NETSTANDARD
-            _innerType = TypeBuilder.CreateType();
+            _innerType = _typeBuilder.CreateType();
 #else
-            _innerType = TypeBuilder.CreateTypeInfo();
+            _innerType = _typeBuilder.CreateTypeInfo();
 #endif
             return _innerType;
         }
@@ -152,7 +171,7 @@ namespace Fireasy.Common.Emit
             }
 
             _interfaceTypes.Add(type);
-            TypeBuilder.AddInterfaceImplementation(type);
+            _typeBuilder.AddInterfaceImplementation(type);
 
             return this;
         }
@@ -268,7 +287,7 @@ namespace Fireasy.Common.Emit
         /// <param name="customBuilder">一个 <see cref="CustomAttributeBuilder"/> 对象。</param>
         protected override void SetCustomAttribute(CustomAttributeBuilder customBuilder)
         {
-            TypeBuilder.SetCustomAttribute(customBuilder);
+            _typeBuilder.SetCustomAttribute(customBuilder);
         }
 
         private TypeAttributes GetTypeAttributes(VisualDecoration visual, CallingDecoration calling)

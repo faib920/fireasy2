@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -23,9 +24,10 @@ namespace Fireasy.Common.Emit
         private readonly MethodAttributes _attributes;
         private readonly Action<BuildContext> _buildAction;
         private readonly List<string> _parameters = new List<string>();
+        private GenericTypeParameter[] _genericTypeParameters;
+        private ReadOnlyCollection<DynamicGenericTypeParameterBuilder> _gtpBuilders;
         private Type _returnType;
         private Type[] _parameterTypes;
-        private string[] _genericTypeNames;
 
         internal DynamicMethodBuilder(BuildContext context, string methodName, Type returnType = null, Type[] parameterTypes = null, VisualDecoration visual = VisualDecoration.Public, CallingDecoration calling = CallingDecoration.Standard, Action<BuildContext> ilCoding = null)
              : base(visual, calling)
@@ -63,6 +65,26 @@ namespace Fireasy.Common.Emit
 
             _parameters.Add(name);
             return this;
+        }
+
+        /// <summary>
+        /// 定义泛型参数。
+        /// </summary>
+        /// <param name="parameters">参数。</param>
+        /// <returns></returns>
+        public List<DynamicGenericTypeParameterBuilder> DefineGenericParameters(params GenericTypeParameter[] parameters)
+        {
+            var builders = MethodBuilder.DefineGenericParameters(parameters.Select(s => s.Name).ToArray());
+            var result = new List<DynamicGenericTypeParameterBuilder>();
+
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                result.Add(new DynamicGenericTypeParameterBuilder(parameters[i], builders[i]));
+            }
+
+            _gtpBuilders = new ReadOnlyCollection<DynamicGenericTypeParameterBuilder>(result);
+
+            return result;
         }
 
         /// <summary>
@@ -111,29 +133,23 @@ namespace Fireasy.Common.Emit
         }
 
         /// <summary>
-        /// 获取或设置方法的泛型参数名称数组。
-        /// </summary>
-        public string[] GenericArguments
-        {
-            get
-            {
-                return _genericTypeNames;
-            }
-
-            set
-            {
-                _genericTypeNames = value;
-                ProcessGenericMethod();
-            }
-        }
-
-        /// <summary>
         /// 获取当前的 <see cref="MethodBuilder"/>。
         /// </summary>
         /// <returns></returns>
         public MethodBuilder MethodBuilder
         {
             get { return _methodBuilder; }
+        }
+
+        /// <summary>
+        /// 获取泛型类型参数构造器集合。
+        /// </summary>
+        public ReadOnlyCollection<DynamicGenericTypeParameterBuilder> GenericTypeParameterBuilders
+        {
+            get
+            {
+                return _gtpBuilders;
+            }
         }
 
         /// <summary>
@@ -301,56 +317,7 @@ namespace Fireasy.Common.Emit
         {
             if (method.IsGenericMethod)
             {
-                var types = method.GetGenericArguments();
-                var list = types.Select(type => type.Name).ToList();
-                if (method.ReturnType.IsGenericType)
-                {
-                    var index = list.IndexOf(method.ReturnType.Name);
-                    if (index >= 0)
-                    {
-                        list.Add(list[index]);
-                    }
-                }
-
-                GenericArguments = list.ToArray();
-                if (_methodBuilder != null)
-                {
-                    ProcessGenericMethod();
-                }
-            }
-        }
-
-        private void ProcessGenericMethod()
-        {
-            if (GenericArguments == null || _methodBuilder == null)
-            {
-                return;
-            }
-
-            var array = new Dictionary<int, int>();
-            var list = new List<string>();
-            var l = 0;
-            var v = Math.Min(GenericArguments.Length, ParameterTypes.Length);
-            for (var i = 0; i < v; i++)
-            {
-                if (!string.IsNullOrEmpty(GenericArguments[i]))
-                {
-                    array.Add(i, l++);
-                    list.Add(GenericArguments[i]);
-                }
-            }
-
-            var gpas = _methodBuilder.DefineGenericParameters(list.ToArray());
-            foreach (var kvp in array)
-            {
-                ParameterTypes[kvp.Key] = gpas[kvp.Value];
-            }
-
-            MethodBuilder.SetParameters(ParameterTypes);
-            if (GenericArguments.Length == ParameterTypes.Length + 1)
-            {
-                var index = list.IndexOf(GenericArguments[GenericArguments.Length - 1]);
-                ReturnType = gpas[index];
+                _genericTypeParameters = method.GetGenericArguments().Select(s => GenericTypeParameter.From(s)).ToArray();
             }
         }
 
@@ -370,7 +337,6 @@ namespace Fireasy.Common.Emit
             Context.Emitter = new EmitHelper(_methodBuilder.GetILGenerator(), _methodBuilder);
             if (ParameterTypes != null)
             {
-                ProcessGenericMethod();
                 _methodBuilder.SetParameters(ParameterTypes);
             }
 
@@ -386,6 +352,11 @@ namespace Fireasy.Common.Emit
             else
             {
                 Context.Emitter.ret();
+            }
+
+            if (_genericTypeParameters != null)
+            {
+                DefineGenericParameters(_genericTypeParameters);
             }
 
             if (isOverride)

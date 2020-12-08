@@ -927,9 +927,20 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static Type GetTaskReturnType(this Type type)
         {
-            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Task<>))
+            if (type.IsGenericType)
             {
-                return type.GetGenericArguments()[0];
+                var gdtype = type.GetGenericTypeDefinition();
+                if (gdtype == typeof(Task<>))
+                {
+                    return type.GetGenericArguments()[0];
+                }
+
+#if !NETSTANDARD2_0 && !NETFRAMEWORK
+                if (gdtype == typeof(ValueTask<>))
+                {
+                    return type.GetGenericArguments()[0];
+                }
+#endif
             }
 
             return null;
@@ -942,15 +953,43 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static bool IsTaskReturnType(this Type type)
         {
+#if !NETSTANDARD2_0 && !NETFRAMEWORK
+            if (type.IsGenericType)
+            {
+                var gdtype = type.GetGenericTypeDefinition();
+                return gdtype == typeof(ValueTask<>) || gdtype == typeof(Task<>);
+            }
+
+            return type == typeof(Task) || type == typeof(ValueTask);
+#else
             return (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Task<>)) || type == typeof(Task);
+#endif
         }
 
+#if !NETSTANDARD2_0 && !NETFRAMEWORK
         /// <summary>
-        /// 判断方法是否具有 async 标识。
+        /// 判断是否为 ValueTask 返回的类型。
         /// </summary>
-        /// <param name="method"></param>
+        /// <param name="type"></param>
         /// <returns></returns>
-        public static bool IsAsynchronous(this MethodInfo method)
+        public static bool IsValueTaskReturnType(this Type type)
+        {
+            if (type.IsGenericType)
+            {
+                var gdtype = type.GetGenericTypeDefinition();
+                return gdtype == typeof(ValueTask<>);
+            }
+
+            return type == typeof(ValueTask);
+        }
+#endif
+
+            /// <summary>
+            /// 判断方法是否具有 async 标识。
+            /// </summary>
+            /// <param name="method"></param>
+            /// <returns></returns>
+            public static bool IsAsynchronous(this MethodInfo method)
         {
             return method.IsDefined(typeof(AsyncStateMachineAttribute));
         }

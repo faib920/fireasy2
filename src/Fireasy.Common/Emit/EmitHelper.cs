@@ -2819,6 +2819,17 @@ namespace Fireasy.Common.Emit
         /// <summary>
         /// 创建一个值类型的新对象或新实例，并将对象引用（O 类型）推送到计算堆栈上。
         /// </summary>
+        /// <param name="builder">一个构造器。</param>
+        /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>
+        public EmitHelper newobj(DynamicConstructorBuilder builder)
+        {
+            ILGenerator.Emit(OpCodes.Newobj, builder.ConstructorBuilder);
+            return this;
+        }
+
+        /// <summary>
+        /// 创建一个值类型的新对象或新实例，并将对象引用（O 类型）推送到计算堆栈上。
+        /// </summary>
         /// <param name="type">表示对象的类型。</param>
         /// <param name="parameters">构造的参数类型。</param>
         /// <returns>当前 <see cref="EmitHelper"/> 的实例。</returns>

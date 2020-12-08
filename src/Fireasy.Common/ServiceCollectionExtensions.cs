@@ -95,13 +95,29 @@ namespace Microsoft.Extensions.DependencyInjection
             {
                 if (reg.Assembly != null)
                 {
-                    Helpers.DiscoverAssembly(reg.Assembly, (svrType, implType, lifetime) => Register(services, svrType, implType, GetLifetime(lifetime)));
+                    Helpers.DiscoverServices(reg.Assembly, (svrType, implType, lifetime) => Register(services, svrType, implType, GetLifetime(lifetime)));
                 }
                 else
                 {
                     Register(services, reg.ServiceType, reg.ImplementationType, GetLifetime(reg.Lifetime));
                 }
             }
+
+            return services;
+        }
+
+        /// <summary>
+        /// 在 <see cref="IServiceCollection"/> 上注册程序集 <paramref name="assembly"/> 中可发现的服务。
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="assembly">程序集。</param>
+        /// <returns></returns>
+        public static IServiceCollection AddServices(this IServiceCollection services, Assembly assembly)
+        {
+            Guard.ArgumentNull(services, nameof(services));
+            Guard.ArgumentNull(assembly, nameof(assembly));
+
+            Helpers.DiscoverServices(assembly, (svrType, implType, lifetime) => Register(services, svrType, implType, GetLifetime(lifetime)));
 
             return services;
         }

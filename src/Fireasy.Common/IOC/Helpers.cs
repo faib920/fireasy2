@@ -36,7 +36,7 @@ namespace Fireasy.Common.Ioc
         /// </summary>
         /// <param name="assembly"></param>
         /// <param name="regAct"></param>
-        internal static void DiscoverAssembly(Assembly assembly, Action<Type, Type, Lifetime> regAct)
+        internal static void DiscoverServices(Assembly assembly, Action<Type, Type, Lifetime> regAct)
         {
             foreach (var type in assembly.GetExportedTypes())
             {

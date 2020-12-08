@@ -38,9 +38,10 @@ namespace Fireasy.Common.Aop
         private const short STACK_ARGUMENT_INDEX = 3;
         private const short STACK_RETURNVALUE_INDEX = 4;
         private const short STACK_ASYNCSTATEMACHINE_INDEX = 0;
-        private const short STACK_TASK_INDEX = 3;
+        private const short STACK_TASK_INDEX = 4;
         private const short STACK_ASYNC_EXCEPTION1_INDEX = 4;
         private const short STACK_ASYNC_EXCEPTION2_INDEX = 5;
+        private const byte STACK_MACHINE_INDEX = 3;
 
         private class MethodCache
         {
@@ -73,7 +74,6 @@ namespace Fireasy.Common.Aop
             internal protected static MethodInfo TaskFromResult = typeof(Task).GetMethod(nameof(Task.FromResult));
             internal protected static MethodInfo MembersContains = typeof(List<MemberInfo>).GetMethod(nameof(List<MemberInfo>.Contains));
             internal protected static MethodInfo MembersAdd = typeof(List<MemberInfo>).GetMethod(nameof(List<MemberInfo>.Add));
-            internal protected static MethodInfo CreateInstance = typeof(Activator).GetMethods().FirstOrDefault(s => s.Name == nameof(Activator.CreateInstance) && s.IsGenericMethod);
         }
 
         /// <summary>
@@ -476,7 +476,11 @@ namespace Fireasy.Common.Aop
         {
             var attributes = method.GetCustomAttributes<InterceptAttribute>(true).Union(context.GlobalIntercepts);
 
+//#if !NETSTANDARD2_0 && !NETFRAMEWORK
+//            if (method.ReturnType.IsTaskReturnType() && !method.ReturnType.IsValueTaskReturnType())
+//#else
             if (method.ReturnType.IsTaskReturnType())
+//#endif
             {
                 return InjectAsyncMethod(context, method, attributes);
             }
@@ -493,13 +497,13 @@ namespace Fireasy.Common.Aop
         /// <returns></returns>
         private static DynamicMethodBuilder InjectAsyncMethod(BuildInternalContext context, MethodInfo method, IEnumerable<InterceptAttribute> attributes)
         {
-            var returnType = method.ReturnType == typeof(Task) ? null : method.ReturnType.GetGenericArguments()[0];
+            var returnType = method.ReturnType.GetTaskReturnType();
 
             var proxyBuilder = CreateAsyncProxyMethod(context.TypeBuilder, method);
 
             var machineBuilder = CreateAsyncStateMachine(context, method, proxyBuilder);
 
-            #region 方法原型
+#region 方法原型
             // var list = new List<IInterceptor>();
             // list.Add(new AopTest.AsyncInterceptor());
             // var interceptCallInfo = new InterceptCallInfo();
@@ -512,17 +516,22 @@ namespace Fireasy.Common.Aop
             //     参数1,
             //     参数2
             // };
-            // var stateMachine = Activator.CreateInstance<<Aspect>_AsyncStateMachine<>方法>();
-            // stateMachine.<>_builder = default(AsyncTaskMethodBuilder<int?>);
+            // var stateMachine = new <Aspect>_AsyncStateMachine<>方法();
             // stateMachine.<>_this = this;
             // stateMachine.<>_interceptors = list;
             // stateMachine.<>_callInfo = interceptCallInfo;
-            // stateMachine.<>_state = -1;
             // stateMachine.参数1 = 参数1;
             // stateMachine.参数2 = 参数2;
-            // stateMachine.<>_builder.Start(ref stateMachine);
-            // return stateMachine.<>_builder.Task;
-            #endregion
+            // return stateMachine.Start();
+#endregion
+
+            var machineType = (Type)machineBuilder.TypeBuilder.TypeBuilder;
+            if (machineType.IsGenericType)
+            {
+                machineType = machineType.MakeGenericType(method.GetGenericArguments());
+            }
+
+            var reflection = MachineReflection.Generate(machineBuilder, machineType);
 
             var parameters = method.GetParameters();
             var methodBuilder = context.TypeBuilder.DefineMethod(
@@ -531,9 +540,10 @@ namespace Fireasy.Common.Aop
                 parameters.Select(s => s.ParameterType).ToArray(),
                 ilCoding: ctx =>
                 {
-                    ctx.Emitter.DeclareLocal(machineBuilder.TypeBuilder.TypeBuilder);
+                    ctx.Emitter.DeclareLocal(machineType);
                     ctx.Emitter.DeclareLocal(typeof(List<IInterceptor>));
                     ctx.Emitter.DeclareLocal(typeof(InterceptCallInfo));
+                    ctx.Emitter.DeclareLocal(typeof(object[]));
                     ctx.Emitter.DeclareLocal(method.ReturnType);
                     ctx.Emitter
                     .nop
@@ -547,44 +557,28 @@ namespace Fireasy.Common.Aop
                     .newobj(typeof(InterceptCallInfo))
                     .stloc(STACK_CALLINFO_INDEX)
                     .InitLocal(method, method)
-                    // Activator.CreateInstance<<Aspect>_AsyncStateMachine<>方法>()
                     .nop
-                    .call(MethodCache.CreateInstance.MakeGenericMethod(machineBuilder.TypeBuilder.TypeBuilder))
+                    .newobj(reflection.Constructor)
                     .stloc(STACK_ASYNCSTATEMACHINE_INDEX)
-                    // new AsyncTaskMethodBuilder
-                    .ldloc(STACK_ASYNCSTATEMACHINE_INDEX)
-                    .ldflda(machineBuilder.Builder)
-                    .initobj(returnType == null ? typeof(AsyncTaskMethodBuilder) : typeof(AsyncTaskMethodBuilder<>).MakeGenericType(returnType))
                     // set This
                     .ldloc(STACK_ASYNCSTATEMACHINE_INDEX)
                     .ldarg(0)
-                    .stfld(machineBuilder.This)
+                    .stfld(reflection.This)
                     // set IInterceptors
                     .ldloc(STACK_ASYNCSTATEMACHINE_INDEX)
                     .ldloc(STACK_INTERCEPTOR_LIST_INDEX)
-                    .stfld(machineBuilder.IInterceptors)
+                    .stfld(reflection.IInterceptors)
                     // set CallInfo
                     .ldloc(STACK_ASYNCSTATEMACHINE_INDEX)
                     .ldloc(STACK_CALLINFO_INDEX)
-                    .stfld(machineBuilder.CallInfo)
-                    // state = -1
-                    .ldloc(STACK_ASYNCSTATEMACHINE_INDEX)
-                    .ldc_i4(-1)
-                    .stfld(machineBuilder.State)
+                    .stfld(reflection.CallInfo)
                     // set Parameters
                     .For(0, parameters.Length, (e1, i) =>
                         e1.ldloc(STACK_ASYNCSTATEMACHINE_INDEX).ldarg(i + 1)
-                            .stfld(machineBuilder.Parameters[parameters[i].Name]).end())
-                    // builder.Start
+                            .stfld(reflection.Parameters[i]).end())
+                    // Start
                     .ldloc(STACK_ASYNCSTATEMACHINE_INDEX)
-                    .ldflda(machineBuilder.Builder)
-                    .ldloca_s(0)
-                    .call(machineBuilder.Builder.FieldType.GetMethod(nameof(AsyncTaskMethodBuilder.Start)).MakeGenericMethod(machineBuilder.TypeBuilder.TypeBuilder))
-                    // return builder.Task
-                    .nop
-                    .ldloc(STACK_ASYNCSTATEMACHINE_INDEX)
-                    .ldflda(machineBuilder.Builder)
-                    .call(machineBuilder.Builder.FieldType.GetProperty(nameof(AsyncTaskMethodBuilder.Task)).GetMethod)
+                    .call(reflection.StartMethod)
                     .stloc(STACK_TASK_INDEX)
                     .ldloc(STACK_TASK_INDEX)
                     .ret();
@@ -611,7 +605,7 @@ namespace Fireasy.Common.Aop
         {
             var isInterface = context.TypeBuilder.BaseType == typeof(object);
 
-            #region 方法原型
+#region 方法原型
             // var list = new List<InterceptAttribute>();
             // list.Add(new MyInterceptAttribute());
             // var info = new InterceptCallInfo();
@@ -648,7 +642,7 @@ namespace Fireasy.Common.Aop
             // {
             //     return (bool)info.ReturnValue;
             // };
-            #endregion
+#endregion
             var parameters = method.GetParameters();
             var methodBuilder = context.TypeBuilder.DefineMethod(
                 method.Name,
@@ -952,7 +946,7 @@ namespace Fireasy.Common.Aop
                 .stloc(STACK_RETURNVALUE_INDEX)
                 .ldloc(STACK_CALLINFO_INDEX)
                 .ldloc(STACK_RETURNVALUE_INDEX)
-                .Assert(returnType.IsValueType, e1 => e1.box(returnType))
+                .boxIfValueType(returnType)
                 .call(MethodCache.CallInfoSetReturnValue);
         }
 
@@ -973,14 +967,14 @@ namespace Fireasy.Common.Aop
                             .ldtoken(returnType)
                             .call(MethodCache.TypeGetTypeFromHandle)
                             .call(MethodCache.GetDefaultValue)
-                            .Assert(returnType.IsValueType, e => e.unbox_any(returnType))
+                            .unboxIfValueType(returnType)
                             .ret()
                             .MarkLabel(lbRetValNotNull)
                             .ldloc(STACK_CALLINFO_INDEX)
                             .callvirt(MethodCache.CallInfoGetReturnValue)
-                            .Assert(returnType.IsValueType, e => e.unbox_any(returnType))
+                            .unboxIfValueType(returnType)
                             .ret(),
-                        e1 => e1.Assert(returnType.IsValueType, e => e.unbox_any(returnType), e => e.isinst(returnType)).ret());
+                        e1 => e1.castType(returnType).ret());
         }
 
         /// <summary>
@@ -993,11 +987,6 @@ namespace Fireasy.Common.Aop
         {
             //方法不允许有ref和out类型的参数
             var parameters = method.GetParameters();
-            if (parameters.Length == 0)
-            {
-                return emitter;
-            }
-
             return emitter
                 .ldloc(STACK_CALLINFO_INDEX)
                 .ldc_i4(parameters.Length)
@@ -1044,7 +1033,7 @@ namespace Fireasy.Common.Aop
                 .callvirt(MethodCache.CallInfoGetArguments)
                 .ldc_i4(index)
                 .ldelem_ref
-                .Assert(argumentType.IsValueType, e => e.unbox_any(argumentType));
+                .unboxIfValueType(argumentType);
         }
 
         /// <summary>
@@ -1117,12 +1106,14 @@ namespace Fireasy.Common.Aop
 
         private static EmitHelper SetBuilderResult(this EmitHelper emitter, AsyncStateMachineBuilder machineBuilder)
         {
+            var mthSetResult = TryGetGenericFieldMethod(machineBuilder.Builder.FieldBuilder, t => t.GetMethod(nameof(AsyncTaskMethodBuilder.SetResult)));
+
             return emitter
                 .Assert(machineBuilder.Result != null, e1 => e1.ldarg_0.call(machineBuilder.TrySetResultMethodBuilder.MethodBuilder))
                 .ldarg_0
                 .ldflda(machineBuilder.Builder)
                 .Assert(machineBuilder.Result != null, e1 => e1.ldarg_0.ldfld(machineBuilder.Result))
-                .call(machineBuilder.Builder.FieldType.GetMethod(nameof(AsyncTaskMethodBuilder.SetResult)));
+                .call(mthSetResult);
         }
 
         /// <summary>
@@ -1135,6 +1126,7 @@ namespace Fireasy.Common.Aop
         private static AsyncStateMachineBuilder CreateAsyncStateMachine(BuildInternalContext context, MethodInfo method, DynamicMethodBuilder proxyBuilder)
         {
             var attributes = method.GetCustomAttributes<InterceptAttribute>(true).Union(context.GlobalIntercepts);
+            List<DynamicGenericTypeParameterBuilder> genericTypeParameterBuilders = null;
 
             var machineBuilder = new AsyncStateMachineBuilder();
             var name = AOP_PREFIX + "AsyncStateMachine<>" + method.Name;
@@ -1153,15 +1145,35 @@ namespace Fireasy.Common.Aop
             machineBuilder.TypeBuilder = typeBuilder;
 
             var returnType = machineBuilder.ReturnType = method.ReturnType.GetTaskReturnType();
+            var isGenericReturnType = false;
+
+            if (method.IsGenericMethod)
+            {
+                var genericTypeParameters = method.GetGenericArguments().Select(s => GenericTypeParameter.From(s)).ToArray();
+                genericTypeParameterBuilders = typeBuilder.DefineGenericParameters(genericTypeParameters);
+
+                if (returnType != null)
+                {
+                    returnType = machineBuilder.ReturnType = ReplaceGenericParameterType(genericTypeParameterBuilders, returnType);
+                    isGenericReturnType = returnType.GetType().Name == "GenericTypeParameterBuilder";
+                }
+            }
 
             typeBuilder.ImplementInterface(typeof(IAsyncStateMachine));
 
+#if !NETSTANDARD2_0 && !NETFRAMEWORK
+            var isValueTask = method.ReturnType.IsValueTaskReturnType();
+            var builderType = returnType == null ? (isValueTask ? typeof(AsyncValueTaskMethodBuilder) : typeof(AsyncTaskMethodBuilder)) : (isValueTask ? typeof(AsyncValueTaskMethodBuilder<>) : typeof(AsyncTaskMethodBuilder<>)).MakeGenericType(returnType);
+            var awaiterType = returnType == null ? (isValueTask ? typeof(ValueTaskAwaiter) : typeof(TaskAwaiter)) : (isValueTask ? typeof(ValueTaskAwaiter<>) : typeof(TaskAwaiter<>)).MakeGenericType(returnType);
+#else
+            var isValueTask = false;
             var builderType = returnType == null ? typeof(AsyncTaskMethodBuilder) : typeof(AsyncTaskMethodBuilder<>).MakeGenericType(returnType);
             var awaiterType = returnType == null ? typeof(TaskAwaiter) : typeof(TaskAwaiter<>).MakeGenericType(returnType);
+#endif
 
             machineBuilder.This = typeBuilder.DefineField("<>_this", typeBuilder.TypeBuilder.DeclaringType, visual: VisualDecoration.Public);
-            machineBuilder.State = typeBuilder.DefineField("<>_state", typeof(int), visual: VisualDecoration.Public);
-            machineBuilder.Builder = typeBuilder.DefineField("<>_builder", builderType, visual: VisualDecoration.Public);
+            machineBuilder.State = typeBuilder.DefineField("<>_state", typeof(int));
+            machineBuilder.Builder = typeBuilder.DefineField("<>_builder", builderType);
             machineBuilder.Awaiter = typeBuilder.DefineField("<>_awaiter", awaiterType);
             machineBuilder.IInterceptors = typeBuilder.DefineField("<>_interceptors", typeof(List<>).MakeGenericType(typeof(IInterceptor)), visual: VisualDecoration.Public);
             machineBuilder.CallInfo = typeBuilder.DefineField("<>_callInfo", typeof(InterceptCallInfo), visual: VisualDecoration.Public);
@@ -1172,14 +1184,33 @@ namespace Fireasy.Common.Aop
                 machineBuilder.TrySetResultMethodBuilder = DefineTrySetResultMethod(machineBuilder);
             }
 
+            //定义参数字段
             foreach (var par in method.GetParameters())
             {
-                machineBuilder.Parameters.Add(par.Name, typeBuilder.DefineField(par.Name, par.ParameterType, null, VisualDecoration.Public));
+                var parType = ReplaceGenericParameterType(genericTypeParameterBuilders, par.ParameterType);
+                machineBuilder.Parameters.Add(par.Name, typeBuilder.DefineField(par.Name, parType, null, VisualDecoration.Public));
             }
+
+            //定义构造函数，初始化 builder 和 state = -1
+            machineBuilder.ConstructorBuilder = typeBuilder.DefineConstructor(null, ilCoding: b =>
+            {
+                b.Emitter
+                    .ldarg_0
+                    .ldflda(machineBuilder.Builder)
+                    .initobj(builderType)
+                    .SetState(machineBuilder, -1)
+                    .ret();
+            });
+
+#if !NETSTANDARD2_0 && !NETFRAMEWORK
+            var taskType = returnType == null ? (isValueTask ? typeof(ValueTask) : typeof(Task)) : (isValueTask ? typeof(ValueTask<>) : typeof(Task<>)).MakeGenericType(returnType);
+#else
+            var taskType = returnType == null ? typeof(Task) : typeof(Task<>).MakeGenericType(returnType);
+#endif
 
             typeBuilder.DefineMethod(nameof(IAsyncStateMachine.MoveNext), null, null, VisualDecoration.Public, ilCoding: b =>
             {
-                #region 方法原型
+#region 方法原型
                 // try
                 // {
                 //	 try
@@ -1229,7 +1260,7 @@ namespace Fireasy.Common.Aop
                 // this.<>TrySetResult();
                 // <>_builder.SetResult(<>_result);
                 // <>_this.<Aspect>_Intercept(<>_interceptors, <>_callInfo, InterceptType.Finally);
-                #endregion
+#endregion
 
                 b.Emitter.DeclareLocal(typeof(bool));
                 b.Emitter.DeclareLocal(typeof(bool));
@@ -1238,14 +1269,31 @@ namespace Fireasy.Common.Aop
                 b.Emitter.DeclareLocal(typeof(Exception));
                 b.Emitter.DeclareLocal(typeof(Exception));
 
+                if (isValueTask)
+                {
+                    b.Emitter.DeclareLocal(taskType);
+                }
+
                 var l1 = b.Emitter.DefineLabel();
                 var l2 = b.Emitter.DefineLabel();
                 var l3 = b.Emitter.DefineLabel();
                 var l4 = b.Emitter.DefineLabel();
                 var l5 = b.Emitter.DefineLabel();
 
-                var mthOnCompleted = builderType.GetMethod(nameof(AsyncTaskMethodBuilder.AwaitUnsafeOnCompleted))
-                    .MakeGenericMethod(awaiterType, machineBuilder.TypeBuilder.TypeBuilder);
+                var mthOnCompleted = TryGetGenericFieldMethod(machineBuilder.Builder.FieldBuilder, t => t.GetMethod(nameof(AsyncTaskMethodBuilder.AwaitUnsafeOnCompleted)));
+                mthOnCompleted = mthOnCompleted.MakeGenericMethod(awaiterType, machineBuilder.TypeBuilder.TypeBuilder);
+
+                var mthSetException = TryGetGenericFieldMethod(machineBuilder.Builder.FieldBuilder, t => t.GetMethod(nameof(AsyncTaskMethodBuilder.SetException)));
+
+                //调用代理方法
+                var mthBase = typeBuilder.TypeBuilder.IsGenericType ? 
+                    proxyBuilder.MethodBuilder.MakeGenericMethod(genericTypeParameterBuilders.Select(s => s.GenerateTypeParameterBuilder).ToArray()) : 
+                    proxyBuilder.MethodBuilder;
+
+                //Task.GetAwaiter
+                var mthTask = method.IsGenericMethod && isGenericReturnType ?
+                    TypeBuilder.GetMethod(method.ReturnType.GetGenericTypeDefinition().MakeGenericType(returnType), method.ReturnType.GetGenericTypeDefinition().GetMethod(nameof(Task.GetAwaiter))) :
+                    method.ReturnType.GetMethod(nameof(Task.GetAwaiter));
 
                 b.Emitter.BeginExceptionBlock();
                 b.Emitter.BeginExceptionBlock();
@@ -1284,17 +1332,32 @@ namespace Fireasy.Common.Aop
                     .MarkLabel(l4)
                     //Invoke Proxy Method GetAwaiter
                     .nop
-                    .ldarg_0
-                    .ldarg_0
-                    .ldfld(machineBuilder.This)
-                    .Each(machineBuilder.Parameters, (e1, kvp, i) => e1.ldarg_0.ldfld(kvp.Value))
-                    .callvirt(proxyBuilder.MethodBuilder)
-                    .callvirt(method.ReturnType.GetMethod(nameof(Task.GetAwaiter)))
-                    .stfld(machineBuilder.Awaiter)
+                    .Assert(isValueTask, // todo 暂不知 ValueTask 为何不能与 Task 采取相同的IL
+                        e1 => e1
+                            .ldarg_0
+                            .ldfld(machineBuilder.This)
+                            .Each(machineBuilder.Parameters, (e1, kvp, i) => e1.ldarg_0.ldfld(kvp.Value))
+                            .callvirt(mthBase)
+                            .stloc(6)
+                            .nop
+                            .ldarg_0
+                            .ldloca_s(6)
+                            .callvirt(mthTask)
+                            .stfld(machineBuilder.Awaiter),
+                        e1 => e1
+                            .ldarg_0
+                            .ldarg_0
+                            .ldfld(machineBuilder.This)
+                            .Each(machineBuilder.Parameters, (e1, kvp, i) => e1.ldarg_0.ldfld(kvp.Value))
+                            .callvirt(mthBase)
+                            .callvirt(mthTask)
+                            .stfld(machineBuilder.Awaiter)
+                    )
+                    .nop
                     //if (!awaiter.IsCompleted)
                     .ldarg_0
                     .ldflda(machineBuilder.Awaiter)
-                    .call(awaiterType.GetProperty(nameof(TaskAwaiter.IsCompleted)).GetMethod)
+                    .call(TryGetGenericFieldMethod(machineBuilder.Awaiter.FieldBuilder, t => t.GetProperty(nameof(TaskAwaiter.IsCompleted)).GetMethod))
                     .ldc_i4_0
                     .ceq
                     .stloc_1
@@ -1303,12 +1366,12 @@ namespace Fireasy.Common.Aop
                         .SetState(machineBuilder, 0)
                         //AwaitUnsafeOnCompleted
                         .ldarg_0
-                        .stloc_s(3)
+                        .stloc_s(STACK_MACHINE_INDEX)
                         .ldarg_0
                         .ldflda(machineBuilder.Builder)
                         .ldarg_0
                         .ldflda(machineBuilder.Awaiter)
-                        .ldloca_s(3)
+                        .ldloca_s(STACK_MACHINE_INDEX)
                         .call(mthOnCompleted)
                         .nop
                         .leave(l3)
@@ -1324,14 +1387,14 @@ namespace Fireasy.Common.Aop
                     .ldarg_0
                     .ldarg_0
                     .ldflda(machineBuilder.Awaiter)
-                    .call(awaiterType.GetMethod(nameof(TaskAwaiter.GetResult)))
+                    .call(TryGetGenericFieldMethod(machineBuilder.Awaiter.FieldBuilder, t => t.GetMethod(nameof(TaskAwaiter.GetResult))))
                     .Assert(machineBuilder.Result != null, e1 =>
                         e1.stfld(machineBuilder.Result)
                             .ldarg_0
                             .ldfld(machineBuilder.CallInfo)
                             .ldarg_0
                             .ldfld(machineBuilder.Result)
-                            .Assert(returnType.IsValueType, e1 => e1.box(returnType))
+                            .boxIfValueType(returnType)
                             .call(MethodCache.CallInfoSetReturnValue))
                     .Intercept(context, machineBuilder, InterceptType.AfterMethodCall)
                     .BeginCatchBlock(typeof(Exception))
@@ -1352,7 +1415,7 @@ namespace Fireasy.Common.Aop
                         .ldarg_0
                         .ldflda(machineBuilder.Builder)
                         .ldloc(STACK_ASYNC_EXCEPTION2_INDEX)
-                        .call(builderType.GetMethod(nameof(AsyncTaskMethodBuilder.SetException)))
+                        .call(mthSetException)
                         .nop
                         .leave(l3)
                     .EndExceptionBlock()
@@ -1366,6 +1429,29 @@ namespace Fireasy.Common.Aop
 
             typeBuilder.DefineMethod(nameof(IAsyncStateMachine.SetStateMachine), null, new[] { typeof(IAsyncStateMachine) }, VisualDecoration.Public)
                 .DefineParameter("stateMachine");
+
+            //定义 Start 方法
+            machineBuilder.StartMethodBuilder = typeBuilder.DefineMethod("Start", taskType, null, VisualDecoration.Public, ilCoding: b =>
+            {
+                var mthStart = TryGetGenericFieldMethod(machineBuilder.Builder.FieldBuilder, t => t.GetMethod(nameof(AsyncTaskMethodBuilder.Start)));
+                mthStart = mthStart.MakeGenericMethod(typeBuilder.TypeBuilder);
+
+                var mthGetTask = TryGetGenericFieldMethod(machineBuilder.Builder.FieldBuilder, t => t.GetProperty(nameof(AsyncTaskMethodBuilder.Task)).GetMethod);
+
+                b.Emitter.DeclareLocal(machineBuilder.TypeBuilder.TypeBuilder);
+                b.Emitter
+                .ldarg_0
+                .stloc_0
+                .ldarg_0
+                .ldflda(machineBuilder.Builder)
+                .ldloca_s(0)
+                .call(mthStart)
+                .nop
+                .ldarg_0
+                .ldflda(machineBuilder.Builder)
+                .call(mthGetTask)
+                .ret();
+            });
 
             return machineBuilder;
         }
@@ -1392,7 +1478,7 @@ namespace Fireasy.Common.Aop
                     .ldarg_0
                     .ldfld(machineBuilder.CallInfo)
                     .callvirt(MethodCache.CallInfoGetReturnValue)
-                    .Assert(machineBuilder.ReturnType.IsValueType, e1 => e1.unbox_any(machineBuilder.ReturnType), e1 => e1.isinst(machineBuilder.ReturnType))
+                    .castType(machineBuilder.ReturnType)
                     .stfld(machineBuilder.Result)
                     .nop
                     .MarkLabel(b1)
@@ -1410,6 +1496,13 @@ namespace Fireasy.Common.Aop
         {
             var parameters = method.GetParameters();
             var methodBuilder = typeBuilder.DefineMethod(AOP_PREFIX + "<>" + method.Name, method.ReturnType, parameters.Select(s => s.ParameterType).ToArray(), VisualDecoration.Private);
+
+            if (method.IsGenericMethod)
+            {
+                var genericTypeParameters = method.GetGenericArguments().Select(s => GenericTypeParameter.From(s)).ToArray();
+                methodBuilder.DefineGenericParameters(genericTypeParameters);
+            }
+
             foreach (var par in parameters)
             {
                 methodBuilder.DefineParameter(par.Name);
@@ -1426,6 +1519,34 @@ namespace Fireasy.Common.Aop
             });
 
             return methodBuilder;
+        }
+
+        private static Type ReplaceGenericParameterType(List<DynamicGenericTypeParameterBuilder> builders, Type type)
+        {
+            if (builders == null)
+            {
+                return type;
+            }
+
+            return builders.FirstOrDefault(s => s.GenerateTypeParameterBuilder.Name.Equals(type.Name))?.GenerateTypeParameterBuilder ?? type;
+        }
+
+        private static Type TryGetGenericDefinitionType(Type type)
+        {
+            return type.IsGenericType ? type.GetGenericTypeDefinition() : type;
+        }
+
+        private static MethodInfo TryGetGenericFieldMethod(FieldBuilder fieldBuilder, Func<Type, MethodInfo> func)
+        {
+            if (fieldBuilder.FieldType.GetType().Name == "TypeBuilderInstantiation")
+            {
+                var method = func(TryGetGenericDefinitionType(fieldBuilder.FieldType));
+                return TypeBuilder.GetMethod(fieldBuilder.FieldType, method);
+            }
+            else
+            {
+                return func(fieldBuilder.FieldType);
+            }
         }
 
         private class BuildInternalContext
@@ -1467,7 +1588,70 @@ namespace Fireasy.Common.Aop
 
             public DynamicMethodBuilder TrySetResultMethodBuilder { get; set; }
 
+            public DynamicConstructorBuilder ConstructorBuilder { get; set; }
+
+            public DynamicMethodBuilder StartMethodBuilder { get; set; }
+
+            public DynamicMethodBuilder GetTaskMethodBuilder { get; set; }
+
             public Dictionary<string, DynamicFieldBuilder> Parameters { get; set; } = new Dictionary<string, DynamicFieldBuilder>();
+        }
+
+        private class MachineReflection
+        {
+            public FieldInfo State { get; set; }
+
+            public FieldInfo This { get; set; }
+
+            public FieldInfo Builder { get; set; }
+
+            public FieldInfo IInterceptors { get; set; }
+
+            public FieldInfo Awaiter { get; set; }
+
+            public FieldInfo CallInfo { get; set; }
+
+            public FieldInfo Result { get; set; }
+
+            public ConstructorInfo Constructor { get; set; }
+
+            public MethodInfo StartMethod { get; set; }
+
+            public List<FieldInfo> Parameters { get; set; } = new List<FieldInfo>();
+
+            public static MachineReflection Generate(AsyncStateMachineBuilder builder, Type machineType)
+            {
+                if (machineType.IsGenericType)
+                {
+                    return new MachineReflection
+                    {
+                        State = TypeBuilder.GetField(machineType, builder.State.FieldBuilder),
+                        This = TypeBuilder.GetField(machineType, builder.This.FieldBuilder),
+                        Builder = TypeBuilder.GetField(machineType, builder.Builder.FieldBuilder),
+                        IInterceptors = TypeBuilder.GetField(machineType, builder.IInterceptors.FieldBuilder),
+                        Awaiter = TypeBuilder.GetField(machineType, builder.Awaiter.FieldBuilder),
+                        CallInfo = TypeBuilder.GetField(machineType, builder.CallInfo.FieldBuilder),
+                        Result = builder.Result == null ? null : TypeBuilder.GetField(machineType, builder.Result.FieldBuilder),
+                        Constructor = TypeBuilder.GetConstructor(machineType, builder.ConstructorBuilder.ConstructorBuilder),
+                        StartMethod = TypeBuilder.GetMethod(machineType, builder.StartMethodBuilder.MethodBuilder),
+                        Parameters = builder.Parameters.Select(s => TypeBuilder.GetField(machineType, s.Value.FieldBuilder)).ToList()
+                    };
+                }
+
+                return new MachineReflection
+                {
+                    State = builder.State.FieldBuilder,
+                    This = builder.This.FieldBuilder,
+                    Builder = builder.Builder.FieldBuilder,
+                    IInterceptors = builder.IInterceptors.FieldBuilder,
+                    Awaiter = builder.Awaiter.FieldBuilder,
+                    CallInfo = builder.CallInfo.FieldBuilder,
+                    Result = builder.Result?.FieldBuilder,
+                    Constructor = builder.ConstructorBuilder.ConstructorBuilder,
+                    StartMethod = builder.StartMethodBuilder.MethodBuilder,
+                    Parameters = builder.Parameters.Select(s => (FieldInfo)s.Value.FieldBuilder).ToList()
+                };
+            }
         }
     }
 }

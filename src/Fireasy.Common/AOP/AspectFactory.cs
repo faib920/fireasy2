@@ -53,7 +53,12 @@ namespace Fireasy.Common.Aop
                 throw new AspectException(SR.GetString(SRKind.AopTypeMustNotSeald, objectType.FullName));
             }
 
-            return InterceptBuilder.BuildTypeCached(objectType);
+            var option = new InterceptBuildOption
+            {
+                AssemblyBuilder = AspectAssemblyScope.Current?.AssemblyBuilder
+            };
+
+            return InterceptBuilder.BuildTypeCached(objectType, option);
         }
     }
 }
