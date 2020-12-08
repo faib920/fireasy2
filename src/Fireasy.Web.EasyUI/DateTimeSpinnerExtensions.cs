@@ -36,7 +36,7 @@ namespace Fireasy.Web.EasyUI
         {
             settings = settings ?? new DateTimeSpinnerSettings();
 
-            var builder = new EasyUITagBuilder("input", "easyui-timespinner", settings);
+            var builder = new EasyUITagBuilder("input", "easyui-datetimespinner", settings);
             builder.MergeAttribute("name", exp);
             builder.MergeAttribute("data-options", SettingsSerializer.Serialize(settings));
             builder.AddCssClass("form-input");
@@ -66,7 +66,7 @@ namespace Fireasy.Web.EasyUI
             var propertyName = MetadataHelper.GetPropertyName(htmlHelper, expression);
             settings.Bind(typeof(TModel), propertyName);
 
-            var builder = new EasyUITagBuilder("input", "easyui-timespinner", settings);
+            var builder = new EasyUITagBuilder("input", "easyui-datetimespinner", settings);
             builder.MergeAttribute("name", propertyName);
             builder.MergeAttribute("data-options", SettingsSerializer.Serialize(settings));
             builder.AddCssClass("form-input");
