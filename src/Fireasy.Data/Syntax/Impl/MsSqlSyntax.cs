@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using Fireasy.Data.Extensions;
 using Fireasy.Data.Provider;
+using System;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Linq;
@@ -70,9 +71,9 @@ namespace Fireasy.Data.Syntax
         public string[] Delimiter => new[] { "[", "]" };
 
         /// <summary>
-        /// 获取换行符。
+        /// 获取语句结束符。
         /// </summary>
-        public string Linefeed => "\nGO\n";
+        public string StatementTerminator => Environment.NewLine + "GO" + Environment.NewLine + Environment.NewLine;
 
         /// <summary>
         /// 获取是否允许在聚合中使用 DISTINCT 关键字。

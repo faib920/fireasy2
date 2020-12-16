@@ -102,6 +102,11 @@ namespace Fireasy.Data
             return _innerDatabase.ExecuteNonQuery(queryCommand, parameters);
         }
 
+        int IDatabase.ExecuteBatch(IEnumerable<IQueryCommand> queryCommands, ParameterCollection parameters)
+        {
+            return _innerDatabase.ExecuteBatch(queryCommands, parameters);
+        }
+
         IDataReader IDatabase.ExecuteReader(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CommandBehavior? behavior)
         {
             return _innerDatabase.ExecuteReader(queryCommand, segment, parameters, behavior);
@@ -135,6 +140,11 @@ namespace Fireasy.Data
         Task<int> IDatabase.ExecuteNonQueryAsync(IQueryCommand queryCommand, ParameterCollection parameters, CancellationToken cancellationToken)
         {
             return _innerDatabase.ExecuteNonQueryAsync(queryCommand, parameters, cancellationToken);
+        }
+
+        Task<int> IDatabase.ExecuteBatchAsync(IEnumerable<IQueryCommand> queryCommands, ParameterCollection parameters, CancellationToken cancellationToken)
+        {
+            return _innerDatabase.ExecuteBatchAsync(queryCommands, parameters, cancellationToken);
         }
 
         Task<IDataReader> IDatabase.ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CommandBehavior? behavior, CancellationToken cancellationToken)

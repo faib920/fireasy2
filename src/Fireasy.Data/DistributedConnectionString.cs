@@ -17,6 +17,20 @@ namespace Fireasy.Data
         /// <summary>
         /// 使用连接字符串初始化 <see cref="DistributedConnectionString"/> 类的新实例。
         /// </summary>
+        /// <param name="mode">分布式模式。</param>
+        /// <param name="connectionString">数据库连接字符串。</param>
+        /// <param name="weight">权重。</param>
+        /// <exception cref="ArgumentNullException">connectionString 为 null。</exception>
+        public DistributedConnectionString(DistributedMode mode, string connectionString, int weight = 100)
+            : base(connectionString)
+        {
+            Mode = mode;
+            Weight = weight;
+        }
+
+        /// <summary>
+        /// 使用连接字符串初始化 <see cref="DistributedConnectionString"/> 类的新实例。
+        /// </summary>
         /// <param name="connectionString">数据库连接字符串。</param>
         /// <exception cref="ArgumentNullException">connectionString 为 null。</exception>
         public DistributedConnectionString(string connectionString)

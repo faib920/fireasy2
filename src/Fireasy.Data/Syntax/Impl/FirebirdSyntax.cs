@@ -62,9 +62,9 @@ namespace Fireasy.Data.Syntax
         public virtual string[] Delimiter => new[] { "\"", "\"" };
 
         /// <summary>
-        /// 获取换行符。
+        /// 获取语句结束符。
         /// </summary>
-        public virtual string Linefeed => throw new NotImplementedException();
+        public virtual string StatementTerminator => ";" + Environment.NewLine;
 
         /// <summary>
         /// 获取是否允许在聚合中使用 DISTINCT 关键字。

@@ -56,9 +56,9 @@ namespace Fireasy.Data.Syntax
         public virtual string[] Delimiter => new[] { "[", "]" };
 
         /// <summary>
-        /// 获取换行符。
+        /// 获取语句结束符。
         /// </summary>
-        public string Linefeed => string.Empty;
+        public string StatementTerminator => string.Empty;
 
         /// <summary>
         /// 获取是否允许在聚合中使用 DISTINCT 关键字。

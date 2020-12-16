@@ -62,9 +62,9 @@ namespace Fireasy.Data.Syntax
         string[] Delimiter { get; }
 
         /// <summary>
-        /// 获取换行符。
+        /// 获取语句结束符。
         /// </summary>
-        string Linefeed { get; }
+        string StatementTerminator { get; }
 
         /// <summary>
         /// 获取是否允许在聚合中使用 DISTINCT 关键字。

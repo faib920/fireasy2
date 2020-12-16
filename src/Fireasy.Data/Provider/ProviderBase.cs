@@ -101,19 +101,19 @@ namespace Fireasy.Data.Provider
         /// <summary>
         /// 获取注册到数据库提供者的插件服务实例。
         /// </summary>
-        /// <typeparam name="TService">插件服务的类型。</typeparam>
+        /// <typeparam name="TProvider">插件服务的类型。</typeparam>
         /// <returns></returns>
-        public virtual TService GetService<TService>() where TService : class, IProviderService
+        public virtual TProvider GetService<TProvider>() where TProvider : class, IProviderService
         {
-            if (_services.TryGetValue(typeof(TService), out Lazy<IProviderService> lazy))
+            if (_services.TryGetValue(typeof(TProvider), out Lazy<IProviderService> lazy))
             {
-                return (TService)lazy.Value;
+                return (TProvider)lazy.Value;
             }
 
-            var attr = typeof(TService).GetCustomAttributes<DefaultProviderServiceAttribute>().FirstOrDefault();
-            if (attr != null && typeof(TService).IsAssignableFrom(attr.ServiceType))
+            var attr = typeof(TProvider).GetCustomAttributes<DefaultProviderServiceAttribute>().FirstOrDefault();
+            if (attr != null && typeof(TProvider).IsAssignableFrom(attr.ServiceType))
             {
-                var service = attr.ServiceType.New<TService>();
+                var service = attr.ServiceType.New<TProvider>();
                 if (service == null)
                 {
                     return default;

@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 
 using Fireasy.Data.Provider;
+using System;
 using System.Data;
 using System.Linq;
 using System.Text;
@@ -66,9 +67,9 @@ namespace Fireasy.Data.Syntax
         public string[] Delimiter => new[] { "[", "]" };
 
         /// <summary>
-        /// 获取换行符。
+        /// 获取语句结束符。
         /// </summary>
-        public string Linefeed => "\n;\n";
+        public string StatementTerminator => ";" + Environment.NewLine;
 
         /// <summary>
         /// 获取是否允许在聚合中使用 DISTINCT 关键字。

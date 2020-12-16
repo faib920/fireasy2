@@ -473,6 +473,37 @@ namespace Fireasy.Data
         }
 
         /// <summary>
+        /// 执行批处理文本，返回受影响的记录数。
+        /// </summary>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <returns>所影响的记录数。</returns>
+        public virtual int ExecuteBatch(IEnumerable<IQueryCommand> queryCommands, ParameterCollection parameters = null)
+        {
+            var syntax = Provider.GetService<ISyntaxProvider>();
+
+            SqlCommand command = string.Join(syntax.StatementTerminator, queryCommands);
+
+            return ExecuteNonQuery(command, parameters);
+        }
+
+        /// <summary>
+        /// 异步的，执行批处理文本，返回受影响的记录数。
+        /// </summary>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>所影响的记录数。</returns>
+        public async virtual Task<int> ExecuteBatchAsync(IEnumerable<IQueryCommand> queryCommands, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
+        {
+            var syntax = Provider.GetService<ISyntaxProvider>();
+
+            SqlCommand command = string.Join(syntax.StatementTerminator, queryCommands);
+
+            return await ExecuteNonQueryAsync(command, parameters, cancellationToken);
+        }
+
+        /// <summary>
         /// 执行查询文本并返回一个 <see cref="IDataReader"/>。
         /// </summary>
         /// <param name="queryCommand">查询命令。</param>
