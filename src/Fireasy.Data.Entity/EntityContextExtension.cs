@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common;
 using Fireasy.Common.Extensions;
+using Fireasy.Data.Entity.Query;
 using Fireasy.Data.Provider;
 using System;
 using System.Data;
@@ -274,6 +275,34 @@ namespace Fireasy.Data.Entity
         public static TEntity Wrap<TEntity>(this EntityContext context, Expression<Func<TEntity>> initExp, bool applyDefaultValue) where TEntity : IEntity
         {
             return (TEntity)context.Wrap(typeof(TEntity), initExp, applyDefaultValue);
+        }
+
+        /// <summary>
+        /// 开启一个批处理。在此期间，Insert、Update、Delete 操作将会被合并为一条命令进行执行。
+        /// </summary>
+        /// <typeparam name="TContext"></typeparam>
+        /// <param name="context"></param>
+        /// <param name="action"></param>
+        public static void UseBatch<TContext>(this TContext context, Action<TContext> action) where TContext : EntityContext
+        {
+            using var scope = new BatchExecuteScope();
+            action(context);
+            scope.Commit(context);
+        }
+
+        /// <summary>
+        /// 异步的，开启一个批处理。在此期间，Insert、Update、Delete 操作将会被合并为一条命令进行执行。
+        /// </summary>
+        /// <typeparam name="TContext"></typeparam>
+        /// <param name="context"></param>
+        /// <param name="func"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static async Task UseBatchAsync<TContext>(this TContext context, Func<TContext, Task> func, CancellationToken cancellationToken = default) where TContext : EntityContext
+        {
+            using var scope = new BatchExecuteScope();
+            await func(context);
+            await scope.CommitAsync(context, cancellationToken);
         }
     }
 }

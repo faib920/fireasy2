@@ -68,3 +68,4 @@ NotFoundRelationshipKey=无法自动建立 {0} 与 {1} 之间的对应关系，�
 InvalidContructorParametersWithPrimaryKeys={0} 构造函数的参数包括类型必须与主键保持一致。
 NotFoundSelectMethod=String.Join 里找不到 Select 方法。
 NotSupportNewExpressionOnStringJoin=Select 里不支持 New 表达式，仅能指定一个属性。
+NotSupportExecuteBatch=不支持批处理操作。

@@ -566,21 +566,28 @@ namespace Fireasy.Data.Entity.Query
             var expression = Parameterize(command);
             var result = _translator.Translate(expression);
 
-            if (_isAsync)
+            if (BatchExecuteHelper.TryAddCommand(result.QueryText, () => NamedValueGatherer.Gather(expression)))
             {
-                _cancelToken = Expression.Parameter(typeof(CancellationToken), "token");
-                return Expression.Call(_executor, MethodCache.DbExecuteNoQueryAsync,
-                        Expression.Constant((SqlCommand)result.QueryText),
-                        CreateParameterCollectionExpression(expression),
-                        _cancelToken
-                    );
+                return Expression.Constant(_isAsync ? Task.FromResult(-1) : -1);
             }
             else
             {
-                return Expression.Call(_executor, MethodCache.DbExecuteNoQuery,
-                        Expression.Constant((SqlCommand)result.QueryText),
-                        CreateParameterCollectionExpression(expression)
-                    );
+                if (_isAsync)
+                {
+                    _cancelToken = Expression.Parameter(typeof(CancellationToken), "token");
+                    return Expression.Call(_executor, MethodCache.DbExecuteNoQueryAsync,
+                            Expression.Constant((SqlCommand)result.QueryText),
+                            CreateParameterCollectionExpression(expression),
+                            _cancelToken
+                        );
+                }
+                else
+                {
+                    return Expression.Call(_executor, MethodCache.DbExecuteNoQuery,
+                            Expression.Constant((SqlCommand)result.QueryText),
+                            CreateParameterCollectionExpression(expression)
+                        );
+                }
             }
         }
 

@@ -101,7 +101,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     }
 
                     // re-use same name-value if same type & value
-                    var name = string.Intern("p" + _param++);
+                    var name = BatchExecuteHelper.TryAddParameterName(() => "p" + _param++);
                     nv = new NamedValueExpression(name, c, useEscape);
                     _tmap.Add(tv, nv);
                 }
@@ -152,7 +152,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             var he = new HashedExpression(e);
             if (!_hmap.TryGetValue(he, out NamedValueExpression nv))
             {
-                var name = "p" + (_param++);
+                var name = BatchExecuteHelper.TryAddParameterName(() => "p" + _param++);
                 nv = new NamedValueExpression(name, e);
                 _hmap.Add(he, nv);
             }

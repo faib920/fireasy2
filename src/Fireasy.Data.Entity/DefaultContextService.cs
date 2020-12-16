@@ -10,7 +10,12 @@ using Fireasy.Common.Extensions;
 using Fireasy.Common.Threading;
 using Fireasy.Data.Entity.Query;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Data;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fireasy.Data.Entity
 {
@@ -20,6 +25,7 @@ namespace Fireasy.Data.Entity
     public sealed class DefaultContextService :
         ContextServiceBase,
         IEntityTransactional,
+        IEntityBatchExecutable,
         IQueryPolicyAware,
         IDatabaseAware,
         IObjectPoolNotifyChain
@@ -166,6 +172,16 @@ namespace Fireasy.Data.Entity
             }
 
             Database.RollbackTransaction();
+        }
+
+        public void ExecuteBatch(IEnumerable<string> commands, ParameterCollection parameters)
+        {
+            Database.ExecuteBatch(commands.Select(s => (SqlCommand)s), parameters);
+        }
+
+        public async Task ExecuteBatchAsync(IEnumerable<string> commands, ParameterCollection parameters, CancellationToken cancellationToken = default)
+        {
+            await Database.ExecuteBatchAsync(commands.Select(s => (SqlCommand)s), parameters, cancellationToken);
         }
 
         void IObjectPoolNotifyChain.OnReturn()

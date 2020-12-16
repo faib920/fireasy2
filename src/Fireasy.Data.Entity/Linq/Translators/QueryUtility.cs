@@ -559,19 +559,30 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 var column = (ColumnExpression)GetMemberExpression(transContext, table, property);
                 ConstantExpression value = null;
-                switch (property.Type.FullName)
+
+                if (property.Type == typeof(DateTime))
                 {
-                    case "System.DateTime":
-                        value = Expression.Constant(DateTime.Now);
-                        break;
-                    case "System.DateTimeOffset":
-                        value = Expression.Constant(DateTimeOffset.Now);
-                        break;
-                    case "System.Guid":
-                        value = Expression.Constant(Guid.NewGuid());
-                        break;
-                    default:
-                        continue;
+                    value = Expression.Constant(DateTime.Now);
+                }
+                else if (property.Type == typeof(DateTimeOffset))
+                {
+                    value = Expression.Constant(DateTimeOffset.Now);
+                }
+                else if (property.Type == typeof(Guid))
+                {
+                    value = Expression.Constant(Guid.NewGuid());
+                }
+                else if (property.Type == typeof(long))
+                {
+                    value = Expression.Constant(DateTime.Now.ToBinary());
+                }
+                else if (property.Type == typeof(byte[]))
+                {
+                    value = Expression.Constant(BitConverter.GetBytes(DateTime.Now.ToBinary()));
+                }
+                else
+                {
+                    continue;
                 }
 
                 var assign = assignments.FirstOrDefault(s => s.Column.Name == property.Name);

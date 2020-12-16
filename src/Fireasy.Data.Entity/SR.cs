@@ -81,6 +81,7 @@ namespace Fireasy.Data.Entity
         internal const string InvalidContructorParametersWithPrimaryKeys = "InvalidContructorParametersWithPrimaryKeys";
         internal const string NotFoundSelectMethod = "NotFoundSelectMethod";
         internal const string NotSupportNewExpressionOnStringJoin = "NotSupportNewExpressionOnStringJoin";
+        internal const string NotSupportExecuteBatch = "NotSupportBatchExecute";
     }
 
     internal sealed class SR

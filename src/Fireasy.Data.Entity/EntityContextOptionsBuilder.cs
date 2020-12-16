@@ -6,8 +6,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Data.Entity.Initializers;
+using Fireasy.Data.Identity;
 using Fireasy.Data.Provider;
 using System;
+using System.Linq;
 
 namespace Fireasy.Data.Entity
 {
@@ -47,6 +49,47 @@ namespace Fireasy.Data.Entity
         /// 获取 <see cref="EntityContextOptions"/> 参数。
         /// </summary>
         public EntityContextOptions Options { get; }
+
+        /// <summary>
+        /// 使用特殊的 <see cref="IProviderService"/> 服务接口。
+        /// </summary>
+        /// <typeparam name="TProvider"><see cref="IProviderService"/> 实现类型。</typeparam>
+        /// <returns></returns>
+        public EntityContextOptionsBuilder UseProviderService<TProvider>() where TProvider : IProviderService
+        {
+            IProvider wrapper = new WrappedProvider(Options.Provider);
+            wrapper.RegisterService(typeof(TProvider));
+            Options.Provider = wrapper;
+
+            return this;
+        }
+
+        /// <summary>
+        /// 使用一组特殊的 <see cref="IProviderService"/> 服务接口。
+        /// </summary>
+        /// <typeparam name="serviceTypes"><see cref="IProviderService"/> 实现类型数组。</typeparam>
+        /// <returns></returns>
+        public EntityContextOptionsBuilder UseProviderServices(params Type[] serviceTypes)
+        {
+            if (serviceTypes == null || serviceTypes.Length == 0)
+            {
+                return this;
+            }
+
+            IProvider wrapper = new WrappedProvider(Options.Provider);
+
+            foreach (var svrType in serviceTypes)
+            {
+                if (typeof(IProviderService).IsAssignableFrom(svrType))
+                {
+                    wrapper.RegisterService(svrType);
+                }
+            }
+
+            Options.Provider = wrapper;
+
+            return this;
+        }
 
         /// <summary>
         /// 配置 <see cref="EntityContext"/> 使用 SqlServer 数据库。
@@ -117,6 +160,21 @@ namespace Fireasy.Data.Entity
         {
             Options.Provider = PostgreSqlProvider.Instance;
             Options.ConnectionString = connectionString;
+            return this;
+        }
+
+        /// <summary>
+        /// 使用分布式数据库连接串组。
+        /// </summary>
+        /// <param name="connStrings">分布式数据库连接串。</param>
+        /// <returns></returns>
+        public EntityContextOptionsBuilder UseDistributedConnections(params DistributedConnectionString[] connStrings)
+        {
+            if (connStrings != null && connStrings.Length > 0)
+            {
+                Options.DistributedConnectionStrings = connStrings.ToList();
+            }
+
             return this;
         }
 

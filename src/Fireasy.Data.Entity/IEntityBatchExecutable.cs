@@ -5,19 +5,19 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using System.Data;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fireasy.Data.Entity
 {
     /// <summary>
-    /// 定义对事务的支持。
+    /// 定义对处理的支持。
     /// </summary>
-    public interface IEntityTransactional
+    public interface IEntityBatchExecutable
     {
-        void BeginTransaction(IsolationLevel level);
+        void ExecuteBatch(IEnumerable<string> commands, ParameterCollection parameters);
 
-        void CommitTransaction();
-
-        void RollbackTransaction();
+        Task ExecuteBatchAsync(IEnumerable<string> commands, ParameterCollection parameters, CancellationToken cancellationToken);
     }
 }
