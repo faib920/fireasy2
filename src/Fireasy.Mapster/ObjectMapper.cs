@@ -8,7 +8,6 @@
 
 using Fireasy.Common.Mapper;
 using Mapster;
-using System;
 
 namespace Fireasy.Mapster
 {
@@ -21,7 +20,7 @@ namespace Fireasy.Mapster
 
         public TDestination Map<TSource, TDestination>(TSource source, TDestination destination)
         {
-            throw new NotImplementedException();
+            return TypeAdapter.BuildAdapter(source).AdaptTo(destination);
         }
     }
 }

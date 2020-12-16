@@ -9,7 +9,6 @@
 using Fireasy.Common.Mapper;
 using System;
 using Fireasy.Mapster;
-using Mapster;
 
 namespace Microsoft.Extensions.DependencyInjection
 {

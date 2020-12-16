@@ -8,6 +8,7 @@
 #if NETSTANDARD
 using Mapster;
 using System;
+using System.Reflection;
 
 namespace Fireasy.Mapster
 {
@@ -24,6 +25,25 @@ namespace Fireasy.Mapster
         {
             var setter = TypeAdapterConfig<TSource, TDestination>.NewConfig();
             action?.Invoke(setter);
+
+            return this;
+        }
+
+        /// <summary>
+        /// 添加程序集中的 <see cref="IRegister"/> 类。
+        /// </summary>
+        /// <param name="assemblies">要搜索的程序集数组，如果没有指定，则为当前调用的程序集。</param>
+        /// <returns></returns>
+        public MapsterOptions AddRegisters(params Assembly[] assemblies)
+        {
+            if (assemblies == null)
+            {
+                TypeAdapterConfig.GlobalSettings.Scan(Assembly.GetCallingAssembly());
+            }
+            else
+            {
+                TypeAdapterConfig.GlobalSettings.Scan(assemblies);
+            }
 
             return this;
         }
