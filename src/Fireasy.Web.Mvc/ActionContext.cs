@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 #if !NETCOREAPP
 using Fireasy.Common;
+using Fireasy.Common.Ioc;
 using Fireasy.Common.Serialization;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,6 +45,11 @@ namespace Fireasy.Web.Mvc
         /// 获取动作方法的参数字典。
         /// </summary>
         public IDictionary<string, object> Parameters { get; internal set; }
+
+        /// <summary>
+        /// 获取容器。
+        /// </summary>
+        public Container Container { get; internal set; }
     }
 }
 #endif

@@ -24,6 +24,12 @@ namespace Fireasy.Web.Mvc
     public class ControllerActionInvoker : System.Web.Mvc.Async.AsyncControllerActionInvoker
     {
         private ActionContext _context;
+        private readonly Container _container;
+
+        public ControllerActionInvoker(Container container)
+        {
+            _container = container;
+        }
 
         /// <summary>
         /// 获取参数的值。
@@ -113,7 +119,7 @@ namespace Fireasy.Web.Mvc
         /// <returns></returns>
         public override bool InvokeAction(ControllerContext controllerContext, string actionName)
         {
-            using (var scope = new ActionContext(controllerContext))
+            using (var scope = new ActionContext(controllerContext) { Container = _container })
             {
                 return base.InvokeAction(controllerContext, actionName);
             }

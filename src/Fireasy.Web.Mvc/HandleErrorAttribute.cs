@@ -65,7 +65,11 @@ namespace Fireasy.Web.Mvc
         /// <param name="filterContext"></param>
         protected virtual void HandleExceptionForJson(ExceptionContext filterContext)
         {
+#if NETCOREAPP
+            IActionResult result;
+#else
             ActionResult result;
+#endif
             //如果是通知类的异常，直接输出提示
             var notifyExp = GetNotificationException(filterContext.Exception);
             if (notifyExp != null)
@@ -97,14 +101,13 @@ namespace Fireasy.Web.Mvc
             Tracer.Error($"Throw exception when '{controllerName}.{actionName}' is executed:\n{filterContext.Exception.Output()}");
 
             //记录日志
-#if !NETCOREAPP
-            var logger = LoggerFactory.CreateLogger();
+#if NETCOREAPP
+            var logger = filterContext.HttpContext.RequestServices.GetService<ILogger>();
 #else
-            var logger = ServiceProviderServiceExtensions.GetService<ILogger>(filterContext.HttpContext.RequestServices);
+            var logger = LoggerFactory.CreateLogger();
 #endif
             if (logger != null)
             {
-
                 logger.Error(string.Format("执行控制器 {0} 的方法 {1} 时发生错误。",
                     controllerName, actionName), filterContext.Exception);
             }
@@ -115,21 +118,27 @@ namespace Fireasy.Web.Mvc
         /// </summary>
         /// <param name="filterContext"></param>
         /// <returns></returns>
-        protected virtual ActionResult GetHandledResult(ExceptionContext filterContext)
+        protected virtual
+#if NETCOREAPP
+            IActionResult
+#else
+            ActionResult
+#endif
+            GetHandledResult(ExceptionContext filterContext)
         {
             EmptyArrayResultAttribute attr = null;
 #if !NETCOREAPP
-            var serviceProvider = ContainerUnity.GetContainer();
+            IServiceProvider serviceProvider = null;
             if (ActionContext.Current != null)
             {
+                serviceProvider = ActionContext.Current.Container;
                 attr = ActionContext.Current.ActionDescriptor
                     .GetCustomAttributes<EmptyArrayResultAttribute>().FirstOrDefault();
 
             }
 #else
             var serviceProvider = filterContext.HttpContext.RequestServices;
-            var descriptor = filterContext.ActionDescriptor as ControllerActionDescriptor;
-            if (descriptor != null)
+            if (filterContext.ActionDescriptor is ControllerActionDescriptor descriptor)
             {
                 attr = descriptor.MethodInfo
                     .GetCustomAttributes(typeof(EmptyArrayResultAttribute), false)
@@ -153,7 +162,7 @@ namespace Fireasy.Web.Mvc
             var handler = serviceProvider.TryGetService<IExceptionHandler>();
             if (handler != null)
             {
-                return handler.GetResult(filterContext.Exception);
+                return handler.GetResult(filterContext);
             }
 
             return new JsonResultWrapper(Result.Fail("发生错误，请查阅相关日志或联系管理员。"));

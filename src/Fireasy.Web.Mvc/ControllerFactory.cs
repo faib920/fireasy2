@@ -76,7 +76,7 @@ namespace Fireasy.Web.Mvc
 
             controller.As<Controller>(c =>
                 {
-                    c.ActionInvoker = new ControllerActionInvoker();
+                    c.ActionInvoker = new ControllerActionInvoker(_container);
                 });
 
             return controller;
