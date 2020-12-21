@@ -99,7 +99,7 @@ namespace Fireasy.Data.Entity.Properties
             var instanceName = entity.GetInstanceName();
             var environment = entity.GetEnvironment();
 
-            var identifier = ContextInstanceManager.Default.TryGet(instanceName);
+            var identifier = ContextInstanceManager.Default.TryGet(instanceName, entity.EntityType);
             if (identifier == null || CheckWithoutLoading(identifier))
             {
                 return PropertyValue.Empty;
@@ -162,7 +162,7 @@ namespace Fireasy.Data.Entity.Properties
             var instanceName = entity.GetInstanceName();
             var environment = entity.GetEnvironment();
 
-            var identifier = ContextInstanceManager.Default.TryGet(instanceName);
+            var identifier = ContextInstanceManager.Default.TryGet(instanceName, entity.EntityType);
             if (identifier == null || CheckWithoutLoading(identifier))
             {
                 return PropertyValue.Empty;
@@ -227,7 +227,7 @@ namespace Fireasy.Data.Entity.Properties
             var instanceName = entity.GetInstanceName();
             var environment = entity.GetEnvironment();
 
-            var identifier = ContextInstanceManager.Default.TryGet(instanceName);
+            var identifier = ContextInstanceManager.Default.TryGet(instanceName, entity.EntityType);
             if (identifier == null || CheckWithoutLoading(identifier))
             {
                 return PropertyValue.Empty;

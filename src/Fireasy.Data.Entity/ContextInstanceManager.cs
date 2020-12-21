@@ -8,6 +8,8 @@
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Security;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Fireasy.Data.Entity
@@ -40,12 +42,22 @@ namespace Fireasy.Data.Entity
         /// 尝试从管理器里获取与实例名对应的 <see cref="IInstanceIdentifier"/> 实例。
         /// </summary>
         /// <param name="instanceName"></param>
+        /// <param name="entityType"></param>
         /// <returns></returns>
-        public IInstanceIdentifier TryGet(string instanceName)
+        public IInstanceIdentifier TryGet(string instanceName, Type entityType = null)
         {
             if (string.IsNullOrEmpty(instanceName))
             {
-                return null;
+                if (entityType != null)
+                {
+                    var match = _instances.FirstOrDefault(s => EntityRepositoryDiscoveryService.TryGetInitializerPair(s.Value.ContextType)?.Contains(entityType) == true); 
+                    if (match.Value != null)
+                    {
+                        return match.Value;
+                    }
+                }
+
+                return _instances.Count == 1 ? _instances.First().Value : null;
             }
 
             if (_instances.TryGetValue(instanceName, out IInstanceIdentifier value))

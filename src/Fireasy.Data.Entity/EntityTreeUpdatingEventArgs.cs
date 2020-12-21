@@ -104,7 +104,7 @@ namespace Fireasy.Data.Entity
 
             var instanceName = Current.GetInstanceName();
             var environment = Current.GetEnvironment();
-            var identifier = ContextInstanceManager.Default.TryGet(instanceName);
+            var identifier = ContextInstanceManager.Default.TryGet(instanceName, typeof(T));
             var contextProvider = identifier.GetProviderService<IContextProvider>();
             using var scope = identifier.ServiceProvider.TryCreateScope();
             using var service = contextProvider.CreateContextService(new ContextServiceContext(scope?.ServiceProvider ?? identifier.ServiceProvider, identifier));
@@ -131,7 +131,7 @@ namespace Fireasy.Data.Entity
 
             var instanceName = Current.GetInstanceName();
             var environment = Current.GetEnvironment();
-            var identifier = ContextInstanceManager.Default.TryGet(instanceName);
+            var identifier = ContextInstanceManager.Default.TryGet(instanceName, typeof(T));
             var contextProvider = identifier.GetProviderService<IContextProvider>();
             using var scope = identifier.ServiceProvider.TryCreateScope();
             using var service = contextProvider.CreateContextService(new ContextServiceContext(scope?.ServiceProvider ?? identifier.ServiceProvider, identifier));

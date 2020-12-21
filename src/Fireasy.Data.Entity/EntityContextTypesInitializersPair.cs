@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Fireasy.Data.Entity
 {
@@ -41,6 +42,11 @@ namespace Fireasy.Data.Entity
         public Action<EntityContext> SetsInitializer
         {
             get { return Item2; }
+        }
+
+        public bool Contains(Type entityType)
+        {
+            return Item1.Any(s => s.Key == entityType || s.Key.IsAssignableFrom(entityType));
         }
 
         #endregion

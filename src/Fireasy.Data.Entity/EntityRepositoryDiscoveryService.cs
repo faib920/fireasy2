@@ -171,6 +171,16 @@ namespace Fireasy.Data.Entity
 
             return null;
         }
+
+        internal static EntityContextTypesInitializersPair TryGetInitializerPair(Type contextType)
+        {
+            if (_objectSetInitializers.TryGetValue(contextType, out EntityContextTypesInitializersPair pair))
+            {
+                return pair;
+            }
+
+            return null;
+        }
         #endregion
 
     }
