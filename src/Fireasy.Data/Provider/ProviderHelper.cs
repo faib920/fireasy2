@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Fireasy.Common;
 using Fireasy.Common.Configuration;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Configuration;
@@ -168,8 +169,16 @@ namespace Fireasy.Data.Provider
             }
 
 #if NETSTANDARD2_1
-            DbProviderFactories.RegisterFactory("System.Data.OleDb", OleDbFactory.Instance);
-            DbProviderFactories.RegisterFactory("System.Data.SqlClient", SqlClientFactory.Instance);
+            static void registerFactory(string instanceName, DbProviderFactory factory)
+            {
+                if (factory != null)
+                {
+                    DbProviderFactories.RegisterFactory(instanceName, factory);
+                }
+            }
+
+            registerFactory("System.Data.OleDb", OleDbFactory.Instance);
+            registerFactory("System.Data.SqlClient", SqlClientFactory.Instance);
 #endif
         }
 
@@ -183,7 +192,7 @@ namespace Fireasy.Data.Provider
             {
                 var setting = section.Settings[key];
                 ProviderWapper inherProviderWrapper = null;
-                if (_providerWappers.Any(s => s.Contains(setting.Name)) || 
+                if (_providerWappers.Any(s => s.Contains(setting.Name)) ||
                     (setting.Type == null && string.IsNullOrEmpty(setting.InheritedProvider)) ||
                     (setting.Type == null && !string.IsNullOrEmpty(setting.InheritedProvider) && (inherProviderWrapper = _providerWappers.FirstOrDefault(s => s.Contains(setting.InheritedProvider))) == null))
                 {
