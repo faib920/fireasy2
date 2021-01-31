@@ -19,11 +19,13 @@ namespace Fireasy.Data.Entity.Validation
         /// <summary>
         /// 初始化 <see cref="EntityInvalidateException"/> 类的新实例。
         /// </summary>
+        /// <param name="entity">实体对象。</param>
         /// <param name="propertyErrors"></param>
         /// <param name="errors"></param>
-        public EntityInvalidateException(Dictionary<IProperty, IList<ValidationErrorResult>> propertyErrors, IList<string> errors)
-            : base(GetMessage(propertyErrors, errors))
+        public EntityInvalidateException(IEntity entity, Dictionary<IProperty, IList<ValidationErrorResult>> propertyErrors, IList<string> errors)
+            : base(GetMessage(entity, propertyErrors, errors))
         {
+            Entity = entity;
             PropertyErrors = propertyErrors;
             Errors = errors;
         }
@@ -38,6 +40,11 @@ namespace Fireasy.Data.Entity.Validation
         }
 
         /// <summary>
+        /// 获取实体对象。
+        /// </summary>
+        public IEntity Entity { get; }
+
+        /// <summary>
         /// 获取实体全局验证的错误信息。
         /// </summary>
         public IList<string> Errors { get; }
@@ -47,10 +54,10 @@ namespace Fireasy.Data.Entity.Validation
         /// </summary>
         public Dictionary<IProperty, IList<ValidationErrorResult>> PropertyErrors { get; set; }
 
-        private static string GetMessage(Dictionary<IProperty, IList<ValidationErrorResult>> propertyErrors, IList<string> errors)
+        private static string GetMessage(IEntity entity, Dictionary<IProperty, IList<ValidationErrorResult>> propertyErrors, IList<string> errors)
         {
             var sb = new StringBuilder();
-            sb.AppendLine(SR.GetString(SRKind.EntityInvalidate));
+            sb.AppendLine(SR.GetString(SRKind.EntityInvalidate, entity.EntityType.Name));
             foreach (var error in errors)
             {
                 sb.AppendLine(error);

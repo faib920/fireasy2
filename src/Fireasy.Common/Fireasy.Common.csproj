@@ -1,29 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\common.props" />
 
   <PropertyGroup>
     <TargetFrameworks>net45;netstandard2.0;netstandard2.1</TargetFrameworks>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Authors>Huangxd</Authors>
-    <Company>Fireasy</Company>
-    <Copyright>Copyright © Fireasy 2013-2020</Copyright>
-    <SignAssembly>True</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
-    <DelaySign>False</DelaySign>
     <Product>Fireasy Common Library</Product>
-    <FileVersion>2.2.3</FileVersion>
-    <AssemblyVersion>2.2.3</AssemblyVersion>
-    <Version>2.2.3</Version>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Description>
       通用类库，提供配置、缓存、日志、AOP、IOC、序列化、扩展方法、Emit、加解密、定时任务、本地化、分布式锁、多租户、对象映射等等基础方法。
 
       参考文档：http://www.fireasy.cn/docs/comm-summary
     </Description>
-    <PackageIconUrl>http://fireasy.cn/icon.png</PackageIconUrl>
-    <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>
-    <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
-    <PackageReleaseNotes></PackageReleaseNotes>
-    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">

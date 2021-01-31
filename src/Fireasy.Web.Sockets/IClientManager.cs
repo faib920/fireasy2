@@ -48,6 +48,12 @@ namespace Fireasy.Web.Sockets
         void RemoveFromGroup(string connectionId, string groupName);
 
         /// <summary>
+        /// 刷新客户端连接状态。
+        /// </summary>
+        /// <param name="connectionId"></param>
+        void Refresh(string connectionId);
+
+        /// <summary>
         /// 获取指定客户端连接标识的代理。
         /// </summary>
         /// <param name="connectionId">连接ID。</param>

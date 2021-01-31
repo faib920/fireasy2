@@ -1,24 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\common.props" />
 
   <PropertyGroup>
     <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
-    <Authors>Huangxd</Authors>
-    <Company>Fireasy</Company>
     <Product>Fireasy MongoDB Provider</Product>
-    <PackageLicenseExpression></PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
-    <PackageIconUrl>http://fireasy.cn/icon.png</PackageIconUrl>
-    <SignAssembly>True</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
-    <Copyright>Copyright © Fireasy 2013-2020</Copyright>
     <Description>
       用于适配 mongodb 数据库的驱动。
 
       参考文档：http://www.fireasy.cn/docs/mongodb
     </Description>
-    <FileVersion>2.2.3</FileVersion>
-    <AssemblyVersion>2.2.3</AssemblyVersion>
-    <Version>2.2.3</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net452|AnyCPU'">

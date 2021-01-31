@@ -20,16 +20,19 @@ namespace Fireasy.Web.Sockets
     /// </summary>
     public class DistributedClientManager : DefaultClientManager
     {
-        private const string WS_KEY = "ws_alive_keys";
+        private string _aliveCacheKey;
         private string _aliveKey;
         private ISubscribeManager _subscribeMgr;
         private IDistributedCacheManager _cacheMgr;
+        private TimeSpan _errorExpire;
 
         public override void Initialize(WebSocketAcceptContext acceptContext)
         {
             base.Initialize(acceptContext);
 
             _aliveKey = acceptContext.Option.AliveKey;
+            _aliveCacheKey = $"{acceptContext.Option.AppKey}:alive_keys";
+            _errorExpire = TimeSpan.FromMilliseconds(acceptContext.Option.HeartbeatInterval.TotalMilliseconds * 5);
 
             //开启消息订阅，使用aliveKey作为通道
             _subscribeMgr = acceptContext.ServiceProvider.TryGetService<ISubscribeManager>();
@@ -53,17 +56,17 @@ namespace Fireasy.Web.Sockets
 
         public override void Add(string connectionId, IClientProxy clientProxy)
         {
-            var hashSet = _cacheMgr.GetHashSet<string, string>(WS_KEY);
+            var hashSet = _cacheMgr.GetHashSet<string, string>(_aliveCacheKey);
 
             //在分布式缓存里存放连接标识对应的aliveKey，即服务标识，以方便后面查找
-            hashSet.Add(connectionId, _aliveKey, new RelativeTime(TimeSpan.FromDays(5)));
+            hashSet.Add(connectionId, _aliveKey, new RelativeTime(_errorExpire));
 
             base.Add(connectionId, clientProxy);
         }
 
         public override void Remove(string connectionId)
         {
-            var hashSet = _cacheMgr.GetHashSet<string, string>(WS_KEY);
+            var hashSet = _cacheMgr.GetHashSet<string, string>(_aliveCacheKey);
 
             hashSet.Remove(connectionId);
 
@@ -82,6 +85,14 @@ namespace Fireasy.Web.Sockets
             base.RemoveFromGroup(connectionId, groupName);
         }
 
+        public override void Refresh(string connectionId)
+        {
+            var hashSet = _cacheMgr.GetHashSet<string, string>(_aliveCacheKey);
+
+            //在分布式缓存里存放连接标识对应的aliveKey，即服务标识，以方便后面查找
+            hashSet.Add(connectionId, _aliveKey, new RelativeTime(TimeSpan.FromMinutes(5)));
+        }
+
         /// <summary>
         /// 获取指定客户端连接标识的代理。
         /// </summary>
@@ -97,7 +108,7 @@ namespace Fireasy.Web.Sockets
             }
 
             //如果没有，则去分布式缓存里查找出aliveKey，并使用分布式代理进行传递
-            var hashSet = _cacheMgr.GetHashSet<string, string>(WS_KEY);
+            var hashSet = _cacheMgr.GetHashSet<string, string>(_aliveCacheKey);
 
             if (hashSet.TryGet(connectionId, out string aliveKey))
             {
@@ -112,7 +123,7 @@ namespace Fireasy.Web.Sockets
             get
             {
                 var clients = new List<IClientProxy>();
-                var hashSet = _cacheMgr.GetHashSet<string, string>(WS_KEY);
+                var hashSet = _cacheMgr.GetHashSet<string, string>(_aliveCacheKey);
                 foreach (var connectionId in hashSet.GetKeys())
                 {
                     if (hashSet.TryGet(connectionId, out string aliveKey))
@@ -145,7 +156,7 @@ namespace Fireasy.Web.Sockets
                 return NullClientProxy.Instance;
             }
 
-            var hashSet = _cacheMgr.GetHashSet<string, string>(WS_KEY);
+            var hashSet = _cacheMgr.GetHashSet<string, string>(_aliveCacheKey);
 
             var clients = new List<IClientProxy>();
 

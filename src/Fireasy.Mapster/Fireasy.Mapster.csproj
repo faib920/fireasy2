@@ -1,27 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\common.props" />
 
   <PropertyGroup>
     <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Authors>Huangxd</Authors>
-    <Company>Fireasy</Company>
-    <Copyright>Copyright © Fireasy 2013-2020</Copyright>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
-    <DelaySign>False</DelaySign>
     <Product>Fireasy Mapster Provider</Product>
-    <FileVersion>2.2.3</FileVersion>
-    <AssemblyVersion>2.2.3</AssemblyVersion>
-    <Version>2.2.3</Version>
     <Description>
       适配 Mapster。
 
       参考文档：http://www.fireasy.cn/docs/mapster
     </Description>
-    <PackageIconUrl>http://fireasy.cn/icon.png</PackageIconUrl>
-    <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>
-    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">

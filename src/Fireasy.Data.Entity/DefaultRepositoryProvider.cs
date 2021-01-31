@@ -27,7 +27,7 @@ namespace Fireasy.Data.Entity
     /// 缺省的仓储服务实现，使用 Linq to SQL。
     /// </summary>
     /// <typeparam name="TEntity"></typeparam>
-    public sealed class DefaultRepositoryProvider<TEntity> : IQueryPolicyExecutor<TEntity>,
+    public sealed class DefaultRepositoryProvider<TEntity> : IQueryPolicyExecutor,
         IRepositoryProvider<TEntity> where TEntity : IEntity
     {
         private IRepository _repository;
@@ -364,12 +364,12 @@ namespace Fireasy.Data.Entity
             return await Queryable.BatchOperateAsync(instances.Cast<IEntity>(), fnOperation, batchOpt, cancellationToken);
         }
 
-        void IQueryPolicyExecutor<TEntity>.IncludeWith(Expression<Func<TEntity, object>> fnMember)
+        void IQueryPolicyExecutor.IncludeWith<TOEntity, TProperty>(Expression<Func<TOEntity, TProperty>> fnMember)
         {
             InvokeQueryPolicy(q => q.IncludeWith(fnMember));
         }
 
-        void IQueryPolicyExecutor<TEntity>.AssociateWith(Expression<Func<TEntity, IEnumerable>> memberQuery)
+        void IQueryPolicyExecutor.AssociateWith<TOEntity>(Expression<Func<TOEntity, IEnumerable>> memberQuery)
         {
             InvokeQueryPolicy(q => q.AssociateWith(memberQuery));
         }

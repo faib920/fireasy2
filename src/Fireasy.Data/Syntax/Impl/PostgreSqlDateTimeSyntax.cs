@@ -21,6 +21,15 @@ namespace Fireasy.Data.Syntax
         }
 
         /// <summary>
+        /// 获取当前 UTC 时间。
+        /// </summary>
+        /// <returns></returns>
+        public override string UtcNow()
+        {
+            return "(NOW() AT TIME ZONE 'UTC')";
+        }
+
+        /// <summary>
         /// 初始化日期。
         /// </summary>
         /// <param name="yearExp">年表达式。</param>

@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Security;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -22,9 +23,14 @@ namespace Fireasy.Web.Sockets
         public static readonly WebSocketBuildOption Default = new WebSocketBuildOption();
 #endif
         /// <summary>
+        /// 获取或设置应用标识。
+        /// </summary>
+        public string AppKey { get; set; } = "fws";
+
+        /// <summary>
         /// 获取或设置服务标识。
         /// </summary>
-        public string AliveKey { get; set; } = string.Concat("fws_", Guid.NewGuid().ToString("N"));
+        public string AliveKey { get; set; } = string.Concat("fws_", RandomGenerator.Create());
 
         /// <summary>
         /// 获取或设置保持活动状态的时间间隔。

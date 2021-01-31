@@ -53,6 +53,8 @@ namespace Fireasy.Data.Entity.Providers
                 case OleDbProvider _:
                     provider.RegisterService(serviceType, () => new OleDbTranslateProvider());
                     break;
+                case WrappedProvider wrapper:
+                    return wrapper.Inner.GetTranslateProvider();
                 default:
                     return null;
             }
@@ -96,6 +98,8 @@ namespace Fireasy.Data.Entity.Providers
                 case FirebirdProvider _:
                     provider.RegisterService(serviceType, () => new FirebirdTableGenerator());
                     break;
+                case WrappedProvider wrapper:
+                    return wrapper.Inner.GetTableGenerateProvider();
                 default:
                     return null;
             }

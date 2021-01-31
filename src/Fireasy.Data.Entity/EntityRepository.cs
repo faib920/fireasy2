@@ -125,7 +125,7 @@ namespace Fireasy.Data.Entity
                 SetDefaultValue(entity);
             }
 
-            var ret = _subMgr.OnCreate<TEntity, long>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
+            var ret = _subMgr.OnCreate<TEntity, long>(_contextService.ServiceProvider, _contextService.ContextType, _options.NotifyEvents, entity,
                 () => _repositoryProxy.Insert(HandleValidate(entity), _propertyFilter));
 
             return ret > int.MaxValue ? 1 : (int)ret;
@@ -147,7 +147,7 @@ namespace Fireasy.Data.Entity
                 SetDefaultValue(entity);
             }
 
-            var ret = await _subMgr.OnCreateAsync<TEntity, long>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
+            var ret = await _subMgr.OnCreateAsync<TEntity, long>(_contextService.ServiceProvider, _contextService.ContextType, _options.NotifyEvents, entity,
                 () => _repositoryProxy.InsertAsync(HandleValidate(entity), _propertyFilter, cancellationToken));
 
             return ret > int.MaxValue ? 1 : (int)ret;
@@ -309,7 +309,7 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return _subMgr.OnRemove<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
+            return _subMgr.OnRemove<TEntity, int>(_contextService.ServiceProvider, _contextService.ContextType, _options.NotifyEvents, entity,
                 () => _repositoryProxy.Delete(entity, logicalDelete));
         }
 
@@ -325,7 +325,7 @@ namespace Fireasy.Data.Entity
             Guard.ArgumentNull(entity, nameof(entity));
             cancellationToken.ThrowIfCancellationRequested();
 
-            return await _subMgr.OnRemoveAsync<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
+            return await _subMgr.OnRemoveAsync<TEntity, int>(_contextService.ServiceProvider, _contextService.ContextType, _options.NotifyEvents, entity,
                 () => _repositoryProxy.DeleteAsync(entity, logicalDelete, cancellationToken));
         }
 
@@ -339,7 +339,7 @@ namespace Fireasy.Data.Entity
             var ret = _repositoryProxy.Delete(primaryValues);
             if (ret > 0 && _options.NotifyEvents)
             {
-                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterRemove);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, _contextService.ContextType, PersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -355,7 +355,7 @@ namespace Fireasy.Data.Entity
             var ret = await _repositoryProxy.DeleteAsync(primaryValues, default);
             if (ret > 0 && _options.NotifyEvents)
             {
-                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterRemove);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, _contextService.ContextType, PersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -372,7 +372,7 @@ namespace Fireasy.Data.Entity
             var ret = _repositoryProxy.Delete(primaryValues, logicalDelete);
             if (ret > 0 && _options.NotifyEvents)
             {
-                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterRemove);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, _contextService.ContextType, PersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -392,7 +392,7 @@ namespace Fireasy.Data.Entity
             var ret = await _repositoryProxy.DeleteAsync(primaryValues, logicalDelete, cancellationToken);
             if (ret > 0 && _options.NotifyEvents)
             {
-                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterRemove);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, _contextService.ContextType, PersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -409,7 +409,7 @@ namespace Fireasy.Data.Entity
             var ret = _repositoryProxy.Delete(predicate, logicalDelete);
             if (ret > 0 && _options.NotifyEvents)
             {
-                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterRemove);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, _contextService.ContextType, PersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -429,7 +429,7 @@ namespace Fireasy.Data.Entity
             var ret = await _repositoryProxy.DeleteAsync(predicate, logicalDelete);
             if (ret > 0 && _options.NotifyEvents)
             {
-                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterRemove);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, _contextService.ContextType, PersistentEventType.AfterRemove);
             }
 
             return ret;
@@ -447,7 +447,7 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            return _subMgr.OnUpdate<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
+            return _subMgr.OnUpdate<TEntity, int>(_contextService.ServiceProvider, _contextService.ContextType, _options.NotifyEvents, entity,
                 () => _repositoryProxy.Update(HandleValidate(entity), _propertyFilter));
         }
 
@@ -462,7 +462,7 @@ namespace Fireasy.Data.Entity
             Guard.ArgumentNull(entity, nameof(entity));
             cancellationToken.ThrowIfCancellationRequested();
 
-            return await _subMgr.OnUpdateAsync<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents, entity,
+            return await _subMgr.OnUpdateAsync<TEntity, int>(_contextService.ServiceProvider, _contextService.ContextType, _options.NotifyEvents, entity,
                 () => _repositoryProxy.UpdateAsync(HandleValidate(entity), _propertyFilter, cancellationToken));
         }
 
@@ -477,7 +477,7 @@ namespace Fireasy.Data.Entity
             var ret = _repositoryProxy.Update(entity, predicate, _propertyFilter);
             if (ret > 0 && _options.NotifyEvents)
             {
-                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterUpdate);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, _contextService.ContextType, PersistentEventType.AfterUpdate);
             }
 
             return ret;
@@ -497,7 +497,7 @@ namespace Fireasy.Data.Entity
             var ret = await _repositoryProxy.UpdateAsync(entity, predicate, _propertyFilter);
             if (ret > 0 && _options.NotifyEvents)
             {
-                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterUpdate);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, _contextService.ContextType, PersistentEventType.AfterUpdate);
             }
 
             return ret;
@@ -581,7 +581,7 @@ namespace Fireasy.Data.Entity
             var ret = _repositoryProxy.Update(calculator, predicate);
             if (ret > 0 && _options.NotifyEvents)
             {
-                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterUpdate);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, _contextService.ContextType, PersistentEventType.AfterUpdate);
             }
 
             return ret;
@@ -601,7 +601,7 @@ namespace Fireasy.Data.Entity
             var ret = await _repositoryProxy.UpdateAsync(calculator, predicate, cancellationToken);
             if (ret > 0 && _options.NotifyEvents)
             {
-                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, PersistentEventType.AfterUpdate);
+                _subMgr.Publish<TEntity>(_contextService.ServiceProvider, _contextService.ContextType, PersistentEventType.AfterUpdate);
             }
 
             return ret;
@@ -632,7 +632,7 @@ namespace Fireasy.Data.Entity
                 instances.ForEach(s => SetDefaultValue(s));
             }
 
-            return _subMgr.OnBatch<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents,
+            return _subMgr.OnBatch<TEntity, int>(_contextService.ServiceProvider, _contextService.ContextType, _options.NotifyEvents,
                 instances.Cast<IEntity>(), eventType,
                 () => _repositoryProxy.Batch(instances, fnOperation, GetBatchOperateOptions(batchOpt)));
         }
@@ -662,7 +662,7 @@ namespace Fireasy.Data.Entity
                 instances.ForEach(s => SetDefaultValue(s));
             }
 
-            return await _subMgr.OnBatchAsync<TEntity, int>(_contextService.ServiceProvider, _options.NotifyEvents,
+            return await _subMgr.OnBatchAsync<TEntity, int>(_contextService.ServiceProvider, _contextService.ContextType, _options.NotifyEvents,
                 instances.Cast<IEntity>(), eventType,
                 () => _repositoryProxy.BatchAsync(instances, fnOperation, GetBatchOperateOptions(batchOpt), cancellationToken));
         }
@@ -673,27 +673,54 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="fnMember">要包含的属性的表达式。</param>
         /// <returns></returns>
-        public virtual EntityRepository<TEntity> Include(Expression<Func<TEntity, object>> fnMember)
+        public virtual EntityRepository<TEntity> Include<TProperty>(Expression<Func<TEntity, TProperty>> fnMember)
         {
-            _repositoryProxy.As<IQueryPolicyExecutor<TEntity>>(s => s.IncludeWith(fnMember));
+            _repositoryProxy.As<IQueryPolicyExecutor>(s => s.IncludeWith(fnMember));
+            return this;
+        }
+
+        /// <summary>
+        /// 指定要包括在查询结果中的关联对象。
+        /// </summary>
+        /// <param name="fnMember">要包含的子实体的表达式。</param>
+        /// <param name="fnMembers">要包含的子实体的属性的表达式。</param>
+        /// <returns></returns>
+        public virtual EntityRepository<TEntity> Include<TEntityReference, TProperty>(Expression<Func<TEntity, ICollection<TEntityReference>>> fnMember, params Expression<Func<TEntityReference, TProperty>>[] fnMembers) where TEntityReference : IEntity
+        {
+            _repositoryProxy.As<IQueryPolicyExecutor>(s => s.IncludeWith(fnMember));
+
+            if (fnMembers != null)
+            {
+                foreach (var fn in fnMembers)
+                {
+                    _repositoryProxy.As<IQueryPolicyExecutor>(s => s.IncludeWith(fn));
+                }
+            }
+
             return this;
         }
 
         /// <summary>
         /// 根据断言指定要包括在查询结果中的关联对象。
         /// </summary>
-        /// <typeparam name="TEntity"></typeparam>
         /// <param name="isTrue">要计算的条件表达式。如果条件为 true，则进行 Include。</param>
         /// <param name="fnMember">要包含的属性的表达式。</param>
         /// <returns></returns>
-        public EntityRepository<TEntity> AssertInclude(bool isTrue, Expression<Func<TEntity, object>> fnMember)
+        public EntityRepository<TEntity> AssertInclude<TProperty>(bool isTrue, Expression<Func<TEntity, TProperty>> fnMember)
         {
-            if (isTrue)
-            {
-                _repositoryProxy.As<IQueryPolicyExecutor<TEntity>>(s => s.IncludeWith(fnMember));
-            }
+            return isTrue ? Include(fnMember) : this;
+        }
 
-            return this;
+        /// <summary>
+        /// 根据断言指定要包括在查询结果中的关联对象。
+        /// </summary>
+        /// <param name="isTrue">要计算的条件表达式。如果条件为 true，则进行 Include。</param>
+        /// <param name="fnMember">要包含的子实体的表达式。</param>
+        /// <param name="fnMembers">要包含的子实体的属性的表达式。</param>
+        /// <returns></returns>
+        public EntityRepository<TEntity> AssertInclude<TEntityReference, TProperty>(bool isTrue, Expression<Func<TEntity, ICollection<TEntityReference>>> fnMember, params Expression<Func<TEntityReference, TProperty>>[] fnMembers) where TEntityReference : IEntity
+        {
+            return isTrue ? Include(fnMember, fnMembers) : this;
         }
 
         /// <summary>
@@ -703,7 +730,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public virtual EntityRepository<TEntity> Associate(Expression<Func<TEntity, IEnumerable>> memberQuery)
         {
-            _repositoryProxy.As<IQueryPolicyExecutor<TEntity>>(s => s.AssociateWith(memberQuery));
+            _repositoryProxy.As<IQueryPolicyExecutor>(s => s.AssociateWith(memberQuery));
             return this;
         }
 

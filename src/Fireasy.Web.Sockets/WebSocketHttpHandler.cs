@@ -22,9 +22,10 @@ namespace Fireasy.Web.Sockets
                 context.AcceptWebSocketRequest(async c =>
                 {
                     var handlerType = WebSocketBuildOption.Default.GetHandlerType(context.Request.Path);
-                    if (handlerType != null && typeof(WebSocketHandler).IsAssignableFrom(handlerType))
+                    using (var scope = ContainerUnity.GetContainer().CreateScope())
                     {
-                        using (var scope = ContainerUnity.GetContainer().CreateScope())
+                        var handler = HandlerCreator.CreateHandler(scope.ServiceProvider, WebSocketBuildOption.Default, handlerType);
+                        if (handler != null)
                         {
                             var acceptContext = new WebSocketAcceptContext(scope.ServiceProvider, c.WebSocket, context.User, WebSocketBuildOption.Default);
                             await WebSocketHandler.Accept(handlerType, acceptContext);

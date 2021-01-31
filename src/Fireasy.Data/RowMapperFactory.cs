@@ -5,10 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.Extensions;
-using Fireasy.Common.Reflection;
-using Fireasy.Data.Converter;
-using System;
+using Fireasy.Data.Extensions;
 
 namespace Fireasy.Data
 {
@@ -16,24 +13,8 @@ namespace Fireasy.Data
     {
         public static IDataRowMapper<T> CreateRowMapper<T>()
         {
-            var elementType = typeof(T);
-
-            var mapperType = ReflectionCache.GetMember("RowMapper", elementType, k =>
-                {
-                    Type generalType;
-                    if (k.IsPrimitive || k == typeof(string) || ConvertManager.CanConvert(k))
-                    {
-                        generalType = typeof(SingleValueRowMapper<>);
-                    }
-                    else
-                    {
-                        generalType = typeof(DefaultRowMapper<>);
-                    }
-
-                    return generalType.MakeGenericType(k);
-                });
-
-            return mapperType.New<IDataRowMapper<T>>();
+            return typeof(T).IsDbTypeSupported() ? 
+                (IDataRowMapper<T>)SingleValueRowMapper<T>.Create() : new DefaultRowMapper<T>();
         }
     }
 }

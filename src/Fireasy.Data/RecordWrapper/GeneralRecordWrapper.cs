@@ -73,8 +73,40 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            return type == typeof(bool) ? reader.GetBoolean(i) :
-                Convert.ToBoolean(GetValue(reader, i));
+            if (type == typeof(bool))
+            {
+                return reader.GetBoolean(i);
+            }
+            else if (type == typeof(byte))
+            {
+                return reader.GetByte(i) > 0;
+            }
+            else if (type == typeof(short))
+            {
+                return reader.GetInt16(i) > 0;
+            }
+            else if (type == typeof(int))
+            {
+                return reader.GetInt32(i) > 0;
+            }
+            else if (type == typeof(long))
+            {
+                return reader.GetInt64(i) > 0;
+            }
+            else if (type == typeof(decimal))
+            {
+                return reader.GetDecimal(i) > 0;
+            }
+            else if (type == typeof(float))
+            {
+                return reader.GetFloat(i) > 0;
+            }
+            else if (type == typeof(double))
+            {
+                return reader.GetDouble(i) > 0;
+            }
+
+            return Convert.ToBoolean(GetValue(reader, i));
         }
 
         /// <summary>
@@ -99,12 +131,44 @@ namespace Fireasy.Data.RecordWrapper
         {
             if (reader.IsDBNull(i))
             {
-                return (byte)0;
+                return 0;
             }
 
             var type = reader.GetFieldType(i);
-            return type == typeof(byte) ? reader.GetByte(i) :
-                Convert.ToByte(GetValue(reader, i));
+            if (type == typeof(byte))
+            {
+                return reader.GetByte(i);
+            }
+            else if (type == typeof(char))
+            {
+                return Convert.ToByte(reader.GetChar(i));
+            }
+            else if (type == typeof(short))
+            {
+                return Convert.ToByte(reader.GetInt16(i));
+            }
+            else if (type == typeof(int))
+            {
+                return Convert.ToByte(reader.GetInt32(i));
+            }
+            else if (type == typeof(long))
+            {
+                return Convert.ToByte(reader.GetInt64(i));
+            }
+            else if (type == typeof(decimal))
+            {
+                return Convert.ToByte(reader.GetDecimal(i));
+            }
+            else if (type == typeof(float))
+            {
+                return Convert.ToByte(reader.GetFloat(i));
+            }
+            else if (type == typeof(double))
+            {
+                return Convert.ToByte(reader.GetDouble(i));
+            }
+
+            return Convert.ToByte(GetValue(reader, i));
         }
 
         /// <summary>
@@ -130,6 +194,16 @@ namespace Fireasy.Data.RecordWrapper
             if (reader.IsDBNull(i))
             {
                 return new byte[0];
+            }
+
+            var type = reader.GetFieldType(i);
+            if (type == typeof(DateTime))
+            {
+                return BitConverter.GetBytes(reader.GetDateTime(i).ToBinary());
+            }
+            else if (type == typeof(long))
+            {
+                return BitConverter.GetBytes(reader.GetInt64(i));
             }
 
             var bufferSize = 1024;
@@ -229,8 +303,40 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            return type == typeof(short) ? reader.GetInt16(i) :
-                Convert.ToInt16(GetValue(reader, i));
+            if (type == typeof(short))
+            {
+                return reader.GetInt16(i);
+            }
+            else if (type == typeof(char))
+            {
+                return Convert.ToInt16(reader.GetChar(i));
+            }
+            else if (type == typeof(byte))
+            {
+                return reader.GetByte(i);
+            }
+            else if (type == typeof(int))
+            {
+                return Convert.ToInt16(reader.GetInt32(i));
+            }
+            else if (type == typeof(long))
+            {
+                return Convert.ToInt16(reader.GetInt64(i));
+            }
+            else if (type == typeof(decimal))
+            {
+                return Convert.ToInt16(reader.GetDecimal(i));
+            }
+            else if (type == typeof(float))
+            {
+                return Convert.ToInt16(reader.GetFloat(i));
+            }
+            else if (type == typeof(double))
+            {
+                return Convert.ToInt16(reader.GetDouble(i));
+            }
+
+            return Convert.ToInt16(GetValue(reader, i));
         }
 
         /// <summary>
@@ -259,8 +365,40 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            return type == typeof(int) ? reader.GetInt32(i) :
-                Convert.ToInt32(GetValue(reader, i));
+            if (type == typeof(int))
+            {
+                return reader.GetInt32(i);
+            }
+            else if (type == typeof(char))
+            {
+                return reader.GetChar(i);
+            }
+            else if (type == typeof(byte))
+            {
+                return reader.GetByte(i);
+            }
+            else if (type == typeof(short))
+            {
+                return reader.GetInt16(i);
+            }
+            else if (type == typeof(long))
+            {
+                return Convert.ToInt32(reader.GetInt64(i));
+            }
+            else if (type == typeof(decimal))
+            {
+                return Convert.ToInt32(reader.GetDecimal(i));
+            }
+            else if (type == typeof(float))
+            {
+                return Convert.ToInt32(reader.GetFloat(i));
+            }
+            else if (type == typeof(double))
+            {
+                return Convert.ToInt32(reader.GetDouble(i));
+            }
+
+            return Convert.ToInt32(GetValue(reader, i));
         }
 
         /// <summary>
@@ -289,8 +427,44 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            return type == typeof(long) ? reader.GetInt64(i) :
-                Convert.ToInt64(GetValue(reader, i));
+            if (type == typeof(long))
+            {
+                return reader.GetInt64(i);
+            }
+            else if (type == typeof(char))
+            {
+                return reader.GetChar(i);
+            }
+            else if (type == typeof(byte))
+            {
+                return reader.GetByte(i);
+            }
+            else if (type == typeof(short))
+            {
+                return reader.GetInt16(i);
+            }
+            else if (type == typeof(int))
+            {
+                return reader.GetInt32(i);
+            }
+            else if (type == typeof(decimal))
+            {
+                return Convert.ToInt64(reader.GetDecimal(i));
+            }
+            else if (type == typeof(float))
+            {
+                return Convert.ToInt64(reader.GetFloat(i));
+            }
+            else if (type == typeof(double))
+            {
+                return Convert.ToInt64(reader.GetDouble(i));
+            }
+            else if (type == typeof(DateTime))
+            {
+                return reader.GetDateTime(i).ToBinary();
+            }
+
+            return Convert.ToInt64(GetValue(reader, i));
         }
 
         /// <summary>
@@ -319,8 +493,40 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            return type == typeof(float) ? reader.GetFloat(i) :
-                Convert.ToSingle(GetValue(reader, i));
+            if (type == typeof(float))
+            {
+                return reader.GetFloat(i);
+            }
+            else if (type == typeof(char))
+            {
+                return reader.GetChar(i);
+            }
+            else if (type == typeof(byte))
+            {
+                return reader.GetByte(i);
+            }
+            else if (type == typeof(short))
+            {
+                return reader.GetInt16(i);
+            }
+            else if (type == typeof(int))
+            {
+                return reader.GetInt32(i);
+            }
+            else if (type == typeof(long))
+            {
+                return reader.GetInt64(i);
+            }
+            else if (type == typeof(decimal))
+            {
+                return Convert.ToSingle(reader.GetDecimal(i));
+            }
+            else if (type == typeof(double))
+            {
+                return Convert.ToSingle(reader.GetDouble(i));
+            }
+
+            return Convert.ToSingle(GetValue(reader, i));
         }
 
         /// <summary>
@@ -349,8 +555,40 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            return type == typeof(double) ? reader.GetDouble(i) :
-                Convert.ToDouble(GetValue(reader, i));
+            if (type == typeof(double))
+            {
+                return reader.GetDouble(i);
+            }
+            else if (type == typeof(char))
+            {
+                return reader.GetChar(i);
+            }
+            else if (type == typeof(byte))
+            {
+                return reader.GetByte(i);
+            }
+            else if (type == typeof(short))
+            {
+                return reader.GetInt16(i);
+            }
+            else if (type == typeof(int))
+            {
+                return reader.GetInt32(i);
+            }
+            else if (type == typeof(long))
+            {
+                return reader.GetInt64(i);
+            }
+            else if (type == typeof(decimal))
+            {
+                return Convert.ToDouble(reader.GetDecimal(i));
+            }
+            else if (type == typeof(float))
+            {
+                return Convert.ToDouble(reader.GetFloat(i));
+            }
+
+            return Convert.ToDouble(GetValue(reader, i));
         }
 
         /// <summary>
@@ -363,36 +601,6 @@ namespace Fireasy.Data.RecordWrapper
         {
             var index = reader.GetOrdinal(name);
             return index != -1 ? GetDouble(reader, index) : 0;
-        }
-
-        /// <summary>
-        /// 获取指定字段的字符串值。
-        /// </summary>
-        /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
-        /// <param name="i">字段的索引。</param>
-        /// <returns>字段的 <see cref="String"/> 值。</returns>
-        public virtual string GetString(IDataRecord reader, int i)
-        {
-            if (reader.IsDBNull(i))
-            {
-                return string.Empty;
-            }
-
-            var type = reader.GetFieldType(i);
-            return type == typeof(string) ? reader.GetString(i) :
-                Convert.ToString(GetValue(reader, i));
-        }
-
-        /// <summary>
-        /// 获取指定列的字符值。
-        /// </summary>
-        /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
-        /// <param name="name">字段的名称。</param>
-        /// <returns>字段的 <see cref="Boolean"/> 值。</returns>
-        public string GetString(IDataRecord reader, string name)
-        {
-            var index = reader.GetOrdinal(name);
-            return index != -1 ? GetString(reader, index) : string.Empty;
         }
 
         /// <summary>
@@ -409,8 +617,36 @@ namespace Fireasy.Data.RecordWrapper
             }
 
             var type = reader.GetFieldType(i);
-            return type == typeof(decimal) ? reader.GetDecimal(i) :
-                Convert.ToDecimal(GetValue(reader, i));
+            if (type == typeof(decimal))
+            {
+                return reader.GetDecimal(i);
+            }
+            else if (type == typeof(byte))
+            {
+                return reader.GetByte(i);
+            }
+            else if (type == typeof(short))
+            {
+                return reader.GetInt16(i);
+            }
+            else if (type == typeof(int))
+            {
+                return reader.GetInt32(i);
+            }
+            else if (type == typeof(long))
+            {
+                return reader.GetInt64(i);
+            }
+            else if (type == typeof(float))
+            {
+                return Convert.ToDecimal(reader.GetFloat(i));
+            }
+            else if (type == typeof(double))
+            {
+                return Convert.ToDecimal(reader.GetDouble(i));
+            }
+
+            return Convert.ToDecimal(GetValue(reader, i));
         }
 
         /// <summary>
@@ -443,8 +679,7 @@ namespace Fireasy.Data.RecordWrapper
             {
                 return reader.GetDateTime(i);
             }
-
-            if (type == typeof(byte[]))
+            else if (type == typeof(byte[]))
             {
                 var bts = (byte[])GetValue(reader, i);
                 if (bts.Length == 8)
@@ -456,6 +691,10 @@ namespace Fireasy.Data.RecordWrapper
                     var str = Encoding.GetEncoding(0).GetString(bts);
                     return Convert.ToDateTime(str);
                 }
+            }
+            else if (type == typeof(long))
+            {
+                return DateTime.FromBinary(reader.GetInt64(i));
             }
 
             return Convert.ToDateTime(GetValue(reader, i));
@@ -471,6 +710,36 @@ namespace Fireasy.Data.RecordWrapper
         {
             var index = reader.GetOrdinal(name);
             return index != -1 ? GetDateTime(reader, index) : DateTime.MinValue;
+        }
+
+        /// <summary>
+        /// 获取指定字段的字符串值。
+        /// </summary>
+        /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
+        /// <param name="i">字段的索引。</param>
+        /// <returns>字段的 <see cref="String"/> 值。</returns>
+        public virtual string GetString(IDataRecord reader, int i)
+        {
+            if (reader.IsDBNull(i))
+            {
+                return string.Empty;
+            }
+
+            var type = reader.GetFieldType(i);
+            return type == typeof(string) ? reader.GetString(i) :
+                Convert.ToString(GetValue(reader, i));
+        }
+
+        /// <summary>
+        /// 获取指定列的字符值。
+        /// </summary>
+        /// <param name="reader">一个 <see cref="IDataRecord"/> 对象。</param>
+        /// <param name="name">字段的名称。</param>
+        /// <returns>字段的 <see cref="Boolean"/> 值。</returns>
+        public string GetString(IDataRecord reader, string name)
+        {
+            var index = reader.GetOrdinal(name);
+            return index != -1 ? GetString(reader, index) : string.Empty;
         }
 
         /// <summary>

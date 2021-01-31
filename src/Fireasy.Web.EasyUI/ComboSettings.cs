@@ -16,11 +16,6 @@ namespace Fireasy.Web.EasyUI
     /// </summary>
     public class ComboSettings : TextBoxSettings
     {
-        public ComboSettings()
-        {
-            Editable = false;
-        }
-
         /// <summary>
         /// 获取或设置下拉框的宽度。
         /// </summary>
@@ -30,6 +25,31 @@ namespace Fireasy.Web.EasyUI
         /// 获取或设置下拉框的宽度。为 0 时表示自动设定高度。
         /// </summary>
         public int? PanelHeight { get; set; }
+
+        /// <summary>
+        /// 获取或设置下拉框最小宽度。
+        /// </summary>
+        public int? PanelMinWidth { get; set; }
+
+        /// <summary>
+        /// 获取或设置下拉框最大宽度。
+        /// </summary>
+        public int? PanelMaxWidth { get; set; }
+
+        /// <summary>
+        /// 获取或设置下拉框最小高度。
+        /// </summary>
+        public int? PanelMinHeight { get; set; }
+
+        /// <summary>
+        /// 获取或设置下拉框最大高度。
+        /// </summary>
+        public int? PanelMaxHeight { get; set; }
+
+        /// <summary>
+        /// 获取或设置下拉框的对齐方式。
+        /// </summary>
+        public string PanelAlign { get; set; }
 
         /// <summary>
         /// 获取或设置是否可多选。
@@ -45,6 +65,11 @@ namespace Fireasy.Web.EasyUI
         /// 获取或设置在失去焦点的时候是否恢复原始值。
         /// </summary>
         public bool Reversed { get; set; }
+
+        /// <summary>
+        /// 获取或设置是否显示下拉箭头。
+        /// </summary>
+        public bool? HasDownArrow { get; set; }
 
         /// <summary>
         /// 重写序列化属性值的方法。

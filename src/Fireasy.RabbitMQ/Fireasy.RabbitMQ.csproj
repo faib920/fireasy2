@@ -1,26 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\common.props" />
 
   <PropertyGroup>
     <TargetFrameworks>net451;netstandard2.0</TargetFrameworks>
-    <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
-    <Authors>Huangxd</Authors>
-    <Company>Fireasy</Company>
-    <Copyright>Copyright © Fireasy 2013-2020</Copyright>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
-    <DelaySign>False</DelaySign>
     <Product>Fireasy RabbitMQ Provider</Product>
-    <FileVersion>2.2.3</FileVersion>
-    <AssemblyVersion>2.2.3</AssemblyVersion>
-    <Version>2.2.3</Version>
-    <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
-    <PackageIconUrl>http://fireasy.cn/icon.png</PackageIconUrl>
     <Description>
       RabbitMQ 消息订阅/发布的实现。
 
       参考文档：http://www.fireasy.cn/docs/rabbitmq
     </Description>
-    <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net451|AnyCPU'">

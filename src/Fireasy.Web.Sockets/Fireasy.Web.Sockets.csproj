@@ -1,27 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\common.props" />
 
   <PropertyGroup>
     <TargetFrameworks>net45;netstandard2.0;</TargetFrameworks>
-    <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
-    <Authors>Huangxd</Authors>
-    <Company>Fireasy</Company>
-    <Copyright>Copyright © Fireasy 2013-2020</Copyright>
-    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
-    <SignAssembly>True</SignAssembly>
-    <DelaySign>False</DelaySign>
     <Product>Fireasy Asp.Net WebSocket</Product>
-    <FileVersion>2.2.3</FileVersion>
-    <AssemblyVersion>2.2.3</AssemblyVersion>
-    <Version>2.2.3</Version>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
-    <PackageIconUrl>http://fireasy.cn/icon.png</PackageIconUrl>
     <Description>
       Asp.Net 下的 WebSocket，实现了与 SignalR 类似的 Hub 功能。
 
       参考文档：http://www.fireasy.cn/docs/ws-summary
     </Description>
-    <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">

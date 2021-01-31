@@ -109,6 +109,32 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
+        /// <summary>
+        /// 添加实体的事件订阅器。
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="filter">过滤器。</param>
+        /// <returns></returns>
+        public static IServiceCollection AddPersistentSubscriber<TContext, TSubscriber>(this IServiceCollection services, Func<PersistentSubject, bool> filter = null) where TContext : EntityContext where TSubscriber : PersistentSubscriber
+        {
+            services.AddTransient<TSubscriber>();
+            services.TryAddEnumerable(ServiceDescriptor.Transient<IPersistentSubscriberPredicatePair, PersistentSubscriberPredicatePair<TSubscriber>>(sp => new PersistentSubscriberPredicatePair<TSubscriber>(typeof(TContext), filter, sp.GetService<TSubscriber>())));
+            return services;
+        }
+
+        /// <summary>
+        /// 添加实体的异步事件订阅器。
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="filter">过滤器。</param>
+        /// <returns></returns>
+        public static IServiceCollection AddAsyncPersistentSubscriber<TContext, TSubscriber>(this IServiceCollection services, Func<PersistentSubject, bool> filter = null) where TContext : EntityContext where TSubscriber : AsyncPersistentSubscriber
+        {
+            services.AddTransient<TSubscriber>();
+            services.TryAddEnumerable(ServiceDescriptor.Transient<IAsyncPersistentSubscriberPredicatePair, AsyncPersistentSubscriberPredicatePair<TSubscriber>>(sp => new AsyncPersistentSubscriberPredicatePair<TSubscriber>(typeof(TContext), filter, sp.GetService<TSubscriber>())));
+            return services;
+        }
+
         private static EntityContextOptions ContextOptionsFactory(Type contextType, Type optionsType, IServiceProvider serviceProvider, Action<EntityContextOptionsBuilder> setupAction)
         {
             var builder = new EntityContextOptionsBuilder(contextType, optionsType.New<EntityContextOptions>(serviceProvider));

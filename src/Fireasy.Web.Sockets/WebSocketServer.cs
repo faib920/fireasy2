@@ -17,7 +17,7 @@ namespace Fireasy.Web.Sockets
     /// </summary>
     public class WebSocketServer
     {
-        public async Task Start<T>(string uri, WebSocketBuildOption options) where T : WebSocketHandler, new()
+        public async Task Start<T>(string uri, WebSocketBuildOption option) where T : WebSocketHandler, new()
         {
             var listener = new HttpListener();
             listener.Prefixes.Add(uri);
@@ -28,11 +28,15 @@ namespace Fireasy.Web.Sockets
                 var listenerContext = await listener.GetContextAsync();
                 if (listenerContext.Request.IsWebSocketRequest)
                 {
-                    var socketContext = await listenerContext.AcceptWebSocketAsync(null, options.KeepAliveInterval);
+                    var socketContext = await listenerContext.AcceptWebSocketAsync(null, option.KeepAliveInterval);
                     using (var scope = ContainerUnity.GetContainer().CreateScope())
                     {
-                        var acceptContext = new WebSocketAcceptContext(scope.ServiceProvider, socketContext.WebSocket, listenerContext.User, options);
-                        await WebSocketHandler.Accept<T>(acceptContext);
+                        var handler = HandlerCreator.CreateHandler(scope.ServiceProvider, option, typeof(T));
+                        if (handler != null)
+                        {
+                            var acceptContext = new WebSocketAcceptContext(scope.ServiceProvider, socketContext.WebSocket, listenerContext.User, option);
+                            await WebSocketHandler.Accept(handler, acceptContext);
+                        }
                     }
                 }
                 else

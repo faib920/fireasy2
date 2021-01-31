@@ -14,21 +14,20 @@ namespace Fireasy.Data
 {
     public abstract class ExpressionRowMapper<T> : IDataRowMapper<T>
     {
-        private Func<IDatabase, IDataReader, T> _funcDataRecd;
+        private Func<IDataReader, T> _funcDataRecd;
 
         /// <summary>
         /// 将一个 <see cref="IDataReader"/> 转换为一个 <typeparamref name="T"/> 的对象。
         /// </summary>
-        /// <param name="reader">一个 <see cref="IDataReader"/> 对象。</param>
         /// <returns>由当前 <see cref="IDataReader"/> 对象中的数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
-        public virtual T Map(IDatabase database, IDataReader reader)
+        public virtual T Map(IDataReader reader)
         {
             if (_funcDataRecd == null)
             {
                 _funcDataRecd = BuildExpressionForDataReader().Compile();
             }
 
-            return _funcDataRecd(database, reader);
+            return _funcDataRecd(reader);
         }
 
         /// <summary>
@@ -36,15 +35,15 @@ namespace Fireasy.Data
         /// </summary>
         public IRecordWrapper RecordWrapper { get; set; }
 
-        object IDataRowMapper.Map(IDatabase database, IDataReader reader)
+        object IDataRowMapper.Map(IDataReader reader)
         {
-            return Map(database, reader);
+            return Map(reader);
         }
 
         /// <summary>
         /// 为 <see cref="IDataReader"/> 构造表达式。
         /// </summary>
         /// <returns></returns>
-        protected abstract Expression<Func<IDatabase, IDataReader, T>> BuildExpressionForDataReader();
+        protected abstract Expression<Func<IDataReader, T>> BuildExpressionForDataReader();
     }
 }

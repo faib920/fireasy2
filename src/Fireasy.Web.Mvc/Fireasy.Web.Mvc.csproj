@@ -1,28 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\common.props" />
 
   <PropertyGroup>
     <TargetFrameworks>net45;netcoreapp2.1;netcoreapp3.0</TargetFrameworks>
-
-    <Authors>Huangxd</Authors>
-    <Company>Fireasy</Company>
-    <Copyright>Copyright © Fireasy 2013-2020</Copyright>
-    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
-    <SignAssembly>True</SignAssembly>
-    <DelaySign>False</DelaySign>
     <Product>Fireasy Asp.Net Mvc</Product>
-    <FileVersion>2.2.3</FileVersion>
-    <AssemblyVersion>2.2.3</AssemblyVersion>
-    <Version>2.2.3</Version>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
-    <PackageIconUrl>http://fireasy.cn/icon.png</PackageIconUrl>
     <Description>
       Asp.Net MVC 辅助类，使 Action 可接受复杂的 Json 绑定，Json 按 Fireasy 序列化输出。支持 .Net Core 3.x 版本。
 
       参考文档：http://www.fireasy.cn/docs/mvc-summary
     </Description>
-    <PackageReleaseNotes></PackageReleaseNotes>
-    <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">

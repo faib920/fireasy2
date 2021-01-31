@@ -54,6 +54,11 @@ namespace Fireasy.Web.Sockets
             _innerMgr.AddToGroup(connectionId, groupName);
         }
 
+        public void Refresh(string connectionId)
+        {
+            _innerMgr.Refresh(connectionId);
+        }
+
         public IClientProxy Client(string connectionId)
         {
             return _innerMgr.Client(connectionId);

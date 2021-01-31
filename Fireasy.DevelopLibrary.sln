@@ -85,7 +85,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.AutoMapper", "src\F
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Windows.Forms.CoreApp3", "test\Fireasy.Windows.Forms.CoreApp3\Fireasy.Windows.Forms.CoreApp3.csproj", "{5D37876B-B44D-405C-A132-845E79BBAB85}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fireasy.Mapster", "src\Fireasy.Mapster\Fireasy.Mapster.csproj", "{5F1389DB-5FF5-45C2-80BF-A2B68083ACE9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Mapster", "src\Fireasy.Mapster\Fireasy.Mapster.csproj", "{5F1389DB-5FF5-45C2-80BF-A2B68083ACE9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Memcached", "src\Fireasy.Memcached\Fireasy.Memcached.csproj", "{94F8817B-647D-4CB0-AF3D-F7C358284E79}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fireasy.Clound", "src\Fireasy.Clound\Fireasy.Clound.csproj", "{3A85E119-C3B8-41E2-919B-6EFF12CE6B56}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -229,6 +233,14 @@ Global
 		{5F1389DB-5FF5-45C2-80BF-A2B68083ACE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5F1389DB-5FF5-45C2-80BF-A2B68083ACE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5F1389DB-5FF5-45C2-80BF-A2B68083ACE9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94F8817B-647D-4CB0-AF3D-F7C358284E79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94F8817B-647D-4CB0-AF3D-F7C358284E79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94F8817B-647D-4CB0-AF3D-F7C358284E79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94F8817B-647D-4CB0-AF3D-F7C358284E79}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A85E119-C3B8-41E2-919B-6EFF12CE6B56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A85E119-C3B8-41E2-919B-6EFF12CE6B56}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A85E119-C3B8-41E2-919B-6EFF12CE6B56}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A85E119-C3B8-41E2-919B-6EFF12CE6B56}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -269,6 +281,8 @@ Global
 		{AB456A43-8383-4B49-9E33-CF3603A2577A} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
 		{5D37876B-B44D-405C-A132-845E79BBAB85} = {9E3A93FF-A335-4546-93AC-6DD95595FA71}
 		{5F1389DB-5FF5-45C2-80BF-A2B68083ACE9} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
+		{94F8817B-647D-4CB0-AF3D-F7C358284E79} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
+		{3A85E119-C3B8-41E2-919B-6EFF12CE6B56} = {C17CFE8E-2A64-4E6E-9720-4C8681AF3DC3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {72E7FC59-9162-48A8-B31F-CB0FEE862E56}

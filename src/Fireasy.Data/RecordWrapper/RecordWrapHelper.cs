@@ -48,43 +48,21 @@ namespace Fireasy.Data.RecordWrapper
 
         private static string GetDbTypeName(DbType type)
         {
-            switch (type)
+            return type switch
             {
-                case DbType.AnsiString:
-                case DbType.AnsiStringFixedLength:
-                case DbType.String:
-                case DbType.StringFixedLength:
-                    return nameof(IRecordWrapper.GetString);
-                case DbType.Int16:
-                case DbType.UInt16:
-                    return nameof(IRecordWrapper.GetInt16);
-                case DbType.Int32:
-                case DbType.UInt32:
-                    return nameof(IRecordWrapper.GetInt32);
-                case DbType.Int64:
-                case DbType.UInt64:
-                    return nameof(IRecordWrapper.GetInt64);
-                case DbType.Byte:
-                case DbType.SByte:
-                    return nameof(IRecordWrapper.GetByte);
-                case DbType.Single:
-                    return nameof(IRecordWrapper.GetFloat);
-                case DbType.Decimal:
-                    return nameof(IRecordWrapper.GetDecimal);
-                case DbType.Double:
-                    return nameof(IRecordWrapper.GetDouble);
-                case DbType.Boolean:
-                    return nameof(IRecordWrapper.GetBoolean);
-                case DbType.Date:
-                case DbType.DateTime:
-                case DbType.DateTime2:
-                case DbType.DateTimeOffset:
-                    return nameof(IRecordWrapper.GetDateTime);
-                case DbType.Binary:
-                    return nameof(IRecordWrapper.GetBytes);
-                default:
-                    return string.Empty;
-            }
+                DbType.AnsiString or DbType.AnsiStringFixedLength or DbType.String or DbType.StringFixedLength => nameof(IRecordWrapper.GetString),
+                DbType.Int16 or DbType.UInt16 => nameof(IRecordWrapper.GetInt16),
+                DbType.Int32 or DbType.UInt32 => nameof(IRecordWrapper.GetInt32),
+                DbType.Int64 or DbType.UInt64 => nameof(IRecordWrapper.GetInt64),
+                DbType.Byte or DbType.SByte => nameof(IRecordWrapper.GetByte),
+                DbType.Single => nameof(IRecordWrapper.GetFloat),
+                DbType.Decimal => nameof(IRecordWrapper.GetDecimal),
+                DbType.Double => nameof(IRecordWrapper.GetDouble),
+                DbType.Boolean => nameof(IRecordWrapper.GetBoolean),
+                DbType.Date or DbType.DateTime or DbType.DateTime2 or DbType.DateTimeOffset => nameof(IRecordWrapper.GetDateTime),
+                DbType.Binary => nameof(IRecordWrapper.GetBytes),
+                _ => string.Empty,
+            };
         }
     }
 }

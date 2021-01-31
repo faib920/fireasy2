@@ -1,26 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+  <Import Project="..\..\common.props" />
 
   <PropertyGroup>
     <TargetFrameworks>net45;netcoreapp3.0</TargetFrameworks>
-    <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
-    <Authors>Huangxd</Authors>
-    <Company>Fireasy</Company>
-    <Copyright>Copyright © Fireasy 2013-2020</Copyright>
-    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
-    <SignAssembly>True</SignAssembly>
-    <DelaySign>False</DelaySign>
     <Product>Fireasy Windows Forms</Product>
-    <FileVersion>2.2.3</FileVersion>
-    <AssemblyVersion>2.2.3</AssemblyVersion>
-    <Version>2.2.3</Version>
     <Description>
       Winform 组件库，TreeList 控件及输入框控件。
       
       参考文档：http://www.fireasy.cn/docs/winform-summary
     </Description>
-    <PackageProjectUrl>https://github.com/faib920/fireasy2</PackageProjectUrl>
-    <PackageIconUrl>http://fireasy.cn/icon.png</PackageIconUrl>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
@@ -29,6 +17,11 @@
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
   
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netcoreapp3.0|AnyCPU'">
+    <DocumentationFile>..\..\Release\netcoreapp3.0\Fireasy.Windows.Forms.xml</DocumentationFile>
+    <OutputPath>..\..\Release\</OutputPath>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Fireasy.Common\Fireasy.Common.csproj" />
   </ItemGroup>
@@ -38,7 +31,7 @@
     <Reference Include="System.Drawing.Design" />
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <EmbeddedResource Update="Resource.resx">
       <Generator>ResXFileCodeGenerator</Generator>

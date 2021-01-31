@@ -73,7 +73,7 @@ namespace Fireasy.Data.Syntax
         /// <summary>
         /// 获取语句结束符。
         /// </summary>
-        public string StatementTerminator => Environment.NewLine + "GO" + Environment.NewLine + Environment.NewLine;
+        public string StatementTerminator => ";" + Environment.NewLine;
 
         /// <summary>
         /// 获取是否允许在聚合中使用 DISTINCT 关键字。

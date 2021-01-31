@@ -176,6 +176,21 @@ namespace Fireasy.Data.Provider
         /// <summary>
         /// 注册插件服务类型。
         /// </summary>
+        /// <param name="providerService">服务对象。</param>
+        public IProvider RegisterService(IProviderService providerService)
+        {
+            var providerType = providerService.GetType().GetDirectImplementInterface(typeof(IProviderService));
+            if (providerType != null)
+            {
+                _services.AddOrUpdate(providerType, () => new Lazy<IProviderService>(() => providerService));
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// 注册插件服务类型。
+        /// </summary>
         /// <param name="serviceType">服务类型。</param>
         /// <param name="implType">实现类型。</param>
         public virtual IProvider RegisterService(Type serviceType, Type implType)

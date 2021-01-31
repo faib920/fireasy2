@@ -8,6 +8,7 @@
 using Fireasy.Common;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Provider;
+using Fireasy.Data.RecordWrapper;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -90,6 +91,11 @@ namespace Fireasy.Data
         IEnumerable<T> IDatabase.ExecuteEnumerable<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper)
         {
             return _innerDatabase.ExecuteEnumerable(queryCommand, segment, parameters, rowMapper);
+        }
+
+        IEnumerable<T> IDatabase.ExecuteEnumerable<T>(IQueryCommand queryCommand, Func<IRecordWrapper, IDataReader, T> rowMapper, IDataSegment segment, ParameterCollection parameters)
+        {
+            return _innerDatabase.ExecuteEnumerable(queryCommand, rowMapper, segment, parameters);
         }
 
         IEnumerable<object> IDatabase.ExecuteEnumerable(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters)
@@ -176,6 +182,11 @@ namespace Fireasy.Data
         Task<IEnumerable<T>> IDatabase.ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper, CancellationToken cancellationToken)
         {
             return _innerDatabase.ExecuteEnumerableAsync<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);
+        }
+
+        Task<IEnumerable<T>> IDatabase.ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, Func<IRecordWrapper, IDataReader, T> rowMapper, IDataSegment segment, ParameterCollection parameters, CancellationToken cancellationToken)
+        {
+            return _innerDatabase.ExecuteEnumerableAsync(queryCommand, rowMapper, segment, parameters, cancellationToken);
         }
 
         Task<IEnumerable<dynamic>> IDatabase.ExecuteEnumerableAsync(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, CancellationToken cancellationToken)

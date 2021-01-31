@@ -1,27 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\common.props" />
 
   <PropertyGroup>
     <TargetFrameworks>net45;netcoreapp2.1</TargetFrameworks>
-    <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
-    <Authors>Huangxd</Authors>
-    <Company>Fireasy</Company>
-    <Copyright>Copyright © Fireasy 2013-2020</Copyright>
-    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
-    <SignAssembly>True</SignAssembly>
-    <DelaySign>False</DelaySign>
     <Product>Fireasy EasyUI Extensions</Product>
-    <FileVersion>2.2.3</FileVersion>
-    <AssemblyVersion>2.2.3</AssemblyVersion>
-    <Version>2.2.3</Version>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Description>
       EasyUI for Asp.Net 扩展库。支持 .Net Core 3.x 版本。
 
       参考文档：http://www.fireasy.cn/docs/easyui-summary
     </Description>
-    <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
-    <PackageIconUrl>http://fireasy.cn/icon.png</PackageIconUrl>
-    <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">

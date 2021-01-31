@@ -62,8 +62,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         newInnerSelect = newInnerProjection.Select;
                         var newProjector = newInnerProjection.Projector;
 
+                        var columns = newOuterSelect.Columns.Select(s => s.Expression is ColumnExpression c
+                                ? new ColumnDeclaration(s.Name, new ColumnExpression(c.Type, newOuterSelect.Alias, c.Name, c.MapInfo))
+                                : s);
+
                         var newAlias = new TableAlias();
-                        var pc = ColumnProjector.ProjectColumns(QueryUtility.CanBeColumnExpression, newProjector, newOuterSelect.Columns, newAlias, newOuterSelect.Alias, newInnerSelect.Alias);
+                        var pc = ColumnProjector.ProjectColumns(QueryUtility.CanBeColumnExpression, newProjector, columns, newAlias, newOuterSelect.Alias, newInnerSelect.Alias);
                         var join = new JoinExpression(JoinType.OuterApply, newOuterSelect, newInnerSelect, null);
                         var joinedSelect = new SelectExpression(newAlias, pc.Columns, join, null, null, null, proj.IsSingleton, null, null, null, null, false);
 

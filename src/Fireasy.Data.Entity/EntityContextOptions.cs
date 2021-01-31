@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common;
 using Fireasy.Data.Entity.Initializers;
 using Fireasy.Data.Provider;
 using System;
@@ -113,6 +114,14 @@ namespace Fireasy.Data.Entity
         {
             get { return _serviceProvider; }
             set { _serviceProvider = value; }
+        }
+
+        /// <summary>
+        /// 获取应用程序服务提供者实例。
+        /// </summary>
+        public IServiceProvider ServiceProvider
+        {
+            get { return _serviceProvider; }
         }
 
         Type IInstanceIdentifier.ContextType { get; set; }

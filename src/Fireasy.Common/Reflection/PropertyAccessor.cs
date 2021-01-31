@@ -138,8 +138,8 @@ namespace Fireasy.Common.Reflection
     /// </summary>
     public class PropertyAccessor<T> : IPropertyAccessor
     {
-        private readonly Func<object, T> getter;
-        private readonly Action<object, T> setter;
+        private readonly Func<object, T> _getter;
+        private readonly Action<object, T> _setter;
 
         /// <summary>
         /// 获取要包装的 <see cref="PropertyInfo"/> 对象。
@@ -153,8 +153,8 @@ namespace Fireasy.Common.Reflection
         public PropertyAccessor(PropertyInfo propertyInfo)
         {
             PropertyInfo = propertyInfo;
-            getter = CreateGetterDelegate(propertyInfo);
-            setter = CreateSetterDelegate(propertyInfo);
+            _getter = CreateGetterDelegate(propertyInfo);
+            _setter = CreateSetterDelegate(propertyInfo);
         }
 
         private Func<object, T> CreateGetterDelegate(PropertyInfo propertyInfo)
@@ -201,22 +201,22 @@ namespace Fireasy.Common.Reflection
 
         public T GetValue(object instance)
         {
-            if (getter == null)
+            if (_getter == null)
             {
                 throw new NotSupportedException(SR.GetString(SRKind.UnableCreateCachedDelegate));
             }
 
-            return getter(instance);
+            return _getter(instance);
         }
 
         public void SetValue(object instance, T value)
         {
-            if (setter == null)
+            if (_setter == null)
             {
                 throw new NotSupportedException(SR.GetString(SRKind.UnableCreateCachedDelegate));
             }
 
-            setter(instance, value);
+            _setter(instance, value);
         }
 
         object IPropertyAccessor.GetValue(object instance)

@@ -28,6 +28,11 @@ namespace Fireasy.Data.Provider
             _inner = inner;
         }
 
+        /// <summary>
+        /// 获取内部的 <see cref="IProvider"/> 实例。
+        /// </summary>
+        public IProvider Inner => _inner;
+
         string IProvider.ProviderName { get => _inner.ProviderName; set => _inner.ProviderName = value; }
 
         bool IProvider.HasFeature => _inner.HasFeature;
@@ -80,6 +85,17 @@ namespace Fireasy.Data.Provider
             if (providerService != null)
             {
                 _services.AddOrUpdate(providerService, () => new Lazy<IProviderService>(() => serviceType.New<IProviderService>()));
+            }
+
+            return this;
+        }
+
+        IProvider IProvider.RegisterService(IProviderService providerService)
+        {
+            var providerType = providerService.GetType().GetDirectImplementInterface(typeof(IProviderService));
+            if (providerType != null)
+            {
+                _services.AddOrUpdate(providerType, () => new Lazy<IProviderService>(() => providerService));
             }
 
             return this;

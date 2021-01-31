@@ -191,7 +191,7 @@ namespace Fireasy.Data.Entity.Subscribes
             subMgr.AddSubscriber(typeof(PersistentSubject), action);
         }
 
-        public TResult OnCreate<TEntity, TResult>(IServiceProvider serviceProvider, bool notification, IEntity entity, Func<TResult> func)
+        public TResult OnCreate<TEntity, TResult>(IServiceProvider serviceProvider, Type contextType, bool notification, IEntity entity, Func<TResult> func)
         {
             if (!notification)
             {
@@ -199,16 +199,16 @@ namespace Fireasy.Data.Entity.Subscribes
             }
 
             var ret = default(TResult);
-            if (Publish(serviceProvider, entity, PersistentEventType.BeforeCreate))
+            if (Publish(serviceProvider, contextType, entity, PersistentEventType.BeforeCreate))
             {
                 ret = func();
-                Publish(serviceProvider, entity, PersistentEventType.AfterCreate);
+                Publish(serviceProvider, contextType, entity, PersistentEventType.AfterCreate);
             }
 
             return ret;
         }
 
-        public async Task<TResult> OnCreateAsync<TEntity, TResult>(IServiceProvider serviceProvider, bool notification, IEntity entity, Func<Task<TResult>> func)
+        public async Task<TResult> OnCreateAsync<TEntity, TResult>(IServiceProvider serviceProvider, Type contextType, bool notification, IEntity entity, Func<Task<TResult>> func)
         {
             if (!notification)
             {
@@ -216,16 +216,16 @@ namespace Fireasy.Data.Entity.Subscribes
             }
 
             var ret = default(TResult);
-            if (await PublishAsync(serviceProvider, entity, PersistentEventType.BeforeCreate))
+            if (await PublishAsync(serviceProvider, contextType, entity, PersistentEventType.BeforeCreate))
             {
                 ret = await func();
-                await PublishAsync(serviceProvider, entity, PersistentEventType.AfterCreate);
+                await PublishAsync(serviceProvider, contextType, entity, PersistentEventType.AfterCreate);
             }
 
             return ret;
         }
 
-        public TResult OnUpdate<TEntity, TResult>(IServiceProvider serviceProvider, bool notification, IEntity entity, Func<TResult> func)
+        public TResult OnUpdate<TEntity, TResult>(IServiceProvider serviceProvider, Type contextType, bool notification, IEntity entity, Func<TResult> func)
         {
             if (!notification)
             {
@@ -233,16 +233,16 @@ namespace Fireasy.Data.Entity.Subscribes
             }
 
             var ret = default(TResult);
-            if (Publish(serviceProvider, entity, PersistentEventType.BeforeUpdate))
+            if (Publish(serviceProvider, contextType, entity, PersistentEventType.BeforeUpdate))
             {
                 ret = func();
-                Publish(serviceProvider, entity, PersistentEventType.AfterUpdate);
+                Publish(serviceProvider, contextType, entity, PersistentEventType.AfterUpdate);
             }
 
             return ret;
         }
 
-        public async Task<TResult> OnUpdateAsync<TEntity, TResult>(IServiceProvider serviceProvider, bool notification, IEntity entity, Func<Task<TResult>> func)
+        public async Task<TResult> OnUpdateAsync<TEntity, TResult>(IServiceProvider serviceProvider, Type contextType, bool notification, IEntity entity, Func<Task<TResult>> func)
         {
             if (!notification)
             {
@@ -250,16 +250,16 @@ namespace Fireasy.Data.Entity.Subscribes
             }
 
             var ret = default(TResult);
-            if (await PublishAsync(serviceProvider, entity, PersistentEventType.BeforeUpdate))
+            if (await PublishAsync(serviceProvider, contextType, entity, PersistentEventType.BeforeUpdate))
             {
                 ret = await func();
-                await PublishAsync(serviceProvider, entity, PersistentEventType.AfterUpdate);
+                await PublishAsync(serviceProvider, contextType, entity, PersistentEventType.AfterUpdate);
             }
 
             return ret;
         }
 
-        public TResult OnRemove<TEntity, TResult>(IServiceProvider serviceProvider, bool notification, IEntity entity, Func<TResult> func)
+        public TResult OnRemove<TEntity, TResult>(IServiceProvider serviceProvider, Type contextType, bool notification, IEntity entity, Func<TResult> func)
         {
             if (!notification)
             {
@@ -267,16 +267,16 @@ namespace Fireasy.Data.Entity.Subscribes
             }
 
             var ret = default(TResult);
-            if (Publish(serviceProvider, entity, PersistentEventType.BeforeRemove))
+            if (Publish(serviceProvider, contextType, entity, PersistentEventType.BeforeRemove))
             {
                 ret = func();
-                Publish(serviceProvider, entity, PersistentEventType.AfterRemove);
+                Publish(serviceProvider, contextType, entity, PersistentEventType.AfterRemove);
             }
 
             return ret;
         }
 
-        public async Task<TResult> OnRemoveAsync<TEntity, TResult>(IServiceProvider serviceProvider, bool notification, IEntity entity, Func<Task<TResult>> func)
+        public async Task<TResult> OnRemoveAsync<TEntity, TResult>(IServiceProvider serviceProvider, Type contextType, bool notification, IEntity entity, Func<Task<TResult>> func)
         {
             if (!notification)
             {
@@ -284,16 +284,16 @@ namespace Fireasy.Data.Entity.Subscribes
             }
 
             var ret = default(TResult);
-            if (await PublishAsync(serviceProvider, entity, PersistentEventType.BeforeRemove))
+            if (await PublishAsync(serviceProvider, contextType, entity, PersistentEventType.BeforeRemove))
             {
                 ret = await func();
-                await PublishAsync(serviceProvider, entity, PersistentEventType.AfterRemove);
+                await PublishAsync(serviceProvider, contextType, entity, PersistentEventType.AfterRemove);
             }
 
             return ret;
         }
 
-        public TResult OnBatch<TEntity, TResult>(IServiceProvider serviceProvider, bool notification, IEnumerable<IEntity> entities, PersistentOperator operater, Func<TResult> func)
+        public TResult OnBatch<TEntity, TResult>(IServiceProvider serviceProvider, Type contextType, bool notification, IEnumerable<IEntity> entities, PersistentOperator operater, Func<TResult> func)
         {
             if (!notification)
             {
@@ -301,16 +301,16 @@ namespace Fireasy.Data.Entity.Subscribes
             }
 
             var ret = default(TResult);
-            if (Publish<TEntity>(serviceProvider, entities, operater, PersistentEventType.BeforeBatch))
+            if (Publish<TEntity>(serviceProvider, contextType, entities, operater, PersistentEventType.BeforeBatch))
             {
                 ret = func();
-                Publish<TEntity>(serviceProvider, entities, operater, PersistentEventType.AfterBatch);
+                Publish<TEntity>(serviceProvider, contextType, entities, operater, PersistentEventType.AfterBatch);
             }
 
             return ret;
         }
 
-        public async Task<TResult> OnBatchAsync<TEntity, TResult>(IServiceProvider serviceProvider, bool notification, IEnumerable<IEntity> entities, PersistentOperator operater, Func<Task<TResult>> func)
+        public async Task<TResult> OnBatchAsync<TEntity, TResult>(IServiceProvider serviceProvider, Type contextType, bool notification, IEnumerable<IEntity> entities, PersistentOperator operater, Func<Task<TResult>> func)
         {
             if (!notification)
             {
@@ -318,16 +318,16 @@ namespace Fireasy.Data.Entity.Subscribes
             }
 
             var ret = default(TResult);
-            if (await PublishAsync<TEntity>(serviceProvider, entities, operater, PersistentEventType.BeforeBatch))
+            if (await PublishAsync<TEntity>(serviceProvider, contextType, entities, operater, PersistentEventType.BeforeBatch))
             {
                 ret = await func();
-                await PublishAsync<TEntity>(serviceProvider, entities, operater, PersistentEventType.AfterBatch);
+                await PublishAsync<TEntity>(serviceProvider, contextType, entities, operater, PersistentEventType.AfterBatch);
             }
 
             return ret;
         }
 
-        public bool Publish<TEntity>(IServiceProvider serviceProvider, IEnumerable<IEntity> entities, PersistentOperator operType, PersistentEventType eventType)
+        public bool Publish<TEntity>(IServiceProvider serviceProvider, Type contextType, IEnumerable<IEntity> entities, PersistentOperator operType, PersistentEventType eventType)
         {
             if (!entities.Any())
             {
@@ -335,7 +335,7 @@ namespace Fireasy.Data.Entity.Subscribes
             }
 
             var _event = new EntitiesArgs(entities, operType, eventType);
-            var subject = new PersistentSubject(typeof(TEntity), eventType, _event);
+            var subject = new PersistentSubject(contextType, typeof(TEntity), eventType, _event);
 
             subMgr.Publish(subject);
 
@@ -344,7 +344,7 @@ namespace Fireasy.Data.Entity.Subscribes
             return !_event.Cancel;
         }
 
-        public async Task<bool> PublishAsync<TEntity>(IServiceProvider serviceProvider, IEnumerable<IEntity> entities, PersistentOperator operType, PersistentEventType eventType)
+        public async Task<bool> PublishAsync<TEntity>(IServiceProvider serviceProvider, Type contextType, IEnumerable<IEntity> entities, PersistentOperator operType, PersistentEventType eventType)
         {
             if (!entities.Any())
             {
@@ -352,7 +352,7 @@ namespace Fireasy.Data.Entity.Subscribes
             }
 
             var _event = new EntitiesArgs(entities, operType, eventType);
-            var subject = new PersistentSubject(typeof(TEntity), eventType, _event);
+            var subject = new PersistentSubject(contextType, typeof(TEntity), eventType, _event);
 
             await subMgr.PublishAsync(subject);
 
@@ -361,7 +361,7 @@ namespace Fireasy.Data.Entity.Subscribes
             return !_event.Cancel;
         }
 
-        public bool Publish(IServiceProvider serviceProvider, IEnumerable<IEntity> entities, PersistentOperator operType, PersistentEventType eventType)
+        public bool Publish(IServiceProvider serviceProvider, Type contextType, IEnumerable<IEntity> entities, PersistentOperator operType, PersistentEventType eventType)
         {
             IEntity first;
             if ((first = entities.FirstOrDefault()) == null)
@@ -371,7 +371,7 @@ namespace Fireasy.Data.Entity.Subscribes
 
             var _event = new EntitiesArgs(entities, operType, eventType);
             var entityType = first.EntityType;
-            var subject = new PersistentSubject(entityType, eventType, _event);
+            var subject = new PersistentSubject(contextType, entityType, eventType, _event);
 
             subMgr.Publish(subject);
 
@@ -380,7 +380,7 @@ namespace Fireasy.Data.Entity.Subscribes
             return !_event.Cancel;
         }
 
-        public async Task<bool> PublishAsync(IServiceProvider serviceProvider, IEnumerable<IEntity> entities, PersistentOperator operType, PersistentEventType eventType)
+        public async Task<bool> PublishAsync(IServiceProvider serviceProvider, Type contextType, IEnumerable<IEntity> entities, PersistentOperator operType, PersistentEventType eventType)
         {
             IEntity first;
             if ((first = entities.FirstOrDefault()) == null)
@@ -390,7 +390,7 @@ namespace Fireasy.Data.Entity.Subscribes
 
             var _event = new EntitiesArgs(entities, operType, eventType);
             var entityType = first.EntityType;
-            var subject = new PersistentSubject(entityType, eventType, _event);
+            var subject = new PersistentSubject(contextType, entityType, eventType, _event);
 
             await subMgr.PublishAsync(subject);
 
@@ -399,10 +399,10 @@ namespace Fireasy.Data.Entity.Subscribes
             return !_event.Cancel;
         }
 
-        public bool Publish<TEntity>(IServiceProvider serviceProvider, PersistentEventType eventType)
+        public bool Publish<TEntity>(IServiceProvider serviceProvider, Type contextType, PersistentEventType eventType)
         {
             var _event = new EntityEventTypeArgs(eventType);
-            var subject = new PersistentSubject(typeof(TEntity), eventType, _event);
+            var subject = new PersistentSubject(contextType, typeof(TEntity), eventType, _event);
 
             subMgr.Publish(subject);
 
@@ -411,22 +411,22 @@ namespace Fireasy.Data.Entity.Subscribes
             return !_event.Cancel;
         }
 
-        public async Task<bool> PublishAsync<TEntity>(IServiceProvider serviceProvider, PersistentEventType eventType)
+        public async Task<bool> PublishAsync<TEntity>(IServiceProvider serviceProvider, Type contextType, PersistentEventType eventType)
         {
             var _event = new EntityEventTypeArgs(eventType);
-            var subject = new PersistentSubject(typeof(TEntity), eventType, _event);
+            var subject = new PersistentSubject(contextType, typeof(TEntity), eventType, _event);
 
             await subMgr.PublishAsync(subject);
 
             return !_event.Cancel;
         }
 
-        public bool Publish(IServiceProvider serviceProvider, IEntity entity, PersistentEventType eventType)
+        public bool Publish(IServiceProvider serviceProvider, Type contextType, IEntity entity, PersistentEventType eventType)
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
             var _event = new EntityEventArgs(entity, eventType);
-            var subject = new PersistentSubject(entity.EntityType, eventType, _event);
+            var subject = new PersistentSubject(contextType, entity.EntityType, eventType, _event);
 
             subMgr.Publish(subject);
 
@@ -435,12 +435,12 @@ namespace Fireasy.Data.Entity.Subscribes
             return !_event.Cancel;
         }
 
-        public async Task<bool> PublishAsync(IServiceProvider serviceProvider, IEntity entity, PersistentEventType eventType)
+        public async Task<bool> PublishAsync(IServiceProvider serviceProvider, Type contextType, IEntity entity, PersistentEventType eventType)
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
             var _event = new EntityEventArgs(entity, eventType);
-            var subject = new PersistentSubject(entity.EntityType, eventType, _event);
+            var subject = new PersistentSubject(contextType, entity.EntityType, eventType, _event);
 
             await subMgr.PublishAsync(subject);
 
@@ -456,20 +456,34 @@ namespace Fireasy.Data.Entity.Subscribes
             {
                 foreach (var pair in serviceProvider.GetService<IEnumerable<IPersistentSubscriberPredicatePair>>())
                 {
-                    if (pair.Filter == null || pair.Filter.Invoke(subject))
+                    if (pair.ContextType != null && subject.ContextType != pair.ContextType)
                     {
-                        Tracer.Debug($"{pair.Subscriber} is accepting event of '{subject.EventType}'.");
-                        pair.Subscriber.Accept(subject);
+                        continue;
                     }
+
+                    if (pair.Filter != null && !pair.Filter.Invoke(subject))
+                    {
+                        continue;
+                    }
+
+                    Tracer.Debug($"{pair.Subscriber} is accepting event of '{subject.EventType}'.");
+                    pair.Subscriber.Accept(subject);
                 }
 
                 foreach (var pair in serviceProvider.GetService<IEnumerable<IAsyncPersistentSubscriberPredicatePair>>())
                 {
-                    if (pair.Filter == null || pair.Filter.Invoke(subject))
+                    if (pair.ContextType != null && subject.ContextType != pair.ContextType)
                     {
-                        Tracer.Debug($"{pair.Subscriber} is accepting event of '{subject.EventType}'.");
-                        pair.Subscriber.AcceptAsync(subject).AsSync();
+                        continue;
                     }
+
+                    if (pair.Filter != null && !pair.Filter.Invoke(subject))
+                    {
+                        continue;
+                    }
+
+                    Tracer.Debug($"{pair.Subscriber} is accepting event of '{subject.EventType}'.");
+                    pair.Subscriber.AcceptAsync(subject).AsSync();
                 }
             }
 #endif
@@ -482,20 +496,34 @@ namespace Fireasy.Data.Entity.Subscribes
             {
                 foreach (var pair in serviceProvider.GetService<IEnumerable<IPersistentSubscriberPredicatePair>>())
                 {
-                    if (pair.Filter == null || pair.Filter.Invoke(subject))
+                    if (pair.ContextType != null && subject.ContextType != pair.ContextType)
                     {
-                        Tracer.Debug($"{pair.Subscriber} is accepting event of '{subject.EventType}'.");
-                        pair.Subscriber.Accept(subject);
+                        continue;
                     }
+
+                    if (pair.Filter != null && !pair.Filter.Invoke(subject))
+                    {
+                        continue;
+                    }
+
+                    Tracer.Debug($"{pair.Subscriber} is accepting event of '{subject.EventType}'.");
+                    pair.Subscriber.Accept(subject);
                 }
 
                 foreach (var pair in serviceProvider.GetService<IEnumerable<IAsyncPersistentSubscriberPredicatePair>>())
                 {
-                    if (pair.Filter == null || pair.Filter.Invoke(subject))
+                    if (pair.ContextType != null && subject.ContextType != pair.ContextType)
                     {
-                        Tracer.Debug($"{pair.Subscriber} is accepting event of '{subject.EventType}'.");
-                        await pair.Subscriber.AcceptAsync(subject);
+                        continue;
                     }
+
+                    if (pair.Filter != null && !pair.Filter.Invoke(subject))
+                    {
+                        continue;
+                    }
+
+                    Tracer.Debug($"{pair.Subscriber} is accepting event of '{subject.EventType}'.");
+                    await pair.Subscriber.AcceptAsync(subject);
                 }
             }
 #endif

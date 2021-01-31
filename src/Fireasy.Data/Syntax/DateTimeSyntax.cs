@@ -23,6 +23,15 @@ namespace Fireasy.Data.Syntax
         }
 
         /// <summary>
+        /// 获取当前 UTC 时间。
+        /// </summary>
+        /// <returns></returns>
+        public virtual string UtcNow()
+        {
+            return "GETUTCDATE()";
+        }
+
+        /// <summary>
         /// 初始化日期。
         /// </summary>
         /// <param name="yearExp">年表达式。</param>

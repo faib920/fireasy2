@@ -1,0 +1,21 @@
+<Project>
+  <PropertyGroup>
+    <Authors>Huangxd</Authors>
+    <Company>Fireasy</Company>
+    <Copyright>Copyright © Fireasy 2013-2021</Copyright>
+    <SignAssembly>True</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>False</DelaySign>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <FileVersion>2.2.4</FileVersion>
+    <AssemblyVersion>2.2.4</AssemblyVersion>
+    <Version>2.2.4-beta4</Version>
+    <PackageIconUrl>http://fireasy.cn/icon.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>
+    <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
+    <PackageReleaseNotes></PackageReleaseNotes>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+</Project>

@@ -35,7 +35,7 @@ namespace Fireasy.Data.Entity.Query
         /// <returns></returns>
         Expression ApplyPolicy(Expression expression, MemberInfo member, Func<Expression, Expression> builder);
 
-        void IncludeWith<TEntity>(Expression<Func<TEntity, object>> fnMember) where TEntity : IEntity;
+        void IncludeWith<TEntity, TProperty>(Expression<Func<TEntity, TProperty>> fnMember) where TEntity : IEntity;
 
         void AssociateWith<TEntity>(Expression<Func<TEntity, IEnumerable>> memberQuery) where TEntity : IEntity;
 

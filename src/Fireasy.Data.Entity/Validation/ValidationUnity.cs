@@ -160,7 +160,7 @@ namespace Fireasy.Data.Entity.Validation
 
             if (!isValid)
             {
-                throw new EntityInvalidateException(propertyErrors, errors);
+                throw new EntityInvalidateException(entity, propertyErrors, errors);
             }
         }
 

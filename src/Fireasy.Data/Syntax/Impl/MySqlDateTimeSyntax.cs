@@ -19,7 +19,16 @@ namespace Fireasy.Data.Syntax
         /// <returns></returns>
         public override string Now()
         {
-            return "SYSDATE()";
+            return "NOW()";
+        }
+
+        /// <summary>
+        /// 获取当前 UTC 时间。
+        /// </summary>
+        /// <returns></returns>
+        public override string UtcNow()
+        {
+            return "UTC_TIMESTAMP()";
         }
 
         /// <summary>

@@ -46,10 +46,10 @@ namespace Fireasy.Data.Entity.Query
         {
             internal protected static readonly MethodInfo DbExecuteNoQuery = typeof(IDatabase).GetMethod(nameof(IDatabase.ExecuteNonQuery));
             internal protected static readonly MethodInfo DbExecuteScalar = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.ExecuteScalar) && s.IsGenericMethod);
-            internal protected static readonly MethodInfo DbExecuteEnumerable = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.ExecuteEnumerable) && s.IsGenericMethod);
+            internal protected static readonly MethodInfo DbExecuteEnumerable = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.ExecuteEnumerable) && s.IsGenericMethod && s.GetParameters()[1].ParameterType.IsGenericType);
             internal protected static readonly MethodInfo DbExecuteNoQueryAsync = typeof(IDatabase).GetMethod(nameof(IDatabase.ExecuteNonQueryAsync));
             internal protected static readonly MethodInfo DbExecuteScalarAsync = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.ExecuteScalarAsync) && s.IsGenericMethod);
-            internal protected static readonly MethodInfo DbExecuteEnumerableAsync = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.ExecuteEnumerableAsync) && s.IsGenericMethod);
+            internal protected static readonly MethodInfo DbExecuteEnumerableAsync = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.ExecuteEnumerableAsync) && s.IsGenericMethod && s.GetParameters()[1].ParameterType.IsGenericType);
             internal protected static readonly MethodInfo DbUpdate = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.Update) && s.GetParameters().Length == 4);
             internal protected static readonly MethodInfo DbUpdateAsync = typeof(IDatabase).GetMethods().FirstOrDefault(s => s.Name == nameof(IDatabase.UpdateAsync) && s.GetParameters().Length == 5);
             internal protected static readonly MethodInfo ConstructEntity = typeof(ExecutionBuilder).GetMethod(nameof(ExecutionBuilder.ConstructEntity), BindingFlags.Static | BindingFlags.NonPublic);
@@ -67,8 +67,8 @@ namespace Fireasy.Data.Entity.Query
         /// <summary>
         /// 构造最终执行的表达式。
         /// </summary>
+        /// <param name="transContext"></param>
         /// <param name="expression"></param>
-        /// <param name="translator">翻译器。</param>
         /// <param name="options"></param>
         /// <returns></returns>
         public static Expression Build(TranslateContext transContext, Expression expression, BuildOptions options)
@@ -77,7 +77,8 @@ namespace Fireasy.Data.Entity.Query
             {
                 _transContext = transContext,
                 _executor = Expression.Parameter(typeof(IDatabase), "db"),
-                _translator = transContext.Translator
+                _translator = transContext.Translator,
+                _cancelToken = Expression.Parameter(typeof(CancellationToken), "cancelToken")
             };
 
             if (options.IsAsync != null)
@@ -90,15 +91,11 @@ namespace Fireasy.Data.Entity.Query
                 builder._isNoTracking = true;
             }
 
-            var newExpression = builder.Bind(expression);
+            expression = builder.Bind(expression);
 
-            if (builder._isAsync)
-            {
-                var cancelToken = builder._cancelToken ?? Expression.Parameter(typeof(CancellationToken), "token");
-                return Expression.Lambda(newExpression, builder._executor, cancelToken);
-            }
-
-            return Expression.Lambda(newExpression, builder._executor);
+            return builder._isAsync ?
+                Expression.Lambda(expression, builder._executor, builder._cancelToken) :
+                Expression.Lambda(expression, builder._executor);
         }
 
         private Expression Bind(Expression expression)
@@ -153,8 +150,7 @@ namespace Fireasy.Data.Entity.Query
         //不能删除，使用反射调用
         public static T Assign<T>(ref T variable, T value)
         {
-            variable = value;
-            return value;
+            return variable = value;
         }
 
         /// <summary>
@@ -219,13 +215,14 @@ namespace Fireasy.Data.Entity.Query
             _isAsync = _isAsync || batch.IsAsync;
 
             var operation = batch.Operation;
+            if ((operation.Body is UpdateCommandExpression || operation.Body is InsertCommandExpression) &&
+                batch.Arguments.Count == 0)
+            {
+                return _isAsync ? Expression.Constant(Task.FromResult(-1)) : Expression.Constant(-1);
+            }
+
             if (operation.Body is InsertCommandExpression insert)
             {
-                if (batch.Arguments.Count == 0)
-                {
-                    return _isAsync ? Expression.Constant(Task.FromResult(-1)) : Expression.Constant(-1);
-                }
-
                 var rewriter = insert.Update(insert.Table, VisitColumnAssignments(insert.Assignments));
 
                 if (rewriter != insert)
@@ -451,6 +448,14 @@ namespace Fireasy.Data.Entity.Query
                     Expression.PropertyOrField(kvp, "Value").NotEqual(Expression.Constant(null, nullType)),
                     kvp
                     );
+
+                if (_isAsync)
+                {
+                    var enumerableType = execution.Type.GetTaskReturnType();
+                    var method = typeof(TaskExtension).GetMethods().FirstOrDefault(s => s.Name == "AsSync" && s.IsGenericMethod).MakeGenericMethod(enumerableType);
+                    execution = Expression.Call(method, execution);
+                }
+
                 execution = Expression.Call(typeof(Enumerable), nameof(Enumerable.Where), new Type[] { kvp.Type }, execution, pred);
             }
 
@@ -518,8 +523,9 @@ namespace Fireasy.Data.Entity.Query
 
             _scope = new Scope(_scope, recordWrapper, dataReader, projection.Select.Alias, projection.Select.Columns);
 
-            var projector = Visit(projection.Projector);
-            var rowMapper = CreateDataRowWrapper(projector, elementType);
+            var funcType = typeof(Func<,,>).MakeGenericType(typeof(IRecordWrapper), typeof(IDataReader), elementType);
+            var projector = Expression.Lambda(funcType, Visit(projection.Projector), _scope._recordWrapper, _scope._dataReader);
+
             _scope = saveScope;
 
             var result = _translator.Translate(projection.Select);
@@ -528,12 +534,11 @@ namespace Fireasy.Data.Entity.Query
             if (_isAsync)
             {
                 var method = ReflectionCache.GetMember("ExecuteEnumerableAsync", elementType, k => MethodCache.DbExecuteEnumerableAsync.MakeGenericMethod(k));
-                _cancelToken = Expression.Parameter(typeof(CancellationToken), "token");
                 plan = Expression.Call(_executor, method,
                     Expression.Constant((SqlCommand)result.QueryText),
+                    projector,
                     Expression.Constant(result.DataSegment, typeof(IDataSegment)),
                     CreateParameterCollectionExpression(projection.Select),
-                    Expression.Constant(rowMapper),
                     _cancelToken
                     );
             }
@@ -542,9 +547,9 @@ namespace Fireasy.Data.Entity.Query
                 var method = ReflectionCache.GetMember("ExecuteEnumerable", elementType, k => MethodCache.DbExecuteEnumerable.MakeGenericMethod(k));
                 plan = Expression.Call(_executor, method,
                     Expression.Constant((SqlCommand)result.QueryText),
+                    projector,
                     Expression.Constant(result.DataSegment, typeof(IDataSegment)),
-                    CreateParameterCollectionExpression(projection.Select),
-                    Expression.Constant(rowMapper)
+                    CreateParameterCollectionExpression(projection.Select)
                     );
             }
 
@@ -574,7 +579,6 @@ namespace Fireasy.Data.Entity.Query
             {
                 if (_isAsync)
                 {
-                    _cancelToken = Expression.Parameter(typeof(CancellationToken), "token");
                     return Expression.Call(_executor, MethodCache.DbExecuteNoQueryAsync,
                             Expression.Constant((SqlCommand)result.QueryText),
                             CreateParameterCollectionExpression(expression),
@@ -604,7 +608,6 @@ namespace Fireasy.Data.Entity.Query
             if (_isAsync)
             {
                 var method = ReflectionCache.GetMember("ExecuteScalarAsync", typeof(long), k => MethodCache.DbExecuteScalarAsync.MakeGenericMethod(k));
-                _cancelToken = Expression.Parameter(typeof(CancellationToken), "token");
                 return Expression.Call(_executor, method,
                         Expression.Constant((IIdenticalSqlCommand)result.QueryText),
                         CreateParameterCollectionExpression(expression),
@@ -685,7 +688,6 @@ namespace Fireasy.Data.Entity.Query
             Expression plan;
             if (_isAsync)
             {
-                _cancelToken = Expression.Parameter(typeof(CancellationToken), "token");
                 plan = Expression.Call(_executor, MethodCache.DbUpdateAsync,
                     Expression.Constant(table),
                     Expression.Constant((SqlCommand)result.QueryText),
@@ -769,20 +771,6 @@ namespace Fireasy.Data.Entity.Query
             {
                 return MethodCache.ExpNullParameter;
             }
-        }
-
-        /// <summary>
-        /// 创建 <see cref="IDataRowMapper"/>。
-        /// </summary>
-        /// <param name="projector"></param>
-        /// <param name="elementType"></param>
-        /// <returns></returns>
-        private IDataRowMapper CreateDataRowWrapper(Expression projector, Type elementType)
-        {
-            var funcType = ReflectionCache.GetMember("FuncType", elementType, k => typeof(Func<,>).MakeGenericType(typeof(IDataReader), k));
-            var mapperType = ReflectionCache.GetMember("ProjectionRowMapperType", elementType, k => typeof(ProjectionRowMapper<>).MakeGenericType(k));
-            var lambda = Expression.Lambda(funcType, projector, _scope._dataReader);
-            return mapperType.New<IDataRowMapper>(_executor, lambda, _scope._recordWrapper);
         }
 
         /// <summary>
@@ -1117,31 +1105,6 @@ namespace Fireasy.Data.Entity.Query
                     return sub;
                 }
                 return vex;
-            }
-        }
-
-        private class ProjectionRowMapper<T> : ExpressionRowMapper<T>
-        {
-            private readonly ParameterExpression _executor;
-            private readonly LambdaExpression _expression;
-            private readonly ParameterExpression _recordWrapper;
-
-            public ProjectionRowMapper(ParameterExpression executor, LambdaExpression expression, ParameterExpression recordWrapper)
-            {
-                _executor = executor;
-                _expression = expression;
-                _recordWrapper = recordWrapper;
-            }
-
-            protected override Expression<Func<IDatabase, IDataReader, T>> BuildExpressionForDataReader()
-            {
-                var exp = (LambdaExpression)DbExpressionReplacer.Replace(_expression, _recordWrapper, Expression.Constant(RecordWrapper, typeof(IRecordWrapper)));
-                if (exp.Parameters.Count == 1 && exp.Parameters[0].Type != typeof(IDatabase))
-                {
-                    return Expression.Lambda<Func<IDatabase, IDataReader, T>>(exp.Body, _executor, exp.Parameters[0]);
-                }
-
-                return (Expression<Func<IDatabase, IDataReader, T>>)exp;
             }
         }
 

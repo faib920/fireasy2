@@ -65,6 +65,20 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
+        /// 使用特殊的 <see cref="IProviderService"/> 服务接口。
+        /// </summary>
+        /// <param name="providerService">服务对象。</param>
+        /// <returns></returns>
+        public EntityContextOptionsBuilder UseProviderService(IProviderService providerService)
+        {
+            IProvider wrapper = new WrappedProvider(Options.Provider);
+            wrapper.RegisterService(providerService);
+            Options.Provider = wrapper;
+
+            return this;
+        }
+
+        /// <summary>
         /// 使用一组特殊的 <see cref="IProviderService"/> 服务接口。
         /// </summary>
         /// <typeparam name="serviceTypes"><see cref="IProviderService"/> 实现类型数组。</typeparam>

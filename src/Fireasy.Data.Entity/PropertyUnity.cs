@@ -293,7 +293,8 @@ namespace Fireasy.Data.Entity
                 };
             }
             else if (propertyInfo.PropertyType.IsGenericType &&
-                typeof(IEntitySet).IsAssignableFrom(propertyInfo.PropertyType))
+                (typeof(IEntitySet).IsAssignableFrom(propertyInfo.PropertyType) ||
+                typeof(ICollection<>) == propertyInfo.PropertyType.GetGenericTypeDefinition()))
             {
                 //实体集属性
                 property = new EntitySetProperty

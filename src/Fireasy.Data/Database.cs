@@ -23,6 +23,7 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
+using System.Linq;
 #if NETSTANDARD2_1
 using System.Runtime.CompilerServices;
 #endif
@@ -242,7 +243,28 @@ namespace Fireasy.Data
             using var reader = ExecuteReader(queryCommand, segment, parameters, CommandBehavior.Default);
             while (reader.Read())
             {
-                yield return rowMapper.Map(this, reader);
+                yield return rowMapper.Map(reader);
+            }
+        }
+
+        /// <summary>
+        /// 执行查询文本并将结果以一个 <see cref="IEnumerable{T}"/> 的序列返回。
+        /// </summary>
+        /// <typeparam name="T">查询对象类型。</typeparam>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="rowMapper">数据映射函数。</param>
+        /// <param name="segment">数据分段对象。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <returns>一个 <typeparamref name="T"/> 类型的对象的枚举器。</returns>
+        public virtual IEnumerable<T> ExecuteEnumerable<T>(IQueryCommand queryCommand, Func<IRecordWrapper, IDataReader, T> rowMapper, IDataSegment segment = null, ParameterCollection parameters = null)
+        {
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
+            Guard.ArgumentNull(rowMapper, nameof(rowMapper));
+            var wrapper = Provider.GetService<IRecordWrapper>();
+            using var reader = ExecuteReader(queryCommand, segment, parameters, CommandBehavior.Default);
+            while (reader.Read())
+            {
+                yield return rowMapper(wrapper, reader);
             }
         }
 
@@ -303,7 +325,7 @@ namespace Fireasy.Data
             using var reader = (InternalDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, CommandBehavior.Default, cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
-                yield return rowMapper.Map(this, reader);
+                yield return rowMapper.Map(reader);
             }
         }
 
@@ -365,7 +387,35 @@ namespace Fireasy.Data
             using var reader = (InternalDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, CommandBehavior.Default, cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
-                result.Add(rowMapper.Map(this, reader));
+                result.Add(rowMapper.Map(reader));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 异步的，执行查询文本并将结果以一个 <see cref="IEnumerable{T}"/> 的序列返回。
+        /// </summary>
+        /// <typeparam name="T">查询对象类型。</typeparam>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="rowMapper">数据映射函数。</param>
+        /// <param name="segment">数据分段对象。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>一个 <typeparamref name="T"/> 类型的对象的枚举器。</returns>
+        public async virtual Task<IEnumerable<T>> ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, Func<IRecordWrapper, IDataReader, T> rowMapper, IDataSegment segment = null, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
+        {
+            Guard.ArgumentNull(queryCommand, nameof(queryCommand));
+            Guard.ArgumentNull(rowMapper, nameof(rowMapper));
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var result = new List<T>();
+            var wrapper = Provider.GetService<IRecordWrapper>();
+
+            using var reader = (InternalDataReader)await ExecuteReaderAsync(queryCommand, segment, parameters, CommandBehavior.Default, cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                result.Add(rowMapper(wrapper, reader));
             }
 
             return result;
@@ -475,14 +525,19 @@ namespace Fireasy.Data
         /// <summary>
         /// 执行批处理文本，返回受影响的记录数。
         /// </summary>
-        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="queryCommands">一组查询命令。</param>
         /// <param name="parameters">查询参数集合。</param>
         /// <returns>所影响的记录数。</returns>
         public virtual int ExecuteBatch(IEnumerable<IQueryCommand> queryCommands, ParameterCollection parameters = null)
         {
+            if (queryCommands == null || queryCommands.Count() == 0)
+            {
+                return -1;
+            }
+
             var syntax = Provider.GetService<ISyntaxProvider>();
 
-            SqlCommand command = string.Join(syntax.StatementTerminator, queryCommands);
+            SqlCommand command = string.Join(syntax.StatementTerminator, queryCommands) + syntax.StatementTerminator;
 
             return ExecuteNonQuery(command, parameters);
         }
@@ -490,12 +545,17 @@ namespace Fireasy.Data
         /// <summary>
         /// 异步的，执行批处理文本，返回受影响的记录数。
         /// </summary>
-        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="queryCommands">一组查询命令。</param>
         /// <param name="parameters">查询参数集合。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>所影响的记录数。</returns>
         public async virtual Task<int> ExecuteBatchAsync(IEnumerable<IQueryCommand> queryCommands, ParameterCollection parameters = null, CancellationToken cancellationToken = default)
         {
+            if (queryCommands == null || queryCommands.Count() == 0)
+            {
+                return -1;
+            }
+
             var syntax = Provider.GetService<ISyntaxProvider>();
 
             SqlCommand command = string.Join(syntax.StatementTerminator, queryCommands);

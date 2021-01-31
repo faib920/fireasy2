@@ -1,30 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\common.props" />
 
   <PropertyGroup>
     <TargetFrameworks>net452;netstandard2.0</TargetFrameworks>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Authors>Huangxd</Authors>
-    <Company>Fireasy</Company>
-    <Copyright>Copyright © Fireasy 2013-2020</Copyright>
-    <SignAssembly>True</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\..\..\..\keys\fireasy.snk</AssemblyOriginatorKeyFile>
-    <DelaySign>False</DelaySign>
     <Product>Fireasy Quartz.Net Provider</Product>
-    <FileVersion>2.2.3</FileVersion>
-    <AssemblyVersion>2.2.3</AssemblyVersion>
-    <Version>2.2.3</Version>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>
       Quartz.Net 任务调度组件的实现。
 
       参考文档：http://www.fireasy.cn/docs/quartznet
     </Description>
-    <PackageIconUrl>http://fireasy.cn/icon.png</PackageIconUrl>
-    <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>
-    <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>
-    <PackageReleaseNotes></PackageReleaseNotes>
-    <LangVersion>latest</LangVersion>
-
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net452|AnyCPU'">
     <DocumentationFile>..\..\Release\net452\Fireasy.QuartzNet.xml</DocumentationFile>

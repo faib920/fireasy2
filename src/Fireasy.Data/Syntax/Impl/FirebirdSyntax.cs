@@ -129,10 +129,18 @@ namespace Fireasy.Data.Syntax
                     return $"CAST({sourceExp} AS FLOAT)";
                 case DbType.Boolean:
                     return $"CAST({sourceExp} AS BOOLEAN)";
+                case DbType.SByte:
+                case DbType.Byte:
                 case DbType.Int16:
                     return $"CAST({sourceExp} AS SMALLINT)";
+                case DbType.UInt16:
                 case DbType.Int32:
                     return $"CAST({sourceExp} AS INT)";
+                case DbType.UInt32:
+                case DbType.Int64:
+                    return $"CAST({sourceExp} AS BIGINT)";
+                case DbType.UInt64:
+                    return $"CAST({sourceExp} AS DECIMAL(18, 0))";
                 case DbType.Date:
                     return $"CAST({sourceExp} AS DATE)";
                 case DbType.DateTime:
@@ -170,7 +178,7 @@ namespace Fireasy.Data.Syntax
                     }
                     throw new ArgumentOutOfRangeException();
                 case DbType.Guid:
-                    return "VARCHAR(40)";
+                    return "CHAR(36)";
                 case DbType.Binary:
                     return "BLOB";
                 case DbType.Decimal:
@@ -193,10 +201,18 @@ namespace Fireasy.Data.Syntax
                     return "FLOAT";
                 case DbType.Boolean:
                     return "BOOLEAN";
+                case DbType.SByte:
+                case DbType.Byte:
                 case DbType.Int16:
                     return "SMALLINT";
+                case DbType.UInt16:
                 case DbType.Int32:
                     return "INT";
+                case DbType.UInt32:
+                case DbType.Int64:
+                    return "BIGINT";
+                case DbType.UInt64:
+                    return "DECIMAL(18, 0)";
                 case DbType.Date:
                     return "DATE";
                 case DbType.DateTime:

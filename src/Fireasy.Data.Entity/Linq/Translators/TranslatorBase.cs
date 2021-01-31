@@ -372,6 +372,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             return u;
         }
+
         protected override Expression VisitClientJoin(ClientJoinExpression join)
         {
             // convert client join into a up-front lookup table builder & replace client-join in tree with lookup accessor

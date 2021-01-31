@@ -15,10 +15,10 @@ namespace Fireasy.Data.Entity.Query
     /// 查询的辅助策略的执行者。
     /// </summary>
     /// <typeparam name="TEntity"></typeparam>
-    public interface IQueryPolicyExecutor<TEntity> where TEntity : IEntity
+    public interface IQueryPolicyExecutor
     {
-        void IncludeWith(Expression<Func<TEntity, object>> fnMember);
+        void IncludeWith<TEntity, TProperty>(Expression<Func<TEntity, TProperty>> fnMember) where TEntity : IEntity;
 
-        void AssociateWith(Expression<Func<TEntity, IEnumerable>> memberQuery);
+        void AssociateWith<TEntity>(Expression<Func<TEntity, IEnumerable>> memberQuery) where TEntity : IEntity;
     }
 }

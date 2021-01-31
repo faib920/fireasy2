@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 
 using Fireasy.Data.Provider;
+using Fireasy.Data.RecordWrapper;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -87,6 +88,17 @@ namespace Fireasy.Data
         IEnumerable<T> ExecuteEnumerable<T>(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, IDataRowMapper<T> rowMapper = null);
 
         /// <summary>
+        /// 执行查询文本并将结果以一个 <see cref="IEnumerable{T}"/> 的序列返回。
+        /// </summary>
+        /// <typeparam name="T">查询对象类型。</typeparam>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="rowMapper">数据映射函数。</param>
+        /// <param name="segment">数据分段对象。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <returns>一个 <typeparamref name="T"/> 类型的对象的枚举器。</returns>
+        IEnumerable<T> ExecuteEnumerable<T>(IQueryCommand queryCommand, Func<IRecordWrapper, IDataReader, T> rowMapper, IDataSegment segment = null, ParameterCollection parameters = null);
+
+        /// <summary>
         /// 根据自定义的SQL语句查询返回一组动态对象。
         /// </summary>
         /// <param name="queryCommand">查询命令。</param>
@@ -129,6 +141,18 @@ namespace Fireasy.Data
         /// <param name="cancellationToken">取消操作的通知。</param>
         /// <returns>一个 <typeparamref name="T"/> 类型的对象的枚举器。</returns>
         Task<IEnumerable<T>> ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, IDataRowMapper<T> rowMapper = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 异步的，执行查询文本并将结果以一个 <see cref="IEnumerable{T}"/> 的序列返回。
+        /// </summary>
+        /// <typeparam name="T">查询对象类型。</typeparam>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="rowMapper">数据映射函数。</param>
+        /// <param name="segment">数据分段对象。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>一个 <typeparamref name="T"/> 类型的对象的枚举器。</returns>
+        Task<IEnumerable<T>> ExecuteEnumerableAsync<T>(IQueryCommand queryCommand, Func<IRecordWrapper, IDataReader, T> rowMapper, IDataSegment segment = null, ParameterCollection parameters = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 异步的，执行查询文本并将结果并返回动态序列。

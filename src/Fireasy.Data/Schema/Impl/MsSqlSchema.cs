@@ -167,14 +167,14 @@ WHERE (O.TABLE_TYPE <> 'view' AND T.TABLE_CATALOG = '{connpar.Database}') AND
                 TableName = wrapper.GetString(reader, 2),
                 Name = wrapper.GetString(reader, 3),
                 DataType = wrapper.GetString(reader, 4),
-                Length = reader.IsDBNull(5) ? (long?)null : wrapper.GetInt64(reader, 5),
-                NumericPrecision = reader.IsDBNull(6) ? (int?)null : wrapper.GetInt32(reader, 6),
+                Length = reader.IsDBNull(5) ? (long?)null : wrapper.GetInt32(reader, 5),
+                NumericPrecision = reader.IsDBNull(6) ? (int?)null : wrapper.GetByte(reader, 6),
                 NumericScale = reader.IsDBNull(7) ? (int?)null : wrapper.GetInt32(reader, 7),
                 IsNullable = wrapper.GetString(reader, 8) == "YES",
                 IsPrimaryKey = wrapper.GetInt32(reader, 9) > 0,
                 Default = wrapper.GetString(reader, 10),
                 Description = wrapper.GetString(reader, 11),
-                Autoincrement = wrapper.GetInt32(reader, 12) == 1
+                Autoincrement = wrapper.GetInt16(reader, 12) == 1
             }));
         }
 
@@ -246,14 +246,14 @@ WHERE (O.TABLE_TYPE = 'view' AND T.TABLE_CATALOG = '{connpar.Database}') AND
                 ViewName = wrapper.GetString(reader, 2),
                 Name = wrapper.GetString(reader, 3),
                 DataType = wrapper.GetString(reader, 4),
-                Length = reader.IsDBNull(5) ? (long?)null : wrapper.GetInt64(reader, 5),
-                NumericPrecision = reader.IsDBNull(6) ? (int?)null : wrapper.GetInt32(reader, 6),
+                Length = reader.IsDBNull(5) ? (long?)null : wrapper.GetInt32(reader, 5),
+                NumericPrecision = reader.IsDBNull(6) ? (int?)null : wrapper.GetByte(reader, 6),
                 NumericScale = reader.IsDBNull(7) ? (int?)null : wrapper.GetInt32(reader, 7),
                 IsNullable = wrapper.GetString(reader, 8) == "YES",
                 IsPrimaryKey = wrapper.GetInt32(reader, 9) > 0,
                 Default = wrapper.GetString(reader, 10),
                 Description = wrapper.GetString(reader, 11),
-                Autoincrement = wrapper.GetInt32(reader, 12) == 1
+                Autoincrement = wrapper.GetInt16(reader, 12) == 1
             });
         }
 

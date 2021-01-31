@@ -75,6 +75,12 @@ namespace Fireasy.Data.Provider
         IProvider RegisterService(Type serviceType);
 
         /// <summary>
+        /// 注册插件服务类型。
+        /// </summary>
+        /// <param name="providerService">服务对象。</param>
+        IProvider RegisterService(IProviderService providerService);
+
+        /// <summary>
         /// 注册指定类型的插件服务。
         /// </summary>
         /// <param name="definedType"></param>

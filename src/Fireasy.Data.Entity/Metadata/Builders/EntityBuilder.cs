@@ -116,7 +116,7 @@ namespace Fireasy.Data.Entity.Metadata.Builders
         /// <typeparam name="TRelatedEntity"></typeparam>
         /// <param name="propertyExp"></param>
         /// <returns></returns>
-        public virtual EntityCollectionBuilder<TEntity, TRelatedEntity> HasMany<TRelatedEntity>(Expression<Func<TEntity, IList<TRelatedEntity>>> propertyExp)
+        public virtual EntityCollectionBuilder<TEntity, TRelatedEntity> HasMany<TRelatedEntity>(Expression<Func<TEntity, ICollection<TRelatedEntity>>> propertyExp)
         {
             var property = MetadataHelper.FindProperty(propertyExp);
             return (EntityCollectionBuilder<TEntity, TRelatedEntity>)_propBuilders.TryGetValue(property,
@@ -181,7 +181,7 @@ namespace Fireasy.Data.Entity.Metadata.Builders
                 return new EntityReferenceBuilder<TEntity, TRelatedEntity>.NullBuilder();
             }
 
-            public override EntityCollectionBuilder<TEntity, TRelatedEntity> HasMany<TRelatedEntity>(Expression<Func<TEntity, IList<TRelatedEntity>>> propertyExp)
+            public override EntityCollectionBuilder<TEntity, TRelatedEntity> HasMany<TRelatedEntity>(Expression<Func<TEntity, ICollection<TRelatedEntity>>> propertyExp)
             {
                 return new EntityCollectionBuilder<TEntity, TRelatedEntity>.NullBuilder();
             }

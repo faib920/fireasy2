@@ -62,7 +62,7 @@ namespace Fireasy.Data.Entity.Query
             return expression;
         }
 
-        public void IncludeWith<TEntity>(Expression<Func<TEntity, object>> fnMember) where TEntity : IEntity
+        public void IncludeWith<TEntity, TProperty>(Expression<Func<TEntity, TProperty>> fnMember) where TEntity : IEntity
         {
             foreach (var member in MemberFinder.Find(fnMember))
             {

@@ -3,6 +3,7 @@
 
 using Fireasy.Data.Entity.Linq.Expressions;
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 
 namespace Fireasy.Data.Entity.Linq.Translators
@@ -65,6 +66,23 @@ namespace Fireasy.Data.Entity.Linq.Translators
         public static Expression ReplaceAll(Expression expression, Expression[] searchFor, Expression[] replaceWith)
         {
             for (int i = 0, n = searchFor.Length; i < n; i++)
+            {
+                expression = Replace(expression, searchFor[i], replaceWith[i]);
+            }
+
+            return expression;
+        }
+
+        /// <summary>
+        /// 替换所有已经找到的表达式。
+        /// </summary>
+        /// <param name="expression">要搜寻的表达式。</param>
+        /// <param name="searchFor">搜寻的目标表达式。</param>
+        /// <param name="replaceWith">替换的表达式。</param>
+        /// <returns></returns>
+        public static Expression ReplaceAll(Expression expression, IList<Expression> searchFor, IList<Expression> replaceWith)
+        {
+            for (int i = 0, n = searchFor.Count; i < n; i++)
             {
                 expression = Replace(expression, searchFor[i], replaceWith[i]);
             }

@@ -38,7 +38,7 @@ namespace Fireasy.Data
         /// <param name="database">当前的 <see cref="IDatabase"/> 对象。</param>
         /// <param name="reader">一个 <see cref="IDataReader"/> 对象。</param>
         /// <returns>由当前 <see cref="IDataReader"/> 对象中的数据转换成的 <typeparamref name="T"/> 对象实例。</returns>
-        public T Map(IDatabase database, IDataReader reader)
+        public T Map(IDataReader reader)
         {
             if (_funcDataRecd == null)
             {
@@ -58,9 +58,9 @@ namespace Fireasy.Data
         /// </summary>
         public Action<object> Initializer { get; set; }
 
-        object IDataRowMapper.Map(IDatabase database, IDataReader reader)
+        object IDataRowMapper.Map(IDataReader reader)
         {
-            return Map(database, reader);
+            return Map(reader);
         }
 
         private IEnumerable<ParameterInfo> GetParameters(ConstructorInfo conInfo)

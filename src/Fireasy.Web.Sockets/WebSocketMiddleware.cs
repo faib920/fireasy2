@@ -24,7 +24,7 @@ namespace Fireasy.Web.Sockets
         private readonly IServiceProvider _serviceProvider;
 
         /// <summary>
-        /// 初始化 <see cref="SessionReviveMiddleware"/> 类的新实例。
+        /// 初始化 <see cref="WebSocketMiddleware"/> 类的新实例。
         /// </summary>
         /// <param name="next"></param>
         /// <param name="serviceProvider"></param>
@@ -43,16 +43,13 @@ namespace Fireasy.Web.Sockets
                 var webSocket = await context.WebSockets.AcceptWebSocketAsync();
                 var handlerType = _option.GetHandlerType(context.Request.Path);
 
-                if (handlerType != null && typeof(WebSocketHandler).IsAssignableFrom(handlerType))
+                using (var scope = context.RequestServices.CreateScope())
                 {
-                    var handler = GetHandler(handlerType);
+                    var handler = HandlerCreator.CreateHandler(scope.ServiceProvider, _option, handlerType);
                     if (handler != null)
                     {
-                        using (var scope = context.RequestServices.CreateScope())
-                        {
-                            var acceptContext = new WebSocketAcceptContext(scope.ServiceProvider, webSocket, context.User, _option);
-                            await WebSocketHandler.Accept(handler, acceptContext);
-                        }
+                        var acceptContext = new WebSocketAcceptContext(scope.ServiceProvider, webSocket, context.User, _option);
+                        await WebSocketHandler.Accept(handler, acceptContext);
                     }
                 }
             }
@@ -60,28 +57,6 @@ namespace Fireasy.Web.Sockets
             {
                 await _next(context);
             }
-        }
-
-        private WebSocketHandler GetHandler(Type handlerType)
-        {
-            var constructor = handlerType.GetConstructors().FirstOrDefault();
-            if (constructor == null)
-            {
-                throw new Exception($"No default constructor of {handlerType}.");
-            }
-
-            var parameters = constructor.GetParameters();
-            var arguments = new object[parameters.Length];
-
-            if (_serviceProvider != null)
-            {
-                for (var i = 0; i < parameters.Length; i++)
-                {
-                    arguments[i] = _serviceProvider.GetService(parameters[i].ParameterType);
-                }
-            }
-
-            return (WebSocketHandler)constructor.Invoke(arguments);
         }
     }
 }

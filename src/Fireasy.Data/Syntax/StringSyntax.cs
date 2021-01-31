@@ -106,6 +106,30 @@ namespace Fireasy.Data.Syntax
         }
 
         /// <summary>
+        /// 在源的左边加入字符。
+        /// </summary>
+        /// <param name="sourceExp">源表达式。</param>
+        /// <param name="count">空格的个数。</param>
+        /// <param name="padding"></param>
+        /// <returns></returns>
+        public virtual string PadLeft(object sourceExp, object count, object padding = null)
+        {
+            return padding == null ? $"LPAD({sourceExp}, {count})" : $"LPAD({sourceExp}, {count}, {padding})";
+        }
+
+        /// <summary>
+        /// 在源的右边加入字符。
+        /// </summary>
+        /// <param name="sourceExp">源表达式。</param>
+        /// <param name="count">空格的个数。</param>
+        /// <param name="padding"></param>
+        /// <returns></returns>
+        public virtual string PadRight(object sourceExp, object count, object padding = null)
+        {
+            return padding == null ? $"RPAD({sourceExp}, {count})" : $"RPAD({sourceExp}, {count}, {padding})";
+        }
+
+        /// <summary>
         /// 将源表达式中的部份字符替换为新的字符。
         /// </summary>
         /// <param name="sourceExp">源表达式。</param>

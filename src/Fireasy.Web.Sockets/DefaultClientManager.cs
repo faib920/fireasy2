@@ -70,6 +70,13 @@ namespace Fireasy.Web.Sockets
         {
             if (_clients.TryRemove(connectionId, out IClientProxy client))
             {
+                foreach (var g in _groups)
+                {
+                    if (g.Value.Contains(connectionId))
+                    {
+                        g.Value.Remove(connectionId);
+                    }
+                }
                 client.TryDispose();
             }
         }
@@ -80,6 +87,10 @@ namespace Fireasy.Web.Sockets
             {
                 _groups[groupName].Remove(connectionId);
             }
+        }
+
+        public virtual void Refresh(string connectionId)
+        {
         }
 
         /// <summary>

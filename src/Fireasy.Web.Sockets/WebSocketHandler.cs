@@ -255,16 +255,16 @@ namespace Fireasy.Web.Sockets
         /// <returns></returns>
         private byte[] HandleResult(WebSocketMessageType type, byte[] data)
         {
+            if (data.Length == 1 && data[0] == '\0')
+            {
+                Clients.Refresh(ConnectionId);
+                OnHeartBeating();
+                return null;
+            }
+
             if (type == WebSocketMessageType.Binary)
             {
-                if (data.Length == 1 && data[0] == '\0')
-                {
-                    OnHeartBeating();
-                }
-                else
-                {
-                    OnReceived(data);
-                }
+                OnReceived(data);
             }
             else if (type == WebSocketMessageType.Text)
             {

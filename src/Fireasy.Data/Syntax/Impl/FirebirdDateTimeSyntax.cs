@@ -14,6 +14,24 @@ namespace Fireasy.Data.Syntax
     public class FirebirdDateTimeSyntax : DateTimeSyntax
     {
         /// <summary>
+        /// 获取当前时间。
+        /// </summary>
+        /// <returns></returns>
+        public override string Now()
+        {
+            return "CURRENT_TIMESTAMP";
+        }
+
+        /// <summary>
+        /// 获取当前 UTC 时间。
+        /// </summary>
+        /// <returns></returns>
+        public override string UtcNow()
+        {
+            return "CURRENT_TIMESTAMP";
+        }
+
+        /// <summary>
         /// 获取源表达式中的年份。
         /// </summary>
         /// <param name="sourceExp">源表达式。</param>
