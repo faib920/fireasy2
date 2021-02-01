@@ -16,8 +16,20 @@ namespace Fireasy.Data.Entity
     /// </summary>
     public interface IEntityBatchExecutable
     {
+        /// <summary>
+        /// 处理批处理命令。
+        /// </summary>
+        /// <param name="commands"></param>
+        /// <param name="parameters"></param>
         void ExecuteBatch(IEnumerable<string> commands, ParameterCollection parameters);
 
+        /// <summary>
+        /// 异步的，处理批处理命令。
+        /// </summary>
+        /// <param name="commands"></param>
+        /// <param name="parameters"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         Task ExecuteBatchAsync(IEnumerable<string> commands, ParameterCollection parameters, CancellationToken cancellationToken);
     }
 }

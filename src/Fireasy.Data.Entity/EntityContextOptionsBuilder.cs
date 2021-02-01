@@ -6,7 +6,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Data.Entity.Initializers;
-using Fireasy.Data.Identity;
 using Fireasy.Data.Provider;
 using System;
 using System.Linq;
