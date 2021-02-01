@@ -10,7 +10,6 @@ using Fireasy.Common.Extensions;
 using Fireasy.Common.Threading;
 using Fireasy.Data.Entity.Query;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -42,7 +41,6 @@ namespace Fireasy.Data.Entity
         /// 初始化 <see cref="DefaultContextService"/> 类的新实例。
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="databaseFactory">一个用于创建 <see cref="IDatabase"/> 的工厂函数。</param>
         public DefaultContextService(ContextServiceContext context)
             : base(context)
         {
@@ -63,7 +61,7 @@ namespace Fireasy.Data.Entity
                     return null;
                 }
 
-                return SingletonLocker.Lock(ref _database, _databaseCreateor);
+                return SingletonLocker.Lock(ref _database, this, _databaseCreateor);
             }
         }
 
@@ -114,13 +112,19 @@ namespace Fireasy.Data.Entity
             IDatabase database = null;
             if (context.Options.Provider != null)
             {
+                var hasInterceptor = context.Options.ServiceProvider.GetService(typeof(DbCommandInterceptor)) != null;
+
                 if (context.Options.DistributedConnectionStrings != null)
                 {
-                    database = new Database(context.Options.DistributedConnectionStrings, context.Options.Provider);
+                    database = hasInterceptor ?
+                        new InterceptDatabase(context.Options.DistributedConnectionStrings, context.Options.Provider) :
+                        new Database(context.Options.DistributedConnectionStrings, context.Options.Provider);
                 }
                 else if (context.Options.ConnectionString != null)
                 {
-                    database = new Database(context.Options.ConnectionString, context.Options.Provider);
+                    database = hasInterceptor ?
+                        new InterceptDatabase(context.Options.ConnectionString, context.Options.Provider) :
+                        new Database(context.Options.ConnectionString, context.Options.Provider);
                 }
 
                 database = database.TrySetServiceProvider(context.ServiceProvider);
@@ -174,14 +178,26 @@ namespace Fireasy.Data.Entity
             Database.RollbackTransaction();
         }
 
+        /// <summary>
+        /// 处理批处理命令。
+        /// </summary>
+        /// <param name="commands"></param>
+        /// <param name="parameters"></param>
         public void ExecuteBatch(IEnumerable<string> commands, ParameterCollection parameters)
         {
             Database.ExecuteBatch(commands.Select(s => (SqlCommand)s), parameters);
         }
 
-        public async Task ExecuteBatchAsync(IEnumerable<string> commands, ParameterCollection parameters, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// 异步的，处理批处理命令。
+        /// </summary>
+        /// <param name="commands"></param>
+        /// <param name="parameters"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public Task ExecuteBatchAsync(IEnumerable<string> commands, ParameterCollection parameters, CancellationToken cancellationToken = default)
         {
-            await Database.ExecuteBatchAsync(commands.Select(s => (SqlCommand)s), parameters, cancellationToken);
+            return Database.ExecuteBatchAsync(commands.Select(s => (SqlCommand)s), parameters, cancellationToken);
         }
 
         void IObjectPoolNotifyChain.OnReturn()
