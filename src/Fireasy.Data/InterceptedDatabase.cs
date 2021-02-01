@@ -19,35 +19,35 @@ namespace Fireasy.Data
     /// <summary>
     /// 提供拦截器的 <see cref="IDatabase"/> 实现类。
     /// </summary>
-    public class InterceptDatabase : Database
+    public class InterceptedDatabase : Database
     {
         private DbCommandInterceptor _interceptor;
 
         /// <summary>
-        /// 初始化 <see cref="InterceptDatabase"/> 类的新实例。
+        /// 初始化 <see cref="InterceptedDatabase"/> 类的新实例。
         /// </summary>
         /// <param name="provider">数据库提供者。</param>
-        protected InterceptDatabase(IProvider provider)
+        protected InterceptedDatabase(IProvider provider)
             : base (provider)
         {
         }
 
         /// <summary>
-        /// 初始化 <see cref="InterceptDatabase"/> 类的新实例。
+        /// 初始化 <see cref="InterceptedDatabase"/> 类的新实例。
         /// </summary>
         /// <param name="connectionString">数据库连接字符串。</param>
         /// <param name="provider">数据库提供者。</param>
-        public InterceptDatabase(ConnectionString connectionString, IProvider provider)
+        public InterceptedDatabase(ConnectionString connectionString, IProvider provider)
             : base(connectionString, provider)
         {
         }
 
         /// <summary>
-        /// 初始化 <see cref="InterceptDatabase"/> 类的新实例。
+        /// 初始化 <see cref="InterceptedDatabase"/> 类的新实例。
         /// </summary>
         /// <param name="connectionStrings">数据库连接字符串组。</param>
         /// <param name="provider">数据库提供者。</param>
-        public InterceptDatabase(List<DistributedConnectionString> connectionStrings, IProvider provider)
+        public InterceptedDatabase(List<DistributedConnectionString> connectionStrings, IProvider provider)
             : base(connectionStrings, provider)
         {
         }

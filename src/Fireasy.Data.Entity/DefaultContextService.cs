@@ -117,13 +117,13 @@ namespace Fireasy.Data.Entity
                 if (context.Options.DistributedConnectionStrings != null)
                 {
                     database = hasInterceptor ?
-                        new InterceptDatabase(context.Options.DistributedConnectionStrings, context.Options.Provider) :
+                        new InterceptedDatabase(context.Options.DistributedConnectionStrings, context.Options.Provider) :
                         new Database(context.Options.DistributedConnectionStrings, context.Options.Provider);
                 }
                 else if (context.Options.ConnectionString != null)
                 {
                     database = hasInterceptor ?
-                        new InterceptDatabase(context.Options.ConnectionString, context.Options.Provider) :
+                        new InterceptedDatabase(context.Options.ConnectionString, context.Options.Provider) :
                         new Database(context.Options.ConnectionString, context.Options.Provider);
                 }
 
