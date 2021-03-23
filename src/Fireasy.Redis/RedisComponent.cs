@@ -139,9 +139,14 @@ namespace Fireasy.Redis
             return serializer.Serialize(value);
         }
 
-        protected virtual CSRedisClient CreateClient(string[] constrs)
+        protected virtual CSRedisClient CreateClient(List<string> constrs)
         {
-            return new CSRedisClient(null, constrs);
+            if (Setting.Sentinels.Count > 0)
+            {
+                return new CSRedisClient(constrs[0], Setting.Sentinels.Select(s => s.ToString()).ToArray());
+            }
+
+            return new CSRedisClient(null, constrs.ToArray());
         }
 
         protected CSRedisClient GetConnection(string key = null)
@@ -158,7 +163,7 @@ namespace Fireasy.Redis
 
             return _clients.GetOrAdd(index, k =>
             {
-                var constrs = _connectionStrs.Select(s => string.Concat(s, $",defaultDatabase={_dbRanage[k]}")).ToArray();
+                var constrs = _connectionStrs.Select(s => string.Concat(s, $",defaultDatabase={_dbRanage[k]}")).ToList();
                 constrs.ForEach(s =>
                 {
                     Tracer.Debug($"Connecting to the redis server '{s}'.");
@@ -191,61 +196,72 @@ namespace Fireasy.Redis
             }
             else
             {
+                var sb = new StringBuilder();
+                if (!string.IsNullOrEmpty(Setting.Password))
+                {
+                    sb.Append($",password={Setting.Password}");
+                }
+
+                if (Setting.DefaultDb != 0 && string.IsNullOrEmpty(Setting.DbRange))
+                {
+                    sb.Append($",defaultDatabase={Setting.DefaultDb}");
+                }
+
+                if (Setting.Ssl)
+                {
+                    sb.Append($",ssl=true");
+                }
+
+                if (Setting.WriteBuffer != null)
+                {
+                    sb.Append($",writeBuffer={Setting.WriteBuffer}");
+                }
+
+                if (Setting.PoolSize != null)
+                {
+                    sb.Append($",poolsize={Setting.PoolSize}");
+                }
+
+                if (!string.IsNullOrEmpty(Setting.Prefix))
+                {
+                    sb.Append($",prefix={Setting.Prefix}");
+                }
+
+                if (Setting.ConnectTimeout.Milliseconds != 5000)
+                {
+                    sb.Append($",connectTimeout={Setting.ConnectTimeout.Milliseconds}");
+                }
+
+                if (Setting.SyncTimeout.Milliseconds != 10000)
+                {
+                    sb.Append($",syncTimeout={Setting.SyncTimeout.Milliseconds}");
+                }
+
+                sb.Append(",allowAdmin=true");
+
                 foreach (var host in Setting.Hosts)
                 {
-                    var connStr = new StringBuilder($"{host.Server}");
+                    var sb1 = new StringBuilder($"{host.Server}");
 
                     #region connection build
                     if (host.Port != 0)
                     {
-                        connStr.Append($":{host.Port}");
+                        sb1.Append($":{host.Port}");
                     }
 
-                    if (!string.IsNullOrEmpty(Setting.Password))
+                    if (sb.Length > 0)
                     {
-                        connStr.Append($",password={Setting.Password}");
+                        sb1.Append(sb.ToString());
                     }
-
-                    if (Setting.DefaultDb != 0 && string.IsNullOrEmpty(Setting.DbRange))
-                    {
-                        connStr.Append($",defaultDatabase={Setting.DefaultDb}");
-                    }
-
-                    if (Setting.Ssl)
-                    {
-                        connStr.Append($",ssl=true");
-                    }
-
-                    if (Setting.WriteBuffer != null)
-                    {
-                        connStr.Append($",writeBuffer={Setting.WriteBuffer}");
-                    }
-
-                    if (Setting.PoolSize != null)
-                    {
-                        connStr.Append($",poolsize={Setting.PoolSize}");
-                    }
-
-                    if (Setting.ConnectTimeout.Milliseconds != 5000)
-                    {
-                        connStr.Append($",connectTimeout={Setting.ConnectTimeout.Milliseconds}");
-                    }
-
-                    if (Setting.SyncTimeout.Milliseconds != 10000)
-                    {
-                        connStr.Append($",syncTimeout={Setting.SyncTimeout.Milliseconds}");
-                    }
-
-                    connStr.Append(",allowAdmin=true");
                     #endregion
 
-                    _connectionStrs.Add(connStr.ToString());
+                    _connectionStrs.Add(sb1.ToString());
                 }
             }
 
             if (string.IsNullOrEmpty(Setting.DbRange))
             {
-                _clients.GetOrAdd(0, () => new CSRedisClient(null, _connectionStrs.ToArray()));
+                _clients.GetOrAdd(0, () => CreateClient(_connectionStrs));
             }
             else
             {

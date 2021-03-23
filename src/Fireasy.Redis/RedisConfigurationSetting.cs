@@ -29,6 +29,11 @@ namespace Fireasy.Redis
         public List<RedisHost> Hosts { get; private set; } = new List<RedisHost>();
 
         /// <summary>
+        /// 获取 Redis 哨兵机群。
+        /// </summary>
+        public List<RedisHost> Sentinels { get; private set; } = new List<RedisHost>();
+
+        /// <summary>
         /// 获取或设置连接池大小。
         /// </summary>
         public int? PoolSize { get; set; }
@@ -67,6 +72,11 @@ namespace Fireasy.Redis
         /// 获取或设置密码。
         /// </summary>
         public string Password { get; set; }
+
+        /// <summary>
+        /// 获取或设置 Key 的前缀。
+        /// </summary>
+        public string Prefix { get; set; }
 
         /// <summary>
         /// 获取或设置对象序列化器的类型。
@@ -114,6 +124,7 @@ namespace Fireasy.Redis
             Server = server;
             Port = port;
         }
+
         public RedisHost(string host)
         {
             int index;
@@ -141,5 +152,10 @@ namespace Fireasy.Redis
         /// 获取是否只读。
         /// </summary>
         public bool ReadOnly { get; set; }
+
+        public override string ToString()
+        {
+            return Port == 0 ? Server : $"{Server}:{Port}";
+        }
     }
 }

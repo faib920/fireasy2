@@ -334,7 +334,7 @@ namespace Fireasy.Data.Entity
 
             var contextProvider = options.GetProviderService<IContextProvider>();
 
-            _contextService = contextProvider.CreateContextService(new ContextServiceContext(_serviceProvider, options));
+            _contextService ??= contextProvider.CreateContextService(new ContextServiceContext(_serviceProvider, options));
         }
 
         private void TrySetContextType(EntityContextOptions options)

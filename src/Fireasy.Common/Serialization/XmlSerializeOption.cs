@@ -12,12 +12,24 @@ namespace Fireasy.Common.Serialization
     {
         public static readonly XmlSerializeOption Default = new XmlSerializeOption();
 
+        /// <summary>
+        /// 初始化 <see cref="XmlSerializeOption"/> 类的新实例。
+        /// </summary>
         public XmlSerializeOption()
         {
             CData = true;
             Declaration = true;
             StartElement = true;
             Converters.AddRange(GlobalConverters.GetConverters(typeof(XmlConverter)));
+        }
+
+        /// <summary>
+        /// 初始化 <see cref="XmlSerializeOption"/> 类的新实例。
+        /// </summary>
+        /// <param name="option">参照的实例。</param>
+        public XmlSerializeOption(XmlSerializeOption option)
+        {
+            Reference(option);
         }
 
         /// <summary>
@@ -46,7 +58,7 @@ namespace Fireasy.Common.Serialization
         public XmlNodeStyle NodeStyle { get; set; }
 
         /// <summary>
-        /// 引用另一个对象的设置属性。
+        /// 引用另一个选项的设置属性。
         /// </summary>
         /// <param name="other"></param>
         public override void Reference(SerializeOption other)

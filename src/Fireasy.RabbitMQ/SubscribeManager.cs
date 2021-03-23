@@ -604,18 +604,18 @@ namespace Fireasy.RabbitMQ
                         //如果超出重试次数
                         if (Setting.RetryTimes != null && subject.PublishRetries > Setting.RetryTimes)
                         {
-                            return true;
+                            return SubjectRetryStatus.OutOfTimes;
                         }
 
                         try
                         {
                             Tracer.Debug($"Republish message of '{subject.Name}'.");
                             PublishSubject(subject);
-                            return true;
+                            return SubjectRetryStatus.Success;
                         }
                         catch (Exception)
                         {
-                            return false;
+                            return SubjectRetryStatus.Failed;
                         }
                     });
                 });

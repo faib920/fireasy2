@@ -56,7 +56,7 @@ namespace Fireasy.Data.Entity
         {
             get
             {
-                if (_databaseCreateor == null)
+                if (_databaseCreateor == null || IsDisposed)
                 {
                     return null;
                 }
@@ -87,14 +87,14 @@ namespace Fireasy.Data.Entity
         {
             if (EntityTransactionScope.IsInTransaction())
             {
-                return false;
+                return base.Dispose(disposing);
             }
 
             RollbackTransaction();
 
-            if (Database != null)
+            if (_database != null)
             {
-                Database.TryDispose(disposing);
+                _database.TryDispose(disposing);
                 _database = null;
             }
 
@@ -112,19 +112,13 @@ namespace Fireasy.Data.Entity
             IDatabase database = null;
             if (context.Options.Provider != null)
             {
-                var hasInterceptor = context.Options.ServiceProvider.GetService(typeof(DbCommandInterceptor)) != null;
-
                 if (context.Options.DistributedConnectionStrings != null)
                 {
-                    database = hasInterceptor ?
-                        new InterceptedDatabase(context.Options.DistributedConnectionStrings, context.Options.Provider) :
-                        new Database(context.Options.DistributedConnectionStrings, context.Options.Provider);
+                    database = new InterceptedDatabase(context.Options.DistributedConnectionStrings, context.Options.Provider);
                 }
                 else if (context.Options.ConnectionString != null)
                 {
-                    database = hasInterceptor ?
-                        new InterceptedDatabase(context.Options.ConnectionString, context.Options.Provider) :
-                        new Database(context.Options.ConnectionString, context.Options.Provider);
+                    database = new InterceptedDatabase(context.Options.ConnectionString, context.Options.Provider);
                 }
 
                 database = database.TrySetServiceProvider(context.ServiceProvider);
@@ -162,7 +156,7 @@ namespace Fireasy.Data.Entity
                 return;
             }
 
-            Database.CommitTransaction();
+            _database?.CommitTransaction();
         }
 
         /// <summary>
@@ -175,7 +169,7 @@ namespace Fireasy.Data.Entity
                 return;
             }
 
-            Database.RollbackTransaction();
+            _database?.RollbackTransaction();
         }
 
         /// <summary>
@@ -202,7 +196,7 @@ namespace Fireasy.Data.Entity
 
         void IObjectPoolNotifyChain.OnReturn()
         {
-            if (Database is IObjectPoolNotifyChain chain)
+            if (_database is IObjectPoolNotifyChain chain)
             {
                 chain.OnReturn();
             }

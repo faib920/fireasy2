@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace Fireasy.Windows.Forms
@@ -20,7 +21,9 @@ namespace Fireasy.Windows.Forms
         }
 
         public Rectangle WorkBound { get; private set; }
+        public Rectangle FrozenColumnBound { get; private set; }
         public Rectangle ColumnBound { get; private set; }
+        public Rectangle FrozenItemBound { get; private set; }
         public Rectangle ItemBound { get; private set; }
         public Rectangle RowNumberBound { get; private set; }
         public Rectangle AvlieBound { get; set; }
@@ -86,7 +89,10 @@ namespace Fireasy.Windows.Forms
                 height -= _treeList.FooterHeight;
             }
 
-            ItemBound = new Rectangle(WorkBound.X + RowNumberBound.Width, top, width, height);
+            var frozenWidth = 0;// _treeList.Columns.Where(s => s.Frozen).Sum(s => s.Width);
+
+            ItemBound = new Rectangle(WorkBound.X + RowNumberBound.Width + frozenWidth, top, width, height);
+            FrozenItemBound = new Rectangle(WorkBound.X + RowNumberBound.Width, top, frozenWidth, height);
         }
 
         private void GetRowNumberRectangle()
@@ -114,7 +120,10 @@ namespace Fireasy.Windows.Forms
             }
             else
             {
-                ColumnBound = new Rectangle(WorkBound.X + RowNumberBound.Width, WorkBound.Y, WorkBound.Width, _treeList.HeaderHeight);
+                var frozenWidth = 0;// _treeList.Columns.Where(s => s.Frozen).Sum(s => s.Width);
+
+                ColumnBound = new Rectangle(WorkBound.X + RowNumberBound.Width + frozenWidth, WorkBound.Y, WorkBound.Width - RowNumberBound.Width, _treeList.HeaderHeight);
+                FrozenColumnBound = new Rectangle(WorkBound.X + RowNumberBound.Width, WorkBound.Y, frozenWidth, _treeList.HeaderHeight);
                 AvlieBound = new Rectangle(WorkBound.X, ColumnBound.Bottom, WorkBound.Width, WorkBound.Height - _treeList.HeaderHeight);
             }
         }

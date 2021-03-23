@@ -19,7 +19,7 @@ namespace Fireasy.Common.Subscribes.Persistance
         /// </summary>
         /// <param name="provider">提供者，用于存储中的隔离。</param>
         /// <param name="readAndAccept">读取并接受的方法。读取后如果返回 true，那么将取消该主题的持久化。</param>
-        void ReadSubjects(string provider, Func<StoredSubject, bool> readAndAccept);
+        void ReadSubjects(string provider, Func<StoredSubject, SubjectRetryStatus> readAndAccept);
 
         /// <summary>
         /// 存储主题对象。

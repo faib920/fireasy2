@@ -106,10 +106,11 @@ namespace Fireasy.Redis
                         SerializerType = optValue.SerializerType,
                         Ssl = optValue.Ssl,
                         SlidingTime = optValue.SlidingTime,
+                        Prefix = optValue.Prefix,
                         IgnoreException = optValue.IgnoreException
                     };
 
-                    RedisHelper.ParseHosts(setting, optValue.Hosts);
+                    RedisHelper.ParseHosts(setting, optValue.Hosts, optValue.Sentinels);
                 }
             }
 

@@ -9,7 +9,6 @@ using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Security;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Fireasy.Data.Entity
@@ -84,10 +83,7 @@ namespace Fireasy.Data.Entity
                 }
 
                 var key = RandomGenerator.Create();
-                if (_instances.TryAdd(key, identification))
-                {
-                    identification.ServiceProvider = identification.ServiceProvider.TryCreateScope().ServiceProvider;
-                }
+                _instances.TryAdd(key, identification.Clone());
 
                 return key;
             }

@@ -104,7 +104,16 @@ namespace Fireasy.Common.Serialization
         public CultureInfo Culture { get; set; } = CultureInfo.InvariantCulture;
 
         /// <summary>
-        /// 引用另一个对象的设置属性。
+        /// 附加另一个选项的转换器。
+        /// </summary>
+        /// <param name="other"></param>
+        public virtual void AttachConverters(SerializeOption other)
+        {
+            Converters.AddRange(other.Converters);
+        }
+
+        /// <summary>
+        /// 引用另一个选项的设置属性。
         /// </summary>
         /// <param name="other"></param>
         public virtual void Reference(SerializeOption other)

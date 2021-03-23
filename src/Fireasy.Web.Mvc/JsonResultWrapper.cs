@@ -121,7 +121,9 @@ namespace Fireasy.Web.Mvc
             //jsonp的处理
             var jsoncallback = context.HttpContext.Request.Form["callback"];
 
-            var serializer = ContainerUnity.GetContainer().TryGetService<ISerializer>(() => new JsonSerializer(option));
+            var serializer = ContainerUnity.GetContainer().TryGetService<ISerializer>(() => new JsonSerializer());
+            serializer.Option = option;
+
             string json;
             if (serializer is ITextSerializer txtSerializer)
             {

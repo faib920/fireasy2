@@ -68,14 +68,15 @@ namespace Fireasy.Web.Mvc
 
             if (option == null)
             {
-                option = _mvcOptions.JsonSerializeOption;
+                option = new JsonSerializeOption(_mvcOptions.JsonSerializeOption);
             }
             else
             {
-                option.Reference(_mvcOptions.JsonSerializeOption);
+                option.AttachConverters(_mvcOptions.JsonSerializeOption);
             }
 
-            var serializer = serviceProvider.TryGetService<ISerializer>(() => new JsonSerializer(option));
+            var serializer = serviceProvider.TryGetService<ISerializer>(() => new JsonSerializer());
+            serializer.Option = option;
 
             if (serializer is ITextSerializer txtSerializer)
             {

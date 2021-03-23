@@ -23,7 +23,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IServiceCollection AddAutoMapper(this IServiceCollection services, Action<AutoMapperOptions> setupAction)
         {
-            var options = new AutoMapperOptions();
+            var options = new AutoMapperOptions(services);
             setupAction?.Invoke(options);
 
             var mapperConfiguration = new AP.MapperConfiguration(c =>
@@ -31,7 +31,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 options.Configurators.ForEach(s => s?.Invoke(c));
             });
 
-            services.AddSingleton(sp => mapperConfiguration.CreateMapper());
+            services.AddSingleton(sp =>  mapperConfiguration.CreateMapper(t => sp.GetService(t)));
             services.AddSingleton<IObjectMapper, ObjectMapper>();
 
             return services;

@@ -5,11 +5,11 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.Extensions;
 using Fireasy.Common.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace Fireasy.Common.Subscribes.Persistance
 {
@@ -24,7 +24,7 @@ namespace Fireasy.Common.Subscribes.Persistance
         private static readonly object _locker = new object();
         private bool _isInitialized = false;
 
-        void ISubjectPersistance.ReadSubjects(string provider, Func<StoredSubject, bool> readAndAccept)
+        void ISubjectPersistance.ReadSubjects(string provider, Func<StoredSubject, SubjectRetryStatus> readAndAccept)
         {
             Guard.ArgumentNull(readAndAccept, nameof(readAndAccept));
 
@@ -39,6 +39,7 @@ namespace Fireasy.Common.Subscribes.Persistance
             {
                 var dirName = Path.GetFileName(subPath);
                 var deleted = new List<string>();
+                var disabled = new List<string>();
 
                 foreach (var filePath in Directory.GetFiles(subPath))
                 {
@@ -47,36 +48,64 @@ namespace Fireasy.Common.Subscribes.Persistance
 
                     try
                     {
-                        using var stream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite);
-                        using var memory = stream.CopyToMemory();
-                        var serializer = new BinaryCompressSerializer();
-                        var subject = serializer.Deserialize<StoredSubject>(memory.ToArray());
+                        var content = string.Empty;
+                        using (var stream = new StreamReader(filePath, Encoding.UTF8))
+                        {
+                            content = stream.ReadToEnd();
+                        }
+
+                        var option = new JsonSerializeOption();
+                        option.Converters.Add(new FullDateTimeJsonConverter());
+                        var serializer = new JsonSerializer(option);
+                        var subject = serializer.Deserialize<StoredSubject>(content);
                         if (subject.ExpiresAt < DateTime.Now)
                         {
-                            deleted.Add(filePath);
+                            disabled.Add(filePath);
                             continue;
                         }
 
                         subject.PublishRetries++;
 
-                        if (readAndAccept(subject))
+                        var status = readAndAccept(subject);
+                        if (status == SubjectRetryStatus.Success)
                         {
                             deleted.Add(filePath);
                         }
+                        else if (status == SubjectRetryStatus.OutOfTimes)
+                        {
+                            disabled.Add(filePath);
+                        }
                         else
                         {
-                            var bytes = serializer.Serialize(subject);
-                            stream.Write(bytes, 0, bytes.Length);
+                            using var stream = new StreamWriter(filePath, false, Encoding.UTF8);
+                            content = serializer.Serialize(subject);
+                            stream.Write(content);
                         }
                     }
-                    catch
+                    catch (Exception exp)
                     {
+                        Tracer.Error($"Throw exception when read subject-persistance of '{filePath}': {exp.Message}");
                     }
                 }
 
                 foreach (var fileName in deleted)
                 {
                     File.Delete(fileName);
+                }
+
+                if (disabled.Count > 0)
+                {
+                    var dir = Path.Combine(root, dirName, "disabled", DateTime.Today.ToString("yyyy-MM-dd"));
+                    if (!Directory.Exists(dir))
+                    {
+                        Directory.CreateDirectory(dir);
+                    }
+
+                    foreach (var filePath in disabled)
+                    {
+                        var fileName = Path.GetFileName(filePath);
+                        File.Move(filePath, Path.Combine(dir, fileName));
+                    }
                 }
             }
         }
@@ -94,15 +123,17 @@ namespace Fireasy.Common.Subscribes.Persistance
 
             try
             {
-                using var stream = new FileStream(filePath, FileMode.Create);
-                var serializer = new BinaryCompressSerializer();
-                var bytes = serializer.Serialize(subject);
-                stream.Write(bytes, 0, bytes.Length);
+                using var stream = new StreamWriter(filePath, false, Encoding.UTF8);
+                var option = new JsonSerializeOption();
+                option.Converters.Add(new FullDateTimeJsonConverter());
+                var serializer = new JsonSerializer(option);
+                var content = serializer.Serialize(subject);
+                stream.Write(content);
                 return true;
             }
-            catch
+            catch (Exception exp)
             {
-                return false;
+                throw new SubjectPersistentException(string.Empty, exp);
             }
         }
 

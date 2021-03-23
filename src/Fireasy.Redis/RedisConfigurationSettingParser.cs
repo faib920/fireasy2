@@ -11,6 +11,8 @@ using Fireasy.Common.Extensions;
 using Microsoft.Extensions.Configuration;
 #endif
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 
 namespace Fireasy.Redis
@@ -47,19 +49,41 @@ namespace Fireasy.Redis
                 setting.RetryTimes = configNode.GetAttributeValue("retryTimes").To<int?>();
                 setting.SlidingTime = configNode.GetAttributeValue("slidingTime").ToTimeSpan();
                 setting.IgnoreException = configNode.GetAttributeValue("ignoreException").To(true);
+                setting.Prefix = configNode.GetAttributeValue<string>("prefix");
 
-                foreach (XmlNode nd in configNode.SelectNodes("host"))
-                {
-                    var host = new RedisHost(nd.GetAttributeValue("server"), nd.GetAttributeValue("port", 0))
-                    {
-                        ReadOnly = nd.GetAttributeValue("readonly", false)
-                    };
-
-                    setting.Hosts.Add(host);
-                }
+                ReadHosts("hosts", configNode, setting.Hosts);
+                ReadHosts("sentinels", configNode, setting.Sentinels);
             }
 
             return setting;
+        }
+
+        private void ReadHosts(string name, XmlNode configNode, List<RedisHost> hosts)
+        {
+            if (!string.IsNullOrEmpty(configNode.SelectSingleNode(name)?.InnerText))
+            {
+                hosts.AddRange(configNode.SelectSingleNode(name)?.InnerText.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries).Select(s => new RedisHost(s)));
+            }
+            else
+            {
+                foreach (XmlNode nd in configNode.SelectNodes(name.Left(name.Length - 1)))
+                {
+                    RedisHost host;
+                    if (!string.IsNullOrEmpty(nd.InnerText))
+                    {
+                        host = new RedisHost(nd.InnerText);
+                    }
+                    else
+                    {
+                        host = new RedisHost(nd.GetAttributeValue("server"), nd.GetAttributeValue("port", 0))
+                        {
+                            ReadOnly = nd.GetAttributeValue("readonly", false)
+                        };
+                    }
+
+                    hosts.Add(host);
+                }
+            }
         }
 
 #if NETSTANDARD
@@ -90,26 +114,36 @@ namespace Fireasy.Redis
                 setting.RetryTimes = configNode["retryTimes"].To<int?>();
                 setting.SlidingTime = configNode["slidingTime"].ToTimeSpan();
                 setting.IgnoreException = configNode["ignoreException"].To(true);
+                setting.Prefix = configNode["prefix"];
 
-                var hosts = configNode.GetSection("hosts");
-                if (!hosts.Exists())
-                {
-                    hosts = configNode.GetSection("host");
-                }
-
-                foreach (var nd in hosts.GetChildren())
-                {
-                    var host = new RedisHost(nd["server"], nd["port"].To(0))
-                    {
-                        ReadOnly = nd["readonly"].To(false)
-                    };
-
-                    setting.Hosts.Add(host);
-                }
+                ReadHosts("hosts", configNode, setting.Hosts);
+                ReadHosts("sentinels", configNode, setting.Sentinels);
             }
 
             return setting;
         }
+
+        private void ReadHosts(string name, IConfiguration configNode, List<RedisHost> hosts)
+        {
+            foreach (var nd in configNode.GetSection(name).GetChildren())
+            {
+                RedisHost host;
+                if (!string.IsNullOrEmpty(nd.Value))
+                {
+                    host = new RedisHost(nd.Value);
+                }
+                else
+                {
+                    host = new RedisHost(nd["server"], nd["port"].To(0))
+                    {
+                        ReadOnly = nd["readonly"].To(false)
+                    };
+                }
+
+                hosts.Add(host);
+            }
+        }
+
 #endif
     }
 }

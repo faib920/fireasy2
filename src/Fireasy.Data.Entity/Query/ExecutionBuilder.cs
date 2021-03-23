@@ -261,7 +261,7 @@ namespace Fireasy.Data.Entity.Query
         {
             if (typeof(IEntity).IsAssignableFrom(mbmInitExp.Type))
             {
-                return ConvertEntityExpression(mbmInitExp);
+                return ConvertEntityExpression(mbmInitExp, false);
             }
 
             return base.VisitMemberInit(mbmInitExp);
@@ -271,7 +271,7 @@ namespace Fireasy.Data.Entity.Query
         {
             var mbrInitExp = entity.Expression as MemberInitExpression;
 
-            return ConvertEntityExpression(mbrInitExp);
+            return ConvertEntityExpression(mbrInitExp, true);
         }
 
         protected override Expression VisitNew(NewExpression node)
@@ -736,6 +736,25 @@ namespace Fireasy.Data.Entity.Query
         }
 
         /// <summary>
+        /// 尝试使用 ConvertManager 进行转换表达式。
+        /// </summary>
+        /// <param name="expression"></param>
+        /// <returns></returns>
+        private Expression TryValueConvert(Expression expression)
+        {
+            if (expression is ConstantExpression constExp)
+            {
+                var valueConverter = ConvertManager.GetConverter(constExp.Type);
+                if (valueConverter != null)
+                {
+                    return Expression.Constant(valueConverter.ConvertTo(constExp.Value));
+                }
+            }
+
+            return expression;
+        }
+
+        /// <summary>
         /// 收集嵌套的参数并生成 <see cref="ParameterCollection"/> 的表达式。
         /// </summary>
         /// <param name="expression"></param>
@@ -745,7 +764,7 @@ namespace Fireasy.Data.Entity.Query
             var namedValues = NamedValueGatherer.Gather(expression);
 
             var values = (from v in namedValues
-                          let nex = Visit(v.Value)
+                          let nex = TryValueConvert(Visit(v.Value))
                           select nex.NodeType == ExpressionType.Convert ? nex : Expression.Convert(nex, typeof(object))).ToArray();
 
             if (values.Length > 0)
@@ -777,29 +796,44 @@ namespace Fireasy.Data.Entity.Query
         /// 构造实体对象。
         /// </summary>
         /// <param name="entity">实体对象。</param>
+        /// <param name="isInitialized">是否初始。</param>
         /// <param name="properties">属性数组。</param>
         /// <param name="values">值数组。</param>
         /// <param name="instanceName"></param>
         /// <param name="environment"></param>
         /// <returns></returns>
-        private static IEntity ConstructEntity(IEntity entity, IProperty[] properties, PropertyValue[] values,
+        private static IEntity ConstructEntity(IEntity entity, bool isInitialized, IProperty[] properties, PropertyValue[] values,
             string instanceName, EntityPersistentEnvironment environment)
         {
-            entity.As<ISupportInitializeNotification>(s => s.BeginInit());
-
-            //循环所有属性进行赋值
-            for (int i = 0, n = properties.Length; i < n; i++)
+            if (isInitialized)
             {
-                entity.InitializeValue(properties[i], values[i]);
+                entity.As<ISupportInitializeNotification>(s => s.BeginInit());
+
+                //循环所有属性进行赋值
+                for (int i = 0, n = properties.Length; i < n; i++)
+                {
+                    entity.InitializeValue(properties[i], values[i]);
+                }
+
+                //设置状态
+                entity.SetState(EntityState.Unchanged);
+
+                //设置 InstanceName 和 Environment
+                entity.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
+
+                entity.As<ISupportInitializeNotification>(s => s.EndInit());
             }
+            else
+            {
+                //循环所有属性进行赋值
+                for (int i = 0, n = properties.Length; i < n; i++)
+                {
+                    entity.SetValue(properties[i], values[i]);
+                }
 
-            //设置状态
-            entity.SetState(EntityState.Unchanged);
-
-            //设置 InstanceName 和 Environment
-            entity.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
-
-            entity.As<ISupportInitializeNotification>(s => s.EndInit());
+                //设置 InstanceName 和 Environment
+                entity.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
+            }
 
             return entity;
         }
@@ -947,7 +981,7 @@ namespace Fireasy.Data.Entity.Query
             return rows;
         }
 
-        private Expression ConvertEntityExpression(MemberInitExpression mbmInitExp)
+        private Expression ConvertEntityExpression(MemberInitExpression mbmInitExp, bool isInitialized)
         {
             if (_isNoTracking == true)
             {
@@ -999,6 +1033,7 @@ namespace Fireasy.Data.Entity.Query
 
             var constCall = Expression.Call(null, MethodCache.ConstructEntity,
                 newExp,
+                Expression.Constant(isInitialized),
                 Expression.NewArrayInit(typeof(IProperty), properties.ToArray()),
                 Expression.NewArrayInit(typeof(PropertyValue), values.ToArray()),
                 Expression.Constant(_transContext.InstanceName, typeof(string)),

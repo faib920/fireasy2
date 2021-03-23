@@ -21,12 +21,13 @@ namespace Fireasy.Windows.Forms
         protected override void OnPaint(PaintEventArgs e)
         {
             ThemeManager.BaseRenderer.DrawBackground(new BackgroundRenderEventArgs(this, e.Graphics, _bound.ItemBound));
-            ThemeManager.BaseRenderer.DrawBorder(new BorderRenderEventArgs(this, e.Graphics, ClientRectangle));
 
             DrawColumns(e.Graphics);
             DrawRowNumberColumn(e.Graphics);
             DrawItems(e.Graphics);
             DrawFooter(e.Graphics);
+
+            ThemeManager.BaseRenderer.DrawBorder(new BorderRenderEventArgs(this, e.Graphics, ClientRectangle));
         }
 
         private void DrawFooter(Graphics graphics)

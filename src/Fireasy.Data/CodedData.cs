@@ -47,6 +47,16 @@ namespace Fireasy.Data
             return v1.ToString() != v2;
         }
 
+        public static bool operator ==(CodedData v1, CodedData v2)
+        {
+            return v1.ToString() == v2.ToString();
+        }
+
+        public static bool operator !=(CodedData v1, CodedData v2)
+        {
+            return v1.ToString() != v2.ToString();
+        }
+
         /// <summary>
         /// 初始化类 <see cref="CodedData"/> 的新实例。
         /// </summary>

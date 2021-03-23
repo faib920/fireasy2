@@ -112,11 +112,12 @@ namespace Fireasy.Redis
                         PoolSize = optValue.PoolSize,
                         SerializerType = optValue.SerializerType,
                         Ssl = optValue.Ssl,
+                        Prefix = optValue.Prefix,
                         RetryDelayTime = optValue.RetryDelayTime,
                         RetryTimes = optValue.RetryTimes
                     };
 
-                    RedisHelper.ParseHosts(setting, optValue.Hosts);
+                    RedisHelper.ParseHosts(setting, optValue.Hosts, optValue.Sentinels);
                 }
             }
 
@@ -489,7 +490,7 @@ namespace Fireasy.Redis
                         //如果超出重试次数
                         if (Setting.RetryTimes != null && subject.PublishRetries > Setting.RetryTimes)
                         {
-                            return true;
+                            return SubjectRetryStatus.OutOfTimes;
                         }
 
                         try
@@ -497,11 +498,11 @@ namespace Fireasy.Redis
                             Tracer.Debug($"Republish message of '{subject.Name}'.");
                             var client = GetConnection(null);
                             PublishSubject(client, subject);
-                            return true;
+                            return SubjectRetryStatus.Success;
                         }
                         catch (Exception)
                         {
-                            return false;
+                            return SubjectRetryStatus.Failed;
                         }
                     });
                 });

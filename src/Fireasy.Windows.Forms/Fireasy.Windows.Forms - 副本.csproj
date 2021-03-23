@@ -10,6 +10,7 @@
       参考文档：http://www.fireasy.cn/docs/winform-summary
     </Description>
     <UseWindowsForms>true</UseWindowsForms>
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
@@ -21,17 +22,6 @@
     <DocumentationFile>..\..\Release\netcoreapp3.0\Fireasy.Windows.Forms.xml</DocumentationFile>
     <OutputPath>..\..\Release\</OutputPath>
   </PropertyGroup>
-  
-  <ItemGroup>
-    <None Remove="Resources\checked.png" />
-    <None Remove="Resources\error.png" />
-    <None Remove="Resources\start1.png" />
-    <None Remove="Resources\start2.png" />
-    <None Remove="Resources\tree_file.gif" />
-    <None Remove="Resources\tree_folder.gif" />
-    <None Remove="Resources\tree_folder_open.gif" />
-    <None Remove="Resources\unchecked.png" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Fireasy.Common\Fireasy.Common.csproj" />
@@ -42,31 +32,18 @@
     <Reference Include="System.Drawing.Design" />
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
-  
-  <ItemGroup>
-    <Resource Include="Resources\checked.png" />
-    <Resource Include="Resources\error.png" />
-    <Resource Include="Resources\start1.png" />
-    <Resource Include="Resources\start2.png" />
-    <Resource Include="Resources\tree_file.gif" />
-    <Resource Include="Resources\tree_folder.gif" />
-    <Resource Include="Resources\tree_folder_open.gif" />
-    <Resource Include="Resources\unchecked.png" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Compile Update="Resource.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resource.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Update="Resource.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resource.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.0'">
+    <PackageReference Include="System.Resources.Extensions">
+      <Version>4.6.0</Version>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

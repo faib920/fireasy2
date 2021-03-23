@@ -189,11 +189,16 @@ namespace Fireasy.Redis
             return result;
         }
 
-        internal static void ParseHosts(RedisConfigurationSetting setting, string host)
+        internal static void ParseHosts(RedisConfigurationSetting setting, string hosts, string sentinels)
         {
-            if (!string.IsNullOrEmpty(host))
+            if (!string.IsNullOrEmpty(hosts))
             {
-                host.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries).ForEach(s => setting.Hosts.Add(new RedisHost(s)));
+                hosts.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries).ForEach(s => setting.Hosts.Add(new RedisHost(s)));
+            }
+
+            if (!string.IsNullOrEmpty(sentinels))
+            {
+                sentinels.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries).ForEach(s => setting.Sentinels.Add(new RedisHost(s)));
             }
         }
     }

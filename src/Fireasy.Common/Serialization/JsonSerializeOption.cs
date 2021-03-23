@@ -26,12 +26,21 @@ namespace Fireasy.Common.Serialization
         }
 
         /// <summary>
+        /// 初始化 <see cref="JsonSerializeOption"/> 类的新实例。
+        /// </summary>
+        /// <param name="option">参照的实例。</param>
+        public JsonSerializeOption(JsonSerializeOption option)
+        {
+            Reference(option);
+        }
+
+        /// <summary>
         /// 获取或设置 Key 的输出处理。
         /// </summary>
         public JsonKeyHandling KeyHandling { get; set; }
 
         /// <summary>
-        /// 引用另一个对象的设置属性。
+        /// 引用另一个选项的设置属性。
         /// </summary>
         /// <param name="other"></param>
         public override void Reference(SerializeOption other)

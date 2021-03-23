@@ -5,7 +5,9 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Caching;
 using Fireasy.Common.Security;
+using Fireasy.Common.Subscribes;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -61,6 +63,16 @@ namespace Fireasy.Web.Sockets
         /// 获取或设置消息格式化器。
         /// </summary>
         public IMessageFormatter Formatter { get; set; } = new MessageFormatter();
+
+        /// <summary>
+        /// 获取或设置分布式订阅管理器。
+        /// </summary>
+        public ISubscribeManager SubscribeManager { get; set; }
+
+        /// <summary>
+        /// 获取或设置分布式缓存管理器。
+        /// </summary>
+        public IDistributedCacheManager CacheManager { get; set; }
 
         /// <summary>
         /// 将处理类映射到指定的路径。

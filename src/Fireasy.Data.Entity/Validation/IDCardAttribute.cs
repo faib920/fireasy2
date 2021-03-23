@@ -19,8 +19,8 @@ namespace Fireasy.Data.Entity.Validation
         /// 初始化 <see cref="IDCardAttribute"/> 类的新实例。
         /// </summary>
         public IDCardAttribute()
-            : base(SR.GetString(SRKind.IDCardValideError))
         {
+            ErrorMessage = SR.GetString(SRKind.IDCardValideError);
         }
 
         public override string FormatErrorMessage(string name)
@@ -30,12 +30,12 @@ namespace Fireasy.Data.Entity.Validation
 
         protected override ValidationResult IsValid(object value, ValidationContext validationContext)
         {
-            if (CheckIDCard18(value.ToString()))
+            if (value == null || CheckIDCard18(value.ToString()))
             {
                 return ValidationResult.Success;
             }
 
-            return new ValidationResult(ErrorMessage);
+            return new ValidationResult(FormatErrorMessage(validationContext.DisplayName));
         }
 
         /// <summary>
@@ -45,6 +45,11 @@ namespace Fireasy.Data.Entity.Validation
         /// <returns></returns>
         private static bool CheckIDCard18(string idcard)
         {
+            if (idcard.Length < 18)
+            {
+                return false;
+            }
+
             if (long.TryParse(idcard.Remove(17), out long n) == false ||
                 n < Math.Pow(10, 16) ||
                 long.TryParse(idcard.Replace('x', '0').Replace('X', '0'), out _) == false)

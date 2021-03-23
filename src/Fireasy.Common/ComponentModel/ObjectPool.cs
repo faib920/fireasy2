@@ -80,6 +80,7 @@ namespace Fireasy.Common.ComponentModel
     {
         private readonly SafetyDictionary<string, InternalQueue> _queueDict = new SafetyDictionary<string, InternalQueue>();
         private readonly Func<T> _creator;
+        private static readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
         private readonly int _maxSize;
         private Timer _timer = null;
@@ -105,6 +106,8 @@ namespace Fireasy.Common.ComponentModel
 
             public bool TryDequeue(out T obj)
             {
+                _lastAccessTime = DateTime.Now;
+
                 if (_queue.TryDequeue(out obj))
                 {
                     Interlocked.Decrement(ref _count);

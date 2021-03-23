@@ -24,6 +24,11 @@ namespace Fireasy.Windows.Forms
         /// <param name="dataSource"></param>
         public void DataBind(object dataSource)
         {
+            if (dataSource == null)
+            {
+                return;
+            }
+
             _dataSource = dataSource;
 
             BeginUpdate();

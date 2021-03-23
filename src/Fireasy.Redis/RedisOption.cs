@@ -25,9 +25,14 @@ namespace Fireasy.Redis
         public string ConnectionString { get; set; }
 
         /// <summary>
-        /// 获取或设置 Redis 主机群，可以指定多个主机。<para>示例：192.168.1.1:6379;192.168.1.2</para>
+        /// 获取或设置 Redis 主机群，可以指定多个主机。<para>示例：192.168.1.1:6379;192.168.1.2。</para>
         /// </summary>
         public string Hosts { get; set; }
+
+        /// <summary>
+        /// 获取或设置 Redis 哨兵主机群，可以指定多个主机。<para>示例：192.168.1.1:26379;192.168.1.2:26379。</para>
+        /// </summary>
+        public string Sentinels { get; set; }
 
         /// <summary>
         /// 获取或设置连接池大小。
@@ -53,6 +58,11 @@ namespace Fireasy.Redis
         /// 获取或设置密码。
         /// </summary>
         public string Password { get; set; }
+
+        /// <summary>
+        /// 获取或设置 Key 的前缀。
+        /// </summary>
+        public string Prefix { get; set; }
 
         /// <summary>
         /// 获取或设置对象序列化器的类型。

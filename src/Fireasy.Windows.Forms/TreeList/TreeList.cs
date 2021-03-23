@@ -13,6 +13,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Design;
 using System.Linq;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace Fireasy.Windows.Forms
@@ -40,9 +41,8 @@ namespace Fireasy.Windows.Forms
         private TreeListColumn _sortedColumn;
         private readonly VirtualItemManager _virMgr;
         private readonly List<TreeListCell> _invalidateCells = new List<TreeListCell>();
+        private bool _isScrolling = false;
 
-        //记录列头调整宽度时拖动线的x位置
-        private int _dragSizePos = -1;
         private bool _isUpdating = false;
 
         //检测列头调整宽度是否超出右边框的距离
@@ -703,6 +703,14 @@ namespace Fireasy.Windows.Forms
         }
 
         /// <summary>
+        /// 获取或设置是否允许滚动条拖到底时按需加载数据。
+        /// </summary>
+        [Category("Data")]
+        [DefaultValue(false)]
+        [Description("获取或设置是否允许滚动条拖到底时按需加载数据。")]
+        public bool AllowDemandLoadWhenScrollEnd { get; set; }
+
+        /// <summary>
         /// 获取数据是否验证成功。
         /// </summary>
         [Browsable(false)]
@@ -817,16 +825,12 @@ namespace Fireasy.Windows.Forms
                     return;
                 }
 
-                //拖动调整线
-                DrawDragLine(e.X);
+                ResizeColumnWidth((TreeListColumn)_lastHoverHitInfo.Element, e.X);
 
-                if (_dragSizePos != -1)
-                {
-                    //抹去原来的调整线
-                    DrawDragLine(_dragSizePos);
-                }
+                _bound.Reset();
+                SetScrollBars();
 
-                _dragSizePos = e.X;
+                Invalidate();
             }
             else
             {
@@ -892,17 +896,6 @@ namespace Fireasy.Windows.Forms
                 _lastHoverHitInfo.HitTestType == TreeListHitTestType.ColumnSize &&
                 e.Button == MouseButtons.Left)
             {
-                ResizeColumnWidth((TreeListColumn)_lastHoverHitInfo.Element, e.X);
-
-                //抹去原来的调整线
-                DrawDragLine(_dragSizePos);
-
-                _dragSizePos = -1;
-
-                _bound.Reset();
-                SetScrollBars();
-
-                Invalidate();
             }
             else if (e.Button == MouseButtons.Left)
             {
@@ -1563,11 +1556,42 @@ namespace Fireasy.Windows.Forms
         {
             var h = GetAdjustItemHeight();
             _vbar = new VScrollBar() { Visible = false, LargeChange = h * 10, SmallChange = h };
+
             _vbar.ValueChanged += (o, e) =>
             {
                 HideEditor();
+
+                if (!_isScrolling && AllowDemandLoadWhenScrollEnd && _vbar.Value >= _vbar.Maximum - _vbar.LargeChange)
+                {
+                    if (DemandLoadWhenScrollEnd != null)
+                    {
+                        DemandLoadWhenScrollEnd(this, new EventArgs());
+                    }
+                }
+
                 Invalidate(_bound.WorkBound);
             };
+
+            _vbar.Scroll += (o, e) =>
+            {
+                if (e.Type == ScrollEventType.EndScroll)
+                {
+                    _isScrolling = false;
+                }
+                else if (!_isScrolling)
+                {
+                    _isScrolling = true;
+                }
+
+                if (AllowDemandLoadWhenScrollEnd && e.Type == ScrollEventType.EndScroll && e.NewValue >= _vbar.Maximum - _vbar.LargeChange)
+                {
+                    if (DemandLoadWhenScrollEnd != null)
+                    {
+                        DemandLoadWhenScrollEnd(this, new EventArgs());
+                    }
+                }
+            };
+
             Controls.Add(_vbar);
 
             _hbar = new HScrollBar() { Visible = false, LargeChange = 50, SmallChange = 5 };
@@ -1592,15 +1616,14 @@ namespace Fireasy.Windows.Forms
             var width = GetColumnTotalWidth();
             var borderWidth = GetBorderWidth();
             var height = _virMgr.Items.Count * itemHeight;
-            var large = GetAdjustItemHeight() * 10;
 
             if (ShowVerScrollBar)
             {
                 _vbar.Location = new Point(Width - _vbar.Width - borderWidth, borderWidth);
                 _vbar.Height = Height - borderWidth * 2 - (ShowHorScrollBar ? _hbar.Height : 0);
                 _vbar.Maximum = height - _bound.ItemBound.Height;
-                _vbar.LargeChange = _vbar.Maximum <= large ? 10 : large;
-                _vbar.Maximum += (_vbar.LargeChange + 1);
+                _vbar.LargeChange = Math.Min(_vbar.Maximum, (int)(Height * 1.5));
+                _vbar.Maximum += _vbar.LargeChange + 1;
                 _vbar.Visible = true;
             }
             else
@@ -1615,8 +1638,8 @@ namespace Fireasy.Windows.Forms
                 _hbar.Location = new Point(borderWidth, Height - _hbar.Height - borderWidth);
                 _hbar.Width = Width - borderWidth * 2 - (ShowVerScrollBar ? _vbar.Width : 0);
                 _hbar.Maximum = width - _bound.ItemBound.Width;
-                _hbar.LargeChange = _hbar.Maximum <= 50 ? 10 : 50;
-                _hbar.Maximum += (_hbar.LargeChange + 1);
+                _hbar.LargeChange = Math.Min(_hbar.Maximum, (int)(Width * 1.5));
+                _hbar.Maximum += _hbar.LargeChange + 1;
                 _hbar.Visible = true;
             }
             else

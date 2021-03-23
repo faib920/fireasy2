@@ -51,6 +51,8 @@ namespace Fireasy.Windows.Forms
         public event TreeListCellAfterCheckedEventHandler AfterCellCheckChange;
         [Description("当行的 Checked 值改变后触发此事件。")]
         public event TreeListItemCheckChangeEventHandler ItemCheckChanged;
+        [Description("当滚动条拖到底时触发此事件按需加载数据。")]
+        public event EventHandler DemandLoadWhenScrollEnd;
 
         #region 触发事件
         protected internal bool RaiseColumnClickEvent(TreeListColumn column, SortOrder order)

@@ -19,6 +19,8 @@ namespace Fireasy.Newtonsoft
     {
         private Newton.JsonSerializerSettings _settings;
 
+        SerializeOption ISerializer.Option { get; set; }
+
         public JsonSerializer()
         {
         }

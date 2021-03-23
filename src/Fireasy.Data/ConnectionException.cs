@@ -26,17 +26,17 @@ namespace Fireasy.Data
         {
         }
 
-        internal static ConnectionException Throw(ConnectionState state, Exception innerException)
+        internal static ConnectionException Throw(DbConnection connection, ConnectionState state, Exception innerException)
         {
             switch (state)
             {
                 case ConnectionState.Open:
-                    return new ConnectionException(SR.GetString(SRKind.UnableOpenConnection), innerException);
+                    return new ConnectionException(SR.GetString(SRKind.UnableOpenConnection, connection.ConnectionString), innerException);
                 case ConnectionState.Closed:
-                    return new ConnectionException(SR.GetString(SRKind.UnableCloseConnection), innerException);
+                    return new ConnectionException(SR.GetString(SRKind.UnableCloseConnection, connection.ConnectionString), innerException);
             }
 
-            return new ConnectionException(SR.GetString(SRKind.ConnectionError), innerException);
+            return new ConnectionException(SR.GetString(SRKind.ConnectionError, connection.ConnectionString), innerException);
         }
     }
 }

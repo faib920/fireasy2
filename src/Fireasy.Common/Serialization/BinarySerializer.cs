@@ -20,6 +20,8 @@ namespace Fireasy.Common.Serialization
         /// </summary>
         public SerializeToken Token { get; set; }
 
+        SerializeOption ISerializer.Option { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
         /// <summary>
         /// 将一个对象序列化为字节数组。
         /// </summary>

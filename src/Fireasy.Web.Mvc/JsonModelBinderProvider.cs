@@ -14,8 +14,7 @@ namespace Fireasy.Web.Mvc
 
         public IModelBinder GetBinder(ModelBinderProviderContext context)
         {
-            if ((context.BindingInfo.BindingSource != null &&
-                context.BindingInfo.BindingSource.Id == "Services") || !context.Metadata.IsComplexType)
+            if (context.BindingInfo.BindingSource?.CanAcceptDataFrom(BindingSource.Services) == true || !context.Metadata.IsComplexType)
             {
                 return null;
             }

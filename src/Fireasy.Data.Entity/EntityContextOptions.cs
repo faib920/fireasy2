@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common;
+using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Initializers;
 using Fireasy.Data.Provider;
 using System;
@@ -136,6 +136,34 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public List<DistributedConnectionString> DistributedConnectionStrings { get; set; }
 
+
+        /// <summary>
+        /// 克隆副本。
+        /// </summary>
+        /// <returns></returns>
+        IInstanceIdentifier IInstanceIdentifier.Clone()
+        {
+            var identifier = (IInstanceIdentifier)new EntityContextOptions (ServiceProvider.TryCreateScope().ServiceProvider)
+            {
+                NotifyEvents = NotifyEvents,
+                ValidateEntity = ValidateEntity,
+                IsolationLevel = IsolationLevel,
+                AllowDefaultValue = AllowDefaultValue,
+                ConfigName = ConfigName,
+                CacheParsing = CacheParsing,
+                CacheParsingTimes = CacheParsingTimes,
+                CacheExecution = CacheExecution,
+                CacheExecutionTimes = CacheExecutionTimes,
+                LoadBehavior = LoadBehavior,
+                Provider = Provider,
+                ConnectionString = ConnectionString,
+                DistributedConnectionStrings = DistributedConnectionStrings
+            };
+
+            identifier.ContextType = ((IInstanceIdentifier)this).ContextType;
+            return identifier;
+        }
+
         public override bool Equals(object obj)
         {
             if (obj == null || !(obj is EntityContextOptions op))
@@ -154,6 +182,7 @@ namespace Fireasy.Data.Entity
                 CacheExecutionTimes == op.CacheExecutionTimes &&
                 LoadBehavior == op.LoadBehavior &&
                 Provider == op.Provider &&
+                ((IInstanceIdentifier)this).ContextType == ((IInstanceIdentifier)op).ContextType &&
                 ConnectionString == op.ConnectionString &&
                 IsMatchDistributedConnectionStrings(DistributedConnectionStrings, op.DistributedConnectionStrings);
         }

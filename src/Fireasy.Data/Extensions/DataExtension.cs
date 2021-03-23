@@ -821,7 +821,7 @@ namespace Fireasy.Data.Extensions
                 catch (DbException exp)
                 {
                     Tracer.Error($"Opening Connection of '{connection.ConnectionString}' throw exception:{exp.Output()}");
-                    throw ConnectionException.Throw(ConnectionState.Open, exp);
+                    throw ConnectionException.Throw(connection, ConnectionState.Open, exp);
                 }
             }
 
@@ -848,7 +848,7 @@ namespace Fireasy.Data.Extensions
                 catch (DbException exp)
                 {
                     Tracer.Error($"Opening Connection of '{connection.ConnectionString}' throw exception:{exp.Output()}");
-                    throw ConnectionException.Throw(ConnectionState.Open, exp);
+                    throw ConnectionException.Throw(connection, ConnectionState.Open, exp);
                 }
             }
 
@@ -873,7 +873,7 @@ namespace Fireasy.Data.Extensions
                 catch (DbException exp)
                 {
                     Tracer.Error($"Closing Connection of '{connection.ConnectionString}' throw exception:{exp.Output()}");
-                    throw ConnectionException.Throw(ConnectionState.Open, exp);
+                    throw ConnectionException.Throw(connection, ConnectionState.Open, exp);
                 }
             }
 

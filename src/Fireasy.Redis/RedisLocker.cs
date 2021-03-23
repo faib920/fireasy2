@@ -91,10 +91,11 @@ namespace Fireasy.Redis
                         WriteBuffer = optValue.WriteBuffer,
                         PoolSize = optValue.PoolSize,
                         SerializerType = optValue.SerializerType,
-                        Ssl = optValue.Ssl
+                        Ssl = optValue.Ssl,
+                        Prefix = optValue.Prefix
                     };
 
-                    RedisHelper.ParseHosts(setting, optValue.Hosts);
+                    RedisHelper.ParseHosts(setting, optValue.Hosts, optValue.Sentinels);
                 }
             }
 

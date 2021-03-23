@@ -120,13 +120,10 @@ namespace Fireasy.Data.Entity
         {
             Guard.ArgumentNull(entity, nameof(entity));
 
-            if (_options.AllowDefaultValue)
-            {
-                SetDefaultValue(entity);
-            }
+            SetDefaultValue(entity);
 
             var ret = _subMgr.OnCreate<TEntity, long>(_contextService.ServiceProvider, _contextService.ContextType, _options.NotifyEvents, entity,
-                () => _repositoryProxy.Insert(HandleValidate(entity), _propertyFilter));
+                () => _repositoryProxy.Insert(Validate(entity), _propertyFilter));
 
             return ret > int.MaxValue ? 1 : (int)ret;
         }
@@ -142,13 +139,10 @@ namespace Fireasy.Data.Entity
             Guard.ArgumentNull(entity, nameof(entity));
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (_options.AllowDefaultValue)
-            {
-                SetDefaultValue(entity);
-            }
+            SetDefaultValue(entity);
 
             var ret = await _subMgr.OnCreateAsync<TEntity, long>(_contextService.ServiceProvider, _contextService.ContextType, _options.NotifyEvents, entity,
-                () => _repositoryProxy.InsertAsync(HandleValidate(entity), _propertyFilter, cancellationToken));
+                () => _repositoryProxy.InsertAsync(Validate(entity), _propertyFilter, cancellationToken));
 
             return ret > int.MaxValue ? 1 : (int)ret;
         }
@@ -448,7 +442,7 @@ namespace Fireasy.Data.Entity
             Guard.ArgumentNull(entity, nameof(entity));
 
             return _subMgr.OnUpdate<TEntity, int>(_contextService.ServiceProvider, _contextService.ContextType, _options.NotifyEvents, entity,
-                () => _repositoryProxy.Update(HandleValidate(entity), _propertyFilter));
+                () => _repositoryProxy.Update(Validate(entity), _propertyFilter));
         }
 
         /// <summary>
@@ -463,7 +457,7 @@ namespace Fireasy.Data.Entity
             cancellationToken.ThrowIfCancellationRequested();
 
             return await _subMgr.OnUpdateAsync<TEntity, int>(_contextService.ServiceProvider, _contextService.ContextType, _options.NotifyEvents, entity,
-                () => _repositoryProxy.UpdateAsync(HandleValidate(entity), _propertyFilter, cancellationToken));
+                () => _repositoryProxy.UpdateAsync(Validate(entity), _propertyFilter, cancellationToken));
         }
 
         /// <summary>
@@ -474,6 +468,11 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public virtual int Update(TEntity entity, Expression<Func<TEntity, bool>> predicate)
         {
+            Guard.ArgumentNull(entity, nameof(entity));
+            entity.SetState(EntityState.Modified);
+
+            Validate(entity);
+
             var ret = _repositoryProxy.Update(entity, predicate, _propertyFilter);
             if (ret > 0 && _options.NotifyEvents)
             {
@@ -492,7 +491,11 @@ namespace Fireasy.Data.Entity
         /// <returns>影响的实体数。</returns>
         public async virtual Task<int> UpdateAsync(TEntity entity, Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         {
+            Guard.ArgumentNull(entity, nameof(entity));
             cancellationToken.ThrowIfCancellationRequested();
+            entity.SetState(EntityState.Modified);
+
+            Validate(entity);
 
             var ret = await _repositoryProxy.UpdateAsync(entity, predicate, _propertyFilter);
             if (ret > 0 && _options.NotifyEvents)
@@ -512,6 +515,7 @@ namespace Fireasy.Data.Entity
         public virtual int Update(Expression<Func<TEntity>> creator, Expression<Func<TEntity, bool>> predicate)
         {
             var entity = EntityProxyManager.GetType(ContextType, typeof(TEntity)).New<TEntity>();
+            entity.SetState(EntityState.Modified);
             entity.InitByExpression(creator);
 
             return predicate == null ? Update(entity) : Update(entity, predicate);
@@ -529,6 +533,7 @@ namespace Fireasy.Data.Entity
             cancellationToken.ThrowIfCancellationRequested();
 
             var entity = EntityProxyManager.GetType(ContextType, typeof(TEntity)).New<TEntity>();
+            entity.SetState(EntityState.Modified);
             entity.InitByExpression(creator);
 
             return predicate == null ? await UpdateAsync(entity, cancellationToken) : await UpdateAsync(entity, predicate, cancellationToken);
@@ -545,6 +550,7 @@ namespace Fireasy.Data.Entity
             Guard.ArgumentNull(initializer, nameof(initializer));
 
             var entity = EntityProxyManager.GetType(ContextType, typeof(TEntity)).New<TEntity>();
+            entity.SetState(EntityState.Modified);
 
             initializer(entity);
 
@@ -564,6 +570,7 @@ namespace Fireasy.Data.Entity
             cancellationToken.ThrowIfCancellationRequested();
 
             var entity = EntityProxyManager.GetType(ContextType, typeof(TEntity)).New<TEntity>();
+            entity.SetState(EntityState.Modified);
 
             initializer(entity);
 
@@ -627,14 +634,14 @@ namespace Fireasy.Data.Entity
             var operateName = OperateFinder.Find(fnOperation);
             var eventType = GetEventType(operateName);
 
-            if (eventType == PersistentOperator.Create && _options.AllowDefaultValue)
+            if (eventType == PersistentOperator.Create)
             {
-                instances.ForEach(s => SetDefaultValue(s));
+                SetDefaultValue(instances);
             }
 
             return _subMgr.OnBatch<TEntity, int>(_contextService.ServiceProvider, _contextService.ContextType, _options.NotifyEvents,
                 instances.Cast<IEntity>(), eventType,
-                () => _repositoryProxy.Batch(instances, fnOperation, GetBatchOperateOptions(batchOpt)));
+                () => _repositoryProxy.Batch(Validate(instances, eventType), fnOperation, GetBatchOperateOptions(batchOpt)));
         }
 
         /// <summary>
@@ -657,14 +664,14 @@ namespace Fireasy.Data.Entity
             var operateName = OperateFinder.Find(fnOperation);
             var eventType = GetEventType(operateName);
 
-            if (eventType == PersistentOperator.Create && _options.AllowDefaultValue)
+            if (eventType == PersistentOperator.Create)
             {
-                instances.ForEach(s => SetDefaultValue(s));
+                SetDefaultValue(instances);
             }
 
             return await _subMgr.OnBatchAsync<TEntity, int>(_contextService.ServiceProvider, _contextService.ContextType, _options.NotifyEvents,
                 instances.Cast<IEntity>(), eventType,
-                () => _repositoryProxy.BatchAsync(instances, fnOperation, GetBatchOperateOptions(batchOpt), cancellationToken));
+                () => _repositoryProxy.BatchAsync(Validate(instances, eventType), fnOperation, GetBatchOperateOptions(batchOpt), cancellationToken));
         }
         #endregion
 
@@ -1021,7 +1028,7 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
-        protected virtual TEntity HandleValidate(TEntity entity)
+        protected virtual TEntity Validate(TEntity entity)
         {
             if (_options.ValidateEntity)
             {
@@ -1032,11 +1039,37 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
+        /// 处理实体验证。
+        /// </summary>
+        /// <param name="entities"></param>
+        /// <param name="eventType"></param>
+        /// <returns></returns>
+        private IEnumerable<TEntity> Validate(IEnumerable<TEntity> entities, PersistentOperator eventType)
+        {
+            if (eventType != PersistentOperator.Remove)
+            {
+                var state = eventType == PersistentOperator.Update ? EntityState.Modified : EntityState.Attached;
+                foreach (var entity in entities)
+                {
+                    entity.SetState(state);
+                    Validate(entity);
+                }
+            }
+
+            return entities;
+        }
+
+        /// <summary>
         /// 设置默认值。
         /// </summary>
         /// <param name="entity"></param>
         protected virtual void SetDefaultValue(TEntity entity)
         {
+            if (!_options.AllowDefaultValue)
+            {
+                return;
+            }
+
             var isNotCompiled = entity.EntityType.IsNotCompiled();
             foreach (var property in PropertyUnity.GetPersistentProperties(EntityType))
             {
@@ -1044,6 +1077,39 @@ namespace Fireasy.Data.Entity
                 if (!isModify && !PropertyValue.IsEmpty(property.Info.DefaultValue))
                 {
                     entity.SetValue(property, property.Info.DefaultValue.TryAllotValue(property.Type, property.Info.DefaultValueFormatter));
+                }
+            }
+        }
+
+        /// <summary>
+        /// 设置默认值。
+        /// </summary>
+        /// <param name="entity"></param>
+        protected virtual void SetDefaultValue(IEnumerable<TEntity> entities)
+        {
+            if (!_options.AllowDefaultValue)
+            {
+                return;
+            }
+
+            IList<IProperty> properties = null;
+            bool isNotCompiled = false;
+
+            foreach (var entity in entities)
+            {
+                if (properties == null)
+                {
+                    properties = PropertyUnity.GetPersistentProperties(EntityType).ToList();
+                    isNotCompiled = entity.EntityType.IsNotCompiled();
+                }
+
+                foreach (var property in properties)
+                {
+                    var isModify = isNotCompiled ? !PropertyValue.IsEmpty(entity.GetValue(property)) : entity.IsModified(property.Name);
+                    if (!isModify && !PropertyValue.IsEmpty(property.Info.DefaultValue))
+                    {
+                        entity.SetValue(property, property.Info.DefaultValue.TryAllotValue(property.Type, property.Info.DefaultValueFormatter));
+                    }
                 }
             }
         }

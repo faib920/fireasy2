@@ -114,7 +114,7 @@ namespace Fireasy.Data.Batcher
                     DestinationTableName = tableName,
                     BatchSize = batchSize
                 };
-                bulk.WriteToServerAsync((DbDataReader)reader);
+                bulk.WriteToServer((DbDataReader)reader);
             }
             catch (Exception exp)
             {

@@ -3,7 +3,9 @@ using Fireasy.Common.Extensions;
 using Fireasy.Common.Logging;
 using Fireasy.Common.Serialization;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.Primitives;
 using System;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -21,12 +23,17 @@ namespace Fireasy.Web.Mvc
             _mvcOptions = mvcOptions;
         }
 
-        public Task BindModelAsync(ModelBindingContext bindingContext)
+        public async Task BindModelAsync(ModelBindingContext bindingContext)
         {
-            var value = bindingContext.ValueProvider.GetValue(bindingContext.ModelName);
+            var value = await GetValueAsync(bindingContext);
             if (value == ValueProviderResult.None)
             {
-                return Task.CompletedTask;
+                if (bindingContext.Model != null)
+                {
+                    bindingContext.Result = ModelBindingResult.Success(bindingContext.Model);
+                }
+
+                return;
             }
 
             var serviceProvider = bindingContext.HttpContext.RequestServices;
@@ -34,8 +41,8 @@ namespace Fireasy.Web.Mvc
             var modelState = bindingContext.ModelState;
             modelState.SetModelValue(bindingContext.ModelName, value);
 
-            var option = _mvcOptions.JsonSerializeOption;
-            var serializer = serviceProvider.TryGetService<ISerializer>(() => new JsonSerializer(option));
+            var serializer = serviceProvider.TryGetService<ISerializer>(() => new JsonSerializer());
+            serializer.Option = new JsonSerializeOption(_mvcOptions.JsonSerializeOption);
 
             try
             {
@@ -67,8 +74,23 @@ namespace Fireasy.Web.Mvc
 
                 bindingContext.Result = ModelBindingResult.Failed();
             }
+        }
 
-            return Task.CompletedTask;
+        private async Task<ValueProviderResult> GetValueAsync(ModelBindingContext bindingContext)
+        {
+            if (bindingContext.BindingSource?.CanAcceptDataFrom(BindingSource.Body) == true)
+            {
+                var body = bindingContext.HttpContext.Request.Body;
+                using var reader = new StreamReader(body, Encoding.UTF8);
+                var content = await reader.ReadToEndAsync();
+                return new ValueProviderResult(new StringValues(content));
+            }
+            else if (!string.IsNullOrEmpty(bindingContext.ModelName))
+            {
+                return bindingContext.ValueProvider.GetValue(bindingContext.ModelName);
+            }
+
+            return ValueProviderResult.None;
         }
     }
 }

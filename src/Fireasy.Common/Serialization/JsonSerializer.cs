@@ -28,9 +28,11 @@ namespace Fireasy.Common.Serialization
         }
 
         /// <summary>
-        /// 获取序列化选项。
+        /// 获取或设置序列化选项。
         /// </summary>
-        public JsonSerializeOption Option { get; private set; }
+        public JsonSerializeOption Option { get; set; }
+
+        SerializeOption ISerializer.Option { get => Option; set => Option = (JsonSerializeOption)value; }
 
         /// <summary>
         /// 将对象转换为使用文本表示。

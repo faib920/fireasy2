@@ -11,6 +11,8 @@ namespace Fireasy.Common.Serialization
 {
     public interface ISerializer
     {
+        SerializeOption Option { get; set; }
+
         byte[] Serialize<T>(T value);
 
         T Deserialize<T>(byte[] bytes);

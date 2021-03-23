@@ -12,7 +12,7 @@ namespace Fireasy.Data.Entity
     /// <summary>
     /// <see cref=" IContextService"/> 初始化的上下文对象。
     /// </summary>
-    public sealed class ContextServiceContext
+    public struct ContextServiceContext
     {
         /// <summary>
         /// 初始化 <see cref="ContextServiceContext"/> 类的新实例。

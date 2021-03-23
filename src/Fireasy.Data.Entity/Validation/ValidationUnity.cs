@@ -65,7 +65,7 @@ namespace Fireasy.Data.Entity.Validation
             {
                 try
                 {
-                    var result = validation.GetValidationResult(relValue, context);
+                    var result = validation.GetValidationResult(ConvertValue(validation, relValue), context);
 
                     //验证失败，记录提示信息
                     if (result != ValidationResult.Success)
@@ -114,7 +114,7 @@ namespace Fireasy.Data.Entity.Validation
             var propertyErrors = new Dictionary<IProperty, IList<ValidationErrorResult>>();
             var errors = new List<string>();
 
-            var proValidations = GetPropertyValidations(entity.EntityType).AsEnumerable();
+            var proValidations = GetPropertyValidations(entity.EntityType, entity.EntityState == EntityState.Modified ? entity.GetModifiedProperties() : null).AsEnumerable();
 
             if (entity.EntityState == EntityState.Modified)
             {
@@ -216,11 +216,11 @@ namespace Fireasy.Data.Entity.Validation
         /// </summary>
         /// <param name="entityType">一个实体的类型。</param>
         /// <returns></returns>
-        private static Dictionary<string, List<ValidationAttribute>> GetPropertyValidations(Type entityType)
+        private static Dictionary<string, List<ValidationAttribute>> GetPropertyValidations(Type entityType, string[] propertyNames = null)
         {
             var dictionary = new Dictionary<string, List<ValidationAttribute>>();
 
-            IEnumerable<PropertyInfo> properties;
+            IEnumerable<PropertyInfo> properties = null;
             if (entityType.IsDefined(typeof(MetadataTypeAttribute), true))
             {
                 var metadataType = entityType.GetCustomAttributes<MetadataTypeAttribute>(true).FirstOrDefault();
@@ -234,6 +234,11 @@ namespace Fireasy.Data.Entity.Validation
             else
             {
                 properties = PropertyUnity.GetProperties(entityType).Select(s => s.Info.ReflectionInfo);
+            }
+
+            if (propertyNames != null)
+            {
+                properties = properties.Where(s => propertyNames.Contains(s.Name));
             }
 
             foreach (var property in properties)
@@ -315,6 +320,23 @@ namespace Fireasy.Data.Entity.Validation
                 DisplayName = displayName,
                 MemberName = property.Name
             };
+        }
+
+        private static object ConvertValue(ValidationAttribute validation, object value)
+        {
+            if (value is IFormattable formattable && (validation is MaxLengthAttribute || validation is MinLengthAttribute || validation is StringLengthAttribute))
+            {
+                return formattable.ToString();
+            }
+            else if (validation is RangeAttribute range)
+            {
+                if (value.GetType() != range.Minimum.GetType())
+                {
+                    return Convert.ChangeType(value, range.Minimum.GetType());
+                }
+            }
+
+            return value;
         }
     }
 }

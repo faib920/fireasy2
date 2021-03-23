@@ -22,6 +22,7 @@ namespace Fireasy.Data
     public class InterceptedDatabase : Database
     {
         private DbCommandInterceptor _interceptor;
+        private bool _isInitialized;
 
         /// <summary>
         /// 初始化 <see cref="InterceptedDatabase"/> 类的新实例。
@@ -353,7 +354,13 @@ namespace Fireasy.Data
 
         private DbCommandInterceptor GetInterceptor()
         {
-            return _interceptor ??= ServiceProvider?.TryGetService<DbCommandInterceptor>();
+            if (!_isInitialized)
+            {
+                _interceptor = ServiceProvider?.TryGetService<DbCommandInterceptor>();
+                _isInitialized = true;
+            }
+
+            return _interceptor;
         }
     }
 }

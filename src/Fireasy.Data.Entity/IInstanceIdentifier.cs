@@ -34,5 +34,11 @@ namespace Fireasy.Data.Entity
         /// 获取或设置数据库连接串。
         /// </summary>
         ConnectionString ConnectionString { get; set; }
+
+        /// <summary>
+        /// 克隆副本。
+        /// </summary>
+        /// <returns></returns>
+        IInstanceIdentifier Clone();
     }
 }

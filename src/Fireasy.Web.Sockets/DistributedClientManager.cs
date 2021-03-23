@@ -35,8 +35,16 @@ namespace Fireasy.Web.Sockets
             _errorExpire = TimeSpan.FromMilliseconds(acceptContext.Option.HeartbeatInterval.TotalMilliseconds * 5);
 
             //开启消息订阅，使用aliveKey作为通道
-            _subscribeMgr = acceptContext.ServiceProvider.TryGetService<ISubscribeManager>();
-            _cacheMgr = acceptContext.ServiceProvider.TryGetService<IDistributedCacheManager>();
+            _subscribeMgr = acceptContext.Option.SubscribeManager ?? 
+                acceptContext.ServiceProvider.TryGetService<ISubscribeManager>();
+
+            _cacheMgr = acceptContext.Option.CacheManager ??
+                acceptContext.ServiceProvider.TryGetService<IDistributedCacheManager>();
+
+            if (_subscribeMgr == null)
+            {
+                throw new NotSupportedException("必须使用分布式订阅组件。");
+            }
 
             if (_cacheMgr == null)
             {

@@ -20,7 +20,7 @@ namespace Fireasy.Common.ComponentModel
         , IAsyncDisposable
 #endif
     {
-        private bool _isDisposed = false;
+        protected bool IsDisposed = false;
 
         /// <summary>
         /// 获取是否检验是否已经释放，当为 true 时，重复 Dispose 会引发 <see cref="ObjectDisposedException"/> 异常。默认为 false。
@@ -46,16 +46,16 @@ namespace Fireasy.Common.ComponentModel
 
         private void DoDispose(bool disposing)
         {
-            if (VerifyDisposed && _isDisposed)
+            if (VerifyDisposed && IsDisposed)
             {
                 throw new ObjectDisposedException(GetType().Name);
             }
 
-            if (!_isDisposed)
+            if (!IsDisposed)
             {
                 if (Dispose(disposing))
                 {
-                    _isDisposed = true;
+                    IsDisposed = true;
                 }
             }
 
@@ -92,16 +92,16 @@ namespace Fireasy.Common.ComponentModel
 
         private async ValueTask DoDisposeAsync(bool disposing)
         {
-            if (VerifyDisposed && _isDisposed)
+            if (VerifyDisposed && IsDisposed)
             {
                 throw new ObjectDisposedException(GetType().Name);
             }
 
-            if (!_isDisposed)
+            if (!IsDisposed)
             {
                 if (await DisposeAsync(disposing))
                 {
-                    _isDisposed = true;
+                    IsDisposed = true;
                 }
             }
 
