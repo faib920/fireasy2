@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using System.Linq;
-#if !NETCOREAPP3_0
+#if !NETCOREAPP3_0_OR_GREATER
 using Microsoft.AspNetCore.Mvc.Formatters.Json.Internal;
 using Microsoft.AspNetCore.Razor.Language;
 #endif
@@ -38,7 +38,7 @@ namespace Microsoft.Extensions.DependencyInjection
             if (options.UseTypicalJsonSerializer)
             {
                 builder.Services.Configure<MvcOptions>(s => s.OutputFormatters.Insert(0, new Fireasy.Web.Mvc.JsonOutputFormatter(options)));
-#if NETCOREAPP3_0
+#if NETCOREAPP3_0_OR_GREATER
                 builder.Services
                     .AddHttpContextAccessor()
                     .AddSingleton<IJsonHelper, Fireasy.Web.Mvc.JsonHelper>()
@@ -54,7 +54,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 builder.Services.AddSingleton<IObjectModelValidator, Fireasy.Web.Mvc.NoneObjectModelValidator>();
             }
 
-#if !NETCOREAPP3_0
+#if !NETCOREAPP3_0_OR_GREATER
             if (options.UseRootRazorProject)
             {
                 builder.Services.AddSingleton<RazorProjectFileSystem, Fireasy.Web.Mvc.BasedRazorProject>();

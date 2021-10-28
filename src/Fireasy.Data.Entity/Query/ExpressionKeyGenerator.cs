@@ -5,12 +5,10 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Common.Extensions;
 using Fireasy.Common.Linq.Expressions;
+using Fireasy.Common.Security;
 using Fireasy.Data.Entity.Linq.Translators;
 using System.Linq.Expressions;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Fireasy.Data.Entity.Query
 {
@@ -32,22 +30,7 @@ namespace Fireasy.Data.Entity.Query
             var evalExp = PartialEvaluator.Eval(expression, TranslateProviderBase.EvaluatedLocallyFunc);
             var cacheKey = ExpressionWriter.WriteToString(evalExp);
 
-            //使用md5进行hash编码
-            var md5 = new MD5CryptoServiceProvider();
-            var data = md5.ComputeHash(Encoding.Unicode.GetBytes(cacheKey));
-
-            var sb = new StringBuilder();
-            foreach (var p in prefix)
-            {
-                if (!string.IsNullOrEmpty(p))
-                {
-                    sb.AppendFormat("{0}:", p);
-                }
-            }
-
-            sb.Append(data.ToHex(true));
-
-            return sb.ToString();
+            return XxHashUnsafe.ComputeHash(cacheKey).ToString("X");
         }
     }
 }

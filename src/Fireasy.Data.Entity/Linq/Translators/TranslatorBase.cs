@@ -37,6 +37,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         private IDataSegment _dataSegment;
         private bool _hideTableAliases;
         private bool _hideColumnAliases;
+        private List<AliasedExpression> _aliasedExps = new List<AliasedExpression>();
 
         /// <summary>
         /// 获取或设置是否嵌套查询。
@@ -206,12 +207,21 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 case (ExpressionType)DbExpressionType.Table:
                 case (ExpressionType)DbExpressionType.ClientJoin:
                 case (ExpressionType)DbExpressionType.Column:
-                case (ExpressionType)DbExpressionType.Select:
                 case (ExpressionType)DbExpressionType.Join:
                 case (ExpressionType)DbExpressionType.Aggregate:
                 case (ExpressionType)DbExpressionType.Scalar:
                 case (ExpressionType)DbExpressionType.Exists:
                 case (ExpressionType)DbExpressionType.In:
+                    return base.Visit(exp);
+                case (ExpressionType)DbExpressionType.Select:
+                    if (_aliasedExps.Count > 0)
+                    {
+                        var saved = _aliasedExps;
+                        _aliasedExps = new List<AliasedExpression>();
+                        exp = base.Visit(exp);
+                        _aliasedExps = saved;
+                        return exp;
+                    }
                     return base.Visit(exp);
                 case (ExpressionType)DbExpressionType.AggregateSubquery:
                     return base.Visit(exp);
@@ -764,6 +774,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
             {
                 case DbExpressionType.Table:
                     var table = (TableExpression)source;
+                    _aliasedExps.Add(table);
                     var tableName = GetTableName(table);
                     Write(tableName);
 
@@ -1922,7 +1933,21 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         protected override Expression VisitSqlText(SqlExpression sql)
         {
-            Write(sql.SqlCommand);
+            var sqlCommand = sql.SqlCommand;
+            if (sql.AliasConversion.Count > 0)
+            {
+                foreach (var type in sql.AliasConversion.Types)
+                {
+                    AliasedExpression exp;
+                    if ((exp = _aliasedExps.FirstOrDefault(s => type.IsAssignableFrom(s.Type))) != null)
+                    {
+                        var name = GetAliasName(exp.Alias);
+                        sqlCommand = sqlCommand.Replace(sql.AliasConversion[type], name);
+                    }
+                }
+            }
+
+            Write(sqlCommand);
 
             if (sql.Parameters != null)
             {

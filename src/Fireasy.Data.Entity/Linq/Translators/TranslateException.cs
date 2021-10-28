@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Linq.Expressions;
 using System;
 using System.Linq.Expressions;
 
@@ -21,7 +22,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <param name="expression">正在翻译的 ELinq 表达式。</param>
         /// <param name="exception">内部异常。</param>
         public TranslateException(Expression expression, Exception exception)
-            : base(exception.Message, exception)
+            : base(SR.GetString(SRKind.FailInTranslateExpression) + Environment.NewLine + ExpressionWriter.WriteToString(expression), exception)
         {
             Expression = expression;
         }

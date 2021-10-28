@@ -168,7 +168,7 @@ namespace Fireasy.Data
             return _innerDatabase.ExecuteScalarAsync<T>(queryCommand, parameters, cancellationToken);
         }
 
-#if NETSTANDARD && !NETSTANDARD2_0
+#if NETSTANDARD2_1_OR_GREATER
         IAsyncEnumerable<T> IDatabase.ExecuteAsyncEnumerable<T>(IQueryCommand queryCommand, IDataSegment segment, ParameterCollection parameters, IDataRowMapper<T> rowMapper, CancellationToken cancellationToken)
         {
             return _innerDatabase.ExecuteAsyncEnumerable<T>(queryCommand, segment, parameters, rowMapper, cancellationToken);

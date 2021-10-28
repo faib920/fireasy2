@@ -35,10 +35,10 @@ namespace Fireasy.Web.Sockets
             _errorExpire = TimeSpan.FromMilliseconds(acceptContext.Option.HeartbeatInterval.TotalMilliseconds * 5);
 
             //开启消息订阅，使用aliveKey作为通道
-            _subscribeMgr = acceptContext.Option.SubscribeManager ?? 
+            _subscribeMgr = acceptContext.Option.SubscribeManagerCreator?.Invoke(acceptContext.ServiceProvider) ?? 
                 acceptContext.ServiceProvider.TryGetService<ISubscribeManager>();
 
-            _cacheMgr = acceptContext.Option.CacheManager ??
+            _cacheMgr = acceptContext.Option.CacheManagerCreator?.Invoke(acceptContext.ServiceProvider) ??
                 acceptContext.ServiceProvider.TryGetService<IDistributedCacheManager>();
 
             if (_subscribeMgr == null)

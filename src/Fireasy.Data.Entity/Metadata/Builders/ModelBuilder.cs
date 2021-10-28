@@ -37,7 +37,7 @@ namespace Fireasy.Data.Entity.Metadata.Builders
         /// <summary>
         /// 构造元数据。
         /// </summary>
-        public void Build()
+        void IMetadataBuilder.Build()
         {
             _builders.ForEach(s => s.Value.Build());
         }

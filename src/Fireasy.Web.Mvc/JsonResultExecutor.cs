@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-#if NETCOREAPP && !NETCOREAPP3_0
+#if NETCOREAPP && !NETCOREAPP3_0_OR_GREATER
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Serialization;
 using Microsoft.AspNetCore.Mvc;
@@ -73,24 +73,12 @@ namespace Fireasy.Web.Mvc
                 }
                 else
                 {
-                    var hosting = serviceProvider.GetService<JsonSerializeOptionHosting>();
-                    if (hosting != null)
-                    {
-                        option = hosting.Option;
-                    }
-                }
-
-                if (option == null)
-                {
-                    option = new JsonSerializeOption(_mvcOptions.JsonSerializeOption);
-                }
-                else
-                {
-                    option.AttachConverters(_mvcOptions.JsonSerializeOption);
+                    var hosting = context.HttpContext.RequestServices.GetService<JsonSerializeOptionHosting>();
+                    option = hosting?.Option;
                 }
 
                 var serializer = serviceProvider.TryGetService<ISerializer>(() => new JsonSerializer());
-                serializer.Option = option;
+                serializer.Option = option ?? new JsonSerializeOption(_mvcOptions.JsonSerializeOption);
 
                 if (serializer is ITextSerializer txtSerializer)
                 {
@@ -113,6 +101,7 @@ using Fireasy.Common.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System;
 using System.Text;
@@ -127,11 +116,11 @@ namespace Fireasy.Web.Mvc
             Encoding = Encoding.UTF8
         }.ToString();
 
-        private MvcOptions mvcOptions;
+        private MvcOptions _mvcOptions;
 
         public JsonResultExecutor(IOptions<MvcOptions> mvcOptions)
         {
-            this.mvcOptions = mvcOptions.Value;
+            _mvcOptions = mvcOptions.Value;
         }
 
         public Task ExecuteAsync(ActionContext context, JsonResult result)
@@ -167,22 +156,12 @@ namespace Fireasy.Web.Mvc
                 }
                 else
                 {
-                    if (context.HttpContext.RequestServices.GetService(typeof(JsonSerializeOptionHosting)) is JsonSerializeOptionHosting hosting)
-                    {
-                        option = hosting.Option;
-                    }
+                    var hosting = context.HttpContext.RequestServices.GetService<JsonSerializeOptionHosting>();
+                    option = hosting?.Option;
                 }
 
-                if (option == null)
-                {
-                    option = mvcOptions.JsonSerializeOption;
-                }
-                else
-                {
-                    option.Reference(mvcOptions.JsonSerializeOption);
-                }
-
-                var serializer = serviceProvider.TryGetService<ISerializer>(() => new JsonSerializer(option));
+                var serializer = serviceProvider.TryGetService<ISerializer>(() => new JsonSerializer());
+                serializer.Option = option ?? new JsonSerializeOption(_mvcOptions.JsonSerializeOption);
 
                 if (serializer is ITextSerializer txtSerializer)
                 {

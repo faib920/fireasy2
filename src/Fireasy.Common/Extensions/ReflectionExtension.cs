@@ -522,6 +522,24 @@ namespace Fireasy.Common.Extensions
         }
 
         /// <summary>
+        /// 获取类型的空值。
+        /// </summary>
+        /// <param name="type">源类型。</param>
+        /// <returns></returns>
+        public static object GetEmptyValue(this Type type)
+        {
+            Guard.ArgumentNull(type, nameof(type));
+
+            var fiend = type.GetField("Empty");
+            if (fiend != null)
+            {
+                return fiend.GetValue(null);
+            }
+
+            return Activator.CreateInstance(type.GetNonNullableType());
+        }
+
+        /// <summary>
         /// 判断类型是否为可空。
         /// </summary>
         /// <param name="type">源类型。</param>
@@ -935,7 +953,7 @@ namespace Fireasy.Common.Extensions
                     return type.GetGenericArguments()[0];
                 }
 
-#if !NETSTANDARD2_0 && !NETFRAMEWORK
+#if NETSTANDARD2_1_OR_GREATER
                 if (gdtype == typeof(ValueTask<>))
                 {
                     return type.GetGenericArguments()[0];
@@ -953,7 +971,7 @@ namespace Fireasy.Common.Extensions
         /// <returns></returns>
         public static bool IsTaskReturnType(this Type type)
         {
-#if !NETSTANDARD2_0 && !NETFRAMEWORK
+#if NETSTANDARD2_1_OR_GREATER
             if (type.IsGenericType)
             {
                 var gdtype = type.GetGenericTypeDefinition();
@@ -966,7 +984,7 @@ namespace Fireasy.Common.Extensions
 #endif
         }
 
-#if !NETSTANDARD2_0 && !NETFRAMEWORK
+#if NETSTANDARD2_1_OR_GREATER
         /// <summary>
         /// 判断是否为 ValueTask 返回的类型。
         /// </summary>
@@ -984,12 +1002,12 @@ namespace Fireasy.Common.Extensions
         }
 #endif
 
-            /// <summary>
-            /// 判断方法是否具有 async 标识。
-            /// </summary>
-            /// <param name="method"></param>
-            /// <returns></returns>
-            public static bool IsAsynchronous(this MethodInfo method)
+        /// <summary>
+        /// 判断方法是否具有 async 标识。
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public static bool IsAsynchronous(this MethodInfo method)
         {
             return method.IsDefined(typeof(AsyncStateMachineAttribute));
         }

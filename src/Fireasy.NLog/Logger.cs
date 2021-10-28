@@ -6,6 +6,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Fireasy.Common.Logging;
+using Fireasy.Common.Threading;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -118,12 +119,14 @@ namespace Fireasy.NLog
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        public async Task ErrorAsync(object message, Exception exception = null, CancellationToken cancellationToken = default)
+        public Task ErrorAsync(object message, Exception exception = null, CancellationToken cancellationToken = default)
         {
             if (LogEnvironment.IsConfigured(LogLevel.Error))
             {
                 _logger.Error(exception, message?.ToString());
             }
+
+            return TaskCompatible.CompletedTask;
         }
 
         /// <summary>
@@ -131,12 +134,14 @@ namespace Fireasy.NLog
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        public async Task InfoAsync(object message, Exception exception = null, CancellationToken cancellationToken = default)
+        public Task InfoAsync(object message, Exception exception = null, CancellationToken cancellationToken = default)
         {
             if (LogEnvironment.IsConfigured(LogLevel.Info))
             {
                 _logger.Info(exception, message?.ToString());
             }
+
+            return TaskCompatible.CompletedTask;
         }
 
         /// <summary>
@@ -144,12 +149,14 @@ namespace Fireasy.NLog
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        public async Task WarnAsync(object message, Exception exception = null, CancellationToken cancellationToken = default)
+        public Task WarnAsync(object message, Exception exception = null, CancellationToken cancellationToken = default)
         {
             if (LogEnvironment.IsConfigured(LogLevel.Warn))
             {
                 _logger.Warn(exception, message?.ToString());
             }
+
+            return TaskCompatible.CompletedTask;
         }
 
         /// <summary>
@@ -170,12 +177,14 @@ namespace Fireasy.NLog
         /// </summary>
         /// <param name="message">要记录的信息。</param>
         /// <param name="exception">异常对象。</param>
-        public async Task FatalAsync(object message, Exception exception = null, CancellationToken cancellationToken = default)
+        public Task FatalAsync(object message, Exception exception = null, CancellationToken cancellationToken = default)
         {
             if (LogEnvironment.IsConfigured(LogLevel.Fatal))
             {
                 _logger.Fatal(exception, message?.ToString());
             }
+
+            return TaskCompatible.CompletedTask;
         }
 
         public ILogger<T> Create<T>() where T : class

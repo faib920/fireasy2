@@ -121,7 +121,7 @@ namespace Fireasy.Data.Entity.Query
             return await (Task<TResult>)result;
         }
 
-#if !NETFRAMEWORK && !NETSTANDARD2_0
+#if NETSTANDARD2_1_OR_GREATER
         public IAsyncEnumerable<TResult> ExecuteEnumerableAsync<TResult>(Expression expression, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();

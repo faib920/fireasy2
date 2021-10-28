@@ -68,6 +68,8 @@ namespace Fireasy.Windows.Forms
         private ImageList _imageList;
         private string _noneItemText = "没有可显示的数据";
         private Color _alternateBackColor = Color.Empty;
+        private Color _itemHighlightBackColor = Color.Red;
+        private Color _itemHighlightForeColor = Color.White;
         private Color _groupForeColor = Color.DarkBlue;
 
         /// <summary>
@@ -150,6 +152,44 @@ namespace Fireasy.Windows.Forms
                 if (_alternateBackColor != value)
                 {
                     _alternateBackColor = value;
+                    Invalidate();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 获取或设置项高亮背景颜色。
+        /// </summary>
+        [Category("Appearance")]
+        [DefaultValue(typeof(Color), "Red")]
+        [Description("获取或设置项高亮背景颜色。")]
+        public Color ItemHighlightBackColor
+        {
+            get { return _itemHighlightBackColor; }
+            set
+            {
+                if (_itemHighlightBackColor != value)
+                {
+                    _itemHighlightBackColor = value;
+                    Invalidate();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 获取或设置项高亮前景颜色。
+        /// </summary>
+        [Category("Appearance")]
+        [DefaultValue(typeof(Color), "White")]
+        [Description("获取或设置项高亮前景颜色。")]
+        public Color ItemHighlightForeColor
+        {
+            get { return _itemHighlightForeColor; }
+            set
+            {
+                if (_itemHighlightForeColor != value)
+                {
+                    _itemHighlightForeColor = value;
                     Invalidate();
                 }
             }
@@ -1108,10 +1148,11 @@ namespace Fireasy.Windows.Forms
 
             if (grouping)
             {
-                foreach (var kvp in Items.GroupBy(s => s.Group).ToDictionary(s => s.Key, s => s.ToList()))
+                foreach (var kvp in Items.GroupBy(s => s.GroupKey).ToDictionary(s => s.Key, s => s.ToList()))
                 {
                     var group = new TreeListGroup(kvp.Key);
                     Groups.Add(group);
+                    kvp.Value.ForEach(s => s.Group = group);
                     group.Items.AddRange(kvp.Value);
                 }
             }
@@ -1621,8 +1662,8 @@ namespace Fireasy.Windows.Forms
             {
                 _vbar.Location = new Point(Width - _vbar.Width - borderWidth, borderWidth);
                 _vbar.Height = Height - borderWidth * 2 - (ShowHorScrollBar ? _hbar.Height : 0);
-                _vbar.Maximum = height - _bound.ItemBound.Height;
-                _vbar.LargeChange = Math.Min(_vbar.Maximum, (int)(Height * 1.5));
+                _vbar.Maximum = Math.Max(0, height - _bound.ItemBound.Height);
+                _vbar.LargeChange = Math.Min(_vbar.Maximum, Math.Max(0, (int)(Height * 1.5)));
                 _vbar.Maximum += _vbar.LargeChange + 1;
                 _vbar.Visible = true;
             }
@@ -1637,8 +1678,8 @@ namespace Fireasy.Windows.Forms
             {
                 _hbar.Location = new Point(borderWidth, Height - _hbar.Height - borderWidth);
                 _hbar.Width = Width - borderWidth * 2 - (ShowVerScrollBar ? _vbar.Width : 0);
-                _hbar.Maximum = width - _bound.ItemBound.Width;
-                _hbar.LargeChange = Math.Min(_hbar.Maximum, (int)(Width * 1.5));
+                _hbar.Maximum = Math.Max(0, width - _bound.ItemBound.Width);
+                _hbar.LargeChange = Math.Min(_hbar.Maximum, Math.Max(0, (int)(Width * 1.5)));
                 _hbar.Maximum += _hbar.LargeChange + 1;
                 _hbar.Visible = true;
             }

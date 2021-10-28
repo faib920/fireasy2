@@ -8,9 +8,11 @@
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Entity.Properties;
+using Fireasy.Data.Entity.Validation;
 using Fireasy.Data.Extensions;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -369,6 +371,8 @@ namespace Fireasy.Data.Entity
 
             property.Info.DefaultValue.CorrectValue(property.Type);
 
+            InitCustomAttributes(property.Info);
+
             return property;
         }
 
@@ -380,6 +384,14 @@ namespace Fireasy.Data.Entity
         private static PropertyMapInfo InitRelatedPropertyInfo(PropertyInfo propertyInfo)
         {
             return new PropertyMapInfo { ColumnName = NullFieldName, ReflectionInfo = propertyInfo };
+        }
+
+        private static void InitCustomAttributes(PropertyMapInfo mapInfo)
+        {
+            if (mapInfo.Attributes.Count == 0 && mapInfo.ReflectionInfo != null)
+            {
+                mapInfo.Attributes.AddRange(mapInfo.ReflectionInfo.GetCustomAttributes());
+            }
         }
 
         private static void RegisterProperty(Type entityType, PropertyInfo property)

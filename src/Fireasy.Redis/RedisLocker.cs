@@ -92,7 +92,8 @@ namespace Fireasy.Redis
                         PoolSize = optValue.PoolSize,
                         SerializerType = optValue.SerializerType,
                         Ssl = optValue.Ssl,
-                        Prefix = optValue.Prefix
+                        Prefix = optValue.Prefix,
+                        Preheat = optValue.Preheat
                     };
 
                     RedisHelper.ParseHosts(setting, optValue.Hosts, optValue.Sentinels);

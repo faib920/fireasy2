@@ -372,9 +372,14 @@ namespace Fireasy.Windows.Forms
         public int Level { get; internal set; }
 
         /// <summary>
+        /// 获取分组。
+        /// </summary>
+        public TreeListGroup Group { get; internal set; }
+
+        /// <summary>
         /// 获取或设置分组名称。
         /// </summary>
-        public string Group { get; set; }
+        public string GroupKey { get; set; }
 
         /// <summary>
         /// 获取或设置所属的 <see cref="TreeList"/> 容器。

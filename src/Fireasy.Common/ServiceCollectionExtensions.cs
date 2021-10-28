@@ -201,8 +201,16 @@ namespace Microsoft.Extensions.DependencyInjection
             }
             else if (svrType != null)
             {
+                if (typeof(IRepeatableService).IsAssignableFrom(implType))
+                {
+                    services.TryAddEnumerable(ServiceDescriptor.Describe(svrType, CheckAopProxyType(implType), lifetime));
+                }
+                else
+                {
+                    services.Replace(ServiceDescriptor.Describe(svrType, CheckAopProxyType(implType), lifetime));
+                }
+
                 Tracer.Debug($"{lifetime}-Descriptor has been registered: {svrType} --> {implType}.");
-                services.Replace(ServiceDescriptor.Describe(svrType, CheckAopProxyType(implType), lifetime));
             }
         }
 

@@ -237,6 +237,11 @@ namespace Fireasy.Redis
                     sb.Append($",syncTimeout={Setting.SyncTimeout.Milliseconds}");
                 }
 
+                if (Setting.Preheat != null)
+                {
+                    sb.Append($",preheat={(Setting.Preheat == true ? "true" : "false")}");
+                }
+
                 sb.Append(",allowAdmin=true");
 
                 foreach (var host in Setting.Hosts)
@@ -336,7 +341,7 @@ namespace Fireasy.Redis
             }
         }
 
-        private ISerializer GetSerializer()
+        protected ISerializer GetSerializer()
         {
             return SingletonLocker.Lock(ref _serializerFactory, this, () =>
             {

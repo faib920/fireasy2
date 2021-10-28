@@ -63,6 +63,7 @@ namespace Fireasy.Common
         internal const string LoopResolveSameType = "LoopResolveSameType";
         internal const string NotFoundRegisterForType = "NotFoundRegisterForType";
         internal const string NotSerializeTask = "NotSerializeTask";
+        internal const string OnlyImplOneInterface = "OnlyImplOneInterface";
     }
 
     internal class SR

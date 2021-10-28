@@ -1666,6 +1666,119 @@ namespace Fireasy.Data.Entity
         #endregion
         #endregion
 
+        #region > 和 <
+        public static bool operator >(PropertyValue v1, PropertyValue v2)
+        {
+            if (v1._storageType != v2._storageType)
+            {
+                return false;
+            }
+
+            return v1._storageType switch
+            {
+                StorageType.Byte => v1._byte > v2._byte,
+                StorageType.SByte => v1._sbyte > v2._sbyte,
+                StorageType.Char => v1._char > v2._char,
+                StorageType.DateTime => v1._dateTime > v2._dateTime,
+                StorageType.Decimal => v1._decimal > v2._decimal,
+                StorageType.Double => v1._double > v2._double,
+                StorageType.Int16 => v1._int16 > v2._int16,
+                StorageType.Int32 => v1._int32 > v2._int32,
+                StorageType.Int64 => v1._int64 > v2._int64,
+                StorageType.UInt16 => v1._uint16 > v2._uint16,
+                StorageType.UInt32 => v1._uint32 > v2._uint32,
+                StorageType.UInt64 => v1._uint64 > v2._uint64,
+                StorageType.Single => v1._single > v2._single,
+                StorageType.String => string.Compare( v1._string, v2._string) > 0,
+                _ => throw new ArgumentException(),
+            };
+        }
+
+        public static bool operator <(PropertyValue v1, PropertyValue v2)
+        {
+            if (v1._storageType != v2._storageType)
+            {
+                return false;
+            }
+
+            return v1._storageType switch
+            {
+                StorageType.Byte => v1._byte < v2._byte,
+                StorageType.SByte => v1._sbyte < v2._sbyte,
+                StorageType.Char => v1._char < v2._char,
+                StorageType.DateTime => v1._dateTime < v2._dateTime,
+                StorageType.Decimal => v1._decimal < v2._decimal,
+                StorageType.Double => v1._double < v2._double,
+                StorageType.Int16 => v1._int16 < v2._int16,
+                StorageType.Int32 => v1._int32 < v2._int32,
+                StorageType.Int64 => v1._int64 < v2._int64,
+                StorageType.UInt16 => v1._uint16 < v2._uint16,
+                StorageType.UInt32 => v1._uint32 < v2._uint32,
+                StorageType.UInt64 => v1._uint64 < v2._uint64,
+                StorageType.Single => v1._single < v2._single,
+                StorageType.String => string.Compare(v1._string, v2._string) < 0,
+                _ => throw new ArgumentException(),
+            };
+        }
+        #endregion
+
+        #region > 和 <
+        public static bool operator >=(PropertyValue v1, PropertyValue v2)
+        {
+            if (v1._storageType != v2._storageType)
+            {
+                return false;
+            }
+
+            return v1._storageType switch
+            {
+                StorageType.Byte => v1._byte >= v2._byte,
+                StorageType.SByte => v1._sbyte >= v2._sbyte,
+                StorageType.Char => v1._char >= v2._char,
+                StorageType.DateTime => v1._dateTime >= v2._dateTime,
+                StorageType.Decimal => v1._decimal >= v2._decimal,
+                StorageType.Double => v1._double >= v2._double,
+                StorageType.Int16 => v1._int16 >= v2._int16,
+                StorageType.Int32 => v1._int32 >= v2._int32,
+                StorageType.Int64 => v1._int64 >= v2._int64,
+                StorageType.UInt16 => v1._uint16 >= v2._uint16,
+                StorageType.UInt32 => v1._uint32 >= v2._uint32,
+                StorageType.UInt64 => v1._uint64 >= v2._uint64,
+                StorageType.Single => v1._single >= v2._single,
+                StorageType.String => string.Compare(v1._string, v2._string) >= 0,
+                _ => throw new ArgumentException(),
+            };
+        }
+
+        public static bool operator <=(PropertyValue v1, PropertyValue v2)
+        {
+            if (v1._storageType != v2._storageType)
+            {
+                return false;
+            }
+
+            return v1._storageType switch
+            {
+                StorageType.Byte => v1._byte <= v2._byte,
+                StorageType.SByte => v1._sbyte <= v2._sbyte,
+                StorageType.Char => v1._char <= v2._char,
+                StorageType.DateTime => v1._dateTime <= v2._dateTime,
+                StorageType.Decimal => v1._decimal <= v2._decimal,
+                StorageType.Double => v1._double <= v2._double,
+                StorageType.Int16 => v1._int16 <= v2._int16,
+                StorageType.Int32 => v1._int32 <= v2._int32,
+                StorageType.Int64 => v1._int64 <= v2._int64,
+                StorageType.UInt16 => v1._uint16 <= v2._uint16,
+                StorageType.UInt32 => v1._uint32 <= v2._uint32,
+                StorageType.UInt64 => v1._uint64 <= v2._uint64,
+                StorageType.Single => v1._single <= v2._single,
+                StorageType.String => string.Compare(v1._string, v2._string) <= 0,
+                _ => throw new ArgumentException(),
+            };
+        }
+
+        #endregion
+
         /// <summary>
         /// 获取该对象是否有效，即数字不为 0、字符串不为空字符时有效。
         /// </summary>

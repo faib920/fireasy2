@@ -39,9 +39,14 @@ namespace Fireasy.RabbitMQ
         public Type SerializerType { get; set; }
 
         /// <summary>
-        /// 获取或设置交换机类型。默认为空时，消息只会通知给一个消费客户端；当使用 topic 时消息将通知给所有消费客户端。
+        /// 获取或设置交换机类型。默认为空时，使用用工作队列；否则为广播队列，取值为 direct、fanout 或 topic。
         /// </summary>
         public string ExchangeType { get; set; }
+
+        /// <summary>
+        /// 获取或设置交换机名。
+        /// </summary>
+        public string ExchangeName { get; set; }
 
         /// <summary>
         /// 获取或设置虚拟主机。

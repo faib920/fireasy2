@@ -63,7 +63,7 @@ namespace Fireasy.Data
         public T Result { get; set; }
 
         /// <summary>
-        /// 获取或设置是否拦截以便跳过后续的执行。
+        /// 获取或设置 Before 时是否拦截以便跳过后续的执行。
         /// </summary>
         public bool Skip { get; set; }
     }

@@ -69,7 +69,7 @@ namespace Fireasy.Windows.Forms
         internal void Update(TreeList treelist)
         {
             TreeList = treelist;
-            Items = new TreeListItemCollection(treelist, null, 0);
+            Items = new TreeListItemCollection(treelist, null, 0, this);
         }
     }
 }

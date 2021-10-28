@@ -48,6 +48,11 @@ namespace Fireasy.Common.Ioc
                 Lifetime? lifetime;
                 var interfaceTypes = type.GetDirectImplementInterfaces().ToArray();
 
+                if (typeof(IRepeatableService).IsAssignableFrom(type) && interfaceTypes.Length > 1)
+                {
+                    throw new InvalidOperationException(SR.GetString(SRKind.OnlyImplOneInterface, type));
+                }
+
                 //如果使用标注
                 if (type.IsDefined(typeof(ServiceRegisterAttribute)))
                 {
@@ -63,14 +68,18 @@ namespace Fireasy.Common.Ioc
                     continue;
                 }
 
-                if (interfaceTypes.Length == 0)
+                if (interfaceTypes.Length > 0)
                 {
-                    regAct(type, type, (Lifetime)lifetime);
+                    interfaceTypes.ForEach(s => regAct(s, type, (Lifetime)lifetime));
+
+                    if (type.IsDefined<RegisterOneselfAttribute>())
+                    {
+                        regAct(type, type, (Lifetime)lifetime);
+                    }
                 }
                 else
                 {
                     regAct(type, type, (Lifetime)lifetime);
-                    interfaceTypes.ForEach(s => regAct(s, type, (Lifetime)lifetime));
                 }
             }
         }

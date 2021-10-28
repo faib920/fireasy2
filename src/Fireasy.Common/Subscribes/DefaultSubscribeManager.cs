@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Threading;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
@@ -94,9 +95,11 @@ namespace Fireasy.Common.Subscribes
         /// <typeparam name="TSubject"></typeparam>
         /// <param name="subject">主题内容。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
-        public async Task PublishAsync<TSubject>(TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
+        public Task PublishAsync<TSubject>(TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
         {
             Publish(subject);
+
+            return TaskCompatible.CompletedTask;
         }
 
         /// <summary>
@@ -106,9 +109,11 @@ namespace Fireasy.Common.Subscribes
         /// <param name="name">主题名称。</param>
         /// <param name="subject">主题内容。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
-        public async Task PublishAsync<TSubject>(string name, TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
+        public Task PublishAsync<TSubject>(string name, TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
         {
             Publish(name, subject);
+
+            return TaskCompatible.CompletedTask;
         }
 
         /// <summary>

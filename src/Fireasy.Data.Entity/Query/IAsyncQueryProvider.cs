@@ -18,7 +18,7 @@ namespace Fireasy.Data.Entity.Query
     /// </summary>
     public interface IAsyncQueryProvider : IQueryProvider
     {
-#if !NETFRAMEWORK && !NETSTANDARD2_0
+#if NETSTANDARD2_1_OR_GREATER
         IAsyncEnumerable<TResult> ExecuteEnumerableAsync<TResult>(Expression expression, CancellationToken cancellationToken);
 #endif
 

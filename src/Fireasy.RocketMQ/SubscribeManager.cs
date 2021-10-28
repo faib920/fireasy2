@@ -1,4 +1,7 @@
-﻿using Fireasy.Common.Subscribes;
+﻿using Fireasy.Common.ComponentModel;
+using Fireasy.Common.Subscribes;
+using NewLife.RocketMQ;
+using NewLife.RocketMQ.Protocol;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,6 +10,9 @@ namespace Fireasy.RocketMQ
 {
     public class SubscribeManager : ISubscribeManager
     {
+        private SafetyDictionary<string, Producer> _producers = new SafetyDictionary<string, Producer>();
+        private SafetyDictionary<string, Consumer> _consumers = new SafetyDictionary<string, Consumer>();
+
         public void AddAsyncSubscriber<TSubject>(Func<TSubject, Task> subscriber) where TSubject : class
         {
             throw new NotImplementedException();
@@ -34,7 +40,22 @@ namespace Fireasy.RocketMQ
 
         public void AddSubscriber(string name, Action<byte[]> subscriber)
         {
-            throw new NotImplementedException();
+            var consumer = _consumers.GetOrAdd(name, () =>
+            {
+                var mq = new Consumer { Topic = name, NameServerAddress = "" };
+                mq.Start();
+                return mq;
+            });
+
+            consumer.OnConsume = (q, ms) =>
+            {
+                foreach (var item in ms)
+                {
+                    subscriber.Invoke(item.Body);
+                }
+
+                return true;
+            };
         }
 
         public void Publish<TSubject>(TSubject subject) where TSubject : class
@@ -49,7 +70,19 @@ namespace Fireasy.RocketMQ
 
         public void Publish(string name, byte[] data)
         {
-            throw new NotImplementedException();
+            var producer = _producers.GetOrAdd(name, () =>
+            {
+                var mq = new Producer { Topic = name, NameServerAddress = "" };
+                mq.Start();
+                return mq;
+            });
+
+            var msg = new Message
+            {
+                Body = data,
+            };
+
+            producer.Publish(msg);
         }
 
         public Task PublishAsync<TSubject>(TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
@@ -62,24 +95,27 @@ namespace Fireasy.RocketMQ
             throw new NotImplementedException();
         }
 
-        public Task PublishAsync(string name, byte[] data, CancellationToken cancellationToken = default)
+        public async Task PublishAsync(string name, byte[] data, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            Publish(name, data);
         }
 
         public void RemoveSubscriber<TSubject>()
         {
-            throw new NotImplementedException();
+            RemoveSubscriber(TopicHelper.GetTopicName(typeof(TSubject)));
         }
 
         public void RemoveSubscriber(Type subjectType)
         {
-            throw new NotImplementedException();
+            RemoveSubscriber(TopicHelper.GetTopicName(subjectType));
         }
 
         public void RemoveSubscriber(string name)
         {
-            throw new NotImplementedException();
+            if (_consumers.TryRemove(name, out Consumer consumer))
+            {
+                consumer.Dispose();
+            }
         }
     }
 }

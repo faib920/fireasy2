@@ -81,12 +81,6 @@ namespace Fireasy.Data.Entity.Query
                 return creator();
             }
 
-            var elementType = typeof(T).GetEnumerableElementType() ?? typeof(T);
-            if (!CanCache(elementType))
-            {
-                return creator();
-            }
-
             var generator = _serviceProvider.TryGetService<IExecuteCacheKeyGenerator>(() => ExpressionKeyGenerator.Instance);
             var cacheKey = _serviceProvider.GetCacheKey(generator.Generate(expression, CACHE_KEY));
 
@@ -142,12 +136,6 @@ namespace Fireasy.Data.Entity.Query
                 return await creator(cancellationToken);
             }
 
-            var elementType = typeof(T).GetEnumerableElementType() ?? typeof(T);
-            if (!CanCache(elementType))
-            {
-                return await creator(cancellationToken);
-            }
-
             var generator = _serviceProvider.TryGetService<IExecuteCacheKeyGenerator>(() => ExpressionKeyGenerator.Instance);
             var cacheKey = _serviceProvider.GetCacheKey(generator.Generate(expression, CACHE_KEY));
 
@@ -169,27 +157,6 @@ namespace Fireasy.Data.Entity.Query
             TryStartRunner();
 
             return cacheItem.Data;
-        }
-
-        /// <summary>
-        /// 判断是否使用缓存。
-        /// </summary>
-        /// <param name="elementType"></param>
-        /// <returns></returns>
-        protected virtual bool CanCache(Type elementType)
-        {
-            if (elementType.IsDbTypeSupported())
-            {
-                return true;
-            }
-
-            var attr = elementType.GetCustomAttribute<EntityCachableAttribute>();
-            if (attr == null || attr.Enabled)
-            {
-                return true;
-            }
-
-            return false;
         }
 
         private CacheItem<T> HandleCacheItem<T>(string cacheKey, Expression expression, T data, DataPager pager)
@@ -453,9 +420,10 @@ namespace Fireasy.Data.Entity.Query
                     case nameof(Queryable.LastOrDefault):
                     case nameof(Queryable.Single):
                     case nameof(Queryable.SingleOrDefault):
-                        if (_evaluator != null)
+                        base.VisitMethodCall(node);
+                        if (_evaluator != null && _result.Enabled != false)
                         {
-                            _result.Enabled = _evaluator.Evaluate(node);
+                            _result.Enabled = _evaluator.Evaluate(ResultType.Single, node.Type);
                         }
                         else
                         {
@@ -487,9 +455,16 @@ namespace Fireasy.Data.Entity.Query
                             _result.Expired = expired;
                         }
                         break;
+                    default:
+                        base.VisitMethodCall(node);
+                        if (_evaluator != null && _result.Enabled != false && node.Type.IsGenericType)
+                        {
+                            _result.Enabled = _evaluator.Evaluate(ResultType.Enumerable, node.Type.GetEnumerableElementType());
+                        }
+                        break;
                 }
 
-                return base.VisitMethodCall(node);
+                return node;
             }
         }
 

@@ -19,6 +19,7 @@ namespace Fireasy.Windows.Forms
     {
         private readonly TreeList _treelist;
         private readonly TreeListItem _parent;
+        private readonly TreeListGroup _group;
         private readonly int _level;
         private int _sortVersion;
 
@@ -29,11 +30,12 @@ namespace Fireasy.Windows.Forms
         {
         }
 
-        internal TreeListItemCollection(TreeList treelist, TreeListItem parent, int level)
+        internal TreeListItemCollection(TreeList treelist, TreeListItem parent, int level, TreeListGroup group = null)
         {
             _treelist = treelist;
             _parent = parent;
             _level = level;
+            _group = group;
         }
 
         public TreeListItem Add(string text)
@@ -91,6 +93,8 @@ namespace Fireasy.Windows.Forms
             item.Index = Count;
             item.Owner = this;
             base.InsertItem(index, item);
+
+            item.Group = _group;
 
             ResortIndex();
 

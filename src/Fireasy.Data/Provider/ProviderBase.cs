@@ -154,7 +154,7 @@ namespace Fireasy.Data.Provider
         /// <param name="factory"></param>
         public virtual IProvider RegisterService(Type definedType, Func<IProviderService> factory)
         {
-            _services.AddOrUpdate(definedType, () => new Lazy<IProviderService>(factory));
+            _services.AddOrUpdate(definedType, () => new Lazy<IProviderService>(() => Initialize(factory())));
             return this;
         }
 
@@ -167,7 +167,7 @@ namespace Fireasy.Data.Provider
             var providerService = serviceType.GetDirectImplementInterface(typeof(IProviderService));
             if (providerService != null)
             {
-                _services.AddOrUpdate(providerService, () => new Lazy<IProviderService>(() => serviceType.New<IProviderService>()));
+                _services.AddOrUpdate(providerService, () => new Lazy<IProviderService>(() => Initialize(serviceType.New<IProviderService>())));
             }
 
             return this;
@@ -182,7 +182,7 @@ namespace Fireasy.Data.Provider
             var providerType = providerService.GetType().GetDirectImplementInterface(typeof(IProviderService));
             if (providerType != null)
             {
-                _services.AddOrUpdate(providerType, () => new Lazy<IProviderService>(() => providerService));
+                _services.AddOrUpdate(providerType, () => new Lazy<IProviderService>(() => Initialize(providerService)));
             }
 
             return this;
@@ -195,7 +195,7 @@ namespace Fireasy.Data.Provider
         /// <param name="implType">实现类型。</param>
         public virtual IProvider RegisterService(Type serviceType, Type implType)
         {
-            _services.AddOrUpdate(serviceType, () => new Lazy<IProviderService>(() => implType.New<IProviderService>()));
+            _services.AddOrUpdate(serviceType, () => new Lazy<IProviderService>(() => Initialize(implType.New<IProviderService>())));
             return this;
         }
 
@@ -266,6 +266,12 @@ namespace Fireasy.Data.Provider
         protected virtual void InitializeServices()
         {
 
+        }
+
+        private IProviderService Initialize(IProviderService service)
+        {
+            service.Provider = this;
+            return service;
         }
     }
 }

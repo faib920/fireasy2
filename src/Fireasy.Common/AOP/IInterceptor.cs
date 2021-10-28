@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 
 using Fireasy.Common.Ioc;
+using System.Threading.Tasks;
 
 namespace Fireasy.Common.Aop
 {

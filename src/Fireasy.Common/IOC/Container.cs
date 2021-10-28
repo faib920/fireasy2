@@ -241,7 +241,6 @@ namespace Fireasy.Common.Ioc
         /// <returns>类型的实例对象。如果没有注册，则为 null。</returns>
         public object Resolve(Type serviceType)
         {
-            using var scope = new ResolveLoopScope();
             var obj = ResolveHelper.Resolve(this, serviceType, out Lifetime lifetime);
             if (lifetime == Lifetime.Singleton && obj is IDisposable dispObj)
             {
@@ -499,7 +498,6 @@ namespace Fireasy.Common.Ioc
                     return obj;
                 }
 
-                using var scope = new ResolveLoopScope();
                 obj = ResolveHelper.Resolve(this, serviceType, out Lifetime lifetime);
 
                 if (lifetime == Lifetime.Scoped)
@@ -566,6 +564,7 @@ namespace Fireasy.Common.Ioc
 
                     var list = CreateEnumerable(elementType);
 
+                    /*
                     regs.Select(s => s.ServiceType).Distinct().ForEach(s =>
                     {
                         if (!ResolveLoopScope.Current?.TryAddType(s) == false)
@@ -574,6 +573,7 @@ namespace Fireasy.Common.Ioc
                             //throw new ResolveException(SR.GetString(SRKind.LoopResolveSameType, s));
                         }
                     });
+                    */
 
                     foreach (var reg in regs)
                     {
@@ -587,11 +587,13 @@ namespace Fireasy.Common.Ioc
                 IRegistration registration;
                 if ((registration = resolver.GetRegistrations(serviceType).LastOrDefault()) != null)
                 {
+                    /*
                     if (ResolveLoopScope.Current?.TryAddType(registration.ServiceType) == false)
                     {
                         Tracer.Debug(SR.GetString(SRKind.LoopResolveSameType, registration.ServiceType));
                         //throw new ResolveException(SR.GetString(SRKind.LoopResolveSameType, registration.ServiceType));
                     }
+                    */
 
                     lifetime = registration.Lifetime;
                     return registration.Resolve(resolver);

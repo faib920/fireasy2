@@ -29,8 +29,9 @@ namespace Fireasy.Data.Provider
         /// 初始化 <see cref="MsSqlProvider"/> 类的新实例。
         /// </summary>
         public MsSqlProvider()
-#if NETSTANDARD2_0
-            : base(new AssemblyProviderFactoryResolver("System.Data.SqlClient.SqlClientFactory, System.Data.SqlClient"))
+#if NETSTANDARD
+            : base(new AssemblyProviderFactoryResolver("Microsoft.Data.SqlClient.SqlClientFactory, Microsoft.Data.SqlClient"),
+                    new AssemblyProviderFactoryResolver("System.Data.SqlClient.SqlClientFactory, System.Data.SqlClient"))
 #else
             : base(new InstallerProviderFactoryResolver("System.Data.SqlClient"))
 #endif

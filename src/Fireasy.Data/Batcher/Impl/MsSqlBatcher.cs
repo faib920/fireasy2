@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.Extensions;
 using Fireasy.Data.Extensions;
 using Fireasy.Data.Provider;
 using Fireasy.Data.Syntax;
@@ -41,26 +42,27 @@ namespace Fireasy.Data.Batcher
                 return;
             }
 
+            ConnectionStateManager constateMgr = null;
+
             try
             {
-                var connection = GetConnection(database).TryOpen();
+                var connection = GetConnection(database);
+                constateMgr = new ConnectionStateManager(connection);
 
-                //给表名加上界定符
                 var syntax = database.Provider.GetService<ISyntaxProvider>();
                 var tableName = syntax.DelimitTable(dataTable.TableName);
-                using var bulk = new SqlBulkCopy((SqlConnection)connection,
-                    SqlBulkCopyOptions.KeepIdentity,
-                    (SqlTransaction)database.Transaction)
-                {
-                    DestinationTableName = tableName,
-                    BatchSize = batchSize
-                };
-                using var reader = new DataTableBatchReader(bulk, dataTable);
+                using var bulk = GetBulkCopyProvider();
+                bulk.Initialize(connection, database.Transaction, tableName, batchSize);
+                using var reader = new DataTableBatchReader(dataTable, (i, n) => bulk.AddColumnMapping(i, n));
                 bulk.WriteToServer(reader);
             }
             catch (Exception exp)
             {
                 throw new BatcherException(dataTable.Rows, exp);
+            }
+            finally
+            {
+                constateMgr?.TryClose();
             }
         }
 
@@ -75,22 +77,25 @@ namespace Fireasy.Data.Batcher
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
         public void Insert<T>(IDatabase database, IEnumerable<T> list, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
         {
+            ConnectionStateManager constateMgr = null;
+
             try
             {
-                var connection = GetConnection(database).TryOpen();
+                var connection = GetConnection(database);
+                constateMgr = new ConnectionStateManager(connection).TryOpen();
 
-                //给表名加上前后导符
-                using var bulk = new SqlBulkCopy((SqlConnection)connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
-                {
-                    DestinationTableName = tableName,
-                    BatchSize = batchSize
-                };
-                using var reader = new EnumerableBatchReader<T>(bulk, list);
+                using var bulk = GetBulkCopyProvider();
+                bulk.Initialize(connection, database.Transaction, tableName, batchSize);
+                using var reader = new EnumerableBatchReader<T>(list, (i, n) => bulk.AddColumnMapping(i, n));
                 bulk.WriteToServer(reader);
             }
             catch (Exception exp)
             {
                 throw new BatcherException(list.ToList(), exp);
+            }
+            finally
+            {
+                constateMgr?.TryClose();
             }
         }
 
@@ -104,21 +109,24 @@ namespace Fireasy.Data.Batcher
         /// <param name="completePercentage">已完成百分比的通知方法。</param>
         public void Insert(IDatabase database, IDataReader reader, string tableName, int batchSize = 1000, Action<int> completePercentage = null)
         {
+            ConnectionStateManager constateMgr = null;
+
             try
             {
-                var connection = GetConnection(database).TryOpen();
+                var connection = GetConnection(database);
+                constateMgr = new ConnectionStateManager(connection).TryOpen();
 
-                //给表名加上前后导符
-                using var bulk = new SqlBulkCopy((SqlConnection)connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
-                {
-                    DestinationTableName = tableName,
-                    BatchSize = batchSize
-                };
+                using var bulk = GetBulkCopyProvider();
+                bulk.Initialize(connection, database.Transaction, tableName, batchSize);
                 bulk.WriteToServer((DbDataReader)reader);
             }
             catch (Exception exp)
             {
                 throw new BatcherException(null, exp);
+            }
+            finally
+            {
+                constateMgr?.TryClose();
             }
         }
 
@@ -137,27 +145,27 @@ namespace Fireasy.Data.Batcher
             }
 
             cancellationToken.ThrowIfCancellationRequested();
+            ConnectionStateManager constateMgr = null;
 
             try
             {
-                var connection = await GetConnection(database).TryOpenAsync(cancellationToken: cancellationToken);
+                var connection = GetConnection(database);
+                constateMgr = await new ConnectionStateManager(connection).TryOpenAsync(cancellationToken);
 
-                //给表名加上界定符
                 var syntax = database.Provider.GetService<ISyntaxProvider>();
                 var tableName = syntax.DelimitTable(dataTable.TableName);
-                using var bulk = new SqlBulkCopy((SqlConnection)connection,
-                    SqlBulkCopyOptions.KeepIdentity,
-                    (SqlTransaction)database.Transaction)
-                {
-                    DestinationTableName = tableName,
-                    BatchSize = batchSize
-                };
-                using var reader = new DataTableBatchReader(bulk, dataTable);
-                await bulk.WriteToServerAsync(reader, cancellationToken).ConfigureAwait(false);
+                using var bulk = GetBulkCopyProvider();
+                bulk.Initialize(connection, database.Transaction, tableName, batchSize);
+                using var reader = new DataTableBatchReader(dataTable, (i, n) => bulk.AddColumnMapping(i, n));
+                await bulk.WriteToServerAsync(reader, cancellationToken);
             }
             catch (Exception exp)
             {
                 throw new BatcherException(dataTable.Rows, exp);
+            }
+            finally
+            {
+                await constateMgr?.TryCloseAsync(cancellationToken);
             }
         }
 
@@ -173,23 +181,25 @@ namespace Fireasy.Data.Batcher
         public async Task InsertAsync<T>(IDatabase database, IEnumerable<T> list, string tableName, int batchSize = 1000, Action<int> completePercentage = null, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ConnectionStateManager constateMgr = null;
 
             try
             {
-                var connection = await GetConnection(database).TryOpenAsync(cancellationToken: cancellationToken);
+                var connection = GetConnection(database);
+                constateMgr = await new ConnectionStateManager(connection).TryOpenAsync(cancellationToken);
 
-                //给表名加上前后导符
-                using var bulk = new SqlBulkCopy((SqlConnection)connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
-                {
-                    DestinationTableName = tableName,
-                    BatchSize = batchSize
-                };
-                using var reader = new EnumerableBatchReader<T>(bulk, list);
-                await bulk.WriteToServerAsync(reader, cancellationToken).ConfigureAwait(false);
+                using var bulk = GetBulkCopyProvider();
+                bulk.Initialize(connection, database.Transaction, tableName, batchSize);
+                using var reader = new EnumerableBatchReader<T>(list, (i, n) => bulk.AddColumnMapping(i, n));
+                await bulk.WriteToServerAsync(reader, cancellationToken);
             }
             catch (Exception exp)
             {
                 throw new BatcherException(list.ToList(), exp);
+            }
+            finally
+            {
+                await constateMgr?.TryCloseAsync(cancellationToken);
             }
         }
 
@@ -204,28 +214,71 @@ namespace Fireasy.Data.Batcher
         public async Task InsertAsync(IDatabase database, IDataReader reader, string tableName, int batchSize = 1000, Action<int> completePercentage = null, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ConnectionStateManager constateMgr = null;
 
             try
             {
-                var connection = await GetConnection(database).TryOpenAsync(cancellationToken: cancellationToken);
+                var connection = GetConnection(database);
+                constateMgr = await new ConnectionStateManager(connection).TryOpenAsync(cancellationToken);
 
-                //给表名加上前后导符
-                using var bulk = new SqlBulkCopy((SqlConnection)connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)database.Transaction)
-                {
-                    DestinationTableName = tableName,
-                    BatchSize = batchSize
-                };
-                await bulk.WriteToServerAsync((DbDataReader)reader, cancellationToken).ConfigureAwait(false);
+                using var bulk = GetBulkCopyProvider();
+                bulk.Initialize(connection, database.Transaction, tableName, batchSize);
+                await bulk.WriteToServerAsync((DbDataReader)reader, cancellationToken);
             }
             catch (Exception exp)
             {
                 throw new BatcherException(null, exp);
+            }
+            finally
+            {
+                await constateMgr?.TryCloseAsync(cancellationToken);
             }
         }
 
         private DbConnection GetConnection(IDatabase database)
         {
             return database is IDistributedDatabase distDb ? distDb.GetConnection(DistributedMode.Master) : database.Connection;
+        }
+
+        private IBulkCopyProvider GetBulkCopyProvider()
+        {
+            return (this as IProviderService).Provider.GetService<IBulkCopyProvider>() ?? new DefaultSqlBulkCopyProvider();
+        }
+
+        internal class DefaultSqlBulkCopyProvider : IBulkCopyProvider
+        {
+            private SqlBulkCopy _bulkCopy;
+
+            IProvider IProviderService.Provider { get; set; }
+
+            public void Dispose()
+            {
+                _bulkCopy.TryDispose();
+            }
+
+            public void Initialize(DbConnection connection, DbTransaction transaction, string tableName, int batchSize)
+            {
+                _bulkCopy = new SqlBulkCopy((SqlConnection)connection, SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)transaction)
+                {
+                    DestinationTableName = tableName,
+                    BatchSize = batchSize
+                };
+            }
+
+            public void AddColumnMapping(int sourceColumnIndex, string destinationColumn)
+            {
+                _bulkCopy.ColumnMappings.Add(sourceColumnIndex, destinationColumn);
+            }
+
+            public void WriteToServer(DbDataReader reader)
+            {
+                _bulkCopy.WriteToServer(reader);
+            }
+
+            public async Task WriteToServerAsync(DbDataReader reader, CancellationToken cancellationToken)
+            {
+                await _bulkCopy.WriteToServerAsync(reader, cancellationToken).ConfigureAwait(false);
+            }
         }
     }
 }

@@ -26,7 +26,7 @@ namespace Fireasy.Data
             }
 
             var nextPage = CreateNextPager(dataPager);
-            var sql = GetCommand(context, nextPage);
+            var sql = ChangeCommand(context, nextPage);
 
             //查询下一页是否有数据
             var result = context.Database.ExecuteScalar<int>((SqlCommand)sql);
@@ -34,7 +34,7 @@ namespace Fireasy.Data
             {
                 //查询当前页剩余的记录
                 nextPage.CurrentPageIndex--;
-                sql = GetCommand(context, nextPage);
+                sql = ChangeCommand(context, nextPage);
                 result = context.Database.ExecuteScalar<int>((SqlCommand)sql);
 
                 HandleNoNextPage(dataPager, result);
@@ -53,16 +53,16 @@ namespace Fireasy.Data
             }
 
             var nextPage = CreateNextPager(dataPager);
-            var sql = GetCommand(context, nextPage);
+            var sql = ChangeCommand(context, nextPage);
 
             //查询下一页是否有数据
-            var result = await context.Database.ExecuteScalarAsync<int>((SqlCommand)sql);
+            var result = await context.Database.ExecuteScalarAsync<int>(sql);
             if (result == 0)
             {
                 //查询当前页剩余的记录
                 nextPage.CurrentPageIndex--;
-                sql = GetCommand(context, nextPage);
-                result = await context.Database.ExecuteScalarAsync<int>((SqlCommand)sql);
+                sql = ChangeCommand(context, nextPage);
+                result = await context.Database.ExecuteScalarAsync<int>(sql);
 
                 HandleNoNextPage(dataPager, result);
             }
@@ -77,11 +77,16 @@ namespace Fireasy.Data
         /// </summary>
         public bool HasNextPage { get; private set; }
 
-        private SqlCommand GetCommand(CommandContext context, DataPager pager)
+        private SqlCommand ChangeCommand(CommandContext context, DataPager pager)
         {
-            var syntax = context.Database.Provider.GetService<ISyntaxProvider>();
-            SqlCommand sql = $"SELECT COUNT(*) FROM ({syntax.Segment(context.Command.CommandText, pager)}) T";
-            return sql;
+            var sql = context.TryChangeSegment(pager, () =>
+            {
+                var syntax = context.Database.Provider.GetService<ISyntaxProvider>();
+                syntax.Segment(context);
+                return context.Command.CommandText;
+            });
+
+            return $"SELECT COUNT(1) FROM ({sql}) TEMP";
         }
 
         private DataPager CreateNextPager(IPager pager)

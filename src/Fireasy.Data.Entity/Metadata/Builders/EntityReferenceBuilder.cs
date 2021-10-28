@@ -68,7 +68,12 @@ namespace Fireasy.Data.Entity.Metadata.Builders
         /// <summary>
         /// 构造元数据。
         /// </summary>
-        public virtual void Build()
+        void IMetadataBuilder.Build()
+        {
+            InternalBuild();
+        }
+
+        protected virtual void InternalBuild()
         {
             var property = PropertyUnity.RegisterSupposedProperty(_propertyInfo.Name, _propertyInfo.PropertyType, _metadata.EntityType, null, _options);
             _metadata.InternalAddProperty(property);
@@ -98,7 +103,7 @@ namespace Fireasy.Data.Entity.Metadata.Builders
                 return this;
             }
 
-            public override void Build()
+            protected override void InternalBuild()
             {
             }
         }

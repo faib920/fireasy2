@@ -13,7 +13,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
-using System.Data.SqlClient;
 
 namespace Fireasy.Data.Batcher
 {
@@ -29,15 +28,15 @@ namespace Fireasy.Data.Batcher
         /// <summary>
         /// 初始化 <see cref="DataTableBatchReader"/> 类的新实例。
         /// </summary>
-        /// <param name="bulkCopy"></param>
         /// <param name="table"></param>
-        public DataTableBatchReader(SqlBulkCopy bulkCopy, DataTable table)
+        /// <param name="initializer"></param>
+        public DataTableBatchReader(DataTable table, Action<int, string> initializer)
         {
             _table = table;
 
             for (int i = 0, n = table.Columns.Count; i < n; i++)
             {
-                bulkCopy.ColumnMappings.Add(i, table.Columns[i].ColumnName);
+                initializer(i, table.Columns[i].ColumnName);
             }
         }
 
@@ -206,11 +205,11 @@ namespace Fireasy.Data.Batcher
         /// <summary>
         /// 初始化 <see cref="EnumerableBatchReader"/> 类的新实例。
         /// </summary>
-        /// <param name="bulk"></param>
         /// <param name="enumerable"></param>
-        public EnumerableBatchReader(SqlBulkCopy bulk, IEnumerable<T> enumerable)
+        /// <param name="initializer"></param>
+        public EnumerableBatchReader(IEnumerable<T> enumerable, Action<int, string> initializer)
         {
-            InitAccessories(bulk, enumerable);
+            InitAccessories(enumerable, initializer);
             _enumerator = enumerable.GetEnumerator();
         }
 
@@ -379,7 +378,7 @@ namespace Fireasy.Data.Batcher
         /// 初始化对象访问器。
         /// </summary>
         /// <param name="list"></param>
-        private void InitAccessories(SqlBulkCopy bulk, IEnumerable<T> list)
+        private void InitAccessories(IEnumerable<T> list, Action<int, string> initializer)
         {
             var e = list.GetEnumerator();
             if (!e.MoveNext())
@@ -393,7 +392,7 @@ namespace Fireasy.Data.Batcher
             {
                 foreach (var map in resolver.GetDbMapping())
                 {
-                    bulk.ColumnMappings.Add(_values.Count, map.FieldName);
+                    initializer(_values.Count, map.FieldName);
                     _values.Add(map.ValueFunc);
 
                 }
@@ -405,7 +404,7 @@ namespace Fireasy.Data.Batcher
                 {
                     if (property.PropertyType.IsDbTypeSupported())
                     {
-                        bulk.ColumnMappings.Add(_values.Count, property.Name);
+                        initializer(_values.Count, property.Name);
                         _values.Add(o => property.GetValue(o));
                     }
                 }

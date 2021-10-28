@@ -7,15 +7,16 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Threading;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Fireasy.Data
 {
     /// <summary>
-    /// 用于拦截命令的执行。
+    /// 用于拦截命令的执行的抽象类。
     /// </summary>
-    public abstract class DbCommandInterceptor
+    public abstract class DbCommandInterceptor : IDbCommandInterceptor
     {
         /// <summary>
         /// 执行 ExecuteNonQuery 方法之前。
@@ -169,6 +170,44 @@ namespace Fireasy.Data
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         public virtual Task OnAfterExecuteEnumerableAsync<T>(DbCommandInterceptContext<IEnumerable<T>> context, CancellationToken cancellationToken = default)
+        {
+            return TaskCompatible.CompletedTask;
+        }
+
+        /// <summary>
+        /// 执行 ExecuteDataReader 方法之前。
+        /// </summary>
+        /// <param name="context"></param>
+        public virtual void OnBeforeExecuteReader(DbCommandInterceptContext<IDataReader> context)
+        {
+        }
+
+        /// <summary>
+        /// 执行 ExecuteDataReaderAsync 方法之前。
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public virtual Task OnBeforeExecuteReaderAsync(DbCommandInterceptContext<IDataReader> context, CancellationToken cancellationToken = default)
+        {
+            return TaskCompatible.CompletedTask;
+        }
+
+        /// <summary>
+        /// 执行 ExecuteDataReader 方法之后。
+        /// </summary>
+        /// <param name="context"></param>
+        public virtual void OnAfterExecuteReader(DbCommandInterceptContext<IDataReader> context)
+        {
+        }
+
+        /// <summary>
+        /// 执行 ExecuteDataReaderAsync 方法之后。
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public virtual Task OnAfterExecuteReaderAsync(DbCommandInterceptContext<IDataReader> context, CancellationToken cancellationToken = default)
         {
             return TaskCompatible.CompletedTask;
         }

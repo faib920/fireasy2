@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Data;
 
 namespace Fireasy.Data
@@ -14,6 +15,9 @@ namespace Fireasy.Data
     /// </summary>
     public sealed class CommandContext
     {
+        private string _commandText;
+        private IDataSegment _segment;
+
         internal CommandContext(IDatabase database, IQueryCommand queryCommand, IDbCommand command, IDataSegment segment, ParameterCollection parameters)
         {
             Database = database;
@@ -47,5 +51,52 @@ namespace Fireasy.Data
         /// 获取 <see cref="IQueryCommand"/> 对象。
         /// </summary>
         public IQueryCommand QueryCommand { get; private set; }
+
+        public void SetCommand(string commandText)
+        {
+            _commandText = Command.CommandText;
+            Command.CommandText = commandText;
+        }
+
+        public void SetSegment(IDataSegment segment)
+        {
+            _segment = Segment;
+            Segment = segment;
+        }
+
+        public string TryChangeSegment(IDataSegment segment, Func<string> func)
+        {
+            _segment = Segment;
+            Segment = segment;
+
+            var commandText = func();
+
+            if (!string.IsNullOrEmpty(_commandText))
+            {
+                Command.CommandText = _commandText;
+            }
+
+            if (_segment != null)
+            {
+                Segment = _segment;
+            }
+
+            return commandText;
+        }
+
+        public CommandContext Reset()
+        {
+            if (!string.IsNullOrEmpty(_commandText))
+            {
+                Command.CommandText = _commandText;
+            }
+
+            if (_segment != null)
+            {
+                Segment = _segment;
+            }
+
+            return this;
+        }
     }
 }

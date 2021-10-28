@@ -10,9 +10,11 @@ using Fireasy.Common.Extensions;
 using Fireasy.Common.Linq.Expressions;
 using Fireasy.Data.Entity.Properties;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace Fireasy.Data.Entity
 {
@@ -30,6 +32,28 @@ namespace Fireasy.Data.Entity
         {
             var value = EntityLazyloader.Load(entity, property);
             entity.InitializeValue(property, value);
+        }
+
+        /// <summary>
+        /// 为实体集加载所有延迟加载的属性值。
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <param name="entities">要加载的实体集。</param>
+        /// <param name="filterAttribute">使用一个特性来标记需要过滤的属性。</param>
+        public static void LazyLoad<TEntity>(this IEnumerable<TEntity> entities, Type filterAttribute = null) where TEntity : IEntity
+        {
+            EntityLazyloader.LoadEntities(entities.Cast<IEntity>(), filterAttribute);
+        }
+
+        /// <summary>
+        /// 为实体集加载所有延迟加载的属性值。
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <param name="entity">要加载的实体。</param>
+        /// <param name="filterAttribute">使用一个特性来标记需要过滤的属性。</param>
+        public static void LazyLoad<TEntity>(this TEntity entity, Type filterAttribute = null) where TEntity : IEntity
+        {
+            EntityLazyloader.LoadEntities(new[] { entity as IEntity }, filterAttribute);
         }
 
         /// <summary>

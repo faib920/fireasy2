@@ -33,6 +33,7 @@ namespace Fireasy.Data.Backup
             var sb = new StringBuilder();
             sb.AppendFormat("BACKUP DATABASE {0} TO DISK = '{1}'", option.Database, option.FileName);
             using var connection = database.CreateConnection();
+            ConnectionStateManager connstateMgr = null;
             try
             {
                 if (string.IsNullOrEmpty(option.Database))
@@ -40,13 +41,17 @@ namespace Fireasy.Data.Backup
                     option.Database = connection.Database;
                 }
 
-                connection.TryOpen();
+                connstateMgr = new ConnectionStateManager(connection).TryOpen();
                 using var command = database.Provider.CreateCommand(connection, null, sb.ToString());
                 command.ExecuteNonQuery();
             }
             catch (Exception exp)
             {
                 throw new BackupException(exp);
+            }
+            finally
+            {
+                connstateMgr?.TryClose();
             }
         }
 
@@ -62,6 +67,7 @@ namespace Fireasy.Data.Backup
             var sb = new StringBuilder();
             sb.AppendFormat("RESTORE DATABASE {0} FROM DISK = '{1}'", option.Database, option.FileName);
             using var connection = database.CreateConnection();
+            ConnectionStateManager connstateMgr = null;
             try
             {
                 if (string.IsNullOrEmpty(option.Database))
@@ -69,13 +75,17 @@ namespace Fireasy.Data.Backup
                     option.Database = connection.Database;
                 }
 
-                connection.TryOpen();
+                connstateMgr = new ConnectionStateManager(connection).TryOpen();
                 using var command = database.Provider.CreateCommand(connection, null, sb.ToString());
                 command.ExecuteNonQuery();
             }
             catch (Exception exp)
             {
                 throw new BackupException(exp);
+            }
+            finally
+            {
+                connstateMgr?.TryClose();
             }
         }
     }

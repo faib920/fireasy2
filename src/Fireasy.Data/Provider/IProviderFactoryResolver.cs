@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common;
 using System;
 using System.Data.Common;
 using System.IO;
@@ -53,6 +54,7 @@ namespace Fireasy.Data.Provider
             var factory = DbProviderFactories.GetFactory(_providerName);
             if (factory != null)
             {
+                Tracer.Debug($"Load DbProvider '{_providerName}'.");
                 return factory;
             }
 
@@ -86,6 +88,7 @@ namespace Fireasy.Data.Provider
             {
                 if (AssemblyLoader.TryLoad(typeName, out DbProviderFactory factory))
                 {
+                    Tracer.Debug($"Load Assembliy '{typeName}'.");
                     return factory;
                 }
             }

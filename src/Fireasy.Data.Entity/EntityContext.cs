@@ -317,7 +317,7 @@ namespace Fireasy.Data.Entity
             var modelBuilder = new ModelBuilder();
             OnModelCreating(modelBuilder);
 
-            modelBuilder.Build();
+            (modelBuilder as IMetadataBuilder).Build();
 
             TrySetContextType(options);
             TrySetServiceProvider(options);

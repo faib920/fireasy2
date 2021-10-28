@@ -7,13 +7,18 @@
 // -----------------------------------------------------------------------
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Linq;
+using Fireasy.Data.Entity.Query;
 #if NETSTANDARD
 using Microsoft.Extensions.DependencyInjection;
 #endif
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fireasy.Data.Entity.Properties
 {
@@ -311,6 +316,180 @@ namespace Fireasy.Data.Entity.Properties
             var enumProperty = property.As<EnumProperty>();
             var value = entity.GetValue(enumProperty.Reference);
             return PropertyValue.IsEmpty(value) ? PropertyValue.Empty : ((Enum)value).GetDescription();
+        }
+    }
+
+    internal class EntityBatchLoadder
+    {
+        public void Load(IEnumerable<IEntity> entities, Type filterAttribute = null)
+        {
+            var first = entities.FirstOrDefault();
+            if (first == null)
+            {
+                return;
+            }
+
+            var instanceName = first.GetInstanceName();
+            var environment = first.GetEnvironment();
+
+            var identifier = ContextInstanceManager.Default.TryGet(instanceName, first.EntityType);
+            if (identifier == null)
+            {
+                return;
+            }
+
+            var dict = FindMetadata(entities, filterAttribute);
+
+            var contextProvider = identifier.Provider.GetService<IContextProvider>();
+            using var scope = identifier.ServiceProvider.TryCreateScope();
+            using var service = contextProvider.CreateContextService(new ContextServiceContext(scope?.ServiceProvider ?? identifier.ServiceProvider, identifier));
+            service.InitializeEnvironment(environment).InitializeInstanceName(instanceName);
+
+            foreach (var kvp in dict)
+            {
+                var expression = BuildRelationExpression(kvp.Key, kvp.Value);
+                if (expression == null)
+                {
+                    continue;
+                }
+
+                var repProvider = service.CreateRepositoryProvider(kvp.Key.RelationalType);
+
+                var result = (IEnumerable)Execute(repProvider.Queryable, expression, filterAttribute);
+                foreach (IEntity item in result)
+                {
+                    foreach (var entity in entities)
+                    {
+                        var value = PropertyValue.NewValue(item, kvp.Key.RelationalType);
+                        entity.InitializeValue(kvp.Key, value);
+                    }
+                }
+            }
+        }
+
+        private Dictionary<RelationProperty, List<Tuple<IProperty, object>>> FindMetadata(IEnumerable<IEntity> entities, Type filterAttribute)
+        {
+            var dict = new Dictionary<RelationProperty, List<Tuple<IProperty, object>>>();
+
+            foreach (var entity in entities)
+            {
+                foreach (RelationProperty property in PropertyUnity.GetRelatedProperties(entity.EntityType))
+                {
+                    if (property is not EntityProperty p)
+                    {
+                        continue;
+                    }
+
+                    if (filterAttribute != null && !property.Info.ReflectionInfo.IsDefined(filterAttribute))
+                    {
+                        continue;
+                    }
+
+                    var relationKey = RelationshipUnity.GetRelationship(property);
+
+                    var keyValues = relationKey.Keys.Select(s => Tuple.Create(
+                        s.PrincipalProperty,
+                        entity.GetValue(s.DependentProperty).GetValue())).Where(s => s.Item2 != null).ToList();
+
+                    if (keyValues.Count > 0)
+                    {
+                        if (!dict.TryGetValue(property, out List<Tuple<IProperty, object>> list))
+                        {
+                            dict.Add(property, keyValues);
+                        }
+                        else
+                        {
+                            list.AddRange(keyValues);
+                        }
+                    }
+                }
+            }
+
+            return dict;
+        }
+
+        private Expression BuildRelationExpression(RelationProperty relationProperty, List<Tuple<IProperty, object>> properties)
+        {
+            var relationKey = RelationshipUnity.GetRelationship(relationProperty);
+            if (relationKey == null)
+            {
+                return null;
+            }
+
+            var parExp = Expression.Parameter(relationProperty.RelationalType, "s");
+            Expression binExp = null;
+
+            foreach (var g in properties.GroupBy(s => s.Item1))
+            {
+                var member = g.Key.Info.ReflectionInfo;
+                var mbrExp = Expression.MakeMemberAccess(parExp, member);
+                var exp = g.Select(t => t.Item2).Distinct().ToList()
+                    .Select(s => Expression.Equal(mbrExp, Expression.Convert(Expression.Constant(s), mbrExp.Type))).Aggregate(Expression.Or);
+                binExp = binExp == null ? exp : Expression.And(binExp, exp);
+            }
+
+            if (binExp == null)
+            {
+                return null;
+            }
+
+            return Expression.Lambda(binExp, parExp);
+        }
+
+        /// <summary>
+        /// 执行查询返回结果。
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="predicate"></param>
+        /// <returns></returns>
+        private object Execute(IQueryable queryable, Expression predicate, Type filterAttribute = null)
+        {
+            var expression = BuildQueryExpression(queryable, predicate, filterAttribute);
+
+            return queryable.Provider.Execute(expression);
+        }
+
+        private Expression BuildQueryExpression(IQueryable queryable, Expression predicate, Type filterAttribute = null)
+        {
+            var expression = Expression.Call(typeof(Queryable), nameof(Queryable.Where),
+                new[] { queryable.ElementType }, queryable.Expression, predicate);
+
+            if (filterAttribute != null)
+            {
+                var properties = PropertyUnity.GetProperties(queryable.ElementType).Where(s => s.Info.ReflectionInfo.IsDefined(filterAttribute)).ToList();
+                if (properties.Count > 0)
+                {
+                    properties.AddRange(PropertyUnity.GetPrimaryProperties(queryable.ElementType));
+
+                    var parExp = Expression.Parameter(queryable.ElementType, "s");
+                    var binds = properties.Select(s => Expression.Bind(s.Info.ReflectionInfo, CreateSubPropertyExpression(s, () => Expression.MakeMemberAccess(parExp, s.Info.ReflectionInfo), filterAttribute)));
+                    var initExp = Expression.MemberInit(Expression.New(queryable.ElementType), binds);
+
+                    expression = Expression.Call(typeof(Queryable), nameof(Queryable.Select),
+                        new[] { queryable.ElementType, queryable.ElementType }, expression, Expression.Lambda(initExp, parExp));
+                }
+            }
+
+            return expression;
+        }
+
+        private Expression CreateSubPropertyExpression(IProperty property, Func<Expression> func, Type filterAttribute)
+        {
+            var mbrExp = func();
+
+            if (filterAttribute != null && property is EntityProperty ep)
+            {
+                var properties = PropertyUnity.GetProperties(ep.RelationalType).Where(s => s.Info.ReflectionInfo.IsDefined(filterAttribute)).ToList();
+                if (properties.Count > 0)
+                {
+                    properties.AddRange(PropertyUnity.GetPrimaryProperties(ep.RelationalType));
+
+                    var binds = properties.Select(s => Expression.Bind(s.Info.ReflectionInfo, CreateSubPropertyExpression(s, () => Expression.MakeMemberAccess(mbrExp, s.Info.ReflectionInfo), filterAttribute)));
+                    return Expression.MemberInit(Expression.New(ep.RelationalType), binds);
+                }
+            }
+
+            return mbrExp;
         }
     }
 }

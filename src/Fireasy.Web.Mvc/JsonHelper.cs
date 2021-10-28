@@ -1,6 +1,7 @@
-﻿#if NETCOREAPP3_0
+﻿#if NETCOREAPP3_0_OR_GREATER
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Serialization;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -11,18 +12,18 @@ namespace Fireasy.Web.Mvc
 {
     public class JsonHelper : IJsonHelper
     {
-        private readonly HttpContext context;
-        private readonly MvcOptions mvcOptions;
+        private readonly HttpContext _context;
+        private readonly MvcOptions _mvcOptions;
 
         public JsonHelper(IHttpContextAccessor httpAccessor, IOptions<MvcOptions> mvcOptions)
         {
-            context = httpAccessor.HttpContext;
-            this.mvcOptions = mvcOptions.Value;
+            _context = httpAccessor.HttpContext;
+            _mvcOptions = mvcOptions.Value;
         }
 
         public IHtmlContent Serialize(object value)
         {
-            var serviceProvider = context.RequestServices;
+            var serviceProvider = _context.RequestServices;
 
             JsonSerializeOption option = null;
             if (value is JsonResultWrapper wrapper)
@@ -31,22 +32,12 @@ namespace Fireasy.Web.Mvc
             }
             else
             {
-                if (context.RequestServices.GetService(typeof(JsonSerializeOptionHosting)) is JsonSerializeOptionHosting hosting)
-                {
-                    option = hosting.Option;
-                }
+                var hosting = _context.RequestServices.GetService<JsonSerializeOptionHosting>();
+                option = hosting?.Option;
             }
 
-            if (option == null)
-            {
-                option = mvcOptions.JsonSerializeOption;
-            }
-            else
-            {
-                option.Reference(mvcOptions.JsonSerializeOption);
-            }
-
-            var serializer = serviceProvider.TryGetService<ISerializer>(() => new JsonSerializer(option));
+            var serializer = serviceProvider.TryGetService<ISerializer>(() => new JsonSerializer());
+            serializer.Option = option ?? new JsonSerializeOption(_mvcOptions.JsonSerializeOption);
 
             string json;
             if (serializer is ITextSerializer txtSerializer)

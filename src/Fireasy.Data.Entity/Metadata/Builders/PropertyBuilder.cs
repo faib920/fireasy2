@@ -5,6 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Reflection;
 
 namespace Fireasy.Data.Entity.Metadata.Builders
@@ -27,7 +28,12 @@ namespace Fireasy.Data.Entity.Metadata.Builders
             }
         }
 
-        public virtual void Build()
+        void IMetadataBuilder.Build()
+        {
+            InternalBuild();
+        }
+
+        protected virtual void InternalBuild()
         {
             var property = PropertyUnity.RegisterProperty(_mapInfo.ReflectionInfo.Name, _mapInfo.ReflectionInfo.PropertyType, _metadata.EntityType, _mapInfo);
             _metadata.InternalAddProperty(property);
@@ -177,10 +183,22 @@ namespace Fireasy.Data.Entity.Metadata.Builders
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public virtual PropertyBuilder<TProperty> DefaultValueFormatter(string formatter)
+        public virtual PropertyBuilder<TProperty> HasDefaultValueFormatter(string formatter)
         {
             _mapInfo.DefaultValueFormatter = formatter;
             return this;
+        }
+
+        /// <summary>
+        /// 添加验证特性。
+        /// </summary>
+        /// <param name="builderAction"></param>
+        /// <returns></returns>
+        public virtual ValidationBuilder HasValidation(Action<ValidationBuilder> builderAction = null)
+        {
+            var builder = new ValidationBuilder(_mapInfo);
+            builderAction?.Invoke(builder);
+            return builder;
         }
 
         internal class NullBuilder : PropertyBuilder<TProperty>
@@ -250,12 +268,17 @@ namespace Fireasy.Data.Entity.Metadata.Builders
                 return this;
             }
 
-            public override PropertyBuilder<TProperty> DefaultValueFormatter(string formatter)
+            public override PropertyBuilder<TProperty> HasDefaultValueFormatter(string formatter)
             {
                 return this;
             }
 
-            public override void Build()
+            public override ValidationBuilder HasValidation(Action<ValidationBuilder> builderAction = null)
+            {
+                return new ValidationBuilder.NullBuilder();
+            }
+
+            protected override void InternalBuild()
             {
             }
         }

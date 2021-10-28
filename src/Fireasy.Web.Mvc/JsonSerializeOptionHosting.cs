@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 #if NETCOREAPP
 using Fireasy.Common.Serialization;
+using Microsoft.Extensions.Options;
 
 namespace Fireasy.Web.Mvc
 {
@@ -16,9 +17,18 @@ namespace Fireasy.Web.Mvc
     public class JsonSerializeOptionHosting
     {
         /// <summary>
+        /// 初始化 <see cref="JsonSerializeOptionHosting"/> 类的新实例。
+        /// </summary>
+        /// <param name="options"></param>
+        public JsonSerializeOptionHosting(IOptions<MvcOptions> options)
+        {
+            Option = new JsonSerializeOption(options.Value.JsonSerializeOption);
+        }
+
+        /// <summary>
         /// 获取 <see cref="JsonSerializeOption"/> 对象。
         /// </summary>
-        public JsonSerializeOption Option { get; } = new JsonSerializeOption();
+        public JsonSerializeOption Option { get; }
     }
 }
 #endif

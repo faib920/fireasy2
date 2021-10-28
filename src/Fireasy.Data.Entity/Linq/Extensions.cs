@@ -11,12 +11,12 @@ using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Extensions;
 using Fireasy.Common.Linq.Expressions;
 using Fireasy.Common.Reflection;
+using Fireasy.Data.Entity.Linq.Expressions;
 using Fireasy.Data.Entity.Linq.Translators;
 using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Entity.Query;
 using Fireasy.Data.Syntax;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -401,6 +401,51 @@ namespace Fireasy.Data.Entity.Linq
         }
 
         /// <summary>
+        /// 使用一个 SQL 条件表达式。
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="condition">一个条件表达式。</param>
+        /// <param name="parameterAct">用于初始化参数的方法。</param>
+        /// <param name="aliasconversion">表别名转换器。</param>
+        /// <returns></returns>
+        public static IQueryable<TSource> Where<TSource>(this IQueryable<TSource> source, string condition, Action<ParameterCollection> parameterAct = null, TableAliasConversion aliasconversion = null)
+        {
+            if (source == null || string.IsNullOrEmpty(condition))
+            {
+                return source;
+            }
+
+            var parameters = new ParameterCollection();
+            parameterAct?.Invoke(parameters);
+
+            return Where(source, condition, parameters, aliasconversion);
+        }
+
+        /// <summary>
+        /// 使用一个 SQL 条件表达式。
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="condition">一个条件表达式。</param>
+        /// <param name="parameters">一个参数集合。</param>
+        /// <param name="aliasconversion">表别名转换器。</param>
+        /// <returns></returns>
+        public static IQueryable<TSource> Where<TSource>(this IQueryable<TSource> source, string condition, ParameterCollection parameters, TableAliasConversion aliasconversion = null)
+        {
+            if (source == null || string.IsNullOrEmpty(condition))
+            {
+                return source;
+            }
+
+            var method = (MethodInfo)MethodBase.GetCurrentMethod();
+
+            var expression = Expression.Call(method.MakeGenericMethod(typeof(TSource)), source.Expression, Expression.Constant(condition), Expression.Constant(parameters), Expression.Constant(aliasconversion));
+
+            return source.Provider.CreateQuery<TSource>(expression);
+        }
+
+        /// <summary>
         /// 使用一个排序定义对象对集合中的元素进行排序。
         /// </summary>
         /// <typeparam name="TSource"></typeparam>
@@ -479,6 +524,27 @@ namespace Fireasy.Data.Entity.Linq
         }
 
         /// <summary>
+        /// 使用 Right Join。
+        /// </summary>
+        /// <typeparam name="TOuter"></typeparam>
+        /// <typeparam name="TInner"></typeparam>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="outer"></param>
+        /// <param name="inner"></param>
+        /// <param name="predicate"></param>
+        /// <param name="resultSelector"></param>
+        /// <returns></returns>
+        public static IQueryable<TResult> Join<TOuter, TInner, TResult>(this IQueryable<TOuter> outer, IEnumerable<TInner> inner, Expression<Func<TOuter, TInner, bool>> predicate, Expression<Func<TOuter, TInner, TResult>> resultSelector)
+        {
+            var method = (MethodInfo)MethodBase.GetCurrentMethod();
+            method = method.MakeGenericMethod(new[] { typeof(TOuter), typeof(TInner), typeof(TResult) });
+            var expression = Expression.Call(null, method,
+                new[] { outer.Expression, Expression.Constant(inner), predicate, resultSelector });
+
+            return outer.Provider.CreateQuery<TResult>(expression);
+        }
+
+        /// <summary>
         /// 使用 Left Join。
         /// </summary>
         /// <typeparam name="TOuter"></typeparam>
@@ -502,6 +568,27 @@ namespace Fireasy.Data.Entity.Linq
         }
 
         /// <summary>
+        /// 使用 Left Join。
+        /// </summary>
+        /// <typeparam name="TOuter"></typeparam>
+        /// <typeparam name="TInner"></typeparam>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="outer"></param>
+        /// <param name="inner"></param>
+        /// <param name="predicate"></param>
+        /// <param name="resultSelector"></param>
+        /// <returns></returns>
+        public static IQueryable<TResult> LeftJoin<TOuter, TInner, TResult>(this IQueryable<TOuter> outer, IEnumerable<TInner> inner, Expression<Func<TOuter, TInner, bool>> predicate, Expression<Func<TOuter, TInner, TResult>> resultSelector)
+        {
+            var method = (MethodInfo)MethodBase.GetCurrentMethod();
+            method = method.MakeGenericMethod(new[] { typeof(TOuter), typeof(TInner), typeof(TResult) });
+            var expression = Expression.Call(null, method,
+                new[] { outer.Expression, Expression.Constant(inner), predicate, resultSelector });
+
+            return outer.Provider.CreateQuery<TResult>(expression);
+        }
+
+        /// <summary>
         /// 使用 Right Join。
         /// </summary>
         /// <typeparam name="TOuter"></typeparam>
@@ -520,6 +607,27 @@ namespace Fireasy.Data.Entity.Linq
             method = method.MakeGenericMethod(new[] { typeof(TOuter), typeof(TInner), typeof(TKey), typeof(TResult) });
             var expression = Expression.Call(null, method,
                 new[] { outer.Expression, Expression.Constant(inner), outerKeySelector, innerKeySelector, resultSelector });
+
+            return outer.Provider.CreateQuery<TResult>(expression);
+        }
+
+        /// <summary>
+        /// 使用 Right Join。
+        /// </summary>
+        /// <typeparam name="TOuter"></typeparam>
+        /// <typeparam name="TInner"></typeparam>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="outer"></param>
+        /// <param name="inner"></param>
+        /// <param name="predicate"></param>
+        /// <param name="resultSelector"></param>
+        /// <returns></returns>
+        public static IQueryable<TResult> RightJoin<TOuter, TInner, TResult>(this IQueryable<TOuter> outer, IEnumerable<TInner> inner, Expression<Func<TOuter, TInner, bool>> predicate, Expression<Func<TOuter, TInner, TResult>> resultSelector)
+        {
+            var method = (MethodInfo)MethodBase.GetCurrentMethod();
+            method = method.MakeGenericMethod(new[] { typeof(TOuter), typeof(TInner), typeof(TResult) });
+            var expression = Expression.Call(null, method,
+                new[] { outer.Expression, Expression.Constant(inner), predicate, resultSelector });
 
             return outer.Provider.CreateQuery<TResult>(expression);
         }
@@ -869,7 +977,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="source"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TSource> FirstAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
+        public static Task<TSource> FirstAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -877,7 +985,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -888,7 +996,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TSource> FirstAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
+        public static Task<TSource> FirstAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -896,7 +1004,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -906,7 +1014,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="source"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TSource> FirstOrDefaultAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
+        public static Task<TSource> FirstOrDefaultAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -914,7 +1022,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -925,7 +1033,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TSource> FirstOrDefaultAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
+        public static Task<TSource> FirstOrDefaultAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -933,7 +1041,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -943,7 +1051,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="source"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TSource> LastAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
+        public static Task<TSource> LastAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -951,7 +1059,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -962,7 +1070,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TSource> LastAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
+        public static Task<TSource> LastAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -970,7 +1078,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -980,7 +1088,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="source"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TSource> LastOrDefaultAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
+        public static Task<TSource> LastOrDefaultAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -988,7 +1096,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -999,7 +1107,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TSource> LastOrDefaultAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
+        public static Task<TSource> LastOrDefaultAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -1007,7 +1115,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -1017,7 +1125,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="source"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TSource> SingleAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
+        public static Task<TSource> SingleAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -1025,7 +1133,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -1036,7 +1144,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TSource> SingleAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
+        public static Task<TSource> SingleAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -1044,7 +1152,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -1054,7 +1162,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="source"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TSource> SingleOrDefaultAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
+        public static Task<TSource> SingleOrDefaultAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -1062,7 +1170,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -1073,7 +1181,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TSource> SingleOrDefaultAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
+        public static Task<TSource> SingleOrDefaultAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -1081,7 +1189,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TSource>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -1091,7 +1199,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="source"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<bool> AnyAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
+        public static Task<bool> AnyAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -1099,7 +1207,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<bool>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<bool>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -1110,7 +1218,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<bool> AnyAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
+        public static Task<bool> AnyAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -1118,7 +1226,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<bool>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<bool>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -1128,7 +1236,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="source"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<bool> AllAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
+        public static Task<bool> AllAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -1136,7 +1244,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<bool>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<bool>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -1147,7 +1255,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<bool> AllAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
+        public static Task<bool> AllAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -1155,7 +1263,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<bool>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<bool>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -1165,7 +1273,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="source"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<int> CountAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
+        public static Task<int> CountAsync<TSource>(this IQueryable<TSource> source, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -1173,7 +1281,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<int>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<int>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -1184,7 +1292,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="predicate">用于测试每个元素是否满足条件的函数。</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<int> CountAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
+        public static Task<int> CountAsync<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -1192,7 +1300,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<int>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<int>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -1202,7 +1310,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="source"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TResult> AverageAsync<TResult>(this IQueryable<TResult> source, CancellationToken cancellationToken = default)
+        public static Task<TResult> AverageAsync<TResult>(this IQueryable<TResult> source, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -1210,7 +1318,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TResult>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TResult>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -1222,7 +1330,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="selector">每一个元素的投影函数。</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TResult> AverageAsync<TSource, TResult>(this IQueryable<TSource> source, Expression<Func<TSource, TResult>> selector, CancellationToken cancellationToken = default)
+        public static Task<TResult> AverageAsync<TSource, TResult>(this IQueryable<TSource> source, Expression<Func<TSource, TResult>> selector, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -1230,7 +1338,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), selector, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TResult>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TResult>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -1240,7 +1348,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="source"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TResult> SumAsync<TResult>(this IQueryable<TResult> source, CancellationToken cancellationToken = default)
+        public static Task<TResult> SumAsync<TResult>(this IQueryable<TResult> source, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -1248,7 +1356,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TResult>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TResult>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -1260,7 +1368,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="selector">每一个元素的投影函数。</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TResult> SumAsync<TSource, TResult>(this IQueryable<TSource> source, Expression<Func<TSource, TResult>> selector, CancellationToken cancellationToken = default)
+        public static Task<TResult> SumAsync<TSource, TResult>(this IQueryable<TSource> source, Expression<Func<TSource, TResult>> selector, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -1268,7 +1376,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), selector, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TResult>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TResult>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -1278,7 +1386,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="source"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TResult> MaxAsync<TResult>(this IQueryable<TResult> source, CancellationToken cancellationToken = default)
+        public static Task<TResult> MaxAsync<TResult>(this IQueryable<TResult> source, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -1286,7 +1394,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TResult>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TResult>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -1298,7 +1406,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="selector">每一个元素的投影函数。</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TResult> MaxAsync<TSource, TResult>(this IQueryable<TSource> source, Expression<Func<TSource, TResult>> selector, CancellationToken cancellationToken = default)
+        public static Task<TResult> MaxAsync<TSource, TResult>(this IQueryable<TSource> source, Expression<Func<TSource, TResult>> selector, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -1306,7 +1414,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), selector, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TResult>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TResult>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -1316,7 +1424,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="source"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TResult> MinAsync<TResult>(this IQueryable<TResult> source, CancellationToken cancellationToken = default)
+        public static Task<TResult> MinAsync<TResult>(this IQueryable<TResult> source, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -1324,7 +1432,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TResult>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TResult>(expression, cancellationToken);
         }
 
         /// <summary>
@@ -1336,7 +1444,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="selector">每一个元素的投影函数。</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<TResult> MinAsync<TSource, TResult>(this IQueryable<TSource> source, Expression<Func<TSource, TResult>> selector, CancellationToken cancellationToken = default)
+        public static Task<TResult> MinAsync<TSource, TResult>(this IQueryable<TSource> source, Expression<Func<TSource, TResult>> selector, CancellationToken cancellationToken = default)
         {
             CheckAsyncImplementd(source.Provider);
 
@@ -1344,10 +1452,10 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), selector, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TResult>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<TResult>(expression, cancellationToken);
         }
 
-#if NETSTANDARD && !NETSTANDARD2_0
+#if NETSTANDARD2_1_OR_GREATER
         /// <summary>
         /// 异步的，将序列转换成异步枚举。
         /// </summary>
@@ -1388,7 +1496,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <param name="primaryValues"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        internal static async Task<T> GetByPrimaryAsync<T>(this IQueryable source, PropertyValue[] primaryValues, CancellationToken cancellationToken = default)
+        internal static Task<T> GetByPrimaryAsync<T>(this IQueryable source, PropertyValue[] primaryValues, CancellationToken cancellationToken = default)
         {
             Guard.ArgumentNull(primaryValues, nameof(primaryValues));
             CheckAsyncImplementd(source.Provider);
@@ -1403,7 +1511,7 @@ namespace Fireasy.Data.Entity.Linq
             var expression = Expression.Call(null, method,
                 new[] { (Expression)Expression.Constant(source), predicate, Expression.Constant(cancellationToken, typeof(CancellationToken)) });
 
-            return await ((IAsyncQueryProvider)source.Provider).ExecuteAsync<T>(expression, cancellationToken);
+            return ((IAsyncQueryProvider)source.Provider).ExecuteAsync<T>(expression, cancellationToken);
         }
 
         internal static async Task<T> SingleCoreAsnyc<T>(this Task<IEnumerable<T>> task)

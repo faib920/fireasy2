@@ -41,7 +41,7 @@ namespace Fireasy.Data.Entity.Query
         /// <returns></returns>
         Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default);
 
-#if !NETFRAMEWORK && !NETSTANDARD2_0
+#if NETSTANDARD2_1_OR_GREATER
         IAsyncEnumerable<TResult> ExecuteEnumerableAsync<TResult>(Expression expression, CancellationToken cancellationToken);
 #endif
     }

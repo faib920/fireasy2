@@ -69,40 +69,20 @@ namespace Fireasy.Redis
             TryReInitialize();
 
             var sKey = key.ToString();
-            CheckCache<TValue> GetCacheValue()
+            var content = _client.HGet(_cacheKey, sKey);
+            if (!string.IsNullOrEmpty(content))
             {
-                if (_client.HExists(_cacheKey, sKey))
+                var item = _deserialize(content);
+                if (!item.HasExpired())
                 {
-                    var content = _client.HGet(_cacheKey, sKey);
-                    var item = _deserialize(content);
-                    if (!item.HasExpired())
-                    {
-                        return CheckCache<TValue>.Result(item.Value);
-                    }
+                    return item.Value;
                 }
-
-                return CheckCache<TValue>.Null();
             }
 
-            var ck = GetCacheValue();
-            if (ck.HasValue)
-            {
-                return ck.Value;
-            }
-
-            return RedisHelper.Lock(_client, string.Concat(_cacheKey, ":", sKey), _setting.LockTimeout, () =>
-                {
-                    var ck1 = GetCacheValue();
-                    if (ck1.HasValue)
-                    {
-                        return ck1.Value;
-                    }
-
-                    var value = valueCreator();
-                    var content = _serialize(new RedisCacheItem<TValue>(value, expiration == null ? NeverExpired.Instance : expiration()));
-                    _client.HSet(_cacheKey, sKey, content);
-                    return value;
-                });
+            var value = valueCreator();
+            content = _serialize(new RedisCacheItem<TValue>(value, expiration == null ? NeverExpired.Instance : expiration()));
+            _client.HSet(_cacheKey, sKey, content);
+            return value;
         }
 
         /// <summary>
@@ -120,40 +100,20 @@ namespace Fireasy.Redis
             TryReInitialize();
 
             var sKey = key.ToString();
-            async Task<CheckCache<TValue>> GetCacheValue()
+            var content = await _client.HGetAsync(_cacheKey, sKey);
+            if (!string.IsNullOrEmpty(content))
             {
-                if (await _client.HExistsAsync(_cacheKey, sKey))
+                var item = _deserialize(content);
+                if (!item.HasExpired())
                 {
-                    var content = await _client.HGetAsync(_cacheKey, sKey);
-                    var item = _deserialize(content);
-                    if (!item.HasExpired())
-                    {
-                        return CheckCache<TValue>.Result(item.Value);
-                    }
+                    return item.Value;
                 }
-
-                return CheckCache<TValue>.Null();
             }
 
-            var ck = await GetCacheValue();
-            if (ck.HasValue)
-            {
-                return ck.Value;
-            }
-
-            return await RedisHelper.LockAsync(_client, string.Concat(_cacheKey, ":", sKey), _setting.LockTimeout, async () =>
-                {
-                    var ck1 = await GetCacheValue();
-                    if (ck1.HasValue)
-                    {
-                        return ck1.Value;
-                    }
-
-                    var value = await valueCreator();
-                    var content = _serialize(new RedisCacheItem<TValue>(value, expiration == null ? NeverExpired.Instance : expiration()));
-                    await _client.HSetAsync(_cacheKey, sKey, content);
-                    return value;
-                });
+            var value = await valueCreator();
+            content = _serialize(new RedisCacheItem<TValue>(value, expiration == null ? NeverExpired.Instance : expiration()));
+            await _client.HSetAsync(_cacheKey, sKey, content);
+            return value;
         }
 
         /// <summary>

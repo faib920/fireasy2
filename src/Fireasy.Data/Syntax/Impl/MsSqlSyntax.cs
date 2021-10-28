@@ -105,11 +105,11 @@ namespace Fireasy.Data.Syntax
             }
             else if (version >= 11)
             {
-                context.Command.CommandText = SegmentWith2012(context.Command.CommandText, context.Segment);
+                context.SetCommand(SegmentWith2012(context.Command.CommandText, context.Segment));
             }
             else
             {
-                context.Command.CommandText = Segment(context.Command.CommandText, context.Segment);
+                context.SetCommand(Segment(context.Command.CommandText, context.Segment));
             }
 
             return true;
@@ -441,9 +441,9 @@ namespace Fireasy.Data.Syntax
                 return version;
             }
 
-            database.Connection.TryOpen();
+            var constateMgr = new ConnectionStateManager(database.Connection).TryOpen();
             var serverVersion = database.Connection.ServerVersion;
-            database.Connection.TryClose();
+            constateMgr.TryClose();
 
             if (!string.IsNullOrEmpty(serverVersion))
             {

@@ -46,9 +46,16 @@ namespace Fireasy.Data.Entity.Query
         /// <summary>
         /// 评估表达式能够被缓存。
         /// </summary>
-        /// <param name="expression"></param>
+        /// <param name="resultType"></param>
+        /// <param name="elementType"></param>
         /// <returns></returns>
-        bool Evaluate(MethodCallExpression expression);
+        bool Evaluate(ResultType resultType, Type elementType);
+    }
+
+    public enum ResultType
+    {
+        Enumerable,
+        Single
     }
 
     /// <summary>

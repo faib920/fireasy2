@@ -254,7 +254,7 @@ namespace Fireasy.Common.Serialization
             foreach (var name in dynamicObject.Keys)
             {
                 dynamicObject.TryGetValue(name, out object value);
-                if (_option.NullValueHandling == NullValueHandling.Ignore && value == null)
+                if (value == null && _option.NullValueHandling == NullValueHandling.Ignore)
                 {
                     continue;
                 }
@@ -290,9 +290,16 @@ namespace Fireasy.Common.Serialization
                 }
 
                 var value = metadata.Getter.Invoke(obj);
-                if (_option.NullValueHandling == NullValueHandling.Ignore && value == null)
+                if (value == null)
                 {
-                    continue;
+                    if (_option.NullValueHandling == NullValueHandling.Ignore)
+                    {
+                        continue;
+                    }
+                    else if (_option.NullValueHandling == NullValueHandling.Empty)
+                    {
+                        value = metadata.PropertyInfo.PropertyType.GetEmptyValue();
+                    }
                 }
 
                 if (!flag.AssertTrue())

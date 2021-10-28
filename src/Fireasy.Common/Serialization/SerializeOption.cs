@@ -300,7 +300,11 @@ namespace Fireasy.Common.Serialization
         /// <summary>
         /// 忽略该值。
         /// </summary>
-        Ignore
+        Ignore,
+        /// <summary>
+        /// 缺省值。
+        /// </summary>
+        Empty
     }
 
     /// <summary>

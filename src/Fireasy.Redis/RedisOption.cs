@@ -84,6 +84,11 @@ namespace Fireasy.Redis
         /// </summary>
         public TimeSpan SyncTimeout { get; set; } = TimeSpan.FromMilliseconds(10000);
 
+        /// <summary>
+        /// 获取或设置是否使用预热。
+        /// </summary>
+        public bool? Preheat { get; set; }
+
         bool IConfiguredOptions.IsConfigured { get; set; }
     }
 

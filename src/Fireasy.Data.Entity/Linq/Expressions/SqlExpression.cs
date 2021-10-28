@@ -54,6 +54,11 @@ namespace Fireasy.Data.Entity.Linq.Expressions
         public string SqlCommand { get; }
 
         /// <summary>
+        /// 获取表别名转换器。
+        /// </summary>
+        public TableAliasConversion AliasConversion { get; } = new TableAliasConversion();
+
+        /// <summary>
         /// 获取参数集合。
         /// </summary>
         public List<NamedValueExpression> Parameters { get; }

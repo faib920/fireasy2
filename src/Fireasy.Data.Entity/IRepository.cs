@@ -403,7 +403,14 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="fnMember">要包含的属性的表达式。</param>
         /// <returns></returns>
-        IRepository<TEntity> Include(Expression<Func<TEntity, object>> fnMember);
+        IRepository<TEntity> Include(Expression<Func<TEntity, IEntity>> fnMember);
+
+        /// <summary>
+        /// 指定要包括在查询结果中的关联对象。
+        /// </summary>
+        /// <param name="fnMember">要包含的属性的表达式。</param>
+        /// <returns></returns>
+        IRepository<TEntity> Include(Expression<Func<TEntity, ICollection<IEntity>>> fnMember);
 
         /// <summary>
         /// 对指定割开的查询始终附加指定的谓语。

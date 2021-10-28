@@ -43,6 +43,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.AutoMapper", "src\F
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fireasy.Mapster", "src\Fireasy.Mapster\Fireasy.Mapster.csproj", "{5F1389DB-5FF5-45C2-80BF-A2B68083ACE9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fireasy.Data.MsSqlClient", "src\Fireasy.Data.MsSqlClient\Fireasy.Data.MsSqlClient.csproj", "{D6CE0967-009C-4BE5-A807-0FDD698DE3B0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fireasy.StackExchange.Redis", "src\Fireasy.StackExchange.Redis\Fireasy.StackExchange.Redis.csproj", "{04AA5C18-CBCD-4266-9A60-2B4A1CAE9F97}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -121,6 +125,14 @@ Global
 		{5F1389DB-5FF5-45C2-80BF-A2B68083ACE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5F1389DB-5FF5-45C2-80BF-A2B68083ACE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5F1389DB-5FF5-45C2-80BF-A2B68083ACE9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6CE0967-009C-4BE5-A807-0FDD698DE3B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6CE0967-009C-4BE5-A807-0FDD698DE3B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6CE0967-009C-4BE5-A807-0FDD698DE3B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6CE0967-009C-4BE5-A807-0FDD698DE3B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{04AA5C18-CBCD-4266-9A60-2B4A1CAE9F97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{04AA5C18-CBCD-4266-9A60-2B4A1CAE9F97}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{04AA5C18-CBCD-4266-9A60-2B4A1CAE9F97}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{04AA5C18-CBCD-4266-9A60-2B4A1CAE9F97}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -144,6 +156,7 @@ Global
 		{8B887B93-5677-4338-A1C5-CDD956B8C996} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
 		{AB456A43-8383-4B49-9E33-CF3603A2577A} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
 		{5F1389DB-5FF5-45C2-80BF-A2B68083ACE9} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
+		{04AA5C18-CBCD-4266-9A60-2B4A1CAE9F97} = {19E2EB7D-D0D9-4457-AD22-AE43723E0930}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {72E7FC59-9162-48A8-B31F-CB0FEE862E56}

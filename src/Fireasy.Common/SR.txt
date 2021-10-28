@@ -50,3 +50,4 @@ UnableCreateCachedDelegate=无法为 {0} 创建缓存态委托。
 LoopResolveSameType=检测到循环反转类型为 {0} 的对象，已被终止。
 NotFoundRegisterForType=没有在容器中发现 {0} 的注册。
 NotSerializeTask=不能序列化类型 {0}。
+OnlyImplOneInterface=使用 IRepeatableService 标记服务时，类型 {0} 只允许实现一个拥有方法的接口。

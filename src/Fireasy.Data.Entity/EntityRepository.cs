@@ -680,31 +680,21 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="fnMember">要包含的属性的表达式。</param>
         /// <returns></returns>
-        public virtual EntityRepository<TEntity> Include<TProperty>(Expression<Func<TEntity, TProperty>> fnMember)
+        public virtual IncludedRepository<TEntity, TProperty> Include<TProperty>(Expression<Func<TEntity, TProperty>> fnMember) where TProperty : IEntity
         {
             _repositoryProxy.As<IQueryPolicyExecutor>(s => s.IncludeWith(fnMember));
-            return this;
+            return new IncludedRepository<TEntity, TProperty>(this);
         }
 
         /// <summary>
         /// 指定要包括在查询结果中的关联对象。
         /// </summary>
-        /// <param name="fnMember">要包含的子实体的表达式。</param>
-        /// <param name="fnMembers">要包含的子实体的属性的表达式。</param>
+        /// <param name="fnMember">要包含的属性的表达式。</param>
         /// <returns></returns>
-        public virtual EntityRepository<TEntity> Include<TEntityReference, TProperty>(Expression<Func<TEntity, ICollection<TEntityReference>>> fnMember, params Expression<Func<TEntityReference, TProperty>>[] fnMembers) where TEntityReference : IEntity
+        public virtual IncludedRepository<TEntity, TProperty> Include<TProperty>(Expression<Func<TEntity, ICollection<TProperty>>> fnMember) where TProperty : IEntity
         {
             _repositoryProxy.As<IQueryPolicyExecutor>(s => s.IncludeWith(fnMember));
-
-            if (fnMembers != null)
-            {
-                foreach (var fn in fnMembers)
-                {
-                    _repositoryProxy.As<IQueryPolicyExecutor>(s => s.IncludeWith(fn));
-                }
-            }
-
-            return this;
+            return new IncludedRepository<TEntity, TProperty>(this);
         }
 
         /// <summary>
@@ -713,9 +703,9 @@ namespace Fireasy.Data.Entity
         /// <param name="isTrue">要计算的条件表达式。如果条件为 true，则进行 Include。</param>
         /// <param name="fnMember">要包含的属性的表达式。</param>
         /// <returns></returns>
-        public EntityRepository<TEntity> AssertInclude<TProperty>(bool isTrue, Expression<Func<TEntity, TProperty>> fnMember)
+        public IncludedRepository<TEntity, TProperty> AssertInclude<TProperty>(bool isTrue, Expression<Func<TEntity, TProperty>> fnMember) where TProperty : IEntity
         {
-            return isTrue ? Include(fnMember) : this;
+            return isTrue ? Include(fnMember) : new IncludedRepository<TEntity, TProperty>(this);
         }
 
         /// <summary>
@@ -725,9 +715,9 @@ namespace Fireasy.Data.Entity
         /// <param name="fnMember">要包含的子实体的表达式。</param>
         /// <param name="fnMembers">要包含的子实体的属性的表达式。</param>
         /// <returns></returns>
-        public EntityRepository<TEntity> AssertInclude<TEntityReference, TProperty>(bool isTrue, Expression<Func<TEntity, ICollection<TEntityReference>>> fnMember, params Expression<Func<TEntityReference, TProperty>>[] fnMembers) where TEntityReference : IEntity
+        public IncludedRepository<TEntity, TProperty> AssertInclude<TProperty>(bool isTrue, Expression<Func<TEntity, ICollection<TProperty>>> fnMember) where TProperty : IEntity
         {
-            return isTrue ? Include(fnMember, fnMembers) : this;
+            return isTrue ? Include(fnMember) : new IncludedRepository<TEntity, TProperty>(this);
         }
 
         /// <summary>
@@ -976,7 +966,17 @@ namespace Fireasy.Data.Entity
         /// </summary>
         /// <param name="fnMember">要包含的属性的表达式。</param>
         /// <returns></returns>
-        IRepository<TEntity> IRepository<TEntity>.Include(Expression<Func<TEntity, object>> fnMember)
+        IRepository<TEntity> IRepository<TEntity>.Include(Expression<Func<TEntity, IEntity>> fnMember)
+        {
+            return Include(fnMember);
+        }
+
+        /// <summary>
+        /// 指定要包括在查询结果中的关联对象。
+        /// </summary>
+        /// <param name="fnMember">要包含的属性的表达式。</param>
+        /// <returns></returns>
+        IRepository<TEntity> IRepository<TEntity>.Include(Expression<Func<TEntity, ICollection<IEntity>>> fnMember)
         {
             return Include(fnMember);
         }
@@ -1208,5 +1208,20 @@ namespace Fireasy.Data.Entity
         }
 
         public bool ContainsListCollection => throw new NotImplementedException();
+
+        public class IncludedRepository<TParent, TReference> : EntityRepository<TParent> where TParent : IEntity where TReference : IEntity
+        {
+            public IncludedRepository(EntityRepository<TParent> repository)
+                : base(repository._contextService, repository._repositoryProxy, repository._options)
+            {
+            }
+
+            public IncludedRepository<TParent, TProperty> ThenInclude<TProperty>(Expression<Func<TReference, TProperty>> fnMember) where TProperty : IEntity
+            {
+                _repositoryProxy.As<IQueryPolicyExecutor>(s => s.IncludeWith(fnMember));
+
+                return new IncludedRepository<TParent, TProperty>(this);
+            }
+        }
     }
 }

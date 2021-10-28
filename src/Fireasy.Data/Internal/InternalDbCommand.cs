@@ -5,8 +5,8 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using Fireasy.Common.ComponentModel;
 using Fireasy.Data.Extensions;
-using System;
 using System.Data;
 using System.Data.Common;
 using System.Threading;
@@ -14,15 +14,13 @@ using System.Threading.Tasks;
 
 namespace Fireasy.Data.Internal
 {
-    internal class InternalDbCommand : IDbCommand
+    internal class InternalDbCommand : DisposableBase, IDbCommand
     {
-        private readonly IDbCommand _command;
-        private readonly ReaderNestedlocked _locker;
+        private IDbCommand _command;
 
-        public InternalDbCommand(IDbCommand command, ReaderNestedlocked locker)
+        public InternalDbCommand(IDbCommand command)
         {
             _command = command;
-            _locker = locker;
         }
 
         public string CommandText
@@ -76,9 +74,15 @@ namespace Fireasy.Data.Internal
             return _command.CreateParameter();
         }
 
-        void IDisposable.Dispose()
+        protected override bool Dispose(bool disposing)
         {
-            _command.Dispose();
+            if (disposing)
+            {
+                _command.Dispose();
+                _command = null;
+            }
+
+            return true;
         }
 
         public int ExecuteNonQuery()
@@ -89,7 +93,7 @@ namespace Fireasy.Data.Internal
         public IDataReader ExecuteReader()
         {
             ((DbConnection)_command.Connection).TryOpen();
-            return new InternalDataReader(_command, _command.ExecuteReader(), _locker);
+            return new InternalDataReader(this, _command.ExecuteReader());
         }
 
         public async Task<IDataReader> ExecuteReaderAsync(CancellationToken cancellationToken)
@@ -97,14 +101,14 @@ namespace Fireasy.Data.Internal
             cancellationToken.ThrowIfCancellationRequested();
 
             await ((DbConnection)_command.Connection).TryOpenAsync();
-            var reader = await ((DbCommand)_command).ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-            return new InternalDataReader(_command, reader, _locker);
+            var reader = await ((DbCommand)_command).ExecuteReaderAsync(cancellationToken);
+            return new InternalDataReader(this, reader);
         }
 
         public IDataReader ExecuteReader(CommandBehavior behavior)
         {
             ((DbConnection)_command.Connection).TryOpen();
-            return new InternalDataReader(_command, _command.ExecuteReader(behavior), _locker);
+            return new InternalDataReader(this, _command.ExecuteReader(behavior));
         }
 
         public async Task<IDataReader> ExecuteReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
@@ -112,8 +116,8 @@ namespace Fireasy.Data.Internal
             cancellationToken.ThrowIfCancellationRequested();
 
             await ((DbConnection)_command.Connection).TryOpenAsync();
-            var reader = await ((DbCommand)_command).ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
-            return new InternalDataReader(_command, reader, _locker);
+            var reader = await ((DbCommand)_command).ExecuteReaderAsync(behavior, cancellationToken);
+            return new InternalDataReader(this, reader);
         }
 
         public object ExecuteScalar()

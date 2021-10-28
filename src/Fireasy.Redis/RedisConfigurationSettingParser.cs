@@ -50,6 +50,7 @@ namespace Fireasy.Redis
                 setting.SlidingTime = configNode.GetAttributeValue("slidingTime").ToTimeSpan();
                 setting.IgnoreException = configNode.GetAttributeValue("ignoreException").To(true);
                 setting.Prefix = configNode.GetAttributeValue<string>("prefix");
+                setting.Preheat = configNode.GetAttributeValue<bool?>("preheat");
 
                 ReadHosts("hosts", configNode, setting.Hosts);
                 ReadHosts("sentinels", configNode, setting.Sentinels);
@@ -115,6 +116,7 @@ namespace Fireasy.Redis
                 setting.SlidingTime = configNode["slidingTime"].ToTimeSpan();
                 setting.IgnoreException = configNode["ignoreException"].To(true);
                 setting.Prefix = configNode["prefix"];
+                setting.Preheat = configNode["preheat"].To<bool?>();
 
                 ReadHosts("hosts", configNode, setting.Hosts);
                 ReadHosts("sentinels", configNode, setting.Sentinels);

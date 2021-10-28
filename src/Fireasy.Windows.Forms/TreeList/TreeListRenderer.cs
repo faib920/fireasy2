@@ -338,9 +338,9 @@ namespace Fireasy.Windows.Forms
             {
                 return e.Item.TreeList.Focused ? SystemColors.Highlight : SystemColors.ButtonFace;
             }
-            else if (e.Item.Highlight)
+            else if (e.Item.Highlight && e.Item.TreeList.ItemHighlightBackColor != Color.Empty)
             {
-                return Color.Red;
+                return e.Item.TreeList.ItemHighlightBackColor;
             }
             else if (e.Item.BackgroundColor != Color.Empty)
             {

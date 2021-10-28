@@ -116,18 +116,20 @@ namespace Fireasy.Data
 
             DbConnection conn1 = null;
             DbConnection conn2 = null;
+            ConnectionStateManager constateMgr1 = null;
+            ConnectionStateManager constateMgr2 = null;
 
             try
             {
                 Tracer.Debug($"Query row-version of {tableName}.");
                 conn1 = database.GetConnection(DistributedMode.Master);
-                conn1.TryOpen();
+                constateMgr1 = new ConnectionStateManager(conn2).TryOpen();
                 var command1 = conn1.CreateCommand();
                 command1.CommandText = sql;
                 var ver1 = command1.ExecuteScalar();
 
                 conn2 = database.GetConnection(DistributedMode.Slave);
-                conn2.TryOpen();
+                constateMgr2 = new ConnectionStateManager(conn2).TryOpen();
                 var command2 = conn2.CreateCommand();
                 command2.CommandText = sql;
                 var ver2 = command2.ExecuteScalar();
@@ -141,8 +143,8 @@ namespace Fireasy.Data
             }
             finally
             {
-                conn1?.TryClose();
-                conn2?.TryClose();
+                constateMgr1?.TryClose();
+                constateMgr2?.TryClose();
             }
 
             return DistributedMode.Slave;
@@ -166,7 +168,7 @@ namespace Fireasy.Data
         /// <param name="tableName"></param>
         protected virtual void TryAddSyncMarked(IDatabase database, string tableName)
         {
-            if (!CheckClusterSyncTableExists(database))
+            if (tableName.Equals(ClusterSyncTableName, StringComparison.CurrentCultureIgnoreCase) || !CheckClusterSyncTableExists(database))
             {
                 return;
             }
@@ -184,9 +186,13 @@ namespace Fireasy.Data
 
                 Tracer.Debug($"Initialize triggers of {tableName}.");
 
-                foreach (var sqlTrigger in GetTriggerCommands(ClusterSyncTableName, tableName))
+                try
                 {
-                    database.ExecuteNonQuery(sqlTrigger);
+                    database.ExecuteBatch(GetTriggerCommands(ClusterSyncTableName, tableName));
+                }
+                catch (Exception exp)
+                {
+                    Tracer.Error($"Initialize triggers of {tableName} throw exception: {exp.Message}.");
                 }
             }
         }

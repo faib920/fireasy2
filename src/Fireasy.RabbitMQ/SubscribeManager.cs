@@ -37,7 +37,6 @@ namespace Fireasy.RabbitMQ
         private Func<ISerializer> _serializerFactory;
         private readonly ISubjectPersistance _persistance;
         private readonly ISubscribeNotification _notification;
-        private readonly ITopicNameNormalizer _nameNormalizer;
         private PersistentTimer _timer;
 
         /// <summary>
@@ -57,7 +56,6 @@ namespace Fireasy.RabbitMQ
             ServiceProvider = serviceProvider;
             _persistance = serviceProvider.TryGetService<ISubjectPersistance>(() => LocalFilePersistance.Default);
             _notification = serviceProvider.TryGetService<ISubscribeNotification>();
-            _nameNormalizer = serviceProvider.TryGetService<ITopicNameNormalizer>();
         }
 
 #if NETSTANDARD
@@ -93,6 +91,7 @@ namespace Fireasy.RabbitMQ
                     Password = optValue.Password,
                     UserName = optValue.UserName,
                     ExchangeType = optValue.ExchangeType,
+                    ExchangeName = optValue.ExchangeName,
                     VirtualHost = optValue.VirtualHost,
                     RetryDelayTime = optValue.RetryDelayTime,
                     RetryTimes = optValue.RetryTimes
@@ -151,11 +150,13 @@ namespace Fireasy.RabbitMQ
         /// <typeparam name="TSubject"></typeparam>
         /// <param name="subject">主题内容。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
-        public async Task PublishAsync<TSubject>(TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
+        public Task PublishAsync<TSubject>(TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             Publish(subject);
+
+            return TaskCompatible.CompletedTask;
         }
 
         /// <summary>
@@ -165,11 +166,13 @@ namespace Fireasy.RabbitMQ
         /// <param name="name">主题名称。</param>
         /// <param name="subject">主题内容。</param>
         /// <param name="cancellationToken">取消操作的通知。</param>
-        public async Task PublishAsync<TSubject>(string name, TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
+        public Task PublishAsync<TSubject>(string name, TSubject subject, CancellationToken cancellationToken = default) where TSubject : class
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             Publish(name, subject);
+
+            return TaskCompatible.CompletedTask;
         }
 
         /// <summary>
@@ -370,9 +373,9 @@ namespace Fireasy.RabbitMQ
         /// <summary>
         /// 开启一个队列。
         /// </summary>
-        /// <param name="channelName"></param>
+        /// <param name="queueName"></param>
         /// <returns></returns>
-        private IModel StartQueue(string channelName)
+        private IModel StartQueue(string queueName)
         {
             var connection = GetConnection();
             if (connection == null)
@@ -381,22 +384,29 @@ namespace Fireasy.RabbitMQ
             }
 
             var channel = connection.CreateModel();
-            var queueName = channelName;
 
+
+            //工作队列模式
             if (string.IsNullOrEmpty(Setting.ExchangeType))
             {
                 channel.BasicQos(0, 1, false);
-                channel.QueueDeclare(channelName, true, false, false, null);
+                channel.QueueDeclare(queueName, true, false, false, null);
             }
             else
             {
-                var exchangeName = GetExchangeName(channelName);
-                channel.ExchangeDeclare(exchangeName, Setting.ExchangeType);
-                queueName = channel.QueueDeclare().QueueName;
-                channel.QueueBind(queueName, exchangeName, channelName);
+                var exchangeName = Setting.ExchangeName ?? string.Empty;
+                var routeKey = string.Concat(exchangeName, ".", queueName);
+
+                if (!string.IsNullOrEmpty(exchangeName))
+                {
+                    channel.ExchangeDeclare(exchangeName, Setting.ExchangeType, true);
+                }
+
+                queueName = channel.QueueDeclare(queueName, true, false, false, null).QueueName;
+                channel.QueueBind(queueName, exchangeName, routeKey);
             }
 
-            var consumer = new CustomEventingBasicConsumer(channel, channelName);
+            var consumer = new CustomEventingBasicConsumer(channel, queueName);
             consumer.Received += (sender, args) => ConsumeData(sender as CustomEventingBasicConsumer, args);
 
             //消费消息
@@ -405,14 +415,14 @@ namespace Fireasy.RabbitMQ
             return channel;
         }
 
-        private AliveObject<IModel> CreateAliveModel(string channelName)
+        private AliveObject<IModel> CreateAliveModel(string queueName)
         {
-            return new AliveObject<IModel>(() => StartQueue(channelName), new AliveCheckPolicy<IModel>(s => s.IsOpen, TimeSpan.FromSeconds(5)));
+            return new AliveObject<IModel>(() => StartQueue(queueName), new AliveCheckPolicy<IModel>(s => s.IsOpen, TimeSpan.FromSeconds(5)));
         }
 
         private void ConsumeData(CustomEventingBasicConsumer consumer, BasicDeliverEventArgs args)
         {
-            if (!_subscribers.TryGetValue(consumer.ChannelName, out RabbitChannelCollection channels))
+            if (!_subscribers.TryGetValue(consumer.QueueName, out RabbitChannelCollection channels))
             {
                 return;
             }
@@ -465,7 +475,7 @@ namespace Fireasy.RabbitMQ
             }
             catch (Exception exp)
             {
-                Tracer.Error($"Throw exception when consume message of '{consumer.ChannelName}':\n{exp.Output()}");
+                Tracer.Error($"Throw exception when consume message of '{consumer.QueueName}':\n{exp.Output()}");
 
                 RetryPublishData(consumer, args, subject, exp);
             }
@@ -482,18 +492,20 @@ namespace Fireasy.RabbitMQ
 
                 consumer.Model.BasicNack(args.DeliveryTag, false, false);
 
+                var hasNext = subject.AcceptRetries < Setting.RetryTimes;
+                if (_notification != null)
+                {
+                    using var scope = ServiceProvider.TryCreateScope();
+                    var context = new SubscribeNotificationContext(scope.ServiceProvider, subject.Name, subject.Body, exception, GetSerializer(), hasNext);
+                    _notification.OnConsumeError(context);
+                    if (!context.CanRetry)
+                    {
+                        return;
+                    }
+                }
+
                 if (subject != null && Setting.RetryTimes > 0 && subject.AcceptRetries < Setting.RetryTimes)
                 {
-                    if (_notification != null)
-                    {
-                        var context = new SubscribeNotificationContext(subject.Name, subject.Body, exception);
-                        _notification.OnConsumeError(context);
-                        if (!context.CanRetry)
-                        {
-                            return;
-                        }
-                    }
-
                     Task.Run(() =>
                     {
                         Thread.Sleep((int)Setting.RetryDelayTime.TotalMilliseconds);
@@ -504,7 +516,7 @@ namespace Fireasy.RabbitMQ
                         }
                         catch (Exception exp)
                         {
-                            PersistSubject(subject, exp);
+                            PersistSubject(subject, exp, hasNext);
                         }
                     });
                 }
@@ -525,7 +537,7 @@ namespace Fireasy.RabbitMQ
             {
                 if (Setting.RetryTimes > 0)
                 {
-                    PersistSubject(pdata, exp);
+                    PersistSubject(pdata, exp, Setting.RetryTimes > 1);
                 }
                 else
                 {
@@ -545,32 +557,43 @@ namespace Fireasy.RabbitMQ
             {
                 var bytes = Serialize(subject);
 
+                var queueName = subject.Name;
+
+                //工作队列模式
                 if (string.IsNullOrEmpty(Setting.ExchangeType))
                 {
-                    channel.QueueDeclare(subject.Name, true, false, false, null);
+                    channel.QueueDeclare(queueName, true, false, false, null);
 
                     var properties = channel.CreateBasicProperties();
                     properties.Persistent = true;
                     properties.DeliveryMode = 2;
 
-                    channel.BasicPublish(string.Empty, subject.Name, properties, bytes);
+                    channel.BasicPublish(string.Empty, queueName, properties, bytes);
                 }
                 else
                 {
-                    var exchangeName = GetExchangeName(subject.Name);
-                    channel.ExchangeDeclare(exchangeName, Setting.ExchangeType);
-                    channel.BasicPublish(exchangeName, subject.Name, null, bytes);
+                    var exchangeName = Setting.ExchangeName ?? string.Empty;
+                    var routeKey = string.Concat(exchangeName, ".", queueName);
+
+                    if (!string.IsNullOrWhiteSpace(exchangeName))
+                    {
+                        channel.ExchangeDeclare(exchangeName, Setting.ExchangeType, true);
+                    }
+
+                    channel.QueueDeclare(queueName, true, false, false, null);
+                    channel.BasicPublish(exchangeName, routeKey, null, bytes);
                 }
             }
         }
 
-        private void PersistSubject(StoredSubject subject, Exception exception)
+        private void PersistSubject(StoredSubject subject, Exception exception, bool hasNext)
         {
             if (_persistance != null && subject.PublishRetries == 0)
             {
                 if (_notification != null)
                 {
-                    var context = new SubscribeNotificationContext(subject.Name, subject.Body, exception);
+                    using var scope = ServiceProvider.TryCreateScope();
+                    var context = new SubscribeNotificationContext(scope.ServiceProvider, subject.Name, subject.Body, exception, GetSerializer(), hasNext);
                     _notification.OnPublishError(context);
                     if (!context.CanRetry)
                     {
@@ -613,23 +636,25 @@ namespace Fireasy.RabbitMQ
                             PublishSubject(subject);
                             return SubjectRetryStatus.Success;
                         }
-                        catch (Exception)
+                        catch (Exception exception)
                         {
+                            var hasNext = subject.PublishRetries < Setting.RetryTimes;
+                            if (_notification != null)
+                            {
+                                using var scope = ServiceProvider.TryCreateScope();
+                                var context = new SubscribeNotificationContext(scope.ServiceProvider, subject.Name, subject.Body, exception, GetSerializer(), hasNext);
+                                _notification.OnPublishError(context);
+                                if (!context.CanRetry)
+                                {
+                                    return SubjectRetryStatus.Failed;
+                                }
+                            }
+
                             return SubjectRetryStatus.Failed;
                         }
                     });
                 });
             });
-        }
-
-        /// <summary>
-        /// 获取交换机的名称。
-        /// </summary>
-        /// <param name="channelName"></param>
-        /// <returns></returns>
-        private string GetExchangeName(string channelName)
-        {
-            return string.Concat(Setting.ExchangeType, channelName);
         }
 
         void IConfigurationSettingHostService.Attach(IConfigurationSettingItem setting)
@@ -657,27 +682,27 @@ namespace Fireasy.RabbitMQ
 
         private class RabbitChannelCollection : DisposableBase
         {
-            private readonly List<RabbitChannel> channels = new List<RabbitChannel>();
+            private readonly List<RabbitChannel> _channels = new List<RabbitChannel>();
 
             public RabbitChannel Find(IModel model)
             {
-                return channels.FirstOrDefault(s => model.Equals(s.Model.Value));
+                return _channels.FirstOrDefault(s => model.Equals(s.Model.Value));
             }
 
             public void Add(RabbitChannel channel)
             {
-                channels.Add(channel);
+                _channels.Add(channel);
             }
 
             public void ForEach(Action<RabbitChannel> action)
             {
-                channels.ForEach(action);
+                _channels.ForEach(action);
             }
 
             protected override bool Dispose(bool disposing)
             {
-                channels.ForEach(s => s.Dispose());
-                channels.Clear();
+                _channels.ForEach(s => s.Dispose());
+                _channels.Clear();
 
                 return base.Dispose(disposing);
             }
@@ -712,13 +737,13 @@ namespace Fireasy.RabbitMQ
 
         private class CustomEventingBasicConsumer : EventingBasicConsumer
         {
-            public CustomEventingBasicConsumer(IModel model, string channelName)
+            public CustomEventingBasicConsumer(IModel model, string queueName)
                 : base(model)
             {
-                ChannelName = channelName;
+                QueueName = queueName;
             }
 
-            public string ChannelName { get; private set; }
+            public string QueueName { get; private set; }
         }
     }
 }

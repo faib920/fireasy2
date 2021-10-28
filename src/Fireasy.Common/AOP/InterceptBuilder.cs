@@ -430,7 +430,6 @@ namespace Fireasy.Common.Aop
         /// 查找并向方法体内注入代码。
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="interceptMethod">前面定义的拦截方法体。</param>
         private static void FindAndInjectMethods(BuildInternalContext context)
         {
             foreach (MethodInfo method in context.Members.Where(s => s is MethodInfo))
@@ -504,7 +503,7 @@ namespace Fireasy.Common.Aop
             var machineBuilder = CreateAsyncStateMachine(context, method, proxyBuilder);
 
 #region 方法原型
-            // var list = new List<IInterceptor>();
+            // var list = new List<IAsyncInterceptor>();
             // list.Add(new AopTest.AsyncInterceptor());
             // var interceptCallInfo = new InterceptCallInfo();
             // interceptCallInfo.Target = this;
@@ -603,6 +602,11 @@ namespace Fireasy.Common.Aop
         /// <returns></returns>
         private static DynamicMethodBuilder InjectGenericMethod(BuildInternalContext context, MethodInfo method, IEnumerable<InterceptAttribute> attributes)
         {
+            if (!attributes.All(s => typeof(IInterceptor).IsAssignableFrom(s.InterceptorType)))
+            {
+                throw new ArgumentException();
+            }
+
             var isInterface = context.TypeBuilder.BaseType == typeof(object);
 
 #region 方法原型
@@ -1161,7 +1165,7 @@ namespace Fireasy.Common.Aop
 
             typeBuilder.ImplementInterface(typeof(IAsyncStateMachine));
 
-#if !NETSTANDARD2_0 && !NETFRAMEWORK
+#if NETSTANDARD2_1_OR_GREATER
             var isValueTask = method.ReturnType.IsValueTaskReturnType();
             var builderType = returnType == null ? (isValueTask ? typeof(AsyncValueTaskMethodBuilder) : typeof(AsyncTaskMethodBuilder)) : (isValueTask ? typeof(AsyncValueTaskMethodBuilder<>) : typeof(AsyncTaskMethodBuilder<>)).MakeGenericType(returnType);
             var awaiterType = returnType == null ? (isValueTask ? typeof(ValueTaskAwaiter) : typeof(TaskAwaiter)) : (isValueTask ? typeof(ValueTaskAwaiter<>) : typeof(TaskAwaiter<>)).MakeGenericType(returnType);
@@ -1202,7 +1206,7 @@ namespace Fireasy.Common.Aop
                     .ret();
             });
 
-#if !NETSTANDARD2_0 && !NETFRAMEWORK
+#if NETSTANDARD2_1_OR_GREATER
             var taskType = returnType == null ? (isValueTask ? typeof(ValueTask) : typeof(Task)) : (isValueTask ? typeof(ValueTask<>) : typeof(Task<>)).MakeGenericType(returnType);
 #else
             var taskType = returnType == null ? typeof(Task) : typeof(Task<>).MakeGenericType(returnType);

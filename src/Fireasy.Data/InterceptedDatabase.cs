@@ -21,7 +21,7 @@ namespace Fireasy.Data
     /// </summary>
     public class InterceptedDatabase : Database
     {
-        private DbCommandInterceptor _interceptor;
+        private IDbCommandInterceptor _interceptor;
         private bool _isInitialized;
 
         /// <summary>
@@ -103,7 +103,7 @@ namespace Fireasy.Data
             }
 
             var ic = new DbCommandInterceptContext<IEnumerable<T>>(this, queryCommand, segment, parameters);
-            await interceptor.OnBeforeExecuteEnumerableAsync(ic);
+            await interceptor.OnBeforeExecuteEnumerableAsync(ic, cancellationToken);
             if (ic.Skip)
             {
                 return ic.Result;
@@ -111,7 +111,7 @@ namespace Fireasy.Data
 
             ic.Result = await base.ExecuteEnumerableAsync(queryCommand, rowMapper, segment, parameters, cancellationToken);
 
-            await interceptor.OnAfterExecuteEnumerableAsync(ic);
+            await interceptor.OnAfterExecuteEnumerableAsync(ic, cancellationToken);
 
             return ic.Result;
         }
@@ -166,7 +166,7 @@ namespace Fireasy.Data
             }
 
             var ic = new DbCommandInterceptContext<IEnumerable<T>>(this, queryCommand, segment, parameters);
-            await interceptor.OnBeforeExecuteEnumerableAsync(ic);
+            await interceptor.OnBeforeExecuteEnumerableAsync(ic, cancellationToken);
             if (ic.Skip)
             {
                 return ic.Result;
@@ -174,7 +174,7 @@ namespace Fireasy.Data
 
             ic.Result = await base.ExecuteEnumerableAsync(queryCommand, segment, parameters, rowMapper, cancellationToken);
 
-            await interceptor.OnAfterExecuteEnumerableAsync(ic);
+            await interceptor.OnAfterExecuteEnumerableAsync(ic, cancellationToken);
 
             return ic.Result;
         }
@@ -225,7 +225,7 @@ namespace Fireasy.Data
             }
 
             var ic = new DbCommandInterceptContext<IEnumerable<dynamic>>(this, queryCommand, segment, parameters);
-            await interceptor.OnBeforeExecuteEnumerableAsync(ic);
+            await interceptor.OnBeforeExecuteEnumerableAsync(ic, cancellationToken);
             if (ic.Skip)
             {
                 return ic.Result;
@@ -233,7 +233,7 @@ namespace Fireasy.Data
 
             ic.Result = await base.ExecuteEnumerableAsync(queryCommand, segment, parameters, cancellationToken);
 
-            await interceptor.OnAfterExecuteEnumerableAsync(ic);
+            await interceptor.OnAfterExecuteEnumerableAsync(ic, cancellationToken);
 
             return ic.Result;
         }
@@ -282,7 +282,7 @@ namespace Fireasy.Data
             }
 
             var ic = new DbCommandInterceptContext<int>(this, queryCommand, null, parameters);
-            await interceptor.OnBeforeExecuteNonQueryAsync(ic);
+            await interceptor.OnBeforeExecuteNonQueryAsync(ic, cancellationToken);
             if (ic.Skip)
             {
                 return ic.Result;
@@ -290,7 +290,7 @@ namespace Fireasy.Data
 
             ic.Result = await base.ExecuteNonQueryAsync(queryCommand, parameters, cancellationToken);
 
-            await interceptor.OnAfterExecuteNonQueryAsync(ic);
+            await interceptor.OnAfterExecuteNonQueryAsync(ic, cancellationToken);
 
             return ic.Result;
         }
@@ -339,7 +339,7 @@ namespace Fireasy.Data
             }
 
             var ic = new DbCommandInterceptContext<object>(this, queryCommand, null, parameters);
-            await interceptor.OnBeforeExecuteScalarAsync(ic);
+            await interceptor.OnBeforeExecuteScalarAsync(ic, cancellationToken);
             if (ic.Skip)
             {
                 return ic.Result;
@@ -347,16 +347,77 @@ namespace Fireasy.Data
 
             ic.Result = await base.ExecuteScalarAsync(queryCommand, parameters, cancellationToken);
 
-            await interceptor.OnAfterExecuteScalarAsync(ic);
+            await interceptor.OnAfterExecuteScalarAsync(ic, cancellationToken);
 
             return ic.Result;
         }
 
-        private DbCommandInterceptor GetInterceptor()
+        /// <summary>
+        /// 执行查询文本并返回一个 <see cref="IDataReader"/>。
+        /// </summary>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="segment">数据分段对象。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="behavior"></param>
+        /// <returns>一个 <see cref="IDataReader"/> 对象。</returns>
+        public override IDataReader ExecuteReader(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CommandBehavior? behavior = null)
+        {
+            var interceptor = GetInterceptor();
+            if (interceptor == null)
+            {
+                return base.ExecuteReader(queryCommand, segment, parameters, behavior);
+            }
+
+            var ic = new DbCommandInterceptContext<IDataReader>(this, queryCommand, segment, parameters);
+            interceptor.OnBeforeExecuteReader(ic);
+            if (ic.Skip)
+            {
+                return ic.Result;
+            }
+
+            ic.Result = base.ExecuteReader(queryCommand, segment, parameters, behavior);
+
+            interceptor.OnAfterExecuteReader(ic);
+
+            return ic.Result;
+        }
+
+        /// <summary>
+        /// 异步的，执行查询文本并返回一个 <see cref="IDataReader"/>。
+        /// </summary>
+        /// <param name="queryCommand">查询命令。</param>
+        /// <param name="segment">数据分段对象。</param>
+        /// <param name="parameters">查询参数集合。</param>
+        /// <param name="behavior"></param>
+        /// <param name="cancellationToken">取消操作的通知。</param>
+        /// <returns>一个 <see cref="IDataReader"/> 对象。</returns>
+        public override async Task<IDataReader> ExecuteReaderAsync(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null, CommandBehavior? behavior = null, CancellationToken cancellationToken = default)
+        {
+            var interceptor = GetInterceptor();
+            if (interceptor == null)
+            {
+                return await base.ExecuteReaderAsync(queryCommand, segment, parameters, behavior, cancellationToken);
+            }
+
+            var ic = new DbCommandInterceptContext<IDataReader>(this, queryCommand, segment, parameters);
+            await interceptor.OnBeforeExecuteReaderAsync(ic, cancellationToken);
+            if (ic.Skip)
+            {
+                return ic.Result;
+            }
+
+            ic.Result = await base.ExecuteReaderAsync(queryCommand, segment, parameters, behavior, cancellationToken);
+
+            await interceptor.OnAfterExecuteReaderAsync(ic, cancellationToken);
+
+            return ic.Result;
+        }
+
+        private IDbCommandInterceptor GetInterceptor()
         {
             if (!_isInitialized)
             {
-                _interceptor = ServiceProvider?.TryGetService<DbCommandInterceptor>();
+                _interceptor = ServiceProvider?.TryGetService<IDbCommandInterceptor>();
                 _isInitialized = true;
             }
 

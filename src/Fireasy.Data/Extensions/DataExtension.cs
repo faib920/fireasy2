@@ -17,7 +17,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -652,8 +651,9 @@ namespace Fireasy.Data.Extensions
         /// </summary>
         /// <param name="queryCommand"></param>
         /// <param name="syntax"></param>
+        /// <param name="operateMarks">操作符。</param>
         /// <returns></returns>
-        public static string GetMainTableName(this IQueryCommand queryCommand, ISyntaxProvider syntax)
+        public static string GetMainTableName(this IQueryCommand queryCommand, ISyntaxProvider syntax, string[] operateMarks = null)
         {
             if (queryCommand is SpecialCommand || queryCommand is ProcedureCommand)
             {
@@ -666,6 +666,27 @@ namespace Fireasy.Data.Extensions
 
             var sqlItems = commandText.Split(new[] { " ", "\r\n", Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
             var sqlItemsLength = sqlItems.Length;
+            if (operateMarks != null)
+            {
+                var checkOperate = false;
+                for (var i = 0; i < sqlItemsLength; i++)
+                {
+                    foreach (var marker in operateMarks)
+                    {
+                        if (sqlItems[i].Equals(marker, StringComparison.OrdinalIgnoreCase))
+                        {
+                            checkOperate = true;
+                            continue;
+                        }
+                    }
+                }
+
+                if (!checkOperate)
+                {
+                    return string.Empty;
+                }
+            }
+
             for (var i = 0; i < sqlItemsLength; i++)
             {
                 foreach (var marker in tableMarkers)
@@ -814,9 +835,7 @@ namespace Fireasy.Data.Extensions
             {
                 try
                 {
-                    var watch = Stopwatch.StartNew();
                     connection.Open();
-                    Tracer.Debug($"The connection of '{connection.ConnectionString}' was opened ({watch.ElapsedMilliseconds}ms).");
                 }
                 catch (DbException exp)
                 {
@@ -832,18 +851,11 @@ namespace Fireasy.Data.Extensions
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (connection.State == ConnectionState.Broken)
-            {
-                connection.Close();
-            }
-
             if (connection.State != ConnectionState.Open)
             {
                 try
                 {
-                    var watch = Stopwatch.StartNew();
                     await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-                    Tracer.Debug($"The connection of '{connection.ConnectionString}' was opened ({watch.ElapsedMilliseconds}ms).");
                 }
                 catch (DbException exp)
                 {
@@ -866,9 +878,7 @@ namespace Fireasy.Data.Extensions
             {
                 try
                 {
-                    var watch = Stopwatch.StartNew();
                     connection.Close();
-                    Tracer.Debug($"The connection of '{connection.ConnectionString}' was closed ({watch.ElapsedMilliseconds}ms).");
                 }
                 catch (DbException exp)
                 {

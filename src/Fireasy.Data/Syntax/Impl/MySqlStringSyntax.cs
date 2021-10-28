@@ -28,6 +28,16 @@ namespace Fireasy.Data.Syntax
         }
 
         /// <summary>
+        /// 计算源表达式的长度。
+        /// </summary>
+        /// <param name="sourceExp">源表达式。</param>
+        /// <returns></returns>
+        public override string Length(object sourceExp)
+        {
+            return $"CHAR_LENGTH({sourceExp})";
+        }
+
+        /// <summary>
         /// 判断子串在源表达式中的位置。
         /// </summary>
         /// <param name="sourceExp">源表达式。</param>

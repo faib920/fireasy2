@@ -221,6 +221,7 @@ namespace Fireasy.Data.Entity.Validation
             var dictionary = new Dictionary<string, List<ValidationAttribute>>();
 
             IEnumerable<PropertyInfo> properties = null;
+            var isMetadataType = false;
             if (entityType.IsDefined(typeof(MetadataTypeAttribute), true))
             {
                 var metadataType = entityType.GetCustomAttributes<MetadataTypeAttribute>(true).FirstOrDefault();
@@ -230,6 +231,7 @@ namespace Fireasy.Data.Entity.Validation
                 }
 
                 properties = metadataType.MetadataClassType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                isMetadataType = true;
             }
             else
             {
@@ -243,21 +245,20 @@ namespace Fireasy.Data.Entity.Validation
 
             foreach (var property in properties)
             {
-                var attributes = property.GetCustomAttributes<ValidationAttribute>().ToList();
-                if (attributes.Count == 0)
-                {
-                    continue;
-                }
-
                 IProperty dp;
                 if ((dp = CheckPropertyValid(entityType, property)) == null)
                 {
                     continue;
                 }
 
-                var attrs = dictionary.TryGetValue(property.Name, () => new List<ValidationAttribute>());
-                MarkValidationProperty(dp, attributes);
-                attrs.AddRange(attributes);
+                var attrs = dictionary.TryGetValue(property.Name, () => dp.Info.Attributes.OfType<ValidationAttribute>().ToList());
+
+                if (isMetadataType)
+                {
+                    attrs.AddRange(property.GetCustomAttributes<ValidationAttribute>());
+                }
+
+                MarkValidationProperty(dp, attrs);
             }
 
             return dictionary;
@@ -328,7 +329,7 @@ namespace Fireasy.Data.Entity.Validation
             {
                 return formattable.ToString();
             }
-            else if (validation is RangeAttribute range)
+            else if (validation is RangeAttribute range && value != null)
             {
                 if (value.GetType() != range.Minimum.GetType())
                 {

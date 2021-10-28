@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<Import Project="..\..\common.props" />
+
+	<PropertyGroup>
+		<TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+		<Product>Fireasy StackExchange.Redis Provider</Product>
+		<Description>
+			提供 StackExchange.Redis 的适配。
+
+			参考文档：http://www.fireasy.cn/docs/stackexchange.redis
+		</Description>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net461|AnyCPU'">
+		<DocumentationFile>..\..\Release\net45\Fireasy.StackExchange.Redis.xml</DocumentationFile>
+		<OutputPath>..\..\Release\</OutputPath>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
+		<DocumentationFile>..\..\Release\netstandard2.0\Fireasy.StackExchange.Redis.xml</DocumentationFile>
+		<OutputPath>..\..\Release\</OutputPath>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="StackExchange.Redis" Version="2.2.50" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Fireasy.Common\Fireasy.Common.csproj" />
+	</ItemGroup>
+
+</Project>

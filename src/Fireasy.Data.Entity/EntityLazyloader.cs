@@ -10,8 +10,12 @@ using Fireasy.Common;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Properties;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fireasy.Data.Entity
 {
@@ -36,6 +40,11 @@ namespace Fireasy.Data.Entity
 
             var loadder = attr.LoadderType.New<IPropertyLazyLoadder>();
             return loadder == null ? PropertyValue.Empty : loadder.GetValue(entity, property);
+        }
+
+        internal static void LoadEntities(IEnumerable<IEntity> entities, Type filterAttribute = null)
+        {
+            new EntityBatchLoadder().Load(entities, filterAttribute);
         }
 
         /// <summary>

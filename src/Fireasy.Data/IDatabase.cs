@@ -107,7 +107,7 @@ namespace Fireasy.Data
         /// <returns>一个动态对象的枚举器。</returns>
         IEnumerable<dynamic> ExecuteEnumerable(IQueryCommand queryCommand, IDataSegment segment = null, ParameterCollection parameters = null);
 
-#if NETSTANDARD && !NETSTANDARD2_0
+#if NETSTANDARD2_1_OR_GREATER
         /// <summary>
         /// 异步的，执行查询文本并将结果以一个 <see cref="IEnumerable{T}"/> 的序列返回。
         /// </summary>

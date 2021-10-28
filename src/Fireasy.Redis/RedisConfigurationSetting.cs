@@ -112,6 +112,11 @@ namespace Fireasy.Redis
         /// 获取或设置是否在使用 TryGet 时忽略异常。
         /// </summary>
         public bool IgnoreException { get; set; } = true;
+
+        /// <summary>
+        /// 获取或设置是否使用预热。
+        /// </summary>
+        public bool? Preheat { get; set; }
     }
 
     /// <summary>

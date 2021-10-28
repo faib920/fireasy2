@@ -7,6 +7,8 @@
 // -----------------------------------------------------------------------
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace Fireasy.Data.Entity.Validation
 {
@@ -15,12 +17,24 @@ namespace Fireasy.Data.Entity.Validation
     /// </summary>
     public class IDCardAttribute : ValidationAttribute
     {
+        private readonly bool _simple;
+
         /// <summary>
         /// 初始化 <see cref="IDCardAttribute"/> 类的新实例。
         /// </summary>
         public IDCardAttribute()
         {
             ErrorMessage = SR.GetString(SRKind.IDCardValideError);
+        }
+
+        /// <summary>
+        /// 初始化 <see cref="IDCardAttribute"/> 类的新实例。
+        /// </summary>
+        /// <param name="simple">采用简便的正则表达式。</param>
+        public IDCardAttribute(bool simple)
+            : this()
+        {
+            _simple = simple;
         }
 
         public override string FormatErrorMessage(string name)
@@ -30,7 +44,7 @@ namespace Fireasy.Data.Entity.Validation
 
         protected override ValidationResult IsValid(object value, ValidationContext validationContext)
         {
-            if (value == null || CheckIDCard18(value.ToString()))
+            if (value == null || CheckIDCard18(value.ToString(), _simple))
             {
                 return ValidationResult.Success;
             }
@@ -43,37 +57,35 @@ namespace Fireasy.Data.Entity.Validation
         /// </summary>
         /// <param name="idcard"></param>
         /// <returns></returns>
-        private static bool CheckIDCard18(string idcard)
+        private static bool CheckIDCard18(string idcard, bool simple)
         {
-            if (idcard.Length < 18)
+            //正则验证
+            if (!Regex.IsMatch(@"^[1-9]\d{5}(18|19|([23]\d))\d{2}((0[1-9])|(10|11|12))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]$", idcard))
             {
                 return false;
             }
 
-            if (long.TryParse(idcard.Remove(17), out long n) == false ||
-                n < Math.Pow(10, 16) ||
-                long.TryParse(idcard.Replace('x', '0').Replace('X', '0'), out _) == false)
+            if (simple)
             {
-                return false;//数字验证
+                return true;
             }
 
             var address = "11x22x35x44x53x12x23x36x45x54x13x31x37x46x61x14x32x41x50x62x15x33x42x51x63x21x34x43x52x64x65x71x81x82x91";
 
+            //省份验证
             if (address.IndexOf(idcard.Remove(2)) == -1)
-            {
-                return false;//省份验证
-            }
-
-            var birth = idcard.Substring(6, 8).Insert(6, "-").Insert(4, "-");
-
-            //生日验证
-            if (DateTime.TryParse(birth, out _) == false)
             {
                 return false;
             }
 
-            var arrVarifyCode = ("1,0,X,9,8,7,6,5,4,3,2").Split(',');
-            var Wi = ("7,9,10,5,8,4,2,1,6,3,7,9,10,5,8,4,2").Split(',');
+            //生日验证
+            if (DateTime.TryParseExact(idcard.Substring(6, 8), "yyyyMMdd", CultureInfo.CurrentCulture, DateTimeStyles.None, out _) == false)
+            {
+                return false;
+            }
+
+            var arrVarifyCode = "1,0,X,9,8,7,6,5,4,3,2".Split(',');
+            var Wi = "7,9,10,5,8,4,2,1,6,3,7,9,10,5,8,4,2".Split(',');
             var Ai = idcard.Remove(17).ToCharArray();
             var sum = 0;
 

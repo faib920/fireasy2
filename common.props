@@ -8,9 +8,9 @@
     <DelaySign>False</DelaySign>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <FileVersion>2.2.4</FileVersion>
-    <AssemblyVersion>2.2.4</AssemblyVersion>
-    <Version>2.2.4-beta4</Version>
+    <FileVersion>2.2.7</FileVersion>
+    <AssemblyVersion>2.2.7</AssemblyVersion>
+    <Version>2.2.7-beta8</Version>
     <PackageIconUrl>http://fireasy.cn/icon.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/faib920/fireasy2</RepositoryUrl>
     <PackageProjectUrl>http://www.fireasy.cn/framework</PackageProjectUrl>

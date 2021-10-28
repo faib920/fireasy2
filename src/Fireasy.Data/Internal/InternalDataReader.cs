@@ -5,7 +5,7 @@
 //   (c) Copyright Fireasy. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
-using Fireasy.Data.Extensions;
+using Fireasy.Common.ComponentModel;
 using System;
 using System.Data;
 using System.Data.Common;
@@ -14,19 +14,15 @@ using System.Threading.Tasks;
 
 namespace Fireasy.Data.Internal
 {
-    internal class InternalDataReader : IDataReader
+    internal class InternalDataReader : DisposableBase, IDataReader
     {
-        private readonly DbCommand _command;
+        private IDbCommand _command;
         private readonly IDataReader _reader;
-        private readonly ReaderNestedlocked _locker;
 
-        public InternalDataReader(IDbCommand command, IDataReader reader, ReaderNestedlocked locker)
+        public InternalDataReader(IDbCommand command, IDataReader reader)
         {
-            _command = (DbCommand)command;
+            _command = command;
             _reader = reader;
-            _locker = locker;
-
-            locker.Increment();
         }
 
         public object this[int i] => _reader[i];
@@ -46,14 +42,16 @@ namespace Fireasy.Data.Internal
             _reader.Close();
         }
 
-        void IDisposable.Dispose()
+        protected override bool Dispose(bool disposing)
         {
-            _reader.Dispose();
-
-            if (_locker.Decrement() == 0 && _command.Transaction == null)
+            if (disposing)
             {
-                _command.Connection.TryClose();
+                _reader.Close();
+                _reader.Dispose();
+                _command.Dispose();
             }
+
+            return true;
         }
 
         public bool GetBoolean(int i)
@@ -174,6 +172,11 @@ namespace Fireasy.Data.Internal
         public bool NextResult()
         {
             return _reader.NextResult();
+        }
+
+        public async Task<bool> NextResultAsync(CancellationToken cancellationToken)
+        {
+            return await ((DbDataReader)_reader).NextResultAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public bool Read()

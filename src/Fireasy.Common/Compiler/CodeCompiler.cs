@@ -21,6 +21,7 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using Fireasy.Common.Extensions;
+using Microsoft.VisualBasic;
 
 namespace Fireasy.Common.Compiler
 {
@@ -36,6 +37,8 @@ namespace Fireasy.Common.Compiler
         {
 #if !NETSTANDARD
             CodeProvider = new CSharpCodeProvider();
+#else
+            SyntaxTreeParser = s => CSharpSyntaxTree.ParseText(s);
 #endif
         }
 
@@ -44,6 +47,11 @@ namespace Fireasy.Common.Compiler
         /// 获取或设置代码编译的提供者，默认为 <see cref="CSharpCodeProvider"/>。
         /// </summary>
         public CodeDomProvider CodeProvider { get; set; }
+#else 
+        /// <summary>
+        /// 获取或设置语法解析器。
+        /// </summary>
+        public Func<string, SyntaxTree> SyntaxTreeParser { get; set; }
 #endif
 
         /// <summary>
@@ -139,10 +147,10 @@ namespace Fireasy.Common.Compiler
             return compileResult.CompiledAssembly;
 #else
             var compilation = CSharpCompilation.Create(Guid.NewGuid().ToString())
-                .AddSyntaxTrees(CSharpSyntaxTree.ParseText(source))
+                .AddSyntaxTrees(SyntaxTreeParser(source))
                 .AddReferences(MetadataReference.CreateFromFile(typeof(object).Assembly.Location))
                 .AddReferences(Assemblies.Select(s => MetadataReference.CreateFromFile(s)))
-                .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+                .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, optimizationLevel: OptimizationLevel.Release));
 
             if (!string.IsNullOrEmpty(OutputAssembly))
             {
@@ -330,5 +338,14 @@ namespace Fireasy.Common.Compiler
 
             return (TDelegate)(object)Delegate.CreateDelegate(typeof(TDelegate), theMethod.IsStatic ? null : compileType.New(), theMethod);
         }
+    }
+
+    /// <summary>
+    /// 编译所使用的语言。
+    /// </summary>
+    public enum Language
+    {
+        CSharp,
+        VisualBasic
     }
 }

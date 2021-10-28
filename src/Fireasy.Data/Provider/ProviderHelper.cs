@@ -14,7 +14,7 @@ using Fireasy.Data.Extensions;
 using Fireasy.Data.Provider.Configuration;
 using System;
 using System.Collections.Generic;
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1_OR_GREATER
 using System.Data.Common;
 using System.Data.OleDb;
 using System.Data.SqlClient;
@@ -168,7 +168,7 @@ namespace Fireasy.Data.Provider
                 RegisterCustomProviders(section);
             }
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1_OR_GREATER
             static void registerFactory(string instanceName, DbProviderFactory factory)
             {
                 if (factory != null)

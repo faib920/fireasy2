@@ -53,6 +53,11 @@ namespace Fireasy.RabbitMQ
         public string ExchangeType { get; set; }
 
         /// <summary>
+        /// 获取或设置交换机名。
+        /// </summary>
+        public string ExchangeName { get; set; }
+
+        /// <summary>
         /// 获取或设置虚拟主机。
         /// </summary>
         public string VirtualHost { get; set; }

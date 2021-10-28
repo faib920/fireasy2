@@ -26,7 +26,7 @@ namespace Fireasy.Data.Entity.Validation
         /// </summary>
         /// <param name="simple">采用简便的正则表达式。</param>
         public MobileAttribute(bool simple)
-            : base("Mobile", simple ? "^1[0-9]{10}$" : "^13[0-9]{9}|15[012356789][0-9]{8}|18[0-9][0-9]{8}|14[5678][0-9]{8}|17[0235678][0-9]{8}|166[0-9]{8}|19[89][0-9]{8}$")
+            : base("Mobile", simple ? "^1[0-9]{10}$" : "^13[0-9]{9}$|^14[01456879][0-9]{8}$|^15[012356789][0-9]{8}$|^16[2567][0-9]{8}$|^17[01235678][0-9]{8}$|^18[0-9][0-9]{8}$|^19[012356789][0-9]{8}$")
         {
             ErrorMessage = SR.GetString(SRKind.MobileValideError);
         }

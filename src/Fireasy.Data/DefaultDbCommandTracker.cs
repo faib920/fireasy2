@@ -19,14 +19,14 @@ namespace Fireasy.Data
     /// <summary>
     /// 默认的命令执行跟踪器。使用 __dbtrack 目录中的文本文件来记录日志。
     /// </summary>
-    internal class DefaultCommandTracker : ICommandTracker
+    internal class DefaultDbCommandTracker : IDbCommandTracker
     {
         private string _logPath;
         private readonly ISubscribeManager _subscribeMgr = DefaultSubscribeManager.Instance;
 
-        internal readonly static ICommandTracker Instance = new DefaultCommandTracker();
+        internal readonly static IDbCommandTracker Instance = new DefaultDbCommandTracker();
 
-        protected DefaultCommandTracker()
+        protected DefaultDbCommandTracker()
         {
             _subscribeMgr.AddSubscriber<CommandTrackerSubject>(s =>
                 {
@@ -35,7 +35,7 @@ namespace Fireasy.Data
                 });
         }
 
-        void ICommandTracker.Write(IDbCommand command, TimeSpan period)
+        void IDbCommandTracker.OnExecute(IDbCommand command, TimeSpan period)
         {
             CreateDirectory();
 
@@ -49,7 +49,7 @@ timer(s): {period}
             _subscribeMgr.Publish(new CommandTrackerSubject { FileName = fileName, Content = content });
         }
 
-        void ICommandTracker.Fail(IDbCommand command, Exception exception)
+        void IDbCommandTracker.OnError(IDbCommand command, Exception exception)
         {
             CreateDirectory();
 
@@ -63,7 +63,7 @@ error: {exception.Message}
             _subscribeMgr.Publish(new CommandTrackerSubject { FileName = fileName, Content = content });
         }
 
-        async Task ICommandTracker.WriteAsync(IDbCommand command, TimeSpan period, CancellationToken cancellationToken)
+        async Task IDbCommandTracker.OnExecuteAsync(IDbCommand command, TimeSpan period, CancellationToken cancellationToken)
         {
             CreateDirectory();
 
@@ -84,7 +84,7 @@ timer(s): {period}
             }
         }
 
-        async Task ICommandTracker.FailAsync(IDbCommand command, Exception exception, CancellationToken cancellationToken)
+        async Task IDbCommandTracker.OnErrorAsync(IDbCommand command, Exception exception, CancellationToken cancellationToken)
         {
             CreateDirectory();
 

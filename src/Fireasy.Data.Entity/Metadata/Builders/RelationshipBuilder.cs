@@ -72,7 +72,12 @@ namespace Fireasy.Data.Entity.Metadata.Builders
         /// <summary>
         /// 构造元数据。
         /// </summary>
-        public virtual void Build()
+        void IMetadataBuilder.Build()
+        {
+            InternalBuild();
+        }
+
+        protected virtual void InternalBuild()
         {
             if (_primaryKeys.Count != _foreignKeys.Count)
             {
@@ -108,7 +113,7 @@ namespace Fireasy.Data.Entity.Metadata.Builders
                 return this;
             }
 
-            public override void Build()
+            protected override void InternalBuild()
             {
             }
         }

@@ -101,10 +101,16 @@ namespace Fireasy.Data.Entity.Metadata.Builders
             return this;
         }
 
+
         /// <summary>
         /// 构造元数据。
         /// </summary>
-        public virtual void Build()
+        void IMetadataBuilder.Build()
+        {
+            InternalBuild();
+        }
+
+        protected virtual void InternalBuild()
         {
             var treeMetdata = new EntityTreeMetadata(_metadata, _attribute);
 
@@ -175,7 +181,7 @@ namespace Fireasy.Data.Entity.Metadata.Builders
                 return this;
             }
 
-            public override void Build()
+            protected override void InternalBuild()
             {
             }
         }

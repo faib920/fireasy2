@@ -62,7 +62,7 @@ namespace Fireasy.Redis
             CSRedisClientLock locker;
             while ((locker = client.Lock(token, (int)timeout.TotalSeconds)) == null)
             {
-                Thread.Sleep(LOCK_DELAY);
+                await Task.Delay(LOCK_DELAY);
             }
 
             try
@@ -80,7 +80,7 @@ namespace Fireasy.Redis
             CSRedisClientLock locker;
             while ((locker = client.Lock(token, (int)timeout.TotalSeconds)) == null)
             {
-                Thread.Sleep(LOCK_DELAY);
+                await Task.Delay(LOCK_DELAY);
             }
 
             T result;
@@ -98,12 +98,15 @@ namespace Fireasy.Redis
 
         internal static void TryLock(CSRedisClient client, string token, TimeSpan timeout, Action action, Action onLocked = null)
         {
-            CSRedisClientLock locker;
-            if ((locker = client.Lock(token, (int)timeout.TotalSeconds)) == null)
+            InternalLock locker;
+            var value = Guid.NewGuid().ToString();
+            if (!client.Set(token, value, (int)timeout.TotalSeconds, RedisExistence.Nx))
             {
                 onLocked?.Invoke();
                 return;
             }
+
+            locker = new InternalLock(client, token, value);
 
             try
             {
@@ -117,11 +120,14 @@ namespace Fireasy.Redis
 
         internal static T TryLock<T>(CSRedisClient client, string token, TimeSpan timeout, Func<T> func, Func<T> onLocked = null)
         {
-            CSRedisClientLock locker;
-            if ((locker = client.Lock(token, (int)timeout.TotalSeconds)) == null)
+            InternalLock locker;
+            var value = Guid.NewGuid().ToString();
+            if (!client.Set(token, value, (int)timeout.TotalSeconds, RedisExistence.Nx))
             {
                 return onLocked != null ? onLocked() : default;
             }
+
+            locker = new InternalLock(client, token, value);
 
             T result;
             try
@@ -138,24 +144,23 @@ namespace Fireasy.Redis
 
         internal static async Task TryLockAsync(CSRedisClient client, string token, TimeSpan timeout, Func<Task> func, Func<Task> onLocked = null)
         {
-            CSRedisClientLock locker;
-            if ((locker = client.Lock(token, (int)timeout.TotalSeconds)) == null)
+            InternalLock locker;
+            var value = Guid.NewGuid().ToString();
+            if (!await client.SetAsync(token, value, (int)timeout.TotalSeconds, RedisExistence.Nx).ConfigureAwait(false))
             {
                 if (onLocked != null)
                 {
                     await onLocked();
                 }
 
-#if NET45
                 await TaskCompatible.CompletedTask;
-#else
-                await Task.CompletedTask;
-#endif
             }
+
+            locker = new InternalLock(client, token, value);
 
             try
             {
-                await func();
+                await func().ConfigureAwait(false);
             }
             finally
             {
@@ -165,21 +170,19 @@ namespace Fireasy.Redis
 
         internal static async Task<T> TryLockAsync<T>(CSRedisClient client, string token, TimeSpan timeout, Func<Task<T>> func, Func<Task<T>> onLocked = null)
         {
-            CSRedisClientLock locker;
-            if ((locker = client.Lock(token, (int)timeout.TotalSeconds)) == null)
+            InternalLock locker;
+            var value = Guid.NewGuid().ToString();
+            if (!await client.SetAsync(token, value, (int)timeout.TotalSeconds, RedisExistence.Nx).ConfigureAwait(false))
             {
-                if (onLocked != null)
-                {
-                    return await onLocked();
-                }
-
-                return await Task.FromResult(default(T));
+                return onLocked != null ? await onLocked() : await Task.FromResult(default(T));
             }
+
+            locker = new InternalLock(client, token, value);
 
             T result;
             try
             {
-                result = await func();
+                result = await func().ConfigureAwait(false);
             }
             finally
             {
@@ -201,5 +204,30 @@ namespace Fireasy.Redis
                 sentinels.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries).ForEach(s => setting.Sentinels.Add(new RedisHost(s)));
             }
         }
+
+        internal class InternalLock : IDisposable
+        {
+            private CSRedisClient _client;
+            private string _name;
+            private string _value;
+
+            internal InternalLock(CSRedisClient rds, string name, string value)
+            {
+                _client = rds;
+                _name = name;
+                _value = value;
+            }
+
+            public bool Unlock()
+            {
+                return _client.Eval("local gva = redis.call('GET', KEYS[1])\r\nif gva == ARGV[1] then\r\n  redis.call('DEL', KEYS[1])\r\n  return 1\r\nend\r\nreturn 0", _name, _value)?.ToString() == "1";
+            }
+
+            public void Dispose()
+            {
+                Unlock();
+            }
+        }
+
     }
 }

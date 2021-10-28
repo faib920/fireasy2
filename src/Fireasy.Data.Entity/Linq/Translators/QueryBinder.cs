@@ -8,7 +8,6 @@ using Fireasy.Data.Entity.Linq.Expressions;
 using Fireasy.Data.Entity.Metadata;
 using Fireasy.Data.Entity.Properties;
 using Fireasy.Data.Entity.Query;
-using Fireasy.Data.Syntax;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -159,13 +158,33 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         _isQueryAsync = true;
                         return Visit(node.Arguments[0]);
                     case nameof(Extensions.Where):
+                        if (node.Arguments.Count == 4)
+                        {
+                            return BindWhere(node.Type, node.Arguments[0], node.Arguments[1], node.Arguments[2], (ConstantExpression)node.Arguments[3]);
+                        }
                         return BindWhere(node.Type, node.Arguments[0], node.Arguments[1], node.Arguments[2]);
                     case nameof(Extensions.IsBetween):
                         return BindBetween(node.Arguments[0], node.Arguments[1], node.Arguments[2]);
+                    case nameof(Extensions.Join):
+                        return BindJoin(node.Type, node.Arguments[0], node.Arguments[1], GetLambda(node.Arguments[2]), GetLambda(node.Arguments[3]));
                     case nameof(Extensions.LeftJoin):
-                        return BindJoin(node.Type, node.Arguments[0], node.Arguments[1], GetLambda(node.Arguments[2]), GetLambda(node.Arguments[3]), GetLambda(node.Arguments[4]), JoinType.LeftOuter);
+                        if (node.Arguments.Count == 4)
+                        {
+                            return BindJoin(node.Type, node.Arguments[0], node.Arguments[1], GetLambda(node.Arguments[2]), GetLambda(node.Arguments[3]), JoinType.LeftOuter);
+                        }
+                        else
+                        {
+                            return BindJoin(node.Type, node.Arguments[0], node.Arguments[1], GetLambda(node.Arguments[2]), GetLambda(node.Arguments[3]), GetLambda(node.Arguments[4]), JoinType.LeftOuter);
+                        }
                     case nameof(Extensions.RightJoin):
-                        return BindJoin(node.Type, node.Arguments[0], node.Arguments[1], GetLambda(node.Arguments[2]), GetLambda(node.Arguments[3]), GetLambda(node.Arguments[4]), JoinType.RightOuter);
+                        if (node.Arguments.Count == 4)
+                        {
+                            return BindJoin(node.Type, node.Arguments[0], node.Arguments[1], GetLambda(node.Arguments[2]), GetLambda(node.Arguments[3]), JoinType.RightOuter);
+                        }
+                        else
+                        {
+                            return BindJoin(node.Type, node.Arguments[0], node.Arguments[1], GetLambda(node.Arguments[2]), GetLambda(node.Arguments[3]), GetLambda(node.Arguments[4]), JoinType.RightOuter);
+                        }
                 }
             }
             else if (typeof(IRepository).IsAssignableFrom(node.Method.DeclaringType))
@@ -467,7 +486,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 );
         }
 
-        private Expression BindWhere(Type resultType, Expression source, Expression condition, Expression parameters)
+        private Expression BindWhere(Type resultType, Expression source, Expression condition, Expression parameters, ConstantExpression aliasConverter = null)
         {
             var projection = VisitSequence(source);
             if (projection == null)
@@ -483,6 +502,14 @@ namespace Fireasy.Data.Entity.Linq.Translators
             }
 
             var where = new SqlExpression(sql, values);
+            if (aliasConverter != null)
+            {
+                var converter = (TableAliasConversion)aliasConverter.Value;
+                foreach (var type in converter.Types)
+                {
+                    where.AliasConversion.Add(type, converter[type]);
+                }
+            }
 
             var alias = GetNextAlias();
             var pc = ProjectColumns(projection.Projector, alias, projection.Select.Alias);
@@ -617,6 +644,36 @@ namespace Fireasy.Data.Entity.Linq.Translators
             _alias = null;
 
             var join = new JoinExpression(joinType, outerProjection.Select, innerProjection.Select, outerKeyExpr.Equal(innerKeyExpr));
+
+            var alias = GetNextAlias();
+            var pc = ProjectColumns(resultExpr, alias, outerProjection.Select.Alias, innerProjection.Select.Alias);
+            return new ProjectionExpression(
+                new SelectExpression(alias, pc.Columns, join, null),
+                pc.Projector, _isQueryAsync, _isNoTracking
+                );
+        }
+
+        private Expression BindJoin(Type resultType, Expression outerSource, Expression innerSource, LambdaExpression predicate, LambdaExpression resultSelector)
+        {
+            var joinType = GetJoinType(ref outerSource, ref innerSource);
+            return BindJoin(resultType, outerSource, innerSource, predicate, resultSelector, joinType);
+        }
+
+        private Expression BindJoin(Type resultType, Expression outerSource, Expression innerSource, LambdaExpression predicate, LambdaExpression resultSelector, JoinType joinType)
+        {
+            var outerProjection = VisitSequence(outerSource);
+            var innerProjection = VisitSequence(innerSource);
+
+            _expMaps[predicate.Parameters[0]] = outerProjection.Projector;
+            _expMaps[predicate.Parameters[1]] = innerProjection.Projector;
+            _expMaps[resultSelector.Parameters[0]] = outerProjection.Projector;
+            _expMaps[resultSelector.Parameters[1]] = innerProjection.Projector;
+
+            _alias = outerProjection.Select.Alias;
+            var resultExpr = Visit(resultSelector.Body);
+            _alias = null;
+
+            var join = new JoinExpression(joinType, outerProjection.Select, innerProjection.Select, Visit(predicate.Body));
 
             var alias = GetNextAlias();
             var pc = ProjectColumns(resultExpr, alias, outerProjection.Select.Alias, innerProjection.Select.Alias);
@@ -1564,7 +1621,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             if (predicate != null)
             {
-                source = Expression.Call(typeof(Queryable), nameof(Queryable.Where), method.GetGenericArguments(), source, predicate);
+                source = Expression.Call(typeof(Queryable), nameof(Queryable.Where), new Type[] { source.Type.GetEnumerableElementType() }, source, predicate);
             }
 
             var projection = VisitSequence(source);
@@ -1916,6 +1973,16 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 members.Add(property.Info.ReflectionInfo);
             }
 
+            Expression entitySource = null;
+            foreach (var property in PropertyUnity.GetRelatedProperties(sourceType).Where(s => _transContext.QueryPolicy.IsIncluded(s.Info.ReflectionInfo)))
+            {
+                entitySource ??= Visit(source);
+
+                var exp = BindMember(entitySource, property.Info.ReflectionInfo);
+                arguments.Add(exp);
+                members.Add(property.Info.ReflectionInfo);
+            }
+
             var keyPairArray = new Expression[members.Count];
             var constructor = typeof(KeyValuePair<string, object>).GetConstructors()[0];
             for (var i = 0; i < members.Count; i++)
@@ -1930,7 +1997,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
         public Expression BindExtendAs(Type returnType, Expression source, LambdaExpression selector)
         {
-            var memberInits = new List<MemberBinding>();
+            var memberInits = new HashSet<MemberBinding>();
 
             if (selector != null)
             {
@@ -1995,7 +2062,18 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 memberInits.Add(Expression.Bind(prop, columnExp));
             }
 
-            return Expression.MemberInit(Expression.New(returnType), memberInits);
+            Expression entitySource = null;
+            foreach (var property in PropertyUnity.GetRelatedProperties(returnType).Where(s => _transContext.QueryPolicy.IsIncluded(s.Info.ReflectionInfo)))
+            {
+                entitySource ??= Visit(source);
+
+                var exp = BindMember(entitySource, property.Info.ReflectionInfo);
+                memberInits.Add(Expression.Bind(property.Info.ReflectionInfo, exp));
+            }
+
+            var mbrInitExp = Expression.MemberInit(Expression.New(returnType), memberInits);
+            return mbrInitExp;
+            //return new EntityExpression(EntityMetadataUnity.GetEntityMetadata(returnType), mbrInitExp);
         }
 
         public Expression BindTo(Type returnType, Expression source)

@@ -6,7 +6,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Diagnostics.CodeAnalysis;
-#if NETSTANDARD && !NETSTANDARD2_0
+#if NETSTANDARD2_1_OR_GREATER
 using System.Threading.Tasks;
 #endif
 
@@ -16,7 +16,7 @@ namespace Fireasy.Common.ComponentModel
     /// 实现了标准的 <see cref="IDisposable"/> 模式的抽象类。
     /// </summary>
     public abstract class DisposableBase : IDisposable, ISpecificDisposable
-#if NETSTANDARD && !NETSTANDARD2_0
+#if NETSTANDARD2_1_OR_GREATER
         , IAsyncDisposable
 #endif
     {
@@ -79,7 +79,7 @@ namespace Fireasy.Common.ComponentModel
             DoDispose(disposing);
         }
 
-#if NETSTANDARD && !NETSTANDARD2_0
+#if NETSTANDARD2_1_OR_GREATER
         /// <summary>
         /// 异步的，释放对象所占用的非托管和托管资源。
         /// </summary>

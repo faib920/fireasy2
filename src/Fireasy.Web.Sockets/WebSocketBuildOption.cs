@@ -65,14 +65,14 @@ namespace Fireasy.Web.Sockets
         public IMessageFormatter Formatter { get; set; } = new MessageFormatter();
 
         /// <summary>
-        /// 获取或设置分布式订阅管理器。
+        /// 获取或设置分布式订阅管理器的创建者。
         /// </summary>
-        public ISubscribeManager SubscribeManager { get; set; }
+        public Func<IServiceProvider, ISubscribeManager> SubscribeManagerCreator { get; set; }
 
         /// <summary>
-        /// 获取或设置分布式缓存管理器。
+        /// 获取或设置分布式缓存管理器的创建者。
         /// </summary>
-        public IDistributedCacheManager CacheManager { get; set; }
+        public Func<IServiceProvider, IDistributedCacheManager> CacheManagerCreator { get; set; }
 
         /// <summary>
         /// 将处理类映射到指定的路径。

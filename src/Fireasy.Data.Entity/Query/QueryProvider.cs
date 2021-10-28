@@ -10,7 +10,7 @@ using Fireasy.Common;
 using Fireasy.Common.Extensions;
 using Fireasy.Data.Entity.Linq.Translators;
 using System;
-#if !NETFRAMEWORK && !NETSTANDARD2_0
+#if NETSTANDARD2_1_OR_GREATER
 using System.Collections.Generic;
 #endif
 using System.Linq;
@@ -127,7 +127,7 @@ namespace Fireasy.Data.Entity.Query
             return executeCache.TryGet(expression, GetCacheContext(), () => _entityQueryProvider.Execute<TResult>(expression));
         }
 
-#if !NETFRAMEWORK && !NETSTANDARD2_0
+#if NETSTANDARD2_1_OR_GREATER
         public IAsyncEnumerable<TResult> ExecuteEnumerableAsync<TResult>(Expression expression, CancellationToken cancellationToken)
         {
             var executeCache = ServiceProvider.TryGetService(() => DefaultExecuteCache.Instance);

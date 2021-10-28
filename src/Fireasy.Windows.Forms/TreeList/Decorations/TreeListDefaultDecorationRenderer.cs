@@ -64,9 +64,9 @@ namespace Fireasy.Windows.Forms
                 foreColor = Color.DarkGray;
             }
 
-            if (item.Highlight)
+            if (item.Highlight && treeList.ItemHighlightForeColor != Color.Empty)
             {
-                foreColor = Color.White;
+                foreColor = treeList.ItemHighlightForeColor;
             }
             else if (state == DrawState.Hot)
             {

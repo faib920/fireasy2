@@ -126,7 +126,12 @@ namespace Fireasy.Data.Entity.Metadata.Builders
         /// <summary>
         /// 构造元数据。
         /// </summary>
-        public virtual void Build()
+        void IMetadataBuilder.Build()
+        {
+            InternalBuild();
+        }
+
+        protected virtual void InternalBuild()
         {
             using (var scope = new MetadataInitializeScope(_metadata))
             {
@@ -138,7 +143,11 @@ namespace Fireasy.Data.Entity.Metadata.Builders
                 }
 
                 _propBuilders.ForEach(s => s.Value.Build());
-                _treeBuilder?.Build();
+
+                if (_treeBuilder != null)
+                {
+                    (_treeBuilder as IMetadataBuilder).Build();
+                }
             }
 
             EntityMetadataUnity.AddEntityMetadata(typeof(TEntity), _metadata);
@@ -186,7 +195,7 @@ namespace Fireasy.Data.Entity.Metadata.Builders
                 return new EntityCollectionBuilder<TEntity, TRelatedEntity>.NullBuilder();
             }
 
-            public override void Build()
+            protected override void InternalBuild()
             {
             }
         }

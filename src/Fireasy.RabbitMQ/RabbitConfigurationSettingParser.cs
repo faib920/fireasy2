@@ -34,6 +34,7 @@ namespace Fireasy.RabbitMQ
                 setting.UserName = configNode.GetAttributeValue("userName");
                 setting.Password = configNode.GetAttributeValue("password");
                 setting.ExchangeType = configNode.GetAttributeValue("exchangeType");
+                setting.ExchangeName = configNode.GetAttributeValue("exchangeName");
                 setting.VirtualHost = configNode.GetAttributeValue("virtualHost");
                 setting.RetryDelayTime = configNode.GetAttributeValue("retryDelayTime").ToTimeSpan(TimeSpan.FromSeconds(20));
                 setting.RetryTimes = configNode.GetAttributeValue("retryTimes").To<int?>();
@@ -60,6 +61,7 @@ namespace Fireasy.RabbitMQ
                 setting.UserName = configNode["userName"];
                 setting.Password = configNode["password"];
                 setting.ExchangeType = configNode["exchangeType"];
+                setting.ExchangeName = configNode["exchangeName"];
                 setting.VirtualHost = configNode["virtualHost"];
                 setting.RetryDelayTime = configNode["retryDelayTime"].ToTimeSpan(TimeSpan.FromSeconds(20));
                 setting.RetryTimes = configNode["retryTimes"].To<int?>();

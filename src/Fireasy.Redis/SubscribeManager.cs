@@ -37,7 +37,6 @@ namespace Fireasy.Redis
         private readonly SafetyDictionary<string, List<CSRedisClient.SubscribeObject>> _channels = new SafetyDictionary<string, List<CSRedisClient.SubscribeObject>>();
         private readonly ISubjectPersistance _persistance;
         private readonly ISubscribeNotification _notification;
-        private readonly ITopicNameNormalizer _nameNormalizer;
         private PersistentTimer _timer;
 
         /// <summary>
@@ -57,7 +56,6 @@ namespace Fireasy.Redis
         {
             _persistance = serviceProvider.TryGetService<ISubjectPersistance>(() => LocalFilePersistance.Default);
             _notification = serviceProvider.TryGetService<ISubscribeNotification>();
-            _nameNormalizer = serviceProvider.TryGetService<ITopicNameNormalizer>();
         }
 
 #if NETSTANDARD
@@ -114,7 +112,8 @@ namespace Fireasy.Redis
                         Ssl = optValue.Ssl,
                         Prefix = optValue.Prefix,
                         RetryDelayTime = optValue.RetryDelayTime,
-                        RetryTimes = optValue.RetryTimes
+                        RetryTimes = optValue.RetryTimes,
+                        Preheat = optValue.Preheat
                     };
 
                     RedisHelper.ParseHosts(setting, optValue.Hosts, optValue.Sentinels);
@@ -367,9 +366,11 @@ namespace Fireasy.Redis
             {
                 if (subject != null && Setting.RetryTimes > 0 && subject.AcceptRetries < Setting.RetryTimes)
                 {
+                    var hasNext = subject.AcceptRetries < Setting.RetryTimes - 1;
                     if (_notification != null)
                     {
-                        var context = new SubscribeNotificationContext(subject.Name, subject.Body, exception);
+                        using var scope = ServiceProvider.TryCreateScope();
+                        var context = new SubscribeNotificationContext(scope.ServiceProvider, subject.Name, subject.Body, exception, GetSerializer(), hasNext);
                         _notification.OnConsumeError(context);
                         if (!context.CanRetry)
                         {
@@ -388,7 +389,7 @@ namespace Fireasy.Redis
                         }
                         catch (Exception exp)
                         {
-                            PersistSubject(subject, exp);
+                            PersistSubject(subject, exp, hasNext);
                         }
                     });
                 }
@@ -409,7 +410,7 @@ namespace Fireasy.Redis
             {
                 if (Setting.RetryTimes > 0)
                 {
-                    PersistSubject(pdata, exp);
+                    PersistSubject(pdata, exp, true);
                 }
                 else
                 {
@@ -431,7 +432,7 @@ namespace Fireasy.Redis
             {
                 if (Setting.RetryTimes > 0)
                 {
-                    PersistSubject(pdata, exp);
+                    PersistSubject(pdata, exp, Setting.RetryTimes > 1);
                 }
                 else
                 {
@@ -447,16 +448,17 @@ namespace Fireasy.Redis
 
         private async Task PublishSubjectAsync(CSRedisClient client, StoredSubject subject)
         {
-            await client.PublishAsync(subject.Name, Serialize(subject));
+            await client.PublishAsync(subject.Name, Serialize(subject)).ConfigureAwait(false);
         }
 
-        private void PersistSubject(StoredSubject subject, Exception exception)
+        private void PersistSubject(StoredSubject subject, Exception exception, bool hasNext)
         {
             if (_persistance != null && subject.PublishRetries == 0)
             {
                 if (_notification != null)
                 {
-                    var context = new SubscribeNotificationContext(subject.Name, subject.Body, exception);
+                    using var scope = ServiceProvider.TryCreateScope();
+                    var context = new SubscribeNotificationContext(scope.ServiceProvider, subject.Name, subject.Body, exception, GetSerializer(), hasNext);
                     _notification.OnPublishError(context);
                     if (!context.CanRetry)
                     {
@@ -500,8 +502,20 @@ namespace Fireasy.Redis
                             PublishSubject(client, subject);
                             return SubjectRetryStatus.Success;
                         }
-                        catch (Exception)
+                        catch (Exception exception)
                         {
+                            var hasNext = subject.PublishRetries < Setting.RetryTimes;
+                            if (_notification != null)
+                            {
+                                using var scope = ServiceProvider.TryCreateScope();
+                                var context = new SubscribeNotificationContext(scope.ServiceProvider, subject.Name, subject.Body, exception, GetSerializer(), hasNext);
+                                _notification.OnPublishError(context);
+                                if (!context.CanRetry)
+                                {
+                                    return SubjectRetryStatus.Failed;
+                                }
+                            }
+
                             return SubjectRetryStatus.Failed;
                         }
                     });

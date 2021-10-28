@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Reflection;
 
@@ -100,5 +101,10 @@ namespace Fireasy.Data.Entity
         /// 获取属性所对应的 <see cref="PropertyInfo"/> 对象。
         /// </summary>
         public PropertyInfo ReflectionInfo { get; internal set; }
+
+        /// <summary>
+        /// 获取属性所对应的自定义特性。
+        /// </summary>
+        public List<Attribute> Attributes { get; } = new List<Attribute>();
     }
 }
