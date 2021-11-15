@@ -27,6 +27,15 @@ namespace Fireasy.Data.Entity
         }
 
         /// <summary>
+        /// 初始化 <see cref="RelationshipAssignAttribute"/> 类的新实例。
+        /// </summary>
+        /// <param name="foreignKey">关联的实体类型中的充当主键的属性名称。</param>
+        public RelationshipAssignAttribute(string foreignKey)
+        {
+            ForeignKey = foreignKey;
+        }
+
+        /// <summary>
         /// 获取或设置关联实体类型中充当主键的属性名称。
         /// </summary>
         public string PrimaryKey { get; set; }

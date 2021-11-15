@@ -29,6 +29,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         private List<OrderExpression> _thenBys;
         private Expression _batchSource;
         private bool _isNoTracking = false;
+        private bool _isStateless = false;
         private bool _isQueryAsync = false;
         private TableAlias _alias;
         private TranslateContext _transContext;
@@ -126,6 +127,9 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     case nameof(Extensions.AsNoTracking):
                         _isNoTracking = true;
                         return Visit(node.Arguments[0]);
+                    //case nameof(Extensions.AsStateless):
+                    //    _isStateless = true;
+                    //    return Visit(node.Arguments[0]);
                     case nameof(Extensions.CacheParsing):
                     case nameof(Extensions.CacheExecution):
                         return Visit(node.Arguments[0]);
@@ -1768,7 +1772,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             if (!properties.Any())
             {
-                throw new NotSupportedException(SR.GetString(SRKind.NotDefinedPrimaryKey));
+                throw new NotSupportedException(SR.GetString(SRKind.NotDefinedPrimaryKey, entityType));
             }
 
             var exp = properties.Select(p =>
@@ -1780,7 +1784,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             if (exp == null)
             {
-                throw new Exception(SR.GetString(SRKind.NotDefinedPrimaryKey));
+                throw new Exception(SR.GetString(SRKind.NotDefinedPrimaryKey, entityType));
             }
 
             return exp;
@@ -2134,6 +2138,12 @@ namespace Fireasy.Data.Entity.Linq.Translators
                         mex.Expression == ex.Expression &&
                         mex.Member == member)
                     {
+                        var property = PropertyUnity.GetProperty(ex.Type, member.Name);
+                        if (property == null)
+                        {
+                            throw new NotSupportedException(SR.GetString(SRKind.CannotBindProperty, ex.Type, member.Name));
+                        }
+
                         return Expression.MakeMemberAccess(source, member);
                     }
 

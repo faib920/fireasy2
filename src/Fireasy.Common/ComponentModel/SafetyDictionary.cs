@@ -290,7 +290,7 @@ namespace Fireasy.Common.ComponentModel
             catch
             {
                 LazyValues.TryRemove(key, out _);
-                return default;
+                throw;
             }
         }
 

@@ -295,7 +295,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
 
             if (!primaryKeys.Any())
             {
-                throw new NotSupportedException(SR.GetString(SRKind.NotDefinedPrimaryKey));
+                throw new NotSupportedException(SR.GetString(SRKind.NotDefinedPrimaryKey, parExp.Type));
             }
 
             var where = primaryKeys.Select(p =>

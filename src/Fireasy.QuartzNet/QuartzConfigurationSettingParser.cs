@@ -29,6 +29,7 @@ namespace Fireasy.QuartzNet
                 taskSet.StartTime = node.GetAttributeValue<DateTime?>("startTime");
                 taskSet.EndTime = node.GetAttributeValue<DateTime?>("endTime");
                 taskSet.CronExpression = node.GetAttributeValue("cron");
+                taskSet.Disabled = node.GetAttributeValue<bool>("disabled");
 
                 if (node.SelectSingleNode("arguments")?.InnerText is string strArg && !string.IsNullOrEmpty(strArg))
                 {
@@ -58,6 +59,7 @@ namespace Fireasy.QuartzNet
                 taskSet.StartTime = child.GetSection("startTime").Value.To<DateTime?>();
                 taskSet.EndTime = child.GetSection("endTime").Value.To<DateTime?>();
                 taskSet.CronExpression = child.GetSection("cron").Value;
+                taskSet.Disabled = child.GetSection("disabled").Value.To<bool>();
 
                 if (child.GetSection("arguments").Value is string strArg && !string.IsNullOrEmpty(strArg))
                 {

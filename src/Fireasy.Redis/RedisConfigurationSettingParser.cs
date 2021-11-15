@@ -90,9 +90,17 @@ namespace Fireasy.Redis
 #if NETSTANDARD
         public IConfigurationSettingItem Parse(IConfiguration configuration)
         {
+            var bindingConfig = (BindingConfiguration)configuration;
+            var config = bindingConfig.Root.GetSection("fireasy:redis");
+            var configNode = config;
+            if (!config.Exists())
+            {
+                config = bindingConfig.Current;
+                configNode = config.GetSection("config");
+            }
+
             var setting = new RedisConfigurationSetting();
-            setting.ConnectionString = configuration["connectionString"];
-            var configNode = configuration.GetSection("config");
+            setting.ConnectionString = config["connectionString"];
             if (configNode.Exists())
             {
                 var serializerType = configNode["serializerType"];

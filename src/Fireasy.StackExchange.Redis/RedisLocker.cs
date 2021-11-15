@@ -92,7 +92,8 @@ namespace Fireasy.Redis
                         SerializerType = optValue.SerializerType,
                         Ssl = optValue.Ssl,
                         Prefix = optValue.Prefix,
-                        Twemproxy = optValue.Twemproxy
+                        Twemproxy = optValue.Twemproxy,
+                        MinIoThreads = optValue.MinIoThreads
                     };
 
                     RedisHelper.ParseHosts(setting, optValue.Hosts);

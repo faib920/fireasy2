@@ -243,7 +243,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 case (ExpressionType)DbExpressionType.Insert:
                     return HideAliases(() => base.Visit(exp));
                 default:
-                    throw new TranslateException(exp, new Exception(SR.GetString(SRKind.NodeTranslateNotSupported, (DbExpressionType)exp.NodeType)));
+                    throw new TranslateException(exp, new NotSupportedException(SR.GetString(SRKind.NodeTranslateNotSupported, (DbExpressionType)exp.NodeType)));
             }
         }
 

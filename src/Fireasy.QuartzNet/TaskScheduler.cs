@@ -12,12 +12,12 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Fireasy.Common.Options;
 using Fireasy.Common.Tasks.Configuration;
-using System.Linq;
 #endif
 using Quartz;
 using Quartz.Impl;
 using System;
 using System.Collections.Specialized;
+using System.Linq;
 using System.Threading;
 using Fireasy.Common;
 using Fireasy.Common.ComponentModel;
@@ -34,6 +34,7 @@ namespace Fireasy.QuartzNet
         private bool _isRunning;
         private readonly CancellationTokenSource _stopToken = new CancellationTokenSource();
         private QuartzConfigurationSetting _setting;
+        private bool _isStarted = false;
 
         /// <summary>
         /// 初始化 <see cref="TaskScheduler"/> 类的新实例。
@@ -72,7 +73,11 @@ namespace Fireasy.QuartzNet
             var optValue = options.CurrentValue;
             var setting = GetQuartzSetting(optValue);
 
-            setting?.Jobs.ForEach(s => StartJob(s));
+            if (!_isStarted)
+            {
+                setting?.Jobs.Where(s => !s.Disabled).ForEach(s => StartJob(s));
+                _isStarted = true;
+            }
 
             foreach (var jobOpt in optValue.Jobs)
             {
@@ -204,6 +209,7 @@ namespace Fireasy.QuartzNet
 
             return base.Dispose(disposing);
         }
+
         private ITrigger CreateTrigger(StartOptions options)
         {
             return TriggerBuilder.Create()
@@ -274,7 +280,11 @@ namespace Fireasy.QuartzNet
             {
                 _setting = (QuartzConfigurationSetting)setting;
 
-                _setting.Jobs.ForEach(s => StartJob(s));
+                if (!_isStarted)
+                {
+                    _setting.Jobs.Where(s => !s.Disabled).ForEach(s => StartJob(s));
+                    _isStarted = true;
+                }
             }
         }
 

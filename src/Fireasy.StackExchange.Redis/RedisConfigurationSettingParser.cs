@@ -50,6 +50,7 @@ namespace Fireasy.Redis
                 setting.IgnoreException = configNode.GetAttributeValue("ignoreException").To(true);
                 setting.Prefix = configNode.GetAttributeValue<string>("prefix");
                 setting.Twemproxy = configNode.GetAttributeValue<bool?>("twemproxy");
+                setting.MinIoThreads = configNode.GetAttributeValue<int>("minIoThreads");
 
                 ReadHosts("hosts", configNode, setting.Hosts);
             }
@@ -88,9 +89,17 @@ namespace Fireasy.Redis
 #if NETSTANDARD
         public IConfigurationSettingItem Parse(IConfiguration configuration)
         {
+            var bindingConfig = (BindingConfiguration)configuration;
+            var config = bindingConfig.Root.GetSection("fireasy:redis");
+            var configNode = config;
+            if (!config.Exists())
+            {
+                config = bindingConfig.Current;
+                configNode = config.GetSection("config");
+            }
+
             var setting = new RedisConfigurationSetting();
-            setting.ConnectionString = configuration["connectionString"];
-            var configNode = configuration.GetSection("config");
+            setting.ConnectionString = config["connectionString"];
             if (configNode.Exists())
             {
                 var serializerType = configNode["serializerType"];
@@ -114,6 +123,7 @@ namespace Fireasy.Redis
                 setting.IgnoreException = configNode["ignoreException"].To(true);
                 setting.Prefix = configNode["prefix"];
                 setting.Twemproxy = configNode["twemproxy"].To<bool?>();
+                setting.MinIoThreads = configNode["minIoThreads"].To<int>();
 
                 ReadHosts("hosts", configNode, setting.Hosts);
             }

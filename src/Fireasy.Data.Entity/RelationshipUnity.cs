@@ -56,7 +56,7 @@ namespace Fireasy.Data.Entity
 
             if (metadata == null)
             {
-                throw new RelationshipException(SR.GetString(SRKind.NotDefinedRelationship));
+                throw new RelationshipException(SR.GetString(SRKind.NotDefinedRelationship, property.EntityType.Name, property.Name));
             }
 
             return metadata.Repair();
@@ -113,7 +113,7 @@ namespace Fireasy.Data.Entity
                 }
                 catch (ArgumentException exp)
                 {
-                    throw new ArgumentException(SR.GetString(SRKind.RelationNameRepeated), exp);
+                    throw new RelationshipException(SR.GetString(SRKind.RelationNameRepeated, key.GetName().Name), exp);
                 }
             });
         }
@@ -172,11 +172,21 @@ namespace Fireasy.Data.Entity
             if (assignAttr != null)
             {
                 var fkPro = PropertyUnity.GetProperty(otherType, assignAttr.ForeignKey);
-                var pkPro = PropertyUnity.GetProperty(thisType, assignAttr.PrimaryKey);
+                var pkPro = string.IsNullOrWhiteSpace(assignAttr.PrimaryKey) ? 
+                    PropertyUnity.GetPrimaryProperties(thisType).FirstOrDefault() : PropertyUnity.GetProperty(thisType, assignAttr.PrimaryKey);
                 if (fkPro != null && pkPro != null)
                 {
+                    if (!pkPro.Info.IsPrimaryKey)
+                    {
+                        throw new RelationshipException(SR.GetString(SRKind.IsNotPrimaryProperty, pkPro.Name));
+                    }
+
                     var key = new RelationshipKey { PrincipalKey = pkPro.Name, PrincipalProperty = pkPro, DependentKey = fkPro.Name, DependentProperty = fkPro };
                     return new RelationshipMetadata(thisType, otherType, RelationshipStyle.One2Many, RelationshipSource.AutomaticallyAssign, new[] { key });
+                }
+                else
+                {
+                    throw new RelationshipException(SR.GetString(SRKind.InvalidRelationshipAssign, assignAttr.PrimaryKey, assignAttr.ForeignKey));
                 }
             }
 
@@ -184,13 +194,14 @@ namespace Fireasy.Data.Entity
             var pks = PropertyUnity.GetPrimaryProperties(thisType).ToList();
             if (pks.Count > 0)
             {
-                var fks = pks.Select(s => PropertyUnity.GetProperty(otherType, s.Name) ?? PropertyUnity.GetProperty(otherType, thisType.Name.ToSingular() + s.Name)).ToList();
+                var refId = thisType.Name.ToSingular() + "ID";
+                var fks = pks.Select(s => PropertyUnity.GetProperty(otherType, s.Name) ?? PropertyUnity.GetProperty(otherType, refId)).ToList();
                 var keys = new RelationshipKey[pks.Count];
                 for (var i = 0; i < pks.Count; i++)
                 {
                     if (fks[i] == null)
                     {
-                        throw new ArgumentException(SR.GetString(SRKind.NotFoundRelationshipKey, thisType, otherType, thisType.Name.ToSingular()));
+                        throw new RelationshipException(SR.GetString(SRKind.NotFoundRelationshipKey, thisType, otherType, pks[i].Name, refId));
                     }
 
                     keys[i] = new RelationshipKey { PrincipalKey = pks[i].Name, PrincipalProperty = pks[i], DependentKey = fks[i].Name, DependentProperty = fks[i] };
@@ -294,7 +305,7 @@ namespace Fireasy.Data.Entity
             {
                 return RelationshipStyle.One2One;
             }
-            throw new RelationshipException(SR.GetString(SRKind.NotDefinedRelationshipDirection));
+            throw new RelationshipException(SR.GetString(SRKind.NotDefinedRelationshipDirection, keyExpression));
         }
 
         private static bool ParseRelationKey(string data, out string thisKey, out string otherKey)

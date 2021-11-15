@@ -19,8 +19,9 @@ namespace Fireasy.Data.Entity
         /// 初始化 <see cref="RelationshipException"/> 类的新实例。
         /// </summary>
         /// <param name="message">异常的信息。</param>
-        public RelationshipException(string message)
-            : base(message)
+        /// <param name="innerExp"></param>
+        public RelationshipException(string message, Exception innerExp = null)
+            : base(message, innerExp)
         {
         }
     }

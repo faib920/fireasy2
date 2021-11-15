@@ -158,6 +158,10 @@ namespace Fireasy.Data.Entity.Query
                 var buildOptions = new ExecutionBuilder.BuildOptions { IsAsync = isAsync, IsNoTracking = !options.TraceEntityState };
                 return ExecutionBuilder.Build(transContext, transExpression, buildOptions);
             }
+            catch (TranslateException ex)
+            {
+                throw ex;
+            }
             catch (Exception ex)
             {
                 throw new TranslateException(expression, ex);
@@ -208,6 +212,10 @@ namespace Fireasy.Data.Entity.Query
                 }
 
                 return result;
+            }
+            catch (TranslateException ex)
+            {
+                throw ex;
             }
             catch (Exception ex)
             {

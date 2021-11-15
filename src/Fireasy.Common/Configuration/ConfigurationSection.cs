@@ -7,13 +7,13 @@
 // -----------------------------------------------------------------------
 
 using Fireasy.Common.Extensions;
+#if NETSTANDARD
+using Microsoft.Extensions.Configuration;
+#endif
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
-#if NETSTANDARD
-using Microsoft.Extensions.Configuration;
-#endif
 
 namespace Fireasy.Common.Configuration
 {
@@ -119,6 +119,7 @@ namespace Fireasy.Common.Configuration
         {
             foreach (var child in configuration.GetSection(nodeName).GetChildren())
             {
+                var bindConfiguration = new BindingConfiguration(configuration, child);
                 var name = child.Key;
                 if (string.IsNullOrEmpty(name))
                 {
@@ -127,7 +128,7 @@ namespace Fireasy.Common.Configuration
 
                 try
                 {
-                    var setting = func(child);
+                    var setting = func(bindConfiguration);
                     if (!string.IsNullOrEmpty(typeNodeName))
                     {
                         var typeName = child.GetSection(typeNodeName).Value;
@@ -135,7 +136,7 @@ namespace Fireasy.Common.Configuration
                         {
                             var type = Type.GetType(typeName, true, true);
 
-                            var extend = ParseSetting(child, type);
+                            var extend = ParseSetting(bindConfiguration, type);
                             if (extend != null)
                             {
                                 setting = new ExtendConfigurationSetting { Base = setting, Extend = extend };

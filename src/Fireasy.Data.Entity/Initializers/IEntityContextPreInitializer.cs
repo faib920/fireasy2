@@ -18,4 +18,13 @@ namespace Fireasy.Data.Entity.Initializers
         /// <param name="context"></param>
         void PreInitialize(EntityContextPreInitializeContext context);
     }
+
+    public interface IEntityContextInitializer
+    {
+        /// <summary>
+        /// 初始化操作。
+        /// </summary>
+        /// <param name="context"></param>
+        void Initialize(EntityContextInitializeContext context);
+    }
 }

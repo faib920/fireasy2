@@ -76,6 +76,11 @@ namespace Fireasy.Redis
 
         public bool? Twemproxy { get; set; }
 
+        /// <summary>
+        /// 获取或设置最小线程数。
+        /// </summary>
+        public int MinIoThreads { get; set; }
+
         bool IConfiguredOptions.IsConfigured { get; set; }
     }
 

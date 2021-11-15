@@ -46,5 +46,10 @@ namespace Fireasy.QuartzNet
         /// 获取或设置参数字典。
         /// </summary>
         public IDictionary<string, object> Arguments { get; set; }
+
+        /// <summary>
+        /// 获取或设置是否禁用。
+        /// </summary>
+        public bool Disabled { get; set; }
     }
 }

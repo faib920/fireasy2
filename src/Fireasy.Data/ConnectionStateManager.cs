@@ -36,8 +36,13 @@ namespace Fireasy.Data
         public ConnectionStateManager TryOpen()
         {
             _state = _connection.State;
-            if (_state != ConnectionState.Open)
+            if (_state == ConnectionState.Closed)
             {
+                _connection.Open();
+            }
+            else if (_state == ConnectionState.Broken)
+            {
+                _connection.Close();
                 _connection.Open();
             }
 
@@ -56,6 +61,15 @@ namespace Fireasy.Data
             {
                 await _connection.OpenAsync(cancellationToken);
             }
+            else if (_state == ConnectionState.Broken)
+            {
+#if NETSTANDARD2_1_OR_GREATER
+                await _connection.CloseAsync();
+#else
+                _connection.Close();
+#endif
+                await _connection.OpenAsync(cancellationToken);
+            }
 
             return this;
         }
@@ -66,7 +80,7 @@ namespace Fireasy.Data
         /// <returns></returns>
         public ConnectionStateManager TryClose()
         {
-            if (_state == ConnectionState.Closed)
+            if (_state == ConnectionState.Closed || _state == ConnectionState.Broken)
             {
                 _connection.Close();
             }
@@ -81,7 +95,7 @@ namespace Fireasy.Data
         /// <returns></returns>
         public async Task<ConnectionStateManager> TryCloseAsync(CancellationToken cancellationToken = default)
         {
-            if (_state == ConnectionState.Closed)
+            if (_state == ConnectionState.Closed || _state == ConnectionState.Broken)
             {
 #if NETSTANDARD2_1_OR_GREATER
                 await _connection.CloseAsync();

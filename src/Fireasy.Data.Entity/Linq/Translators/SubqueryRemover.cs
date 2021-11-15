@@ -54,7 +54,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     return Visit(expr);
                 }
 
-                throw new Exception(SR.GetString(SRKind.NotDefinedReference));
+                throw new ArgumentException(SR.GetString(SRKind.NotDefinedReference, column.Name));
             }
 
             return column;
@@ -71,7 +71,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                     return aggregate.Update(c);
                 }
 
-                throw new Exception(SR.GetString(SRKind.NotDefinedReference));
+                throw new ArgumentException(SR.GetString(SRKind.NotDefinedReference, column.Name));
             }
 
             return aggregate;

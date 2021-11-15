@@ -22,7 +22,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
         /// <param name="expression">正在翻译的 ELinq 表达式。</param>
         /// <param name="exception">内部异常。</param>
         public TranslateException(Expression expression, Exception exception)
-            : base(SR.GetString(SRKind.FailInTranslateExpression) + Environment.NewLine + ExpressionWriter.WriteToString(expression), exception)
+            : base(SR.GetString(SRKind.FailInTranslateExpression) + exception?.Message + Environment.NewLine + ExpressionWriter.WriteToString(expression), exception)
         {
             Expression = expression;
         }

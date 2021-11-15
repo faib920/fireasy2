@@ -165,6 +165,11 @@ namespace Fireasy.Data.Entity.Query
             //如果没有更新参数，则返回-1
             if (insert.Assignments.Count == 0)
             {
+                if (insert.WithAutoIncrementValue)
+                {
+                    return _isAsync ? Expression.Constant(Task.FromResult(-1L)) : Expression.Constant(-1L);
+                }
+
                 return _isAsync ? Expression.Constant(Task.FromResult(-1)) : Expression.Constant(-1);
             }
 
@@ -363,9 +368,16 @@ namespace Fireasy.Data.Entity.Query
                     var converter = Expression.Call(null, MethodCache.GetConverter, Expression.Constant(column.Type));
 
                     //调用 IValueConverter.ConvertFrom
-                    expression = Expression.Convert(
-                        Expression.Call(converter, MethodCache.ConvertFrom, expression, Expression.Constant(dbType)),
-                        column.Type);
+                    try
+                    {
+                        expression = Expression.Convert(
+                            Expression.Call(converter, MethodCache.ConvertFrom, expression, Expression.Constant(dbType)),
+                            column.Type);
+                    }
+                    catch (Exception exp)
+                    {
+                        throw new QueryExecuteException(SR.GetString(SRKind.CallConvertFromError, column.Name, dbType, column.Type), exp);
+                    }
                 }
                 else
                 {
@@ -635,7 +647,8 @@ namespace Fireasy.Data.Entity.Query
 
             foreach (var nv in namedValues)
             {
-                var info = GetPropertyInfoFromExpression(nv.Value);
+                var name = string.Empty;
+                var info = GetPropertyInfoFromExpression(nv.Value, ref name);
                 if (info != null)
                 {
                     table.Columns.Add(nv.Name, info.DataType.Value.FromDbType());
@@ -649,7 +662,8 @@ namespace Fireasy.Data.Entity.Query
             var parameters = namedValues.ToDictionary(s => s.Name, s =>
                 {
                     var expression = s.Value;
-                    var info = GetPropertyInfoFromExpression(expression);
+                    var name = string.Empty;
+                    var info = GetPropertyInfoFromExpression(expression, ref name);
                     if (info == null)
                     {
                         return expression;
@@ -658,7 +672,15 @@ namespace Fireasy.Data.Entity.Query
                     if (ConvertManager.GetConverter(expression.Type) != null)
                     {
                         var convExp = Expression.Call(null, MethodCache.GetConverter, Expression.Constant(expression.Type));
-                        expression = Expression.Call(convExp, MethodCache.ConvertTo, expression, Expression.Constant((DbType)info.DataType));
+
+                        try
+                        {
+                            expression = Expression.Call(convExp, MethodCache.ConvertTo, expression, Expression.Constant((DbType)info.DataType));
+                        }
+                        catch (Exception exp)
+                        {
+                            throw new QueryExecuteException(SR.GetString(SRKind.CallConvertToError, name, (DbType)info.DataType, info.ReflectionInfo.PropertyType), exp);
+                        }
                     }
 
                     return (object)Expression.Lambda(expression, batch.Operation.Parameters[1]).Compile();
@@ -718,17 +740,24 @@ namespace Fireasy.Data.Entity.Query
                 Expression.Constant(entities, typeof(IEnumerable)));
         }
 
-        private PropertyMapInfo GetPropertyInfoFromExpression(Expression expression)
+        private PropertyMapInfo GetPropertyInfoFromExpression(Expression expression, ref string name)
         {
             if (expression.NodeType == ExpressionType.MemberAccess)
             {
                 var member = (MemberExpression)expression;
                 var property = PropertyUnity.GetProperty(member.Member.DeclaringType, member.Member.Name);
+                if (property == null)
+                {
+                    throw new QueryExecuteException(SR.GetString(SRKind.NotFoundPropertyMatadata, member.Member.DeclaringType.Name, member.Member.Name));
+                }
+
+                name = member.Member.Name;
                 return property?.Info;
             }
             else if ((DbExpressionType)expression.NodeType == DbExpressionType.Column)
             {
                 var column = (ColumnExpression)expression;
+                name = column.Name;
                 return column.MapInfo;
             }
 
@@ -775,7 +804,7 @@ namespace Fireasy.Data.Entity.Query
                 for (var i = 0; i < namedValues.Count; i++)
                 {
                     Expression pv = values[i] is Expression ?
-                        (Expression)values[i] :
+                        values[i] :
                         Expression.Constant(values[i], typeof(object));
 
                     var pExp = Expression.New(consPar, Expression.Constant(namedValues[i].Name), pv);
@@ -898,10 +927,17 @@ namespace Fireasy.Data.Entity.Query
                 tableName = env.Environment.GetVariableTableName(metadata);
             }
 
-            var value = generator.GenerateValue(database, tableName, columnName);
-            entity.SetValue(property, PropertyValue.NewValue(value, property.Type));
+            try
+            {
+                var value = generator.GenerateValue(database, tableName, columnName);
+                entity.SetValue(property, PropertyValue.NewValue(value, property.Type));
 
-            return value;
+                return value;
+            }
+            catch (Exception exp)
+            {
+                throw new QueryExecuteException(SR.GetString(SRKind.CallGenerateIdentityError, tableName, columnName), exp);
+            }
         }
 
         private Expression MakeJoinKey(IList<Expression> key)
@@ -1066,8 +1102,8 @@ namespace Fireasy.Data.Entity.Query
                 {
                     if (column.Alias == s.Alias && _nameMap.TryGetValue(column.Name, out ordinal))
                     {
-                        recordWrapper = this._recordWrapper;
-                        dataReader = this._dataReader;
+                        recordWrapper = _recordWrapper;
+                        dataReader = _dataReader;
                         return true;
                     }
                 }
@@ -1109,7 +1145,7 @@ namespace Fireasy.Data.Entity.Query
                 {
                     if (!_map.TryGetValue(column, out NamedValueExpression nv))
                     {
-                        nv = QueryUtility.GetNamedValueExpression($"n{(_iParam++)}", column, (DbType)column.MapInfo.DataType);
+                        nv = QueryUtility.GetNamedValueExpression($"n{_iParam++}", column, (DbType)column.MapInfo.DataType);
                         _map.Add(column, nv);
                     }
 

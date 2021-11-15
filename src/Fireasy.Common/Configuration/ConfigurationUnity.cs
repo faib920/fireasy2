@@ -87,7 +87,8 @@ namespace Fireasy.Common.Configuration
             return (T)_cfgCache.GetOrAdd(attribute.Name, key =>
                 {
                     var section = new T();
-                    section.Bind(configuration.GetSection(key.Replace("/", ":")));
+                    var bindConfiguration = new BindingConfiguration(configuration, key.Replace("/", ":"));
+                    section.Bind(bindConfiguration);
 
                     if (section is IConfigurationSectionWithCount wc)
                     {

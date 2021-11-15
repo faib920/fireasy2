@@ -83,7 +83,7 @@ namespace Fireasy.Data.Entity
                                  where entityType != null
                                  select new EntityRepositoryTypeMapper(s, entityType)).ToList();
 
-                _options.Initializers?.PreInitialize(new EntityContextPreInitializeContext(_context, _contextService, reposMaps));
+                _options?.Initializers?.PreInitialize(new EntityContextPreInitializeContext(_context, _contextService, reposMaps));
 
                 // Properties declared directly on DbContext such as Database are skipped
                 foreach (var m in reposMaps)
@@ -140,9 +140,10 @@ namespace Fireasy.Data.Entity
         // <summary>
         // Calls the public setter on any property found to initialize it to a new instance of DbSet.
         // </summary>
-        public void InitializeSets()
+        public EntityRepositoryDiscoveryService InitializeSets()
         {
             GetSets()?.SetsInitializer(_context); // Ensures sets have been discovered
+            return this;
         }
 
         #endregion

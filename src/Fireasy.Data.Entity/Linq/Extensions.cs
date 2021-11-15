@@ -107,6 +107,24 @@ namespace Fireasy.Data.Entity.Linq
             return source.Provider.CreateQuery<TSource>(expression);
         }
 
+        /*
+        /// <summary>
+        /// 标记返回的实体不使用状态跟踪。
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        public static IQueryable<TSource> AsStateless<TSource>(this IQueryable<TSource> source)
+        {
+            var method = (MethodInfo)MethodBase.GetCurrentMethod();
+            method = method.MakeGenericMethod(typeof(TSource));
+            var expression = Expression.Call(null, method,
+                new[] { source.Expression });
+
+            return source.Provider.CreateQuery<TSource>(expression);
+        }
+        */
+
         /// <summary>
         /// 设置是否允许 LINQ 解析放入到缓存中。
         /// </summary>
@@ -807,7 +825,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static TEntity ExtendAs<TEntity>(this IEntity entity, Expression<Func<object>> selector)
         {
-            throw new NotSupportedException(SR.GetString(SRKind.MethodMustInExpression));
+            throw new NotSupportedException(SR.GetString(SRKind.MethodMustInExpression, "Extensions.ExtendAs"));
         }
 
         /// <summary>
@@ -818,7 +836,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static dynamic Extend(this IEntity entity, Expression<Func<object>> selector)
         {
-            throw new NotSupportedException(SR.GetString(SRKind.MethodMustInExpression));
+            throw new NotSupportedException(SR.GetString(SRKind.MethodMustInExpression, "Extensions.Extend"));
         }
 
         /// <summary>
@@ -831,7 +849,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         public static bool IsBetween<T>(this T source, T lowerBound, T upperBound)
         {
-            throw new NotSupportedException(SR.GetString(SRKind.MethodMustInExpression));
+            throw new NotSupportedException(SR.GetString(SRKind.MethodMustInExpression, "Extensions.IsBetween"));
         }
 
         /// <summary>
@@ -844,7 +862,7 @@ namespace Fireasy.Data.Entity.Linq
         /// <returns></returns>
         internal static TResult ExtendGenericAs<TSource, TResult>(this TSource source, Expression<Func<TResult>> selector)
         {
-            throw new NotSupportedException(SR.GetString(SRKind.MethodMustInExpression));
+            throw new NotSupportedException(SR.GetString(SRKind.MethodMustInExpression, "Extensions.ExtendGenericAs"));
         }
 
         /// <summary>

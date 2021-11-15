@@ -831,10 +831,15 @@ namespace Fireasy.Data.Extensions
 
         internal static DbConnection TryOpen(this DbConnection connection)
         {
-            if (connection.State != ConnectionState.Open)
+            if (connection.State == ConnectionState.Closed || connection.State == ConnectionState.Broken)
             {
                 try
                 {
+                    if (connection.State == ConnectionState.Broken)
+                    {
+                        connection.Close();
+                    }
+
                     connection.Open();
                 }
                 catch (DbException exp)
@@ -851,10 +856,15 @@ namespace Fireasy.Data.Extensions
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (connection.State != ConnectionState.Open)
+            if (connection.State == ConnectionState.Closed || connection.State == ConnectionState.Broken)
             {
                 try
                 {
+                    if (connection.State == ConnectionState.Broken)
+                    {
+                        connection.Close();
+                    }
+
                     await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
                 }
                 catch (DbException exp)
@@ -874,7 +884,7 @@ namespace Fireasy.Data.Extensions
                 return connection;
             }
 
-            if (connection.State == ConnectionState.Open)
+            if (connection.State == ConnectionState.Open || connection.State == ConnectionState.Broken)
             {
                 try
                 {

@@ -106,7 +106,8 @@ namespace Fireasy.Redis
                         SlidingTime = optValue.SlidingTime,
                         Prefix = optValue.Prefix,
                         IgnoreException = optValue.IgnoreException,
-                        Twemproxy = optValue.Twemproxy
+                        Twemproxy = optValue.Twemproxy,
+                        MinIoThreads = optValue.MinIoThreads
                     };
 
                     RedisHelper.ParseHosts(setting, optValue.Hosts);
@@ -415,7 +416,7 @@ namespace Fireasy.Redis
                 var server = client.GetServer(endpoint);
                 foreach (var db in GetDatabases())
                 {
-                    foreach (var key in server.Keys(db.Database))
+                    foreach (var key in server.Keys(db.Database, pattern))
                     {
                         keys.Add(key);
                     }
@@ -441,7 +442,7 @@ namespace Fireasy.Redis
                 var server = client.GetServer(endpoint);
                 foreach (var db in GetDatabases())
                 {
-                    await foreach (string key in server.KeysAsync(db.Database))
+                    await foreach (string key in server.KeysAsync(db.Database, pattern))
                     {
                         keys.Add(key);
                     }

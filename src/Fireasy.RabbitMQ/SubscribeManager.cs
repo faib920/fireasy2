@@ -32,8 +32,8 @@ namespace Fireasy.RabbitMQ
     [ConfigurationSetting(typeof(RabbitConfigurationSetting))]
     public class SubscribeManager : DisposableBase, ISubscribeManager, IConfigurationSettingHostService, IServiceProviderAccessor
     {
-        private static AliveObject<IConnection> _connectionLazy;
-        private static readonly SafetyDictionary<string, RabbitChannelCollection> _subscribers = new SafetyDictionary<string, RabbitChannelCollection>();
+        private AliveObject<IConnection> _connectionLazy;
+        private readonly SafetyDictionary<string, RabbitChannelCollection> _subscribers = new SafetyDictionary<string, RabbitChannelCollection>();
         private Func<ISerializer> _serializerFactory;
         private readonly ISubjectPersistance _persistance;
         private readonly ISubscribeNotification _notification;
@@ -380,11 +380,10 @@ namespace Fireasy.RabbitMQ
             var connection = GetConnection();
             if (connection == null)
             {
-                return null;
+                throw new ServerConnectException("无法连接到 RabbitMQ 服务器。");
             }
 
             var channel = connection.CreateModel();
-
 
             //工作队列模式
             if (string.IsNullOrEmpty(Setting.ExchangeType))
@@ -552,37 +551,40 @@ namespace Fireasy.RabbitMQ
         /// <param name="subject"></param>
         private void PublishSubject(StoredSubject subject)
         {
-            var connection = GetConnection();
-            using (var channel = connection.CreateModel())
+            using var connection = CreateConnectionFactory().CreateConnection();
+            if (connection == null)
             {
-                var bytes = Serialize(subject);
+                throw new ServerConnectException("无法连接到 RabbitMQ 服务器。");
+            }
 
-                var queueName = subject.Name;
+            using var channel = connection.CreateModel();
+            var bytes = Serialize(subject);
 
-                //工作队列模式
-                if (string.IsNullOrEmpty(Setting.ExchangeType))
+            var queueName = subject.Name;
+
+            //工作队列模式
+            if (string.IsNullOrEmpty(Setting.ExchangeType))
+            {
+                channel.QueueDeclare(queueName, true, false, false, null);
+
+                var properties = channel.CreateBasicProperties();
+                properties.Persistent = true;
+                properties.DeliveryMode = 2;
+
+                channel.BasicPublish(string.Empty, queueName, properties, bytes);
+            }
+            else
+            {
+                var exchangeName = Setting.ExchangeName ?? string.Empty;
+                var routeKey = string.Concat(exchangeName, ".", queueName);
+
+                if (!string.IsNullOrWhiteSpace(exchangeName))
                 {
-                    channel.QueueDeclare(queueName, true, false, false, null);
-
-                    var properties = channel.CreateBasicProperties();
-                    properties.Persistent = true;
-                    properties.DeliveryMode = 2;
-
-                    channel.BasicPublish(string.Empty, queueName, properties, bytes);
+                    channel.ExchangeDeclare(exchangeName, Setting.ExchangeType, true);
                 }
-                else
-                {
-                    var exchangeName = Setting.ExchangeName ?? string.Empty;
-                    var routeKey = string.Concat(exchangeName, ".", queueName);
 
-                    if (!string.IsNullOrWhiteSpace(exchangeName))
-                    {
-                        channel.ExchangeDeclare(exchangeName, Setting.ExchangeType, true);
-                    }
-
-                    channel.QueueDeclare(queueName, true, false, false, null);
-                    channel.BasicPublish(exchangeName, routeKey, null, bytes);
-                }
+                channel.QueueDeclare(queueName, true, false, false, null);
+                channel.BasicPublish(exchangeName, routeKey, null, bytes);
             }
         }
 

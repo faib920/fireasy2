@@ -25,4 +25,17 @@ namespace Fireasy.Data.Entity.Initializers
 
         public ReadOnlyCollection<EntityRepositoryTypeMapper> Mappers { get; }
     }
+
+    public sealed class EntityContextInitializeContext
+    {
+        internal EntityContextInitializeContext(EntityContext context, IContextService service)
+        {
+            EntityContext = context;
+            ContextService = service;
+        }
+
+        public EntityContext EntityContext { get; }
+
+        public IContextService ContextService { get; }
+    }
 }

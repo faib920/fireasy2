@@ -11,7 +11,9 @@ using Fireasy.Common.Extensions;
 using Fireasy.Common.Ioc;
 using Fireasy.Common.Logging;
 using System;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 #if !NETCOREAPP
 using System.Web.Mvc;
@@ -19,6 +21,7 @@ using System.Web.Mvc;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 #endif
 
@@ -108,8 +111,56 @@ namespace Fireasy.Web.Mvc
 #endif
             if (logger != null)
             {
-                logger.Error(string.Format("执行控制器 {0} 的方法 {1} 时发生错误。",
-                    controllerName, actionName), filterContext.Exception);
+                var sb = new StringBuilder();
+                var request = filterContext.HttpContext.Request;
+#if NETCOREAPP
+                if (request.QueryString.HasValue)
+#else
+                if (request.QueryString.Count > 0)
+#endif
+                {
+                    sb.AppendLine($"Query: {request.QueryString}。");
+                }
+
+#if NETCOREAPP
+                if (request.HasFormContentType)
+#else
+                if (request.Form.Count > 0)
+#endif
+                {
+                    sb.AppendLine("Forms: ");
+                    foreach (string key in request.Form.Keys)
+                    {
+                        sb.AppendLine($" {key}={request.Form[key]}");
+                    }
+                }
+#if NETCOREAPP
+                else if (request.Method.ToUpper() == "POST")
+#else
+                else if (request.HttpMethod == "POST")
+#endif
+                {
+#if NETCOREAPP
+                    var syncIOFeature = filterContext.HttpContext.Features.Get<IHttpBodyControlFeature>();
+                    if (syncIOFeature != null)
+                    {
+                        syncIOFeature.AllowSynchronousIO = true;
+                    }
+                    using var reader = new StreamReader(request.Body);
+                    var content = reader.ReadToEnd();
+#else
+                    using var reader = request.InputStream;
+                    using var memory = reader.CopyToMemory();
+                    var content = Encoding.UTF8.GetString(memory.ToArray());
+#endif
+                    if (!string.IsNullOrWhiteSpace(content))
+                    {
+                        sb.Append($"Body: {content}");
+                    }
+                }
+
+                var wapper = new RequestDetailException(sb.ToString(), filterContext.Exception);
+                logger.Error($"执行控制器 {controllerName} 的方法 {actionName} 时发生错误。", wapper);
             }
         }
 

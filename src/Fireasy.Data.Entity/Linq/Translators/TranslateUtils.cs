@@ -105,7 +105,7 @@ namespace Fireasy.Data.Entity.Linq.Translators
                 binder = attr.BinderType.New<IMethodCallBinder>();
                 if (binder == null)
                 {
-                    throw new ArgumentException(SR.GetString(SRKind.ClassNotImplInterface, "IMethodCallBinder"));
+                    throw new ArgumentException(SR.GetString(SRKind.ClassNotImplInterface, attr.BinderType, "IMethodCallBinder"));
                 }
 
                 _defBinders.TryAdd(method, binder);

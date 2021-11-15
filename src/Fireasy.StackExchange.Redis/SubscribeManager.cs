@@ -112,7 +112,8 @@ namespace Fireasy.Redis
                         Prefix = optValue.Prefix,
                         RetryDelayTime = optValue.RetryDelayTime,
                         RetryTimes = optValue.RetryTimes,
-                        Twemproxy = optValue.Twemproxy
+                        Twemproxy = optValue.Twemproxy,
+                        MinIoThreads = optValue.MinIoThreads
                     };
 
                     RedisHelper.ParseHosts(setting, optValue.Hosts);

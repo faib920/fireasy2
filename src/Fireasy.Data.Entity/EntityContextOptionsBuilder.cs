@@ -198,7 +198,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityContextOptionsBuilder UseCodeFirst(Action<RespositoryChangedEventArgs> changedAction = null)
         {
-            Options.Initializers.Add<RespositoryCreatePreInitializer>(s => s.EventHandler = changedAction);
+            Options.Initializers.AddPreInitializer<RespositoryCreatePreInitializer>(s => s.EventHandler = changedAction);
             return this;
         }
 
@@ -211,7 +211,7 @@ namespace Fireasy.Data.Entity
         {
             var environment = new EntityPersistentEnvironment();
             setupAction?.Invoke(environment);
-            Options.Initializers.Add<EnvironmentPreInitializer>(s => s.Environment = environment);
+            Options.Initializers.AddInitializer<EnvironmentInitializer>(s => s.Environment = environment);
             return this;
         }
 
@@ -221,7 +221,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityContextOptionsBuilder UseOracleTrigger()
         {
-            Options.Initializers.Add<OracleTriggerPreInitializer>();
+            Options.Initializers.AddPreInitializer<OracleTriggerPreInitializer>();
             return this;
         }
 
@@ -232,7 +232,7 @@ namespace Fireasy.Data.Entity
         /// <returns></returns>
         public EntityContextOptionsBuilder UseOracleTrigger<TEntity>() where TEntity : IEntity
         {
-            Options.Initializers.Add<OracleTriggerPreInitializer>(s => s.Add(typeof(TEntity)));
+            Options.Initializers.AddPreInitializer<OracleTriggerPreInitializer>(s => s.Add(typeof(TEntity)));
             return this;
         }
     }

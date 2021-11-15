@@ -81,6 +81,7 @@ namespace Fireasy.Data.Entity
             Initialize(options);
 
             new EntityRepositoryDiscoveryService(this, options).InitializeSets();
+            _options?.Initializers?.Initialize(new Initializers.EntityContextInitializeContext(this, _contextService));
         }
 
         /// <summary>

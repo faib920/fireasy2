@@ -82,6 +82,13 @@ namespace Fireasy.Data.Entity
         internal const string NotFoundSelectMethod = "NotFoundSelectMethod";
         internal const string NotSupportNewExpressionOnStringJoin = "NotSupportNewExpressionOnStringJoin";
         internal const string NotSupportExecuteBatch = "NotSupportBatchExecute";
+        internal const string CallConvertFromError = "CallConvertFromError";
+        internal const string CallConvertToError = "CallConvertToError";
+        internal const string CallGenerateIdentityError = "CallGenerateIdentityError";
+        internal const string NotFoundPropertyMatadata = "NotFoundPropertyMatadata";
+        internal const string CannotBindProperty = "CannotBindProperty";
+        internal const string IsNotPrimaryProperty = "IsNotPrimaryProperty";
+        internal const string InvalidRelationshipAssign = "InvalidRelationshipAssign";
     }
 
     internal sealed class SR

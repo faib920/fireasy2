@@ -7,8 +7,10 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Fireasy.Common;
 using Fireasy.Common.ComponentModel;
 using Fireasy.Common.Configuration;
@@ -23,12 +25,12 @@ namespace Fireasy.Redis
     /// <summary>
     /// Redis 组件抽象类。
     /// </summary>
-    public abstract class RedisComponent : DisposableBase, IConfigurationSettingHostService, IServiceProviderAccessor
+    public abstract class RedisComponent : DisposableBase, IConfigurationSettingHostService, IServiceProviderAccessor, IServiceProvider
     {
         private List<int> _dbRanage;
         private Func<string, string> _captureRule;
         private Func<ISerializer> _serializerFactory;
-        private static Lazy<ConnectionMultiplexer> _connectionLazy;
+        private Lazy<ConnectionMultiplexer> _connectionLazy;
 
         protected RedisComponent()
         {
@@ -51,6 +53,16 @@ namespace Fireasy.Redis
         protected RedisConfigurationSetting Setting { get; private set; }
 
         protected ConfigurationOptions Options { get; private set; }
+
+        object IServiceProvider.GetService(Type serviceType)
+        {
+            if (serviceType == typeof(ConnectionMultiplexer))
+            {
+                return _connectionLazy.Value;
+            }
+
+            return null;
+        }
 
         /// <summary>
         /// 反序列化。
@@ -158,22 +170,29 @@ namespace Fireasy.Redis
         {
             var client = _connectionLazy.Value;
             var ckey = _captureRule == null ? key : _captureRule(key);
-            var index = _dbRanage != null ? GetModulus(ckey, _dbRanage.Count) : Options.DefaultDatabase ?? 0;
+            var index = _dbRanage != null ? GetModulus(ckey, _dbRanage.Count) : Setting.DefaultDb;
 
             if (_dbRanage != null)
             {
-                Tracer.Debug($"Select redis db{index} for the key '{key}'.");
+                Tracer.Debug($"Select redis db{_dbRanage[index]} for the key '{key}'.");
             }
 
-            return client.GetDatabase(index);
+            return client.GetDatabase(_dbRanage[index]);
         }
 
         protected IEnumerable<IDatabase> GetDatabases()
         {
             var client = _connectionLazy.Value;
-            foreach (var index in _dbRanage)
+            if (_dbRanage == null)
             {
-                yield return client.GetDatabase(index);
+                yield return client.GetDatabase(Setting.DefaultDb);
+            }
+            else
+            {
+                foreach (var index in _dbRanage)
+                {
+                    yield return client.GetDatabase(index);
+                }
             }
         }
 
@@ -198,7 +217,7 @@ namespace Fireasy.Redis
             {
                 Options = new ConfigurationOptions
                 {
-                    DefaultDatabase = Setting.DefaultDb == 0 || !string.IsNullOrEmpty(Setting.DbRange) ? (int?)null : Setting.DefaultDb,
+                    //DefaultDatabase = Setting.DefaultDb == 0 || !string.IsNullOrEmpty(Setting.DbRange) ? (int?)null : Setting.DefaultDb,
                     Password = Setting.Password,
                     AllowAdmin = true,
                     Ssl = Setting.Ssl,
@@ -253,7 +272,51 @@ namespace Fireasy.Redis
                 _connectionLazy = new Lazy<ConnectionMultiplexer>(() => CreateConnection(Options));
             }
 
+            ConvertEndPoints();
+            SetMinThreads();
             OnInitialize();
+        }
+
+        private void ConvertEndPoints()
+        {
+            var ipEndPoints = new EndPointCollection();
+            foreach (var endpoint in Options.EndPoints)
+            {
+                if (endpoint is not DnsEndPoint dnsPoint)
+                {
+                    continue;
+                }
+
+                var ipAddresses = Dns.GetHostAddresses(dnsPoint.Host);
+                foreach (var ipAddress in ipAddresses)
+                {
+                    ipEndPoints.Add(new IPEndPoint(ipAddress, dnsPoint.Port));
+                }
+            }
+
+            if (ipEndPoints.Count > 0)
+            {
+                Options.EndPoints.Clear();
+                foreach (var ipPoint in ipEndPoints)
+                {
+                    Options.EndPoints.Add(ipPoint);
+                }
+            }
+        }
+
+        private void SetMinThreads()
+        {
+            if (Setting.MinIoThreads > 0)
+            {
+                //当最小线程数小于配置，才使用配置
+                ThreadPool.GetMinThreads(out int minIoThreads, out int minIOC);
+                minIoThreads = Setting.MinIoThreads > minIoThreads ? Setting.MinIoThreads : minIoThreads;
+                minIOC = Setting.MinIoThreads > minIOC ? Setting.MinIoThreads : minIOC;
+                if (!ThreadPool.SetMinThreads(minIoThreads, minIOC))
+                {
+                    throw new Exception("Redis thread pool error!");
+                }
+            }
         }
 
         IConfigurationSettingItem IConfigurationSettingHostService.GetSetting()

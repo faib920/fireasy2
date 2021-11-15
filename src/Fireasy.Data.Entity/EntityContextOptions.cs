@@ -26,8 +26,8 @@ namespace Fireasy.Data.Entity
         /// </summary>
         public EntityContextOptions()
         {
-            Initializers = new EntityContextPreInitializerCollection();
-            Initializers.Add<RecompileAssemblyPreInitializer>();
+            Initializers = new EntityContextInitializerCollection();
+            Initializers.AddPreInitializer<RecompileAssemblyPreInitializer>();
         }
 
         /// <summary>
@@ -103,7 +103,7 @@ namespace Fireasy.Data.Entity
         /// <summary>
         /// 获取初始化方法。
         /// </summary>
-        public EntityContextPreInitializerCollection Initializers { get; }
+        public EntityContextInitializerCollection Initializers { get; }
 
         /// <summary>
         /// 获取或设置数据库提供者。
