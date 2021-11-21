@@ -502,6 +502,7 @@ namespace Fireasy.Data.Entity.Query
                 _readers = _readers,
                 _lookup = _lookup,
                 _translator = _translator,
+                _transContext = _transContext,
                 _variableMap = _variableMap
             };
             return eb.Visit(expression);

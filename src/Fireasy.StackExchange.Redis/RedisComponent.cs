@@ -169,13 +169,15 @@ namespace Fireasy.Redis
         protected IDatabase GetDatabase(string key)
         {
             var client = _connectionLazy.Value;
-            var ckey = _captureRule == null ? key : _captureRule(key);
-            var index = _dbRanage != null ? GetModulus(ckey, _dbRanage.Count) : Setting.DefaultDb;
-
-            if (_dbRanage != null)
+            if (_dbRanage == null)
             {
-                Tracer.Debug($"Select redis db{_dbRanage[index]} for the key '{key}'.");
+                return client.GetDatabase(Setting.DefaultDb);
             }
+
+            var ckey = _captureRule == null ? key : _captureRule(key);
+            var index = GetModulus(ckey, _dbRanage.Count);
+
+            Tracer.Debug($"Select redis db{_dbRanage[index]} for the key '{key}'.");
 
             return client.GetDatabase(_dbRanage[index]);
         }
