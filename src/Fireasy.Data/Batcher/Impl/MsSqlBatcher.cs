@@ -47,7 +47,7 @@ namespace Fireasy.Data.Batcher
             try
             {
                 var connection = GetConnection(database);
-                constateMgr = new ConnectionStateManager(connection);
+                constateMgr = new ConnectionStateManager(connection).TryOpen();
 
                 var syntax = database.Provider.GetService<ISyntaxProvider>();
                 var tableName = syntax.DelimitTable(dataTable.TableName);

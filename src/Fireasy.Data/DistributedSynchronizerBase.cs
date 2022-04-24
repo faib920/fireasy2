@@ -123,7 +123,7 @@ namespace Fireasy.Data
             {
                 Tracer.Debug($"Query row-version of {tableName}.");
                 conn1 = database.GetConnection(DistributedMode.Master);
-                constateMgr1 = new ConnectionStateManager(conn2).TryOpen();
+                constateMgr1 = new ConnectionStateManager(conn1).TryOpen();
                 var command1 = conn1.CreateCommand();
                 command1.CommandText = sql;
                 var ver1 = command1.ExecuteScalar();
